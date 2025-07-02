@@ -154,10 +154,10 @@ async function createLog(
           userEmail || process.env.ENV_COMPANY_EMAIL || "k331502@nate.com";
       } else {
         // 클라이언트 사이드에서만 경고 로그
-        devLog.warn(`Missing user context for log: ${action}`, {
-          hasUserId: !!currentUserId,
-          hasEmail: !!userEmail,
-        });
+        // devLog.warn(`Missing user context for log: ${action}`, {
+        //   hasUserId: !!currentUserId,
+        //   hasEmail: !!userEmail,
+        // });
       }
     }
 

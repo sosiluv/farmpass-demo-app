@@ -9,7 +9,7 @@ export async function getMetadataSettings() {
     // 업로드된 파비콘이 있으면 해당 경로 사용, 없으면 기본 파비콘 사용
     const faviconPath = settings?.favicon
       ? `/uploads/${settings.favicon}`
-      : "/favicon.ico";
+      : "/favicon.png";
 
     return {
       siteName: settings?.siteName || DEFAULT_SYSTEM_SETTINGS.siteName,
@@ -23,7 +23,7 @@ export async function getMetadataSettings() {
     return {
       siteName: DEFAULT_SYSTEM_SETTINGS.siteName,
       siteDescription: DEFAULT_SYSTEM_SETTINGS.siteDescription,
-      favicon: "/favicon.ico",
+      favicon: "/favicon.png",
     };
   }
 }

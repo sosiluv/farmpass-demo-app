@@ -35,69 +35,81 @@ DROP POLICY IF EXISTS "allow_all" ON public.push_subscriptions;
 -- user_notification_settings 테이블 정책 삭제
 DROP POLICY IF EXISTS "allow_all" ON public.user_notification_settings;
 
+-- =================================
+-- 관리자 확인 함수 (RLS 우회 방식)
+-- =================================
+CREATE OR REPLACE FUNCTION public.is_system_admin()
+RETURNS BOOLEAN
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+DECLARE
+    result BOOLEAN;
+BEGIN
+    -- RLS를 우회하여 직접 조회 (SECURITY DEFINER로 인해 RLS 무시)
+    SELECT account_type = 'admin'
+    INTO result
+    FROM public.profiles
+    WHERE id = auth.uid();
+    
+    RETURN COALESCE(result, FALSE);
+EXCEPTION
+    WHEN OTHERS THEN
+        -- 조회 실패 시 기본적으로 false 반환
+        RETURN FALSE;
+END;
+$$;
 
+COMMENT ON FUNCTION public.is_system_admin() IS 
+'RLS를 우회하여 profiles.account_type으로 관리자 확인. 재귀 방지 및 실시간 권한 변경 지원';
 
---- 관리자 계정 role부여 해야함 무조건필수
+-- =================================
+-- 관리자 계정 role부여 해야함 무조건필수
+-- =================================
 UPDATE auth.users
 SET raw_app_meta_data = COALESCE(raw_app_meta_data, '{}'::jsonb) || '{"role": "admin"}'
 WHERE id = 'a45d5a0f-4f1b-4815-9574-9971e17901fd';
 
-
-
-
-
-
 -- =================================
--- profiles 테이블 정책 (JWT 커스텀 클레임 기반, 무한 재귀 완전 방지)
+-- profiles 테이블 정책 (함수 기반, 무한 재귀 완전 방지)
 -- =================================
 CREATE POLICY "Users can view own profile" ON public.profiles
     FOR SELECT USING (auth.uid() = id);
 
-
 CREATE POLICY "Admins can view all profiles" ON public.profiles
-    FOR SELECT USING (
-        auth.jwt() -> 'app_metadata' ->> 'role' = 'admin'
-    );
+    FOR SELECT USING (public.is_system_admin());
 
 CREATE POLICY "Users can update own profile" ON public.profiles
     FOR UPDATE USING (auth.uid() = id);
 
 CREATE POLICY "Admins can update all profiles" ON public.profiles
-    FOR UPDATE USING (
-        auth.jwt() -> 'app_metadata' ->> 'role' = 'admin'
-    );
+    FOR UPDATE USING (public.is_system_admin());
 
 COMMENT ON POLICY "Users can view own profile" ON public.profiles IS 
 '사용자는 자신의 프로필만 조회할 수 있음';
 
 COMMENT ON POLICY "Admins can view all profiles" ON public.profiles IS 
-'JWT app_metadata.role = admin인 경우 모든 프로필을 조회할 수 있음';
+'is_system_admin() 함수로 관리자 확인 후 모든 프로필을 조회할 수 있음';
 
 COMMENT ON POLICY "Users can update own profile" ON public.profiles IS 
 '사용자는 자신의 프로필만 수정할 수 있음';
 
 COMMENT ON POLICY "Admins can update all profiles" ON public.profiles IS 
-'JWT app_metadata.role = admin인 경우 모든 프로필을 수정할 수 있음';
+'is_system_admin() 함수로 관리자 확인 후 모든 프로필을 수정할 수 있음';
 
 
 -- =================================
--- farms 테이블 정책 (순환 참조 제거)
+-- farms 테이블 정책 (함수 기반, 순환 참조 완전 제거)
 -- =================================
 CREATE POLICY "Users can view own farms" ON public.farms
     FOR SELECT USING (
-        EXISTS (
-            SELECT 1 FROM public.profiles
-            WHERE id = auth.uid() AND account_type = 'admin'
-        ) OR
+        public.is_system_admin() OR
         owner_id = auth.uid()
     );
 
 CREATE POLICY "Users can manage own farms" ON public.farms
     FOR ALL USING (
-        EXISTS (
-            SELECT 1 FROM public.profiles
-            WHERE id = auth.uid() AND account_type = 'admin'
-        ) OR
+        public.is_system_admin() OR
         owner_id = auth.uid()
     );
 
@@ -109,14 +121,11 @@ COMMENT ON POLICY "Users can manage own farms" ON public.farms IS
 
 
 -- =================================
--- farm_members 테이블 정책 (farms 참조 최소화)
+-- farm_members 테이블 정책 (함수 기반, 순환 참조 완전 제거)
 -- =================================
 CREATE POLICY "Users can view farm members" ON public.farm_members
     FOR SELECT USING (
-        EXISTS (
-            SELECT 1 FROM public.profiles
-            WHERE id = auth.uid() AND account_type = 'admin'
-        ) OR
+        public.is_system_admin() OR
         user_id = auth.uid() OR
         farm_id IN (
             SELECT id FROM public.farms WHERE owner_id = auth.uid()
@@ -125,10 +134,7 @@ CREATE POLICY "Users can view farm members" ON public.farm_members
 
 CREATE POLICY "Farm owners can manage members" ON public.farm_members
     FOR ALL USING (
-        EXISTS (
-            SELECT 1 FROM public.profiles
-            WHERE id = auth.uid() AND account_type = 'admin'
-        ) OR
+        public.is_system_admin() OR
         farm_id IN (
             SELECT id FROM public.farms WHERE owner_id = auth.uid()
         )
@@ -142,14 +148,11 @@ COMMENT ON POLICY "Farm owners can manage members" ON public.farm_members IS
 
 
 -- =================================
--- visitor_entries 테이블 정책
+-- visitor_entries 테이블 정책 (함수 기반, 순환 참조 완전 제거)
 -- =================================
 CREATE POLICY "Users can view farm visitors" ON public.visitor_entries
     FOR SELECT USING (
-        EXISTS (
-            SELECT 1 FROM public.profiles
-            WHERE id = auth.uid() AND account_type = 'admin'
-        ) OR
+        public.is_system_admin() OR
         farm_id IN (
             SELECT id FROM public.farms WHERE owner_id = auth.uid()
         ) OR
@@ -161,10 +164,7 @@ CREATE POLICY "Users can view farm visitors" ON public.visitor_entries
 
 CREATE POLICY "Users can manage farm visitors" ON public.visitor_entries
     FOR ALL USING (
-        EXISTS (
-            SELECT 1 FROM public.profiles
-            WHERE id = auth.uid() AND account_type = 'admin'
-        ) OR
+        public.is_system_admin() OR
         farm_id IN (
             SELECT id FROM public.farms WHERE owner_id = auth.uid()
         ) OR
@@ -217,53 +217,37 @@ COMMENT ON POLICY "Anyone can register visitors" ON public.visitor_entries IS
 
 
 -- =================================
--- system_settings 테이블 정책
+-- system_settings 테이블 정책 (함수 기반)
 -- =================================
 CREATE POLICY "Admins can manage all system settings" ON "public"."system_settings"
   FOR ALL
   TO authenticated
-  WITH CHECK (EXISTS (
-    SELECT 1 FROM public.profiles
-    WHERE id = auth.uid()
-    AND account_type = 'admin'
-  ));    
+  USING (public.is_system_admin())
+  WITH CHECK (public.is_system_admin());    
 
 COMMENT ON POLICY "Admins can manage all system settings" ON public.system_settings IS 
 '시스템 설정은 관리자만 생성, 조회, 수정, 삭제할 수 있음';
 
 
 -- =================================
--- system_logs 테이블 정책 (UUID 타입 준수)
+-- system_logs 테이블 정책 (함수 기반, UUID 타입 준수)
 -- =================================
 CREATE POLICY "system_logs_admin_full_access" ON public.system_logs
     FOR ALL 
-    USING (
-        EXISTS (
-            SELECT 1 FROM public.profiles
-            WHERE id = auth.uid() AND account_type = 'admin'
-        )
-    )
-    WITH CHECK (
-        EXISTS (
-            SELECT 1 FROM public.profiles
-            WHERE id = auth.uid() AND account_type = 'admin'
-        )
-    );
+    USING (public.is_system_admin())
+    WITH CHECK (public.is_system_admin());
 
 COMMENT ON POLICY "system_logs_admin_full_access" ON public.system_logs IS 
 '관리자는 모든 시스템 로그에 대한 전체 권한(CRUD)을 가짐';
 
 -- =================================
--- 포괄적 로그 삽입 정책 (모든 로그 타입 지원)
+-- 포괄적 로그 삽입 정책 (함수 기반, 모든 로그 타입 지원)
 -- =================================
 CREATE POLICY "system_logs_insert" ON public.system_logs
     FOR INSERT 
     WITH CHECK (
         -- 관리자는 모든 로그 생성 가능
-        EXISTS (
-            SELECT 1 FROM public.profiles
-            WHERE id = auth.uid() AND account_type = 'admin'
-        ) OR
+        public.is_system_admin() OR
         
         -- 서비스 역할은 모든 로그 생성 가능
         auth.role() = 'service_role' OR
@@ -365,16 +349,13 @@ COMMENT ON POLICY "system_logs_insert" ON public.system_logs IS
 '포괄적 로그 삽입 정책: 코드베이스에서 실제 사용하는 모든 로그 액션 패턴을 허용. 인증된 사용자, 외부 사용자, 시스템 로그 모두 지원';
 
 -- =================================
--- 로그 조회 정책
+-- 로그 조회 정책 (함수 기반)
 -- =================================
 CREATE POLICY "system_logs_select" ON public.system_logs
     FOR SELECT 
     USING (
         -- 관리자는 모든 로그 조회 가능
-        EXISTS (
-            SELECT 1 FROM public.profiles
-            WHERE id = auth.uid() AND account_type = 'admin'
-        ) OR
+        public.is_system_admin() OR
         
         -- 인증된 사용자는 자신과 관련된 로그만 조회 가능
         (auth.uid() IS NOT NULL AND (

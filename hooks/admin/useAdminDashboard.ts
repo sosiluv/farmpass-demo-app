@@ -160,10 +160,6 @@ export function useAdminDashboard() {
               role = "농장주";
             }
           }
-          // account_type이 farm_owner인 경우도 농장주로 분류
-          else if (user.account_type === "farm_owner") {
-            role = "농장주";
-          }
 
           const existing = acc.find((item) => item.role === role);
           if (existing) {

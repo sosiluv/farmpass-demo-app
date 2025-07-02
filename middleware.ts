@@ -426,12 +426,21 @@ export async function middleware(request: NextRequest) {
  * 제외되는 경로들:
  * - _next/static: Next.js 정적 파일들
  * - _next/image: 이미지 최적화 파일들
- * - favicon.ico: 파비콘
+ * - favicon.ico/favicon.png: 파비콘 파일들
  * - api/auth: 인증 API들 (Supabase가 처리)
  * - api/admin: 관리자 API들 (API 라우트에서 직접 권한 처리)
  * - api/settings: 공개 설정 API들
+ * - api/health: 헬스체크 API (모니터링용)
+ * - api/monitoring: 모니터링 API (모니터링용)
+ * - api/push: 푸시 알림 API (PWA 알림)
+ * - api/visitor: 방문자 관련 API (방문자 등록)
  * - api/farms/.../visitors/check-session: 공개 방문자 세션 체크 API
- * - 정적 파일들: 이미지, CSS, JS, 폰트 파일들
+ * - manifest.json: PWA 매니페스트 파일
+ * - sw.js: 서비스 워커 파일
+ * - workbox-*: PWA 워크박스 관련 파일들
+ * - push-sw.js: 푸시 알림 서비스 워커
+ * - docs/: 문서 페이지들 (HTML 파일들)
+ * - 정적 파일들: 이미지, CSS, JS, 폰트, HTML, JSON 파일들
  *
  * @see https://nextjs.org/docs/app/building-your-application/routing/middleware#matcher
  */
@@ -449,6 +458,6 @@ export const config = {
      * - static files (svg, png, jpg, jpeg, gif, webp, css, js, etc.)
      * Feel free to modify this pattern to include more paths.
      */
-    "/((?!_next/static|_next/image|favicon.ico|api/auth|api/admin|api/settings|api/farms/[^/]+/visitors/check-session|.*\\.(?:svg|png|jpg|jpeg|gif|webp|css|js|woff|woff2)$).*)",
+    "/((?!_next/static|_next/image|favicon\\.(?:ico|png)|api/auth|api/admin|api/settings|api/health|api/monitoring|api/push|api/visitor|api/farms/[^/]+/visitors/check-session|manifest\\.json|sw\\.js|workbox-|push-sw\\.js|docs/|.*\\.(?:svg|png|jpg|jpeg|gif|webp|css|js|woff|woff2|html|json)$).*)",
   ],
 };
