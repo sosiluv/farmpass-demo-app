@@ -1,0 +1,855 @@
+<!DOCTYPE html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>농장 출입 관리 시스템 - 빠른 시작 가이드</title>
+    <style>
+      body {
+        font-family: "Malgun Gothic", -apple-system, BlinkMacSystemFont,
+          "Segoe UI", Roboto, sans-serif;
+        line-height: 1.8;
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 20px;
+        background-color: #f8fdf8;
+        color: #2d3748;
+      }
+
+      .header {
+        text-align: center;
+        padding: 40px 0;
+        background: linear-gradient(135deg, #ff9800, #ffc107);
+        color: white;
+        border-radius: 16px;
+        margin-bottom: 40px;
+        box-shadow: 0 8px 25px rgba(255, 152, 0, 0.3);
+      }
+
+      .header h1 {
+        font-size: 2.5em;
+        margin: 0;
+        text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+      }
+
+      .header p {
+        font-size: 1.2em;
+        margin: 10px 0 0 0;
+        opacity: 0.95;
+      }
+
+      .highlight-banner {
+        background: linear-gradient(135deg, #4caf50, #8bc34a);
+        color: white;
+        padding: 20px;
+        border-radius: 12px;
+        text-align: center;
+        margin-bottom: 30px;
+        font-size: 1.1em;
+        font-weight: 500;
+      }
+
+      .nav-menu {
+        background: white;
+        border-radius: 12px;
+        padding: 20px;
+        margin-bottom: 30px;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        text-align: center;
+      }
+
+      .nav-menu h3 {
+        margin: 0 0 15px 0;
+        color: #ff9800;
+      }
+
+      .nav-menu a {
+        display: inline-block;
+        margin: 5px 10px;
+        padding: 8px 16px;
+        background-color: #fff3e0;
+        color: #e65100;
+        text-decoration: none;
+        border-radius: 20px;
+        transition: all 0.3s ease;
+        font-weight: 500;
+      }
+
+      .nav-menu a:hover {
+        background-color: #ff9800;
+        color: white;
+        transform: translateY(-2px);
+      }
+
+      .content {
+        background: white;
+        border-radius: 12px;
+        padding: 40px;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        margin-bottom: 30px;
+      }
+
+      h2 {
+        color: #ff9800;
+        border-bottom: 3px solid #fff3e0;
+        padding-bottom: 10px;
+        margin-top: 40px;
+      }
+
+      h3 {
+        color: #e65100;
+        margin-top: 30px;
+      }
+
+      h4 {
+        color: #f57c00;
+        margin-top: 25px;
+      }
+
+      .checklist-section {
+        background: #fff3e0;
+        border-left: 4px solid #ff9800;
+        padding: 25px;
+        margin: 25px 0;
+        border-radius: 0 8px 8px 0;
+      }
+
+      .step-container {
+        background: linear-gradient(135deg, #e8f5e8, #f1f8e9);
+        border: 2px solid #4caf50;
+        border-radius: 12px;
+        padding: 30px;
+        margin: 30px 0;
+        position: relative;
+      }
+
+      .step-number {
+        background: #4caf50;
+        color: white;
+        width: 60px;
+        height: 60px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5em;
+        font-weight: bold;
+        position: absolute;
+        top: -30px;
+        left: 30px;
+        box-shadow: 0 4px 10px rgba(76, 175, 80, 0.3);
+      }
+
+      .step-title {
+        color: #2e7d32;
+        margin-top: 20px;
+        margin-bottom: 20px;
+        font-size: 1.4em;
+      }
+
+      .time-badge {
+        background: #ff9800;
+        color: white;
+        padding: 5px 15px;
+        border-radius: 20px;
+        font-size: 0.9em;
+        font-weight: bold;
+        float: right;
+      }
+
+      .input-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin: 20px 0;
+        background: white;
+        border-radius: 8px;
+        overflow: hidden;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+      }
+
+      .input-table th {
+        background: #4caf50;
+        color: white;
+        padding: 15px;
+        text-align: left;
+        font-weight: 600;
+      }
+
+      .input-table td {
+        padding: 15px;
+        border-bottom: 1px solid #e8f5e8;
+        vertical-align: top;
+      }
+
+      .input-table tr:nth-child(even) {
+        background-color: #f8fdf8;
+      }
+
+      .code-block {
+        background: #2d3748;
+        color: #e2e8f0;
+        padding: 20px;
+        border-radius: 8px;
+        margin: 15px 0;
+        font-family: "Courier New", monospace;
+        overflow-x: auto;
+      }
+
+      .code-block .url {
+        color: #60d9ef;
+        font-weight: bold;
+      }
+
+      .code-block .comment {
+        color: #a0aec0;
+      }
+
+      .installation-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 15px;
+        margin: 20px 0;
+      }
+
+      .installation-item {
+        background: #f1f8e9;
+        border: 2px solid #8bc34a;
+        border-radius: 8px;
+        padding: 15px;
+        text-align: center;
+        font-weight: 500;
+      }
+
+      /* 일반 리스트 스타일 개선 */
+      ul {
+        padding-left: 25px;
+        margin: 15px 0;
+      }
+
+      ol {
+        padding-left: 25px;
+        margin: 15px 0;
+      }
+
+      li {
+        margin: 8px 0;
+        line-height: 1.6;
+        padding-left: 5px;
+      }
+
+      /* 중첩된 리스트 스타일 */
+      ul ul,
+      ol ol,
+      ul ol,
+      ol ul {
+        margin: 5px 0;
+        padding-left: 20px;
+      }
+
+      .alert-box {
+        background: #fff3e0;
+        border: 2px solid #ff9800;
+        border-radius: 8px;
+        padding: 20px;
+        margin: 20px 0;
+        position: relative;
+      }
+
+      .alert-box::before {
+        content: "⚠️";
+        font-size: 1.5em;
+        position: absolute;
+        left: 15px;
+        top: 15px;
+      }
+
+      .alert-box .alert-content {
+        margin-left: 40px;
+      }
+
+      .success-box {
+        background: linear-gradient(135deg, #e8f5e8, #f1f8e9);
+        border: 2px solid #4caf50;
+        border-radius: 12px;
+        padding: 25px;
+        margin: 25px 0;
+        text-align: center;
+      }
+
+      .success-box h3 {
+        color: #2e7d32;
+        margin-top: 0;
+        font-size: 1.4em;
+      }
+
+      .completion-checklist {
+        background: white;
+        border: 2px solid #4caf50;
+        border-radius: 12px;
+        padding: 25px;
+        margin: 30px 0;
+      }
+
+      .completion-checklist h3 {
+        color: #4caf50;
+        margin-top: 0;
+        text-align: center;
+      }
+
+      .completion-checklist ul {
+        list-style: none;
+        padding: 0;
+      }
+
+      .completion-checklist li {
+        padding: 8px 0;
+        border-bottom: 1px solid #e8f5e8;
+      }
+
+      .completion-checklist li:last-child {
+        border-bottom: none;
+      }
+
+      .checkmark {
+        color: #4caf50;
+        font-weight: bold;
+        margin-right: 10px;
+      }
+
+      .trouble-section {
+        background: #fff8e1;
+        border: 2px solid #ffc107;
+        border-radius: 12px;
+        padding: 25px;
+        margin: 30px 0;
+      }
+
+      .trouble-section h3 {
+        color: #ff8f00;
+        margin-top: 0;
+      }
+
+      .qa-item {
+        background: white;
+        border-radius: 8px;
+        padding: 20px;
+        margin: 15px 0;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+      }
+
+      .qa-question {
+        color: #e65100;
+        font-weight: bold;
+        margin-bottom: 10px;
+      }
+
+      .qa-answer {
+        color: #424242;
+      }
+
+      .next-steps {
+        background: linear-gradient(135deg, #e3f2fd, #f1f8e9);
+        border-radius: 12px;
+        padding: 30px;
+        margin: 30px 0;
+      }
+
+      .next-steps h3 {
+        color: #1976d2;
+        margin-top: 0;
+      }
+
+      .next-links {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 15px;
+        margin: 20px 0;
+      }
+
+      .next-link {
+        background: white;
+        border: 2px solid #2196f3;
+        border-radius: 8px;
+        padding: 15px;
+        text-decoration: none;
+        color: #1976d2;
+        transition: all 0.3s ease;
+      }
+
+      .next-link:hover {
+        background: #2196f3;
+        color: white;
+        transform: translateY(-2px);
+      }
+
+      .contact-support {
+        background: linear-gradient(135deg, #4caf50, #8bc34a);
+        color: white;
+        padding: 25px;
+        border-radius: 12px;
+        text-align: center;
+        margin: 30px 0;
+      }
+
+      .contact-support h3 {
+        color: white;
+        margin-top: 0;
+      }
+
+      .contact-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 15px;
+        margin-top: 20px;
+      }
+
+      .contact-item {
+        background: rgba(255, 255, 255, 0.1);
+        padding: 15px;
+        border-radius: 8px;
+      }
+
+      .footer {
+        text-align: center;
+        margin-top: 50px;
+        padding: 30px;
+        background: #fff3e0;
+        border-radius: 12px;
+        color: #e65100;
+        font-weight: 500;
+      }
+
+      @media (max-width: 768px) {
+        body {
+          padding: 10px;
+        }
+
+        .header h1 {
+          font-size: 2em;
+        }
+
+        .content {
+          padding: 20px;
+        }
+
+        .step-number {
+          left: 15px;
+        }
+
+        .installation-grid,
+        .next-links,
+        .contact-grid {
+          grid-template-columns: 1fr;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="header">
+      <h1>🚀 농장 출입 관리 시스템</h1>
+      <p>빠른 시작 가이드</p>
+    </div>
+
+    <div class="highlight-banner">
+      <strong>5분만에 시작하는 농장 출입 관리!</strong><br />
+      복잡한 설정 없이 바로 사용할 수 있도록 핵심 기능만 빠르게 안내합니다.
+    </div>
+
+    <div class="nav-menu">
+      <h3>📚 사용자 문서 메뉴</h3>
+      <a href="user-manual.html">📖 사용자 매뉴얼</a>
+      <a href="quick-start.html">🚀 빠른 시작 가이드</a>
+      <a href="product-overview.html">📋 제품 소개서</a>
+      <a href="faq.html">❓ 자주 묻는 질문</a>
+      <a href="pwa-guide.html">📱 PWA 사용 가이드</a>
+    </div>
+
+    <div class="content">
+      <h2>📋 시작 전 체크리스트</h2>
+
+      <div class="checklist-section">
+        <h3>✅ 준비물</h3>
+        <ul>
+          <li>
+            <span class="checkmark">☐</span> 인터넷 연결된 컴퓨터 또는 스마트폰
+          </li>
+          <li>
+            <span class="checkmark">☐</span> 이메일 주소 (Gmail, Naver 등)
+          </li>
+          <li><span class="checkmark">☐</span> 휴대폰 번호</li>
+          <li>
+            <span class="checkmark">☐</span> 농장 기본 정보 (농장명, 주소 등)
+          </li>
+        </ul>
+
+        <h3>✅ 소요 시간</h3>
+        <ul>
+          <li><strong>회원가입</strong>: 3분</li>
+          <li><strong>농장 등록</strong>: 2분</li>
+          <li><strong>첫 방문자 등록</strong>: 2분</li>
+          <li><strong>QR코드 설치</strong>: 5분</li>
+        </ul>
+      </div>
+
+      <div class="step-container">
+        <div class="step-number">1</div>
+        <div class="step-title">
+          회원가입 <span class="time-badge">3분</span>
+        </div>
+
+        <h4>1️⃣ 시스템 접속</h4>
+        <div class="code-block">
+          <div class="comment">🌐 웹 브라우저 주소창에 입력</div>
+          <div class="url">https://your-farm-system.com</div>
+          <br />
+          <div class="comment">📱 모바일에서도 동일한 주소 사용</div>
+        </div>
+
+        <h4>2️⃣ 회원가입 정보 입력</h4>
+        <table class="input-table">
+          <thead>
+            <tr>
+              <th>항목</th>
+              <th>입력 예시</th>
+              <th>주의사항</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>이메일</strong></td>
+              <td>farmer@gmail.com</td>
+              <td>로그인 ID로 사용</td>
+            </tr>
+            <tr>
+              <td><strong>비밀번호</strong></td>
+              <td>Farm123!@#</td>
+              <td>8자 이상, 특수문자 포함</td>
+            </tr>
+            <tr>
+              <td><strong>이름</strong></td>
+              <td>홍길동</td>
+              <td>실제 이름</td>
+            </tr>
+            <tr>
+              <td><strong>연락처</strong></td>
+              <td>010-1234-5678</td>
+              <td>하이픈(-) 포함</td>
+            </tr>
+            <tr>
+              <td><strong>농장명</strong></td>
+              <td>푸른목장</td>
+              <td>대표 농장명</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <h4>3️⃣ 이메일 인증</h4>
+        <ol>
+          <li>가입 완료 후 이메일 확인</li>
+          <li><strong>"계정 인증"</strong> 링크 클릭</li>
+          <li><span class="checkmark">✅</span> 인증 완료!</li>
+        </ol>
+      </div>
+
+      <div class="step-container">
+        <div class="step-number">2</div>
+        <div class="step-title">
+          농장 등록 <span class="time-badge">2분</span>
+        </div>
+
+        <h4>1️⃣ 로그인 후 농장 추가</h4>
+        <div class="code-block">대시보드 → "농장 관리" → "새 농장 추가"</div>
+
+        <h4>2️⃣ 농장 정보 입력</h4>
+        <table class="input-table">
+          <thead>
+            <tr>
+              <th>필수 정보</th>
+              <th>입력 예시</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>농장명</strong></td>
+              <td>푸른목장 1농장</td>
+            </tr>
+            <tr>
+              <td><strong>주소</strong></td>
+              <td>경기도 김포시 농장로 123</td>
+            </tr>
+            <tr>
+              <td><strong>농장 유형</strong></td>
+              <td>축산업 (한우)</td>
+            </tr>
+            <tr>
+              <td><strong>관리자명</strong></td>
+              <td>홍길동</td>
+            </tr>
+            <tr>
+              <td><strong>관리자 연락처</strong></td>
+              <td>010-1234-5678</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <h4>3️⃣ 저장 완료</h4>
+        <div class="success-box">
+          <span class="checkmark">✅</span> 농장 등록 완료!
+        </div>
+      </div>
+
+      <div class="step-container">
+        <div class="step-number">3</div>
+        <div class="step-title">
+          첫 방문자 등록 <span class="time-badge">2분</span>
+        </div>
+
+        <h4>1️⃣ 방문자 등록</h4>
+        <div class="code-block">"방문자 관리" → "새 방문자 등록"</div>
+
+        <h4>2️⃣ 방문자 정보 입력</h4>
+        <table class="input-table">
+          <thead>
+            <tr>
+              <th>필수 정보</th>
+              <th>입력 예시</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>방문자명</strong></td>
+              <td>김철수</td>
+            </tr>
+            <tr>
+              <td><strong>연락처</strong></td>
+              <td>010-9876-5432</td>
+            </tr>
+            <tr>
+              <td><strong>주소</strong></td>
+              <td>서울시 강남구 테헤란로 456</td>
+            </tr>
+            <tr>
+              <td><strong>방문 목적</strong></td>
+              <td>사료 배송</td>
+            </tr>
+            <tr>
+              <td><strong>방문 일시</strong></td>
+              <td>오늘 오후 2시</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <h4>3️⃣ 개인정보 동의 체크</h4>
+        <ul>
+          <li><span class="checkmark">[x]</span> 개인정보 수집 및 이용 동의</li>
+        </ul>
+
+        <h4>4️⃣ 등록 완료</h4>
+        <div class="success-box">
+          <span class="checkmark">✅</span> 첫 방문자 등록 완료!
+        </div>
+      </div>
+
+      <div class="step-container">
+        <div class="step-number">4</div>
+        <div class="step-title">
+          QR코드 설치 <span class="time-badge">5분</span>
+        </div>
+
+        <h4>1️⃣ QR코드 생성</h4>
+        <div class="code-block">"농장 관리" → 농장 선택 → "QR코드 생성"</div>
+
+        <h4>2️⃣ QR코드 인쇄</h4>
+        <ol>
+          <li><strong>"인쇄"</strong> 버튼 클릭</li>
+          <li>A4 용지에 인쇄</li>
+          <li>투명 파일에 넣어 보호</li>
+        </ol>
+
+        <h4>3️⃣ QR코드 설치 위치</h4>
+        <div class="installation-grid">
+          <div class="installation-item">🚪 농장 입구 게이트</div>
+          <div class="installation-item">📋 방문자 대기실</div>
+          <div class="installation-item">🏢 사무실 입구</div>
+          <div class="installation-item">🚗 주차장 안내판</div>
+        </div>
+
+        <h4>4️⃣ 테스트</h4>
+        <ol>
+          <li>스마트폰으로 QR코드 스캔</li>
+          <li>방문자 등록 페이지 확인</li>
+          <li><span class="checkmark">✅</span> 설치 완료!</li>
+        </ol>
+      </div>
+
+      <div class="step-container">
+        <div class="step-number">5</div>
+        <div class="step-title">
+          알림 설정 <span class="time-badge">1분</span>
+        </div>
+
+        <h4>1️⃣ 알림 권한 허용</h4>
+        <div class="code-block">"설정" → "알림 설정" → "웹 푸시 알림 허용"</div>
+
+        <h4>2️⃣ 브라우저 권한 허용</h4>
+        <p>브라우저 팝업에서 <strong>"허용"</strong> 클릭</p>
+
+        <h4>3️⃣ 알림 유형 선택</h4>
+        <ul>
+          <li><span class="checkmark">[x]</span> 방문자 등록 알림</li>
+          <li><span class="checkmark">[x]</span> 긴급 알림</li>
+          <li><span class="checkmark">[x]</span> 시스템 알림</li>
+        </ul>
+
+        <div class="success-box">
+          <span class="checkmark">✅</span> 실시간 알림 설정 완료!
+        </div>
+      </div>
+
+      <div class="completion-checklist">
+        <h3>🎉 완료! 이제 사용 가능합니다</h3>
+
+        <h4>✅ 설정 완료 확인</h4>
+        <ul>
+          <li><span class="checkmark">[x]</span> 회원가입 및 인증</li>
+          <li><span class="checkmark">[x]</span> 농장 등록</li>
+          <li><span class="checkmark">[x]</span> 첫 방문자 등록</li>
+          <li><span class="checkmark">[x]</span> QR코드 설치</li>
+          <li><span class="checkmark">[x]</span> 알림 설정</li>
+        </ul>
+
+        <div class="success-box">
+          <h3>🏆 축하합니다!</h3>
+          <p>
+            <strong
+              >농장 출입 관리 시스템을 사용할 준비가 완료되었습니다!</strong
+            >
+          </p>
+        </div>
+      </div>
+
+      <h2>💡 바로 써보기</h2>
+
+      <h3>📱 방문자가 QR코드 스캔 시</h3>
+      <ol>
+        <li>스마트폰으로 QR코드 스캔</li>
+        <li>방문자 정보 입력</li>
+        <li>관리자에게 즉시 알림 발송</li>
+        <li>시스템에 자동 등록</li>
+      </ol>
+
+      <h3>💻 관리자 모니터링</h3>
+      <ol>
+        <li>실시간 방문자 현황 확인</li>
+        <li>방문자 목록에서 상세 정보 조회</li>
+        <li>필요 시 정보 수정 또는 삭제</li>
+      </ol>
+
+      <div class="trouble-section">
+        <h3>🆘 문제가 생겼다면?</h3>
+
+        <h4>🤔 자주 발생하는 문제</h4>
+
+        <div class="qa-item">
+          <div class="qa-question">
+            Q: QR코드를 스캔했는데 아무것도 안 나와요
+          </div>
+          <div class="qa-answer">
+            <strong>A:</strong> 다음을 확인해주세요
+            <ul>
+              <li>스마트폰 카메라 앱으로 스캔</li>
+              <li>QR코드가 선명한지 확인</li>
+              <li>충분한 조명 확보</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="qa-item">
+          <div class="qa-question">Q: 알림이 오지 않아요</div>
+          <div class="qa-answer">
+            <strong>A:</strong> 설정을 확인해주세요
+            <ul>
+              <li>브라우저 알림 권한 허용</li>
+              <li>시스템 설정에서 알림 활성화</li>
+              <li>스마트폰 알림 설정 확인</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="qa-item">
+          <div class="qa-question">Q: 로그인이 안 돼요</div>
+          <div class="qa-answer">
+            <strong>A:</strong> 다음을 시도해보세요
+            <ul>
+              <li>이메일 주소와 비밀번호 재확인</li>
+              <li>Caps Lock 키 확인</li>
+              <li>브라우저 새로고침</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <div class="contact-support">
+        <h3>📞 도움이 필요하시면</h3>
+        <div class="contact-grid">
+          <div class="contact-item">
+            <strong>전화</strong><br />
+            054-843-1141<br />
+            (평일 09:00-18:00)
+          </div>
+          <div class="contact-item">
+            <strong>이메일</strong><br />
+            k331502@nate.com
+          </div>
+          <div class="contact-item">
+            <strong>홈페이지</strong><br />
+            http://www.swkukorea.com/
+          </div>
+        </div>
+      </div>
+
+      <div class="next-steps">
+        <h3>📚 다음 단계</h3>
+
+        <h4>🎯 더 알아보기</h4>
+        <p>시작이 완료되었다면 다음 기능들도 활용해보세요:</p>
+
+        <div class="next-links">
+          <a href="user-manual.html#농장-구성원-관리" class="next-link">
+            <strong>1. 농장 구성원 추가</strong><br />
+            여러 명이 농장을 관리하는 경우
+          </a>
+
+          <a href="user-manual.html#통계-및-분석" class="next-link">
+            <strong>2. 방문자 통계 확인</strong><br />
+            방문 패턴과 트렌드 분석
+          </a>
+
+          <a href="user-manual.html#방문자-데이터-내보내기" class="next-link">
+            <strong>3. 데이터 내보내기</strong><br />
+            Excel 파일로 방문자 기록 관리
+          </a>
+
+          <a href="user-manual.html#시스템-설정-관리" class="next-link">
+            <strong>4. 시스템 설정 조정</strong><br />
+            농장에 맞는 세부 설정
+          </a>
+        </div>
+
+        <h4>📖 상세 매뉴얼</h4>
+        <p>
+          더 자세한 사용법은
+          <a href="user-manual.html" style="color: #1976d2; font-weight: bold"
+            >전체 사용자 매뉴얼</a
+          >을 참고해주세요.
+        </p>
+      </div>
+    </div>
+
+    <div class="footer">
+      <h3>🎯 빠른 시작 가이드를 완료하셨습니다!</h3>
+      <p><strong>이제 농장 출입 관리가 훨씬 쉬워집니다.</strong></p>
+      <p>질문이나 도움이 필요하시면 언제든 연락 주세요! 📞</p>
+    </div>
+  </body>
+</html>
