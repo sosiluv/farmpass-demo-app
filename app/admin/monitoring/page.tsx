@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useCallback } from "react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Skeleton } from "@/components/ui/skeleton";
 import { AlertCircle, Activity, Bug } from "lucide-react";
@@ -16,6 +16,7 @@ import {
   AnalyticsCard,
 } from "@/components/admin/monitoring";
 import { AdminError } from "@/components/error/admin-error";
+import { useDataFetchTimeout } from "@/hooks/useTimeout";
 
 interface MonitoringData {
   timestamp: string;
@@ -93,8 +94,6 @@ export default function MonitoringDashboard() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const [timeoutReached, setTimeoutReached] = useState(false);
-
   const router = useRouter();
   const { state } = useAuth();
   const profile = state.status === "authenticated" ? state.profile : null;
@@ -110,7 +109,7 @@ export default function MonitoringDashboard() {
     }
   }, [isAdmin, router]);
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     try {
       const response = await fetch("/api/monitoring/dashboard", {
         cache: "no-store",
@@ -124,19 +123,20 @@ export default function MonitoringDashboard() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  // 타임아웃 관리
+  const { timeoutReached, retry } = useDataFetchTimeout(loading, fetchData, {
+    timeout: 10000,
+  });
 
   useEffect(() => {
     fetchData();
     const interval = setInterval(fetchData, 30 * 60 * 1000); // 30분마다 갱신
-    const timeout = setTimeout(() => {
-      setTimeoutReached(true);
-    }, 10000);
     return () => {
       clearInterval(interval);
-      clearTimeout(timeout);
     };
-  }, []);
+  }, [fetchData]);
 
   // 권한이 없는 경우
   if (!isAdmin) {
@@ -150,16 +150,12 @@ export default function MonitoringDashboard() {
     );
   }
 
-  if (timeoutReached && loading) {
+  if (timeoutReached) {
     return (
       <AdminError
         title="데이터를 불러오지 못했습니다"
         description="네트워크 상태를 확인하거나 다시 시도해 주세요."
-        reset={() => {
-          setTimeoutReached(false);
-          setLoading(true);
-          fetchData();
-        }}
+        retry={retry}
         error={new Error("Timeout: 데이터 로딩 10초 초과")}
       />
     );

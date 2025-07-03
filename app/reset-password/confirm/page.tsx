@@ -1,8 +1,10 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
+import { useTimeout } from "@/hooks/useTimeout";
+import { AdminError } from "@/components/error/admin-error";
 import {
   Card,
   CardContent,
@@ -12,7 +14,7 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Leaf, Loader2, Lock } from "lucide-react";
+import { Leaf, Loader2, Lock, AlertCircle } from "lucide-react";
 import { motion } from "framer-motion";
 import { useCommonToast } from "@/lib/utils/notification/toast-messages";
 import { devLog } from "@/lib/utils/logging/dev-logger";
@@ -39,67 +41,84 @@ export default function ResetPasswordConfirmPage() {
   });
   const [errors, setErrors] = useState<FormErrors>({});
   const [loading, setLoading] = useState(false);
+  const [tokenLoading, setTokenLoading] = useState(true);
   const [tokenProcessed, setTokenProcessed] = useState(false);
+  const [tokenError, setTokenError] = useState<string | null>(null);
   const router = useRouter();
   const toast = useCommonToast();
   const { signOut, changePassword } = useAuth();
   const searchParams = useSearchParams();
   const processingRef = useRef(false);
 
+  const handleEmailLink = useCallback(async () => {
+    // 이미 처리 중이거나 완료된 경우 중복 실행 방지
+    if (processingRef.current || tokenProcessed) {
+      return;
+    }
+
+    const token = searchParams?.get("token");
+    const type = searchParams?.get("type");
+
+    if (!token || type !== "recovery") {
+      setTokenLoading(false);
+      setTokenError("유효하지 않은 재설정 링크입니다.");
+      return;
+    }
+
+    setTokenLoading(true);
+    processingRef.current = true;
+    setTokenProcessed(true);
+
+    try {
+      devLog.log("token:", token);
+      devLog.log("type:", type);
+
+      // Rate limit 방지를 위한 지연
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+
+      // 토큰으로 세션 생성 및 검증
+      const { error } = await supabase.auth.verifyOtp({
+        token_hash: token,
+        type: "recovery",
+      });
+
+      if (error) {
+        throw error; // AuthApiError를 그대로 throw
+      }
+
+      // 성공적으로 토큰 검증됨
+      toast.showCustomSuccess("인증 성공", "새로운 비밀번호를 입력해주세요.");
+    } catch (error: any) {
+      const authError = getAuthErrorMessage(error);
+      setTokenError(authError.message);
+      toast.showCustomError("오류", authError.message);
+
+      // 리다이렉트가 필요한 경우
+      if (authError.shouldRedirect && authError.redirectTo) {
+        setTimeout(() => {
+          router.push(authError.redirectTo!);
+        }, 2000);
+      }
+    } finally {
+      setTokenLoading(false);
+      processingRef.current = false;
+    }
+  }, [searchParams, tokenProcessed, toast, router]);
+
+  const { isTimedOut, retry } = useTimeout(tokenLoading, {
+    timeout: 15000, // 15초 타임아웃
+    onRetry: handleEmailLink,
+  });
+
   useEffect(() => {
-    // 이메일 링크의 토큰 처리
-    const handleEmailLink = async () => {
-      // 이미 처리 중이거나 완료된 경우 중복 실행 방지
-      if (processingRef.current || tokenProcessed) {
-        return;
-      }
-
-      const token = searchParams?.get("token");
-      const type = searchParams?.get("type");
-
-      if (!token || type !== "recovery") {
-        return;
-      }
-
-      processingRef.current = true;
-      setTokenProcessed(true);
-
-      try {
-        devLog.log("token:", token);
-        devLog.log("type:", type);
-
-        // Rate limit 방지를 위한 지연
-        await new Promise((resolve) => setTimeout(resolve, 1000));
-
-        // 토큰으로 세션 생성 및 검증
-        const { error } = await supabase.auth.verifyOtp({
-          token_hash: token,
-          type: "recovery",
-        });
-
-        if (error) {
-          throw error; // AuthApiError를 그대로 throw
-        }
-
-        // 성공적으로 토큰 검증됨
-        toast.showCustomSuccess("인증 성공", "새로운 비밀번호를 입력해주세요.");
-      } catch (error: any) {
-        const authError = getAuthErrorMessage(error);
-        toast.showCustomError("오류", authError.message);
-
-        // 리다이렉트가 필요한 경우
-        if (authError.shouldRedirect && authError.redirectTo) {
-          setTimeout(() => {
-            router.push(authError.redirectTo!);
-          }, 2000);
-        }
-      } finally {
-        processingRef.current = false;
-      }
-    };
-
-    handleEmailLink();
-  }, [searchParams]); // router와 toast 의존성 제거
+    // URL에 토큰이 있을 때만 처리
+    if (searchParams?.get("token")) {
+      handleEmailLink();
+    } else {
+      setTokenLoading(false);
+      setTokenError("비밀번호 재설정 링크가 유효하지 않습니다.");
+    }
+  }, [searchParams, handleEmailLink]);
 
   const validateForm = async () => {
     const newErrors: FormErrors = {};
@@ -177,6 +196,85 @@ export default function ResetPasswordConfirmPage() {
     setFormData((prev) => ({ ...prev, [name]: value }));
     setErrors((prev) => ({ ...prev, [name]: "" }));
   };
+
+  // 토큰 타임아웃 상태 처리
+  if (isTimedOut && !tokenProcessed && !tokenError) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-gradient-farm p-4">
+        <div className="w-full max-w-md">
+          <AdminError
+            title="토큰 검증 시간 초과"
+            description="비밀번호 재설정 토큰 검증 시간이 초과되었습니다. 네트워크 상태를 확인하고 다시 시도해주세요."
+            error={new Error("Token verification timeout")}
+            retry={retry}
+          />
+        </div>
+      </div>
+    );
+  }
+
+  // 토큰 로딩 중
+  if (tokenLoading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-gradient-farm p-4">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+          className="w-full max-w-md"
+        >
+          <Card className="border-none shadow-soft-lg">
+            <CardHeader className="space-y-1 text-center">
+              <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
+                <Loading
+                  spinnerSize={24}
+                  showText={false}
+                  minHeight="auto"
+                  className="text-primary"
+                />
+              </div>
+              <CardTitle className="text-2xl">링크 확인 중...</CardTitle>
+              <CardDescription>
+                비밀번호 재설정 링크를 확인하고 있습니다.
+              </CardDescription>
+            </CardHeader>
+          </Card>
+        </motion.div>
+      </div>
+    );
+  }
+
+  // 토큰 에러 상태
+  if (tokenError) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-gradient-farm p-4">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+          className="w-full max-w-md"
+        >
+          <Card className="border-none shadow-soft-lg">
+            <CardHeader className="space-y-1 text-center">
+              <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-red-100">
+                <AlertCircle className="h-6 w-6 text-red-600" />
+              </div>
+              <CardTitle className="text-2xl">링크 오류</CardTitle>
+              <CardDescription>{tokenError}</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Button
+                onClick={() => router.push("/reset-password")}
+                className="w-full"
+              >
+                다시 요청하기
+              </Button>
+            </CardContent>
+          </Card>
+        </motion.div>
+      </div>
+    );
+  }
 
   return (
     <ErrorBoundary

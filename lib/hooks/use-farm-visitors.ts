@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 import { supabase } from "@/lib/supabase/client";
 import { devLog } from "@/lib/utils/logging/dev-logger";
 import { VisitorEntry } from "@/lib/types";
@@ -55,8 +55,11 @@ export function useFarmVisitors(farmId: string | null) {
   const [purposeStats, setPurposeStats] = useState<VisitorPurposeStats[]>([]);
   const [weekdayStats, setWeekdayStats] = useState<WeekdayStats[]>([]);
   const [revisitStats, setRevisitStats] = useState<RevisitStats[]>([]);
-  const [isFetching, setIsFetching] = useState(false);
+
+  // useRef로 관리하여 상태 변경으로 인한 리렌더링 방지
+  const isFetchingRef = useRef(false);
   const lastFarmIdRef = useRef<string | null>(null);
+  const hasDataRef = useRef(false); // 데이터 존재 여부도 ref로 관리
 
   const [dashboardStats, setDashboardStats] = useState<DashboardStats>({
     totalVisitors: 0,
@@ -71,23 +74,27 @@ export function useFarmVisitors(farmId: string | null) {
     },
   });
 
-  useEffect(() => {
-    const fetchVisitors = async () => {
+  const fetchVisitors = useCallback(
+    async (forceRefetch: boolean = false) => {
       // 중복 방지 강화
-      if (isFetching) {
+      if (isFetchingRef.current) {
         devLog.log(`Already loading visitors for farmId: ${farmId}`);
         return;
       }
 
-      // farmId가 변경되지 않았으면 요청하지 않음
-      if (farmId === lastFarmIdRef.current && visitors.length > 0) {
-        devLog.log(`FarmId unchanged, skipping fetch: ${farmId}`);
+      // farmId가 변경되지 않았으면 요청하지 않음 (강제 새로고침이 아닌 경우)
+      if (
+        !forceRefetch &&
+        farmId === lastFarmIdRef.current &&
+        hasDataRef.current
+      ) {
+        devLog.log(`FarmId unchanged and has data, skipping fetch: ${farmId}`);
         return;
       }
 
       try {
         setLoading(true);
-        setIsFetching(true);
+        isFetchingRef.current = true;
         lastFarmIdRef.current = farmId;
 
         devLog.log(`Fetching visitors for farmId: ${farmId}`);
@@ -110,6 +117,9 @@ export function useFarmVisitors(farmId: string | null) {
 
         const visitors = data || [];
         setVisitors(visitors);
+
+        // 데이터 존재 여부 업데이트
+        hasDataRef.current = visitors.length > 0;
 
         // 통합 통계 시스템 사용 (트렌드 포함)
         const dashboardStatsData = generateDashboardStats(visitors);
@@ -158,19 +168,38 @@ export function useFarmVisitors(farmId: string | null) {
         });
 
         setVisitorTrend(trendData);
+
+        devLog.log(
+          `Successfully fetched ${visitors.length} visitors for farmId: ${farmId}`
+        );
       } catch (error) {
         devLog.error("방문자 데이터 조회 실패:", error);
+        hasDataRef.current = false;
       } finally {
         setLoading(false);
-        setIsFetching(false);
+        isFetchingRef.current = false;
       }
-    };
+    },
+    [farmId]
+  );
 
+  const refetch = useCallback(() => {
+    return fetchVisitors(true);
+  }, [fetchVisitors]);
+
+  // farmId 변경 시 ref 초기화
+  useEffect(() => {
+    if (farmId !== lastFarmIdRef.current) {
+      hasDataRef.current = false;
+    }
+  }, [farmId]);
+
+  useEffect(() => {
     // farmId가 정의되지 않았으면 요청하지 않음
     if (farmId !== undefined) {
       fetchVisitors();
     }
-  }, [farmId]);
+  }, [farmId, fetchVisitors]);
 
   return {
     loading,
@@ -180,5 +209,6 @@ export function useFarmVisitors(farmId: string | null) {
     weekdayStats,
     revisitStats,
     dashboardStats,
+    refetch,
   };
 }

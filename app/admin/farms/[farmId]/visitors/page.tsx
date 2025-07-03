@@ -33,6 +33,7 @@ import { generateFarmVisitorPageStats } from "@/lib/utils/data/common-stats";
 import { ErrorBoundary } from "@/components/error/error-boundary";
 import { ResponsivePagination } from "@/components/common/responsive-pagination";
 import { AdminError } from "@/components/error/admin-error";
+import { useMultipleLoadingTimeout } from "@/hooks/useTimeout";
 
 export default function FarmVisitorsPage() {
   const params = useParams();
@@ -44,7 +45,6 @@ export default function FarmVisitorsPage() {
 
   const [currentFarm, setCurrentFarm] = useState<Farm | null>(null);
   const [isInitialized, setIsInitialized] = useState(false);
-  const [timeoutReached, setTimeoutReached] = useState(false);
 
   // 새로운 Zustand Store 사용
   const { visitors, allVisitors, loading, error, fetchVisitors } =
@@ -90,6 +90,13 @@ export default function FarmVisitorsPage() {
       fetchVisitors({ farmId, includeAllFarms: false });
     }
   }, [farmId, fetchVisitors]);
+
+  // 타임아웃 관리
+  const { timeoutReached, retry } = useMultipleLoadingTimeout(
+    [loading, fetchState.loading],
+    loadVisitors,
+    { timeout: 10000 }
+  );
 
   // 초기화 로직 (한 번만 실행)
   useEffect(() => {
@@ -191,21 +198,12 @@ export default function FarmVisitorsPage() {
       new Date(a.visit_datetime).getTime();
   }, []);
 
-  useEffect(() => {
-    if (!loading && !fetchState.loading) return;
-    const timeout = setTimeout(() => setTimeoutReached(true), 10000);
-    return () => clearTimeout(timeout);
-  }, [loading, fetchState.loading]);
-
-  if (timeoutReached && (loading || fetchState.loading)) {
+  if (timeoutReached) {
     return (
       <AdminError
         title="데이터를 불러오지 못했습니다"
         description="네트워크 상태를 확인하거나 다시 시도해 주세요."
-        reset={() => {
-          setTimeoutReached(false);
-          fetchVisitors({ farmId });
-        }}
+        retry={retry}
         error={new Error("Timeout: 데이터 로딩 10초 초과")}
       />
     );

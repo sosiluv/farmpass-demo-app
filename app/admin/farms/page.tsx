@@ -19,6 +19,8 @@ import { useFarmMembersPreview } from "@/lib/hooks/use-farm-members-preview-safe
 import type { MemberWithProfile } from "@/lib/hooks/use-farm-members-preview-safe";
 import { ErrorBoundary } from "@/components/error/error-boundary";
 import { devLog } from "@/lib/utils/logging/dev-logger";
+import { AdminError } from "@/components/error/admin-error";
+import { useDataFetchTimeout } from "@/hooks/useTimeout";
 
 interface FarmMembersData {
   count: number;
@@ -29,9 +31,8 @@ interface FarmMembersData {
 export default function FarmsPage() {
   const { state } = useAuth();
   const profile = state.status === "authenticated" ? state.profile : null;
-  const { farms, fetchState, addFarm, updateFarm, deleteFarm } = useFarms(
-    profile?.id
-  );
+  const { farms, fetchState, addFarm, updateFarm, deleteFarm, refetch } =
+    useFarms(profile?.id);
   const { isLoading } = useFarmsContext();
 
   // 로컬 상태 관리
@@ -39,6 +40,13 @@ export default function FarmsPage() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [farmToDelete, setFarmToDelete] = useState<string | null>(null);
   const [editingFarm, setEditingFarm] = useState<Farm | null>(null);
+
+  // 타임아웃 관리
+  const { timeoutReached, retry } = useDataFetchTimeout(
+    isLoading || fetchState.loading,
+    refetch,
+    { timeout: 10000 }
+  );
 
   // 소유자 확인 함수 메모이제이션
   const isOwner = useCallback(
@@ -113,7 +121,17 @@ export default function FarmsPage() {
     return data;
   }, [farmIds, getMembersForFarm]);
 
-  // 모든 Hook 호출 후 조건부 return 처리
+  // 타임아웃 상태 처리
+  if (timeoutReached) {
+    return (
+      <AdminError
+        title="데이터를 불러오지 못했습니다"
+        description="네트워크 상태를 확인하거나 다시 시도해 주세요."
+        retry={retry}
+        error={new Error("Timeout: 데이터 로딩 10초 초과")}
+      />
+    );
+  }
 
   // 로딩 상태 처리
   if (isLoading || fetchState.loading) {

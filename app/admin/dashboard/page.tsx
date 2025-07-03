@@ -19,6 +19,7 @@ import { ErrorBoundary } from "@/components/error/error-boundary";
 import { calculateUnifiedChartData } from "@/lib/utils/data/common-stats";
 import { devLog } from "@/lib/utils/logging/dev-logger";
 import { AdminError } from "@/components/error/admin-error";
+import { useMultipleLoadingTimeout } from "@/hooks/useTimeout";
 
 export default function DashboardPage() {
   const { state } = useAuth();
@@ -96,6 +97,7 @@ export default function DashboardPage() {
     visitors,
     dashboardStats,
     visitorTrend,
+    refetch: refetchVisitors,
   } = useFarmVisitors(memoizedSelectedFarm);
 
   // 통합 차트 데이터 계산 - useMemo로 최적화
@@ -108,23 +110,24 @@ export default function DashboardPage() {
   const shouldShowSkeleton =
     userLoading || fetchState.loading || (visitorsLoading && selectedFarm);
 
-  const [timeoutReached, setTimeoutReached] = useState(false);
+  // 데이터 재페칭 함수
+  const handleDataRefetch = useCallback(() => {
+    refetchVisitors?.();
+  }, [refetchVisitors]);
 
-  useEffect(() => {
-    if (!visitorsLoading && !fetchState.loading) return;
-    const timeout = setTimeout(() => setTimeoutReached(true), 10000);
-    return () => clearTimeout(timeout);
-  }, [visitorsLoading, fetchState.loading]);
+  // 다중 로딩 상태 타임아웃 관리
+  const { timeoutReached, retry } = useMultipleLoadingTimeout(
+    [visitorsLoading, fetchState.loading],
+    handleDataRefetch,
+    { timeout: 10000 }
+  );
 
-  if (timeoutReached && (visitorsLoading || fetchState.loading)) {
+  if (timeoutReached) {
     return (
       <AdminError
         title="데이터를 불러오지 못했습니다"
         description="네트워크 상태를 확인하거나 다시 시도해 주세요."
-        reset={() => {
-          setTimeoutReached(false);
-          window.location.reload();
-        }}
+        retry={retry}
         error={new Error("Timeout: 데이터 로딩 10초 초과")}
       />
     );

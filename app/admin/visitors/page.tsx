@@ -16,13 +16,14 @@ import {
   VisitorExportRefactored,
 } from "@/components/admin/visitors";
 import { PageHeader } from "@/components/layout";
-import { useMemo, useEffect, useCallback, useState } from "react";
+import { useMemo, useEffect, useCallback } from "react";
 import { useVisitorActions } from "@/hooks/useVisitorActions";
 import { calculateVisitorStats } from "@/lib/utils/data/common-stats";
 import { generateVisitorPageStats } from "@/lib/utils/data/common-stats";
 import { ErrorBoundary } from "@/components/error/error-boundary";
 import { ResponsivePagination } from "@/components/common/responsive-pagination";
 import { AdminError } from "@/components/error/admin-error";
+import { useDataFetchTimeout } from "@/hooks/useTimeout";
 
 /**
  * 방문자 기록 조회 페이지
@@ -68,8 +69,6 @@ export default function VisitorsPage() {
 
   const { reset } = useVisitorStore();
 
-  const [timeoutReached, setTimeoutReached] = useState(false);
-
   /**
    * 커스텀 날짜 초기화 핸들러
    */
@@ -110,11 +109,10 @@ export default function VisitorsPage() {
     loadVisitors();
   }, [reset, loadVisitors]);
 
-  useEffect(() => {
-    if (!loading) return;
-    const timeout = setTimeout(() => setTimeoutReached(true), 10000);
-    return () => clearTimeout(timeout);
-  }, [loading]);
+  // 타임아웃 관리
+  const { timeoutReached, retry } = useDataFetchTimeout(loading, loadVisitors, {
+    timeout: 10000,
+  });
 
   // 통계 계산 (메모이제이션)
   const visitorStats = useMemo(() => {
@@ -156,15 +154,12 @@ export default function VisitorsPage() {
     filters.consentGiven,
   ]);
 
-  if (timeoutReached && loading) {
+  if (timeoutReached) {
     return (
       <AdminError
         title="데이터를 불러오지 못했습니다"
         description="네트워크 상태를 확인하거나 다시 시도해 주세요."
-        reset={() => {
-          setTimeoutReached(false);
-          fetchVisitors();
-        }}
+        retry={retry}
         error={new Error("Timeout: 데이터 로딩 10초 초과")}
       />
     );

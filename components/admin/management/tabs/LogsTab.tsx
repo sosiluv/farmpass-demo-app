@@ -29,25 +29,23 @@ import { ResponsivePagination } from "@/components/common/responsive-pagination"
 import { LogFilters } from "../logs";
 import { ErrorBoundary } from "@/components/error/error-boundary";
 import { AdminError } from "@/components/error/admin-error";
+import { useDataFetchTimeout } from "@/hooks/useTimeout";
 
 export function LogsTab() {
-  const { stats, loading } = useAdminLogs();
+  const { stats, loading, refetch } = useAdminLogs();
   const [selectedLog, setSelectedLog] = useState<SystemLog | null>(null);
 
-  const [timeoutReached, setTimeoutReached] = React.useState(false);
+  // 타임아웃 관리
+  const { timeoutReached, retry } = useDataFetchTimeout(loading, refetch, {
+    timeout: 10000,
+  });
 
-  React.useEffect(() => {
-    if (!loading) return;
-    const timeout = setTimeout(() => setTimeoutReached(true), 10000);
-    return () => clearTimeout(timeout);
-  }, [loading]);
-
-  if (timeoutReached && loading) {
+  if (timeoutReached) {
     return (
       <AdminError
         title="데이터를 불러오지 못했습니다"
         description="네트워크 상태를 확인하거나 다시 시도해 주세요."
-        reset={() => setTimeoutReached(false)}
+        retry={retry}
         error={new Error("Timeout: 데이터 로딩 10초 초과")}
       />
     );

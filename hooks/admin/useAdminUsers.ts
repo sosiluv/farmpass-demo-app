@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { supabase } from "@/lib/supabase/client";
 import { devLog } from "@/lib/utils/logging/dev-logger";
 
@@ -30,7 +30,7 @@ export function useAdminUsers() {
   const [stats, setStats] = useState<UserStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
-  const [isFetching, setIsFetching] = useState(false);
+  const isFetchingRef = useRef(false);
 
   const fetchUserStats = async () => {
     // 클라이언트에서만 실행
@@ -40,14 +40,14 @@ export function useAdminUsers() {
     }
 
     // 간단한 중복 방지
-    if (isFetching) {
+    if (isFetchingRef.current) {
       devLog.log("[useAdminUsers] 이미 로딩 중입니다.");
       return;
     }
 
     try {
       setLoading(true);
-      setIsFetching(true);
+      isFetchingRef.current = true;
       setError(null);
 
       devLog.log("[useAdminUsers] 사용자 통계 데이터 가져오기 시작");
@@ -205,7 +205,7 @@ export function useAdminUsers() {
       );
     } finally {
       setLoading(false);
-      setIsFetching(false);
+      isFetchingRef.current = false;
     }
   };
 

@@ -14,6 +14,8 @@ import {
 } from "@/components/admin/farms/members";
 import { ErrorBoundary } from "@/components/error/error-boundary";
 import { CardSkeleton } from "@/components/common/skeletons";
+import { AdminError } from "@/components/error/admin-error";
+import { useDataFetchTimeout } from "@/hooks/useTimeout";
 
 interface PageProps {
   params: {
@@ -33,6 +35,7 @@ export default function MembersPage({ params }: PageProps) {
     addMember,
     updateMemberRole,
     removeMember,
+    refetch,
   } = useFarmMembersStore();
   const toast = useCommonToast();
 
@@ -40,6 +43,13 @@ export default function MembersPage({ params }: PageProps) {
   const [memberToDelete, setMemberToDelete] = useState<string | null>(null);
   const [isInitialized, setIsInitialized] = useState(false);
   const lastFetchedFarmId = useRef<string | null>(null);
+
+  // 타임아웃 관리 - refetch 함수 사용
+  const { timeoutReached, retry } = useDataFetchTimeout(
+    loading || fetchState.loading,
+    refetch,
+    { timeout: 10000 }
+  );
 
   const farm = farms.find((f) => f.id === farmId);
 
@@ -153,6 +163,18 @@ export default function MembersPage({ params }: PageProps) {
     setDeleteDialogOpen(true);
   }, []);
 
+  // 타임아웃 상태 처리
+  if (timeoutReached) {
+    return (
+      <AdminError
+        title="데이터를 불러오지 못했습니다"
+        description="네트워크 상태를 확인하거나 다시 시도해 주세요."
+        retry={retry}
+        error={new Error("Timeout: 데이터 로딩 10초 초과")}
+      />
+    );
+  }
+
   // 로딩 상태 처리 (farms 로딩도 포함)
   if (loading || fetchState.loading || !farm) {
     return (
@@ -169,7 +191,14 @@ export default function MembersPage({ params }: PageProps) {
   if (!fetchState.loading && farms.length > 0 && !farm) {
     const farmExists = farms.some((f) => f.id === farmId);
     if (!farmExists) {
-      throw new Error("요청하신 농장이 존재하지 않거나 접근할 수 없습니다.");
+      return (
+        <AdminError
+          title="농장을 찾을 수 없습니다"
+          description="요청하신 농장이 존재하지 않거나 접근 권한이 없습니다."
+          error={new Error("Farm not found or access denied")}
+          retry={retry}
+        />
+      );
     }
   }
 

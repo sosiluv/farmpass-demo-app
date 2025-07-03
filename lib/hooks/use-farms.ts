@@ -1,11 +1,11 @@
 "use client";
 
+import { useCallback, useEffect, useRef } from "react";
+import { useFarmsStore } from "@/store/use-farms-store";
 import { useCommonToast } from "@/lib/utils/notification/toast-messages";
 import { devLog } from "@/lib/utils/logging/dev-logger";
-import { useFarmsStore } from "@/store/use-farms-store";
-import { useCallback } from "react";
+import { logApiError, logSystemWarning } from "@/lib/utils/logging/system-log";
 import type { FarmFormValues } from "@/lib/utils/validation";
-import { logSystemWarning, logApiError } from "@/lib/utils/logging/system-log";
 
 export interface Farm {
   id: string;
@@ -38,9 +38,33 @@ export function useFarms(userId?: string) {
     deleteFarm: storeFarmDelete,
   } = useFarmsStore();
 
+  // useRef로 관리하여 상태 변경으로 인한 리렌더링 방지
+  const isFetchingRef = useRef(false);
+  const lastUserIdRef = useRef<string | undefined>(undefined);
+  const hasDataRef = useRef(false);
+
   const fetchFarms = useCallback(
-    async (targetUserId?: string) => {
+    async (targetUserId?: string, forceRefetch: boolean = false) => {
       const userIdToUse = targetUserId || userId;
+
+      // 중복 요청 방지
+      if (isFetchingRef.current) {
+        devLog.log(`Already loading farms for userId: ${userIdToUse}`);
+        return;
+      }
+
+      // userId가 변경되지 않았고 데이터가 있으면 요청하지 않음 (강제 새로고침이 아닌 경우)
+      if (
+        !forceRefetch &&
+        userIdToUse === lastUserIdRef.current &&
+        hasDataRef.current
+      ) {
+        devLog.log(
+          `UserId unchanged and has data, skipping fetch: ${userIdToUse}`
+        );
+        return;
+      }
+
       if (!userIdToUse) {
         await logSystemWarning("farms_fetch", "사용자 ID 없이 농장 조회 시도", {
           resource: "farm",
@@ -50,11 +74,16 @@ export function useFarms(userId?: string) {
       }
 
       try {
+        isFetchingRef.current = true;
+        lastUserIdRef.current = userIdToUse;
+
+        devLog.log(`Fetching farms for userId: ${userIdToUse}`);
         await storeFetchFarms(userIdToUse);
+        hasDataRef.current = true;
       } catch (error) {
         devLog.error("Failed to fetch farms:", error);
+        hasDataRef.current = false;
 
-        // 농장 조회 API 에러 로그
         await logApiError(
           "/api/farms",
           "GET",
@@ -63,10 +92,29 @@ export function useFarms(userId?: string) {
         );
 
         toast.showError("FARM_FETCH_FAILED");
+      } finally {
+        isFetchingRef.current = false;
       }
     },
-    [storeFetchFarms, toast, userId]
+    [userId, storeFetchFarms, toast]
   );
+
+  const refetch = useCallback(() => {
+    return fetchFarms(undefined, true);
+  }, [fetchFarms]);
+
+  // userId 변경 시 ref 초기화
+  useEffect(() => {
+    if (userId !== lastUserIdRef.current) {
+      hasDataRef.current = false;
+    }
+  }, [userId]);
+
+  useEffect(() => {
+    if (userId !== undefined) {
+      fetchFarms();
+    }
+  }, [userId, fetchFarms]);
 
   const addFarm = useCallback(
     async (values: FarmFormValues, targetUserId?: string) => {
@@ -156,5 +204,6 @@ export function useFarms(userId?: string) {
     updateFarm,
     deleteFarm,
     generateQRCodeUrl,
+    refetch,
   };
 }

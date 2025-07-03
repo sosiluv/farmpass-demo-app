@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import type { FarmMember } from "@/lib/types";
 import { devLog } from "@/lib/utils/logging/dev-logger";
+import { logApiError } from "@/lib/utils/logging/system-log";
 
 interface FarmMembersState {
   members: FarmMember[];
@@ -8,7 +9,10 @@ interface FarmMembersState {
   initialized: boolean;
   currentFarmId: string | null;
   error: Error | null;
-  fetchMembers: (farmId: string) => Promise<void>;
+  isFetchingRef: { current: boolean };
+  lastFarmIdRef: { current: string | null };
+  hasDataRef: { current: boolean };
+  fetchMembers: (farmId: string, forceRefetch?: boolean) => Promise<void>;
   addMember: (
     farmId: string,
     email: string,
@@ -20,6 +24,7 @@ interface FarmMembersState {
     role: "manager" | "viewer"
   ) => Promise<void>;
   removeMember: (farmId: string, memberId: string) => Promise<void>;
+  refetch: () => Promise<void>;
 }
 
 export const useFarmMembersStore = create<FarmMembersState>((set, get) => ({
@@ -28,23 +33,35 @@ export const useFarmMembersStore = create<FarmMembersState>((set, get) => ({
   initialized: false,
   currentFarmId: null,
   error: null,
+  isFetchingRef: { current: false },
+  lastFarmIdRef: { current: null },
+  hasDataRef: { current: false },
 
-  fetchMembers: async (farmId: string) => {
-    const { currentFarmId, initialized, loading } = get();
+  fetchMembers: async (farmId: string, forceRefetch: boolean = false) => {
+    const state = get();
 
-    // 이미 로딩 중이거나, 초기화되었고 같은 농장 ID인 경우 스킵
-    if (loading || (initialized && currentFarmId === farmId)) {
-      devLog.log(
-        `⏭️ Skipping fetch for farm ${farmId} - already ${
-          loading ? "loading" : "initialized"
-        }`
-      );
+    // 중복 요청 방지
+    if (state.isFetchingRef.current) {
+      devLog.log(`Already loading members for farmId: ${farmId}`);
+      return;
+    }
+
+    // farmId가 변경되지 않았고 데이터가 있으면 요청하지 않음 (강제 새로고침이 아닌 경우)
+    if (
+      !forceRefetch &&
+      farmId === state.lastFarmIdRef.current &&
+      state.hasDataRef.current
+    ) {
+      devLog.log(`FarmId unchanged and has data, skipping fetch: ${farmId}`);
       return;
     }
 
     try {
-      devLog.log(`🔄 Fetching members for farm: ${farmId}`);
-      set({ loading: true, error: null, initialized: false }); // initialized를 false로 설정
+      set({ loading: true });
+      state.isFetchingRef.current = true;
+      state.lastFarmIdRef.current = farmId;
+
+      devLog.log(`Fetching members for farmId: ${farmId}`);
 
       // API 라우트를 통해 멤버 목록 조회 (로그 기록 포함)
       const response = await fetch(`/api/farms/${farmId}/members`, {
@@ -76,15 +93,11 @@ export const useFarmMembersStore = create<FarmMembersState>((set, get) => ({
         profile_image_url: member.profiles?.profile_image_url || null,
       }));
 
-      devLog.success(
-        `Fetched ${members.length} members via API route for farm ${farmId}`
-      );
-
       set({
-        members,
-        initialized: true,
+        members: members,
         currentFarmId: farmId,
-        loading: false,
+        initialized: true,
+        error: null,
       });
     } catch (error) {
       devLog.error("❌ Error in fetchMembers:", error);
@@ -122,15 +135,14 @@ export const useFarmMembersStore = create<FarmMembersState>((set, get) => ({
         farm_id: newMemberData.farm_id,
         user_id: newMemberData.user_id,
         role: newMemberData.role,
-        position: newMemberData.position,
-        responsibilities: newMemberData.responsibilities,
-        is_active: newMemberData.is_active,
+        position: newMemberData.position || null,
+        responsibilities: newMemberData.responsibilities || null,
+        is_active: newMemberData.is_active ?? true,
         created_at: newMemberData.created_at,
-        updated_at: newMemberData.updated_at,
+        updated_at: newMemberData.updated_at || newMemberData.created_at,
         email: newMemberData.profiles?.email || "",
         representative_name: newMemberData.profiles?.name || "알 수 없음",
-        profile_image_url:
-          newMemberData.profiles?.profile_image_url || undefined,
+        profile_image_url: newMemberData.profiles?.profile_image_url || null,
       };
 
       set((state) => ({
@@ -212,6 +224,13 @@ export const useFarmMembersStore = create<FarmMembersState>((set, get) => ({
     } catch (error) {
       set({ error: error as Error, loading: false });
       throw error;
+    }
+  },
+
+  refetch: async () => {
+    const state = get();
+    if (state.currentFarmId) {
+      await state.fetchMembers(state.currentFarmId, true);
     }
   },
 }));

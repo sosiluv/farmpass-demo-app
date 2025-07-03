@@ -109,12 +109,12 @@ const VapidKeySection = React.memo(function VapidKeySection({
           <div className="relative">
             <Input
               id="vapidPrivateKey"
-              type="password"
+              type="text"
               placeholder="VAPID 키를 생성해주세요"
               value={settings.vapidPrivateKey || ""}
               readOnly
               disabled
-              className="pr-10 bg-muted/50 text-muted-foreground cursor-not-allowed"
+              className="pr-10 bg-muted/50 text-muted-foreground cursor-not-allowed font-mono"
             />
             <Button
               type="button"

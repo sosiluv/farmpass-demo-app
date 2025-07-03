@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { supabase } from "@/lib/supabase/client";
 import { getFarmTypeLabel } from "@/lib/constants/farm-types";
 import {
@@ -63,7 +63,7 @@ export function useAdminDashboard() {
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
-  const [isFetching, setIsFetching] = useState(false);
+  const isFetchingRef = useRef(false);
 
   const fetchDashboardStats = async () => {
     // 클라이언트에서만 실행
@@ -73,14 +73,14 @@ export function useAdminDashboard() {
     }
 
     // 간단한 중복 방지
-    if (isFetching) {
+    if (isFetchingRef.current) {
       devLog.log("[useAdminDashboard] 이미 로딩 중입니다.");
       return;
     }
 
     try {
       setLoading(true);
-      setIsFetching(true);
+      isFetchingRef.current = true;
       setError(null);
 
       devLog.log("[useAdminDashboard] 대시보드 통계 데이터 가져오기 시작");
@@ -399,7 +399,7 @@ export function useAdminDashboard() {
       );
     } finally {
       setLoading(false);
-      setIsFetching(false);
+      isFetchingRef.current = false;
     }
   };
 
