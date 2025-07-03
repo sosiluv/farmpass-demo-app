@@ -125,11 +125,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       try {
         devLog.log(`Loading profile for user ${userId}`);
 
-        const { data, error } = await supabase
+        // 배포 환경에서 프로필 로딩 타임아웃 설정
+        const timeoutPromise = new Promise<never>((_, reject) =>
+          setTimeout(() => reject(new Error("프로필 로딩 타임아웃")), 8000)
+        );
+
+        const profilePromise = supabase
           .from("profiles")
           .select("*")
           .eq("id", userId)
           .single();
+
+        const { data, error } = await Promise.race([
+          profilePromise,
+          timeoutPromise,
+        ]);
 
         if (error) throw error;
 
@@ -137,7 +147,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return data;
       } catch (error) {
         devLog.error("Error loading profile:", error);
-        await logAuthError("PROFILE_LOAD_FAILED", error, undefined, userId);
+
+        // 타임아웃이나 네트워크 에러의 경우 로그 기록하지 않음
+        if (!(error instanceof Error && error.message.includes("타임아웃"))) {
+          await logAuthError("PROFILE_LOAD_FAILED", error, undefined, userId);
+        }
         return null;
       } finally {
         // 로딩 완료 후 Promise 초기화
@@ -157,17 +171,28 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       try {
         dispatch({ type: "SET_LOADING" });
 
+        // 배포 환경에서 네트워크 지연을 고려한 타임아웃 설정
+        const timeoutPromise = new Promise((_, reject) =>
+          setTimeout(() => reject(new Error("세션 확인 타임아웃")), 10000)
+        );
+
+        const sessionPromise = supabase.auth.getSession();
+
         const {
           data: { session },
           error,
-        } = await supabase.auth.getSession();
+        } = (await Promise.race([sessionPromise, timeoutPromise])) as any;
 
         if (error) throw error;
 
         if (session && mounted) {
+          devLog.log("Session found, loading profile...");
           const profile = await loadProfile(session.user.id);
 
           if (profile && mounted) {
+            devLog.log(
+              "Profile loaded successfully, setting authenticated state"
+            );
             dispatch({
               type: "SET_AUTHENTICATED",
               session,
@@ -175,15 +200,35 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               profile,
             });
           } else if (mounted) {
+            devLog.warn("Profile loading failed, setting unauthenticated");
             dispatch({ type: "SET_UNAUTHENTICATED" });
           }
         } else if (mounted) {
+          devLog.log("No session found, setting unauthenticated");
           dispatch({ type: "SET_UNAUTHENTICATED" });
         }
       } catch (error) {
         devLog.error("Error initializing auth:", error);
         if (mounted) {
-          dispatch({ type: "SET_ERROR", error: error as Error });
+          // 네트워크 관련 에러의 경우 unauthenticated로 처리
+          if (
+            error instanceof Error &&
+            (error.message.includes("타임아웃") ||
+              error.message.includes("network") ||
+              error.message.includes("fetch"))
+          ) {
+            devLog.warn(
+              "Network error during initialization, setting unauthenticated"
+            );
+            dispatch({ type: "SET_UNAUTHENTICATED" });
+          } else {
+            dispatch({ type: "SET_ERROR", error: error as Error });
+          }
+        }
+      } finally {
+        // 초기 세션 로드 완료 표시
+        if (mounted) {
+          initialSessionLoaded.current = true;
         }
       }
     };
@@ -251,15 +296,28 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   // 앱 초기화 완료 감지
   useEffect(() => {
-    if (initialSessionLoaded.current) {
+    if (initialSessionLoaded.current && state.status === "initializing") {
       // 약간의 지연을 두어 앱 초기화 완료를 명확히 표시
       const timer = setTimeout(() => {
+        devLog.log("Dispatching APP_INITIALIZED action");
         dispatch({ type: "APP_INITIALIZED" });
       }, 100);
 
       return () => clearTimeout(timer);
     }
-  }, [initialSessionLoaded.current]);
+  }, [initialSessionLoaded.current, state.status]);
+
+  // 배포 환경에서 무한 로딩 방지를 위한 안전장치
+  useEffect(() => {
+    if (state.status === "initializing") {
+      const failsafeTimer = setTimeout(() => {
+        devLog.warn("Failsafe: Force setting unauthenticated after 15 seconds");
+        dispatch({ type: "SET_UNAUTHENTICATED" });
+      }, 15000); // 15초 후 강제로 unauthenticated 상태로 전환
+
+      return () => clearTimeout(failsafeTimer);
+    }
+  }, [state.status]);
 
   // 전역 에러 리스너 설정
   useEffect(() => {

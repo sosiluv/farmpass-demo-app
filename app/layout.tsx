@@ -9,10 +9,12 @@ import { AuthProvider } from "@/components/providers/auth-provider";
 import { ToastPositionProvider } from "@/components/providers/toast-position-provider";
 import { DebugProvider } from "@/components/providers/debug-provider";
 import { SystemMonitor } from "@/components/common/system-monitor";
+import { PWAUpdater } from "@/components/common/pwa-updater";
 import { getMetadataSettings } from "@/lib/server/metadata";
 import { ErrorBoundary } from "@/components/error/error-boundary";
 import { Analytics } from "@vercel/analytics/react";
 import Script from "next/script";
+import { FarmsProvider } from "@/components/providers/farms-provider";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -74,6 +76,7 @@ export default function RootLayout({
           title="시스템 오류"
           description="예상치 못한 오류가 발생했습니다. 페이지를 새로고침하거나 잠시 후 다시 시도해주세요."
         >
+          <PWAUpdater />
           <AuthProvider>
             <ToastPositionProvider>
               <DebugProvider>
@@ -83,9 +86,11 @@ export default function RootLayout({
                   enableSystem
                   disableTransitionOnChange
                 >
-                  {children}
-                  <Toaster />
-                  <SystemMonitor />
+                  <FarmsProvider>
+                    {children}
+                    <Toaster />
+                    <SystemMonitor />
+                  </FarmsProvider>
                 </ThemeProvider>
               </DebugProvider>
             </ToastPositionProvider>
