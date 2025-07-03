@@ -329,7 +329,7 @@ model users {
 }
 
 model SystemSettings {
-  id                            String    @id
+  id                            String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   createdAt                     DateTime  @default(now())
   updatedAt                     DateTime  @updatedAt
   siteName                      String    @default("농장 출입 관리 시스템(FarmPass)")

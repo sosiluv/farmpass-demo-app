@@ -25,12 +25,7 @@ export async function GET(request: NextRequest) {
     if (!settings) {
       // 설정이 없으면 기본값으로 생성
       const newSettings = await prisma.systemSettings.create({
-        data: {
-          ...DEFAULT_SYSTEM_SETTINGS,
-          id: crypto.randomUUID(),
-          createdAt: new Date(),
-          updatedAt: new Date(),
-        },
+        data: DEFAULT_SYSTEM_SETTINGS as any,
       });
 
       // 초기화 이벤트 로깅 - 통합 로깅 시스템 사용
