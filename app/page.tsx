@@ -63,7 +63,7 @@ export default async function HomePage() {
         <div className="container relative z-10 mx-auto px-4">
           <div className="text-center animate-fade-in">
             <div className="mx-auto mb-6 flex justify-center">
-              <Logo size="xl" />
+              <Logo size="xxl" />
             </div>
             <h1 className="mb-4 text-4xl font-bold tracking-tight text-foreground md:text-5xl lg:text-6xl">
               {displaySettings.siteName}
@@ -201,7 +201,7 @@ export default async function HomePage() {
       <footer className="border-t bg-card py-12">
         <div className="container mx-auto px-4">
           <div className="flex flex-col items-center justify-between gap-4 md:flex-row">
-            <Logo showText />
+            <Logo size="xl" showText />
             <div className="flex gap-2">
               <Badge variant="outline">모바일 최적화</Badge>
               <Badge variant="outline">QR 코드 지원</Badge>

@@ -104,7 +104,7 @@ export default function LoginPage() {
           <Card className="border-none shadow-soft-lg">
             <CardHeader className="space-y-1 text-center">
               <div className="mx-auto mb-4 flex justify-center">
-                <Logo size="lg" />
+                <Logo size="xl" />
               </div>
               <CardTitle className="text-3xl">로그인</CardTitle>
               <CardDescription>

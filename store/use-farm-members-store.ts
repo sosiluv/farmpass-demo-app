@@ -93,14 +93,25 @@ export const useFarmMembersStore = create<FarmMembersState>((set, get) => ({
         profile_image_url: member.profiles?.profile_image_url || null,
       }));
 
+      // owner가 맨 위에 오도록 정렬
+      const sortedMembers = [
+        ...members.filter((m) => m.role === "owner"),
+        ...members.filter((m) => m.role !== "owner"),
+      ];
+
       set({
-        members: members,
+        members: sortedMembers,
         currentFarmId: farmId,
         initialized: true,
         error: null,
+        loading: false,
       });
+      // ref 값들도 제대로 초기화
+      state.isFetchingRef.current = false;
+      state.hasDataRef.current = true;
     } catch (error) {
-      devLog.error("❌ Error in fetchMembers:", error);
+      // finally 블록처럼 ref 값들 초기화
+      state.isFetchingRef.current = false;
       set({ error: error as Error, loading: false });
       throw error;
     }

@@ -81,8 +81,8 @@ export async function POST(request: NextRequest) {
         tag: "validity-check-silent",
         silent: true,
         requireInteraction: false,
-        icon: "/icon-192x192.png",
-        badge: "/icon-192x192.png",
+        icon: "/icon-192x192.svg",
+        badge: "/icon-192x192.svg",
         data: {
           isValidityCheck: true,
           timestamp: Date.now(),

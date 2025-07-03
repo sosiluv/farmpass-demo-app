@@ -65,16 +65,18 @@ export function useSettingsImageManager({
       const link = document.createElement("link");
       link.rel = "icon";
       link.href = faviconUrl;
-      link.type = "image/x-icon";
+      link.type = faviconUrl.endsWith(".ico") ? "image/x-icon" : "image/png";
       document.head.appendChild(link);
       faviconLinkRef.current = link;
       devLog.log(`[FAVICON] Added new favicon link:`, link.href);
     } else {
-      // 기본 파비콘으로 복원
+      // 기본 파비콘으로 복원 (ico 우선, 없으면 png)
+      const defaultIco = "/favicon.ico";
       const link = document.createElement("link");
       link.rel = "icon";
-      link.href = "/favicon.png";
-      link.type = "image/png";
+      // ico 우선, 없으면 png
+      link.href = defaultIco;
+      link.type = "image/x-icon";
       document.head.appendChild(link);
       faviconLinkRef.current = link;
       devLog.log(`[FAVICON] Restored default favicon`);

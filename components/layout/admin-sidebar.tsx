@@ -174,29 +174,27 @@ export function AdminSidebar() {
       onDoubleClick={handleDoubleClick}
     >
       <SidebarHeader className="bg-background border-b">
-        <div className="flex items-center gap-2 px-2 py-3">
-          <Logo />
-          <div className="flex flex-col flex-1 min-w-0">
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <span className="text-sm font-semibold truncate cursor-help">
-                    {settings.siteName || DEFAULT_SYSTEM_SETTINGS.siteName}
-                  </span>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>{settings.siteName || DEFAULT_SYSTEM_SETTINGS.siteName}</p>
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-            <span className="text-xs text-muted-foreground truncate">
-              {profile?.account_type === "admin"
-                ? "시스템 관리자"
-                : farms.length > 0
-                ? `${farms.length}개 농장 관리`
-                : "농장을 등록해주세요"}
-            </span>
-          </div>
+        <div className="flex flex-col items-center gap-2 px-2 py-4">
+          <Logo size="lg" />
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <span className="text-sm font-semibold truncate cursor-help text-center block w-full">
+                  {settings.siteName || DEFAULT_SYSTEM_SETTINGS.siteName}
+                </span>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>{settings.siteName || DEFAULT_SYSTEM_SETTINGS.siteName}</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+          <span className="text-xs text-muted-foreground truncate text-center block w-full">
+            {profile?.account_type === "admin"
+              ? "시스템 관리자"
+              : farms.length > 0
+              ? `${farms.length}개 농장 관리`
+              : "농장을 등록해주세요"}
+          </span>
         </div>
 
         {/* 대시보드로 돌아가기 버튼 - 모바일에서만 표시 */}

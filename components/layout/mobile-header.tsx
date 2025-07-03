@@ -12,7 +12,7 @@ export function MobileHeader() {
   return (
     <header className="flex h-16 items-center justify-between border-b bg-background px-4 md:hidden">
       <div className="flex items-center gap-2">
-        <Logo size="sm" />
+        <Logo size="xl" />
         <div className="flex flex-col">
           <span className="text-sm font-semibold">농장 관리</span>
           <span className="text-xs text-muted-foreground">

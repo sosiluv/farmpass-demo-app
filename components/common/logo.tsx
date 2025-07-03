@@ -1,6 +1,5 @@
 "use client";
 
-import { Leaf } from "lucide-react";
 import { useLogo } from "@/hooks/use-logo";
 import { cn } from "@/lib/utils";
 import Image from "next/image";
@@ -10,7 +9,7 @@ interface LogoProps {
   iconClassName?: string;
   showText?: boolean;
   textClassName?: string;
-  size?: "sm" | "md" | "lg" | "xl";
+  size?: "sm" | "md" | "lg" | "xl" | "xxl";
 }
 
 const sizeMap = {
@@ -25,13 +24,18 @@ const sizeMap = {
     text: "text-base",
   },
   lg: {
-    container: "h-12 w-12",
+    container: "h-14 w-28",
     icon: "h-8 w-8",
     text: "text-lg",
   },
   xl: {
-    container: "h-16 w-16",
+    container: "h-16 w-40",
     icon: "h-10 w-10",
+    text: "text-sm",
+  },
+  xxl: {
+    container: "h-24 w-40",
+    icon: "h-16 w-16",
     text: "text-xl",
   },
 };
@@ -63,7 +67,6 @@ export function Logo({
             src={logoUrl}
             alt={siteName}
             fill
-            priority
             className="object-contain"
             sizes="(max-width: 768px) 32px, 40px"
           />
@@ -82,16 +85,15 @@ export function Logo({
     <div className={cn("flex items-center gap-2", className)}>
       <div
         className={cn(
-          "relative overflow-hidden rounded-lg bg-primary",
+          "relative overflow-hidden rounded-lg",
           sizeConfig.container,
           iconClassName
         )}
       >
         <Image
-          src="/default-logo2.jpg"
+          src="/default-logo2.svg"
           alt={siteName}
           fill
-          priority
           className="object-contain"
           sizes="(max-width: 768px) 32px, 40px"
         />
