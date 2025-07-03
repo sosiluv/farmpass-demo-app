@@ -28,7 +28,9 @@ export const devLog = {
    * 경고 로그 (항상 출력)
    */
   warn: (...args: any[]) => {
-    console.warn(...args);
+    if (isDev) {
+      console.warn(...args);
+    }
   },
 
   /**

@@ -1,3 +1,5 @@
+import { devLog } from "./utils/logging/dev-logger";
+
 interface SlackMessage {
   channel: string;
   text: string;
@@ -43,13 +45,13 @@ export class SlackNotifier {
 
   async sendAlert(message: SlackMessage): Promise<void> {
     if (!this.webhookUrl) {
-      console.warn("Slack webhook URL not configured");
+      devLog.warn("Slack webhook URL not configured");
       return;
     }
 
     const key = `${message.channel}:${message.text}`;
     if (this.isRateLimited(key)) {
-      console.log("Rate limited: Skipping duplicate alert");
+      devLog.log("Rate limited: Skipping duplicate alert");
       return;
     }
 
@@ -72,7 +74,7 @@ export class SlackNotifier {
         this.updateRateLimit(key);
         return;
       } catch (error) {
-        console.error(
+        devLog.error(
           `Slack 알림 전송 실패 (시도 ${attempt + 1}/${this.MAX_RETRIES}):`,
           error
         );

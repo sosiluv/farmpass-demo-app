@@ -1,7 +1,10 @@
 import { google } from "googleapis";
 import { createClient } from "@/lib/supabase/server";
 import { headers } from "next/headers";
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
+import { logApiError, logSystemWarning } from "@/lib/utils/logging/system-log";
+import { devLog } from "@/lib/utils/logging/dev-logger";
+import { getClientIP, getUserAgent } from "@/lib/server/ip-helpers";
 
 // 시스템 헬스체크 데이터 패치
 async function fetchHealthCheck(baseUrl: string) {
@@ -149,7 +152,10 @@ async function fetchErrorLogs() {
   }
 }
 
-export async function GET() {
+export async function GET(request: NextRequest) {
+  const clientIP = getClientIP(request);
+  const userAgent = getUserAgent(request);
+
   try {
     const host = headers().get("host") || "localhost:3000";
     const baseUrl = `${
@@ -163,6 +169,43 @@ export async function GET() {
         fetchAnalyticsData(),
         fetchErrorLogs(),
       ]);
+
+    // 각 서비스의 실패 상태 확인 및 로깅
+    if (healthCheck.status === "rejected") {
+      await logSystemWarning(
+        "monitoring_health_check_failed",
+        "헬스 체크 데이터 조회 실패",
+        { ip: clientIP, userAgent },
+        { error: healthCheck.reason }
+      );
+    }
+
+    if (uptimeStatus.status === "rejected") {
+      await logSystemWarning(
+        "monitoring_uptime_failed",
+        "업타임 상태 조회 실패",
+        { ip: clientIP, userAgent },
+        { error: uptimeStatus.reason }
+      );
+    }
+
+    if (analyticsData.status === "rejected") {
+      await logSystemWarning(
+        "monitoring_analytics_failed",
+        "GA4 데이터 조회 실패",
+        { ip: clientIP, userAgent },
+        { error: analyticsData.reason }
+      );
+    }
+
+    if (errorLogs.status === "rejected") {
+      await logSystemWarning(
+        "monitoring_error_logs_failed",
+        "에러 로그 조회 실패",
+        { ip: clientIP, userAgent },
+        { error: errorLogs.reason }
+      );
+    }
 
     return NextResponse.json({
       timestamp: new Date().toISOString(),
@@ -186,9 +229,26 @@ export async function GET() {
       },
       meta: {
         uptimeConfigured: !!process.env.UPTIMEROBOT_API_KEY,
+        analyticsConfigured: !!(
+          process.env.GA_SERVICE_ACCOUNT_KEY && process.env.GA4_PROPERTY_ID
+        ),
       },
     });
   } catch (error) {
+    devLog.error("Failed to fetch monitoring data:", error);
+
+    // API 에러 로그 기록
+    await logApiError(
+      "/api/monitoring/dashboard",
+      "GET",
+      error instanceof Error ? error : String(error),
+      undefined,
+      {
+        ip: clientIP,
+        userAgent,
+      }
+    );
+
     return NextResponse.json(
       {
         error: "Failed to fetch monitoring data",
@@ -199,4 +259,3 @@ export async function GET() {
     );
   }
 }
-// ... existing code ...

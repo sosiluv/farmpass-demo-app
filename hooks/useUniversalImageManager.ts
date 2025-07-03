@@ -98,16 +98,22 @@ export function useUniversalImageManager(
       if (error) throw error;
       const typedData = data as Record<string, any>;
       const currentUrl = typedData?.[options.dbField];
+
       if (currentUrl) {
-        // 파일명 추출 (systems/..., userId/...)만 추출
-        const match = currentUrl.match(/(systems|[\w-]+)\/[\w\-.]+/);
-        if (match) {
+        // 파일명 추출 - Supabase Storage URL에서 추출
+        const fileName =
+          currentUrl.match(
+            /\/storage\/v1\/object\/public\/[^\/]+\/(.+)/
+          )?.[1] || currentUrl.match(/(systems|[\w-]+)\/[\w\-.]+/)?.[0];
+
+        if (fileName) {
           await deleteImageUniversal({
             bucket: options.storageBucket,
-            fileName: match[0],
+            fileName: fileName,
           });
         }
       }
+
       // DB에서 해당 필드 null로 업데이트
       const { error: updateError, data: updated } = await supabase
         .from(options.dbTable)

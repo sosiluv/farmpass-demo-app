@@ -1,4 +1,5 @@
 import { useEffect, useState, useCallback, useRef } from "react";
+import { devLog } from "@/lib/utils/logging/dev-logger";
 
 export interface UseTimeoutOptions {
   timeout?: number; // 타임아웃 시간 (ms)
@@ -149,7 +150,7 @@ export function useDataFetchTimeout(
     try {
       await refetchRef.current();
     } catch (error) {
-      console.error("Retry failed:", error);
+      devLog.error("Retry failed:", error);
     }
   }, []);
 

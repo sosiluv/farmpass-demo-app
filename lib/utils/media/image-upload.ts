@@ -272,6 +272,19 @@ export async function deleteImageUniversal({
       `[DELETE_IMAGE] Deleting file: ${fileName} from bucket: ${bucket}`
     );
 
+    // 파일 존재 여부 확인
+    const { data: fileExists, error: checkError } = await supabase.storage
+      .from(bucket)
+      .list(fileName.split("/").slice(0, -1).join("/"), {
+        search: fileName.split("/").pop(),
+      });
+
+    if (checkError) {
+      devLog.warn(`[DELETE_IMAGE] Error checking file existence:`, checkError);
+    } else {
+      devLog.log(`[DELETE_IMAGE] File existence check result:`, fileExists);
+    }
+
     const { data, error } = await supabase.storage
       .from(bucket)
       .remove([fileName]);

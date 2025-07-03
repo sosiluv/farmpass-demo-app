@@ -1,13 +1,21 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { cookies } from "next/headers";
 import { getSystemSettings } from "@/lib/cache/system-settings-cache";
 import { devLog } from "@/lib/utils/logging/dev-logger";
+import {
+  logApiError,
+  logVisitorDataAccess,
+} from "@/lib/utils/logging/system-log";
+import { getClientIP, getUserAgent } from "@/lib/server/ip-helpers";
 
 export async function GET(
-  request: Request,
+  request: NextRequest,
   { params }: { params: { farmId: string } }
 ) {
+  const clientIP = getClientIP(request);
+  const userAgent = getUserAgent(request);
+
   try {
     const farmId = params.farmId;
     const cookieStore = cookies();
@@ -15,6 +23,17 @@ export async function GET(
 
     // 세션이 없으면 첫 방문으로 간주
     if (!sessionToken) {
+      // 세션 없음 로그 기록
+      await logVisitorDataAccess(
+        "SESSION_NOT_FOUND",
+        undefined,
+        undefined,
+        {
+          farm_id: farmId,
+          session_token: "none",
+        },
+        { ip: clientIP, userAgent }
+      );
       return NextResponse.json({ isFirstVisit: true });
     }
 
@@ -42,6 +61,17 @@ export async function GET(
 
     // 방문 기록이 없으면 첫 방문으로 간주
     if (!lastVisit) {
+      // 세션은 있으나 방문 기록 없음 로그
+      await logVisitorDataAccess(
+        "RECORD_NOT_FOUND",
+        undefined,
+        undefined,
+        {
+          farm_id: farmId,
+          session_token: sessionToken,
+        },
+        { ip: clientIP, userAgent }
+      );
       return NextResponse.json({ isFirstVisit: true });
     }
 
@@ -54,10 +84,40 @@ export async function GET(
     const isExpired = hoursSinceLastVisit >= settings.reVisitAllowInterval;
 
     if (isExpired) {
+      // 세션 만료 로그 기록
+      await logVisitorDataAccess(
+        "SESSION_EXPIRED",
+        undefined,
+        undefined,
+        {
+          farm_id: farmId,
+          session_token: sessionToken,
+          hours_since_last_visit: Math.round(hoursSinceLastVisit),
+          visit_allow_interval: settings.reVisitAllowInterval,
+        },
+        { ip: clientIP, userAgent }
+      );
+
       // 세션이 만료되었으면 쿠키 삭제
       cookies().delete("visitor_session");
       return NextResponse.json({ isFirstVisit: true });
     }
+
+    // 유효한 세션 로그 기록
+    await logVisitorDataAccess(
+      "SESSION_VALID",
+      undefined,
+      undefined,
+      {
+        farm_id: farmId,
+        session_token: sessionToken,
+        hours_since_last_visit: Math.round(hoursSinceLastVisit),
+        remaining_hours: Math.round(
+          settings.reVisitAllowInterval - hoursSinceLastVisit
+        ),
+      },
+      { ip: clientIP, userAgent }
+    );
 
     // 유효한 세션인 경우 마지막 방문 정보 반환
     return NextResponse.json({
@@ -77,6 +137,19 @@ export async function GET(
     });
   } catch (error) {
     devLog.error("Error checking session:", error);
+
+    // API 에러 로그 기록
+    await logApiError(
+      "/api/farms/[farmId]/visitors/check-session",
+      "GET",
+      error instanceof Error ? error : String(error),
+      undefined,
+      {
+        ip: clientIP,
+        userAgent,
+      }
+    );
+
     return NextResponse.json(
       { error: "Failed to check session" },
       { status: 500 }

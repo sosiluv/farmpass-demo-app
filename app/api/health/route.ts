@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { slackNotifier } from "@/lib/slack";
+import { devLog } from "@/lib/utils/logging/dev-logger";
 
 // package.json에서 버전 정보 가져오기
 const packageJson = require("../../../package.json");
@@ -66,7 +67,7 @@ export async function GET() {
       process.env.NODE_ENV !== "production" &&
       process.env.NEXT_PHASE === "phase-production-build"
     ) {
-      console.log("Skipping database check during build phase");
+      devLog.log("Skipping database check during build phase");
     } else {
       await Promise.race([
         prisma.$queryRaw`SELECT 1`,
@@ -143,7 +144,7 @@ export async function GET() {
           }
         )
         .catch((error) => {
-          console.error("시스템 리소스 경고 Slack 알림 실패:", error);
+          devLog.error("시스템 리소스 경고 Slack 알림 실패:", error);
         });
     }
 
@@ -239,7 +240,7 @@ export async function GET() {
     // 8. 오류 처리
     // =================================
     // 데이터베이스 연결 실패 등 문제 발생 시
-    console.error("Health check failed:", error);
+    devLog.error("Health check failed:", error);
 
     // =================================
     // 9. 시스템 오류 시 Slack 알림 (비동기 처리)
@@ -261,7 +262,7 @@ export async function GET() {
         }
       )
       .catch((slackError) => {
-        console.error("Slack 알림 전송 실패:", slackError);
+        devLog.error("Slack 알림 전송 실패:", slackError);
       });
 
     return NextResponse.json(

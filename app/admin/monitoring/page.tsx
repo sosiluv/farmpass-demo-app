@@ -214,7 +214,7 @@ export default function MonitoringDashboard() {
           {data.meta.uptimeConfigured && (
             <UptimeCard monitors={data.services.uptime?.monitors ?? []} />
           )}
-          {data.meta.analyticsConfigured && data.services.analytics && (
+          {data.meta.analyticsConfigured && (
             <AnalyticsCard data={data.services.analytics} />
           )}
         </div>

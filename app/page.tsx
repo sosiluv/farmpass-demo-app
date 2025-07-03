@@ -13,6 +13,7 @@ import { prisma } from "@/lib/prisma";
 import { features, steps } from "./home-data";
 import { DEFAULT_SYSTEM_SETTINGS } from "@/lib/types/settings";
 import { Logo } from "@/components/common";
+import { devLog } from "@/lib/utils/logging/dev-logger";
 
 // 동적 렌더링 강제
 export const dynamic = "force-dynamic";
@@ -31,7 +32,7 @@ export default async function HomePage() {
       LIMIT 1
     `;
   } catch (error) {
-    console.warn("데이터베이스 연결 실패, 기본값 사용:", error);
+    devLog.warn("데이터베이스 연결 실패, 기본값 사용:", error);
     settings = [DEFAULT_SYSTEM_SETTINGS];
   }
 

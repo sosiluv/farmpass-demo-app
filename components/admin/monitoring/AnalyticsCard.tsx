@@ -1,9 +1,8 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Users, Eye, Clock, TrendingUp } from "lucide-react";
-import { cn } from "@/lib/utils";
 
 interface AnalyticsCardProps {
-  data: {
+  data?: {
     visitors: number;
     pageviews: number;
     sessions?: number;
