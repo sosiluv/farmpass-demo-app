@@ -210,6 +210,7 @@ export default function RegisterPage() {
                       value={formData.name}
                       onChange={handleInputChange}
                       required
+                      autoComplete="name"
                       className={`h-12 pl-10 input-focus ${
                         errors.name ? "border-red-500" : ""
                       }`}

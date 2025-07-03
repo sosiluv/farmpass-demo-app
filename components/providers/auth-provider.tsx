@@ -106,41 +106,47 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const mounted = useRef(false);
   const initialSessionLoaded = useRef(false);
   const isSigningOutRef = useRef<boolean>(false);
-  const profileLoadingRef = useRef(false);
+  const profileLoadingPromise = useRef<Promise<Profile | null> | null>(null);
 
   // 구독 관리 훅 사용
   const { switchSubscription, cleanupSubscription, setupErrorListener } =
     useSubscriptionManager();
 
-  // 프로필 로드 (단순화된 버전)
+  // 프로필 로드 (개선된 버전)
   const loadProfile = async (userId: string): Promise<Profile | null> => {
-    if (profileLoadingRef.current) {
-      devLog.log("Profile loading already in progress, skipping");
-      return null;
+    // 이미 진행 중인 요청이 있으면 그 결과를 기다림
+    if (profileLoadingPromise.current) {
+      devLog.log("Profile loading already in progress, waiting for completion");
+      return await profileLoadingPromise.current;
     }
 
-    profileLoadingRef.current = true;
+    // 새로운 프로필 로딩 시작
+    const loadingPromise = (async (): Promise<Profile | null> => {
+      try {
+        devLog.log(`Loading profile for user ${userId}`);
 
-    try {
-      devLog.log(`Loading profile for user ${userId}`);
+        const { data, error } = await supabase
+          .from("profiles")
+          .select("*")
+          .eq("id", userId)
+          .single();
 
-      const { data, error } = await supabase
-        .from("profiles")
-        .select("*")
-        .eq("id", userId)
-        .single();
+        if (error) throw error;
 
-      if (error) throw error;
+        devLog.log("Profile loaded successfully");
+        return data;
+      } catch (error) {
+        devLog.error("Error loading profile:", error);
+        await logAuthError("PROFILE_LOAD_FAILED", error, undefined, userId);
+        return null;
+      } finally {
+        // 로딩 완료 후 Promise 초기화
+        profileLoadingPromise.current = null;
+      }
+    })();
 
-      devLog.log("Profile loaded successfully");
-      return data;
-    } catch (error) {
-      devLog.error("Error loading profile:", error);
-      await logAuthError("PROFILE_LOAD_FAILED", error, undefined, userId);
-      return null;
-    } finally {
-      profileLoadingRef.current = false;
-    }
+    profileLoadingPromise.current = loadingPromise;
+    return await loadingPromise;
   };
 
   // 초기 세션 로드
@@ -194,7 +200,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       switch (event) {
         case "SIGNED_IN":
-          if (session?.user && state.status !== "authenticated") {
+          // signIn 함수에서 이미 처리 중이거나 이미 인증된 상태면 스킵
+          if (
+            session?.user &&
+            state.status !== "authenticated" &&
+            state.status !== "loading"
+          ) {
             const profile = await loadProfile(session.user.id);
             if (profile && mounted) {
               dispatch({
@@ -279,10 +290,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         throw error;
       }
 
-      const profile = await loadProfile(data.user.id);
+      let profile = await loadProfile(data.user.id);
 
       if (!profile) {
-        throw new Error("프로필을 불러올 수 없습니다.");
+        // 프로필 로딩 실패 시 한 번 더 시도
+        devLog.warn("첫 번째 프로필 로딩 실패, 재시도 중...");
+        await new Promise((resolve) => setTimeout(resolve, 1000)); // 1초 대기
+        const retryProfile = await loadProfile(data.user.id);
+
+        if (!retryProfile) {
+          throw new Error(
+            "프로필을 불러올 수 없습니다. 네트워크 상태를 확인하고 다시 시도해주세요."
+          );
+        }
+
+        // 재시도 성공
+        profile = retryProfile;
       }
 
       // 병렬 처리
