@@ -75,8 +75,11 @@ export interface CleanupStatus {
   };
 }
 
-// 기본 시스템 설정값 (Prisma에서 자동 생성되는 필드 제외)
-export const DEFAULT_SYSTEM_SETTINGS = {
+// 기본 시스템 설정값
+export const DEFAULT_SYSTEM_SETTINGS: Omit<
+  SystemSettings,
+  "id" | "createdAt" | "updatedAt"
+> = {
   // 일반 설정
   siteName: "농장 출입 관리 시스템(FarmPass)",
   siteDescription:
