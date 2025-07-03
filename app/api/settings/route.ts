@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
+import { prisma } from "@/lib/prisma";
+import crypto from "crypto";
 import { DEFAULT_SYSTEM_SETTINGS } from "@/lib/types/settings";
 import { invalidateSystemSettingsCache } from "@/lib/cache/system-settings-cache";
 import {
@@ -18,26 +20,18 @@ export async function GET(request: NextRequest) {
   const userAgent = getUserAgent(request);
 
   try {
-    const supabase = await createClient();
+    const settings = await prisma.systemSettings.findFirst();
 
-    // 기존 설정 조회
-    const { data: settings, error: fetchError } = await supabase
-      .from("system_settings")
-      .select("*")
-      .limit(1)
-      .single();
-
-    if (fetchError && fetchError.code === "PGRST116") {
+    if (!settings) {
       // 설정이 없으면 기본값으로 생성
-      const { data: newSettings, error: createError } = await supabase
-        .from("system_settings")
-        .insert([DEFAULT_SYSTEM_SETTINGS])
-        .select()
-        .single();
-
-      if (createError) {
-        throw createError;
-      }
+      const newSettings = await prisma.systemSettings.create({
+        data: {
+          ...DEFAULT_SYSTEM_SETTINGS,
+          id: crypto.randomUUID(),
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        },
+      });
 
       // 초기화 이벤트 로깅 - 통합 로깅 시스템 사용
       await createSystemLog(
@@ -162,15 +156,9 @@ export async function PATCH(request: NextRequest) {
     }
 
     const data = await request.json();
+    const settings = await prisma.systemSettings.findFirst();
 
-    // 기존 설정 조회
-    const { data: settings, error: fetchError } = await supabase
-      .from("system_settings")
-      .select("*")
-      .limit(1)
-      .single();
-
-    if (fetchError || !settings) {
+    if (!settings) {
       // 설정 PATCH 에러 (설정 없음) 로그
       await logApiError(
         "/api/settings",
@@ -210,17 +198,15 @@ export async function PATCH(request: NextRequest) {
       });
     });
 
-    // 설정 업데이트
-    const { data: updatedSettings, error: updateError } = await supabase
-      .from("system_settings")
-      .update(data)
-      .eq("id", settings.id)
-      .select()
-      .single();
+    const updatedSettings = await prisma.$transaction(async (tx: any) => {
+      // 설정 업데이트
+      const updated = await tx.systemSettings.update({
+        where: { id: settings.id },
+        data,
+      });
 
-    if (updateError) {
-      throw updateError;
-    }
+      return updated;
+    });
 
     // 실제 변경된 필드가 있을 때만 로그 생성
     if (changedFields.length > 0) {
