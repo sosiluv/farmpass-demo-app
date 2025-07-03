@@ -127,7 +127,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
         // 배포 환경에서 프로필 로딩 타임아웃 설정
         const timeoutPromise = new Promise<never>((_, reject) =>
-          setTimeout(() => reject(new Error("프로필 로딩 타임아웃")), 8000)
+          setTimeout(() => reject(new Error("프로필 로딩 타임아웃")), 5000)
         );
 
         const profilePromise = supabase
@@ -146,8 +146,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         devLog.log("Profile loaded successfully");
         return data;
       } catch (error) {
-        devLog.error("Error loading profile:", error);
-
         // 타임아웃이나 네트워크 에러의 경우 로그 기록하지 않음
         if (!(error instanceof Error && error.message.includes("타임아웃"))) {
           await logAuthError("PROFILE_LOAD_FAILED", error, undefined, userId);
