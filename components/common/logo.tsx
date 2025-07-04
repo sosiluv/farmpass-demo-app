@@ -67,6 +67,7 @@ export function Logo({
             src={logoUrl}
             alt={siteName}
             fill
+            priority
             className="object-contain"
             sizes="(max-width: 768px) 32px, 40px"
           />
@@ -94,6 +95,7 @@ export function Logo({
           src="/default-logo2.svg"
           alt={siteName}
           fill
+          priority
           className="object-contain"
           sizes="(max-width: 768px) 32px, 40px"
         />

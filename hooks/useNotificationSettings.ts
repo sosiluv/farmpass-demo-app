@@ -1,28 +1,49 @@
-import { useState, useCallback, useMemo } from "react";
-import { useApi, useMutation } from "@/hooks/common/useApiData";
-import type {
-  NotificationSettings,
-  UpdateNotificationSettingsDTO,
-} from "@/lib/types/notification";
+import { useState, useEffect, useCallback, useMemo } from "react";
+import type { NotificationSettings } from "@/lib/types/notification";
 import type { SystemSettings } from "@/lib/types/settings";
 import { devLog } from "@/lib/utils/logging/dev-logger";
 import { useCommonToast } from "@/lib/utils/notification/toast-messages";
 
 // 알림 설정 조회 훅 (사용자용)
 export function useNotificationSettings() {
-  return useApi<NotificationSettings>("/api/notifications/settings", {
-    immediate: true,
-    cache: true,
-    cacheKey: "notification-settings",
-    cacheTtl: 1 * 60 * 1000, // 1분으로 감소
-    errorMessage: "알림 설정을 불러오는 중 오류가 발생했습니다.",
-    onSuccess: (data) => {
-      devLog.info("알림 설정 로드 성공:", data);
-    },
-    onError: (error) => {
-      devLog.error("알림 설정 로드 실패:", error);
-    },
-  });
+  const [data, setData] = useState<NotificationSettings | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<Error | null>(null);
+  const toast = useCommonToast();
+
+  useEffect(() => {
+    let isMounted = true;
+    setLoading(true);
+    setError(null);
+    fetch("/api/notifications/settings")
+      .then(async (res) => {
+        if (!res.ok)
+          throw new Error("알림 설정을 불러오는 중 오류가 발생했습니다.");
+        const json = await res.json();
+        if (isMounted) {
+          setData(json);
+          devLog.info("알림 설정 로드 성공:", json);
+        }
+      })
+      .catch((err) => {
+        if (isMounted) {
+          setError(err);
+          devLog.error("알림 설정 로드 실패:", err);
+          toast.showCustomError(
+            "알림 설정 로드 실패",
+            "알림 설정을 불러오는 중 오류가 발생했습니다."
+          );
+        }
+      })
+      .finally(() => {
+        if (isMounted) setLoading(false);
+      });
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  return { data, loading, error };
 }
 
 // 시스템 설정용 알림 설정 훅 (시스템 관리자용)

@@ -10,9 +10,6 @@
  * import { validateFarm } from '@/lib/utils'
  */
 
-// API 관??
-export * from "./api";
-
 // ?�이??처리 관??
 export * from "./data";
 
@@ -35,7 +32,7 @@ export * from "./system";
 export * from "./validation";
 
 // ?�임?�페?�스 �?export (?�택???�용)
-export * as API from "./api";
+
 export * as Data from "./data";
 export * as DateTime from "./datetime";
 export * as Logging from "./logging";

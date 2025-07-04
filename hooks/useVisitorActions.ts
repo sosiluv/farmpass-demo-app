@@ -27,7 +27,10 @@ export const useVisitorActions = ({
   const handleEdit = useCallback(
     async (visitor: Visitor) => {
       if (!visitor.id || !visitor.farm_id) {
-        toast.showError("VISITOR_UPDATE_FAILED");
+        toast.showCustomError(
+          "방문자 정보 수정 실패",
+          "방문자 정보를 수정하는 중 오류가 발생했습니다."
+        );
         return;
       }
 
@@ -42,9 +45,15 @@ export const useVisitorActions = ({
           disinfection_check: visitor.disinfection_check,
         });
 
-        toast.showSuccess("VISITOR_UPDATED");
+        toast.showCustomSuccess(
+          "방문자 정보 수정 완료",
+          "방문자 정보가 성공적으로 수정되었습니다."
+        );
       } catch (error) {
-        toast.showError("VISITOR_UPDATE_FAILED");
+        toast.showCustomError(
+          "방문자 정보 수정 실패",
+          "방문자 정보를 수정하는 중 오류가 발생했습니다."
+        );
       }
     },
     [updateVisitor, toast]
@@ -54,15 +63,24 @@ export const useVisitorActions = ({
   const handleDelete = useCallback(
     async (visitor: Visitor) => {
       if (!visitor.id || !visitor.farm_id) {
-        toast.showError("VISITOR_DELETE_FAILED");
+        toast.showCustomError(
+          "방문자 삭제 실패",
+          "방문자를 삭제하는 중 오류가 발생했습니다."
+        );
         return;
       }
 
       try {
         await deleteVisitor(visitor.id, visitor.farm_id);
-        toast.showSuccess("VISITOR_DELETED");
+        toast.showCustomSuccess(
+          "방문자 삭제 완료",
+          "방문자가 성공적으로 삭제되었습니다."
+        );
       } catch (error) {
-        toast.showError("VISITOR_DELETE_FAILED");
+        toast.showCustomError(
+          "방문자 삭제 실패",
+          "방문자를 삭제하는 중 오류가 발생했습니다."
+        );
       }
     },
     [deleteVisitor, toast]
@@ -120,9 +138,15 @@ export const useVisitorActions = ({
           useAdvancedParser: true,
         });
 
-        toast.showSuccess("DATA_EXPORTED");
+        toast.showCustomSuccess(
+          "내보내기 완료",
+          "내보내기가 성공적으로 완료되었습니다."
+        );
       } catch (error) {
-        toast.showError("DATA_EXPORT_FAILED");
+        toast.showCustomError(
+          "내보내기 실패",
+          "내보내기 중 오류가 발생했습니다."
+        );
       }
     },
     [allVisitors, farms, isAdmin, toast]

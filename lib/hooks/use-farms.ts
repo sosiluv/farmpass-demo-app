@@ -80,7 +80,10 @@ export function useFarms(userId?: string) {
         devLog.error("Failed to fetch farms:", error);
         hasDataRef.current = false;
 
-        toast.showError("FARM_FETCH_FAILED");
+        toast.showCustomError(
+          "농장 목록 조회 실패",
+          "농장 목록을 불러오는 중 오류가 발생했습니다."
+        );
       } finally {
         isFetchingRef.current = false;
       }
@@ -117,13 +120,19 @@ export function useFarms(userId?: string) {
       try {
         const farm = await storeFarmAdd(userIdToUse, values);
         if (farm) {
-          toast.showSuccess("FARM_CREATED");
+          toast.showCustomSuccess(
+            "농장 등록 완료",
+            "농장이 성공적으로 등록되었습니다."
+          );
         }
         return farm;
       } catch (error) {
         devLog.error("Failed to add farm:", error);
 
-        toast.showError("FARM_CREATE_FAILED");
+        toast.showCustomError(
+          "농장 등록 실패",
+          "농장을 등록하는 중 오류가 발생했습니다."
+        );
         return null;
       }
     },
@@ -134,11 +143,17 @@ export function useFarms(userId?: string) {
     async (farmId: string, values: Partial<Farm>) => {
       try {
         await storeFarmUpdate(farmId, values);
-        toast.showSuccess("FARM_UPDATED");
+        toast.showCustomSuccess(
+          "농장 수정 완료",
+          "농장 정보가 성공적으로 수정되었습니다."
+        );
       } catch (error) {
         devLog.error("Failed to update farm:", error);
 
-        toast.showError("FARM_UPDATE_FAILED");
+        toast.showCustomError(
+          "농장 수정 실패",
+          "농장을 수정하는 중 오류가 발생했습니다."
+        );
       }
     },
     [storeFarmUpdate, toast]
@@ -148,11 +163,17 @@ export function useFarms(userId?: string) {
     async (farmId: string) => {
       try {
         await storeFarmDelete(farmId);
-        toast.showSuccess("FARM_DELETED");
+        toast.showCustomSuccess(
+          "농장 삭제 완료",
+          "농장이 성공적으로 삭제되었습니다."
+        );
       } catch (error) {
         devLog.error("Failed to delete farm:", error);
 
-        toast.showError("FARM_DELETE_FAILED");
+        toast.showCustomError(
+          "농장 삭제 실패",
+          "농장을 삭제하는 중 오류가 발생했습니다."
+        );
       }
     },
     [storeFarmDelete, toast]

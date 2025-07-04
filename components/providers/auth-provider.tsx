@@ -11,7 +11,7 @@ import { Session, User } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/client";
 import type { Profile } from "@/lib/types";
 import { devLog } from "@/lib/utils/logging/dev-logger";
-import { updateLoginTime } from "@/lib/auth-helpers";
+
 import { useSubscriptionManager } from "@/hooks/useSubscriptionManager";
 
 // 통합된 인증 상태 정의
@@ -332,26 +332,51 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       dispatch({ type: "SET_LOADING" });
 
-      // 로그인 시도 횟수 검증
-      await validateLoginAttempts(email);
-
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
+      // 새로운 통합 로그인 API 사용
+      const response = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ email, password }),
       });
 
-      if (error) {
-        await handleLoginFailure(email, error.message);
-        throw error;
+      const result = await response.json();
+
+      if (!result.success) {
+        // 로그인 실패 시 에러 처리
+        if (response.status === 429) {
+          // 계정 잠금
+          throw new Error(result.message || "계정이 잠겼습니다.");
+        } else if (response.status === 401) {
+          // 인증 실패
+          throw new Error(
+            result.message || "이메일 또는 비밀번호가 올바르지 않습니다."
+          );
+        } else {
+          // 기타 오류
+          throw new Error(result.error || "로그인에 실패했습니다.");
+        }
       }
 
-      let profile = await loadProfile(data.user.id);
+      // 로그인 성공 시 세션 정보 가져오기
+      const {
+        data: { session },
+        error: sessionError,
+      } = await supabase.auth.getSession();
+
+      if (sessionError || !session) {
+        throw new Error("세션 정보를 가져올 수 없습니다.");
+      }
+
+      // 프로필 로드
+      let profile = await loadProfile(session.user.id);
 
       if (!profile) {
         // 프로필 로딩 실패 시 한 번 더 시도
         devLog.warn("첫 번째 프로필 로딩 실패, 재시도 중...");
         await new Promise((resolve) => setTimeout(resolve, 1000)); // 1초 대기
-        const retryProfile = await loadProfile(data.user.id);
+        const retryProfile = await loadProfile(session.user.id);
 
         if (!retryProfile) {
           throw new Error(
@@ -363,22 +388,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         profile = retryProfile;
       }
 
-      // 병렬 처리
-      await Promise.all([
-        updateLoginTime(data.user.id),
-        resetLoginAttempts(email),
-      ]);
-
       // 구독 전환 (백그라운드에서 처리)
-      switchSubscription(data.user.id).catch((error) => {
+      switchSubscription(session.user.id).catch((error) => {
         devLog.warn("구독 전환 실패:", error);
         // 구독 실패해도 로그인은 계속 진행
       });
 
       dispatch({
         type: "SET_AUTHENTICATED",
-        session: data.session,
-        user: data.user,
+        session: session,
+        user: session.user,
         profile,
       });
 
@@ -534,52 +553,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (profile) {
         dispatch({ type: "UPDATE_PROFILE", profile });
       }
-    }
-  };
-
-  // 헬퍼 함수들 (기존과 동일하지만 단순화)
-  const validateLoginAttempts = async (email: string) => {
-    try {
-      const response = await fetch(
-        `/api/auth/validate-login-attempts?email=${encodeURIComponent(email)}`
-      );
-      if (response.ok) {
-        const data = await response.json();
-        if (!data.allowed) {
-          throw new Error(data.message);
-        }
-      }
-    } catch (error) {
-      // 에러 발생 시에도 상태 정리
-      dispatch({ type: "SET_UNAUTHENTICATED" });
-    }
-  };
-
-  const handleLoginFailure = async (email: string, errorMessage: string) => {
-    try {
-      if (errorMessage === "Email not confirmed") {
-        return;
-      }
-
-      await fetch("/api/auth/login-failed", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email }),
-      });
-    } catch (error) {
-      devLog.error("로그인 실패 기록 중 오류:", error);
-    }
-  };
-
-  const resetLoginAttempts = async (email: string) => {
-    try {
-      await fetch("/api/auth/reset-attempts", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email }),
-      });
-    } catch (error) {
-      devLog.error("Failed to reset login attempts:", error);
     }
   };
 

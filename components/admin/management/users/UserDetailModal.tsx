@@ -10,6 +10,10 @@ import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { formatDateTime } from "@/lib/utils/datetime/date";
 import { Profile } from "@/lib/types";
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { useAuth } from "@/components/providers/auth-provider";
+import { useCommonToast } from "@/lib/utils/notification/toast-messages";
 
 interface UserDetailModalProps {
   user: Profile | null;
@@ -18,7 +22,12 @@ interface UserDetailModalProps {
 }
 
 export function UserDetailModal({ user, open, onClose }: UserDetailModalProps) {
-  if (!user) return null;
+  const { state } = useAuth();
+  const [loading, setLoading] = useState(false);
+  const { showCustomSuccess, showCustomError } = useCommonToast();
+
+  const accessToken =
+    state.status === "authenticated" ? state.session.access_token : undefined;
 
   const getRoleColor = (accountType: string) => {
     switch (accountType) {
@@ -70,6 +79,35 @@ export function UserDetailModal({ user, open, onClose }: UserDetailModalProps) {
     return colors[index];
   };
 
+  const handleUnlock = async () => {
+    setLoading(true);
+    try {
+      const res = await fetch("/api/auth/reset-attempts", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+        },
+        body: JSON.stringify({
+          email: user?.email,
+          reason: "관리자 수동 잠금 해제",
+        }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        showCustomSuccess(
+          "계정 잠금 해제",
+          data.message || "계정 잠금이 해제되었습니다!"
+        );
+        onClose();
+      } else {
+        showCustomError("잠금 해제 실패", data.error || "잠금 해제 실패");
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="w-[95vw] max-w-[350px] sm:max-w-[500px] md:max-w-[600px] lg:max-w-[700px] max-h-[90vh] sm:max-h-[85vh] overflow-hidden p-3 sm:p-4 md:p-6">
@@ -81,109 +119,126 @@ export function UserDetailModal({ user, open, onClose }: UserDetailModalProps) {
             선택된 사용자의 상세 정보를 확인할 수 있습니다.
           </DialogDescription>
         </DialogHeader>
-        <ScrollArea className="h-full max-h-[calc(90vh-8rem)] sm:max-h-[calc(85vh-10rem)]">
-          <div className="space-y-4 sm:space-y-6 pr-2 sm:pr-4">
-            {/* 기본 정보 */}
-            <div className="flex flex-col sm:flex-row items-center sm:items-start gap-3 sm:gap-4">
-              <Avatar className="h-12 w-12 sm:h-16 sm:w-16 flex-shrink-0">
-                {user.profile_image_url ? (
-                  <AvatarImage
-                    src={user.profile_image_url}
-                    alt={user.name || "User"}
-                  />
-                ) : (
-                  <AvatarFallback
-                    className={`${getAvatarColor(
-                      user.name
-                    )} text-white text-sm sm:text-base`}
-                  >
-                    {getInitials(user.name)}
-                  </AvatarFallback>
-                )}
-              </Avatar>
-              <div className="text-center sm:text-left flex-1">
-                <div className="text-lg sm:text-xl font-semibold">
-                  {user.name}
-                </div>
-                <div className="text-xs sm:text-sm text-muted-foreground break-all">
-                  {user.email}
-                </div>
-                <div className="flex flex-wrap justify-center sm:justify-start gap-1 sm:gap-2 mt-2">
-                  <Badge
-                    className={`${getRoleColor(user.account_type)} text-xs`}
-                  >
-                    {user.account_type === "admin"
-                      ? "시스템 관리자"
-                      : "일반 사용자"}
-                  </Badge>
-                  <Badge
-                    className={`${getStatusColor(user.is_active)} text-xs`}
-                  >
-                    {user.is_active ? "활성" : "비활성"}
-                  </Badge>
-                </div>
-              </div>
-            </div>
-
-            {/* 상세 정보 */}
-            <div className="space-y-3 sm:space-y-4">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 text-xs sm:text-sm">
-                <div className="p-2 sm:p-3 bg-muted rounded-lg">
-                  <div className="font-medium text-foreground">전화번호</div>
-                  <div className="text-muted-foreground mt-1">
-                    {user.phone || "미등록"}
+        {user ? (
+          <ScrollArea className="h-full max-h-[calc(90vh-8rem)] sm:max-h-[calc(85vh-10rem)]">
+            <div className="space-y-4 sm:space-y-6 pr-2 sm:pr-4">
+              {/* 기본 정보 */}
+              <div className="flex flex-col sm:flex-row items-center sm:items-start gap-3 sm:gap-4">
+                <Avatar className="h-12 w-12 sm:h-16 sm:w-16 flex-shrink-0">
+                  {user.profile_image_url ? (
+                    <AvatarImage
+                      src={user.profile_image_url}
+                      alt={user.name || "User"}
+                    />
+                  ) : (
+                    <AvatarFallback
+                      className={`${getAvatarColor(
+                        user.name
+                      )} text-white text-sm sm:text-base`}
+                    >
+                      {getInitials(user.name)}
+                    </AvatarFallback>
+                  )}
+                </Avatar>
+                <div className="text-center sm:text-left flex-1">
+                  <div className="text-lg sm:text-xl font-semibold">
+                    {user.name}
                   </div>
-                </div>
-                <div className="p-2 sm:p-3 bg-muted rounded-lg">
-                  <div className="font-medium text-foreground">회사/기관</div>
-                  <div className="text-muted-foreground mt-1 break-all">
-                    {user.company_name || "미등록"}
+                  <div className="text-xs sm:text-sm text-muted-foreground break-all">
+                    {user.email}
                   </div>
-                </div>
-                <div className="p-2 sm:p-3 bg-muted rounded-lg">
-                  <div className="font-medium text-foreground">사업자 유형</div>
-                  <div className="text-muted-foreground mt-1">
-                    {user.business_type || "미등록"}
-                  </div>
-                </div>
-                <div className="p-2 sm:p-3 bg-muted rounded-lg">
-                  <div className="font-medium text-foreground">회사 주소</div>
-                  <div className="text-muted-foreground mt-1 break-all">
-                    {user.company_address || "미등록"}
+                  <div className="flex flex-wrap justify-center sm:justify-start gap-1 sm:gap-2 mt-2">
+                    <Badge
+                      className={`${getRoleColor(user.account_type)} text-xs`}
+                    >
+                      {user.account_type === "admin"
+                        ? "시스템 관리자"
+                        : "일반 사용자"}
+                    </Badge>
+                    <Badge
+                      className={`${getStatusColor(user.is_active)} text-xs`}
+                    >
+                      {user.is_active ? "활성" : "비활성"}
+                    </Badge>
                   </div>
                 </div>
               </div>
 
-              {/* 시간 정보 */}
-              <div className="pt-2 sm:pt-4 border-t space-y-2 sm:space-y-3">
-                <div className="p-2 sm:p-3 bg-muted rounded-lg text-xs sm:text-sm">
-                  <span className="font-medium text-foreground">
-                    마지막 로그인:
-                  </span>
-                  <div className="text-muted-foreground mt-1">
-                    {user.last_login_at
-                      ? formatDateTime(user.last_login_at)
-                      : "로그인 기록 없음"}
+              {/* 상세 정보 */}
+              <div className="space-y-3 sm:space-y-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 text-xs sm:text-sm">
+                  <div className="p-2 sm:p-3 bg-muted rounded-lg">
+                    <div className="font-medium text-foreground">전화번호</div>
+                    <div className="text-muted-foreground mt-1">
+                      {user.phone || "미등록"}
+                    </div>
+                  </div>
+                  <div className="p-2 sm:p-3 bg-muted rounded-lg">
+                    <div className="font-medium text-foreground">회사/기관</div>
+                    <div className="text-muted-foreground mt-1 break-all">
+                      {user.company_name || "미등록"}
+                    </div>
+                  </div>
+                  <div className="p-2 sm:p-3 bg-muted rounded-lg">
+                    <div className="font-medium text-foreground">
+                      사업자 유형
+                    </div>
+                    <div className="text-muted-foreground mt-1">
+                      {user.business_type || "미등록"}
+                    </div>
+                  </div>
+                  <div className="p-2 sm:p-3 bg-muted rounded-lg">
+                    <div className="font-medium text-foreground">회사 주소</div>
+                    <div className="text-muted-foreground mt-1 break-all">
+                      {user.company_address || "미등록"}
+                    </div>
                   </div>
                 </div>
-                <div className="p-2 sm:p-3 bg-muted rounded-lg text-xs sm:text-sm">
-                  <span className="font-medium text-foreground">가입일:</span>
-                  <div className="text-muted-foreground mt-1">
-                    {formatDateTime(user.created_at)}
+
+                {/* 시간 정보 */}
+                <div className="pt-2 sm:pt-4 border-t space-y-2 sm:space-y-3">
+                  <div className="p-2 sm:p-3 bg-muted rounded-lg text-xs sm:text-sm">
+                    <span className="font-medium text-foreground">
+                      마지막 로그인:
+                    </span>
+                    <div className="text-muted-foreground mt-1">
+                      {user.last_login_at
+                        ? formatDateTime(user.last_login_at)
+                        : "로그인 기록 없음"}
+                    </div>
                   </div>
-                </div>
-                <div className="p-2 sm:p-3 bg-muted rounded-lg text-xs sm:text-sm">
-                  <span className="font-medium text-foreground">
-                    정보 수정일:
-                  </span>
-                  <div className="text-muted-foreground mt-1">
-                    {formatDateTime(user.updated_at)}
+                  <div className="p-2 sm:p-3 bg-muted rounded-lg text-xs sm:text-sm">
+                    <span className="font-medium text-foreground">가입일:</span>
+                    <div className="text-muted-foreground mt-1">
+                      {formatDateTime(user.created_at)}
+                    </div>
+                  </div>
+                  <div className="p-2 sm:p-3 bg-muted rounded-lg text-xs sm:text-sm">
+                    <span className="font-medium text-foreground">
+                      정보 수정일:
+                    </span>
+                    <div className="text-muted-foreground mt-1">
+                      {formatDateTime(user.updated_at)}
+                    </div>
                   </div>
                 </div>
               </div>
             </div>
+          </ScrollArea>
+        ) : (
+          <div className="p-8 text-center text-muted-foreground">
+            사용자 정보가 없습니다.
           </div>
-        </ScrollArea>
+        )}
+        <div className="mt-4 flex justify-end">
+          <Button
+            variant="destructive"
+            onClick={handleUnlock}
+            disabled={loading || !user}
+          >
+            {loading ? "해제 중..." : "계정 잠금 해제"}
+          </Button>
+        </div>
       </DialogContent>
     </Dialog>
   );
