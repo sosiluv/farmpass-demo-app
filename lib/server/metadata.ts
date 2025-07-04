@@ -1,22 +1,27 @@
 import { getSystemSettings } from "../cache/system-settings-cache";
 import { DEFAULT_SYSTEM_SETTINGS } from "../types/settings";
 import { devLog } from "@/lib/utils/logging/dev-logger";
-import { createClient } from "@/lib/supabase/server";
 
 export async function getMetadataSettings() {
   try {
+    // 캐시를 무효화하고 최신 설정을 가져옴
     const settings = await getSystemSettings();
 
+    devLog.info("Fetched system settings for metadata:", {
+      hasFavicon: !!settings?.favicon,
+      faviconPath: settings?.favicon,
+    });
+
     let faviconPath: string;
-    if (settings?.favicon) {
-      if (settings.favicon.startsWith("http")) {
-        faviconPath = settings.favicon;
-      } else {
-        faviconPath = `https://rmlgxaeugjeckllaimny.supabase.co/storage/v1/object/public/profiles/${settings.favicon}`;
-      }
+    if (settings?.favicon && settings.favicon.trim() !== "") {
+      // DB에 이미 완전한 URL이 저장되어 있음
+      faviconPath = settings.favicon;
     } else {
+      // 기본 파비콘 사용 (public 폴더의 favicon.ico)
       faviconPath = "/favicon.ico";
     }
+
+    devLog.info("Final favicon path:", faviconPath);
 
     return {
       siteName: settings?.siteName || DEFAULT_SYSTEM_SETTINGS.siteName,

@@ -15,25 +15,44 @@ import { ErrorBoundary } from "@/components/error/error-boundary";
 import { Analytics } from "@vercel/analytics/react";
 import Script from "next/script";
 import { FarmsProvider } from "@/components/providers/farms-provider";
-import { DynamicFavicon } from "@/components/common/DynamicFavicon";
 
 const inter = Inter({ subsets: ["latin"] });
 
 export async function generateMetadata(): Promise<Metadata> {
   const settings = await getMetadataSettings();
 
+  // 파일 확장자에 따라 MIME 타입 결정 (파비콘은 ICO, PNG만 지원)
+  const getMimeType = (url: string): string => {
+    const extension = url.split(".").pop()?.toLowerCase();
+    switch (extension) {
+      case "ico":
+        return "image/x-icon";
+      case "png":
+        return "image/png";
+      default:
+        return "image/png"; // 기본값
+    }
+  };
+
+  const mimeType = getMimeType(settings.favicon);
+
   return {
     title: settings.siteName,
     description: settings.siteDescription,
     icons: {
-      icon: settings.favicon,
+      icon: [
+        { url: settings.favicon, sizes: "32x32", type: mimeType },
+        { url: settings.favicon, sizes: "16x16", type: mimeType },
+      ],
+      shortcut: settings.favicon,
+      apple: settings.favicon,
     },
     other: {
       "mobile-web-app-capable": "yes",
       "apple-mobile-web-app-capable": "yes",
       "apple-mobile-web-app-status-bar-style": "default",
-      "apple-mobile-web-app-title": "FarmPass",
-      "application-name": "FarmPass",
+      "apple-mobile-web-app-title": settings.siteName,
+      "application-name": settings.siteName,
       "msapplication-TileColor": "#10b981",
       "msapplication-config": "none",
     },
@@ -54,7 +73,6 @@ export default async function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const settings = await getMetadataSettings();
   return (
     <html lang="ko" suppressHydrationWarning>
       <head>
@@ -78,7 +96,6 @@ export default async function RootLayout({
           title="시스템 오류"
           description="예상치 못한 오류가 발생했습니다. 페이지를 새로고침하거나 잠시 후 다시 시도해주세요."
         >
-          <DynamicFavicon faviconUrl={settings.favicon} />
           <PWAUpdater />
           <AuthProvider>
             <ToastPositionProvider>

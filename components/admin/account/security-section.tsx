@@ -333,29 +333,29 @@ export function SecuritySection({
               {loginActivity.map((activity) => (
                 <div
                   key={activity.id}
-                  className={`flex items-center justify-between p-4 rounded-lg ${
+                  className={`flex flex-col sm:flex-row sm:items-center sm:justify-between p-4 rounded-lg ${
                     activity.isCurrent
                       ? "bg-primary/10 border border-primary/20"
                       : "bg-muted"
                   }`}
                 >
-                  <div className="flex items-center space-x-4">
-                    <activity.icon className="h-5 w-5 text-primary" />
-                    <div>
-                      <div className="font-medium">
+                  <div className="flex items-start sm:items-center space-x-3 sm:space-x-4 mb-3 sm:mb-0">
+                    <activity.icon className="h-5 w-5 text-primary flex-shrink-0 mt-0.5 sm:mt-0" />
+                    <div className="min-w-0 flex-1">
+                      <div className="font-medium text-sm sm:text-base break-words">
                         {activity.device}
                         {activity.isCurrent && (
-                          <span className="ml-2 text-xs bg-primary/20 text-primary px-2 py-1 rounded-full">
+                          <span className="ml-2 text-xs bg-primary/20 text-primary px-2 py-1 rounded-full whitespace-nowrap">
                             현재 세션
                           </span>
                         )}
                       </div>
-                      <div className="text-sm text-muted-foreground">
+                      <div className="text-xs sm:text-sm text-muted-foreground mt-1">
                         {activity.location}
                       </div>
                     </div>
                   </div>
-                  <div className="text-sm text-muted-foreground">
+                  <div className="text-xs sm:text-sm text-muted-foreground text-right sm:text-left">
                     {activity.time}
                   </div>
                 </div>
@@ -363,48 +363,56 @@ export function SecuritySection({
             </div>
 
             <div className="space-y-4">
-              <div className="flex items-center justify-between">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-2 sm:space-y-0">
                 <div className="space-y-1">
-                  <div className="font-medium">마지막 로그인</div>
-                  <div className="text-sm text-muted-foreground">
+                  <div className="font-medium text-sm sm:text-base">
+                    마지막 로그인
+                  </div>
+                  <div className="text-xs sm:text-sm text-muted-foreground break-words">
                     {profile?.last_login_at
                       ? new Date(profile.last_login_at).toLocaleString()
                       : "기록 없음"}
                   </div>
                 </div>
-                <Clock className="h-5 w-5 text-muted-foreground" />
+                <Clock className="h-5 w-5 text-muted-foreground flex-shrink-0" />
               </div>
 
-              <div className="flex items-center justify-between">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-2 sm:space-y-0">
                 <div className="space-y-1">
-                  <div className="font-medium">비밀번호 변경</div>
-                  <div className="text-sm text-muted-foreground">
+                  <div className="font-medium text-sm sm:text-base">
+                    비밀번호 변경
+                  </div>
+                  <div className="text-xs sm:text-sm text-muted-foreground break-words">
                     {profile?.password_changed_at
                       ? new Date(profile.password_changed_at).toLocaleString()
                       : "기록 없음"}
                   </div>
                 </div>
-                <History className="h-5 w-5 text-muted-foreground" />
+                <History className="h-5 w-5 text-muted-foreground flex-shrink-0" />
               </div>
 
-              <div className="flex items-center justify-between">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-2 sm:space-y-0">
                 <div className="space-y-1">
-                  <div className="font-medium">로그인 횟수</div>
-                  <div className="text-sm text-muted-foreground">
+                  <div className="font-medium text-sm sm:text-base">
+                    로그인 횟수
+                  </div>
+                  <div className="text-xs sm:text-sm text-muted-foreground">
                     {profile?.login_count || 0}회
                   </div>
                 </div>
-                <CheckCircle2 className="h-5 w-5 text-muted-foreground" />
+                <CheckCircle2 className="h-5 w-5 text-muted-foreground flex-shrink-0" />
               </div>
 
-              <div className="flex items-center justify-between">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-2 sm:space-y-0">
                 <div className="space-y-1">
-                  <div className="font-medium">계정 상태</div>
-                  <div className="text-sm text-muted-foreground">
+                  <div className="font-medium text-sm sm:text-base">
+                    계정 상태
+                  </div>
+                  <div className="text-xs sm:text-sm text-muted-foreground">
                     {profile?.is_active ? "활성화" : "비활성화"}
                   </div>
                 </div>
-                <Shield className="h-5 w-5 text-muted-foreground" />
+                <Shield className="h-5 w-5 text-muted-foreground flex-shrink-0" />
               </div>
             </div>
           </CardContent>

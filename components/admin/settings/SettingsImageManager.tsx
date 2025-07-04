@@ -1,9 +1,10 @@
+import { useUniversalImageManager } from "@/hooks/useUniversalImageManager";
 import { useCommonToast } from "@/lib/utils/notification/toast-messages";
 import { devLog } from "@/lib/utils/logging/dev-logger";
 import { useEffect, useRef } from "react";
-import { useUniversalImageManager } from "@/hooks/useUniversalImageManager";
 import { supabase } from "@/lib/supabase/client";
 import type { SystemSettings } from "@/lib/types/settings";
+import { useSystemSettings } from "@/lib/hooks/use-system-settings";
 
 interface SettingsImageManagerProps {
   settings: SystemSettings;
@@ -35,16 +36,15 @@ export function useSettingsImageManager({
   settings,
   onSettingsUpdate,
 }: SettingsImageManagerProps) {
-  const { showCustomSuccess, showCustomError } = useCommonToast();
+  const { showCustomError, showCustomSuccess } = useCommonToast();
+  const { invalidateCache } = useSystemSettings();
 
-  // 시스템 설정 강제 새로고침
+  // 설정 새로고침 함수
   const refreshSettings = async () => {
-    const { data, error } = await supabase
-      .from("system_settings")
-      .select("*")
-      .single();
-    if (!error && data) {
-      onSettingsUpdate(data);
+    try {
+      await invalidateCache(); // 서버 캐시와 SWR 캐시 모두 무효화
+    } catch (error) {
+      devLog.error("Failed to refresh settings:", error);
     }
   };
 

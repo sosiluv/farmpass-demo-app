@@ -121,7 +121,7 @@ BEGIN
         level, action, message, user_id, user_email, user_ip, user_agent,
         resource_type, metadata, created_at
       ) VALUES (
-        'info', 'VISITOR_DELETE',
+        'info', 'VISITOR_DELETED',
         format('visitor delete: 만료된 데이터 자동 정리 (%s건)', v_deleted_count),
         v_admin_user_id,
         COALESCE(v_admin_email, 'admin@system'),
@@ -305,13 +305,13 @@ BEGIN
         level, action, message, user_id, user_email, user_ip, user_agent,
         resource_type, metadata, created_at
       ) VALUES (
-        'info', 'SYSTEM_LOG_DELETE',
-        format('system_log delete: 만료된 로그 자동 정리 (%s건)', v_deleted_count),
+        'info', 'LOG_DELETE',
+        format('log delete: 만료된 로그 자동 정리 (%s건)', v_deleted_count),
         v_admin_user_id,
         COALESCE(v_admin_email, 'admin@system'),
-        'system-internal', 'PostgreSQL Auto Log Cleanup Service', 'system_log',
+        'system-internal', 'PostgreSQL Auto Log Cleanup Service', 'system',
         jsonb_build_object(
-          'resource_type', 'system_log',
+          'resource_type', 'system',
           'action', 'DELETE',
           'record_id', null,
           'changes', jsonb_build_object(
@@ -687,7 +687,7 @@ SELECT
   metadata->>'deleted_count' as deleted_count,
   created_at
 FROM system_logs 
-WHERE action IN ('SCHEDULED_JOB', 'VISITOR_DELETE', 'SYSTEM_LOG_DELETE')
+WHERE action IN ('SCHEDULED_JOB', 'VISITOR_DELETED', 'LOG_DELETE')
   AND (metadata->>'job_name' LIKE '%cleanup%' OR action LIKE '%_DELETE')
 ORDER BY created_at DESC
 LIMIT 20;
@@ -797,14 +797,14 @@ BEGIN
     COALESCE(SUM((metadata->>'deleted_count')::INTEGER), 0)
   INTO v_system_logs_cleaned
   FROM system_logs 
-  WHERE action = 'SYSTEM_LOG_DELETE'
+  WHERE action = 'LOG_DELETE'
     AND created_at BETWEEN v_period_start AND v_period_end;
 
   SELECT 
     COALESCE(SUM((metadata->'changes'->>'deleted_count')::INTEGER), 0)
   INTO v_visitor_entries_cleaned
   FROM system_logs 
-  WHERE action = 'VISITOR_DELETE'
+  WHERE action = 'VISITOR_DELETED'
     AND created_at BETWEEN v_period_start AND v_period_end;
 
   -- 현재 데이터 개수 조회

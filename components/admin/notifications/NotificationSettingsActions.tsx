@@ -1,6 +1,5 @@
 import { Button } from "@/components/ui/button";
 import { useMutation } from "@/hooks/common/useApiData";
-import { devLog } from "@/lib/utils/logging/dev-logger";
 import { useNotificationSettingsStore } from "@/store/use-notification-settings-store";
 import { useCommonToast } from "@/lib/utils/notification/toast-messages";
 import { Save } from "lucide-react";

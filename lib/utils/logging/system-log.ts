@@ -2,6 +2,10 @@ import { getSystemSetting } from "@/lib/cache/system-settings-cache";
 import { devLog } from "@/lib/utils/logging/dev-logger";
 import { normalizeIP } from "@/lib/server/ip-helpers";
 import { slackNotifier } from "@/lib/slack";
+import {
+  createServiceRoleClient,
+  validateServiceRoleConfig,
+} from "@/lib/supabase/service-role";
 
 /**
  * 통합 로깅 시스템 - 단순화된 인터페이스
@@ -45,6 +49,29 @@ export interface ApiResult {
 const logCache = new Map<string, number>();
 const CACHE_DURATION = 60000; // 60초
 
+// 환경 변수 로드 상태 확인
+let isConfigValidated = false;
+
+// 로그 레벨 우선순위
+const LOG_LEVEL_PRIORITY: Record<LogLevel, number> = {
+  debug: 0,
+  info: 1,
+  warn: 2,
+  error: 3,
+};
+
+async function validateConfig() {
+  if (!isConfigValidated) {
+    isConfigValidated = validateServiceRoleConfig();
+    if (!isConfigValidated) {
+      devLog.warn(
+        "Service Role 환경 변수가 설정되지 않아 로깅이 비활성화됩니다."
+      );
+    }
+  }
+  return isConfigValidated;
+}
+
 /**
  * 중복 로그 방지 헬퍼
  */
@@ -59,14 +86,6 @@ function shouldSkipDuplicate(key: string): boolean {
   logCache.set(key, now);
   return false;
 }
-
-// 기존 시스템과 동일한 로그 레벨 우선순위
-const LOG_LEVEL_PRIORITY = {
-  debug: 1,
-  info: 2,
-  warn: 3,
-  error: 4,
-} as const;
 
 /**
  * 기존 시스템 설정의 로그 레벨 필터링 함수 재사용
@@ -96,6 +115,13 @@ async function createLog(
   metadata: LogMetadata = {}
 ): Promise<void> {
   try {
+    // 환경 변수 검증 - 설정되지 않은 경우 조용히 리턴
+    const isConfigValid = await validateConfig();
+    if (!isConfigValid) {
+      devLog.log("Logging skipped due to invalid configuration");
+      return;
+    }
+
     const shouldLog = await shouldLogMessage(level);
     devLog.log("[DEBUG] shouldLogMessage", { level, action, shouldLog });
     if (!shouldLog) {
@@ -152,9 +178,7 @@ async function createLog(
             }),
     };
     // 서버 환경: 서비스 롤 키로 직접 insert
-    const { createServiceRoleClient } = await import(
-      "@/lib/supabase/service-role"
-    );
+
     const supabase = createServiceRoleClient();
     const { error } = await supabase.from("system_logs").insert(logData);
     if (error) {
@@ -595,13 +619,24 @@ export class PerformanceMonitor {
 
 export const logSystemResources = async (): Promise<void> => {
   try {
-    // 브라우저 환경에서는 process가 undefined이거나 memoryUsage 함수가 없음
-    if (
-      typeof process === "undefined" ||
-      typeof process.memoryUsage !== "function"
-    ) {
+    // Edge Runtime에서는 Node.js API를 사용할 수 없음
+    // 안전한 방법으로 Node.js 환경인지 확인
+    let isNodeEnv = false;
+
+    try {
+      isNodeEnv =
+        typeof process !== "undefined" &&
+        typeof process.memoryUsage === "function" &&
+        typeof process.env?.NEXT_RUNTIME !== "string";
+    } catch {
+      // Edge Runtime에서 process.env 접근 시 에러 발생 가능
+      isNodeEnv = false;
+    }
+
+    if (!isNodeEnv) {
+      // Edge Runtime 또는 브라우저 환경에서는 스킵
       devLog.log(
-        "[SYSTEM_RESOURCES] 브라우저 환경에서 시스템 리소스 모니터링 스킵"
+        "[SYSTEM_RESOURCES] Edge Runtime/브라우저 환경에서 시스템 리소스 모니터링 스킵"
       );
       return;
     }
@@ -639,6 +674,12 @@ export const isAuditLog = (log: any): boolean => {
     "LOGOUT_SUCCESS",
     "LOGOUT_ERROR",
     "SESSION_EXPIRED",
+    "PASSWORD_RESET_REQUESTED",
+    "PASSWORD_RESET_REQUEST_FAILED",
+    "PASSWORD_RESET_SYSTEM_ERROR",
+    "LOGIN_ATTEMPTS_RESET",
+    "ACCOUNT_LOCKED",
+    "ACCOUNT_UNLOCKED",
 
     // 사용자 계정 관리
     "USER_CREATED",
@@ -651,8 +692,6 @@ export const isAuditLog = (log: any): boolean => {
     "PASSWORD_CHANGE_FAILED",
     "PASSWORD_RESET",
     "PASSWORD_RESET_FAILED",
-    "ACCOUNT_LOCKED",
-    "ACCOUNT_UNLOCKED",
 
     // 농장 관리
     "FARM_CREATED",
@@ -665,6 +704,7 @@ export const isAuditLog = (log: any): boolean => {
     "FARM_DELETE",
     "FARM_DELETE_FAILED",
     "FARM_READ",
+    "FARM_READ_FAILED",
     "FARM_ACCESS",
     "FARM_STATUS_CHANGED",
     "FARM_FETCH_FAILED",
@@ -703,17 +743,28 @@ export const isAuditLog = (log: any): boolean => {
     "CREATION_FAILED",
     "UPDATE_FAILED",
     "DELETE_FAILED",
+    "SESSION_VALID",
+    "SESSION_NOT_FOUND",
+    "RECORD_NOT_FOUND",
 
     // 시스템 설정
+    "SETTINGS_READ",
     "SETTINGS_UPDATED",
     "SETTINGS_CHANGE",
     "SETTINGS_BULK_UPDATE",
     "SETTINGS_ACCESS_DENIED",
     "CONFIGURATION_ERROR",
+    "settings_unauthorized_access",
 
     // 푸시 알림
+    "VAPID_KEY_CREATED",
+    "VAPID_KEY_CREATE_FAILED",
+    "VAPID_KEY_RETRIEVED",
+    "VAPID_KEY_RETRIEVE_FAILED",
     "PUSH_SUBSCRIPTION_CREATED",
     "PUSH_SUBSCRIPTION_DELETED",
+    "PUSH_SUBSCRIPTION_CLEANUP_STARTED",
+    "PUSH_SUBSCRIPTION_CLEANUP_COMPLETED",
     "PUSH_NOTIFICATION_SENT",
     "PUSH_NOTIFICATION_NO_SUBSCRIBERS",
     "PUSH_NOTIFICATION_FILTERED_OUT",
@@ -725,8 +776,16 @@ export const isAuditLog = (log: any): boolean => {
     "NOTIFICATION_VAPID_KEY_RETRIEVED",
     "NOTIFICATION_SUBSCRIPTION_SUCCESS",
 
+    // 프로필 관리
+    "PROFILE_READ",
+    "PROFILE_READ_FAILED",
+    "PROFILE_UPDATE",
+    "PROFILE_UPDATE_FAILED",
+
     // 관리 기능
-    "LOG_CLEANUP",
+    "BROADCAST_SENT",
+    "BROADCAST_FAILED",
+    "LOG_DELETE",
     "LOG_EXPORT",
     "LOG_EXPORT_ERROR",
     "LOG_CLEANUP_ERROR",
@@ -739,6 +798,9 @@ export const isAuditLog = (log: any): boolean => {
     "ADMIN_STATS_GENERATION_STARTED",
     "ADMIN_STATS_GENERATION_COMPLETED",
     "ADMIN_STATS_GENERATION_FAILED",
+
+    // 스케줄 작업
+    "SCHEDULED_JOB",
 
     // 애플리케이션 라이프사이클
     "PAGE_VIEW",
@@ -763,6 +825,9 @@ export const isAuditLog = (log: any): boolean => {
     "BULK_OPERATION",
     "EXPORT_OPERATION",
     "IMPORT_OPERATION",
+
+    // 모니터링
+    "monitoring_data_unavailable",
   ];
 
   const upperAction = log.action?.toUpperCase();
@@ -787,6 +852,8 @@ export const isErrorLog = (log: any): boolean => {
     "USER_DELETE_FAILED",
     "PASSWORD_CHANGE_FAILED",
     "PASSWORD_RESET_FAILED",
+    "PASSWORD_RESET_REQUEST_FAILED",
+    "PASSWORD_RESET_SYSTEM_ERROR",
     "LOGIN_FAILED",
     "LOGIN_ATTEMPT_FAILED",
     "LOGIN_VALIDATION_ERROR",
@@ -796,6 +863,7 @@ export const isErrorLog = (log: any): boolean => {
     "FARM_CREATE_FAILED",
     "FARM_UPDATE_FAILED",
     "FARM_DELETE_FAILED",
+    "FARM_READ_FAILED",
     "FARM_ACCESS_DENIED",
     "FARM_FETCH_FAILED",
 
@@ -815,6 +883,8 @@ export const isErrorLog = (log: any): boolean => {
     "CREATION_FAILED",
     "UPDATE_FAILED",
     "DELETE_FAILED",
+    "SESSION_NOT_FOUND",
+    "RECORD_NOT_FOUND",
 
     // API 및 데이터베이스 오류
     "API_ERROR",
@@ -866,11 +936,14 @@ export const isErrorLog = (log: any): boolean => {
     "SETTINGS_ACCESS_DENIED",
 
     // 알림 관련 오류
+    "VAPID_KEY_CREATE_FAILED",
+    "VAPID_KEY_RETRIEVE_FAILED",
     "PUSH_NOTIFICATION_ERROR",
     "PUSH_NOTIFICATION_SEND_FAILED",
     "PUSH_NOTIFICATION_NO_SUBSCRIBERS",
     "PUSH_NOTIFICATION_FILTERED_OUT",
     "BROADCAST_NOTIFICATION_FAILED",
+    "BROADCAST_FAILED",
     "NOTIFICATION_SETTINGS_CREATION_FAILED",
     "SUBSCRIPTION_ERROR",
 
@@ -894,6 +967,10 @@ export const isErrorLog = (log: any): boolean => {
     "FATAL_ERROR",
     "SERVICE_UNAVAILABLE",
     "MAINTENANCE_MODE_ERROR",
+
+    // 프로필 관리 오류
+    "PROFILE_READ_FAILED",
+    "PROFILE_UPDATE_FAILED",
   ];
 
   const upperAction = log.action?.toUpperCase();
@@ -1036,11 +1113,7 @@ export const getLogCategory = (log: any): string => {
   }
 
   // 로그 관리 관련
-  if (
-    upperAction?.includes("LOG_") ||
-    upperAction?.includes("CLEANUP") ||
-    upperAction?.includes("AUDIT")
-  ) {
+  if (upperAction?.includes("LOG_") || upperAction?.includes("AUDIT")) {
     return "log";
   }
 
@@ -1055,41 +1128,17 @@ export const getLogCategory = (log: any): string => {
     return "application";
   }
 
+  // 스케줄 작업 관련
+  if (upperAction?.includes("SCHEDULED_JOB")) {
+    return "system";
+  }
+
   // 에러 관련 (다른 카테고리에 속하지 않는 경우)
   if (isErrorLog(log)) {
     return "error";
   }
 
   return "system";
-};
-
-/**
- * 일반적인 시스템 액션인지 확인하는 헬퍼 함수
- */
-const isCommonSystemAction = (action: string): boolean => {
-  const commonActions = [
-    "SYSTEM_START",
-    "SYSTEM_STOP",
-    "SYSTEM_RESTART",
-    "HEALTH_CHECK",
-    "HEARTBEAT",
-    "PING",
-    "CACHE_CLEAR",
-    "CACHE_UPDATE",
-    "CACHE_HIT",
-    "CACHE_MISS",
-    "MAINTENANCE_START",
-    "MAINTENANCE_END",
-    "DEBUG_INFO",
-    "INFO",
-    "WARN",
-    "ERROR",
-    "DEBUG",
-  ];
-
-  return commonActions.some((common) =>
-    action.toUpperCase().includes(common.toUpperCase())
-  );
 };
 
 // 기본 내보내기 (새로운 프로젝트에서 사용)

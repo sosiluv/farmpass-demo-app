@@ -37,13 +37,23 @@ export function useSystemSettings() {
     error,
     mutate,
   } = useSWR<SystemSettings>("/api/settings", fetcher, {
-    revalidateOnFocus: false, // 포커스시 재검증 비활성화
+    revalidateOnFocus: false, // 포커스시 재검증 비활성화 (중복 호출 방지)
     revalidateOnReconnect: false, // 재연결시 재검증 비활성화
-    refreshInterval: 300000, // 5분마다 자동 재검증
-    dedupingInterval: 10000, // 10초 내 중복 요청 방지 (5초에서 10초로 증가)
-    errorRetryCount: 2, // 오류 시 재시도 횟수 제한
-    errorRetryInterval: 3000, // 재시도 간격 3초
+    refreshInterval: 0, // 자동 재검증 비활성화
+    dedupingInterval: 10000, // 10초 내 중복 요청 방지 (증가)
+    errorRetryCount: 1, // 오류 시 재시도 횟수 제한 (감소)
+    errorRetryInterval: 5000, // 재시도 간격 5초 (증가)
   });
+
+  // 즉시 캐시 무효화 함수
+  const invalidateCache = async () => {
+    try {
+      await fetch("/api/settings/invalidate-cache", { method: "POST" });
+      await mutate(); // SWR 캐시도 무효화
+    } catch (error) {
+      devLog.error("Failed to invalidate cache:", error);
+    }
+  };
 
   return {
     settings: settings || {
@@ -55,5 +65,6 @@ export function useSystemSettings() {
     loading: !settings && !error,
     error,
     refetch: () => mutate(),
+    invalidateCache,
   };
 }
