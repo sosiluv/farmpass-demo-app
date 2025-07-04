@@ -3,7 +3,6 @@
 import { useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { RefreshCw, Zap } from "lucide-react";
-import { createErrorLog } from "@/lib/utils/logging/system-log";
 import { devLog } from "@/lib/utils/logging/dev-logger";
 
 interface ErrorProps {
@@ -13,12 +12,6 @@ interface ErrorProps {
 
 export default function Error({ error, reset }: ErrorProps) {
   useEffect(() => {
-    createErrorLog("GLOBAL_ERROR", error, "전역 에러 발생").catch(
-      (logError) => {
-        devLog.error("Failed to log global error:", logError);
-      }
-    );
-
     devLog.error("Global error occurred:", error);
   }, [error]);
 

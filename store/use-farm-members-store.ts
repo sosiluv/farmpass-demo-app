@@ -1,7 +1,6 @@
 import { create } from "zustand";
 import type { FarmMember } from "@/lib/types";
 import { devLog } from "@/lib/utils/logging/dev-logger";
-import { logApiError } from "@/lib/utils/logging/system-log";
 
 interface FarmMembersState {
   members: FarmMember[];
@@ -113,6 +112,7 @@ export const useFarmMembersStore = create<FarmMembersState>((set, get) => ({
       // finally 블록처럼 ref 값들 초기화
       state.isFetchingRef.current = false;
       set({ error: error as Error, loading: false });
+      devLog.error("Farm members fetch error:", error);
       throw error;
     }
   },
@@ -208,6 +208,7 @@ export const useFarmMembersStore = create<FarmMembersState>((set, get) => ({
       );
     } catch (error) {
       set({ error: error as Error, loading: false });
+      devLog.error("Member role update error:", error);
       throw error;
     }
   },
@@ -234,6 +235,7 @@ export const useFarmMembersStore = create<FarmMembersState>((set, get) => ({
       devLog.success("Member removed successfully via API route:", memberId);
     } catch (error) {
       set({ error: error as Error, loading: false });
+      devLog.error("Member removal error:", error);
       throw error;
     }
   },

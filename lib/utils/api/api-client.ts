@@ -6,7 +6,6 @@
  * 에러 처리, 로딩 상태, 캐시 관리 통합
  */
 
-import { logApiError } from "@/lib/utils/logging/system-log";
 import { devLog } from "../logging/dev-logger";
 
 // =================================
@@ -239,18 +238,12 @@ export class ApiClient {
               `요청이 너무 많습니다. ${retryAfter}초 후에 다시 시도해주세요.`
             );
 
-            // API 에러 로그 기록
-            await logApiError(url, method, error, userId);
-
             throw error;
           }
 
           const error = new Error(
             errorData.error || `HTTP ${response.status}: ${response.statusText}`
           );
-
-          // API 에러 로그 기록
-          await logApiError(url, method, error, userId);
 
           throw error;
         }

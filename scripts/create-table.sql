@@ -475,6 +475,12 @@ GRANT EXECUTE ON ALL FUNCTIONS IN SCHEMA public TO authenticated;
 GRANT USAGE ON SCHEMA public TO anon;
 GRANT SELECT ON public.profiles TO anon;
 
+-- service_role 유저에게 public 스키마 사용 권한 부여
+GRANT USAGE ON SCHEMA public TO service_role;
+
+-- service_role 유저에게 system_logs 테이블에 대한 모든 권한 부여
+GRANT INSERT, SELECT, UPDATE, DELETE ON TABLE public.system_logs TO service_role;
+
 -- ============================================
 -- 11단계: 확인 쿼리들
 -- ============================================

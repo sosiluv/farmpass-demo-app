@@ -5,6 +5,7 @@ import { getSystemSettings } from "@/lib/cache/system-settings-cache";
 import { devLog } from "@/lib/utils/logging/dev-logger";
 import { logApiError } from "@/lib/utils/logging/system-log";
 import { getClientIP, getUserAgent } from "@/lib/server/ip-helpers";
+import { createSystemLog } from "@/lib/utils/logging/system-log";
 
 // VAPID 키 생성
 export async function POST(request: NextRequest) {
@@ -43,8 +44,19 @@ export async function POST(request: NextRequest) {
     // VAPID 키 생성
     const vapidKeys = webpush.generateVAPIDKeys();
 
-    // 시스템 로그 기록 (선택사항)
-    devLog.log(`VAPID 키 생성됨 - 사용자: ${user.id}`);
+    // 시스템 로그 기록 (성공)
+    await createSystemLog(
+      "VAPID_KEY_CREATED",
+      `VAPID 키가 생성되었습니다. (사용자: ${user.id})`,
+      "info",
+      user.id,
+      "system",
+      undefined,
+      undefined,
+      user.email,
+      clientIP,
+      userAgent
+    );
 
     return NextResponse.json(
       {
@@ -58,6 +70,20 @@ export async function POST(request: NextRequest) {
     );
   } catch (error) {
     devLog.error("VAPID 키 생성 오류:", error);
+
+    // 시스템 로그 기록 (실패)
+    await createSystemLog(
+      "VAPID_KEY_CREATE_FAILED",
+      `VAPID 키 생성 실패.`,
+      "error",
+      undefined,
+      "system",
+      undefined,
+      undefined,
+      undefined,
+      clientIP,
+      userAgent
+    );
 
     // API 에러 로그 기록
     await logApiError(
@@ -103,17 +129,58 @@ export async function GET(request: NextRequest) {
 
     // 3. 둘 다 없으면 404 반환
     if (!publicKey) {
+      // 시스템 로그 기록 (조회 실패)
+      await createSystemLog(
+        "VAPID_KEY_RETRIEVE_FAILED",
+        `VAPID 키가 설정되지 않았습니다.`,
+        "warn",
+        undefined,
+        "system",
+        undefined,
+        undefined,
+        undefined,
+        clientIP,
+        userAgent
+      );
       return NextResponse.json(
         { error: "VAPID 키가 설정되지 않았습니다." },
         { status: 404 }
       );
     }
 
+    // 시스템 로그 기록 (조회 성공)
+    await createSystemLog(
+      "VAPID_KEY_RETRIEVED",
+      `VAPID 키가 조회되었습니다.`,
+      "info",
+      undefined,
+      "system",
+      undefined,
+      undefined,
+      undefined,
+      clientIP,
+      userAgent
+    );
+
     return NextResponse.json({
       publicKey: settings.vapidPublicKey,
     });
   } catch (error) {
     devLog.error("VAPID 키 조회 실패:", error);
+
+    // 시스템 로그 기록 (조회 실패)
+    await createSystemLog(
+      "VAPID_KEY_RETRIEVE_FAILED",
+      `VAPID 키 조회 실패.`,
+      "error",
+      undefined,
+      "system",
+      undefined,
+      undefined,
+      undefined,
+      clientIP,
+      userAgent
+    );
 
     // API 에러 로그 기록
     await logApiError(

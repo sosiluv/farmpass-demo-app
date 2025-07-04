@@ -4,6 +4,7 @@ import {
   deleteImageUniversal,
 } from "@/lib/utils/media/image-upload";
 import { supabase } from "@/lib/supabase/client";
+import { MAX_UPLOAD_SIZE_MB } from "@/lib/constants/upload";
 
 interface UseUniversalImageManagerOptions {
   dbTable: string; // 예: "profiles", "system_settings"
@@ -61,7 +62,7 @@ export function useUniversalImageManager(
         bucket: options.storageBucket,
         path: fileName,
         allowedTypes: options.allowedTypes,
-        maxSizeMB: 5,
+        maxSizeMB: MAX_UPLOAD_SIZE_MB,
       });
       // 3. DB 업데이트
       const { error, data } = await supabase

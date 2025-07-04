@@ -354,9 +354,34 @@ export async function GET(request: NextRequest) {
       ...(expiredCount > 0 && { expiredCount }),
     };
 
+    // 구독 조회 성공 시 시스템 로그 기록
+    await createSystemLog(
+      "PUSH_SUBSCRIPTION_GET",
+      `사용자가 푸시 알림 구독을 조회했습니다.`,
+      "info",
+      user.id,
+      "system",
+      undefined,
+      undefined,
+      user.email,
+      clientIP,
+      userAgent
+    );
+
     return NextResponse.json(response, { status: 200 });
   } catch (error) {
     devLog.error("푸시 구독 조회 API 오류:", error);
+    // API 에러 로그 기록
+    await logApiError(
+      "/api/push/subscription",
+      "GET",
+      error instanceof Error ? error : String(error),
+      undefined,
+      {
+        ip: clientIP,
+        userAgent,
+      }
+    );
     return NextResponse.json(
       { error: "서버 오류가 발생했습니다." },
       { status: 500 }
@@ -434,6 +459,17 @@ export async function DELETE(request: NextRequest) {
     );
   } catch (error) {
     devLog.error("푸시 구독 해제 API 오류:", error);
+    // API 에러 로그 기록
+    await logApiError(
+      "/api/push/subscription",
+      "DELETE",
+      error instanceof Error ? error : String(error),
+      undefined,
+      {
+        ip: clientIP,
+        userAgent,
+      }
+    );
     return NextResponse.json(
       { error: "서버 오류가 발생했습니다." },
       { status: 500 }

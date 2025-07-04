@@ -2,7 +2,6 @@
 
 import React, { Component, ReactNode } from "react";
 import { AdminError } from "./admin-error";
-import { createErrorLog } from "@/lib/utils/logging/system-log";
 import { devLog } from "@/lib/utils/logging/dev-logger";
 
 interface Props {
@@ -44,16 +43,6 @@ export class ErrorBoundary extends Component<Props, State> {
       error.message.includes("CACHE") ||
       error.stack?.includes("cache") ||
       error.stack?.includes("CACHE");
-
-    // 에러 로그 생성
-    createErrorLog(
-      "REACT_ERROR_BOUNDARY",
-      error,
-      `React Error Boundary에서 에러 포착: 컴포넌트 렌더링 중 오류: ${error.message} (에러 횟수: ${newErrorCount})`,
-      undefined
-    ).catch((logError) => {
-      devLog.error("Failed to log error boundary error:", logError);
-    });
 
     // 캐시 관련 에러인 경우 추가 로그
     if (isCacheError) {

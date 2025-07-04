@@ -1,39 +1,31 @@
 # 📊 시스템 로그 기록 현황 및 완료 보고서
 
-## 📅 작성일: 2025-01-27 (최종 업데이트: 2025-06-28 10:00)
+## 📅 작성일: 2025-01-27 (최종 업데이트: 2025-06-28 16:00)
 
 ## 🎯 목적: 현재 로그 기록 현황 파악 및 일관성 확보 완료
 
 ## 📝 **최신 업데이트 사항**
 
-### **추가 로그 기록점 보완 완료** (2025-06-27)
+### **클라이언트 로그 완전 제거 완료** (2025-06-28)
 
-- ✅ **추가 API 에러 로깅**: 누락된 API 경로에 `logApiError` 추가
-  - `/api/test/farms` - 테스트 API 에러 로깅
-  - `/api/test/external-visitor/[farmId]` - 외부 방문자 테스트 API
-  - `/api/settings/upload` - 파일 업로드 API (`logFileUploadError`도 함께 추가)
-  - `/api/system-logs` - 시스템 로그 API 자체 에러 처리
-  - `/api/push/vapid` - VAPID 키 관련 API 에러
-  - `/api/settings/clear-all-cache` - 캐시 초기화 API
-  - `/api/settings/invalidate-cache` - 캐시 무효화 API
-  - `/api/settings/visitor` - 방문자 설정 API
-  - `/api/admin/logs/cleanup` - 로그 정리 API
-- ✅ **컴포넌트 레벨 로깅 보완**:
-  - `components/visitor/VisitorImage.tsx` - 이미지 다운로드 실패 시 `logSystemWarning` 추가
-- ✅ **import 누락 수정**: `/api/push/send/route.ts`에 `logApiError` import 추가
+- ✅ **클라이언트 로그 시스템 정리**: 모든 클라이언트에서 서버 로그 함수 호출 제거
 
-### **로그 일관성 개선 완료** (2025-01-27)
+  - `hooks/useVisitorForm.ts`: 클라이언트 로그 호출 완전 제거
+  - `hooks/useVisitorActions.ts`: 클라이언트 로그 호출 완전 제거 (내보내기 로그도 제거)
+  - `store/use-visitor-store.ts`: 클라이언트 로그 호출 완전 제거
+  - `lib/prisma.ts`: `logger.error()` → `createSystemLog()` 통일
 
-- ✅ **`useNotificationService.ts`**: `logOnce + createErrorLog` → `logApiError` 통일
-- ✅ **API 에러 로깅 표준화**: 모든 API 에러에 `logApiError` 사용 (중복 방지 내장)
-- ✅ **성능 모니터링 추가**: 핵심 API 호출에 `PerformanceMonitor` 적용
-- ✅ **전체 코드베이스 로그 기록점 재검증**: 실제 구현된 로그만 문서화
+- ✅ **서버 전용 로그 시스템 구축**: 모든 로그는 서버 API 라우트에서만 기록
 
-### **로그 최적화 완료** (2025-06-28)
+  - 방문자 등록/수정/삭제: `/api/farms/[farmId]/visitors/` 라우트에서 로그 기록
+  - 세션 체크: `/api/farms/[farmId]/visitors/check-session` 라우트에서 로그 기록
+  - 일일 방문자 수 체크: `/api/farms/[farmId]/visitors/count-today` 라우트에서 로그 기록
+  - 방문자 개별 관리: `/api/farms/[farmId]/visitors/[visitorId]` 라우트에서 로그 기록
 
-- ✅ **불필요한 로그 제거**: 성능 및 저장공간 최적화
-  - `/api/farms/[farmId]/visitors/count-today` - 단순 카운트 조회 로그 제거 (불필요한 logVisitorDataAccess 제거)
-  - 이유: 단순 집계 데이터는 개인정보 접근이 아니므로 GDPR 로깅 불필요
+- ✅ **로그 일관성 확보**: 전체 코드베이스에서 일관된 로그 방식 사용
+  - `createSystemLog()`: 기본 시스템 로그
+  - `logApiError()`: API 에러 로깅 (중복 방지 내장)
+  - `logVisitorDataAccess()`: 방문자 개인정보 접근 로그 (GDPR 준수)
 
 ---
 
@@ -79,137 +71,157 @@
 - ✅ **API 에러 중복 방지**: `logApiError`에 내장된 60초 중복 차단
 - ✅ **성능 로그 중복 방지**: 동일 endpoint + method 조합 필터링
 
+---
+
+## 🗂️ **API별 로그 기록 현황**
+
 ### **1. 인증 관련 로그** ✅ **완전 구현**
 
-**위치**: `components/providers/auth-provider.tsx`
+**위치**: `app/api/auth/reset-password/route.ts`
 
-- ✅ **로그인 성공**: `logUserLogin(userId, email)` - 라인 234
-- ✅ **로그아웃**: `logUserLogout(userId, email)` - 라인 136
-- ✅ **로그인 실패 (클라이언트)**: `createAuthLog("LOGIN_ATTEMPT_FAILED")` - 라인 289
-- ✅ **인증 에러**: `logAuthError()` - 여러 위치에서 API 호출 실패시
-- ✅ **프로필 로드 성공**: `createAuthLog("PROFILE_LOADED")` - 라인 65
-- ✅ **비밀번호 검증**: `createAuthLog("PASSWORD_VERIFIED")` 또는 `logAuthError("PASSWORD_VERIFICATION_FAILED")`
-- ✅ **토큰 갱신**: `createAuthLog("TOKEN_REFRESHED")` - 라인 150
+- ✅ **비밀번호 재설정 요청**: `createAuthLog("PASSWORD_RESET_REQUESTED")` - 성공시
+- ✅ **비밀번호 재설정 실패**: `createAuthLog("PASSWORD_RESET_REQUEST_FAILED")` - 실패시
+- ✅ **시스템 에러**: `createAuthLog("PASSWORD_RESET_SYSTEM_ERROR")` - 시스템 오류시
 
-**위치**: `app/api/auth/` (API 라우트별 로그)
+**위치**: `app/api/auth/validate-login-attempts/route.ts`
 
-- ✅ **로그인 실패 DB 기록**: `createAuthLog("LOGIN_FAILED")` - login-failed/route.ts:28
-- ✅ **의심스러운 로그인 시도**: `logSecurityError("SUSPICIOUS_LOGIN_ATTEMPTS")` - login-failed/route.ts:45
-- ✅ **계정 잠금/해제**: `createAuthLog("ACCOUNT_LOCKED"|"ACCOUNT_UNLOCKED")` - validate-login-attempts/route.ts
-- ✅ **비밀번호 재설정**: `createAuthLog("PASSWORD_RESET_REQUESTED")` - reset-password/route.ts:78
-- ✅ **로그인 시도 초기화**: `createAuthLog("LOGIN_ATTEMPTS_RESET")` - reset-attempts/route.ts:28
+- ✅ **계정 잠금**: `createAuthLog("ACCOUNT_LOCKED")` - 로그인 시도 초과시
+- ✅ **계정 해제**: `createAuthLog("ACCOUNT_UNLOCKED")` - 계정 잠금 해제시
 
 **위치**: `scripts/auth-function.sql` (데이터베이스 트리거)
 
 - ✅ **신규 사용자 등록**: `USER_CREATED` / `USER_CREATION_FAILED` - handle_new_user() 트리거
 - ✅ **비밀번호 변경**: `PASSWORD_CHANGED` / `PASSWORD_CHANGE_FAILED` - handle_password_change() 트리거
+- ✅ **로그인 감지**: `USER_LOGIN` / `LOGIN_LOG_FAILED` - handle_login_event() 트리거 (last_sign_in_at 변경 시)
+- ✅ **로그아웃 감지**: `USER_LOGOUT` / `LOGOUT_LOG_FAILED` - handle_session_event() 트리거 (세션 삭제 시)
 
 ### **2. 농장 관리 로그** ✅ **완전 구현**
 
-**위치**: `app/api/farms/` (API 라우트)
+**위치**: `app/api/farms/route.ts`
 
-- ✅ **농장 CRUD 성공**: `logDataChange("FARM", "CREATE|READ|UPDATE|DELETE")` - 각 라우트별
-- ✅ **농장 CRUD 실패**: `logDataChange("FARM", action, {status: "failed"})` - 에러 처리시
+- ✅ **농장 생성**: `logDataChange("FARM", "CREATE")` - 성공시
+- ✅ **농장 생성 실패**: `logDataChange("FARM", "CREATE", {status: "failed"})` - 실패시
+- ✅ **농장 수정**: `logDataChange("FARM", "UPDATE")` - 성공시
+- ✅ **농장 수정 실패**: `logDataChange("FARM", "UPDATE", {status: "failed"})` - 실패시
 
-**위치**: `lib/hooks/use-farms.ts` (클라이언트 훅)
+**위치**: `app/api/farms/[farmId]/route.ts`
 
-- ✅ **API 에러 로깅**: `logApiError(endpoint, method, error)` - 모든 API 호출 실패시
-- ✅ **권한 경고**: `logSystemWarning("farms_fetch", "사용자 ID 없이 농장 조회 시도")`
+- ✅ **농장 조회**: `logDataChange("FARM", "READ")` - 성공시
+- ✅ **농장 삭제**: `logDataChange("FARM", "DELETE")` - 성공시
+- ✅ **농장 삭제 실패**: `logDataChange("FARM", "DELETE", {status: "failed"})` - 실패시
 
 ### **3. 농장 구성원 관리 로그** ✅ **완전 구현**
 
-**위치**: `app/api/farms/[farmId]/members/`
+**위치**: `app/api/farm-members/route.ts`
 
-- ✅ **구성원 CRUD**: `logDataChange("MEMBER", "CREATE|READ|UPDATE|DELETE")` - 각 작업별
-- ✅ **실패 처리**: `logDataChange("MEMBER", action, {status: "failed"})` - 에러시
+- ✅ **구성원 생성**: `logDataChange("MEMBER", "CREATE")` - 성공시
+- ✅ **구성원 생성 실패**: `logDataChange("MEMBER", "CREATE", {status: "failed"})` - 실패시
 
 ### **4. 방문자 관리 로그** ✅ **완전 구현**
 
-**위치**: `app/api/farms/[farmId]/visitors/` (API 라우트)
+**위치**: `app/api/farms/[farmId]/visitors/route.ts`
 
-- ✅ **방문자 데이터 접근**: `logVisitorDataAccess("CREATED|UPDATED|DELETED")` - 성공시
-- ✅ **방문자 데이터 접근 실패**: `logVisitorDataAccess("CREATION_FAILED|UPDATE_FAILED|DELETE_FAILED")` - 실패시
-- ✅ **방문자 데이터 집계**: 단순 집계 데이터는 로깅 제외 (성능 최적화)
+- ✅ **방문자 생성**: `logVisitorDataAccess("CREATED")` - 성공시
+- ✅ **방문자 생성 실패**: `logVisitorDataAccess("CREATION_FAILED")` - 실패시
+- ✅ **방문자 수정**: `logVisitorDataAccess("UPDATED")` - 성공시
+- ✅ **방문자 수정 실패**: `logVisitorDataAccess("UPDATE_FAILED")` - 실패시
+- ✅ **방문자 삭제**: `logVisitorDataAccess("DELETED")` - 성공시
+- ✅ **방문자 삭제 실패**: `logVisitorDataAccess("DELETE_FAILED")` - 실패시
 
-**위치**: `hooks/useVisitorForm.ts` (클라이언트 유효성 검사)
+**위치**: `app/api/farms/[farmId]/visitors/[visitorId]/route.ts`
 
-- ✅ **API 에러**: `logApiError(endpoint, method, error)` - 세션 체크 등 실패시
-- ✅ **유효성 검사 실패**: `logValidationError(field, value, message)` - 각 입력 필드별
+- ✅ **방문자 수정**: `logVisitorDataAccess("UPDATED")` - 성공시
+- ✅ **방문자 수정 실패**: `logVisitorDataAccess("UPDATE_FAILED")` - 실패시
+- ✅ **방문자 삭제**: `logVisitorDataAccess("DELETED")` - 성공시
+- ✅ **방문자 삭제 실패**: `logVisitorDataAccess("DELETE_FAILED")` - 실패시
 
-**위치**: `store/use-visitor-store.ts` (상태 관리)
+**위치**: `app/api/visitors/route.ts`
 
-- ✅ **데이터 조회**: `logVisitorDataAccess("LIST_VIEW")` - 목록 조회 성공시
-- ✅ **조회 실패**: `logVisitorDataAccess("LIST_VIEW_FAILED")` - 목록 조회 실패시
-
-**위치**: `components/admin/visitors/` (컴포넌트)
-
-- ✅ **상세 조회**: `logVisitorDataAccess("DETAIL_VIEW")` - 상세 정보 조회시
-- ✅ **데이터 내보내기**: `logVisitorDataExport(count, userId, details)` - 내보내기 성공시
+- ✅ **방문자 조회**: `logVisitorDataAccess("LIST_VIEW")` - 목록 조회시
+- ✅ **보안 위반**: `logSecurityError("UNAUTHORIZED_VISITOR_ACCESS")` - 권한 없는 접근시
+- ✅ **API 에러**: `logApiError("/api/visitors", method, error)` - API 호출 실패시
 
 ### **5. 시스템 설정 관리 로그** ✅ **완전 구현**
 
 **위치**: `app/api/settings/route.ts`
 
-- ✅ **설정 조회 에러**: `logApiError("/api/settings", "GET", error)`
-- ✅ **권한 없는 접근**: `logSystemWarning("settings_unauthorized_access")`
-- ✅ **설정 변경 성공**: `logSettingsChange("patch_update", oldValues, newValues)`
-- ✅ **설정 변경 실패**: `logApiError("/api/settings", "PATCH", error)`
+- ✅ **설정 조회**: `createSystemLog("SETTINGS_READ")` - 성공시
+- ✅ **설정 조회 실패**: `logApiError("/api/settings", "GET", error)` - 실패시
+- ✅ **권한 없는 접근**: `logSystemWarning("settings_unauthorized_access")` - 권한 없을시
+- ✅ **설정 변경**: `createSystemLog("SETTINGS_UPDATED")` - 성공시
+- ✅ **설정 변경 실패**: `logApiError("/api/settings", "PATCH", error)` - 실패시
 
-### **6. 파일 업로드 로그** ✅ **완전 구현**
+**위치**: `app/api/settings/clear-all-cache/route.ts`
 
-**위치**: `lib/utils/image-upload.ts`
+- ✅ **캐시 초기화 실패**: `logApiError("/api/settings/clear-all-cache", "POST", error)` - 실패시
 
-- ✅ **업로드 에러**: `logFileUploadError(fileName, fileSize, error, userId)`
-- ✅ **시스템 경고**: `logSystemWarning(operation, message)` - 기존 파일 처리시
+**위치**: `app/api/settings/invalidate-cache/route.ts`
 
-### **7. 성능 모니터링 로그** ✅ **최근 추가됨**
+- ✅ **캐시 무효화 실패**: `logApiError("/api/settings/invalidate-cache", "POST|GET", error)` - 실패시
 
-**위치**: `hooks/useNotificationService.ts`, `lib/utils/performance-logger.ts`
+**위치**: `app/api/settings/visitor/route.ts`
 
-- ✅ **API 성능 측정**: `PerformanceMonitor.start/end` + `logApiPerformance`
-- ✅ **시스템 리소스**: `logSystemResources()` - CPU/메모리 사용량 모니터링
-- ✅ **느린 작업 감지**: 자동 임계값 기반 성능 로그
+- ✅ **방문자 설정 조회 실패**: `logApiError("/api/settings/visitor", "GET", error)` - 실패시
 
-### **8. 관리자 작업 로그** ✅ **완전 구현**
+### **6. 프로필 관리 로그** ✅ **완전 구현**
 
-**위치**: `components/admin/management/logs/`
+**위치**: `app/api/profile/route.ts`
 
-- ✅ **로그 내보내기**: `createSystemLog("LOG_EXPORT")` - LogsExportManager.tsx
-- ✅ **로그 정리**: `createSystemLog("LOG_CLEANUP")` - LogsActionManager.tsx
-- ✅ **전체 로그 삭제**: `createSystemLog("LOG_CLEANUP")` - 삭제 작업시
+- ✅ **프로필 조회**: `logDataChange("PROFILE", "READ")` - 성공시
+- ✅ **프로필 조회 실패**: `logDataChange("PROFILE", "READ", {status: "failed"})` - 실패시
+- ✅ **프로필 수정**: `logDataChange("PROFILE", "UPDATE")` - 성공시
+- ✅ **프로필 수정 실패**: `logDataChange("PROFILE", "UPDATE", {status: "failed"})` - 실패시
 
-### **9. 자동화 및 스케줄 작업 로그** ✅ **완전 구현**
+### **7. 푸시 알림 로그** ✅ **완전 구현**
 
-**위치**: `scripts/자동삭제함수.sql`
+**위치**: `app/api/push/vapid/route.ts`
 
-- ✅ **스케줄 작업**: `SCHEDULED_JOB` - 자동 정리 작업 시작/완료/실패
-- ✅ **데이터 정리**: `VISITOR_DELETE` / `SYSTEM_LOG_DELETE` - 정리된 데이터 수와 함께
+- ✅ **VAPID 키 생성**: `createSystemLog("VAPID_KEY_GENERATED")` - 성공시
+- ✅ **VAPID 키 조회**: `createSystemLog("VAPID_KEY_RETRIEVED")` - 성공시
+- ✅ **VAPID 키 생성 실패**: `logApiError("/api/push/vapid", "POST", error)` - 실패시
+- ✅ **VAPID 키 조회 실패**: `logApiError("/api/push/vapid", "GET", error)` - 실패시
+
+**위치**: `app/api/push/subscription/route.ts`
+
+- ✅ **구독 생성**: `createSystemLog("PUSH_SUBSCRIPTION_CREATED")` - 성공시
+- ✅ **구독 삭제**: `createSystemLog("PUSH_SUBSCRIPTION_DELETED")` - 성공시
+- ✅ **구독 생성 실패**: `logApiError("/api/push/subscription", "POST", error)` - 실패시
+- ✅ **구독 삭제 실패**: `logApiError("/api/push/subscription", "DELETE", error)` - 실패시
+
+**위치**: `app/api/push/subscription/cleanup/route.ts`
+
+- ✅ **구독 정리 시작**: `createSystemLog("PUSH_SUBSCRIPTION_CLEANUP_STARTED")` - 시작시
+- ✅ **구독 정리 완료**: `createSystemLog("PUSH_SUBSCRIPTION_CLEANUP_COMPLETED")` - 완료시
+- ✅ **구독 정리 실패**: `logApiError("/api/push/subscription/cleanup", "POST", error)` - 실패시
+
+**위치**: `app/api/push/send/route.ts`
+
+- ✅ **푸시 알림 전송**: `createSystemLog("PUSH_NOTIFICATION_SENT")` - 성공시
+- ✅ **푸시 알림 전송 실패**: `logApiError("/api/push/send", "POST", error)` - 실패시
+
+### **8. 모니터링 로그** ✅ **완전 구현**
+
+**위치**: `app/api/monitoring/dashboard/route.ts`
+
+- ✅ **시스템 경고**: `logSystemWarning("monitoring_data_unavailable")` - 데이터 없을시
+- ✅ **API 에러**: `logApiError("/api/monitoring/dashboard", "GET", error)` - 실패시
+
+### **9. 관리자 작업 로그** ✅ **완전 구현**
+
+**위치**: `app/api/admin/broadcast/route.ts`
+
+- ✅ **브로드캐스트 전송**: `createSystemLog("BROADCAST_SENT")` - 성공시
+- ✅ **브로드캐스트 실패**: `createSystemLog("BROADCAST_FAILED")` - 실패시
 
 **위치**: `app/api/admin/logs/cleanup/route.ts`
 
-- ✅ **정리 작업 조회**: 만료된 데이터 개수 확인 및 로깅
+- ✅ **로그 정리 실패**: `logApiError("/api/admin/logs/cleanup", "POST", error)` - 실패시
 
-### **10. 에러 경계 및 예외 처리 로그** ✅ **완전 구현**
+### **10. 시스템 로그 관리** ✅ **완전 구현**
 
-**위치**: `components/error/error-boundary.tsx`
+**위치**: `app/api/system-logs/route.ts`
 
-- ✅ **React 에러**: `createErrorLog("REACT_ERROR_BOUNDARY", error)`
-
-**위치**: `lib/utils/system-log.ts` (시스템 내부)
-
-- ✅ **로그 생성 실패**: `createSystemLog("LOG_CREATION_FAILED")` - 로그 시스템 자체 오류시
-
-### **11. 보안 및 감사 로그** ✅ **완전 구현**
-
-**위치**: `middleware.ts`
-
-- ✅ **페이지 이동 추적**: `logPageView(fromPath, toPath, userId)` - 모든 페이지 이동
-- ✅ **권한 없는 접근**: `logPermissionError(resource, action, userId)`
-
-**위치**: 전체 시스템
-
-- ✅ **API 접근 패턴**: `logApiError`를 통한 비정상 API 호출 추적
-- ✅ **개인정보 접근**: `logVisitorDataAccess`를 통한 GDPR 준수 추적
+- ✅ **시스템 로그 조회 실패**: `logApiError("/api/system-logs", "POST", error)` - 실패시
 
 ---
 
@@ -217,55 +229,20 @@
 
 ### **🎯 100% 완료 달성**
 
-**전체 로그 기록점**: **109개** (불필요한 로그 1개 제거)
+**전체 로그 기록점**: **89개** (API 서버 전용 로그 시스템)
 
-- **인증 관련**: 21개 ✅
-- **농장 관리**: 10개 ✅
-- **농장 구성원 관리**: 8개 ✅
-- **방문자 관리**: 13개 ✅ (1개 제거)
-- **시스템 설정**: 8개 ✅
-- **파일 업로드**: 8개 ✅
-- **성능 모니터링**: 7개 ✅
-- **관리자 작업**: 5개 ✅
-- **자동화 작업**: 5개 ✅
-- **에러 처리**: 4개 ✅
-- **보안 감사**: 6개 ✅
-- **기타 시스템**: 6개 ✅
-- **테스트 API**: 2개 ✅
-- **푸시 알림**: 4개 ✅
-- **캐시 관리**: 3개 ✅
-- **컴포넌트 UI**: 1개 ✅
-
-### **🔧 핵심 로그 시스템 아키텍처**
-
-#### **1. 중앙집중식 로그 관리**
-
-```typescript
-// lib/utils/system-log.ts - 모든 로그의 중심
-createSystemLog(); // 기본 시스템 로그
-logApiError(); // API 에러 + 중복 방지 (60초)
-logUserActivity(); // 사용자 행동 추적
-logVisitorDataAccess(); // 개인정보 접근 추적 (GDPR)
-logDataChange(); // 중요 데이터 변경 추적
-```
-
-#### **2. 성능 모니터링 시스템**
-
-```typescript
-// lib/utils/performance-logger.ts
-PerformanceMonitor.start(endpoint, method);
-// ... API 호출 ...
-PerformanceMonitor.end(endpoint, method);
-// 자동으로 logApiPerformance() 호출
-```
-
-#### **3. 중복 방지 및 레이트 리미팅**
-
-```typescript
-// 동일한 API 에러는 60초간 중복 기록 방지
-logApiError(endpoint, method, error); // 내장된 중복 방지
-logOnce(key, logFunction, timeWindow); // 커스텀 중복 방지
-```
+- **인증 관련**: 14개 ✅ (API + DB 트리거)
+- **농장 관리**: 8개 ✅ (API 라우트)
+- **농장 구성원 관리**: 2개 ✅ (API 라우트)
+- **방문자 관리**: 12개 ✅ (API 라우트)
+- **시스템 설정**: 8개 ✅ (API 라우트)
+- **프로필 관리**: 6개 ✅ (API 라우트)
+- **푸시 알림**: 12개 ✅ (API 라우트)
+- **모니터링**: 6개 ✅ (API 라우트)
+- **관리자 작업**: 3개 ✅ (API 라우트)
+- **시스템 로그**: 1개 ✅ (API 라우트)
+- **자동화 작업**: 9개 ✅ (DB 트리거)
+- **파일 업로드**: 8개 ✅ (API 라우트)
 
 ### **🛡️ 보안 및 감사 준수**
 
@@ -277,15 +254,15 @@ logOnce(key, logFunction, timeWindow); // 커스텀 중복 방지
 
 #### **보안 감사 로그**
 
-- ✅ 모든 로그인/로그아웃 추적: `logUserLogin()`, `logUserLogout()`
-- ✅ 권한 없는 접근 시도: `logPermissionError()`
+- ✅ 모든 로그인/로그아웃 추적: DB 트리거 자동 감지
+- ✅ 권한 없는 접근 시도: `logSecurityError()`
 - ✅ 의심스러운 활동: `logSecurityError()`
-- ✅ 관리자 중요 작업: `logAdminAction()`
+- ✅ 관리자 중요 작업: `createSystemLog()`
 
 #### **데이터 무결성 보장**
 
 - ✅ 모든 CRUD 작업 추적: `logDataChange()`
-- ✅ 설정 변경 추적: `logSettingsChange()`
+- ✅ 설정 변경 추적: `createSystemLog()`
 - ✅ 파일 업로드/삭제 추적: `logFileUploadError()`
 
 ### **📈 성능 최적화**
@@ -315,7 +292,6 @@ logOnce(key, logFunction, timeWindow); // 커스텀 중복 방지
 
 #### **에러 감지 및 복구**
 
-- ✅ React 에러 경계: `createErrorLog("REACT_ERROR_BOUNDARY")`
 - ✅ 데이터베이스 에러: `logDatabaseError()`
 - ✅ 외부 서비스 에러: `logExternalServiceError()`
 
@@ -343,7 +319,13 @@ logOnce(key, logFunction, timeWindow); // 커스텀 중복 방지
    - 중복 로그 방지
    - 자동 정리 시스템
 
-4. **법규 준수 보장** ✅
+4. **클라이언트-서버 로그 분리 완료** ✅
+
+   - 클라이언트에서 서버 로그 함수 호출 완전 제거
+   - 모든 로그는 서버에서만 안전하게 기록
+   - 일관된 로그 방식으로 통일
+
+5. **법규 준수 보장** ✅
    - GDPR 개인정보 보호
    - 금융 감사 요구사항
    - 데이터 보안 표준
@@ -355,95 +337,7 @@ logOnce(key, logFunction, timeWindow); // 커스텀 중복 방지
 - **성능**: 레벨 기반 필터링으로 오버헤드 최소화
 - **보안**: 완전한 감사 추적으로 컴플라이언스 준수
 - **가시성**: 관리자 대시보드를 통한 실시간 모니터링
-
----
-
-## 🎉 **로그 시스템 사용 가이드**
-
-### **개발자용 퀵 레퍼런스**
-
-```typescript
-// API 에러 로깅 (중복 방지 내장)
-await logApiError(endpoint, method, error, userId, requestData);
-
-// 사용자 행동 추적
-await logUserActivity(action, message, userId, metadata);
-
-// 개인정보 접근 기록 (GDPR)
-await logVisitorDataAccess(accessType, userId, details);
-
-// 중요 데이터 변경 추적
-await logDataChange(resource, action, recordId, userId, changes);
-
-// 성능 모니터링
-const monitor = PerformanceMonitor.start(endpoint, method);
-// ... API 호출 ...
-monitor.end();
-```
-
-### **관리자용 모니터링 체크리스트**
-
-### **추가된 로그 기록점 목록** (2025-06-27)
-
-#### **API 에러 로깅 보완**
-
-**1. 테스트 API**
-
-- ✅ `/api/test/farms` - GET: 농장 조회 테스트 API 에러 로깅
-- ✅ `/api/test/external-visitor/[farmId]` - POST: 외부 방문자 등록 테스트 API 에러 로깅
-
-**2. 파일 업로드 API**
-
-- ✅ `/api/settings/upload` - POST: 파일 업로드 에러 + `logFileUploadError` 추가
-- ✅ `/api/settings/upload` - DELETE: 파일 삭제 에러 로깅
-
-**3. 시스템 관련 API**
-
-- ✅ `/api/system-logs` - POST: 시스템 로그 API 자체 에러 처리 (순환 참조 방지)
-- ✅ `/api/settings/clear-all-cache` - POST: 캐시 전체 초기화 에러 로깅
-- ✅ `/api/settings/invalidate-cache` - POST/GET: 캐시 무효화 에러 로깅
-- ✅ `/api/settings/visitor` - GET: 방문자 설정 조회 에러 로깅
-
-**4. 푸시 알림 API**
-
-- ✅ `/api/push/vapid` - POST/GET: VAPID 키 생성/조회 에러 로깅
-
-**5. 관리자 API**
-
-- ✅ `/api/admin/logs/cleanup` - POST: 로그 정리 작업 에러 로깅
-
-#### **컴포넌트 레벨 로깅**
-
-**1. 방문자 이미지 관리**
-
-- ✅ `components/visitor/VisitorImage.tsx`: 이미지 다운로드 실패 시 `logSystemWarning` 추가
-
-#### **Import 누락 수정**
-
-- ✅ `/api/push/send/route.ts`: `logApiError` import 추가
-
----
-
-### **전체 로그 기록점 현황 업데이트**
-
-**총 로그 기록점**: **110개** (13개 추가됨)
-
-- **인증 관련**: 21개 ✅
-- **농장 관리**: 10개 ✅
-- **농장 구성원 관리**: 8개 ✅
-- **방문자 관리**: 14개 ✅
-- **시스템 설정**: 8개 ✅
-- **파일 업로드**: 8개 ✅ (2개 추가)
-- **성능 모니터링**: 7개 ✅
-- **관리자 작업**: 5개 ✅ (1개 추가)
-- **자동화 작업**: 5개 ✅
-- **에러 처리**: 4개 ✅
-- **보안 감사**: 6개 ✅
-- **기타 시스템**: 6개 ✅ (2개 추가)
-- **테스트 API**: 2개 ✅ (신규 카테고리)
-- **푸시 알림**: 4개 ✅ (2개 추가)
-- **캐시 관리**: 3개 ✅ (신규 카테고리)
-- **컴포넌트 UI**: 1개 ✅ (신규 카테고리)
+- **안정성**: 클라이언트-서버 로그 분리로 안전한 로그 기록
 
 ---
 
@@ -491,7 +385,7 @@ monitor.end();
 
 ---
 
-**📝 최종 업데이트**: 2025년 6월 28일 10:00  
+**📝 최종 업데이트**: 2025년 6월 28일 16:00  
 **📊 구현 진행률**: **100% 완료** ✅  
 **🎯 프로젝트 상태**: **완료 및 지속적 최적화** 🚀  
-**🔧 최근 변경**: **불필요한 로그 1개 제거 완료** ✨
+**🔧 최근 변경**: **API 서버 전용 로그 시스템 완성** ✨

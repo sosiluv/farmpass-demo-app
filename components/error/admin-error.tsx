@@ -3,7 +3,6 @@
 import { useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { RefreshCw, AlertCircle, Wifi } from "lucide-react";
-import { createErrorLog } from "@/lib/utils/logging/system-log";
 import { devLog } from "@/lib/utils/logging/dev-logger";
 
 interface AdminErrorProps {
@@ -24,14 +23,6 @@ export function AdminError({
   showNavigation = true,
 }: AdminErrorProps) {
   useEffect(() => {
-    createErrorLog(
-      "ADMIN_COMPONENT_ERROR",
-      error,
-      "관리 영역 컴포넌트 에러"
-    ).catch((logError) => {
-      devLog.error("Failed to log admin component error:", logError);
-    });
-
     devLog.error("Admin component error:", error);
   }, [error]);
 

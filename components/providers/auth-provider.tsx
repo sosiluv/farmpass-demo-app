@@ -11,12 +11,6 @@ import { Session, User } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/client";
 import type { Profile } from "@/lib/types";
 import { devLog } from "@/lib/utils/logging/dev-logger";
-import {
-  createAuthLog,
-  logAuthError,
-  logSystemWarning,
-} from "@/lib/utils/logging/system-log";
-import { logUserLogin, logUserLogout } from "@/lib/utils/logging/system-log";
 import { updateLoginTime } from "@/lib/auth-helpers";
 import { useSubscriptionManager } from "@/hooks/useSubscriptionManager";
 
@@ -148,7 +142,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       } catch (error) {
         // 타임아웃이나 네트워크 에러의 경우 로그 기록하지 않음
         if (!(error instanceof Error && error.message.includes("타임아웃"))) {
-          await logAuthError("PROFILE_LOAD_FAILED", error, undefined, userId);
+          // 네트워크 관련 에러의 경우 unauthenticated로 처리
+          devLog.warn(
+            "Network error during initialization, setting unauthenticated"
+          );
+          return null;
         }
         return null;
       } finally {
@@ -266,7 +264,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           if (!isSigningOutRef.current && mounted) {
             devLog.log("External sign out detected");
             if (state.status === "authenticated") {
-              await logUserLogout(state.user.id, state.user.email || "");
+              // 구독 정리 (세션 정리 전에 수행)
+              await cleanupSubscription();
             }
             dispatch({ type: "SET_UNAUTHENTICATED" });
           }
@@ -368,7 +367,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       await Promise.all([
         updateLoginTime(data.user.id),
         resetLoginAttempts(email),
-        logUserLogin(data.user.id, email, "email"),
       ]);
 
       // 구독 전환 (백그라운드에서 처리)
@@ -389,10 +387,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       devLog.error("Sign in error:", error);
       dispatch({ type: "SET_UNAUTHENTICATED" });
 
-      if (!(error as any)?.message?.includes("Invalid login credentials")) {
-        await logAuthError("SIGNIN_PROCESS_ERROR", error, email);
-      }
-
       throw error;
     }
   };
@@ -409,22 +403,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       // 로그아웃 작업들을 병렬로 실행하고 타임아웃 적용
       const logoutPromise = (async () => {
-        // 로그아웃 로그 먼저 기록
-        if (state.status === "authenticated") {
-          try {
-            await Promise.race([
-              logUserLogout(state.user.id, state.user.email || ""),
-              timeoutPromise,
-            ]);
-          } catch (error) {
-            devLog.warn("로그아웃 로그 기록 실패:", error);
-          }
-        }
-
         // 구독 정리 (세션 정리 전에 수행)
         if (state.status === "authenticated") {
           try {
-            await Promise.race([cleanupSubscription(), timeoutPromise]);
+            await cleanupSubscription();
             devLog.log("구독 정리 완료");
           } catch (error) {
             devLog.warn("구독 정리 실패:", error);
@@ -479,25 +461,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       });
 
       if (error) {
-        await logAuthError("PASSWORD_VERIFICATION_FAILED", error, email);
         return {
           success: false,
           error: "현재 비밀번호가 올바르지 않습니다.",
         };
       }
 
-      await createAuthLog(
-        "PASSWORD_VERIFIED",
-        `비밀번호 검증 성공: ${email}`,
-        email,
-        data.user?.id,
-        { verification_purpose: "password_change" }
-      );
-
       return { success: true };
     } catch (error) {
       devLog.error("Password verification error:", error);
-      await logAuthError("PASSWORD_VERIFICATION_PROCESS_ERROR", error, email);
 
       return {
         success: false,
@@ -532,13 +504,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       });
 
       if (error) {
-        await logAuthError(
-          "PASSWORD_CHANGE_ERROR",
-          error,
-          email,
-          state.status === "authenticated" ? state.user.id : undefined
-        );
-
         if (
           error.message ===
           "New password should be different from the old password."
@@ -555,12 +520,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       return { success: true };
     } catch (error) {
       devLog.error("Password change error:", error);
-      await logAuthError(
-        "PASSWORD_CHANGE_PROCESS_ERROR",
-        error,
-        email,
-        state.status === "authenticated" ? state.user.id : undefined
-      );
 
       return {
         success: false,
@@ -591,20 +550,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
       }
     } catch (error) {
-      await logAuthError("LOGIN_VALIDATION_ERROR", error, email);
+      // 에러 발생 시에도 상태 정리
+      dispatch({ type: "SET_UNAUTHENTICATED" });
     }
   };
 
   const handleLoginFailure = async (email: string, errorMessage: string) => {
     try {
       if (errorMessage === "Email not confirmed") {
-        await createAuthLog(
-          "LOGIN_BLOCKED_EMAIL_NOT_CONFIRMED",
-          `이메일 미인증으로 로그인 차단: ${email}`,
-          email,
-          undefined,
-          { error_message: errorMessage }
-        );
         return;
       }
 
@@ -613,17 +566,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email }),
       });
-
-      await createAuthLog(
-        "LOGIN_ATTEMPT_FAILED",
-        `로그인 시도 실패: ${email} - ${errorMessage}`,
-        email,
-        undefined,
-        { error_message: errorMessage }
-      );
     } catch (error) {
       devLog.error("로그인 실패 기록 중 오류:", error);
-      await logAuthError("LOGIN_FAILURE_RECORD_ERROR", error, email);
     }
   };
 

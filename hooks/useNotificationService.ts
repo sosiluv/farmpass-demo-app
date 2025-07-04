@@ -1,11 +1,6 @@
 import { useState, useCallback } from "react";
 import { useCommonToast } from "@/lib/utils/notification/toast-messages";
 import { devLog } from "@/lib/utils/logging/dev-logger";
-import { createSystemLog, logApiError } from "@/lib/utils/logging/system-log";
-import {
-  PerformanceMonitor,
-  logApiPerformance,
-} from "@/lib/utils/logging/system-log";
 import type { NotificationPayload } from "@/lib/types/notification";
 
 export function useNotificationService() {
@@ -21,32 +16,9 @@ export function useNotificationService() {
       if (!response.ok) throw new Error("VAPID 키 조회 실패");
 
       const data = await response.json();
-
-      // ✅ VAPID 키 조회 성공 로그
-      await createSystemLog(
-        "NOTIFICATION_VAPID_KEY_RETRIEVED",
-        "VAPID 공개키 조회 성공",
-        "info",
-        undefined,
-        "system",
-        undefined,
-        {
-          key_length: data.publicKey?.length || 0,
-          timestamp: new Date().toISOString(),
-        }
-      );
-
       return data.publicKey;
     } catch (error) {
       devLog.error("VAPID 키 조회 실패:", error);
-
-      // ❌ VAPID 키 조회 실패 로그 (중복 방지 자동 적용)
-      await logApiError(
-        "/api/push/vapid",
-        "GET",
-        error instanceof Error ? error : String(error)
-      );
-
       return null;
     }
   };
@@ -56,8 +28,6 @@ export function useNotificationService() {
     subscription: PushSubscription,
     farmId?: string
   ) => {
-    const monitor = new PerformanceMonitor("notification_subscription");
-
     try {
       setIsLoading(true);
       devLog.log("[NOTIFICATION] 푸시 알림 구독 시작", { farmId });
@@ -79,50 +49,10 @@ export function useNotificationService() {
         body: JSON.stringify({ is_active: true }),
       });
 
-      // ✅ 푸시 알림 구독 성공 로그
-      await createSystemLog(
-        "NOTIFICATION_SUBSCRIPTION_SUCCESS",
-        `푸시 알림 구독 성공${farmId ? ` (농장: ${farmId})` : ""}`,
-        "info",
-        undefined,
-        "system",
-        undefined,
-        {
-          farm_id: farmId,
-          endpoint: subscription.endpoint,
-          timestamp: new Date().toISOString(),
-          subscription_type: "push_notification",
-        }
-      );
-
-      const duration = await monitor.finish();
-      await logApiPerformance({
-        endpoint: "/api/push/subscription",
-        method: "POST",
-        duration_ms: duration,
-        status_code: 200,
-        response_size: JSON.stringify(result).length,
-      });
-
       toast.showCustomSuccess("구독 성공", "알림 구독이 완료되었습니다");
       return result;
     } catch (error) {
-      const duration = await monitor.finish();
-
-      // ❌ 푸시 알림 구독 실패 로그 (중복 방지 자동 적용)
-      await logApiError(
-        "/api/push/subscription",
-        "POST",
-        error instanceof Error ? error : String(error)
-      );
-      await logApiPerformance({
-        endpoint: "/api/push/subscription",
-        method: "POST",
-        duration_ms: duration,
-        status_code: 500,
-        response_size: 0,
-      });
-
+      devLog.error("구독 실패:", error);
       toast.showCustomError("구독 실패", "푸시 알림 구독에 실패했습니다");
       throw error;
     } finally {
@@ -155,11 +85,7 @@ export function useNotificationService() {
       toast.showCustomSuccess("구독 해제", "알림 구독이 해제되었습니다");
       return await response.json();
     } catch (error) {
-      await logApiError(
-        "/api/push/subscription",
-        "DELETE",
-        error instanceof Error ? error : String(error)
-      );
+      devLog.error("구독 해제 실패:", error);
       toast.showCustomError("구독 해제 실패", "구독 해제에 실패했습니다");
       throw error;
     } finally {
@@ -175,19 +101,12 @@ export function useNotificationService() {
       return await response.json();
     } catch (error) {
       devLog.error("구독 상태 조회 실패:", error);
-      await logApiError(
-        "/api/push/subscription",
-        "GET",
-        error instanceof Error ? error : String(error)
-      );
       return { subscriptions: [] };
     }
   };
 
   // 테스트 알림 발송
   const sendTestNotification = async () => {
-    const monitor = new PerformanceMonitor("notification_test_send");
-
     try {
       const response = await fetch("/api/push/send", {
         method: "POST",
@@ -202,35 +121,12 @@ export function useNotificationService() {
 
       if (!response.ok) throw new Error("테스트 알림 발송 실패");
 
-      const duration = await monitor.finish();
-      await logApiPerformance({
-        endpoint: "/api/push/send",
-        method: "POST",
-        duration_ms: duration,
-        status_code: 200,
-        response_size: 0,
-      });
-
       toast.showCustomSuccess(
         "테스트 알림 발송",
         "테스트 알림이 발송되었습니다"
       );
     } catch (error) {
-      const duration = await monitor.finish();
-
-      await logApiError(
-        "/api/push/send",
-        "POST",
-        error instanceof Error ? error : String(error)
-      );
-      await logApiPerformance({
-        endpoint: "/api/push/send",
-        method: "POST",
-        duration_ms: duration,
-        status_code: 500,
-        response_size: 0,
-      });
-
+      devLog.error("테스트 알림 발송 실패:", error);
       toast.showCustomError("테스트 실패", "테스트 알림 발송에 실패했습니다");
     }
   };
@@ -247,11 +143,7 @@ export function useNotificationService() {
       toast.showCustomSuccess("구독 정리 완료", result.message);
       return result;
     } catch (error) {
-      await logApiError(
-        "/api/push/subscription/cleanup",
-        "POST",
-        error instanceof Error ? error : String(error)
-      );
+      devLog.error("구독 정리 실패:", error);
       toast.showCustomError(
         "구독 정리 실패",
         error instanceof Error

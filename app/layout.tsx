@@ -15,6 +15,7 @@ import { ErrorBoundary } from "@/components/error/error-boundary";
 import { Analytics } from "@vercel/analytics/react";
 import Script from "next/script";
 import { FarmsProvider } from "@/components/providers/farms-provider";
+import { DynamicFavicon } from "@/components/common/DynamicFavicon";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -48,11 +49,12 @@ export const viewport: Viewport = {
   themeColor: "#10b981",
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const settings = await getMetadataSettings();
   return (
     <html lang="ko" suppressHydrationWarning>
       <head>
@@ -76,6 +78,7 @@ export default function RootLayout({
           title="시스템 오류"
           description="예상치 못한 오류가 발생했습니다. 페이지를 새로고침하거나 잠시 후 다시 시도해주세요."
         >
+          <DynamicFavicon faviconUrl={settings.favicon} />
           <PWAUpdater />
           <AuthProvider>
             <ToastPositionProvider>

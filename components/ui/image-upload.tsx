@@ -48,7 +48,9 @@ export function ImageUpload({
   // 공통 이미지 업로드 설정만 사용
   const getUploadConfig = () => ({
     config: IMAGE_UPLOAD_CONFIG,
-    errorMessage: IMAGE_ERROR_MESSAGES.INVALID_TYPE,
+    errorMessage: `지원하지 않는 파일 형식입니다. ${IMAGE_UPLOAD_CONFIG.allowedExtensions.join(
+      ", "
+    )} 만 업로드 가능합니다.`,
     guideline: `권장 크기: ${IMAGE_UPLOAD_CONFIG.maxWidth}x${IMAGE_UPLOAD_CONFIG.maxHeight} 픽셀`,
   });
 

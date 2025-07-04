@@ -36,7 +36,6 @@ export function useSettingsImageManager({
   onSettingsUpdate,
 }: SettingsImageManagerProps) {
   const { showCustomSuccess, showCustomError } = useCommonToast();
-  const faviconLinkRef = useRef<HTMLLinkElement | null>(null);
 
   // 시스템 설정 강제 새로고침
   const refreshSettings = async () => {
@@ -48,73 +47,6 @@ export function useSettingsImageManager({
       onSettingsUpdate(data);
     }
   };
-
-  // 파비콘 즉시 업데이트 함수
-  const updateFaviconInBrowser = (faviconUrl: string | null) => {
-    if (typeof window === "undefined") return;
-
-    devLog.log(`[FAVICON] Updating favicon in browser: ${faviconUrl}`);
-
-    // 기존 모든 <link rel="icon"> 제거
-    document.querySelectorAll('link[rel="icon"]').forEach((link) => {
-      devLog.log(`[FAVICON] Removing existing favicon link:`, link);
-      link.remove();
-    });
-
-    if (faviconUrl) {
-      const link = document.createElement("link");
-      link.rel = "icon";
-      link.href = faviconUrl;
-      link.type = faviconUrl.endsWith(".ico") ? "image/x-icon" : "image/png";
-      document.head.appendChild(link);
-      faviconLinkRef.current = link;
-      devLog.log(`[FAVICON] Added new favicon link:`, link.href);
-    } else {
-      // 기본 파비콘으로 복원 (ico 우선, 없으면 png)
-      const defaultIco = "/favicon.ico";
-      const link = document.createElement("link");
-      link.rel = "icon";
-      // ico 우선, 없으면 png
-      link.href = defaultIco;
-      link.type = "image/x-icon";
-      document.head.appendChild(link);
-      faviconLinkRef.current = link;
-      devLog.log(`[FAVICON] Restored default favicon`);
-    }
-  };
-
-  useEffect(() => {
-    // row가 없으면 자동 생성 (최초 1회)
-    if (!settings?.id) {
-      supabase
-        .from("system_settings")
-        .insert({})
-        .select()
-        .maybeSingle()
-        .then(({ data, error }) => {
-          if (!error && data) {
-            onSettingsUpdate(data);
-          }
-        });
-    }
-
-    // 페이지 로드 시 현재 설정된 파비콘 적용
-    if (settings?.favicon) {
-      devLog.log(
-        `[FAVICON] Page load: applying favicon from settings: ${settings.favicon}`
-      );
-      updateFaviconInBrowser(settings.favicon);
-    }
-
-    return () => {
-      if (faviconLinkRef.current && faviconLinkRef.current.parentNode) {
-        try {
-          faviconLinkRef.current.parentNode.removeChild(faviconLinkRef.current);
-        } catch (error) {}
-        faviconLinkRef.current = null;
-      }
-    };
-  }, [settings?.favicon]); // settings.favicon이 변경될 때마다 실행
 
   // 공통 훅 인스턴스화 (로고)
   const logoManager = useUniversalImageManager({
@@ -246,7 +178,6 @@ export function useSettingsImageManager({
         const result = await faviconManager.handleImageUpload(file);
         await refreshSettings();
         if (result?.publicUrl) {
-          updateFaviconInBrowser(result.publicUrl);
           showCustomSuccess("파비콘 업로드 완료", "파비콘이 업로드되었습니다.");
         }
       } else if (type === "notificationIcon") {
@@ -307,7 +238,6 @@ export function useSettingsImageManager({
       } else if (type === "favicon") {
         await faviconManager.handleImageDelete();
         await refreshSettings();
-        updateFaviconInBrowser(null);
         showCustomSuccess("파비콘 삭제 완료", "파비콘이 삭제되었습니다.");
       } else if (type === "notificationIcon") {
         await notificationIconManager.handleImageDelete();
@@ -349,6 +279,5 @@ export function useSettingsImageManager({
   return {
     handleImageUpload,
     handleImageDelete,
-    updateFaviconInBrowser,
   };
 }

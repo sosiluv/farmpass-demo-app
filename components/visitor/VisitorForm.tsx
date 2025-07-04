@@ -38,6 +38,11 @@ import {
 } from "@/components/ui/select";
 import { devLog } from "@/lib/utils/logging/dev-logger";
 import { FormSkeleton } from "@/components/common/skeletons";
+import {
+  ALLOWED_IMAGE_TYPES,
+  ALLOWED_IMAGE_EXTENSIONS,
+} from "@/lib/constants/upload";
+import { useCommonToast } from "@/lib/utils/notification/toast-messages";
 
 interface VisitorFormProps {
   settings: VisitorSettings;
@@ -72,6 +77,7 @@ export const VisitorForm = ({
   isImageUploading,
 }: VisitorFormProps) => {
   const [logoError, setLogoError] = useState(false);
+  const { showCustomError } = useCommonToast();
 
   if (isLoading) {
     return (
@@ -113,6 +119,19 @@ export const VisitorForm = ({
           <ImageUpload
             onUpload={async (file) => {
               if (file) {
+                if (
+                  !(ALLOWED_IMAGE_TYPES as readonly string[]).includes(
+                    file.type
+                  )
+                ) {
+                  showCustomError(
+                    "이미지 업로드 실패",
+                    `허용되지 않은 파일 형식입니다. ${ALLOWED_IMAGE_EXTENSIONS.join(
+                      ", "
+                    )} 만 업로드 가능합니다.`
+                  );
+                  return;
+                }
                 onInputChange("profilePhoto", file);
                 await onImageUpload(file);
               }

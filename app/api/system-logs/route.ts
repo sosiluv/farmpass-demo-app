@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
+import { createServiceRoleClient } from "@/lib/supabase/service-role";
 import { devLog } from "@/lib/utils/logging/dev-logger";
 import { logApiError } from "@/lib/utils/logging/system-log";
 import { getClientIP, getUserAgent } from "@/lib/server/ip-helpers";
@@ -23,26 +23,12 @@ export async function POST(request: NextRequest) {
     } = body;
 
     // Supabase 클라이언트 생성 (서버사이드에서 service role 사용)
-    const supabase = await createClient();
-
-    // 현재 인증된 사용자 확인
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser();
-
-    if (authError) {
-      devLog.error("Auth error in system log API:", authError);
-      return NextResponse.json(
-        { error: "Authentication failed" },
-        { status: 401 }
-      );
-    }
+    const supabase = createServiceRoleClient();
 
     // 로그 데이터 준비
     const logData = {
-      user_id: userId || user?.id,
-      user_email: userEmail || user?.email,
+      user_id: userId || null,
+      user_email: userEmail || null,
       action,
       message,
       level,
@@ -53,6 +39,7 @@ export async function POST(request: NextRequest) {
       metadata: metadata ? JSON.stringify(metadata) : null,
     };
 
+    devLog.log("logData", logData);
     // 시스템 로그 삽입
     const { error } = await supabase.from("system_logs").insert(logData);
 
@@ -64,6 +51,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    devLog.log("System log insert success", { logData });
     return NextResponse.json({ success: true });
   } catch (error) {
     devLog.error("Exception in system log API:", error);

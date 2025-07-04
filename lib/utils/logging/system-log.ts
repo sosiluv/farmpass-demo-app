@@ -1,4 +1,3 @@
-import { supabase } from "@/lib/supabase/client";
 import { getSystemSetting } from "@/lib/cache/system-settings-cache";
 import { devLog } from "@/lib/utils/logging/dev-logger";
 import { normalizeIP } from "@/lib/server/ip-helpers";
@@ -74,50 +73,16 @@ const LOG_LEVEL_PRIORITY = {
  */
 async function shouldLogMessage(messageLevel: LogLevel): Promise<boolean> {
   try {
-    // 클라이언트에서는 기본 로그 레벨 사용 (중복 호출 방지)
-    if (typeof window !== "undefined") {
-      const messagePriority = LOG_LEVEL_PRIORITY[messageLevel];
-      const defaultPriority = LOG_LEVEL_PRIORITY["info"]; // 기본값은 info
-      return messagePriority >= defaultPriority;
-    }
+    // 서버 환경에서만 동작
     const systemLogLevel = await getSystemSetting("logLevel");
-    // logLevel은 이미 소문자로 저장되어 있으므로 변환 불필요
     const effectiveLogLevel = (systemLogLevel as LogLevel) || "info"; // 기본값은 info
-
     const messagePriority = LOG_LEVEL_PRIORITY[messageLevel];
     const systemPriority = LOG_LEVEL_PRIORITY[effectiveLogLevel];
-
-    // 메시지 우선순위가 시스템 설정 우선순위보다 높거나 같으면 로그 기록
     return messagePriority >= systemPriority;
   } catch (error) {
     devLog.warn("Error checking log level, allowing log:", error);
     return true; // 에러 시 기본적으로 로그 허용
   }
-}
-
-// 파일 상단에 추가
-let cachedUserInfo: { ip: string; userAgent: string } | null = null;
-let userInfoPromise: Promise<{ ip: string; userAgent: string }> | null = null;
-
-async function getUserInfoOnce(): Promise<{ ip: string; userAgent: string }> {
-  if (cachedUserInfo) return cachedUserInfo;
-  if (!userInfoPromise) {
-    userInfoPromise = fetch("/api/user-info")
-      .then((response) =>
-        response.ok
-          ? response.json()
-          : { ip: "client-fetch-failed", userAgent: "" }
-      )
-      .then((userInfo) => {
-        cachedUserInfo = userInfo;
-        return userInfo;
-      })
-      .catch((error) => {
-        devLog.warn("Failed to fetch client IP:", error);
-        return { ip: "client-error", userAgent: "" };
-      });
-  }
-  return userInfoPromise;
 }
 
 /**
@@ -131,93 +96,38 @@ async function createLog(
   metadata: LogMetadata = {}
 ): Promise<void> {
   try {
-    // 기존 시스템과 동일한 레벨 필터링 체크
-    if (!(await shouldLogMessage(level))) {
+    const shouldLog = await shouldLogMessage(level);
+    devLog.log("[DEBUG] shouldLogMessage", { level, action, shouldLog });
+    if (!shouldLog) {
       devLog.log(
-        `🚫 Log filtered out due to level: ${level} (action: ${action})`
+        `[DEBUG] Log filtered out due to level: ${level} (action: ${action})`
       );
       return;
     }
-
-    const isServer = typeof window === "undefined";
-
-    // 사용자 정보 처리 - context 우선, 없으면 인증에서 가져오기
+    const cacheKey = `${action}_${message}_${level}`;
+    const isDuplicate = shouldSkipDuplicate(cacheKey);
+    devLog.log("[DEBUG] shouldSkipDuplicate", { cacheKey, isDuplicate });
+    if (isDuplicate) {
+      devLog.log(`[DEBUG] Log skipped due to duplicate: ${cacheKey}`);
+      return;
+    }
     let currentUserId = context.userId;
     let userEmail = context.email;
-
-    // context에 사용자 정보가 없는 경우 서버 사이드에서는 undefined 사용
     if (!currentUserId || !userEmail) {
-      if (isServer) {
-        // 서버 사이드에서는 시스템 로그로 처리 (UUID 필드에는 undefined 사용)
-        currentUserId = currentUserId || undefined;
-        userEmail =
-          userEmail || process.env.ENV_COMPANY_EMAIL || "k331502@nate.com";
-      } else {
-        // 클라이언트 사이드에서만 경고 로그
-        // devLog.warn(`Missing user context for log: ${action}`, {
-        //   hasUserId: !!currentUserId,
-        //   hasEmail: !!userEmail,
-        // });
-      }
+      userEmail =
+        userEmail || process.env.ENV_COMPANY_EMAIL || "k331502@nate.com";
     }
-
-    // 사용자 이메일이 여전히 없고 userId가 있으면 profiles에서 조회
-    if (!userEmail && currentUserId) {
-      try {
-        const { data: userData } = await supabase
-          .from("profiles")
-          .select("email")
-          .eq("id", currentUserId)
-          .single();
-        userEmail = userData?.email || undefined;
-      } catch (error) {
-        devLog.warn("Failed to fetch user email from profiles:", error);
-      }
-    }
-
-    // IP 주소 처리 - context 우선
     let clientIP = context.ip;
-
     if (!clientIP) {
-      if (isServer) {
-        // 서버사이드에서는 기본값 사용
-        clientIP = "server-system";
-      } else {
-        // 클라이언트에서만 /api/user-info 호출 가능 (최초 1회만, Promise 공유)
-        try {
-          const userInfo = await getUserInfoOnce();
-          clientIP = userInfo.ip || "client-unknown";
-        } catch (error) {
-          devLog.warn("Failed to fetch client IP:", error);
-          clientIP = "client-error";
-        }
-      }
+      clientIP = "server-unknown";
     }
-
-    // IP 주소 정규화 (클라이언트/서버 모두 적용)
-    if (
-      clientIP &&
-      clientIP !== "server-unknown" &&
-      clientIP !== "client-unknown" &&
-      clientIP !== "client-fetch-failed" &&
-      clientIP !== "client-error"
-    ) {
+    if (clientIP && clientIP !== "server-unknown") {
       clientIP = normalizeIP(clientIP);
     }
-
-    // User-Agent 처리 - context 우선
     let userAgent = context.userAgent;
     if (!userAgent) {
-      if (isServer) {
-        // 서버사이드에서는 context에 의존하거나 기본값 사용
-        userAgent = "Server";
-      } else {
-        // 클라이언트에서는 navigator에서 가져오기
-        userAgent = window.navigator.userAgent || "Unknown-Client";
-      }
+      userAgent = "Server";
     }
-
-    // 로그 데이터 구조 (개선된 정보 포함)
     const logData = {
       user_id: currentUserId || null,
       user_email: userEmail || null,
@@ -230,18 +140,9 @@ async function createLog(
       resource_id: null,
       metadata:
         Object.keys(metadata).length > 0
-          ? JSON.stringify({
-              ...metadata,
-              environment: isServer ? "server" : "client",
-              context_provided: {
-                userId: !!context.userId,
-                email: !!context.email,
-                ip: !!context.ip,
-                userAgent: !!context.userAgent,
-              },
-            })
+          ? JSON.stringify(metadata)
           : JSON.stringify({
-              environment: isServer ? "server" : "client",
+              environment: "server",
               context_provided: {
                 userId: !!context.userId,
                 email: !!context.email,
@@ -250,25 +151,18 @@ async function createLog(
               },
             }),
     };
-
-    // Supabase에 로그 삽입
+    // 서버 환경: 서비스 롤 키로 직접 insert
+    const { createServiceRoleClient } = await import(
+      "@/lib/supabase/service-role"
+    );
+    const supabase = createServiceRoleClient();
     const { error } = await supabase.from("system_logs").insert(logData);
-
     if (error) {
-      devLog.error("❌ Failed to create system log:", error);
-      devLog.error("Failed log data:", logData);
-      return;
+      devLog.error("[DEBUG] Supabase direct insert error", error);
+    } else {
+      devLog.log("[DEBUG] Supabase direct insert success", logData);
     }
-
-    devLog.log(`✅ System log created: ${action} - ${message}`, {
-      environment: isServer ? "server" : "client",
-      userId: currentUserId ? "provided" : "missing",
-      email: userEmail ? "provided" : "missing",
-      ip:
-        !clientIP || clientIP.includes("unknown") || clientIP.includes("error")
-          ? `⚠️ ${clientIP || "missing"}`
-          : "✅ provided",
-    });
+    return;
   } catch (error) {
     devLog.error("💥 Exception creating system log:", error);
   }
@@ -420,29 +314,6 @@ export const logger = {
   },
 };
 
-/**
- * 성능 측정 헬퍼 클래스 (단순화)
- */
-export class PerformanceTimer {
-  private startTime: number;
-  private operation: string;
-
-  constructor(operation: string) {
-    this.operation = operation;
-    this.startTime = performance.now();
-  }
-
-  async end(threshold = 1000, context?: LogContext): Promise<number> {
-    const duration = performance.now() - this.startTime;
-
-    if (duration > threshold) {
-      await logger.performance(this.operation, duration, threshold, context);
-    }
-
-    return duration;
-  }
-}
-
 // ============================================
 // 기존 함수 호환성 유지 (기존 코드 수정 없이 사용 가능)
 // ============================================
@@ -468,15 +339,6 @@ export const createSystemLog = async (
   );
 };
 
-export const createErrorLog = async (
-  action: string,
-  error: any,
-  context?: string,
-  userId?: string
-) => {
-  await logger.error(error, { userId }, { action, context });
-};
-
 export const logApiError = (
   endpoint: string,
   method: string,
@@ -497,29 +359,6 @@ export const logDataChange = (
   return logger.business(action, resource, { userId, ...context }, metadata);
 };
 
-export const logAuthError = async (
-  action: string,
-  error: any,
-  email?: string,
-  userId?: string
-) => {
-  await logger.error(error, { userId }, { action, email, type: "auth" });
-};
-
-export const logFileUploadError = async (
-  fileName: string,
-  fileSize: number,
-  error: any,
-  userId?: string,
-  context?: Partial<LogContext>
-) => {
-  await logger.error(
-    error,
-    { userId, ...context },
-    { fileName, fileSize, type: "file_upload" }
-  );
-};
-
 export const logPermissionError = async (
   resource: string,
   action: string,
@@ -533,40 +372,6 @@ export const logPermissionError = async (
     `권한 에러: ${resource}에 대한 ${action} 권한 없음`,
     { userId, ...context },
     { resource, action, requiredRole }
-  );
-};
-
-export const logBusinessError = async (
-  operation: string,
-  error: any,
-  context?: Record<string, any>,
-  userId?: string
-) => {
-  await logger.error(
-    error,
-    { userId },
-    { operation, context, type: "business" }
-  );
-};
-
-export const logSystemResourceError = async (
-  resource: string,
-  error: any,
-  metrics?: Record<string, any>
-) => {
-  await logger.error(error, {}, { resource, metrics, type: "system_resource" });
-};
-
-export const logExternalServiceError = async (
-  service: string,
-  operation: string,
-  error: any,
-  userId?: string
-) => {
-  await logger.error(
-    error,
-    { userId },
-    { service, operation, type: "external_service" }
   );
 };
 
@@ -599,121 +404,6 @@ export const logPageView = async (
   );
 };
 
-export const logUserLogin = async (
-  userId: string,
-  email: string,
-  loginMethod: "email" | "oauth" = "email",
-  context?: Partial<LogContext>
-) => {
-  await logger.business(
-    "USER_LOGIN",
-    "auth",
-    { userId, email, ...context },
-    { email, loginMethod }
-  );
-};
-
-export const logUserLogout = async (
-  userId: string,
-  email: string,
-  context?: Partial<LogContext>
-) => {
-  await logger.business(
-    "USER_LOGOUT",
-    "auth",
-    { userId, email, ...context },
-    { email }
-  );
-};
-
-export const logLoginFailed = async (
-  email: string,
-  reason: string,
-  ip?: string,
-  context?: Partial<LogContext>
-) => {
-  await logger.log(
-    "warn",
-    "USER_LOGIN_FAILED",
-    `로그인 실패: ${email} - ${reason}`,
-    { ip, email, ...context },
-    { email, reason }
-  );
-};
-
-export const logAppStart = async (userId?: string) => {
-  await logger.business("APP_START", "application", { userId }, {});
-};
-
-export const logAppEnd = async (userId?: string, sessionDuration?: number) => {
-  await logger.business(
-    "APP_END",
-    "application",
-    { userId },
-    { sessionDuration }
-  );
-};
-
-export const logFarmActivity = async (
-  action: "CREATED" | "UPDATED" | "DELETED" | "ACCESSED",
-  farmId: string,
-  farmName: string,
-  userId?: string,
-  details?: Record<string, any>
-) => {
-  await logger.business(
-    `FARM_${action}`,
-    "farm",
-    { userId },
-    { farmId, farmName, ...details }
-  );
-};
-
-export const logMemberActivity = async (
-  action: "ADDED" | "REMOVED" | "ROLE_CHANGED",
-  memberEmail: string,
-  farmId: string,
-  userId?: string,
-  details?: Record<string, any>
-) => {
-  await logger.business(
-    `MEMBER_${action}`,
-    "member",
-    { userId },
-    { memberEmail, farmId, ...details }
-  );
-};
-
-export const logSettingsChange = async (
-  settingKey: string,
-  oldValue: any,
-  newValue: any,
-  userId?: string
-) => {
-  await logger.business(
-    "SETTINGS_UPDATED",
-    "settings",
-    { userId },
-    { settingKey, oldValue, newValue }
-  );
-};
-
-export const logValidationError = async (
-  field: string,
-  value: any,
-  rule: string,
-  userId?: string,
-  context?: string
-) => {
-  await logger.log(
-    "warn",
-    "VALIDATION_ERROR",
-    `유효성 검사 실패: ${field}`,
-    { userId },
-    { field, value, rule, context }
-  );
-};
-
 export const logSecurityError = async (
   threat: string,
   description: string,
@@ -735,34 +425,6 @@ export const logPerformanceError = async (
   userId?: string
 ) => {
   await logger.performance(endpoint, actualDuration, threshold, { userId });
-};
-
-export const logAdminAction = async (
-  action: string,
-  target: string,
-  userId: string,
-  changes?: Record<string, any>
-) => {
-  await logger.business(
-    "ADMIN_ACTION",
-    "admin",
-    { userId },
-    { action, target, changes }
-  );
-};
-
-export const logBusinessEvent = async (
-  event: string,
-  description: string,
-  userId?: string,
-  metadata?: Record<string, any>
-) => {
-  await logger.business(
-    "BUSINESS_EVENT",
-    "business",
-    { userId },
-    { event, description, ...metadata }
-  );
 };
 
 export const createAuthLog = async (
@@ -823,21 +485,6 @@ export const logSystemWarning = async (
     `${operation}: ${message}`,
     { userId, ...logContext },
     metadata
-  );
-};
-
-export const logConfigurationWarning = async (
-  configKey: string,
-  issue: string,
-  fallbackValue?: any,
-  userId?: string
-) => {
-  await logger.log(
-    "warn",
-    "CONFIGURATION_WARNING",
-    `설정 경고: ${configKey} - ${issue}`,
-    { userId },
-    { configKey, issue, fallbackValue }
   );
 };
 
@@ -920,14 +567,6 @@ export const logApiPerformance = async (
   }
 };
 
-export const logPerformanceMetric = async (
-  metricType: string,
-  metric: PerformanceMetric,
-  userId?: string
-) => {
-  await logger.performance(metricType, metric.duration_ms, 1000, { userId });
-};
-
 export class PerformanceMonitor {
   private startTime: number;
   private operation: string;
@@ -980,158 +619,6 @@ export const logSystemResources = async (): Promise<void> => {
 
 // ============================================
 // Validation Logger 통합 (기존 호환성 유지)
-// ============================================
-
-export interface ValidationError {
-  field: string;
-  value: any;
-  message: string;
-  errorType: string;
-}
-
-export interface ValidationSummary {
-  formType: string;
-  totalFields: number;
-  failedFields: string[];
-  errors: ValidationError[];
-  completionRate: number;
-  userId?: string;
-  farmId?: string;
-}
-
-export const logValidationSummary = async (
-  summary: ValidationSummary
-): Promise<void> => {
-  try {
-    if (summary.errors.length === 0) {
-      return;
-    }
-
-    await logger.log(
-      "warn",
-      "VALIDATION_SUMMARY",
-      `${summary.formType} 폼 검증 실패: ${summary.failedFields.join(", ")}`,
-      { userId: summary.userId },
-      {
-        formType: summary.formType,
-        failedFields: summary.failedFields,
-        errorCount: summary.errors.length,
-        completionRate: summary.completionRate,
-        errors: summary.errors,
-      }
-    );
-  } catch (error) {
-    devLog.error("[VALIDATION_SUMMARY] 유효성 검사 로그 생성 실패:", error);
-  }
-};
-
-export class VisitorFormValidator {
-  private errors: ValidationError[] = [];
-  private userId?: string;
-  private farmId?: string;
-
-  constructor(userId?: string, farmId?: string) {
-    this.userId = userId;
-    this.farmId = farmId;
-  }
-
-  validateField(
-    field: string,
-    value: any,
-    validator: (value: any) => {
-      isValid: boolean;
-      message?: string;
-      errorType?: string;
-    }
-  ): boolean {
-    const result = validator(value);
-
-    if (!result.isValid) {
-      this.errors.push({
-        field,
-        value: this.maskSensitiveData(field, value),
-        message: result.message || "유효하지 않은 값입니다",
-        errorType: result.errorType || "validation_failed",
-      });
-      return false;
-    }
-
-    return true;
-  }
-
-  validateRequired(field: string, value: any): boolean {
-    return this.validateField(field, value, (val) => ({
-      isValid: val !== null && val !== undefined && val !== "",
-      message: `${field}은(는) 필수 입력 항목입니다`,
-      errorType: "required_field_missing",
-    }));
-  }
-
-  validatePhone(value: string): boolean {
-    const PHONE_PATTERN = /^010-\d{4}-\d{4}$/;
-    return this.validateField("phone", value, (val) => ({
-      isValid: PHONE_PATTERN.test(val || ""),
-      message: "올바른 전화번호 형식(010-XXXX-XXXX)을 입력해주세요",
-      errorType: "invalid_phone_format",
-    }));
-  }
-
-  validateVehicleNumber(value: string): boolean {
-    return this.validateField("vehicle_number", value, (val) => {
-      if (!val) return { isValid: true };
-      const vehicleRegex = /^[0-9]{2,3}[가-힣][0-9]{4}$/;
-      return {
-        isValid: vehicleRegex.test(val),
-        message: "올바른 차량번호 형식이 아닙니다 (예: 12가3456)",
-        errorType: "invalid_vehicle_format",
-      };
-    });
-  }
-
-  async finalize(totalFields: number): Promise<boolean> {
-    const completionRate = (totalFields - this.errors.length) / totalFields;
-
-    if (this.errors.length > 0) {
-      await logValidationSummary({
-        formType: "visitor_registration",
-        totalFields,
-        failedFields: this.errors.map((e) => e.field),
-        errors: this.errors,
-        completionRate,
-        userId: this.userId,
-        farmId: this.farmId,
-      });
-    }
-
-    return this.errors.length === 0;
-  }
-
-  getErrors(): ValidationError[] {
-    return [...this.errors];
-  }
-
-  reset(): void {
-    this.errors = [];
-  }
-
-  private maskSensitiveData(field: string, value: any): any {
-    if (typeof value !== "string") return value;
-
-    switch (field) {
-      case "phone":
-        return value.replace(/(\d{3})-?(\d{4})-?(\d{4})/, "$1-****-$3");
-      case "name":
-        return value.length > 1
-          ? value[0] + "*".repeat(value.length - 1)
-          : value;
-      default:
-        return value;
-    }
-  }
-}
-
-// ============================================
-// 로그 분류 및 분석 함수들 (기존 호환성 유지)
 // ============================================
 
 /**
@@ -1576,67 +1063,6 @@ export const getLogCategory = (log: any): string => {
   return "system";
 };
 
-export const calculateLogStats = (logs: any[]) => {
-  return {
-    total: logs.length,
-    byLevel: {
-      info: logs.filter((log) => log.level === "info").length,
-      warn: logs.filter((log) => log.level === "warn").length,
-      error: logs.filter((log) => log.level === "error").length,
-      debug: logs.filter((log) => log.level === "debug").length,
-    },
-    recentErrors: logs.filter(
-      (log) =>
-        log.level === "error" &&
-        new Date(log.created_at) > new Date(Date.now() - 24 * 60 * 60 * 1000)
-    ).length,
-  };
-};
-
-// ============================================
-// 로그 필터링 함수들의 테스트를 위한 유틸리티
-// ============================================
-
-export const validateLogFiltering = (
-  logs: any[] = []
-): {
-  totalLogs: number;
-  auditLogs: number;
-  errorLogs: number;
-  categoryCounts: Record<string, number>;
-  uncategorizedActions: string[];
-} => {
-  const auditLogs = logs.filter(isAuditLog);
-  const errorLogs = logs.filter(isErrorLog);
-
-  const categoryCounts: Record<string, number> = {};
-  const uncategorizedActions: string[] = [];
-
-  logs.forEach((log) => {
-    const category = getLogCategory(log);
-    categoryCounts[category] = (categoryCounts[category] || 0) + 1;
-
-    // 시스템 카테고리에 속하는 로그 중 알려지지 않은 액션 찾기
-    if (
-      category === "system" &&
-      log.action &&
-      !isCommonSystemAction(log.action)
-    ) {
-      if (!uncategorizedActions.includes(log.action)) {
-        uncategorizedActions.push(log.action);
-      }
-    }
-  });
-
-  return {
-    totalLogs: logs.length,
-    auditLogs: auditLogs.length,
-    errorLogs: errorLogs.length,
-    categoryCounts,
-    uncategorizedActions,
-  };
-};
-
 /**
  * 일반적인 시스템 액션인지 확인하는 헬퍼 함수
  */
@@ -1666,81 +1092,8 @@ const isCommonSystemAction = (action: string): boolean => {
   );
 };
 
-/**
- * 로그 액션의 완전성을 검사하는 함수
- * 새로운 로그 액션이 추가되었을 때 필터링 함수들을 업데이트해야 하는지 확인
- */
-export const checkLogActionCoverage = (
-  logs: any[] = []
-): {
-  missingInAudit: string[];
-  missingInError: string[];
-  missingInCategory: string[];
-  recommendations: string[];
-} => {
-  const actionSet = new Set(logs.map((log) => log.action).filter(Boolean));
-  const allActions = Array.from(actionSet);
-  const recommendations: string[] = [];
-
-  const missingInAudit = allActions.filter((action) => {
-    const testLog = { action, user_id: "test" };
-    const shouldBeAudit =
-      action.includes("CREATE") ||
-      action.includes("UPDATE") ||
-      action.includes("DELETE") ||
-      action.includes("LOGIN") ||
-      action.includes("USER_") ||
-      action.includes("ADMIN_");
-    return shouldBeAudit && !isAuditLog(testLog);
-  });
-
-  const missingInError = allActions.filter((action) => {
-    const testLog = { action, level: "info" };
-    const shouldBeError =
-      action.includes("FAILED") ||
-      action.includes("ERROR") ||
-      action.includes("DENIED") ||
-      action.includes("WARNING");
-    return shouldBeError && !isErrorLog(testLog);
-  });
-
-  const missingInCategory = allActions.filter((action) => {
-    const testLog = { action };
-    return (
-      getLogCategory(testLog) === "system" && !isCommonSystemAction(action)
-    );
-  });
-
-  if (missingInAudit.length > 0) {
-    recommendations.push(
-      `다음 액션들을 isAuditLog에 추가 고려: ${missingInAudit.join(", ")}`
-    );
-  }
-
-  if (missingInError.length > 0) {
-    recommendations.push(
-      `다음 액션들을 isErrorLog에 추가 고려: ${missingInError.join(", ")}`
-    );
-  }
-
-  if (missingInCategory.length > 0) {
-    recommendations.push(
-      `다음 액션들의 카테고리 분류 검토 필요: ${missingInCategory.join(", ")}`
-    );
-  }
-
-  return {
-    missingInAudit,
-    missingInError,
-    missingInCategory,
-    recommendations,
-  };
-};
-
 // 기본 내보내기 (새로운 프로젝트에서 사용)
 export default {
   logger,
-  PerformanceTimer,
   PerformanceMonitor,
-  VisitorFormValidator,
 };
