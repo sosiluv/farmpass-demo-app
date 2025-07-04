@@ -72,7 +72,7 @@ export default function ResetPasswordPage() {
         <Card className="border-none shadow-soft-lg">
           <CardHeader className="space-y-1 text-center">
             <div className="mx-auto mb-4 flex justify-center">
-              <Logo size="lg" />
+              <Logo size="xl" />
             </div>
             <CardTitle className="text-2xl">비밀번호 재설정</CardTitle>
             <CardDescription>

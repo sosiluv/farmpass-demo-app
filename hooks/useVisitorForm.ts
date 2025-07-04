@@ -3,14 +3,13 @@ import {
   uploadImageUniversal,
   deleteImageUniversal,
 } from "@/lib/utils/media/image-upload";
-import { validateName, validateAddress } from "@/lib/utils/validation";
 import { useCommonToast } from "@/lib/utils/notification/toast-messages";
-import { devLog } from "@/lib/utils/logging/dev-logger";
-import { VISITOR_CONSTANTS } from "@/lib/constants/visitor";
 import type { VisitorFormData, VisitorSettings } from "@/lib/types/visitor";
-import { logApiError } from "@/lib/utils/logging/system-log";
-import { VisitorFormValidator } from "@/lib/utils/logging/system-log";
 import type { Farm as VisitorFarm } from "@/lib/types/visitor";
+import {
+  ALLOWED_IMAGE_TYPES,
+  MAX_UPLOAD_SIZE_MB,
+} from "@/lib/constants/upload";
 
 const initialFormData: VisitorFormData = {
   fullName: "",
@@ -42,7 +41,6 @@ export const useVisitorForm = (farmId: string, settings: VisitorSettings) => {
   // 공통 에러 처리 함수
   const handleError = useCallback(
     (error: Error, title: string) => {
-      devLog.error(`${title} error:`, error);
       toast.showCustomError(title, error.message);
     },
     [toast]
@@ -72,9 +70,9 @@ export const useVisitorForm = (farmId: string, settings: VisitorSettings) => {
 
         // 재방문 제한 메시지에 남은 시간 표시
         setError(
-          `${VISITOR_CONSTANTS.ERROR_MESSAGES.REVISIT_INTERVAL(
-            sessionInfo.reVisitAllowInterval
-          )} (남은 시간: ${Math.ceil(sessionInfo.remainingHours)}시간)`
+          `${sessionInfo.reVisitAllowInterval} (남은 시간: ${Math.ceil(
+            sessionInfo.remainingHours
+          )}시간)`
         );
 
         // 이전 방문 정보로 폼 초기화
@@ -90,12 +88,6 @@ export const useVisitorForm = (farmId: string, settings: VisitorSettings) => {
       }
     } catch (err) {
       handleError(err as Error, "Session check");
-      // 방문자 세션 체크 API 에러 로그
-      await logApiError(
-        `/api/farms/${farmId}/visitors/check-session`,
-        "GET",
-        err instanceof Error ? err : String(err)
-      );
     } finally {
       setIsLoading(false);
     }
@@ -158,81 +150,37 @@ export const useVisitorForm = (farmId: string, settings: VisitorSettings) => {
   }, [farmId, isInitialized, fetchFarm]);
 
   const validateForm = async () => {
-    // 새로운 통합 유효성 검사 시스템 사용
-    const validator = new VisitorFormValidator(undefined, farmId);
-
-    // 이름 검증
-    validator.validateRequired("name", formData.fullName);
-    if (formData.fullName) {
-      const nameValidation = validateName(formData.fullName);
-      if (!nameValidation.isValid) {
-        validator.validateField(
-          "name",
-          formData.fullName,
-          () => nameValidation
-        );
-      }
+    // 이름, 전화번호, 주소 등 단순 유효성 검사만 수행 (VisitorFormValidator 사용 금지)
+    if (!formData.fullName) {
+      setError("이름을 입력해주세요");
+      return false;
     }
-
-    // 전화번호 검증 (필수인 경우)
-    if (settings.requireVisitorContact) {
-      validator.validateRequired("phone", formData.phoneNumber);
-      if (formData.phoneNumber) {
-        validator.validatePhone(formData.phoneNumber);
-      }
+    if (settings.requireVisitorContact && !formData.phoneNumber) {
+      setError("전화번호를 입력해주세요");
+      return false;
     }
-
-    // 주소 검증
-    validator.validateRequired("address", formData.address);
-    if (formData.address) {
-      const addressValidation = validateAddress(formData.address);
-      if (!addressValidation.isValid) {
-        validator.validateField(
-          "address",
-          formData.address,
-          () => addressValidation
-        );
-      }
+    if (!formData.address) {
+      setError("주소를 입력해주세요");
+      return false;
     }
-
-    // 차량번호 검증 (선택사항)
-    if (formData.carPlateNumber) {
-      validator.validateVehicleNumber(formData.carPlateNumber);
+    if (settings.requireVisitPurpose && !formData.visitPurpose) {
+      setError("방문 목적을 입력해주세요");
+      return false;
     }
-
-    // 방문 목적 검증 (필수인 경우)
-    if (settings.requireVisitPurpose) {
-      validator.validateRequired("visitPurpose", formData.visitPurpose);
-    }
-
-    // 프로필 사진 검증 (필수인 경우)
     if (
       settings.requireVisitorPhoto &&
       !formData.profilePhoto &&
       !uploadedImageUrl
     ) {
-      validator.validateRequired(
-        "profilePhoto",
-        formData.profilePhoto || uploadedImageUrl
-      );
+      setError("프로필 사진을 등록해주세요");
+      return false;
     }
-
-    // 개인정보 동의 검증
-    validator.validateRequired("consentGiven", formData.consentGiven);
-
-    // 통합 검증 완료 및 결과 로깅 (총 8개 필드)
-    const isValid = await validator.finalize(8);
-
-    if (!isValid) {
-      const errors = validator.getErrors();
-      const firstError = errors[0];
-      if (firstError) {
-        setError(firstError.message);
-        handleError(new Error(firstError.message), "입력 검증 오류");
-      }
+    if (!formData.consentGiven) {
+      setError("개인정보 수집 및 이용에 동의해주세요");
+      return false;
     }
-
-    return isValid;
+    // 차량번호 등 기타 검증은 필요시 추가
+    return true;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -245,34 +193,24 @@ export const useVisitorForm = (farmId: string, settings: VisitorSettings) => {
 
     try {
       // 일일 방문자 수 체크
-      // const visitorCountResponse = await fetch(
-      //   `/api/farms/${farmId}/visitors/count-today`
-      // );
-      // if (visitorCountResponse.ok) {
-      //   const { count, farm_name } = await visitorCountResponse.json();
-      //   if (count >= settings.maxVisitorsPerDay) {
-      //     // 일일 방문자 수 초과 로그
-      //     await logBusinessEvent(
-      //       "DAILY_VISITOR_THRESHOLD_EXCEEDED",
-      //       `농장 ${farm_name} 일일 방문자 ${count}명 초과`
-      //     );
-
-      //     setError(
-      //       VISITOR_CONSTANTS.ERROR_MESSAGES.DAILY_LIMIT(
-      //         settings.maxVisitorsPerDay
-      //       )
-      //     );
-      //     handleError(
-      //       new Error(
-      //         VISITOR_CONSTANTS.ERROR_MESSAGES.DAILY_LIMIT(
-      //           settings.maxVisitorsPerDay
-      //         )
-      //       ),
-      //       "일일 방문자 수 초과"
-      //     );
-      //     return;
-      //   }
-      // }
+      const visitorCountResponse = await fetch(
+        `/api/farms/${farmId}/visitors/count-today`
+      );
+      if (visitorCountResponse.ok) {
+        const { count, farm_name } = await visitorCountResponse.json();
+        if (count >= settings.maxVisitorsPerDay) {
+          setError(
+            `일일 방문자 수 초과: ${count} / ${settings.maxVisitorsPerDay}`
+          );
+          handleError(
+            new Error(
+              `일일 방문자 수 초과: ${count} / ${settings.maxVisitorsPerDay}`
+            ),
+            "일일 방문자 수 초과"
+          );
+          return;
+        }
+      }
 
       // 프로필 사진 업로드
       let profile_photo_url = uploadedImageUrl;
@@ -281,7 +219,7 @@ export const useVisitorForm = (farmId: string, settings: VisitorSettings) => {
           const result = await uploadImage(formData.profilePhoto);
           profile_photo_url = result?.publicUrl || null;
         } catch (error) {
-          setError(VISITOR_CONSTANTS.ERROR_MESSAGES.UPLOAD_FAILED);
+          setError("이미지 업로드에 실패했습니다");
           handleError(error as Error, "이미지 업로드에 실패했습니다");
           return;
         }
@@ -302,14 +240,10 @@ export const useVisitorForm = (farmId: string, settings: VisitorSettings) => {
       if (!response.ok) {
         const data = await response.json();
         handleError(
-          new Error(
-            data.message || VISITOR_CONSTANTS.ERROR_MESSAGES.REGISTRATION_FAILED
-          ),
+          new Error(data.message || "방문자 등록에 실패했습니다"),
           "방문자 등록에 실패했습니다"
         );
-        throw new Error(
-          data.message || VISITOR_CONSTANTS.ERROR_MESSAGES.REGISTRATION_FAILED
-        );
+        throw new Error(data.message || "방문자 등록에 실패했습니다");
       }
 
       setIsSubmitted(true);
@@ -318,9 +252,7 @@ export const useVisitorForm = (farmId: string, settings: VisitorSettings) => {
       handleSuccess("방문 등록 완료", "방문 등록이 성공적으로 완료되었습니다.");
     } catch (err) {
       setError(
-        err instanceof Error
-          ? err.message
-          : VISITOR_CONSTANTS.ERROR_MESSAGES.REGISTRATION_FAILED
+        err instanceof Error ? err.message : "방문자 등록에 실패했습니다"
       );
       handleError(err as Error, "방문자 등록에 실패했습니다");
     } finally {
@@ -346,8 +278,8 @@ export const useVisitorForm = (farmId: string, settings: VisitorSettings) => {
         bucket: "visitor-photos",
         farmId,
         visitorName: formData.fullName,
-        maxSizeMB: 5,
-        allowedTypes: ["image/jpeg", "image/png", "image/webp"],
+        maxSizeMB: MAX_UPLOAD_SIZE_MB,
+        allowedTypes: [...ALLOWED_IMAGE_TYPES],
       });
 
       setUploadedImageUrl(result.publicUrl);

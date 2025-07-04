@@ -1,43 +1,18 @@
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { useMutation } from "@/hooks/common/useApiData";
-import { devLog } from "@/lib/utils/logging/dev-logger";
 import { useNotificationSettingsStore } from "@/store/use-notification-settings-store";
 import { useCommonToast } from "@/lib/utils/notification/toast-messages";
 import { Save } from "lucide-react";
-import { useState, useEffect } from "react";
 import { Icons } from "@/components/common/icons";
 
 export function NotificationSettingsActions() {
+  const [loading, setLoading] = useState(false);
   const [justSaved, setJustSaved] = useState(false);
-
-  const { mutate: updateSettings, loading } = useMutation(
-    async (settings) => {
-      const response = await fetch("/api/notifications/settings", {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(settings),
-      });
-
-      if (!response.ok) {
-        throw new Error("알림 설정 업데이트에 실패했습니다.");
-      }
-
-      return response.json();
-    },
-    {
-      errorMessage: "알림 설정을 저장하는 중 오류가 발생했습니다.",
-      invalidateCache: "notification-settings",
-    }
-  );
 
   const { unsavedSettings, hasUnsavedChanges, setSettings } =
     useNotificationSettingsStore();
-
   const toast = useCommonToast();
 
-  // 변경사항이 있으면 justSaved 상태를 리셋
   useEffect(() => {
     if (hasUnsavedChanges() && justSaved) {
       setJustSaved(false);
@@ -45,13 +20,29 @@ export function NotificationSettingsActions() {
   }, [unsavedSettings, hasUnsavedChanges, justSaved]);
 
   const handleSave = async () => {
+    setLoading(true);
     try {
-      const savedSettings = await updateSettings(unsavedSettings);
+      const response = await fetch("/api/notifications/settings", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(unsavedSettings),
+      });
+      if (!response.ok) throw new Error("알림 설정 업데이트에 실패했습니다.");
+      const savedSettings = await response.json();
       setSettings(savedSettings);
       setJustSaved(true);
-      toast.showSuccess("NOTIFICATION_SETTINGS_SAVED");
+      toast.showCustomSuccess(
+        "알림 설정 저장 완료",
+        "알림 설정이 성공적으로 저장되었습니다."
+      );
+      // 필요하다면 캐시 무효화 로직 추가
     } catch (error) {
-      toast.showError("NOTIFICATION_SETTINGS_SAVE_FAILED");
+      toast.showCustomError(
+        "알림 설정 저장 실패",
+        "알림 설정을 저장하는 중 오류가 발생했습니다"
+      );
+    } finally {
+      setLoading(false);
     }
   };
 

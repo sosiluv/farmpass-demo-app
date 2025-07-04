@@ -14,6 +14,7 @@ import {
   SystemTab,
 } from "@/components/admin/settings/tabs";
 import { useSystemSettings } from "@/lib/hooks/use-system-settings";
+import { useDynamicFavicon } from "@/hooks/use-dynamic-favicon";
 import { useSystemMode } from "@/components/providers/debug-provider";
 import { useAuth } from "@/components/providers/auth-provider";
 import type { SystemSettings } from "@/lib/types/settings";
@@ -26,6 +27,10 @@ import {
 
 export default function SettingsPage() {
   const { settings, loading, refetch } = useSystemSettings();
+
+  // 설정 페이지에서만 동적 파비콘 업데이트 (기본 파비콘 포함)
+  useDynamicFavicon(settings.favicon || "/favicon.ico");
+
   const { refreshSystemModes } = useSystemMode();
   const [unsavedChanges, setUnsavedChanges] = useState(false);
   const [activeTab, setActiveTab] = useState("general");

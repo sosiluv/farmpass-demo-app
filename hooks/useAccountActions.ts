@@ -3,14 +3,16 @@ import { useRouter } from "next/navigation";
 import { useCommonToast } from "@/lib/utils/notification/toast-messages";
 import { devLog } from "@/lib/utils/logging/dev-logger";
 import { useAuth } from "@/components/providers/auth-provider";
-import { supabase } from "@/lib/supabase/client";
 import {
   uploadImageUniversal,
   deleteExistingProfileImage,
 } from "@/lib/utils/media/image-upload";
-import { logDataChange } from "@/lib/utils/logging/system-log";
 import type { Profile } from "@/lib/types";
 import type { PasswordFormData } from "@/lib/types/account";
+import {
+  ALLOWED_IMAGE_TYPES,
+  MAX_UPLOAD_SIZE_MB,
+} from "@/lib/constants/upload";
 
 interface UseAccountActionsProps {
   profile: Profile;
@@ -48,26 +50,18 @@ export function useAccountActions({ profile, userId }: UseAccountActionsProps) {
     try {
       setIsLoading(true);
 
-      const { error } = await supabase
-        .from("profiles")
-        .update({
-          ...data,
-          updated_at: new Date().toISOString(),
-        })
-        .eq("id", userId);
-
-      if (error) throw error;
-
-      // 성공 로그 기록
-      await logDataChange("PROFILE_UPDATE", "PROFILE", userId, {
-        target_user_id: userId,
-        action_type: actionType,
-        updated_fields: Object.keys(data).filter(
-          (key) => data[key] !== undefined
-        ),
-        account_type: profile.account_type,
-        status: "success",
+      const response = await fetch("/api/profile", {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(data),
       });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "프로필 정보 저장에 실패했습니다");
+      }
 
       handleSuccess("저장 완료", successMessage);
 
@@ -76,15 +70,6 @@ export function useAccountActions({ profile, userId }: UseAccountActionsProps) {
 
       return { success: true };
     } catch (error) {
-      // 실패 로그 기록
-      await logDataChange("PROFILE_UPDATE_FAILED", "PROFILE", userId, {
-        target_user_id: userId,
-        action_type: actionType,
-        error: error instanceof Error ? error.message : String(error),
-        account_type: profile.account_type,
-        status: "failed",
-      });
-
       handleError(error as Error, "프로필 정보 저장에 실패했습니다");
       return { success: false, error: (error as Error).message };
     } finally {
@@ -105,30 +90,29 @@ export function useAccountActions({ profile, userId }: UseAccountActionsProps) {
         file,
         bucket: "profiles",
         userId,
-        maxSizeMB: 5,
-        allowedTypes: ["image/jpeg", "image/png", "image/webp"],
+        maxSizeMB: MAX_UPLOAD_SIZE_MB,
+        allowedTypes: [...ALLOWED_IMAGE_TYPES],
       });
 
       const cacheBustedUrl = `${result.publicUrl}?t=${Date.now()}`;
 
-      const { error: updateError } = await supabase
-        .from("profiles")
-        .update({
-          profile_image_url: result.publicUrl,
-          updated_at: new Date().toISOString(),
-        })
-        .eq("id", userId);
-
-      if (updateError) throw updateError;
-
-      await logDataChange("PROFILE_IMAGE_UPLOAD", "PROFILE", userId, {
-        target_user_id: userId,
-        action_type: "profile_image_upload",
-        updated_fields: ["profile_image_url"],
-        file_name: result.fileName,
-        file_size: file.size,
-        account_type: profile.account_type,
+      const response = await fetch("/api/profile", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          publicUrl: result.publicUrl,
+          fileName: result.fileName,
+        }),
       });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(
+          errorData.error || "프로필 이미지 업로드에 실패했습니다"
+        );
+      }
 
       handleSuccess(
         "프로필 이미지 업로드 완료",
@@ -159,32 +143,24 @@ export function useAccountActions({ profile, userId }: UseAccountActionsProps) {
       await deleteExistingProfileImage(userId);
       devLog.log(`[HANDLE_IMAGE_DELETE] Storage cleanup completed`);
 
-      // 2. 데이터베이스에서 profile_image_url을 null로 설정
-      const { error: updateError } = await supabase
-        .from("profiles")
-        .update({
-          profile_image_url: null,
-          updated_at: new Date().toISOString(),
-        })
-        .eq("id", userId);
+      // 2. 서버 API를 통해 데이터베이스에서 profile_image_url을 null로 설정
+      const response = await fetch("/api/profile", {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
 
-      if (updateError) {
+      if (!response.ok) {
+        const errorData = await response.json();
         devLog.error(
           "[HANDLE_IMAGE_DELETE] Database update failed:",
-          updateError
+          errorData.error
         );
-        throw updateError;
+        throw new Error(errorData.error || "프로필 이미지 삭제에 실패했습니다");
       }
 
       devLog.log(`[HANDLE_IMAGE_DELETE] Database update completed`);
-
-      // 3. 로그 기록
-      await logDataChange("PROFILE_IMAGE_DELETE", "PROFILE", userId, {
-        target_user_id: userId,
-        action_type: "profile_image_delete",
-        updated_fields: ["profile_image_url"],
-        account_type: profile.account_type,
-      });
 
       devLog.log(`[HANDLE_IMAGE_DELETE] Logging completed`);
 

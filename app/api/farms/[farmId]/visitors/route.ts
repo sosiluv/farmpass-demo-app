@@ -231,6 +231,49 @@ export async function POST(
       );
     }
 
+    // 오늘 방문자 수 체크 (일일 제한)
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    const todayCount = await prisma.visitor_entries.count({
+      where: {
+        farm_id: farmId,
+        visit_datetime: {
+          gte: today,
+          lt: tomorrow,
+        },
+      },
+    });
+    if (todayCount >= settings.maxVisitorsPerDay) {
+      // 일일 방문자 수 초과 로그
+      await logVisitorDataAccess(
+        "DAILY_LIMIT_EXCEEDED",
+        undefined,
+        undefined,
+        {
+          farm_id: farmId,
+          farm_name: farm.farm_name,
+          count: todayCount,
+          maxVisitorsPerDay: settings.maxVisitorsPerDay,
+          visitor_name: visitorData.fullName,
+          access_scope: "single_farm",
+          status: "failed",
+        },
+        {
+          ip: clientIP,
+          userAgent: userAgent,
+        }
+      );
+      return NextResponse.json(
+        {
+          message: `오늘 방문자 등록 한도(${settings.maxVisitorsPerDay}명)를 초과했습니다.`,
+          error: "DAILY_LIMIT_EXCEEDED",
+        },
+        { status: 400 }
+      );
+    }
+
     // 방문자 데이터 저장
     const visitor = await prisma.visitor_entries.create({
       data: {

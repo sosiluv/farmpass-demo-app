@@ -1,7 +1,6 @@
 import { useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { devLog } from "@/lib/utils/logging/dev-logger";
-import { createAuthLog } from "@/lib/utils/logging/system-log";
 
 export function useSubscriptionManager() {
   const router = useRouter();
@@ -134,41 +133,10 @@ export function useSubscriptionManager() {
           throw new Error("구독 정보 서버 전송 실패");
         }
 
-        // 8. 구독 전환 성공 로그
-        await createAuthLog(
-          "SUBSCRIPTION_SWITCHED",
-          `구독 전환 완료: ${userId}`,
-          undefined,
-          userId,
-          {
-            endpoint: newSubscription.endpoint,
-            timestamp: new Date().toISOString(),
-            action_type: "subscription_management",
-          }
-        ).catch(() => {
-          // 로그 실패는 무시
-        });
-
         devLog.log(`구독 전환 완료: ${userId}`);
         return true;
       } catch (error) {
         devLog.error("구독 전환 실패:", error);
-
-        // 구독 전환 실패 로그
-        await createAuthLog(
-          "SUBSCRIPTION_SWITCH_FAILED",
-          `구독 전환 실패: ${userId}`,
-          undefined,
-          userId,
-          {
-            error: error instanceof Error ? error.message : String(error),
-            timestamp: new Date().toISOString(),
-            action_type: "subscription_management",
-          }
-        ).catch(() => {
-          // 로그 실패는 무시
-        });
-
         return false;
       }
     },

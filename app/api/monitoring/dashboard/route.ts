@@ -28,6 +28,7 @@ async function fetchUptimeStatus() {
       api_key: process.env.UPTIMEROBOT_API_KEY,
       format: "json",
       logs: 1,
+      custom_uptime_ratios: "30",
     }),
   });
   return res.json();

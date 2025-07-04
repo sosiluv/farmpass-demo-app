@@ -79,3 +79,9 @@ pnpm-lock.yaml
 
 # Cursor IDE
 .cursor/
+
+# PWA Service Worker files (auto-generated)
+public/workbox-*.js
+public/sw.js
+public/sw.js.map
+public/workbox-*.js.map

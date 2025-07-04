@@ -9,6 +9,12 @@ import { useState, useEffect, useMemo } from "react";
 import SettingsCardHeader from "../SettingsCardHeader";
 import { devLog } from "@/lib/utils/logging/dev-logger";
 import { useCommonToast } from "@/lib/utils/notification/toast-messages";
+import {
+  ALLOWED_LOGO_TYPES,
+  ALLOWED_LOGO_EXTENSIONS,
+  ALLOWED_FAVICON_TYPES,
+  ALLOWED_FAVICON_EXTENSIONS,
+} from "@/lib/constants/upload";
 
 interface BrandingSectionProps {
   settings: SystemSettings;
@@ -86,15 +92,16 @@ export function BrandingSection({
                   onUpload={async (file) => {
                     if (!file) return;
                     // 허용 타입 검사 (로고)
-                    const allowedTypes = [
-                      "image/png",
-                      "image/jpeg",
-                      "image/svg+xml",
-                    ];
-                    if (!allowedTypes.includes(file.type)) {
+                    if (
+                      !(ALLOWED_LOGO_TYPES as readonly string[]).includes(
+                        file.type
+                      )
+                    ) {
                       showCustomError(
                         "이미지 업로드 실패",
-                        "허용되지 않은 파일 형식입니다. PNG, JPG, SVG만 업로드 가능합니다."
+                        `허용되지 않은 파일 형식입니다. ${ALLOWED_LOGO_EXTENSIONS.join(
+                          ", "
+                        )} 만 업로드 가능합니다.`
                       );
                       return;
                     }
@@ -115,7 +122,7 @@ export function BrandingSection({
               </div>
               <div className="text-sm text-blue-600/80 space-y-1">
                 <p className="font-medium">권장 크기: 200x60px</p>
-                <p>PNG, SVG, JPG 형식</p>
+                <p>{ALLOWED_LOGO_EXTENSIONS.join(", ").toUpperCase()} 형식</p>
                 <p>헤더 및 대시보드에 표시됩니다</p>
               </div>
             </div>
@@ -133,11 +140,16 @@ export function BrandingSection({
                   onUpload={async (file) => {
                     if (!file) return;
                     // 허용 타입 검사 (파비콘)
-                    const allowedTypes = ["image/png", "image/x-icon"];
-                    if (!allowedTypes.includes(file.type)) {
+                    if (
+                      !(ALLOWED_FAVICON_TYPES as readonly string[]).includes(
+                        file.type
+                      )
+                    ) {
                       showCustomError(
                         "이미지 업로드 실패",
-                        "허용되지 않은 파일 형식입니다. PNG, ICO만 업로드 가능합니다."
+                        `허용되지 않은 파일 형식입니다. ${ALLOWED_FAVICON_EXTENSIONS.join(
+                          ", "
+                        )} 만 업로드 가능합니다.`
                       );
                       return;
                     }
@@ -158,7 +170,9 @@ export function BrandingSection({
               </div>
               <div className="text-sm text-orange-600/80 space-y-1">
                 <p className="font-medium">권장 크기: 32x32px</p>
-                <p>ICO, PNG 형식</p>
+                <p>
+                  {ALLOWED_FAVICON_EXTENSIONS.join(", ").toUpperCase()} 형식
+                </p>
                 <p>브라우저 탭에 표시됩니다</p>
               </div>
             </div>

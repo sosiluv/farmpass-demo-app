@@ -20,7 +20,6 @@ import { formatResponsiveDateTime } from "@/lib/utils/datetime/date";
 import { VisitorAvatar } from "./VisitorAvatar";
 import { StatusBadge } from "./StatusBadge";
 import { useAuth } from "@/components/providers/auth-provider";
-import { logVisitorDataAccess } from "@/lib/utils/logging/system-log";
 import type { VisitorEntryWithFarm } from "@/store/use-visitor-store";
 
 interface VisitorDetailModalProps {
@@ -34,47 +33,6 @@ export function VisitorDetailModal({
 }: VisitorDetailModalProps) {
   const { state } = useAuth();
   const user = state.status === "authenticated" ? state.user : null;
-
-  // 방문자 상세 정보 접근 로그 기록 (useCallback으로 메모이제이션)
-  const logVisitorAccess = useCallback(async () => {
-    if (visitor && user?.id) {
-      try {
-        await logVisitorDataAccess(
-          "DETAIL_VIEW",
-          user.id,
-          user.email,
-          {
-            visitor_id: visitor.id,
-            visitor_name: visitor.visitor_name,
-            farm_id: visitor.farm_id,
-            farm_name: visitor.farms?.farm_name || "Unknown",
-            access_scope: "single_farm",
-          },
-          undefined
-        );
-      } catch (error) {
-        await logVisitorDataAccess(
-          "DETAIL_VIEW_FAILED",
-          user.id,
-          user.email,
-          {
-            visitor_id: visitor.id,
-            visitor_name: visitor.visitor_name,
-            farm_id: visitor.farm_id,
-            farm_name: visitor.farms?.farm_name || "Unknown",
-            access_scope: "single_farm",
-            error: error instanceof Error ? error.message : String(error),
-          },
-          undefined
-        );
-      }
-    }
-  }, [visitor, user?.id]);
-
-  // 방문자 상세 정보 접근 로그 기록
-  useEffect(() => {
-    logVisitorAccess();
-  }, [logVisitorAccess]);
 
   if (!visitor) return null;
 

@@ -55,7 +55,7 @@ export function useQuickActions({
   farmId,
 }: UseQuickActionsProps): UseQuickActionsReturn {
   const [isLoading, setIsLoading] = useState(false);
-  const { showSuccess, showError } = useCommonToast();
+  const { showCustomSuccess, showCustomError } = useCommonToast();
   const { fetchMembers } = useFarmMembersStore();
 
   /**
@@ -79,18 +79,27 @@ export function useQuickActions({
         const result = await promoteMember(farmId, memberId);
 
         if (result.success) {
-          showSuccess("MEMBER_PROMOTED");
+          showCustomSuccess(
+            "멤버 승격 완료",
+            "멤버가 성공적으로 승격되었습니다."
+          );
           await refreshData();
         } else {
-          showError("MEMBER_ACTION_FAILED");
+          showCustomError(
+            "멤버 승격 실패",
+            "멤버를 승격하는 중 오류가 발생했습니다."
+          );
         }
       } catch (error) {
-        showError("MEMBER_ACTION_FAILED");
+        showCustomError(
+          "멤버 승격 실패",
+          "멤버를 승격하는 중 오류가 발생했습니다."
+        );
       } finally {
         setIsLoading(false);
       }
     },
-    [farmId, showSuccess, showError, refreshData]
+    [farmId, showCustomSuccess, showCustomError, refreshData]
   );
 
   /**
@@ -103,18 +112,27 @@ export function useQuickActions({
         const result = await demoteMember(farmId, memberId);
 
         if (result.success) {
-          showSuccess("MEMBER_DEMOTED");
+          showCustomSuccess(
+            "멤버 강등 완료",
+            "멤버가 성공적으로 강등되었습니다."
+          );
           await refreshData();
         } else {
-          showError("MEMBER_ACTION_FAILED");
+          showCustomError(
+            "멤버 강등 실패",
+            "멤버를 강등하는 중 오류가 발생했습니다."
+          );
         }
       } catch (error) {
-        showError("MEMBER_ACTION_FAILED");
+        showCustomError(
+          "멤버 강등 실패",
+          "멤버를 강등하는 중 오류가 발생했습니다."
+        );
       } finally {
         setIsLoading(false);
       }
     },
-    [farmId, showSuccess, showError, refreshData]
+    [farmId, showCustomSuccess, showCustomError, refreshData]
   );
 
   /**
@@ -127,18 +145,27 @@ export function useQuickActions({
         const result = await removeMember(farmId, memberId);
 
         if (result.success) {
-          showSuccess("MEMBER_REMOVED");
+          showCustomSuccess(
+            "멤버 삭제 완료",
+            "멤버가 성공적으로 삭제되었습니다."
+          );
           await refreshData();
         } else {
-          showError("MEMBER_ACTION_FAILED");
+          showCustomError(
+            "멤버 삭제 실패",
+            "멤버를 삭제하는 중 오류가 발생했습니다."
+          );
         }
       } catch (error) {
-        showError("MEMBER_ACTION_FAILED");
+        showCustomError(
+          "멤버 삭제 실패",
+          "멤버를 삭제하는 중 오류가 발생했습니다."
+        );
       } finally {
         setIsLoading(false);
       }
     },
-    [farmId, showSuccess, showError, refreshData]
+    [farmId, showCustomSuccess, showCustomError, refreshData]
   );
 
   /**
@@ -151,21 +178,30 @@ export function useQuickActions({
         const result = await updateMemberRole(farmId, memberId, newRole);
         if (result.success) {
           if (newRole === "manager") {
-            showSuccess("MEMBER_PROMOTED");
+            showCustomSuccess(
+              "멤버 승격 완료",
+              "멤버가 성공적으로 승격되었습니다."
+            );
           } else {
-            showSuccess("MEMBER_DEMOTED");
+            showCustomSuccess(
+              "멤버 강등 완료",
+              "멤버가 성공적으로 강등되었습니다."
+            );
           }
           await refreshData();
         } else {
-          showError("MEMBER_ACTION_FAILED");
+          showCustomError(
+            "멤버 작업 실패",
+            "멤버 작업 중 오류가 발생했습니다."
+          );
         }
       } catch (error) {
-        showError("MEMBER_ACTION_FAILED");
+        showCustomError("멤버 작업 실패", "멤버 작업 중 오류가 발생했습니다.");
       } finally {
         setIsLoading(false);
       }
     },
-    [farmId, showSuccess, showError, refreshData]
+    [farmId, showCustomSuccess, showCustomError, refreshData]
   );
 
   /**
@@ -178,18 +214,24 @@ export function useQuickActions({
         const result = await bulkPromoteMembers(farmId, memberIds);
 
         if (result.success > 0) {
-          showSuccess("MEMBER_PROMOTED");
+          showCustomSuccess(
+            "멤버 승격 완료",
+            "멤버가 성공적으로 승격되었습니다."
+          );
           await refreshData();
         } else {
-          showError("MEMBER_ACTION_FAILED");
+          showCustomError(
+            "멤버 작업 실패",
+            "멤버 작업 중 오류가 발생했습니다."
+          );
         }
       } catch (error) {
-        showError("MEMBER_ACTION_FAILED");
+        showCustomError("멤버 작업 실패", "멤버 작업 중 오류가 발생했습니다.");
       } finally {
         setIsLoading(false);
       }
     },
-    [farmId, showSuccess, showError, refreshData]
+    [farmId, showCustomSuccess, showCustomError, refreshData]
   );
 
   /**
@@ -202,18 +244,24 @@ export function useQuickActions({
         const result = await bulkDemoteMembers(farmId, memberIds);
 
         if (result.success > 0) {
-          showSuccess("MEMBER_DEMOTED");
+          showCustomSuccess(
+            "멤버 강등 완료",
+            "멤버가 성공적으로 강등되었습니다."
+          );
           await refreshData();
         } else {
-          showError("MEMBER_ACTION_FAILED");
+          showCustomError(
+            "멤버 작업 실패",
+            "멤버 작업 중 오류가 발생했습니다."
+          );
         }
       } catch (error) {
-        showError("MEMBER_ACTION_FAILED");
+        showCustomError("멤버 작업 실패", "멤버 작업 중 오류가 발생했습니다.");
       } finally {
         setIsLoading(false);
       }
     },
-    [farmId, showSuccess, showError, refreshData]
+    [farmId, showCustomSuccess, showCustomError, refreshData]
   );
 
   /**
@@ -226,18 +274,24 @@ export function useQuickActions({
         const result = await bulkRemoveMembers(farmId, memberIds);
 
         if (result.success > 0) {
-          showSuccess("MEMBER_REMOVED");
+          showCustomSuccess(
+            "멤버 삭제 완료",
+            "멤버가 성공적으로 삭제되었습니다."
+          );
           await refreshData();
         } else {
-          showError("MEMBER_ACTION_FAILED");
+          showCustomError(
+            "멤버 작업 실패",
+            "멤버 작업 중 오류가 발생했습니다."
+          );
         }
       } catch (error) {
-        showError("MEMBER_ACTION_FAILED");
+        showCustomError("멤버 작업 실패", "멤버 작업 중 오류가 발생했습니다.");
       } finally {
         setIsLoading(false);
       }
     },
-    [farmId, showSuccess, showError, refreshData]
+    [farmId, showCustomSuccess, showCustomError, refreshData]
   );
 
   return {

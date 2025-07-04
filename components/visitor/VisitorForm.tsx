@@ -38,6 +38,11 @@ import {
 } from "@/components/ui/select";
 import { devLog } from "@/lib/utils/logging/dev-logger";
 import { FormSkeleton } from "@/components/common/skeletons";
+import {
+  ALLOWED_IMAGE_TYPES,
+  ALLOWED_IMAGE_EXTENSIONS,
+} from "@/lib/constants/upload";
+import { useCommonToast } from "@/lib/utils/notification/toast-messages";
 
 interface VisitorFormProps {
   settings: VisitorSettings;
@@ -72,6 +77,7 @@ export const VisitorForm = ({
   isImageUploading,
 }: VisitorFormProps) => {
   const [logoError, setLogoError] = useState(false);
+  const { showCustomError } = useCommonToast();
 
   if (isLoading) {
     return (
@@ -85,34 +91,47 @@ export const VisitorForm = ({
 
   return (
     <Card className="shadow-lg rounded-lg sm:rounded-2xl border border-gray-100 bg-white/95">
-      <CardHeader className="text-center pb-1 sm:pb-2 border-b border-gray-100">
-        <CardTitle className="text-sm sm:text-2xl font-bold tracking-tight text-gray-900">
+      <CardHeader className="text-center pb-2 sm:pb-3 border-b border-gray-100 px-3 sm:px-6 pt-3 sm:pt-6">
+        <CardTitle className="text-base sm:text-2xl font-bold tracking-tight text-gray-900">
           방문자 등록
         </CardTitle>
-        <div className="flex flex-col items-center py-1 sm:py-2">
+        <div className="flex flex-col items-center py-1.5 sm:py-2">
           {!logoError ? (
             <img
               src="/default-logo1.png"
               alt="회사 로고"
-              className="w-[75%] sm:w-80 h-auto max-w-[180px] sm:max-w-md mb-2 sm:mb-4 drop-shadow"
+              className="w-[60%] sm:w-80 h-auto max-w-[140px] sm:max-w-md mb-1.5 sm:mb-4 drop-shadow"
               style={{ objectFit: "contain" }}
               onError={() => setLogoError(true)}
             />
           ) : (
-            <Logo size="xl" className="mb-4 text-blue-500" />
+            <Logo size="xl" className="mb-3 sm:mb-4 text-blue-500" />
           )}
         </div>
-        <CardDescription className="text-center text-[10px] sm:text-base text-gray-600">
+        <CardDescription className="text-center text-xs sm:text-base text-gray-600 px-2">
           방문 정보를 정확히 입력해주세요. 모든 정보는 방역 관리 목적으로만
           사용됩니다.
         </CardDescription>
       </CardHeader>
-      <CardContent className="pt-2 sm:pt-6 pb-2 px-1 sm:px-6">
+      <CardContent className="pt-3 sm:pt-6 pb-3 sm:pb-6 px-4 sm:px-8">
         {/* 프로필 사진 업로드 영역 */}
-        <div className="mb-2 sm:mb-6 flex flex-col items-center">
+        <div className="mb-3 sm:mb-6 flex flex-col items-center">
           <ImageUpload
             onUpload={async (file) => {
               if (file) {
+                if (
+                  !(ALLOWED_IMAGE_TYPES as readonly string[]).includes(
+                    file.type
+                  )
+                ) {
+                  showCustomError(
+                    "이미지 업로드 실패",
+                    `허용되지 않은 파일 형식입니다. ${ALLOWED_IMAGE_EXTENSIONS.join(
+                      ", "
+                    )} 만 업로드 가능합니다.`
+                  );
+                  return;
+                }
                 onInputChange("profilePhoto", file);
                 await onImageUpload(file);
               }
@@ -134,20 +153,20 @@ export const VisitorForm = ({
             }
             required={settings.requireVisitorPhoto}
             showCamera={true}
-            avatarSize="xl"
+            avatarSize="md"
             label={VISITOR_CONSTANTS.LABELS.PROFILE_PHOTO}
-            className="shadow border border-gray-100 bg-white rounded-lg sm:rounded-xl p-1 sm:p-4"
+            className="shadow border border-gray-100 bg-white rounded-lg sm:rounded-xl p-2 sm:p-4"
           />
         </div>
-        <form onSubmit={onSubmit} className="space-y-1.5 sm:space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-1.5 sm:gap-6">
+        <form onSubmit={onSubmit} className="space-y-3 sm:space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-6">
             {/* 성명 */}
-            <div className="space-y-2">
+            <div className="space-y-2 sm:space-y-2">
               <Label
                 htmlFor="fullName"
-                className="flex items-center gap-2 font-semibold text-gray-800"
+                className="flex items-center gap-2 font-semibold text-gray-800 text-sm"
               >
-                <User className="h-4 w-4" />
+                <User className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                 {VISITOR_CONSTANTS.LABELS.FULL_NAME}
                 <span className="text-red-500">*</span>
               </Label>
@@ -157,16 +176,16 @@ export const VisitorForm = ({
                 onChange={(e) => onInputChange("fullName", e.target.value)}
                 placeholder={VISITOR_CONSTANTS.PLACEHOLDERS.FULL_NAME}
                 required
-                className="h-12 bg-gray-50 border border-gray-200"
+                className="h-10 sm:h-12 bg-gray-50 border border-gray-200 text-sm"
               />
             </div>
             {/* 연락처 */}
-            <div className="space-y-2">
+            <div className="space-y-2 sm:space-y-2">
               <Label
                 htmlFor="phoneNumber"
-                className="flex items-center gap-2 font-semibold text-gray-800"
+                className="flex items-center gap-2 font-semibold text-gray-800 text-sm"
               >
-                <Phone className="h-4 w-4" />
+                <Phone className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                 {VISITOR_CONSTANTS.LABELS.PHONE_NUMBER}
                 {settings.requireVisitorContact && (
                   <span className="text-red-500">*</span>
@@ -177,13 +196,13 @@ export const VisitorForm = ({
                 value={formData.phoneNumber}
                 onChange={(e) => onInputChange("phoneNumber", e.target.value)}
                 placeholder={VISITOR_CONSTANTS.PLACEHOLDERS.PHONE_NUMBER}
-                className="h-12 bg-gray-50 border border-gray-200"
+                className="h-10 sm:h-12 bg-gray-50 border border-gray-200 text-sm"
               />
             </div>
             {/* 주소 */}
-            <div className="space-y-2 md:col-span-2">
-              <Label className="flex items-center gap-2 font-semibold text-gray-800">
-                <MapPin className="h-4 w-4" />
+            <div className="space-y-2 sm:space-y-2 md:col-span-2">
+              <Label className="flex items-center gap-2 font-semibold text-gray-800 text-sm">
+                <MapPin className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                 {VISITOR_CONSTANTS.LABELS.ADDRESS}
                 <span className="text-red-500">*</span>
               </Label>
@@ -195,8 +214,8 @@ export const VisitorForm = ({
                 defaultDetailedAddress={formData.detailedAddress}
               />
               {formData.address && (
-                <div className="mt-2 p-3 bg-gray-50 border border-gray-200 rounded-lg">
-                  <div className="text-sm">
+                <div className="mt-2 p-2.5 sm:p-3 bg-gray-50 border border-gray-200 rounded-lg">
+                  <div className="text-xs sm:text-sm">
                     <div className="font-medium text-gray-700">
                       선택된 주소:
                     </div>
@@ -214,12 +233,12 @@ export const VisitorForm = ({
               )}
             </div>
             {/* 차량번호 */}
-            <div className="space-y-2">
+            <div className="space-y-2 sm:space-y-2">
               <Label
                 htmlFor="carPlateNumber"
-                className="flex items-center gap-2 font-semibold text-gray-800"
+                className="flex items-center gap-2 font-semibold text-gray-800 text-sm"
               >
-                <Car className="h-4 w-4" />
+                <Car className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                 {VISITOR_CONSTANTS.LABELS.CAR_PLATE}
               </Label>
               <Input
@@ -229,16 +248,16 @@ export const VisitorForm = ({
                   onInputChange("carPlateNumber", e.target.value.toUpperCase())
                 }
                 placeholder={VISITOR_CONSTANTS.PLACEHOLDERS.CAR_PLATE}
-                className="h-12 bg-gray-50 border border-gray-200 uppercase"
+                className="h-10 sm:h-12 bg-gray-50 border border-gray-200 uppercase text-sm"
               />
             </div>
             {/* 방문목적 */}
-            <div className="space-y-2">
+            <div className="space-y-2 sm:space-y-2">
               <Label
                 htmlFor="visitPurpose"
-                className="flex items-center gap-2 font-semibold text-gray-800"
+                className="flex items-center gap-2 font-semibold text-gray-800 text-sm"
               >
-                <FileText className="h-4 w-4" />
+                <FileText className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                 {VISITOR_CONSTANTS.LABELS.VISIT_PURPOSE}
                 {settings.requireVisitPurpose && (
                   <span className="text-red-500">*</span>
@@ -249,7 +268,7 @@ export const VisitorForm = ({
                 onValueChange={(value) => onInputChange("visitPurpose", value)}
                 required={settings.requireVisitPurpose}
               >
-                <SelectTrigger className="h-12 bg-gray-50 border border-gray-200">
+                <SelectTrigger className="h-10 sm:h-12 bg-gray-50 border border-gray-200 text-sm">
                   <SelectValue
                     placeholder={VISITOR_CONSTANTS.PLACEHOLDERS.VISIT_PURPOSE}
                   />
@@ -267,8 +286,12 @@ export const VisitorForm = ({
               </Select>
             </div>
             {/* 비고 */}
-            <div className="space-y-2 md:col-span-2">
-              <Label htmlFor="notes" className="font-medium">
+            <div className="space-y-2 sm:space-y-2 md:col-span-2">
+              <Label
+                htmlFor="notes"
+                className="flex items-center gap-2 font-semibold text-gray-800 text-sm"
+              >
+                <FileText className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                 {VISITOR_CONSTANTS.LABELS.NOTES}
               </Label>
               <Textarea
@@ -277,39 +300,43 @@ export const VisitorForm = ({
                 onChange={(e) => onInputChange("notes", e.target.value)}
                 placeholder={VISITOR_CONSTANTS.PLACEHOLDERS.NOTES}
                 rows={3}
-                className="resize-none bg-gray-50 border border-gray-200"
+                className="resize-none bg-gray-50 border border-gray-200 text-sm"
               />
             </div>
           </div>
           {/* 소독여부 - 개인정보 동의 위에 단독 배치 */}
-          <div className="flex items-center space-x-3 p-3 bg-green-50 border border-green-200 rounded-lg mb-4 mt-2">
+          <div className="flex items-center space-x-2 sm:space-x-3 p-2.5 sm:p-3 bg-green-50 border border-green-200 rounded-lg mb-3 sm:mb-4 mt-2">
             <Checkbox
               id="disinfectionCheck"
               checked={formData.disinfectionCheck}
               onCheckedChange={(checked) =>
                 onInputChange("disinfectionCheck", !!checked)
               }
+              className="w-4 h-4 sm:w-5 sm:h-5"
             />
             <Label
               htmlFor="disinfectionCheck"
-              className="flex items-center gap-2 font-medium"
+              className="flex items-center gap-1.5 sm:gap-2 font-medium text-sm sm:text-base"
             >
-              <Shield className="h-4 w-4 text-green-600" />
+              <Shield className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-green-600" />
               {VISITOR_CONSTANTS.LABELS.DISINFECTION}
             </Label>
           </div>
           {/* 개인정보 동의 */}
-          <div className="mt-4">
-            <div className="flex items-start space-x-3 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+          <div className="mt-3 sm:mt-4">
+            <div className="flex items-start space-x-2 sm:space-x-3 p-3 sm:p-4 bg-blue-50 border border-blue-200 rounded-lg">
               <Checkbox
                 id="consentGiven"
                 checked={formData.consentGiven}
                 onCheckedChange={(checked) =>
                   onInputChange("consentGiven", !!checked)
                 }
-                className="mt-1"
+                className="mt-1 w-4 h-4 sm:w-5 sm:h-5"
               />
-              <Label htmlFor="consentGiven" className="text-sm leading-relaxed">
+              <Label
+                htmlFor="consentGiven"
+                className="text-xs sm:text-sm leading-relaxed"
+              >
                 <span className="font-medium">
                   {VISITOR_CONSTANTS.LABELS.CONSENT}
                 </span>
@@ -323,14 +350,14 @@ export const VisitorForm = ({
             </div>
           </div>
           {error && (
-            <Alert variant="destructive">
+            <Alert variant="destructive" className="mt-3 sm:mt-4">
               <AlertTriangle className="h-4 w-4" />
-              <AlertDescription>{error}</AlertDescription>
+              <AlertDescription className="text-sm">{error}</AlertDescription>
             </Alert>
           )}
           <Button
             type="submit"
-            className="w-full h-12 text-lg font-semibold bg-gradient-to-r from-blue-500 to-indigo-500 text-white shadow-md hover:from-blue-600 hover:to-indigo-600 transition-colors"
+            className="w-full h-11 sm:h-12 text-base sm:text-lg font-semibold bg-gradient-to-r from-blue-500 to-indigo-500 text-white shadow-md hover:from-blue-600 hover:to-indigo-600 transition-colors mt-4 sm:mt-6"
             disabled={isSubmitting}
           >
             {isSubmitting ? (

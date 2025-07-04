@@ -1,14 +1,19 @@
 import React, { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { Upload, Bell, BadgeCheck } from "lucide-react";
+
+import { Bell, BadgeCheck } from "lucide-react";
 import type { SystemSettings } from "@/lib/types/settings";
 import SettingsCardHeader from "../SettingsCardHeader";
-import { devLog } from "@/lib/utils/logging/dev-logger";
+
 import { ImageUpload } from "@/components/ui/image-upload";
 import { useCommonToast } from "@/lib/utils/notification/toast-messages";
+import {
+  ALLOWED_NOTIFICATION_ICON_TYPES,
+  ALLOWED_NOTIFICATION_ICON_EXTENSIONS,
+  ALLOWED_NOTIFICATION_BADGE_TYPES,
+  ALLOWED_NOTIFICATION_BADGE_EXTENSIONS,
+} from "@/lib/constants/upload";
 
 interface NotificationIconSectionProps {
   settings: SystemSettings;
@@ -98,15 +103,16 @@ const NotificationIconSection = React.memo(function NotificationIconSection({
                   onUpload={async (file) => {
                     if (!file) return;
                     // 허용 타입 검사 (알림 아이콘)
-                    const allowedTypes = [
-                      "image/png",
-                      "image/svg+xml",
-                      "image/jpeg",
-                    ];
-                    if (!allowedTypes.includes(file.type)) {
+                    if (
+                      !(
+                        ALLOWED_NOTIFICATION_ICON_TYPES as readonly string[]
+                      ).includes(file.type)
+                    ) {
                       showCustomError(
                         "이미지 업로드 실패",
-                        "허용되지 않은 파일 형식입니다. PNG, JPG, SVG만 업로드 가능합니다."
+                        `허용되지 않은 파일 형식입니다. ${ALLOWED_NOTIFICATION_ICON_EXTENSIONS.join(
+                          ", "
+                        )} 만 업로드 가능합니다.`
                       );
                       return;
                     }
@@ -132,7 +138,12 @@ const NotificationIconSection = React.memo(function NotificationIconSection({
               </div>
               <div className="text-sm text-blue-600/80 space-y-1">
                 <p className="font-medium">권장 크기: 192x192px</p>
-                <p>PNG, SVG, JPG 형식</p>
+                <p>
+                  {ALLOWED_NOTIFICATION_ICON_EXTENSIONS.join(
+                    ", "
+                  ).toUpperCase()}{" "}
+                  형식
+                </p>
                 <p>푸시 알림에 표시됩니다</p>
               </div>
             </div>
@@ -149,15 +160,16 @@ const NotificationIconSection = React.memo(function NotificationIconSection({
                   onUpload={async (file) => {
                     if (!file) return;
                     // 허용 타입 검사 (배지 아이콘)
-                    const allowedTypes = [
-                      "image/png",
-                      "image/svg+xml",
-                      "image/jpeg",
-                    ];
-                    if (!allowedTypes.includes(file.type)) {
+                    if (
+                      !(
+                        ALLOWED_NOTIFICATION_BADGE_TYPES as readonly string[]
+                      ).includes(file.type)
+                    ) {
                       showCustomError(
                         "이미지 업로드 실패",
-                        "허용되지 않은 파일 형식입니다. PNG, JPG, SVG만 업로드 가능합니다."
+                        `허용되지 않은 파일 형식입니다. ${ALLOWED_NOTIFICATION_BADGE_EXTENSIONS.join(
+                          ", "
+                        )} 만 업로드 가능합니다.`
                       );
                       return;
                     }
@@ -183,7 +195,12 @@ const NotificationIconSection = React.memo(function NotificationIconSection({
               </div>
               <div className="text-sm text-orange-600/80 space-y-1">
                 <p className="font-medium">권장 크기: 72x72px</p>
-                <p>PNG, SVG, JPG 형식</p>
+                <p>
+                  {ALLOWED_NOTIFICATION_BADGE_EXTENSIONS.join(
+                    ", "
+                  ).toUpperCase()}{" "}
+                  형식
+                </p>
                 <p>푸시 알림 배지에 표시됩니다</p>
               </div>
             </div>

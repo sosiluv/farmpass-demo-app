@@ -1,6 +1,4 @@
-import { createSystemLog } from "@/lib/utils/logging/system-log";
 import { downloadAdvancedCSV } from "@/lib/utils/data/csv-unified";
-import { getKSTDateTimeForFileName } from "@/lib/utils/datetime/date";
 import { isAuditLog, getLogCategory } from "@/lib/utils/logging/system-log";
 import type { SystemLog } from "@/lib/types/system";
 import type { LogsExportOptions } from "../exports";
@@ -83,40 +81,8 @@ export function LogsExportManager({ logs, children }: LogsExportManagerProps) {
         includeDate: true,
         includeBOM: true,
       });
-
-      // 로그 내보내기 성공 로그 기록
-      await createSystemLog(
-        "LOG_EXPORT",
-        `관리자가 시스템 로그를 내보냈습니다 (${exportLogs.length}개)`,
-        "info",
-        undefined,
-        "system",
-        undefined,
-        {
-          action: "export_logs",
-          exported_count: exportLogs.length,
-          total_logs: logs.length,
-          export_options: options,
-          timestamp: new Date().toISOString(),
-        }
-      );
     } catch (error) {
       devLog.error("로그 내보내기 오류:", error);
-
-      // 로그 내보내기 실패 로그 기록
-      await createSystemLog(
-        "LOG_EXPORT_ERROR",
-        "시스템 로그 내보내기 실패",
-        "error",
-        undefined,
-        "system",
-        undefined,
-        {
-          action: "export_logs",
-          error: error instanceof Error ? error.message : String(error),
-          timestamp: new Date().toISOString(),
-        }
-      );
 
       throw error;
     }

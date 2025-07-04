@@ -1,11 +1,14 @@
 import { supabase } from "@/lib/supabase/client";
 import { v4 as uuidv4 } from "uuid";
-import {
-  logExternalServiceError,
-  logFileUploadError,
-  logSystemWarning,
-} from "@/lib/utils/logging/system-log";
 import { devLog } from "@/lib/utils/logging/dev-logger";
+import {
+  MAX_UPLOAD_SIZE_MB,
+  DEFAULT_IMAGE_CACHE_CONTROL,
+  DEFAULT_IMAGE_QUALITY,
+  DEFAULT_IMAGE_WIDTH,
+  DEFAULT_IMAGE_HEIGHT,
+  DEFAULT_IMAGE_FORMAT,
+} from "@/lib/constants/upload";
 
 export interface UploadImageOptions {
   file: File;
@@ -22,7 +25,7 @@ export interface UniversalUploadOptions {
   farmId?: string;
   visitorName?: string;
   maxSizeMB?: number;
-  allowedTypes?: string[];
+  allowedTypes: string[];
   cacheControl?: string;
 }
 
@@ -44,9 +47,9 @@ export async function uploadImageUniversal({
   userId,
   farmId,
   visitorName,
-  maxSizeMB = 5,
-  allowedTypes = ["image/jpeg", "image/png", "image/webp"],
-  cacheControl = "3600",
+  maxSizeMB = MAX_UPLOAD_SIZE_MB,
+  allowedTypes,
+  cacheControl = DEFAULT_IMAGE_CACHE_CONTROL,
 }: UniversalUploadOptions): Promise<{ publicUrl: string; fileName: string }> {
   try {
     // 파일 크기 검증
@@ -58,7 +61,9 @@ export async function uploadImageUniversal({
     // 파일 형식 검증
     if (!allowedTypes.includes(file.type)) {
       throw new ImageUploadError(
-        `지원되는 파일 형식: ${allowedTypes.join(", ")}`
+        `지원되지 않는 파일 형식입니다. ${allowedTypes.join(
+          ", "
+        )} 만 업로드 가능합니다.`
       );
     }
 
@@ -109,17 +114,6 @@ export async function uploadImageUniversal({
       fileName: data.path,
     };
   } catch (error) {
-    // 외부 서비스 에러 로그
-    await logExternalServiceError(
-      "supabase_storage",
-      "file_upload",
-      error,
-      userId
-    );
-
-    // 파일 업로드 에러 로그 (문서에 명시된 로그)
-    await logFileUploadError(file.name, file.size, error, userId);
-
     if (error instanceof ImageUploadError) {
       throw error;
     }
@@ -187,14 +181,6 @@ export async function deleteExistingProfileImage(
     if (listError) {
       devLog.error("Failed to list existing profile images:", listError);
 
-      // 기존 이미지 목록 조회 실패 로그 (문서에 명시된 WARN 레벨)
-      await logSystemWarning(
-        "existing_images_list_failed",
-        `기존 프로필 이미지 목록 조회 실패: ${listError.message}`,
-        { userId },
-        { error: listError.message }
-      );
-
       // 목록 조회 실패 시에도 에러를 던져서 사용자에게 알림
       throw new ImageUploadError(
         `프로필 이미지 목록 조회에 실패했습니다: ${listError.message}`
@@ -215,14 +201,6 @@ export async function deleteExistingProfileImage(
       if (removeError) {
         devLog.error("Failed to remove profile images:", removeError);
 
-        // 기존 이미지 정리 실패 로그 (문서에 명시된 WARN 레벨)
-        await logSystemWarning(
-          "existing_images_cleanup_failed",
-          `기존 프로필 이미지 정리 실패: ${removeError.message}`,
-          { userId },
-          { filePaths, error: removeError.message }
-        );
-
         // 삭제 실패 시 에러를 던져서 사용자에게 알림
         throw new ImageUploadError(
           `프로필 이미지 삭제에 실패했습니다: ${removeError.message}`
@@ -238,12 +216,6 @@ export async function deleteExistingProfileImage(
       );
     }
   } catch (error) {
-    devLog.error("Failed to delete existing profile image:", error);
-
-    // 이미지 삭제 프로세스 에러 로그
-    await logFileUploadError("profile_images_cleanup", 0, error, userId);
-
-    // ImageUploadError가 아닌 경우에만 새로운 에러로 래핑
     if (error instanceof ImageUploadError) {
       throw error;
     }
@@ -292,9 +264,6 @@ export async function deleteImageUniversal({
     if (error) {
       devLog.error(`[DELETE_IMAGE] Supabase error:`, error);
 
-      // 이미지 삭제 에러 로그
-      await logFileUploadError(fileName, 0, error, undefined);
-
       throw new ImageUploadError(
         `이미지 삭제 중 오류가 발생했습니다: ${error.message}`
       );
@@ -302,11 +271,6 @@ export async function deleteImageUniversal({
 
     devLog.log(`[DELETE_IMAGE] Successfully deleted:`, data);
   } catch (error) {
-    devLog.error(`[DELETE_IMAGE] Unexpected error:`, error);
-
-    // 이미지 삭제 프로세스 에러 로그
-    await logFileUploadError(fileName, 0, error, undefined);
-
     if (error instanceof ImageUploadError) {
       throw error;
     }

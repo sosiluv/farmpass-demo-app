@@ -1,5 +1,4 @@
 import { useCommonToast } from "@/lib/utils/notification/toast-messages";
-import { logSystemWarning } from "@/lib/utils/logging/system-log";
 import type { SystemSettings } from "@/lib/types/settings";
 
 interface SettingsValidatorProps {
@@ -42,18 +41,6 @@ export function useSettingsValidator({ user }: SettingsValidatorProps) {
         !isNaN(numValue) &&
         (numValue < validation.min || numValue > validation.max)
       ) {
-        // 설정 유효성 검사 실패 로그 (문서에 명시된 WARN 레벨)
-        await logSystemWarning(
-          "settings_validation_failed",
-          `설정 유효성 검사 실패: ${key} = ${value} (허용 범위: ${validation.min}-${validation.max})`,
-          { userId: user?.id },
-          {
-            setting_key: key,
-            attempted_value: value,
-            validation_rule: validation,
-          }
-        );
-
         showCustomError(
           "설정 유효성 검사 실패",
           `${validation.name}는 ${validation.min}에서 ${validation.max} 사이의 값이어야 합니다.`

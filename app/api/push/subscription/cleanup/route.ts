@@ -63,6 +63,21 @@ export async function POST(request: NextRequest) {
     }
 
     if (!subscriptions || subscriptions.length === 0) {
+      // 정리할 구독 없음 로그
+      await createSystemLog(
+        "PUSH_SUBSCRIPTION_CLEANUP_NONE",
+        `정리할 구독이 없습니다. (방식: ${
+          realTimeCheck ? "realtime" : "basic"
+        })`,
+        "info",
+        user.id,
+        "system",
+        "cleanup",
+        undefined,
+        user.email,
+        clientIP,
+        userAgent
+      );
       return NextResponse.json({
         message: "정리할 구독이 없습니다.",
         cleanedCount: 0,
@@ -81,8 +96,8 @@ export async function POST(request: NextRequest) {
         tag: "validity-check-silent",
         silent: true,
         requireInteraction: false,
-        icon: "/icon-192x192.png",
-        badge: "/icon-192x192.png",
+        icon: "/icon-192x192.svg",
+        badge: "/icon-192x192.svg",
         data: {
           isValidityCheck: true,
           timestamp: Date.now(),
@@ -202,7 +217,25 @@ export async function POST(request: NextRequest) {
     if (cleanedCount > 0) {
       await createSystemLog(
         "PUSH_SUBSCRIPTION_CLEANUP",
-        `만료된 푸시 구독이 정리되었습니다. 정리된 구독 수: ${cleanedCount}`,
+        `만료된 푸시 구독이 정리되었습니다. 정리된 구독 수: ${cleanedCount} (방식: ${
+          realTimeCheck ? "realtime" : "basic"
+        })`,
+        "info",
+        user.id,
+        "system",
+        "cleanup",
+        undefined,
+        user.email,
+        clientIP,
+        userAgent
+      );
+    } else {
+      // 모든 구독이 유효한 경우도 로그
+      await createSystemLog(
+        "PUSH_SUBSCRIPTION_CLEANUP_ALL_VALID",
+        `모든 푸시 구독이 유효합니다. (방식: ${
+          realTimeCheck ? "realtime" : "basic"
+        }, 검사: ${subscriptions.length}, 유효: ${validCount})`,
         "info",
         user.id,
         "system",

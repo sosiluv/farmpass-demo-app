@@ -66,7 +66,6 @@ export default async function MaintenancePage() {
             src={`/uploads/${settings.logo}?t=${Date.now()}`}
             alt={settings.siteName}
             fill
-            priority
             className="object-contain"
             sizes="48px"
           />

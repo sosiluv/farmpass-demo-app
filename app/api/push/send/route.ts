@@ -144,6 +144,24 @@ export async function POST(request: NextRequest) {
 
     // 입력 검증
     if (!title || !message || !notificationType) {
+      await createSystemLog(
+        "PUSH_NOTIFICATION_INVALID_INPUT",
+        `푸시 알림 입력값 검증 실패 (필수값 누락). title: ${title}, message: ${message}, notificationType: ${notificationType}`,
+        "warn",
+        user?.id,
+        "system",
+        farmId || "all",
+        {
+          title,
+          message,
+          notificationType,
+          targetUserIds,
+          farmId,
+        },
+        user?.email,
+        clientIP,
+        userAgent
+      );
       return NextResponse.json(
         { error: "제목, 메시지, 알림 유형은 필수입니다." },
         { status: 400 }
@@ -155,6 +173,24 @@ export async function POST(request: NextRequest) {
         notificationType
       )
     ) {
+      await createSystemLog(
+        "PUSH_NOTIFICATION_INVALID_INPUT",
+        `푸시 알림 입력값 검증 실패 (잘못된 알림 유형). notificationType: ${notificationType}`,
+        "warn",
+        user?.id,
+        "system",
+        farmId || "all",
+        {
+          title,
+          message,
+          notificationType,
+          targetUserIds,
+          farmId,
+        },
+        user?.email,
+        clientIP,
+        userAgent
+      );
       return NextResponse.json(
         { error: "유효하지 않은 알림 유형입니다." },
         { status: 400 }
@@ -176,6 +212,24 @@ export async function POST(request: NextRequest) {
 
     // VAPID 키 초기화
     if (!(await initializeVapidKeys())) {
+      await createSystemLog(
+        "PUSH_NOTIFICATION_VAPID_INIT_FAILED",
+        `VAPID 키 초기화 실패.`,
+        "error",
+        user?.id,
+        "system",
+        farmId || "all",
+        {
+          title,
+          message,
+          notificationType,
+          targetUserIds,
+          farmId,
+        },
+        user?.email,
+        clientIP,
+        userAgent
+      );
       return NextResponse.json(
         { error: "VAPID 키가 설정되지 않았습니다." },
         { status: 500 }
@@ -212,6 +266,25 @@ export async function POST(request: NextRequest) {
       await subscriptionQuery;
 
     if (subscriptionError) {
+      await createSystemLog(
+        "PUSH_NOTIFICATION_SUBSCRIBER_FETCH_FAILED",
+        `푸시 구독자 조회 실패.`,
+        "error",
+        user?.id,
+        "system",
+        farmId || "all",
+        {
+          title,
+          message,
+          notificationType,
+          targetUserIds,
+          farmId,
+          subscriptionError: subscriptionError.message,
+        },
+        user?.email,
+        clientIP,
+        userAgent
+      );
       devLog.error("구독자 조회 오류:", subscriptionError);
       return NextResponse.json(
         { error: "구독자 조회에 실패했습니다." },
@@ -261,6 +334,25 @@ export async function POST(request: NextRequest) {
       .eq("is_active", true);
 
     if (settingsError) {
+      await createSystemLog(
+        "PUSH_NOTIFICATION_SETTINGS_FETCH_FAILED",
+        `알림 설정 조회 실패.`,
+        "error",
+        user?.id,
+        "system",
+        farmId || "all",
+        {
+          title,
+          message,
+          notificationType,
+          targetUserIds,
+          farmId,
+          settingsError: settingsError.message,
+        },
+        user?.email,
+        clientIP,
+        userAgent
+      );
       devLog.error("알림 설정 조회 오류:", settingsError);
       return NextResponse.json(
         { error: "알림 설정 조회에 실패했습니다." },

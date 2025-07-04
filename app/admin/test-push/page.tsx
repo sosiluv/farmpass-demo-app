@@ -330,7 +330,7 @@ export default function PushNotificationTestPage() {
 
   const sendCustomNotification = async () => {
     if (!testForm.title || !testForm.message) {
-      toast.showError("NOTIFICATION_FAILED");
+      toast.showCustomError("알림 작업 실패", "푸시 알림 작업에 실패했습니다.");
       return;
     }
 
@@ -370,7 +370,10 @@ export default function PushNotificationTestPage() {
             sentPayload: payload,
           },
         });
-        toast.showSuccess("NOTIFICATION_TEST_SUCCESS");
+        toast.showCustomSuccess(
+          "테스트 알림 발송 완료",
+          "테스트 알림이 성공적으로 발송되었습니다."
+        );
       } else {
         throw new Error(result.error || "알림 발송 실패");
       }
@@ -381,7 +384,10 @@ export default function PushNotificationTestPage() {
         message: error instanceof Error ? error.message : "발송 실패",
         details: error,
       });
-      toast.showError("NOTIFICATION_TEST_FAILED");
+      toast.showCustomError(
+        "테스트 알림 발송 실패",
+        "테스트 알림 발송에 실패했습니다."
+      );
     } finally {
       setIsLoading(false);
     }
@@ -390,7 +396,10 @@ export default function PushNotificationTestPage() {
   // 실제 방문자 등록을 통한 알림 테스트
   const runVisitorFormTest = async () => {
     if (!visitorTestForm.farmId) {
-      toast.showError("FARM_FETCH_FAILED");
+      toast.showCustomError(
+        "농장 목록 조회 실패",
+        "농장 목록을 불러오는 중 오류가 발생했습니다."
+      );
       return;
     }
 
@@ -445,7 +454,10 @@ export default function PushNotificationTestPage() {
             },
           },
         });
-        toast.showSuccess("VISITOR_CREATED");
+        toast.showCustomSuccess(
+          "방문자 등록 완료",
+          "방문자가 성공적으로 등록되었습니다."
+        );
       } else {
         throw new Error(result.message || result.error || "방문자 등록 실패");
       }
@@ -457,7 +469,10 @@ export default function PushNotificationTestPage() {
         message: error instanceof Error ? error.message : "방문자 등록 실패",
         details: error,
       });
-      toast.showError("VISITOR_CREATE_FAILED");
+      toast.showCustomError(
+        "방문자 등록 실패",
+        "방문자를 등록하는 중 오류가 발생했습니다."
+      );
     } finally {
       setIsLoading(false);
     }

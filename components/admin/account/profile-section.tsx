@@ -22,6 +22,10 @@ import type { ProfileSectionProps, ProfileFormData } from "@/lib/types/account";
 import AccountCardHeader from "./AccountCardHeader";
 import { devLog } from "@/lib/utils/logging/dev-logger";
 import { useCommonToast } from "@/lib/utils/notification/toast-messages";
+import {
+  ALLOWED_IMAGE_TYPES,
+  ALLOWED_IMAGE_EXTENSIONS,
+} from "@/lib/constants/upload";
 
 export function ProfileSection({
   profile,
@@ -117,15 +121,16 @@ export function ProfileSection({
                 onUpload={async (file) => {
                   if (!file) return;
                   // 허용 타입 검사 (프로필 사진)
-                  const allowedTypes = [
-                    "image/jpeg",
-                    "image/png",
-                    "image/webp",
-                  ];
-                  if (!allowedTypes.includes(file.type)) {
+                  if (
+                    !(ALLOWED_IMAGE_TYPES as readonly string[]).includes(
+                      file.type
+                    )
+                  ) {
                     showCustomError(
                       "이미지 업로드 실패",
-                      "허용되지 않은 파일 형식입니다. JPG, PNG, WEBP만 업로드 가능합니다."
+                      `허용되지 않은 파일 형식입니다. ${ALLOWED_IMAGE_EXTENSIONS.join(
+                        ", "
+                      )} 만 업로드 가능합니다.`
                     );
                     return;
                   }

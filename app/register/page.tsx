@@ -152,7 +152,7 @@ export default function RegisterPage() {
           <Card className="border-none shadow-soft-lg">
             <CardHeader className="space-y-1 text-center">
               <div className="mx-auto mb-4 flex justify-center">
-                <Logo size="lg" />
+                <Logo size="xl" />
               </div>
               <CardTitle className="text-3xl">회원가입</CardTitle>
               <CardDescription>
@@ -210,6 +210,7 @@ export default function RegisterPage() {
                       value={formData.name}
                       onChange={handleInputChange}
                       required
+                      autoComplete="name"
                       className={`h-12 pl-10 input-focus ${
                         errors.name ? "border-red-500" : ""
                       }`}

@@ -25,6 +25,13 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { AddressSearch } from "@/components/common/address-search";
 
 export interface VisitorFormValues {
@@ -253,7 +260,38 @@ export function VisitorFormDialog({
               )}
             />
 
-            {renderField("visitor_purpose", "방문 목적", "input", true)}
+            {/* 방문목적 필드 */}
+            <FormField
+              control={form.control}
+              name="visitor_purpose"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>방문 목적 *</FormLabel>
+                  <FormControl>
+                    <Select
+                      value={field.value || ""}
+                      onValueChange={field.onChange}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="방문 목적을 선택하세요." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="납품">납품</SelectItem>
+                        <SelectItem value="점검">점검</SelectItem>
+                        <SelectItem value="미팅">미팅</SelectItem>
+                        <SelectItem value="수의사 진료">수의사 진료</SelectItem>
+                        <SelectItem value="사료 배송">사료 배송</SelectItem>
+                        <SelectItem value="방역">방역</SelectItem>
+                        <SelectItem value="견학">견학</SelectItem>
+                        <SelectItem value="기타">기타</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
             {renderField("vehicle_number", "차량 번호")}
             {renderField("notes", "비고", "textarea")}
 
@@ -284,11 +322,30 @@ export function VisitorFormDialog({
                 취소
               </Button>
               <Button type="submit" disabled={isSubmitting}>
-                {isSubmitting
-                  ? "처리 중..."
-                  : mode === "create"
-                  ? "등록"
-                  : "수정"}
+                {isSubmitting && (
+                  <svg
+                    className="animate-spin mr-2 h-4 w-4"
+                    viewBox="0 0 16 16"
+                    fill="none"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <circle
+                      cx="8"
+                      cy="8"
+                      r="7"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      className="opacity-25"
+                    />
+                    <path
+                      d="M15 8a7 7 0 11-7-7"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      className="opacity-75"
+                    />
+                  </svg>
+                )}
+                {mode === "create" ? "등록" : "수정"}
               </Button>
             </DialogFooter>
           </form>

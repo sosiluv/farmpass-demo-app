@@ -4,7 +4,6 @@ import { useCallback, useEffect, useRef } from "react";
 import { useFarmsStore } from "@/store/use-farms-store";
 import { useCommonToast } from "@/lib/utils/notification/toast-messages";
 import { devLog } from "@/lib/utils/logging/dev-logger";
-import { logApiError, logSystemWarning } from "@/lib/utils/logging/system-log";
 import type { FarmFormValues } from "@/lib/utils/validation";
 
 export interface Farm {
@@ -66,10 +65,7 @@ export function useFarms(userId?: string) {
       }
 
       if (!userIdToUse) {
-        await logSystemWarning("farms_fetch", "사용자 ID 없이 농장 조회 시도", {
-          resource: "farm",
-          action: "fetchFarms",
-        });
+        devLog.error("[useFarms] userId 없이 농장 조회 시도");
         return;
       }
 
@@ -84,14 +80,10 @@ export function useFarms(userId?: string) {
         devLog.error("Failed to fetch farms:", error);
         hasDataRef.current = false;
 
-        await logApiError(
-          "/api/farms",
-          "GET",
-          error instanceof Error ? error : String(error),
-          userIdToUse
+        toast.showCustomError(
+          "농장 목록 조회 실패",
+          "농장 목록을 불러오는 중 오류가 발생했습니다."
         );
-
-        toast.showError("FARM_FETCH_FAILED");
       } finally {
         isFetchingRef.current = false;
       }
@@ -120,6 +112,7 @@ export function useFarms(userId?: string) {
     async (values: FarmFormValues, targetUserId?: string) => {
       const userIdToUse = targetUserId || userId;
       if (!userIdToUse) {
+        devLog.error("[useFarms] userId 없이 농장 등록 시도");
         toast.showCustomError("권한 없음", "농장을 등록할 권한이 없습니다.");
         return null;
       }
@@ -127,21 +120,19 @@ export function useFarms(userId?: string) {
       try {
         const farm = await storeFarmAdd(userIdToUse, values);
         if (farm) {
-          toast.showSuccess("FARM_CREATED");
+          toast.showCustomSuccess(
+            "농장 등록 완료",
+            "농장이 성공적으로 등록되었습니다."
+          );
         }
         return farm;
       } catch (error) {
         devLog.error("Failed to add farm:", error);
 
-        // 농장 생성 API 에러 로그
-        await logApiError(
-          "/api/farms",
-          "POST",
-          error instanceof Error ? error : String(error),
-          userIdToUse
+        toast.showCustomError(
+          "농장 등록 실패",
+          "농장을 등록하는 중 오류가 발생했습니다."
         );
-
-        toast.showError("FARM_CREATE_FAILED");
         return null;
       }
     },
@@ -152,19 +143,17 @@ export function useFarms(userId?: string) {
     async (farmId: string, values: Partial<Farm>) => {
       try {
         await storeFarmUpdate(farmId, values);
-        toast.showSuccess("FARM_UPDATED");
+        toast.showCustomSuccess(
+          "농장 수정 완료",
+          "농장 정보가 성공적으로 수정되었습니다."
+        );
       } catch (error) {
         devLog.error("Failed to update farm:", error);
 
-        // 농장 수정 API 에러 로그
-        await logApiError(
-          `/api/farms/${farmId}`,
-          "PUT",
-          error instanceof Error ? error : String(error),
-          userId
+        toast.showCustomError(
+          "농장 수정 실패",
+          "농장을 수정하는 중 오류가 발생했습니다."
         );
-
-        toast.showError("FARM_UPDATE_FAILED");
       }
     },
     [storeFarmUpdate, toast]
@@ -174,19 +163,17 @@ export function useFarms(userId?: string) {
     async (farmId: string) => {
       try {
         await storeFarmDelete(farmId);
-        toast.showSuccess("FARM_DELETED");
+        toast.showCustomSuccess(
+          "농장 삭제 완료",
+          "농장이 성공적으로 삭제되었습니다."
+        );
       } catch (error) {
         devLog.error("Failed to delete farm:", error);
 
-        // 농장 삭제 API 에러 로그
-        await logApiError(
-          `/api/farms/${farmId}`,
-          "DELETE",
-          error instanceof Error ? error : String(error),
-          userId
+        toast.showCustomError(
+          "농장 삭제 실패",
+          "농장을 삭제하는 중 오류가 발생했습니다."
         );
-
-        toast.showError("FARM_DELETE_FAILED");
       }
     },
     [storeFarmDelete, toast]

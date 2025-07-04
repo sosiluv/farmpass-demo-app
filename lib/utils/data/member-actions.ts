@@ -3,7 +3,7 @@
  * Quick Action(승격/강등/삭제) 로직 중앙화
  */
 
-import { apiClient } from "@/lib/utils/api/api-client";
+// import { apiClient } from "@/lib/utils/api/api-client";
 
 export type MemberRole = "owner" | "manager" | "viewer";
 
@@ -28,10 +28,13 @@ export async function updateMemberRole(
   newRole: "manager" | "viewer"
 ): Promise<MemberActionResult> {
   try {
-    await apiClient.put(`/api/farms/${farmId}/members/${memberId}`, {
-      role: newRole,
+    const response = await fetch(`/api/farms/${farmId}/members/${memberId}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ role: newRole }),
     });
-
+    if (!response.ok) throw new Error("권한 변경 중 오류가 발생했습니다.");
+    // 성공 시 별도 데이터 파싱 불필요
     return {
       success: true,
       message: `권한이 ${
@@ -55,8 +58,10 @@ export async function removeMember(
   memberId: string
 ): Promise<MemberActionResult> {
   try {
-    await apiClient.delete(`/api/farms/${farmId}/members/${memberId}`);
-
+    const response = await fetch(`/api/farms/${farmId}/members/${memberId}`, {
+      method: "DELETE",
+    });
+    if (!response.ok) throw new Error("구성원 삭제 중 오류가 발생했습니다.");
     return {
       success: true,
       message: "구성원이 삭제되었습니다.",

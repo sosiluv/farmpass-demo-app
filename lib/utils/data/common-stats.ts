@@ -2,11 +2,6 @@ import type { Visitor } from "@/store/use-visitor-store";
 import type { VisitorEntry } from "@/lib/types";
 import { getRegionFromAddress } from "../system/region";
 import { getKSTTodayRange } from "@/lib/utils/datetime/date";
-import {
-  createSystemLog,
-  logSystemWarning,
-  createErrorLog,
-} from "../logging/system-log";
 
 /**
  * =================================

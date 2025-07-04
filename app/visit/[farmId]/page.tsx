@@ -83,8 +83,8 @@ export default function VisitPage() {
 
   if (farmLoading || isSettingsLoading) {
     return (
-      <div className="min-h-screen bg-gray-50 py-2 sm:py-8">
-        <div className="w-[85%] mx-auto max-w-[260px] sm:max-w-xl md:max-w-2xl">
+      <div className="min-h-screen bg-gray-50 py-2 sm:py-4">
+        <div className="w-full max-w-sm sm:max-w-md md:max-w-2xl mx-auto px-3 sm:px-4">
           <FormSkeleton
             fields={8}
             className="bg-white shadow-lg rounded-2xl p-6"
@@ -111,8 +111,8 @@ export default function VisitPage() {
       title="방문자 등록 페이지 오류"
       description="방문자 등록 중 문제가 발생했습니다. 페이지를 새로고침하거나 잠시 후 다시 시도해주세요."
     >
-      <div className="min-h-screen bg-gray-50 py-2 sm:py-8">
-        <div className="w-[85%] mx-auto max-w-[260px] sm:max-w-xl md:max-w-2xl">
+      <div className="min-h-screen bg-gray-50 py-2 sm:py-4">
+        <div className="w-full max-w-sm sm:max-w-md md:max-w-2xl mx-auto px-3 sm:px-4">
           <FarmInfoCard farm={farm} />
           <VisitorForm
             settings={settings}

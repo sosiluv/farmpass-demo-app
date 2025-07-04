@@ -5,7 +5,6 @@
  */
 
 import { getSystemSettings } from "@/lib/cache/system-settings-cache";
-import { logConfigurationWarning } from "@/lib/utils/logging/system-log";
 import { devLog } from "@/lib/utils/logging/dev-logger";
 import { PHONE_PATTERN } from "@/lib/constants/input-rules";
 
@@ -41,13 +40,6 @@ const getPasswordRules = async () => {
     };
   } catch (error) {
     devLog.error("Failed to fetch password rules:", error);
-
-    // WARN 레벨 로그로 대체
-    await logConfigurationWarning(
-      "passwordRules",
-      "비밀번호 규칙 조회 실패, 기본값 사용",
-      DEFAULT_PASSWORD_RULES
-    );
 
     return DEFAULT_PASSWORD_RULES;
   }

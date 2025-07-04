@@ -39,8 +39,8 @@ export const VISITOR_CONSTANTS = {
     FULL_NAME: "홍길동",
     PHONE_NUMBER: "010-0000-0000",
     CAR_PLATE: "12가 3456 (선택사항)",
-    VISIT_PURPOSE: "점검, 방역, 미팅, 납품 등",
-    NOTES: "추가 사항이 있으면 입력해주세요",
+    VISIT_PURPOSE: "방문 목적을 선택하세요.",
+    NOTES: "추가 사항이 있으면 입력해주세요.",
   },
 };
 

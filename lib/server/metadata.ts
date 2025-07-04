@@ -4,12 +4,24 @@ import { devLog } from "@/lib/utils/logging/dev-logger";
 
 export async function getMetadataSettings() {
   try {
+    // 캐시를 무효화하고 최신 설정을 가져옴
     const settings = await getSystemSettings();
 
-    // 업로드된 파비콘이 있으면 해당 경로 사용, 없으면 기본 파비콘 사용
-    const faviconPath = settings?.favicon
-      ? `/uploads/${settings.favicon}`
-      : "/favicon.png";
+    devLog.info("Fetched system settings for metadata:", {
+      hasFavicon: !!settings?.favicon,
+      faviconPath: settings?.favicon,
+    });
+
+    let faviconPath: string;
+    if (settings?.favicon && settings.favicon.trim() !== "") {
+      // DB에 이미 완전한 URL이 저장되어 있음
+      faviconPath = settings.favicon;
+    } else {
+      // 기본 파비콘 사용 (public 폴더의 favicon.ico)
+      faviconPath = "/favicon.ico";
+    }
+
+    devLog.info("Final favicon path:", faviconPath);
 
     return {
       siteName: settings?.siteName || DEFAULT_SYSTEM_SETTINGS.siteName,
@@ -23,7 +35,7 @@ export async function getMetadataSettings() {
     return {
       siteName: DEFAULT_SYSTEM_SETTINGS.siteName,
       siteDescription: DEFAULT_SYSTEM_SETTINGS.siteDescription,
-      favicon: "/favicon.png",
+      favicon: "/favicon.ico",
     };
   }
 }

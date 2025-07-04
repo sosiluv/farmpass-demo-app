@@ -1,8 +1,6 @@
 import { create } from "zustand";
 import { devtools } from "zustand/middleware";
 import { supabase } from "@/lib/supabase/client";
-import { logVisitorDataAccess } from "@/lib/utils/logging/system-log";
-import { devLog } from "@/lib/utils/logging/dev-logger";
 import {
   formatLocalDate,
   getTodayRange,
@@ -162,7 +160,6 @@ export const useVisitorStore = create<VisitorState>()(
           now - state.cache.visitors.timestamp < CACHE_TTL &&
           !state.cache.isFetching
         ) {
-          devLog.log("Using cached visitor data");
           set((state) => ({
             visitors: state.cache.visitors!.data,
             loading: { ...state.loading, visitors: false },
@@ -173,13 +170,11 @@ export const useVisitorStore = create<VisitorState>()(
 
         // 중복 요청 방지
         if (state.cache.isFetching) {
-          devLog.log("Visitor fetch already in progress, skipping...");
           return;
         }
 
         // 디바운싱
         if (now - state.cache.lastFetchTime < DEBOUNCE_DELAY) {
-          devLog.log("Visitor fetch debounced");
           return;
         }
 
@@ -190,11 +185,6 @@ export const useVisitorStore = create<VisitorState>()(
         }));
 
         try {
-          // 사용자 정보 가져오기 (로그를 위해)
-          const {
-            data: { user },
-          } = await supabase.auth.getUser();
-
           let query = supabase.from("visitor_entries").select(`
             *,
             farms (
@@ -233,33 +223,6 @@ export const useVisitorStore = create<VisitorState>()(
 
           // 필터 적용
           get().applyFilters();
-
-          // 성공 로그 기록
-          if (user?.id) {
-            const accessScope = farmId
-              ? "single_farm"
-              : includeAllFarms
-              ? "all_farms"
-              : "own_farms";
-
-            const farmName =
-              farmId && visitorData.length > 0
-                ? visitorData[0]?.farms?.farm_name
-                : undefined;
-
-            await logVisitorDataAccess(
-              "LIST_VIEW",
-              user.id,
-              user.email,
-              {
-                farm_id: farmId,
-                farm_name: farmName,
-                visitor_count: visitorData.length || 0,
-                access_scope: accessScope,
-              },
-              undefined
-            );
-          }
         } catch (error) {
           const errorMessage =
             error instanceof Error ? error.message : "방문자 데이터 조회 실패";
@@ -269,34 +232,6 @@ export const useVisitorStore = create<VisitorState>()(
             error: { ...state.error, visitors: errorMessage },
             cache: { ...state.cache, isFetching: false },
           }));
-
-          // 실패 로그 기록
-          try {
-            const {
-              data: { user },
-            } = await supabase.auth.getUser();
-            if (user?.id) {
-              const accessScope = farmId
-                ? "single_farm"
-                : includeAllFarms
-                ? "all_farms"
-                : "own_farms";
-
-              await logVisitorDataAccess(
-                "LIST_VIEW_FAILED",
-                user.id,
-                user.email,
-                {
-                  error: errorMessage,
-                  access_scope: accessScope,
-                  farm_id: farmId,
-                },
-                undefined
-              );
-            }
-          } catch (logError) {
-            devLog.error("로그 기록 실패:", logError);
-          }
 
           throw error;
         }

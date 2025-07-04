@@ -122,7 +122,34 @@ export function AddMemberDialog({
             disabled={isAddingMember}
             className="h-8 sm:h-9 text-xs sm:text-sm px-3 sm:px-4"
           >
-            {isAddingMember ? "추가 중..." : "추가"}
+            {isAddingMember ? (
+              <>
+                <svg
+                  className="animate-spin mr-2 h-4 w-4"
+                  viewBox="0 0 16 16"
+                  fill="none"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <circle
+                    cx="8"
+                    cy="8"
+                    r="7"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    className="opacity-25"
+                  />
+                  <path
+                    d="M15 8a7 7 0 11-7-7"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    className="opacity-75"
+                  />
+                </svg>
+                추가 중...
+              </>
+            ) : (
+              "추가"
+            )}
           </Button>
         </DialogFooter>
       </DialogContent>
