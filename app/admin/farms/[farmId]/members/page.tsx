@@ -27,7 +27,7 @@ export default function MembersPage({ params }: PageProps) {
   const farmId = params.farmId as string;
   const { state } = useAuth();
   const user = state.status === "authenticated" ? state.user : null;
-  const toast = useCommonToast();
+  const { showInfo, showSuccess, showError } = useCommonToast();
   const {
     farms,
     fetchState,
@@ -53,17 +53,17 @@ export default function MembersPage({ params }: PageProps) {
   // 농장 관련 토스트 처리
   useEffect(() => {
     if (farmsError) {
-      toast.showCustomError("오류", farmsError);
+      showError("오류", farmsError);
       clearFarmsMessages();
     }
-  }, [farmsError, toast, clearFarmsMessages]);
+  }, [farmsError, showError, clearFarmsMessages]);
 
   useEffect(() => {
     if (farmsSuccessMessage) {
-      toast.showCustomSuccess("성공", farmsSuccessMessage);
+      showSuccess("성공", farmsSuccessMessage);
       clearFarmsMessages();
     }
-  }, [farmsSuccessMessage, toast, clearFarmsMessages]);
+  }, [farmsSuccessMessage, showSuccess, clearFarmsMessages]);
 
   // 타임아웃 관리 - refetch 함수 사용
   const { timeoutReached, retry } = useDataFetchTimeout(
@@ -115,17 +115,14 @@ export default function MembersPage({ params }: PageProps) {
     async (email: string, role: "manager" | "viewer") => {
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
       if (!emailRegex.test(email)) {
-        toast.showCustomError(
-          "입력 오류",
-          "올바른 이메일 형식을 입력해주세요."
-        );
+        showError("입력 오류", "올바른 이메일 형식을 입력해주세요.");
         return;
       }
 
       try {
-        toast.showInfo("구성원 추가 중", `${email}을(를) 추가하는 중입니다...`);
+        showInfo("구성원 추가 중", `${email}을(를) 추가하는 중입니다...`);
         await addMember(farmId, email, role);
-        toast.showCustomSuccess(
+        showSuccess(
           "구성원 추가 완료",
           `${email}이 ${
             role === "manager" ? "관리자" : "조회자"
@@ -137,50 +134,50 @@ export default function MembersPage({ params }: PageProps) {
           errorMessage = error.message;
         }
 
-        toast.showCustomError("구성원 추가 실패", errorMessage);
+        showError("구성원 추가 실패", errorMessage);
         throw error; // 다이얼로그에서 처리하기 위해 에러를 다시 던짐
       }
     },
-    [farmId, addMember, toast]
+    [farmId, addMember, showInfo, showSuccess]
   );
 
   const handleRoleChange = useCallback(
     async (memberId: string, newRole: "manager" | "viewer") => {
       try {
-        toast.showInfo("권한 변경 중", "구성원 권한을 변경하는 중입니다...");
+        showInfo("권한 변경 중", "구성원 권한을 변경하는 중입니다...");
         await updateMemberRole(farmId, memberId, newRole);
-        toast.showCustomSuccess(
+        showSuccess(
           "권한 변경 완료",
           `구성원 권한이 ${
             newRole === "manager" ? "관리자" : "조회자"
           }로 변경되었습니다.`
         );
       } catch (error: any) {
-        toast.showCustomError(
+        showError(
           "권한 변경 실패",
           error.message || "권한 변경에 실패했습니다."
         );
       }
     },
-    [farmId, updateMemberRole, toast]
+    [farmId, updateMemberRole, showInfo, showSuccess]
   );
 
   const handleDelete = useCallback(async () => {
     if (!memberToDelete) return;
 
     try {
-      toast.showInfo("구성원 삭제 중", "구성원을 삭제하는 중입니다...");
+      showInfo("구성원 삭제 중", "구성원을 삭제하는 중입니다...");
       await removeMember(farmId, memberToDelete);
       setDeleteDialogOpen(false);
       setMemberToDelete(null);
-      toast.showCustomSuccess("구성원 삭제 완료", "구성원이 삭제되었습니다.");
+      showSuccess("구성원 삭제 완료", "구성원이 삭제되었습니다.");
     } catch (error: any) {
-      toast.showCustomError(
+      showError(
         "구성원 삭제 실패",
         error.message || "구성원 삭제에 실패했습니다."
       );
     }
-  }, [farmId, memberToDelete, removeMember, toast]);
+  }, [farmId, memberToDelete, removeMember, showInfo, showSuccess]);
 
   const handleDeleteRequest = useCallback((id: string) => {
     setMemberToDelete(id);

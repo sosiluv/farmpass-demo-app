@@ -37,7 +37,7 @@ import { useEffect } from "react";
 export default function VisitPage() {
   const params = useParams();
   const farmId = params.farmId as string;
-  const toast = useCommonToast();
+  const { showInfo, showWarning, showSuccess, showError } = useCommonToast();
 
   const {
     settings,
@@ -65,28 +65,28 @@ export default function VisitPage() {
   // 에러 상태에 따른 토스트 처리
   useEffect(() => {
     if (error) {
-      toast.showCustomError("방문자 등록 오류", error);
+      showError("방문자 등록 오류", error);
     }
-  }, [error, toast]);
+  }, [error, showError]);
 
   // 농장 에러에 따른 토스트 처리
   useEffect(() => {
     if (farmError) {
-      toast.showCustomError("농장 정보 조회 실패", farmError);
+      showError("농장 정보 조회 실패", farmError);
     }
-  }, [farmError, toast]);
+  }, [farmError, showError]);
 
   // 설정 에러에 따른 토스트 처리
   useEffect(() => {
     if (settingsError) {
-      toast.showCustomError("설정 로드 실패", settingsError);
+      showError("설정 로드 실패", settingsError);
     }
-  }, [settingsError, toast]);
+  }, [settingsError, showError]);
 
   // 폼 제출 핸들러 래핑
   const handleSubmitWrapped = async (e: React.FormEvent) => {
     try {
-      toast.showInfo("방문자 등록 중", "방문자 정보를 등록하는 중입니다...");
+      showInfo("방문자 등록 중", "방문자 정보를 등록하는 중입니다...");
       await handleSubmit(e);
       // 성공 시 토스트는 isSubmitted 상태 변경으로 처리
     } catch (error) {
@@ -97,20 +97,14 @@ export default function VisitPage() {
   // 이미지 업로드 핸들러 래핑
   const handleImageUploadWrapped = async (file: File) => {
     try {
-      toast.showInfo(
-        "이미지 업로드 중",
-        "프로필 이미지를 업로드하는 중입니다..."
-      );
+      showInfo("이미지 업로드 중", "프로필 이미지를 업로드하는 중입니다...");
       await uploadImage(file);
-      toast.showCustomSuccess(
+      showSuccess(
         "이미지 업로드 완료",
         "프로필 이미지가 성공적으로 업로드되었습니다."
       );
     } catch (error) {
-      toast.showCustomError(
-        "이미지 업로드 실패",
-        "프로필 이미지 업로드에 실패했습니다."
-      );
+      showError("이미지 업로드 실패", "프로필 이미지 업로드에 실패했습니다.");
       throw error;
     }
   };
@@ -118,17 +112,14 @@ export default function VisitPage() {
   // 이미지 삭제 핸들러 래핑
   const handleImageDeleteWrapped = async (fileName: string) => {
     try {
-      toast.showInfo("이미지 삭제 중", "프로필 이미지를 삭제하는 중입니다...");
+      showInfo("이미지 삭제 중", "프로필 이미지를 삭제하는 중입니다...");
       await deleteImage(fileName);
-      toast.showCustomSuccess(
+      showSuccess(
         "이미지 삭제 완료",
         "프로필 이미지가 성공적으로 삭제되었습니다."
       );
     } catch (error) {
-      toast.showCustomError(
-        "이미지 삭제 실패",
-        "프로필 이미지 삭제에 실패했습니다."
-      );
+      showError("이미지 삭제 실패", "프로필 이미지 삭제에 실패했습니다.");
       throw error;
     }
   };
@@ -151,7 +142,7 @@ export default function VisitPage() {
         }
       }
     } catch (error) {
-      toast.showWarning(
+      showWarning(
         "브라우저 호환성 문제",
         "브라우저의 뒤로가기 버튼을 사용하거나 직접 창을 닫아주세요."
       );

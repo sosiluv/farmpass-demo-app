@@ -51,7 +51,7 @@ export default function RegisterPage() {
   const [loading, setLoading] = useState(false);
   const [isCheckingEmail, setIsCheckingEmail] = useState(false);
   const router = useRouter();
-  const toast = useCommonToast();
+  const { showInfo, showWarning, showSuccess, showError } = useCommonToast();
 
   const handleInputChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -90,12 +90,12 @@ export default function RegisterPage() {
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
-    toast.showInfo("회원가입 시도 중", "잠시만 기다려주세요.");
+    showInfo("회원가입 시도 중", "잠시만 기다려주세요.");
 
     // 폼 유효성 검증
     const validation = await validateRegistrationForm(formData);
     if (!validation.isValid) {
-      toast.showWarning("입력 오류", "입력값을 확인해주세요.");
+      showWarning("입력 오류", "입력값을 확인해주세요.");
       setErrors(validation.errors);
       return;
     }
@@ -125,7 +125,7 @@ export default function RegisterPage() {
       if (authError) throw authError;
       if (!authData.user) throw new Error("회원가입에 실패했습니다.");
 
-      toast.showCustomSuccess("회원가입이 완료되었습니다.", "로그인해주세요.");
+      showSuccess("회원가입이 완료되었습니다.", "로그인해주세요.");
 
       router.push("/login");
     } catch (error: any) {
@@ -133,7 +133,7 @@ export default function RegisterPage() {
       const errorMessage = getRegistrationErrorMessage(error);
       setErrors({ email: errorMessage });
 
-      toast.showCustomError("회원가입 실패", errorMessage);
+      showError("회원가입 실패", errorMessage);
     } finally {
       setLoading(false);
     }

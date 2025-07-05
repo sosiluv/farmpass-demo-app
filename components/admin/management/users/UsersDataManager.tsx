@@ -14,7 +14,7 @@ interface UsersDataManagerProps {
 }
 
 export function UsersDataManager({ children }: UsersDataManagerProps) {
-  const toast = useCommonToast();
+  const { showInfo, showError } = useCommonToast();
   const [users, setUsers] = useState<Profile[]>([]);
   const [lastUpdate, setLastUpdate] = useState<Date>(new Date());
 
@@ -23,10 +23,7 @@ export function UsersDataManager({ children }: UsersDataManagerProps) {
   }, []);
 
   const fetchUsers = async () => {
-    toast.showInfo(
-      "사용자 정보 로딩 시작",
-      "사용자 정보를 불러오는 중입니다..."
-    );
+    showInfo("사용자 정보 로딩 시작", "사용자 정보를 불러오는 중입니다...");
     try {
       const { data, error } = await supabase.from("profiles").select("*");
       if (error) throw error;
@@ -34,7 +31,7 @@ export function UsersDataManager({ children }: UsersDataManagerProps) {
       setLastUpdate(new Date());
     } catch (error: any) {
       devLog.error("Error fetching users:", error);
-      toast.showCustomError(
+      showError(
         "사용자 정보 불러오기 실패",
         "사용자 정보를 불러오는데 실패했습니다."
       );

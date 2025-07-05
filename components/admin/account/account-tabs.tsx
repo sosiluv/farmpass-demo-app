@@ -16,7 +16,7 @@ interface AccountTabsProps {
 }
 
 export function AccountTabs({ profile, userId }: AccountTabsProps) {
-  const toast = useCommonToast();
+  const { showInfo, showSuccess, showError } = useCommonToast();
   const {
     isLoading,
     handleImageUpload,
@@ -28,15 +28,15 @@ export function AccountTabs({ profile, userId }: AccountTabsProps) {
 
   // Promise<SaveResult>를 Promise<void>로 래핑하고 토스트 처리
   const handleProfileSaveWrapped = async (data: any) => {
-    toast.showInfo("프로필 저장 시작", "프로필 정보를 저장하는 중입니다...");
+    showInfo("프로필 저장 시작", "프로필 정보를 저장하는 중입니다...");
     const result = await handleProfileSave(data);
     if (result.success) {
-      toast.showCustomSuccess(
+      showSuccess(
         "프로필 저장 완료",
         "프로필 정보가 성공적으로 저장되었습니다."
       );
     } else {
-      toast.showCustomError(
+      showError(
         "프로필 저장 실패",
         result.error || "프로필 정보 저장에 실패했습니다."
       );
@@ -44,15 +44,15 @@ export function AccountTabs({ profile, userId }: AccountTabsProps) {
   };
 
   const handleCompanySaveWrapped = async (data: any) => {
-    toast.showInfo("회사 정보 저장 시작", "회사 정보를 저장하는 중입니다...");
+    showInfo("회사 정보 저장 시작", "회사 정보를 저장하는 중입니다...");
     const result = await handleCompanySave(data);
     if (result.success) {
-      toast.showCustomSuccess(
+      showSuccess(
         "회사 정보 저장 완료",
         "회사 정보가 성공적으로 저장되었습니다."
       );
     } else {
-      toast.showCustomError(
+      showError(
         "회사 정보 저장 실패",
         result.error || "회사 정보 저장에 실패했습니다."
       );
@@ -60,15 +60,15 @@ export function AccountTabs({ profile, userId }: AccountTabsProps) {
   };
 
   const handlePasswordChangeWrapped = async (data: any) => {
-    toast.showInfo("비밀번호 변경 시작", "비밀번호를 변경하는 중입니다...");
+    showInfo("비밀번호 변경 시작", "비밀번호를 변경하는 중입니다...");
     const result = await handlePasswordChange(data);
     if (result.success) {
-      toast.showCustomSuccess(
+      showSuccess(
         "비밀번호 변경 완료",
         "비밀번호가 성공적으로 변경되었습니다."
       );
     } else {
-      toast.showCustomError(
+      showError(
         "비밀번호 변경 실패",
         result.error || "비밀번호 변경에 실패했습니다."
       );
@@ -77,41 +77,32 @@ export function AccountTabs({ profile, userId }: AccountTabsProps) {
 
   // 이미지 업로드/삭제 처리
   const handleImageUploadWrapped = async (file: File | null) => {
-    toast.showInfo(
-      "이미지 업로드 시작",
-      "프로필 이미지를 업로드하는 중입니다..."
-    );
+    showInfo("이미지 업로드 시작", "프로필 이미지를 업로드하는 중입니다...");
     try {
       const result = await handleImageUpload(file);
       if (result) {
-        toast.showCustomSuccess(
+        showSuccess(
           "이미지 업로드 완료",
           "프로필 이미지가 성공적으로 업로드되었습니다."
         );
       }
       return result;
     } catch (error) {
-      toast.showCustomError(
-        "이미지 업로드 실패",
-        "프로필 이미지 업로드에 실패했습니다."
-      );
+      showError("이미지 업로드 실패", "프로필 이미지 업로드에 실패했습니다.");
       throw error;
     }
   };
 
   const handleImageDeleteWrapped = async () => {
-    toast.showInfo("이미지 삭제 시작", "프로필 이미지를 삭제하는 중입니다...");
+    showInfo("이미지 삭제 시작", "프로필 이미지를 삭제하는 중입니다...");
     try {
       await handleImageDelete();
-      toast.showCustomSuccess(
+      showSuccess(
         "이미지 삭제 완료",
         "프로필 이미지가 성공적으로 삭제되었습니다."
       );
     } catch (error) {
-      toast.showCustomError(
-        "이미지 삭제 실패",
-        "프로필 이미지 삭제에 실패했습니다."
-      );
+      showError("이미지 삭제 실패", "프로필 이미지 삭제에 실패했습니다.");
       throw error;
     }
   };

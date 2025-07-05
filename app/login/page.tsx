@@ -36,7 +36,7 @@ export default function LoginPage() {
   const [redirecting, setRedirecting] = useState(false);
   const [errors, setErrors] = useState<FormErrors>({});
   const router = useRouter();
-  const toast = useCommonToast();
+  const { showInfo, showWarning, showSuccess, showError } = useCommonToast();
   const { state, signIn } = useAuth();
 
   // 세션 만료로 인한 로그인 페이지 진입 시 브라우저 구독 정리
@@ -96,7 +96,7 @@ export default function LoginPage() {
     e.preventDefault();
     setLoading(true);
     setErrors({});
-    toast.showInfo("로그인 시도 중", "잠시만 기다려주세요.");
+    showInfo("로그인 시도 중", "잠시만 기다려주세요.");
 
     try {
       // Auth Provider에서 모든 로그인 로직 처리
@@ -106,7 +106,7 @@ export default function LoginPage() {
       });
 
       if (result.success) {
-        toast.showCustomSuccess("로그인 성공", "대시보드로 이동합니다.");
+        showSuccess("로그인 성공", "대시보드로 이동합니다.");
         setRedirecting(true); // 리다이렉트 시작
         // 즉시 리다이렉트 (setTimeout 제거)
         router.replace("/admin/dashboard");
@@ -117,10 +117,10 @@ export default function LoginPage() {
       const authError = getAuthErrorMessage(error);
       const errorMessage = authError.message;
       setErrors({ email: errorMessage });
-      toast.showCustomError("로그인 실패", errorMessage);
+      showError("로그인 실패", errorMessage);
 
-      if (authError.code === "INVALID_PASSWORD") {
-        toast.showWarning("비밀번호 오류", "비밀번호가 올바르지 않습니다.");
+      if (authError.message.includes("invalid")) {
+        showWarning("비밀번호 오류", "비밀번호가 올바르지 않습니다.");
       }
 
       // 로그인 실패 시 입력 필드 초기화하지 않음 (사용자가 다시 시도할 수 있도록)

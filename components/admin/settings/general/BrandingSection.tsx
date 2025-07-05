@@ -32,7 +32,7 @@ export function BrandingSection({
   onImageUpload,
   loading,
 }: BrandingSectionProps) {
-  const toast = useCommonToast();
+  const { showInfo, showError } = useCommonToast();
 
   // 이미지 프리뷰 상태 관리
   const [logoPreview, setLogoPreview] = useState<string | null>(
@@ -91,7 +91,7 @@ export function BrandingSection({
                 <ImageUpload
                   onUpload={async (file) => {
                     if (!file) return;
-                    toast.showInfo(
+                    showInfo(
                       "로고 업로드 시작",
                       "사이트 로고를 업로드하는 중입니다..."
                     );
@@ -101,7 +101,7 @@ export function BrandingSection({
                         file.type
                       )
                     ) {
-                      toast.showWarning(
+                      showError(
                         "파일 형식 오류",
                         `허용되지 않은 파일 형식입니다. ${ALLOWED_LOGO_EXTENSIONS.join(
                           ", "
@@ -117,7 +117,7 @@ export function BrandingSection({
                     }
                   }}
                   onDelete={async () => {
-                    toast.showInfo(
+                    showInfo(
                       "로고 삭제 시작",
                       "사이트 로고를 삭제하는 중입니다..."
                     );
@@ -149,7 +149,7 @@ export function BrandingSection({
                 <ImageUpload
                   onUpload={async (file) => {
                     if (!file) return;
-                    toast.showInfo(
+                    showInfo(
                       "파비콘 업로드 시작",
                       "파비콘을 업로드하는 중입니다..."
                     );
@@ -159,7 +159,7 @@ export function BrandingSection({
                         file.type
                       )
                     ) {
-                      toast.showWarning(
+                      showError(
                         "파일 형식 오류",
                         `허용되지 않은 파일 형식입니다. ${ALLOWED_FAVICON_EXTENSIONS.join(
                           ", "
@@ -175,7 +175,7 @@ export function BrandingSection({
                     }
                   }}
                   onDelete={async () => {
-                    toast.showInfo(
+                    showInfo(
                       "파비콘 삭제 시작",
                       "파비콘을 삭제하는 중입니다..."
                     );

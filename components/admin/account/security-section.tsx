@@ -49,7 +49,7 @@ export function SecuritySection({
   });
   const [errors, setErrors] = useState<FormErrors>({});
   const [loginActivity, setLoginActivity] = useState<any[]>([]);
-  const toast = useCommonToast();
+  const { showInfo, showWarning, showError } = useCommonToast();
 
   // 시간 포맷 함수
   const formatTimeAgo = (date: Date) => {
@@ -163,11 +163,11 @@ export function SecuritySection({
     e.preventDefault();
 
     if (!(await validateForm())) {
-      toast.showWarning("입력 오류", "입력값을 확인해주세요.");
+      showWarning("입력 오류", "입력값을 확인해주세요.");
       return;
     }
 
-    toast.showInfo("비밀번호 변경 시작", "비밀번호를 변경하는 중입니다...");
+    showInfo("비밀번호 변경 시작", "비밀번호를 변경하는 중입니다...");
     try {
       await onPasswordChange(passwords);
       // 비밀번호 필드 초기화
@@ -180,7 +180,7 @@ export function SecuritySection({
       setErrors({});
     } catch (error: any) {
       devLog.error("Password change error:", error);
-      toast.showCustomError(
+      showError(
         "오류",
         error.message || "비밀번호 변경 중 오류가 발생했습니다"
       );

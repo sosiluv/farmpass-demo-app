@@ -274,7 +274,7 @@ onError: (error, context) => {
 };
 
 // 컴포넌트에서만 토스트 처리
-toast.showCustomError("오류", error.message);
+toast.showError("오류", error.message);
 ```
 
 #### 세션 관리 패턴
@@ -417,9 +417,9 @@ const { members } = await apiClient("/api/farm-members", { method: "GET" });
   - 진행 상황과 결과를 명확히 구분하여 사용자 혼란 방지
 
 - **Toast 메시지 variant 일관성 완전 적용**:
-  - 전체 애플리케이션에서 `toast.showInfo`, `toast.showWarning`, `toast.showCustomError`, `toast.showCustomSuccess` 패턴 통일
+  - 전체 애플리케이션에서 `toast.showInfo`, `toast.showWarning`, `toast.showError`, `toast.showSuccess` 패턴 통일
   - 설정 유효성 검사, 이미지 관리, 사용자/농장 데이터 관리, 멤버 작업 등 모든 영역에 일관된 적용
-  - 작업 시작 시 `showInfo`, 입력 오류 등 경계 상황에 `showWarning`, 실패 시 `showCustomError`, 성공 시 `showCustomSuccess` 패턴 적용
+  - 작업 시작 시 `showInfo`, 입력 오류 등 경계 상황에 `showWarning`, 실패 시 `showError`, 성공 시 `showSuccess` 패턴 적용
   - 사용자에게 일관되고 명확한 피드백 제공으로 전체적인 사용자 경험 개선
 
 ## [1.2.0] - 2024-12-19

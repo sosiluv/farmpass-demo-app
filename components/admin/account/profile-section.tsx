@@ -49,7 +49,7 @@ export function ProfileSection({
       : null
   );
 
-  const toast = useCommonToast();
+  const { showInfo, showError } = useCommonToast();
 
   // profile prop이 변경될 때마다 프리뷰 업데이트
   useEffect(() => {
@@ -81,7 +81,7 @@ export function ProfileSection({
   };
 
   const handleImageDelete = async () => {
-    toast.showInfo("이미지 삭제 시작", "프로필 이미지를 삭제하는 중입니다...");
+    showInfo("이미지 삭제 시작", "프로필 이미지를 삭제하는 중입니다...");
     try {
       await onImageDelete();
       // 삭제 성공 시에만 UI 상태 업데이트
@@ -118,7 +118,7 @@ export function ProfileSection({
               <ImageUpload
                 onUpload={async (file) => {
                   if (!file) return;
-                  toast.showInfo(
+                  showInfo(
                     "이미지 업로드 시작",
                     "프로필 이미지를 업로드하는 중입니다..."
                   );
@@ -128,7 +128,7 @@ export function ProfileSection({
                       file.type
                     )
                   ) {
-                    toast.showWarning(
+                    showError(
                       "파일 형식 오류",
                       `허용되지 않은 파일 형식입니다. ${ALLOWED_IMAGE_EXTENSIONS.join(
                         ", "

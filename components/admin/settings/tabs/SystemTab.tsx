@@ -28,7 +28,7 @@ export default function SystemTab({
   onUpdate,
   isLoading,
 }: SystemTabProps) {
-  const toast = useCommonToast();
+  const { showError, showSuccess, showInfo } = useCommonToast();
 
   // 커스텀 훅들
   const {
@@ -44,33 +44,33 @@ export default function SystemTab({
   // 에러 토스트 처리
   useEffect(() => {
     if (error) {
-      toast.showCustomError("오류", error);
+      showError("오류", error);
     }
-  }, [error, toast]);
+  }, [error, showError]);
 
   // 성공 토스트 처리
   useEffect(() => {
     if (lastCleanupSuccess) {
-      toast.showCustomSuccess(
+      showSuccess(
         "✅ 정리 완료",
         `${lastCleanupSuccess} 정리가 완료되었습니다.\n상태가 자동으로 새로고침되었습니다.`
       );
     }
-  }, [lastCleanupSuccess, toast]);
+  }, [lastCleanupSuccess, showSuccess]);
 
   // 로그 정리 시작 시 정보 알림
   useEffect(() => {
     if (cleanupLoading) {
-      toast.showInfo("로그 정리 시작", "시스템 로그를 정리하는 중입니다...");
+      showInfo("로그 정리 시작", "시스템 로그를 정리하는 중입니다...");
     }
-  }, [cleanupLoading, toast]);
+  }, [cleanupLoading, showInfo]);
 
   // 상태 로딩 시 정보 알림
   useEffect(() => {
     if (statusLoading) {
-      toast.showInfo("상태 확인 중", "정리 상태를 확인하는 중입니다...");
+      showInfo("상태 확인 중", "정리 상태를 확인하는 중입니다...");
     }
-  }, [statusLoading, toast]);
+  }, [statusLoading, showInfo]);
 
   return (
     <ErrorBoundary

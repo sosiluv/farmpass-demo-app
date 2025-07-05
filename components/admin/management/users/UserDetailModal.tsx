@@ -26,7 +26,7 @@ interface UserDetailModalProps {
 export function UserDetailModal({ user, open, onClose }: UserDetailModalProps) {
   const { state } = useAuth();
   const [loading, setLoading] = useState(false);
-  const { showCustomSuccess, showCustomError, showInfo } = useCommonToast();
+  const { showSuccess, showError, showInfo } = useCommonToast();
 
   const accessToken =
     state.status === "authenticated" ? state.session.access_token : undefined;
@@ -98,11 +98,11 @@ export function UserDetailModal({ user, open, onClose }: UserDetailModalProps) {
         context: "계정 잠금 해제",
         onError: (error, context) => {
           handleError(error, context);
-          showCustomError("잠금 해제 실패", error.message || "잠금 해제 실패");
+          showError("잠금 해제 실패", error.message || "잠금 해제 실패");
         },
       });
 
-      showCustomSuccess(
+      showSuccess(
         "계정 잠금 해제",
         data.message || "계정 잠금이 해제되었습니다!"
       );

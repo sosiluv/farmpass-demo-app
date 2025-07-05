@@ -38,7 +38,7 @@ export default function VisitorsPage() {
   const { state } = useAuth();
   const profile = state.status === "authenticated" ? state.profile : null;
   const isAdmin = profile?.account_type === "admin";
-  const toast = useCommonToast();
+  const { showWarning, showSuccess, showError } = useCommonToast();
 
   // Store에서 데이터와 액션 가져오기
   const { visitors, allVisitors, loading, error, fetchVisitors } =
@@ -79,17 +79,17 @@ export default function VisitorsPage() {
   // 농장 관련 토스트 처리
   useEffect(() => {
     if (farmsError) {
-      toast.showCustomError("오류", farmsError);
+      showError("오류", farmsError);
       clearFarmsMessages();
     }
-  }, [farmsError, toast, clearFarmsMessages]);
+  }, [farmsError, showError, clearFarmsMessages]);
 
   useEffect(() => {
     if (farmsSuccessMessage) {
-      toast.showCustomSuccess("성공", farmsSuccessMessage);
+      showSuccess("성공", farmsSuccessMessage);
       clearFarmsMessages();
     }
-  }, [farmsSuccessMessage, toast, clearFarmsMessages]);
+  }, [farmsSuccessMessage, showSuccess, clearFarmsMessages]);
 
   /**
    * 커스텀 날짜 초기화 핸들러
@@ -177,7 +177,7 @@ export default function VisitorsPage() {
   ]);
 
   if (timeoutReached) {
-    toast.showWarning(
+    showWarning(
       "데이터 로딩 지연",
       "네트워크 상태를 확인하거나 다시 시도해 주세요."
     );

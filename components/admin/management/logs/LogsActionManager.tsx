@@ -19,8 +19,7 @@ export function LogsActionManager({
   setLogs,
   children,
 }: LogsActionManagerProps) {
-  const { showCustomSuccess, showCustomError, showInfo, showWarning } =
-    useCommonToast();
+  const { showSuccess, showError, showInfo, showWarning } = useCommonToast();
 
   // 로그 삭제 처리
   const handleDeleteLog = async (id: string) => {
@@ -38,16 +37,13 @@ export function LogsActionManager({
         context: "로그 삭제",
         onError: (error, context) => {
           handleError(error, context);
-          showCustomError(
-            "로그 삭제 실패",
-            "로그 삭제 중 오류가 발생했습니다."
-          );
+          showError("로그 삭제 실패", "로그 삭제 중 오류가 발생했습니다.");
         },
       });
       setLogs((prevLogs: SystemLog[]) =>
         prevLogs.filter((log: SystemLog) => log.id !== id)
       );
-      showCustomSuccess("로그 삭제 완료", "로그가 삭제되었습니다.");
+      showSuccess("로그 삭제 완료", "로그가 삭제되었습니다.");
     } catch {
       // onError에서 이미 처리함
     }
@@ -74,14 +70,11 @@ export function LogsActionManager({
         context: "전체 로그 삭제",
         onError: (error, context) => {
           handleError(error, context);
-          showCustomError(
-            "로그 삭제 실패",
-            "로그 삭제 중 오류가 발생했습니다."
-          );
+          showError("로그 삭제 실패", "로그 삭제 중 오류가 발생했습니다.");
         },
       });
       setLogs([]);
-      showCustomSuccess(
+      showSuccess(
         "로그 삭제 완료",
         `모든 로그가 삭제되었습니다. (총 ${beforeCount}개)`
       );
@@ -108,22 +101,16 @@ export function LogsActionManager({
         context: "30일 이전 로그 삭제",
         onError: (error, context) => {
           handleError(error, context);
-          showCustomError(
-            "로그 삭제 실패",
-            "로그 삭제 중 오류가 발생했습니다."
-          );
+          showError("로그 삭제 실패", "로그 삭제 중 오류가 발생했습니다.");
         },
       });
       if (result.result.deleted) {
-        showCustomSuccess(
+        showSuccess(
           "로그 삭제 완료",
           `30일 이전 로그가 삭제되었습니다. (총 ${result.result.count}개)`
         );
       } else {
-        showCustomSuccess(
-          "로그 삭제 완료",
-          "삭제할 30일 이전 로그가 없습니다."
-        );
+        showSuccess("로그 삭제 완료", "삭제할 30일 이전 로그가 없습니다.");
       }
     } catch {
       // onError에서 이미 처리함

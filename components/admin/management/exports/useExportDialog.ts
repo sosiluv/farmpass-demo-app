@@ -15,7 +15,7 @@ export function useExportDialog({
   successMessage = "데이터가 성공적으로 내보내졌습니다.",
   errorMessage = "데이터 내보내기 중 오류가 발생했습니다.",
 }: UseExportDialogOptions) {
-  const toast = useCommonToast();
+  const { showError, showInfo, showSuccess } = useCommonToast();
   const [isOpen, setIsOpen] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
 
@@ -24,7 +24,7 @@ export function useExportDialog({
     if (validateOptions) {
       const validation = validateOptions(options);
       if (!validation.isValid) {
-        toast.showCustomError(
+        showError(
           "유효성 검사 오류",
           validation.message || "옵션이 올바르지 않습니다."
         );
@@ -36,16 +36,16 @@ export function useExportDialog({
       setIsExporting(true);
 
       // 내보내기 시작 알림
-      toast.showInfo("내보내기 시작", "데이터를 내보내는 중입니다...");
+      showInfo("내보내기 시작", "데이터를 내보내는 중입니다...");
 
       await onExport(options);
 
-      toast.showCustomSuccess("내보내기 완료", successMessage);
+      showSuccess("내보내기 완료", successMessage);
 
       setIsOpen(false);
     } catch (error) {
       devLog.error("내보내기 오류:", error);
-      toast.showCustomError("내보내기 실패", errorMessage);
+      showError("내보내기 실패", errorMessage);
     } finally {
       setIsExporting(false);
     }

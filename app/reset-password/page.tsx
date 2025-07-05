@@ -26,7 +26,7 @@ export default function ResetPasswordPage() {
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
   const router = useRouter();
-  const toast = useCommonToast();
+  const { showSuccess, showError } = useCommonToast();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -42,11 +42,11 @@ export default function ResetPasswordPage() {
         context: "비밀번호 재설정 요청",
         onError: (error, context) => {
           devLog.error("Password reset error:", error);
-          toast.showCustomError("오류", error.message);
+          showError("오류", error.message);
         },
       });
 
-      toast.showCustomSuccess(
+      showSuccess(
         "이메일 전송 완료",
         "비밀번호 재설정 링크가 이메일로 전송되었습니다."
       );

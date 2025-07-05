@@ -12,14 +12,7 @@ import { useCommonToast } from "@/lib/utils/notification/toast-messages";
 import { useToast } from "@/hooks/use-toast";
 
 export default function TestToastPage() {
-  const {
-    showSuccess,
-    showError,
-    showWarning,
-    showInfo,
-    showCustomSuccess,
-    showCustomError,
-  } = useCommonToast();
+  const { showSuccess, showError, showWarning, showInfo } = useCommonToast();
   const { toast } = useToast();
 
   return (
@@ -84,7 +77,7 @@ export default function TestToastPage() {
           <CardContent className="space-y-3">
             <Button
               onClick={() =>
-                showCustomSuccess(
+                showSuccess(
                   "농장 등록 완료",
                   "새로운 농장이 성공적으로 등록되었습니다. 이제 방문자 관리와 모니터링을 시작할 수 있습니다."
                 )
@@ -95,7 +88,7 @@ export default function TestToastPage() {
             </Button>
             <Button
               onClick={() =>
-                showCustomError(
+                showError(
                   "네트워크 오류",
                   "서버와의 연결이 실패했습니다. 인터넷 연결을 확인하고 다시 시도해주세요."
                 )

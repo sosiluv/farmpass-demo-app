@@ -74,7 +74,7 @@ export function VisitorFormDialog({
   onSuccess,
 }: VisitorFormDialogProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const toast = useCommonToast();
+  const { showInfo, showError } = useCommonToast();
 
   const form = useForm<VisitorFormValues>({
     resolver: zodResolver(visitorFormSchema),
@@ -120,7 +120,7 @@ export function VisitorFormDialog({
   const onSubmit = async (values: VisitorFormValues) => {
     if (isSubmitting) return;
 
-    toast.showInfo("폼 제출 시작", "방문자 정보를 저장하는 중입니다...");
+    showInfo("폼 제출 시작", "방문자 정보를 저장하는 중입니다...");
     try {
       setIsSubmitting(true);
       await onSuccess({
@@ -133,7 +133,7 @@ export function VisitorFormDialog({
       onOpenChange(false);
     } catch (error) {
       devLog.error("폼 제출 실패:", error);
-      toast.showCustomError(
+      showError(
         "폼 제출 실패",
         error instanceof Error ? error.message : "오류가 발생했습니다."
       );

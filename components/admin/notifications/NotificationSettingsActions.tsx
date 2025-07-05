@@ -12,7 +12,7 @@ export function NotificationSettingsActions() {
 
   const { unsavedSettings, hasUnsavedChanges, setSettings } =
     useNotificationSettingsStore();
-  const toast = useCommonToast();
+  const { showInfo, showError, showSuccess } = useCommonToast();
 
   useEffect(() => {
     if (hasUnsavedChanges() && justSaved) {
@@ -21,7 +21,7 @@ export function NotificationSettingsActions() {
   }, [unsavedSettings, hasUnsavedChanges, justSaved]);
 
   const handleSave = async () => {
-    toast.showInfo("알림 설정 저장 시작", "알림 설정을 저장하는 중입니다...");
+    showInfo("알림 설정 저장 시작", "알림 설정을 저장하는 중입니다...");
     setLoading(true);
     try {
       const savedSettings = await apiClient("/api/notifications/settings", {
@@ -31,7 +31,7 @@ export function NotificationSettingsActions() {
         context: "알림 설정 저장",
         onError: (error, context) => {
           handleError(error, context);
-          toast.showCustomError(
+          showError(
             "알림 설정 저장 실패",
             "알림 설정을 저장하는 중 오류가 발생했습니다"
           );
@@ -40,7 +40,7 @@ export function NotificationSettingsActions() {
 
       setSettings(savedSettings);
       setJustSaved(true);
-      toast.showCustomSuccess(
+      showSuccess(
         "알림 설정 저장 완료",
         "알림 설정이 성공적으로 저장되었습니다."
       );

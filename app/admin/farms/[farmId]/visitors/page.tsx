@@ -42,7 +42,7 @@ export default function FarmVisitorsPage() {
   const { state } = useAuth();
   const user = state.status === "authenticated" ? state.user : null;
   const farmId = params.farmId as string;
-  const toast = useCommonToast();
+  const { showSuccess, showError } = useCommonToast();
   const {
     farms,
     fetchState,
@@ -75,17 +75,17 @@ export default function FarmVisitorsPage() {
   // 농장 관련 토스트 처리
   useEffect(() => {
     if (farmsError) {
-      toast.showCustomError("오류", farmsError);
+      showError("오류", farmsError);
       clearFarmsMessages();
     }
-  }, [farmsError, toast, clearFarmsMessages]);
+  }, [farmsError, showError, clearFarmsMessages]);
 
   useEffect(() => {
     if (farmsSuccessMessage) {
-      toast.showCustomSuccess("성공", farmsSuccessMessage);
+      showSuccess("성공", farmsSuccessMessage);
       clearFarmsMessages();
     }
-  }, [farmsSuccessMessage, toast, clearFarmsMessages]);
+  }, [farmsSuccessMessage, showSuccess, clearFarmsMessages]);
 
   // 공통 방문자 액션 훅 사용
   const { handleEdit, handleDelete, handleExport } = useVisitorActions({

@@ -16,7 +16,7 @@ interface FarmsDataManagerProps {
 }
 
 export function FarmsDataManager({ children }: FarmsDataManagerProps) {
-  const { showCustomError, showInfo } = useCommonToast();
+  const { showError, showInfo } = useCommonToast();
   const [farms, setFarms] = useState<ExtendedFarm[]>([]);
   const [lastUpdate, setLastUpdate] = useState<Date>(new Date());
   const [isFetching, setIsFetching] = useState(false);
@@ -92,7 +92,7 @@ export function FarmsDataManager({ children }: FarmsDataManagerProps) {
       setLastUpdate(new Date());
     } catch (error: any) {
       devLog.error("Error fetching farms:", error);
-      showCustomError(
+      showError(
         "농장 정보 불러오기 실패",
         "농장 정보를 불러오는데 실패했습니다."
       );

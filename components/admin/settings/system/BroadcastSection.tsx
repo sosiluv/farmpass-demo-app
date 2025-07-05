@@ -5,7 +5,6 @@ import { motion } from "framer-motion";
 import { Card, CardContent } from "@/components/ui/card";
 import { Send } from "lucide-react";
 import { useCommonToast } from "@/lib/utils/notification/toast-messages";
-import { devLog } from "@/lib/utils/logging/dev-logger";
 import { apiClient } from "@/lib/utils/api-client";
 import { handleError } from "@/lib/utils/handleError";
 import SettingsCardHeader from "../SettingsCardHeader";
@@ -24,7 +23,7 @@ interface BroadcastFormData {
 }
 
 export default function BroadcastSection({ isLoading }: BroadcastSectionProps) {
-  const toast = useCommonToast();
+  const { showWarning, showInfo } = useCommonToast();
   const [formData, setFormData] = useState<BroadcastFormData>({
     title: "",
     message: "",
@@ -53,16 +52,13 @@ export default function BroadcastSection({ isLoading }: BroadcastSectionProps) {
       !formData.message.trim() ||
       !formData.notificationType
     ) {
-      toast.showWarning(
-        "입력 누락",
-        "제목, 메시지, 알림 유형을 모두 입력해주세요."
-      );
+      showWarning("입력 누락", "제목, 메시지, 알림 유형을 모두 입력해주세요.");
       return;
     }
 
     // 긴급 알림인 경우 경고 메시지
     if (formData.notificationType === "emergency") {
-      toast.showWarning(
+      showWarning(
         "긴급 알림 발송",
         "이 알림은 모든 사용자에게 즉시 전송됩니다. 신중하게 발송해주세요."
       );
@@ -71,7 +67,7 @@ export default function BroadcastSection({ isLoading }: BroadcastSectionProps) {
     setIsSending(true);
 
     // 발송 시작 알림
-    toast.showInfo("알림 발송 시작", "푸시 알림을 발송하는 중입니다...");
+    showInfo("알림 발송 시작", "푸시 알림을 발송하는 중입니다...");
 
     try {
       const result = await apiClient("/api/admin/broadcast", {
@@ -96,7 +92,7 @@ export default function BroadcastSection({ isLoading }: BroadcastSectionProps) {
             timestamp: new Date(),
           });
 
-          toast.showCustomError(
+          showWarning(
             "푸시 알림 발송 실패",
             error instanceof Error
               ? error.message
@@ -114,13 +110,13 @@ export default function BroadcastSection({ isLoading }: BroadcastSectionProps) {
 
       // 실패가 있는 경우 경고 메시지 추가
       if (result.failureCount > 0) {
-        toast.showWarning(
+        showWarning(
           "일부 발송 실패",
           `${result.sentCount}명에게 발송 성공, ${result.failureCount}명에게 발송 실패`
         );
       }
 
-      toast.showCustomSuccess(
+      showInfo(
         "푸시 알림 발송 완료",
         `${result.sentCount}명에게 알림을 발송했습니다.`
       );

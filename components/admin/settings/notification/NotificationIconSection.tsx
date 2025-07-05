@@ -56,7 +56,7 @@ const NotificationIconSection = React.memo(function NotificationIconSection({
   onImageDelete: onImageDeleteFromProps,
   loading,
 }: NotificationIconSectionProps) {
-  const toast = useCommonToast();
+  const { showInfo, showWarning } = useCommonToast();
   // 프리뷰 상태 관리
   const [iconPreview, setIconPreview] = useState<string | null>(
     settings.notificationIcon
@@ -102,7 +102,7 @@ const NotificationIconSection = React.memo(function NotificationIconSection({
                 <ImageUpload
                   onUpload={async (file) => {
                     if (!file) return;
-                    toast.showInfo(
+                    showInfo(
                       "알림 아이콘 업로드 시작",
                       "알림 아이콘을 업로드하는 중입니다..."
                     );
@@ -112,7 +112,7 @@ const NotificationIconSection = React.memo(function NotificationIconSection({
                         ALLOWED_NOTIFICATION_ICON_TYPES as readonly string[]
                       ).includes(file.type)
                     ) {
-                      toast.showWarning(
+                      showWarning(
                         "파일 형식 오류",
                         `허용되지 않은 파일 형식입니다. ${ALLOWED_NOTIFICATION_ICON_EXTENSIONS.join(
                           ", "
@@ -130,7 +130,7 @@ const NotificationIconSection = React.memo(function NotificationIconSection({
                     }
                   }}
                   onDelete={async () => {
-                    toast.showInfo(
+                    showInfo(
                       "알림 아이콘 삭제 시작",
                       "알림 아이콘을 삭제하는 중입니다..."
                     );
@@ -167,7 +167,7 @@ const NotificationIconSection = React.memo(function NotificationIconSection({
                 <ImageUpload
                   onUpload={async (file) => {
                     if (!file) return;
-                    toast.showInfo(
+                    showInfo(
                       "배지 아이콘 업로드 시작",
                       "배지 아이콘을 업로드하는 중입니다..."
                     );
@@ -177,7 +177,7 @@ const NotificationIconSection = React.memo(function NotificationIconSection({
                         ALLOWED_NOTIFICATION_BADGE_TYPES as readonly string[]
                       ).includes(file.type)
                     ) {
-                      toast.showWarning(
+                      showWarning(
                         "파일 형식 오류",
                         `허용되지 않은 파일 형식입니다. ${ALLOWED_NOTIFICATION_BADGE_EXTENSIONS.join(
                           ", "
@@ -195,7 +195,7 @@ const NotificationIconSection = React.memo(function NotificationIconSection({
                     }
                   }}
                   onDelete={async () => {
-                    toast.showInfo(
+                    showInfo(
                       "배지 아이콘 삭제 시작",
                       "배지 아이콘을 삭제하는 중입니다..."
                     );

@@ -65,7 +65,7 @@ export default function PushNotificationTestPage() {
   const user = state.status === "authenticated" ? state.user : null;
   const profile = state.status === "authenticated" ? state.profile : null;
   const { farms, fetchFarms } = useFarmsStore();
-  const toast = useCommonToast();
+  const { showInfo, showWarning, showSuccess, showError } = useCommonToast();
 
   // 관리자 권한 체크
   if (!profile || profile.account_type !== "admin") {
@@ -221,10 +221,7 @@ export default function PushNotificationTestPage() {
   };
 
   const testNotificationPermission = async () => {
-    toast.showInfo(
-      "알림 권한 확인",
-      "브라우저 알림 권한을 확인하는 중입니다..."
-    );
+    showInfo("알림 권한 확인", "브라우저 알림 권한을 확인하는 중입니다...");
     addTestResult({
       type: "권한 테스트",
       status: "pending",
@@ -233,7 +230,7 @@ export default function PushNotificationTestPage() {
 
     try {
       if (!("Notification" in window)) {
-        toast.showWarning(
+        showWarning(
           "브라우저 미지원",
           "이 브라우저는 알림을 지원하지 않습니다."
         );
@@ -360,7 +357,7 @@ export default function PushNotificationTestPage() {
 
   const sendCustomNotification = async () => {
     if (!testForm.title || !testForm.message) {
-      toast.showCustomError("알림 작업 실패", "푸시 알림 작업에 실패했습니다.");
+      showError("알림 작업 실패", "푸시 알림 작업에 실패했습니다.");
       return;
     }
 
@@ -394,7 +391,7 @@ export default function PushNotificationTestPage() {
             message: error instanceof Error ? error.message : "발송 실패",
             details: error,
           });
-          toast.showCustomError(
+          showError(
             "테스트 알림 발송 실패",
             "테스트 알림 발송에 실패했습니다."
           );
@@ -413,13 +410,13 @@ export default function PushNotificationTestPage() {
 
       // 실패가 있는 경우 경고
       if (result.failureCount > 0) {
-        toast.showWarning(
+        showWarning(
           "일부 발송 실패",
           `${result.sentCount}명에게 발송 성공, ${result.failureCount}명에게 발송 실패`
         );
       }
 
-      toast.showCustomSuccess(
+      showSuccess(
         "테스트 알림 발송 완료",
         "테스트 알림이 성공적으로 발송되었습니다."
       );
@@ -430,10 +427,7 @@ export default function PushNotificationTestPage() {
         message: error instanceof Error ? error.message : "발송 실패",
         details: error,
       });
-      toast.showCustomError(
-        "테스트 알림 발송 실패",
-        "테스트 알림 발송에 실패했습니다."
-      );
+      showError("테스트 알림 발송 실패", "테스트 알림 발송에 실패했습니다.");
     } finally {
       setIsLoading(false);
     }
@@ -442,7 +436,7 @@ export default function PushNotificationTestPage() {
   // 실제 방문자 등록을 통한 알림 테스트
   const runVisitorFormTest = async () => {
     if (!visitorTestForm.farmId) {
-      toast.showCustomError(
+      showError(
         "농장 목록 조회 실패",
         "농장 목록을 불러오는 중 오류가 발생했습니다."
       );
@@ -486,7 +480,7 @@ export default function PushNotificationTestPage() {
                 error instanceof Error ? error.message : "방문자 등록 실패",
               details: error,
             });
-            toast.showCustomError(
+            showError(
               "방문자 등록 실패",
               "방문자를 등록하는 중 오류가 발생했습니다."
             );
@@ -511,10 +505,7 @@ export default function PushNotificationTestPage() {
           },
         },
       });
-      toast.showCustomSuccess(
-        "방문자 등록 완료",
-        "방문자가 성공적으로 등록되었습니다."
-      );
+      showSuccess("방문자 등록 완료", "방문자가 성공적으로 등록되었습니다.");
     } catch (error) {
       devLog.error(error);
       addTestResult({
@@ -523,7 +514,7 @@ export default function PushNotificationTestPage() {
         message: error instanceof Error ? error.message : "방문자 등록 실패",
         details: error,
       });
-      toast.showCustomError(
+      showError(
         "방문자 등록 실패",
         "방문자를 등록하는 중 오류가 발생했습니다."
       );

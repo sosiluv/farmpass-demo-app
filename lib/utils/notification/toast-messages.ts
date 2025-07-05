@@ -48,24 +48,6 @@ export function useCommonToast() {
       });
     },
 
-    // 커스텀 성공 메시지
-    showCustomSuccess: (title: string, description?: string) => {
-      toast({
-        title,
-        description,
-        variant: "success",
-      });
-    },
-
-    // 커스텀 에러 메시지
-    showCustomError: (title: string, description?: string) => {
-      toast({
-        title,
-        description,
-        variant: "destructive",
-      });
-    },
-
     // 원본 toast 함수 (특수한 경우에만 사용)
     toast,
   };

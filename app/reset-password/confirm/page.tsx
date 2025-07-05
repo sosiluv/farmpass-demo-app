@@ -45,7 +45,7 @@ export default function ResetPasswordConfirmPage() {
   const [tokenProcessed, setTokenProcessed] = useState(false);
   const [tokenError, setTokenError] = useState<string | null>(null);
   const router = useRouter();
-  const toast = useCommonToast();
+  const { showSuccess, showError } = useCommonToast();
   const { signOut, changePassword } = useAuth();
   const searchParams = useSearchParams();
   const processingRef = useRef(false);
@@ -87,11 +87,11 @@ export default function ResetPasswordConfirmPage() {
       }
 
       // 성공적으로 토큰 검증됨
-      toast.showCustomSuccess("인증 성공", "새로운 비밀번호를 입력해주세요.");
+      showSuccess("인증 성공", "새로운 비밀번호를 입력해주세요.");
     } catch (error: any) {
       const authError = getAuthErrorMessage(error);
       setTokenError(authError.message);
-      toast.showCustomError("오류", authError.message);
+      showError("오류", authError.message);
 
       // 리다이렉트가 필요한 경우
       if (authError.shouldRedirect && authError.redirectTo) {
@@ -103,7 +103,7 @@ export default function ResetPasswordConfirmPage() {
       setTokenLoading(false);
       processingRef.current = false;
     }
-  }, [searchParams, tokenProcessed, toast, router]);
+  }, [searchParams, tokenProcessed, showSuccess, showError, router]);
 
   const { isTimedOut, retry } = useTimeout(tokenLoading, {
     timeout: 15000, // 15초 타임아웃
@@ -161,8 +161,8 @@ export default function ResetPasswordConfirmPage() {
         throw new Error(result.error || "비밀번호 변경에 실패했습니다.");
       }
 
-      // 성공 메시지 표시 - duration은 사용자 정의 옵션으로 showCustomSuccess 사용
-      toast.showCustomSuccess(
+      // 성공 메시지 표시 - duration은 사용자 정의 옵션으로 showSuccess 사용
+      showSuccess(
         "비밀번호 변경 완료",
         "새로운 비밀번호로 변경되었습니다. 로그인해주세요."
       );
@@ -180,7 +180,7 @@ export default function ResetPasswordConfirmPage() {
 
       // getAuthErrorMessage 함수를 사용하여 에러 처리
       const authError = getAuthErrorMessage(error);
-      toast.showCustomError("오류", authError.message);
+      showError("오류", authError.message);
 
       // 리다이렉트가 필요한 경우
       if (authError.shouldRedirect && authError.redirectTo) {

@@ -25,25 +25,22 @@ export default function NotificationsPage() {
   const [isSubscribed, setIsSubscribed] = useState(false);
   const { setSettings } = useNotificationSettingsStore();
   const { data: settings, error: settingsError } = useNotificationSettings();
-  const toast = useCommonToast();
+  const { showInfo, showError } = useCommonToast();
 
   // 농장 데이터 로드
   useEffect(() => {
     if (user?.id && !fetchState.loading && farms.length === 0) {
-      toast.showInfo("농장 정보 로딩 시작", "농장 정보를 불러오는 중입니다...");
+      showInfo("농장 정보 로딩 시작", "농장 정보를 불러오는 중입니다...");
       fetchFarms(user.id);
     }
-  }, [user?.id, fetchFarms, fetchState.loading, farms.length, toast]);
+  }, [user?.id, fetchFarms, fetchState.loading, farms.length, showInfo]);
 
   // 알림 설정 에러 처리
   useEffect(() => {
     if (settingsError) {
-      toast.showCustomError(
-        "알림 설정 로드 실패",
-        "알림 설정을 불러오는데 실패했습니다."
-      );
+      showError("알림 설정 로드 실패", "알림 설정을 불러오는데 실패했습니다.");
     }
-  }, [settingsError, toast]);
+  }, [settingsError, showError]);
 
   // 농장 데이터를 WebPushSubscription 컴포넌트 형식으로 변환
   const farmData: Farm[] = farms.map((farm) => ({

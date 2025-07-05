@@ -75,7 +75,7 @@ export default function DashboardPage() {
     clearLastMessage,
   } = useNotificationPermission();
 
-  const toast = useCommonToast();
+  const { showWarning, showSuccess, showError } = useCommonToast();
 
   // selectedFarm 상태 업데이트 - 더 안정적인 조건
   useEffect(() => {
@@ -98,13 +98,13 @@ export default function DashboardPage() {
   useEffect(() => {
     if (lastMessage) {
       if (lastMessage.type === "success") {
-        toast.showCustomSuccess(lastMessage.title, lastMessage.message);
+        showSuccess(lastMessage.title, lastMessage.message);
       } else {
-        toast.showCustomError(lastMessage.title, lastMessage.message);
+        showError(lastMessage.title, lastMessage.message);
       }
       clearLastMessage();
     }
-  }, [lastMessage, toast, clearLastMessage]);
+  }, [lastMessage, showSuccess, showError, clearLastMessage]);
 
   // useFarmVisitors 호출을 메모화하여 불필요한 재호출 방지
   const memoizedSelectedFarm = useMemo(() => {
@@ -158,7 +158,7 @@ export default function DashboardPage() {
 
   if (timeoutReached) {
     // 타임아웃 시 경고 메시지 표시
-    toast.showWarning(
+    showWarning(
       "데이터 로딩 지연",
       "네트워크 상태를 확인하거나 다시 시도해 주세요."
     );

@@ -29,7 +29,7 @@ export default function ConfirmPage() {
   const [tokenProcessed, setTokenProcessed] = useState(false);
   const router = useRouter();
   const searchParams = useSearchParams();
-  const toast = useCommonToast();
+  const { showSuccess, showError } = useCommonToast();
   const processingRef = useRef(false);
 
   const handleEmailConfirmation = useCallback(async () => {
@@ -67,7 +67,7 @@ export default function ConfirmPage() {
 
       if (data.user && data.session) {
         setConfirmed(true);
-        toast.showCustomSuccess(
+        showSuccess(
           "이메일 인증 완료",
           "이메일 인증이 성공적으로 완료되었습니다. 잠시 후 로그인 페이지로 이동합니다."
         );
@@ -77,7 +77,7 @@ export default function ConfirmPage() {
     } catch (error: any) {
       const authError = getAuthErrorMessage(error);
       setError(authError.message);
-      toast.showCustomError("인증 실패", authError.message);
+      showError("인증 실패", authError.message);
 
       // 리다이렉트가 필요한 경우
       if (authError.shouldRedirect && authError.redirectTo) {
@@ -89,7 +89,7 @@ export default function ConfirmPage() {
       setLoading(false);
       processingRef.current = false;
     }
-  }, [searchParams, tokenProcessed, toast, router]);
+  }, [searchParams, tokenProcessed, showSuccess, router]);
 
   const { isTimedOut, retry } = useTimeout(loading, {
     timeout: 15000, // 15초 타임아웃

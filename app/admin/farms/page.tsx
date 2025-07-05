@@ -32,7 +32,7 @@ interface FarmMembersData {
 export default function FarmsPage() {
   const { state } = useAuth();
   const profile = state.status === "authenticated" ? state.profile : null;
-  const toast = useCommonToast();
+  const { showSuccess, showError } = useCommonToast();
   const {
     farms,
     fetchState,
@@ -62,18 +62,18 @@ export default function FarmsPage() {
   // 에러 토스트 처리
   useEffect(() => {
     if (error) {
-      toast.showCustomError("오류", error);
+      showError("오류", error);
       clearMessages();
     }
-  }, [error, toast, clearMessages]);
+  }, [error, showError, clearMessages]);
 
   // 성공 토스트 처리
   useEffect(() => {
     if (successMessage) {
-      toast.showCustomSuccess("성공", successMessage);
+      showSuccess("성공", successMessage);
       clearMessages();
     }
-  }, [successMessage, toast, clearMessages]);
+  }, [successMessage, showSuccess, clearMessages]);
 
   // 소유자 확인 함수 메모이제이션
   const isOwner = useCallback(
