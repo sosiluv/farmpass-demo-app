@@ -1,8 +1,8 @@
 import { createClient } from "@/lib/supabase/client";
 import { devLog } from "@/lib/utils/logging/dev-logger";
-import { handleError } from "@/lib/utils/handleError";
-import type { Session, User } from "@supabase/supabase-js";
-import { apiClient } from "@/lib/utils/api-client";
+
+import { apiClient } from "@/lib/utils/data";
+import { clearClientCookies } from "@/lib/utils/auth";
 
 // 구독 해제를 위한 브라우저 API 직접 호출 (훅 대신)
 async function cleanupBrowserSubscription(): Promise<{
@@ -38,37 +38,13 @@ async function cleanupBrowserSubscription(): Promise<{
 let isRefreshing = false;
 let refreshPromise: Promise<boolean> | null = null;
 
-// 토큰 만료 시간 확인 공통 함수
-function checkTokenExpiration(session: Session | null, bufferTimeMinutes = 5) {
-  if (!session) {
-    return { isExpired: true, needsRefresh: false };
-  }
-
-  const expiresAt = session.expires_at;
-  if (!expiresAt) {
-    return { isExpired: true, needsRefresh: false };
-  }
-
-  const now = Math.floor(Date.now() / 1000);
-  const bufferTime = bufferTimeMinutes * 60; // 분을 초로 변환
-
-  const isExpired = expiresAt - now < 0;
-  const needsRefresh = expiresAt - now < bufferTime;
-
-  return { isExpired, needsRefresh };
-}
-
-// 쿠키 정리 공통 함수
-export function clearSessionCookies() {
-  if (typeof window !== "undefined") {
-    // 모든 sb- 쿠키 삭제
-    document.cookie.split(";").forEach((c) => {
-      const name = c.split("=")[0]?.trim();
-      if (name?.startsWith("sb-")) {
-        document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/`;
-      }
-    });
+// 세션 쿠키 정리 함수 개선
+function clearSessionCookies(): void {
+  try {
+    clearClientCookies();
     devLog.log("세션 쿠키 정리 완료");
+  } catch (error) {
+    devLog.warn("세션 쿠키 정리 실패:", error);
   }
 }
 
@@ -195,11 +171,16 @@ export async function isTokenExpired(): Promise<boolean> {
   try {
     const supabase = createClient();
     const {
-      data: { session },
-    } = await supabase.auth.getSession();
+      data: { user },
+      error,
+    } = await supabase.auth.getUser();
 
-    const { isExpired } = checkTokenExpiration(session);
-    return isExpired;
+    // 사용자 정보가 없거나 에러가 있으면 만료된 것으로 간주
+    if (error || !user) {
+      return true;
+    }
+
+    return false;
   } catch (error) {
     devLog.error("토큰 만료 확인 실패:", error);
     return true;
@@ -215,9 +196,9 @@ export async function validateSession(): Promise<{
   try {
     const supabase = createClient();
     const {
-      data: { session },
+      data: { user },
       error,
-    } = await supabase.auth.getSession();
+    } = await supabase.auth.getUser();
 
     if (error) {
       return {
@@ -227,19 +208,18 @@ export async function validateSession(): Promise<{
       };
     }
 
-    if (!session) {
+    if (!user) {
       return {
         isValid: false,
         needsRefresh: false,
-        error: "세션이 없습니다.",
+        error: "사용자가 인증되지 않았습니다.",
       };
     }
 
-    const { isExpired, needsRefresh } = checkTokenExpiration(session);
-
+    // getUser()는 서버에서 실시간으로 검증하므로 유효한 사용자면 토큰도 유효
     return {
-      isValid: !isExpired,
-      needsRefresh,
+      isValid: true,
+      needsRefresh: false,
     };
   } catch (error) {
     devLog.error("세션 유효성 검증 실패:", error);

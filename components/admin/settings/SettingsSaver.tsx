@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useCommonToast } from "@/lib/utils/notification/toast-messages";
-import { apiClient } from "@/lib/utils/api-client";
-import { handleError } from "@/lib/utils/handleError";
+import { apiClient } from "@/lib/utils/data";
+import { handleError } from "@/lib/utils/error";
 import type { SystemSettings } from "@/lib/types/settings";
 
 interface SettingsSaverProps {

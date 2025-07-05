@@ -23,7 +23,7 @@ import { useCommonToast } from "@/lib/utils/notification/toast-messages";
 import { devLog } from "@/lib/utils/logging/dev-logger";
 import { useFarmsStore } from "@/store/use-farms-store";
 import { useAuth } from "@/components/providers/auth-provider";
-import { apiClient } from "@/lib/utils/api-client";
+import { apiClient } from "@/lib/utils/data";
 import {
   Bell,
   Send,

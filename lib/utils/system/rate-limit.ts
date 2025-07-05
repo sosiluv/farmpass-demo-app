@@ -201,6 +201,17 @@ export const visitorRegistrationRateLimiter = new RateLimiter({
 });
 
 /**
+ * 악성 봇 차단용 Rate Limiter
+ *
+ * 의심스러운 요청 패턴에 대해 더 엄격한 제한 적용
+ * 기본값: IP당 1분에 5회 요청
+ */
+export const maliciousBotRateLimiter = new RateLimiter({
+  maxRequests: parseInt(process.env.MALICIOUS_RATE_LIMIT_MAX || "5"),
+  windowMs: parseInt(process.env.MALICIOUS_RATE_LIMIT_WINDOW_MS || "60000"), // 1분
+});
+
+/**
  * =================================
  * Rate Limit 헤더 생성 함수
  * =================================

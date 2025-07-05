@@ -9,8 +9,8 @@ import {
   ALLOWED_IMAGE_TYPES,
   MAX_UPLOAD_SIZE_MB,
 } from "@/lib/constants/upload";
-import { apiClient } from "@/lib/utils/api-client";
-import { handleError } from "@/lib/utils/handleError";
+import { apiClient } from "@/lib/utils/data";
+import { handleError } from "@/lib/utils/error";
 
 const initialFormData: VisitorFormData = {
   fullName: "",

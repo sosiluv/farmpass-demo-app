@@ -12,7 +12,7 @@ import {
   ALLOWED_IMAGE_TYPES,
   MAX_UPLOAD_SIZE_MB,
 } from "@/lib/constants/upload";
-import { apiClient } from "@/lib/utils/api-client";
+import { apiClient } from "@/lib/utils/data";
 
 interface UseAccountActionsProps {
   profile: Profile;

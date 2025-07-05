@@ -1,4 +1,4 @@
-import { refreshToken, handleSessionExpired } from "@/lib/auth/authService";
+import { refreshToken, handleSessionExpired } from "@/lib/utils/auth";
 
 // 에러 메시지 상수
 const ERROR_MESSAGES = {

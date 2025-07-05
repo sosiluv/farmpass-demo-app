@@ -2,8 +2,8 @@ import { useEffect, useState, useRef, useCallback } from "react";
 import { devLog } from "@/lib/utils/logging/dev-logger";
 import type { FarmMember } from "@/lib/types";
 import isEqual from "lodash/isEqual";
-import { apiClient } from "@/lib/utils/api-client";
-import { handleError } from "@/lib/utils/handleError";
+import { apiClient } from "@/lib/utils/data";
+import { handleError } from "@/lib/utils/error";
 
 export interface MemberWithProfile extends FarmMember {
   name: string;

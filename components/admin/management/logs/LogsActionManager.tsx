@@ -1,7 +1,6 @@
 import { useCommonToast } from "@/lib/utils/notification/toast-messages";
-import { devLog } from "@/lib/utils/logging/dev-logger";
-import { apiClient } from "@/lib/utils/api-client";
-import { handleError } from "@/lib/utils/handleError";
+import { apiClient } from "@/lib/utils/data";
+import { handleError } from "@/lib/utils/error";
 import type { SystemLog } from "@/lib/types/system";
 
 interface LogsActionManagerProps {

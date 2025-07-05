@@ -14,14 +14,23 @@ export const supabase = createClient();
 // Session refresh utility
 export async function refreshSession() {
   try {
+    // 먼저 현재 사용자 상태 확인
     const {
-      data: { session },
-    } = await supabase.auth.getSession();
-    if (!session) {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) {
+      // 사용자가 없으면 세션 갱신 시도
       const { data, error } = await supabase.auth.refreshSession();
       if (error) throw error;
       return data;
     }
+
+    // 사용자가 있으면 현재 세션 정보 반환
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+
     return { session };
   } catch (error) {
     devLog.error("Failed to refresh session:", error);

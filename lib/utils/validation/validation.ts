@@ -7,8 +7,8 @@
 import { getSystemSettings } from "@/lib/cache/system-settings-cache";
 import { devLog } from "@/lib/utils/logging/dev-logger";
 import { PHONE_PATTERN } from "@/lib/constants/input-rules";
-import { apiClient } from "@/lib/utils/api-client";
-import { handleError } from "@/lib/utils/handleError";
+import { apiClient } from "@/lib/utils/data/api-client";
+import { handleError } from "@/lib/utils/error";
 
 // 기본 비밀번호 규칙 (보수적인 설정)
 const DEFAULT_PASSWORD_RULES = {

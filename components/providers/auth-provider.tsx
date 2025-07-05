@@ -11,10 +11,9 @@ import { Session, User } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/client";
 import type { Profile } from "@/lib/types";
 import { devLog } from "@/lib/utils/logging/dev-logger";
-import { apiClient } from "@/lib/utils/api-client";
-import { handleError } from "@/lib/utils/handleError";
-
+import { handleError } from "@/lib/utils/error";
 import { useSubscriptionManager } from "@/hooks/useSubscriptionManager";
+import { apiClient } from "@/lib/utils/data";
 
 // 통합된 인증 상태 정의
 type AuthState =
@@ -170,30 +169,37 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
         // 배포 환경에서 네트워크 지연을 고려한 타임아웃 설정
         const timeoutPromise = new Promise((_, reject) =>
-          setTimeout(() => reject(new Error("세션 확인 타임아웃")), 10000)
+          setTimeout(() => reject(new Error("사용자 확인 타임아웃")), 10000)
         );
 
-        const sessionPromise = supabase.auth.getSession();
+        // getUser()를 사용하여 서버에서 실시간 검증
+        const userPromise = supabase.auth.getUser();
 
         const {
-          data: { session },
+          data: { user },
           error,
-        } = (await Promise.race([sessionPromise, timeoutPromise])) as any;
+        } = (await Promise.race([userPromise, timeoutPromise])) as any;
 
         if (error) throw error;
 
-        if (session && mounted) {
-          devLog.log("Session found, loading profile...");
-          const profile = await loadProfile(session.user.id);
+        if (user && mounted) {
+          devLog.log("User authenticated, loading profile...");
+          const profile = await loadProfile(user.id);
 
           if (profile && mounted) {
             devLog.log(
               "Profile loaded successfully, setting authenticated state"
             );
+
+            // 세션 정보도 필요하므로 getSession() 호출 (상태 관리용)
+            const {
+              data: { session },
+            } = await supabase.auth.getSession();
+
             dispatch({
               type: "SET_AUTHENTICATED",
-              session,
-              user: session.user,
+              session: session || ({} as Session), // 세션이 없으면 빈 객체
+              user,
               profile,
             });
           } else if (mounted) {
@@ -201,7 +207,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             dispatch({ type: "SET_UNAUTHENTICATED" });
           }
         } else if (mounted) {
-          devLog.log("No session found, setting unauthenticated");
+          devLog.log("No user found, setting unauthenticated");
           dispatch({ type: "SET_UNAUTHENTICATED" });
         }
       } catch (error) {
@@ -248,14 +254,28 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             state.status !== "authenticated" &&
             state.status !== "loading"
           ) {
-            const profile = await loadProfile(session.user.id);
-            if (profile && mounted) {
-              dispatch({
-                type: "SET_AUTHENTICATED",
-                session,
-                user: session.user,
-                profile,
-              });
+            // 서버에서 사용자 정보 재검증
+            try {
+              const {
+                data: { user },
+                error,
+              } = await supabase.auth.getUser();
+              if (error || !user) {
+                devLog.warn("User verification failed during SIGNED_IN event");
+                return;
+              }
+
+              const profile = await loadProfile(user.id);
+              if (profile && mounted) {
+                dispatch({
+                  type: "SET_AUTHENTICATED",
+                  session,
+                  user,
+                  profile,
+                });
+              }
+            } catch (error) {
+              devLog.error("Error verifying user during SIGNED_IN:", error);
             }
           }
           break;
@@ -270,14 +290,34 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           break;
 
         case "TOKEN_REFRESHED":
-          // 토큰 갱신은 세션만 업데이트 (로깅 제거)
+          // 토큰 갱신 시에도 사용자 정보 재검증
           if (session && state.status === "authenticated" && mounted) {
-            dispatch({
-              type: "SET_AUTHENTICATED",
-              session,
-              user: state.user,
-              profile: state.profile,
-            });
+            try {
+              const {
+                data: { user },
+                error,
+              } = await supabase.auth.getUser();
+              if (error || !user) {
+                devLog.warn(
+                  "User verification failed during TOKEN_REFRESHED event"
+                );
+                dispatch({ type: "SET_UNAUTHENTICATED" });
+                return;
+              }
+
+              dispatch({
+                type: "SET_AUTHENTICATED",
+                session,
+                user,
+                profile: state.profile,
+              });
+            } catch (error) {
+              devLog.error(
+                "Error verifying user during TOKEN_REFRESHED:",
+                error
+              );
+              dispatch({ type: "SET_UNAUTHENTICATED" });
+            }
           }
           break;
       }
@@ -431,7 +471,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       dispatch({ type: "SET_LOADING" });
 
       // AuthService 사용 (내부에서 구독 정리까지 처리)
-      const { logout } = await import("@/lib/auth/authService");
+      const { logout } = await import("@/lib/utils/auth");
       await logout(false);
 
       dispatch({ type: "SET_UNAUTHENTICATED" });

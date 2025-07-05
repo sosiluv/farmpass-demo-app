@@ -5,8 +5,8 @@ import { motion } from "framer-motion";
 import { Card, CardContent } from "@/components/ui/card";
 import { Send } from "lucide-react";
 import { useCommonToast } from "@/lib/utils/notification/toast-messages";
-import { apiClient } from "@/lib/utils/api-client";
-import { handleError } from "@/lib/utils/handleError";
+import { apiClient } from "@/lib/utils/data";
+import { handleError } from "@/lib/utils/error";
 import SettingsCardHeader from "../SettingsCardHeader";
 import { BroadcastForm, BroadcastAlert, BroadcastResult } from "./broadcast";
 

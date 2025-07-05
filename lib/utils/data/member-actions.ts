@@ -3,9 +3,9 @@
  * Quick Action(승격/강등/삭제) 로직 중앙화
  */
 
-import { apiClient } from "@/lib/utils/api-client";
+import { apiClient } from "@/lib/utils/data";
 import { devLog } from "@/lib/utils/logging/dev-logger";
-import { handleError } from "@/lib/utils/handleError";
+import { handleError } from "@/lib/utils/error";
 
 export type MemberRole = "owner" | "manager" | "viewer";
 

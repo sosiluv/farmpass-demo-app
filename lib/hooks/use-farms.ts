@@ -43,9 +43,13 @@ export function useFarms(userId?: string) {
   const lastUserIdRef = useRef<string | undefined>(undefined);
   const hasDataRef = useRef(false);
 
+  // userId를 ref로 관리하여 useCallback 의존성에서 제거
+  const userIdRef = useRef<string | undefined>(userId);
+  userIdRef.current = userId;
+
   const fetchFarms = useCallback(
     async (targetUserId?: string, forceRefetch: boolean = false) => {
-      const userIdToUse = targetUserId || userId;
+      const userIdToUse = targetUserId || userIdRef.current;
 
       // 중복 요청 방지
       if (isFetchingRef.current) {
@@ -87,7 +91,7 @@ export function useFarms(userId?: string) {
         isFetchingRef.current = false;
       }
     },
-    [userId, storeFetchFarms]
+    [storeFetchFarms] // userId를 의존성에서 제거
   );
 
   const refetch = useCallback(() => {
@@ -101,16 +105,17 @@ export function useFarms(userId?: string) {
     }
   }, [userId]);
 
+  // userId 변경 시에만 fetchFarms 호출
   useEffect(() => {
     if (userId === undefined || userId === null) {
       return;
     }
     fetchFarms();
-  }, [userId, fetchFarms]);
+  }, [userId]); // fetchFarms를 의존성에서 제거
 
   const addFarm = useCallback(
     async (values: FarmFormValues, targetUserId?: string) => {
-      const userIdToUse = targetUserId || userId;
+      const userIdToUse = targetUserId || userIdRef.current;
       if (!userIdToUse) {
         devLog.error("[useFarms] userId 없이 농장 등록 시도");
         setError("농장을 등록할 권한이 없습니다.");
@@ -130,7 +135,7 @@ export function useFarms(userId?: string) {
         return null;
       }
     },
-    [storeFarmAdd, userId]
+    [storeFarmAdd] // userId를 의존성에서 제거
   );
 
   const updateFarm = useCallback(

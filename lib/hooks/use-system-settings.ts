@@ -1,8 +1,8 @@
 import useSWR from "swr";
-import { SystemSettings, DEFAULT_SYSTEM_SETTINGS } from "@/lib/types/settings";
+import { apiClient } from "@/lib/utils/data";
 import { devLog } from "@/lib/utils/logging/dev-logger";
-import { apiClient } from "@/lib/utils/api-client";
-import { handleError } from "@/lib/utils/handleError";
+import { SystemSettings, DEFAULT_SYSTEM_SETTINGS } from "@/lib/types/settings";
+import { handleError } from "@/lib/utils/error";
 
 const fetcher = async (url: string): Promise<SystemSettings> => {
   devLog.log("[useSystemSettings] Settings API 호출:", url);

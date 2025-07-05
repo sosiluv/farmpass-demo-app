@@ -2,8 +2,8 @@ import { useState, useEffect, useCallback, useMemo } from "react";
 import type { NotificationSettings } from "@/lib/types/notification";
 import type { SystemSettings } from "@/lib/types/settings";
 import { devLog } from "@/lib/utils/logging/dev-logger";
-import { apiClient } from "@/lib/utils/api-client";
-import { handleError } from "@/lib/utils/handleError";
+import { apiClient } from "@/lib/utils/data";
+import { handleError } from "@/lib/utils/error";
 
 // 알림 설정 조회 훅 (사용자용)
 export function useNotificationSettings() {

@@ -6,8 +6,8 @@ import {
   PerformanceMonitor,
   logDatabasePerformance,
 } from "@/lib/utils/logging/system-log";
-import { apiClient } from "@/lib/utils/api-client";
-import { handleError } from "@/lib/utils/handleError";
+import { handleError } from "@/lib/utils/error";
+import { apiClient } from "@/lib/utils/data";
 
 export interface Farm {
   id: string;

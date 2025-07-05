@@ -1,8 +1,8 @@
 import { create } from "zustand";
 import type { FarmMember } from "@/lib/types";
 import { devLog } from "@/lib/utils/logging/dev-logger";
-import { apiClient } from "@/lib/utils/api-client";
-import { handleError } from "@/lib/utils/handleError";
+import { apiClient } from "@/lib/utils/data/api-client";
+import { handleError } from "@/lib/utils/error";
 
 interface FarmMembersState {
   members: FarmMember[];

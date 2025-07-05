@@ -2,8 +2,8 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import type { VisitorSettings } from "@/lib/types/visitor";
 import { VISITOR_CONSTANTS } from "@/lib/constants/visitor";
 import { devLog } from "@/lib/utils/logging/dev-logger";
-import { apiClient } from "@/lib/utils/api-client";
-import { handleError } from "@/lib/utils/handleError";
+import { apiClient } from "@/lib/utils/data";
+import { handleError } from "@/lib/utils/error";
 
 interface ApiVisitorSettings {
   visitor_revisit_interval: number;

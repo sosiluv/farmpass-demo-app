@@ -1,6 +1,8 @@
 import { create } from "zustand";
 import { devtools } from "zustand/middleware";
 import { supabase } from "@/lib/supabase/client";
+import { handleError } from "@/lib/utils/error";
+import { apiClient } from "@/lib/utils/data";
 import {
   formatLocalDate,
   getTodayRange,
@@ -13,9 +15,6 @@ import type {
   CreateVisitorData,
   UpdateVisitorData,
 } from "@/lib/types/visitor";
-
-import { apiClient } from "@/lib/utils/api-client";
-import { handleError } from "@/lib/utils/handleError";
 
 // 통합된 방문자 타입 (기존 VisitorEntryWithFarm 호환)
 export type Visitor = VisitorWithFarm;

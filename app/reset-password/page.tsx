@@ -20,7 +20,7 @@ import { useCommonToast } from "@/lib/utils/notification/toast-messages";
 import { devLog } from "@/lib/utils/logging/dev-logger";
 import { Logo } from "@/components/common";
 import { Loading } from "@/components/ui/loading";
-import { apiClient } from "@/lib/utils/api-client";
+import { apiClient } from "@/lib/utils/data";
 
 export default function ResetPasswordPage() {
   const [email, setEmail] = useState("");

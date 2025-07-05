@@ -357,7 +357,7 @@ export async function POST(request: NextRequest) {
 
     const duration = await monitor.finish();
 
-    // 세션 쿠키를 직접 설정하여 클라이언트 세션 설정 불필요
+    // Supabase 기본 쿠키 사용 (중복 쿠키 설정 제거)
     const response = NextResponse.json({
       success: true,
       user: {
@@ -371,23 +371,6 @@ export async function POST(request: NextRequest) {
         expires_at: session!.expires_at,
       },
       remainingAttempts: attempts.maxAttempts,
-    });
-
-    // 세션 쿠키 설정
-    response.cookies.set("sb-access-token", session!.access_token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
-      maxAge: session!.expires_at
-        ? session!.expires_at * 1000 - Date.now()
-        : 3600,
-    });
-
-    response.cookies.set("sb-refresh-token", session!.refresh_token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
-      maxAge: 30 * 24 * 60 * 60 * 1000, // 30일
     });
 
     // 성능 로깅을 비동기로 처리하여 응답 지연 방지

@@ -1,8 +1,8 @@
 import { useState, useEffect } from "react";
 import { devLog } from "@/lib/utils/logging/dev-logger";
 import type { CleanupStatus } from "@/lib/types/settings";
-import { apiClient } from "@/lib/utils/api-client";
-import { handleError } from "@/lib/utils/handleError";
+import { apiClient } from "@/lib/utils/data";
+import { handleError } from "@/lib/utils/error";
 
 export function useCleanupManager() {
   const [cleanupStatus, setCleanupStatus] = useState<CleanupStatus | null>(

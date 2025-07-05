@@ -1,7 +1,7 @@
 import { SystemSettings, DEFAULT_SYSTEM_SETTINGS } from "@/lib/types/settings";
 import { devLog } from "@/lib/utils/logging/dev-logger";
-import { apiClient } from "@/lib/utils/api-client";
-import { handleError } from "@/lib/utils/handleError";
+import { apiClient } from "@/lib/utils/data";
+import { handleError } from "@/lib/utils/error";
 
 export class SystemSettingsCache {
   private cache: SystemSettings | null = null;

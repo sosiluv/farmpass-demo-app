@@ -3,7 +3,7 @@
 import React, { Component, ReactNode } from "react";
 import { AdminError } from "./admin-error";
 import { devLog } from "@/lib/utils/logging/dev-logger";
-import { handleError } from "@/lib/utils/handleError";
+import { handleError } from "@/lib/utils/error";
 
 interface Props {
   children: ReactNode;

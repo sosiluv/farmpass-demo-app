@@ -10,7 +10,9 @@ import { getClientIP, getUserAgent } from "@/lib/server/ip-helpers";
 import {
   apiRateLimiter,
   createRateLimitHeaders,
+  maliciousBotRateLimiter,
 } from "@/lib/utils/system/rate-limit";
+import { clearServerCookies } from "@/lib/utils/auth";
 
 const MIDDLEWARE_CONFIG = {
   // 🌐 공개 접근 가능한 경로들 (인증 불필요)
@@ -70,62 +72,42 @@ const PathMatcher = {
  */
 async function validateAndRefreshToken(supabase: any) {
   try {
-    // 세션 조회
+    // 사용자 정보 조회 (보안 강화)
     const {
-      data: { session },
+      data: { user },
       error,
-    } = await supabase.auth.getSession();
+    } = await supabase.auth.getUser();
 
     if (error) {
-      devLog.warn(`[MIDDLEWARE] Session error: ${error.message}`);
+      devLog.warn(`[MIDDLEWARE] User validation error: ${error.message}`);
       return { isValid: false, user: null };
     }
 
-    if (!session) {
-      devLog.warn(`[MIDDLEWARE] No session found`);
+    if (!user) {
+      devLog.warn(`[MIDDLEWARE] No authenticated user found`);
       return { isValid: false, user: null };
     }
 
-    // 토큰 만료 시간 확인 (서버 사이드에서 직접 계산)
-    const now = Math.floor(Date.now() / 1000);
-    const expiresAt = session.expires_at;
-    const bufferTime = 5 * 60; // 5분 버퍼
+    // getUser()가 성공하면 이미 유효한 사용자임
+    // 토큰 갱신은 Supabase가 자동으로 처리
+    devLog.log(`[MIDDLEWARE] User authenticated: ${user.id}`);
 
-    if (!expiresAt) {
-      devLog.warn(`[MIDDLEWARE] No expiration time in session`);
-      return { isValid: false, user: null };
-    }
-
-    const isExpired = expiresAt - now < 0;
-    const needsRefresh = expiresAt - now < bufferTime;
-
-    if (isExpired) {
-      devLog.warn(`[MIDDLEWARE] Token expired`);
-      return { isValid: false, user: null };
-    }
-
-    // 토큰 갱신이 필요한 경우
-    if (needsRefresh) {
-      devLog.log(`[MIDDLEWARE] Token needs refresh, attempting refresh`);
-
-      const { data: refreshData, error: refreshError } =
-        await supabase.auth.refreshSession();
-
-      if (refreshError || !refreshData.session) {
-        devLog.warn(
-          `[MIDDLEWARE] Token refresh failed: ${refreshError?.message}`
-        );
-        return { isValid: false, user: null };
-      }
-
-      devLog.log(`[MIDDLEWARE] Token refreshed successfully`);
-      return { isValid: true, user: refreshData.session.user };
-    }
-
-    return { isValid: true, user: session.user };
+    return { isValid: true, user: user };
   } catch (error) {
     devLog.error(`[MIDDLEWARE] Token validation error: ${error}`);
     return { isValid: false, user: null };
+  }
+}
+
+// 구독 정리 함수 (별도로 분리)
+async function cleanupUserSubscriptions(userId: string) {
+  try {
+    const supabase = await createClient();
+    await supabase.from("push_subscriptions").delete().eq("user_id", userId);
+
+    devLog.log(`[MIDDLEWARE] Server subscriptions cleaned for user: ${userId}`);
+  } catch (error) {
+    devLog.warn(`[MIDDLEWARE] Failed to clean server subscriptions: ${error}`);
   }
 }
 
@@ -152,6 +134,52 @@ export async function middleware(request: NextRequest) {
 
   // 📍 요청 정보 추출
   const pathname = request.nextUrl.pathname; // 현재 요청 경로
+
+  // 🚫 악성 봇 및 WordPress 관련 요청 차단
+  // 실제 프로젝트에서 사용하지 않는 경로들만 차단
+  const maliciousPatterns = [
+    /\/wordpress/i, // WordPress 관련
+    /\/wp-/i, // WordPress 관련 (wp-admin, wp-content 등)
+    /\.php$/i, // PHP 파일
+    /\/config\//i, // 설정 디렉토리 (실제 사용 안함)
+    /\/backup\//i, // 백업 디렉토리 (실제 사용 안함)
+    /\/database\//i, // 데이터베이스 디렉토리 (실제 사용 안함)
+    /\/install\//i, // 설치 디렉토리 (실제 사용 안함)
+    /\/setup\//i, // 설정 디렉토리 (실제 사용 안함)
+  ];
+
+  if (maliciousPatterns.some((pattern) => pattern.test(pathname))) {
+    const clientIP = getClientIP(request);
+    const userAgent = getUserAgent(request);
+
+    // 악성 봇 Rate Limiting 적용
+    const botLimitResult = maliciousBotRateLimiter.checkLimit(clientIP);
+    if (!botLimitResult.allowed) {
+      devLog.warn(
+        `[MIDDLEWARE] Malicious bot rate limited: ${pathname} from IP: ${clientIP}`
+      );
+      return new NextResponse("Too Many Requests", {
+        status: 429,
+        headers: {
+          "Retry-After": botLimitResult.retryAfter?.toString() || "60",
+          "X-Robots-Tag": "noindex, nofollow",
+        },
+      });
+    }
+
+    devLog.warn(
+      `[MIDDLEWARE] Malicious request blocked: ${pathname} from IP: ${clientIP}, UA: ${userAgent}`
+    );
+
+    // 악성 요청에 대해 더 강력한 응답
+    return new NextResponse("Not Found", {
+      status: 404,
+      headers: {
+        "X-Robots-Tag": "noindex, nofollow",
+        "Cache-Control": "no-cache, no-store, must-revalidate",
+      },
+    });
+  }
 
   // 🌐 클라이언트 정보 추출 (보안 로깅용)
   const clientIP = getClientIP(request); // 실제 클라이언트 IP (프록시 고려)
@@ -183,45 +211,20 @@ export async function middleware(request: NextRequest) {
       }, Token valid: ${isAuthenticated}`
     );
 
-    // 토큰이 만료되어 갱신에 실패한 경우 세션 정리
+    // 인증 실패 시 세션 정리 (user가 있지만 인증이 실패한 경우)
     if (!isAuthenticated && user) {
-      devLog.warn(`[MIDDLEWARE] Token expired, clearing session`);
+      devLog.warn(`[MIDDLEWARE] Authentication failed for user: ${user.id}`);
 
       // 서버 측 구독 정리 (백그라운드에서 처리)
-      try {
-        const supabase = await createClient();
-        await supabase
-          .from("push_subscriptions")
-          .delete()
-          .eq("user_id", user.id);
-
-        devLog.log(
-          `[MIDDLEWARE] Server subscriptions cleaned for user: ${user.id}`
-        );
-      } catch (error) {
-        devLog.warn(
-          `[MIDDLEWARE] Failed to clean server subscriptions: ${error}`
-        );
-        // 구독 정리 실패해도 로그아웃은 계속 진행
-      }
+      await cleanupUserSubscriptions(user.id);
 
       // 세션 쿠키 정리 (미들웨어에서는 NextResponse cookies API 사용)
       const loginUrl = new URL("/login", request.url);
       loginUrl.searchParams.set("session_expired", "true");
       const response = NextResponse.redirect(loginUrl);
 
-      // 모든 sb- 쿠키 삭제
-      const cookies = request.headers.get("cookie") || "";
-      const cookieNames = cookies
-        .split(";")
-        .map((c) => c.split("=")[0]?.trim())
-        .filter((name) => name?.startsWith("sb-"));
-
-      cookieNames.forEach((name) => {
-        if (name) {
-          response.cookies.delete(name);
-        }
-      });
+      // 공통 쿠키 정리 함수 사용
+      clearServerCookies(response);
 
       return response;
     }

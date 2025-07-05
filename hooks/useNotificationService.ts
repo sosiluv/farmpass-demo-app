@@ -1,8 +1,8 @@
 import { useState, useCallback } from "react";
 import { devLog } from "@/lib/utils/logging/dev-logger";
 import type { NotificationPayload } from "@/lib/types/notification";
-import { apiClient } from "@/lib/utils/api-client";
-import { handleError } from "@/lib/utils/handleError";
+import { apiClient } from "@/lib/utils/data";
+import { handleError } from "@/lib/utils/error";
 
 export function useNotificationService() {
   // 토스트 대신 메시지 상태만 반환

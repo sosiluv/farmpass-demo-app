@@ -50,12 +50,9 @@ export default function DashboardPage() {
     }
   }, [fetchState.loading, availableFarms, isAdmin]);
 
-  // selectedFarm 상태를 초기값으로 설정하여 중복 호출 방지
-  const [selectedFarm, setSelectedFarm] = useState<string>(() => {
-    // 초기값을 즉시 설정하여 useEffect에서의 중복 설정 방지
-    if (isAdmin) return "all";
-    return "";
-  });
+  // selectedFarm 상태 관리 개선
+  const [selectedFarm, setSelectedFarm] = useState<string>("");
+  const [isInitialized, setIsInitialized] = useState(false);
 
   // 농장 선택 콜백 - useCallback으로 최적화
   const handleFarmSelect = useCallback((farmId: string) => {
@@ -77,24 +74,26 @@ export default function DashboardPage() {
 
   const { showWarning, showSuccess, showError } = useCommonToast();
 
-  // selectedFarm 상태 업데이트 - 더 안정적인 조건
+  // 초기 농장 선택 설정 - 한 번만 실행
   useEffect(() => {
     if (
+      !isInitialized &&
       initialSelectedFarm &&
-      selectedFarm === "" && // 빈 문자열일 때만 업데이트
       !fetchState.loading &&
       availableFarms.length > 0
     ) {
       setSelectedFarm(initialSelectedFarm);
+      setIsInitialized(true);
       devLog.log(`Initial farm selected: ${initialSelectedFarm}`);
     }
   }, [
     initialSelectedFarm,
-    selectedFarm,
     fetchState.loading,
     availableFarms.length,
+    isInitialized,
   ]);
 
+  // 알림 메시지 처리
   useEffect(() => {
     if (lastMessage) {
       if (lastMessage.type === "success") {
