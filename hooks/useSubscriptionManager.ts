@@ -1,6 +1,8 @@
 import { useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { devLog } from "@/lib/utils/logging/dev-logger";
+import { apiClient } from "@/lib/utils/api-client";
+import { handleError } from "@/lib/utils/handleError";
 
 export function useSubscriptionManager() {
   const router = useRouter();
@@ -8,12 +10,16 @@ export function useSubscriptionManager() {
   // VAPID 키 가져오기
   const getVapidKey = async (): Promise<string | null> => {
     try {
-      const response = await fetch("/api/push/vapid");
-      if (!response.ok) throw new Error("VAPID 키 조회 실패");
-      const data = await response.json();
+      const data = await apiClient("/api/push/vapid", {
+        method: "GET",
+        context: "VAPID 키 조회",
+        onError: (error, context) => {
+          handleError(error, context);
+        },
+      });
       return data.publicKey;
     } catch (error) {
-      devLog.error("VAPID 키 조회 실패:", error);
+      // 에러는 이미 onError에서 처리됨
       return null;
     }
   };
@@ -54,20 +60,18 @@ export function useSubscriptionManager() {
 
         // 2. 서버에서 구독 정보 삭제
         try {
-          const response = await fetch("/api/push/subscription", {
+          await apiClient("/api/push/subscription", {
             method: "DELETE",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ endpoint: subscription.endpoint }),
+            context: "구독 정보 삭제",
+            onError: (error, context) => {
+              handleError(error, context);
+            },
           });
-
-          if (response.ok) {
-            devLog.log("서버 구독 정보 삭제 완료");
-          } else {
-            const errorData = await response.json();
-            devLog.warn("서버 구독 정보 삭제 실패:", errorData);
-          }
+          devLog.log("서버 구독 정보 삭제 완료");
         } catch (error) {
-          devLog.warn("서버 구독 정보 삭제 실패:", error);
+          // 에러는 이미 onError에서 처리됨
           // 브라우저 구독은 해제되었으므로 true 반환
         }
 
@@ -77,7 +81,7 @@ export function useSubscriptionManager() {
         return false;
       }
     } catch (error) {
-      devLog.error("구독 해제 실패:", error);
+      handleError(error, "구독 해제");
       return false;
     }
   };
@@ -123,20 +127,20 @@ export function useSubscriptionManager() {
         });
 
         // 7. 서버에 구독 정보 전송
-        const response = await fetch("/api/push/subscription", {
+        await apiClient("/api/push/subscription", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ subscription: newSubscription.toJSON() }),
+          context: "구독 정보 서버 전송",
+          onError: (error, context) => {
+            handleError(error, context);
+          },
         });
-
-        if (!response.ok) {
-          throw new Error("구독 정보 서버 전송 실패");
-        }
 
         devLog.log(`구독 전환 완료: ${userId}`);
         return true;
       } catch (error) {
-        devLog.error("구독 전환 실패:", error);
+        // 에러는 이미 onError에서 처리됨
         return false;
       }
     },
@@ -146,16 +150,16 @@ export function useSubscriptionManager() {
   // 사용자의 알림 설정 조회
   const getUserNotificationSettings = async (userId: string) => {
     try {
-      const response = await fetch("/api/notifications/settings");
-      if (!response.ok) {
-        devLog.warn("알림 설정 조회 실패");
-        return null;
-      }
-
-      const data = await response.json();
+      const data = await apiClient("/api/notifications/settings", {
+        method: "GET",
+        context: "알림 설정 조회",
+        onError: (error, context) => {
+          handleError(error, context);
+        },
+      });
       return data;
     } catch (error) {
-      devLog.error("알림 설정 조회 중 오류:", error);
+      // 에러는 이미 onError에서 처리됨
       return null;
     }
   };
@@ -172,7 +176,7 @@ export function useSubscriptionManager() {
       devLog.log("구독 정리 완료");
       return result;
     } catch (error) {
-      devLog.error("구독 정리 실패:", error);
+      handleError(error, "구독 정리");
       return false;
     }
   }, []);
@@ -204,19 +208,21 @@ export function useSubscriptionManager() {
       }
 
       // 서버 구독 정보 확인
-      const response = await fetch("/api/push/subscription");
-      if (!response.ok) {
-        return false;
-      }
+      const { subscriptions } = await apiClient("/api/push/subscription", {
+        method: "GET",
+        context: "구독 상태 확인",
+        onError: (error, context) => {
+          devLog.error("구독 상태 확인 실패:", error);
+        },
+      });
 
-      const { subscriptions } = await response.json();
       const hasValidSubscription = subscriptions?.some(
         (sub: any) => sub.endpoint === browserSubscription.endpoint
       );
 
       return hasValidSubscription;
     } catch (error) {
-      devLog.error("구독 동기화 확인 실패:", error);
+      // 에러는 이미 onError에서 처리됨
       return false;
     }
   }, []);

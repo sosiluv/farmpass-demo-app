@@ -77,7 +77,7 @@ export const VisitorForm = ({
   isImageUploading,
 }: VisitorFormProps) => {
   const [logoError, setLogoError] = useState(false);
-  const { showCustomError } = useCommonToast();
+  const toast = useCommonToast();
 
   if (isLoading) {
     return (
@@ -119,13 +119,17 @@ export const VisitorForm = ({
           <ImageUpload
             onUpload={async (file) => {
               if (file) {
+                toast.showInfo(
+                  "이미지 업로드 시작",
+                  "이미지를 업로드하는 중입니다..."
+                );
                 if (
                   !(ALLOWED_IMAGE_TYPES as readonly string[]).includes(
                     file.type
                   )
                 ) {
-                  showCustomError(
-                    "이미지 업로드 실패",
+                  toast.showWarning(
+                    "파일 형식 오류",
                     `허용되지 않은 파일 형식입니다. ${ALLOWED_IMAGE_EXTENSIONS.join(
                       ", "
                     )} 만 업로드 가능합니다.`
@@ -137,6 +141,10 @@ export const VisitorForm = ({
               }
             }}
             onDelete={async () => {
+              toast.showInfo(
+                "이미지 삭제 시작",
+                "이미지를 삭제하는 중입니다..."
+              );
               if (uploadedImageUrl) {
                 const fileName = uploadedImageUrl.split("/").pop();
                 if (fileName) {

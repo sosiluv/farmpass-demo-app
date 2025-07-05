@@ -14,6 +14,8 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/components/providers/auth-provider";
 import { useCommonToast } from "@/lib/utils/notification/toast-messages";
+import { apiClient } from "@/lib/utils/api-client";
+import { handleError } from "@/lib/utils/handleError";
 
 interface UserDetailModalProps {
   user: Profile | null;
@@ -24,7 +26,7 @@ interface UserDetailModalProps {
 export function UserDetailModal({ user, open, onClose }: UserDetailModalProps) {
   const { state } = useAuth();
   const [loading, setLoading] = useState(false);
-  const { showCustomSuccess, showCustomError } = useCommonToast();
+  const { showCustomSuccess, showCustomError, showInfo } = useCommonToast();
 
   const accessToken =
     state.status === "authenticated" ? state.session.access_token : undefined;
@@ -80,9 +82,10 @@ export function UserDetailModal({ user, open, onClose }: UserDetailModalProps) {
   };
 
   const handleUnlock = async () => {
+    showInfo("계정 잠금 해제 시작", "계정 잠금을 해제하는 중입니다...");
     setLoading(true);
     try {
-      const res = await fetch("/api/auth/reset-attempts", {
+      const data = await apiClient("/api/auth/reset-attempts", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -92,17 +95,20 @@ export function UserDetailModal({ user, open, onClose }: UserDetailModalProps) {
           email: user?.email,
           reason: "관리자 수동 잠금 해제",
         }),
+        context: "계정 잠금 해제",
+        onError: (error, context) => {
+          handleError(error, context);
+          showCustomError("잠금 해제 실패", error.message || "잠금 해제 실패");
+        },
       });
-      const data = await res.json();
-      if (res.ok) {
-        showCustomSuccess(
-          "계정 잠금 해제",
-          data.message || "계정 잠금이 해제되었습니다!"
-        );
-        onClose();
-      } else {
-        showCustomError("잠금 해제 실패", data.error || "잠금 해제 실패");
-      }
+
+      showCustomSuccess(
+        "계정 잠금 해제",
+        data.message || "계정 잠금이 해제되었습니다!"
+      );
+      onClose();
+    } catch {
+      // onError에서 이미 처리함
     } finally {
       setLoading(false);
     }

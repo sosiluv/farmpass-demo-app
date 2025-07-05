@@ -6,7 +6,7 @@ interface SettingsValidatorProps {
 }
 
 export function useSettingsValidator({ user }: SettingsValidatorProps) {
-  const { showCustomError } = useCommonToast();
+  const { showWarning } = useCommonToast();
 
   // 입력 필드 유효성 검사 설정
   const inputValidations = {
@@ -41,8 +41,8 @@ export function useSettingsValidator({ user }: SettingsValidatorProps) {
         !isNaN(numValue) &&
         (numValue < validation.min || numValue > validation.max)
       ) {
-        showCustomError(
-          "설정 유효성 검사 실패",
+        showWarning(
+          "입력 범위 오류",
           `${validation.name}는 ${validation.min}에서 ${validation.max} 사이의 값이어야 합니다.`
         );
         return false;

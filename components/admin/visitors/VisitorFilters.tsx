@@ -110,9 +110,9 @@ export const VisitorFilters = memo(function VisitorFilters({
             variant="outline"
             size="sm"
             className={cn(
-              "flex items-center space-x-1.5 sm:space-x-3 h-8 sm:h-10 text-xs sm:text-sm border-slate-200 hover:border-indigo-300 transition-all duration-300 bg-gradient-to-r from-slate-50 to-white hover:from-indigo-50 hover:to-white shadow-sm hover:shadow-md",
+              "flex items-center space-x-1.5 sm:space-x-3 h-8 sm:h-10 text-xs sm:text-sm border-slate-200 dark:border-slate-700 hover:border-indigo-300 dark:hover:border-indigo-400 transition-all duration-300 bg-gradient-to-r from-slate-50 to-white dark:from-slate-800 dark:to-slate-900 hover:from-indigo-50 hover:to-white dark:hover:from-indigo-900 dark:hover:to-slate-900 shadow-sm hover:shadow-md",
               isAdvancedOpen &&
-                "border-indigo-400 bg-gradient-to-r from-indigo-50 to-purple-50"
+                "border-indigo-400 dark:border-indigo-500 bg-gradient-to-r from-indigo-50 to-purple-50 dark:from-indigo-900 dark:to-purple-900"
             )}
           >
             <div
@@ -140,16 +140,24 @@ export const VisitorFilters = memo(function VisitorFilters({
           </Button>
         </CollapsibleTrigger>
         <CollapsibleContent className="space-y-3 sm:space-y-5 animate-in slide-in-from-top-2 duration-300">
-          <div className="p-3 sm:p-5 bg-gradient-to-br from-slate-50/80 via-white to-indigo-50/30 rounded-lg border border-slate-200/60 backdrop-blur-sm">
+          <div className="p-3 sm:p-5 bg-gradient-to-br from-slate-50/80 via-white to-indigo-50/30 dark:from-slate-800 dark:via-slate-900 dark:to-slate-800 rounded-lg border border-slate-200/60 dark:border-slate-700 backdrop-blur-sm">
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-5">
               {/* 농장 선택 */}
               {showFarmFilter && (
                 <div className="space-y-1.5 sm:space-y-3 min-w-0">
-                  <label className="text-xs sm:text-sm font-semibold text-slate-700 flex items-center space-x-1.5 sm:space-x-2">
-                    <div className="p-0.5 sm:p-1 bg-gradient-to-br from-indigo-100 to-purple-100 rounded-md">
-                      <Building2 className="h-3 w-3 sm:h-4 sm:w-4 text-indigo-600" />
+                  <label
+                    className="text-xs sm:text-sm font-semibold text-slate-700 dark:text-white !important flex items-center space-x-1.5 sm:space-x-2"
+                    style={{ color: "#fff" }}
+                  >
+                    <div className="p-0.5 sm:p-1 bg-gradient-to-br from-indigo-100 to-purple-100 dark:from-indigo-900 dark:to-purple-900 rounded-md">
+                      <Building2 className="h-3 w-3 sm:h-4 sm:w-4 text-indigo-600 dark:text-indigo-300" />
                     </div>
-                    <span>농장 선택</span>
+                    <span
+                      className="dark:text-white !important"
+                      style={{ color: "#fff" }}
+                    >
+                      농장 선택
+                    </span>
                   </label>
                   <div className="min-w-0">
                     <VisitorFarmSelector
@@ -164,11 +172,19 @@ export const VisitorFilters = memo(function VisitorFilters({
 
               {/* 커스텀 날짜 선택 */}
               <div className="space-y-1.5 sm:space-y-3 min-w-0">
-                <label className="text-xs sm:text-sm font-semibold text-slate-700 flex items-center space-x-1.5 sm:space-x-2">
-                  <div className="p-0.5 sm:p-1 bg-gradient-to-br from-blue-100 to-indigo-100 rounded-md">
-                    <CalendarIcon className="h-3 w-3 sm:h-4 sm:w-4 text-blue-600" />
+                <label
+                  className="text-xs sm:text-sm font-semibold text-slate-700 dark:text-white !important flex items-center space-x-1.5 sm:space-x-2"
+                  style={{ color: "#fff" }}
+                >
+                  <div className="p-0.5 sm:p-1 bg-gradient-to-br from-blue-100 to-indigo-100 dark:from-blue-900 dark:to-indigo-900 rounded-md">
+                    <CalendarIcon className="h-3 w-3 sm:h-4 sm:w-4 text-blue-600 dark:text-blue-300" />
                   </div>
-                  <span>기간 설정</span>
+                  <span
+                    className="dark:text-white !important"
+                    style={{ color: "#fff" }}
+                  >
+                    기간 설정
+                  </span>
                 </label>
                 <div className="min-w-0">
                   <CustomDatePicker
@@ -201,7 +217,7 @@ export const VisitorFilters = memo(function VisitorFilters({
   );
 
   return (
-    <Card className="border border-slate-200 bg-gradient-to-br from-white via-slate-50/50 to-white backdrop-blur-sm shadow-sm hover:shadow-md transition-all duration-300">
+    <Card className="border border-slate-200 dark:border-slate-700 bg-gradient-to-br from-white via-slate-50/50 to-white dark:from-slate-900 dark:via-slate-800/50 dark:to-slate-900 backdrop-blur-sm shadow-sm hover:shadow-md transition-all duration-300">
       <CardContent className="p-2 sm:p-5 md:p-6">
         <div className="space-y-3 sm:space-y-5 min-w-0">
           {/* 검색 및 결과 카운터 */}

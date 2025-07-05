@@ -2,8 +2,9 @@
 
 import { useState, useEffect } from "react";
 import { useAuth } from "@/components/providers/auth-provider";
-import { useCommonToast } from "@/lib/utils/notification/toast-messages";
 import { devLog } from "@/lib/utils/logging/dev-logger";
+import { apiClient } from "@/lib/utils/api-client";
+import { handleError } from "@/lib/utils/handleError";
 
 interface NotificationPermissionState {
   hasAsked: boolean;
@@ -13,7 +14,12 @@ interface NotificationPermissionState {
 
 export function useNotificationPermission() {
   const { state: authState } = useAuth();
-  const toast = useCommonToast();
+  // 토스트 대신 메시지 상태만 반환
+  const [lastMessage, setLastMessage] = useState<{
+    type: "success" | "error";
+    title: string;
+    message: string;
+  } | null>(null);
 
   const user = authState.status === "authenticated" ? authState.user : null;
   const profile =
@@ -33,7 +39,7 @@ export function useNotificationPermission() {
 
     const checkNotificationPermission = () => {
       const storageKey = getStorageKey(user.id);
-      const hasAskedBefore = localStorage.getItem(storageKey) === "true";
+      const lastAsked = localStorage.getItem(storageKey);
       const currentPermission = Notification.permission;
 
       // 브라우저에서 알림을 지원하지 않는 경우
@@ -46,8 +52,8 @@ export function useNotificationPermission() {
         return;
       }
 
-      // 이미 물어봤거나 권한이 설정된 경우
-      if (hasAskedBefore || currentPermission !== "default") {
+      // 권한이 이미 허용된 경우 - 더 이상 요청하지 않음
+      if (currentPermission === "granted") {
         setState({
           hasAsked: true,
           permission: currentPermission,
@@ -56,17 +62,31 @@ export function useNotificationPermission() {
         return;
       }
 
-      // 처음 로그인하는 사용자에게 알림 동의 창 표시
-      // 로그인 후 2초 후에 표시 (사용자 경험 개선)
-      const timer = setTimeout(() => {
-        setState({
-          hasAsked: false,
-          permission: currentPermission,
-          showDialog: true,
-        });
-      }, 2000);
+      // 권한이 거부되었거나 default인 경우 - 7일 간격으로 재요청
+      if (currentPermission === "denied" || currentPermission === "default") {
+        const sevenDaysAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
+        const canReAsk = !lastAsked || parseInt(lastAsked) < sevenDaysAgo;
 
-      return () => clearTimeout(timer);
+        if (canReAsk) {
+          // 로그인 후 2초 후에 표시 (사용자 경험 개선)
+          const timer = setTimeout(() => {
+            setState({
+              hasAsked: false,
+              permission: currentPermission,
+              showDialog: true,
+            });
+          }, 2000);
+
+          return () => clearTimeout(timer);
+        } else {
+          // 아직 재요청 기간이 되지 않은 경우
+          setState({
+            hasAsked: true,
+            permission: currentPermission,
+            showDialog: false,
+          });
+        }
+      }
     };
 
     checkNotificationPermission();
@@ -84,20 +104,22 @@ export function useNotificationPermission() {
         // 웹푸시 구독 시작
         await initializePushSubscription();
 
-        toast.showCustomSuccess(
-          "알림 허용됨",
-          "중요한 농장 관리 알림을 받으실 수 있습니다."
-        );
+        setLastMessage({
+          type: "success",
+          title: "알림 허용됨",
+          message: "중요한 농장 관리 알림을 받으실 수 있습니다.",
+        });
       } else {
-        toast.showCustomError(
-          "알림 거부됨",
-          "언제든지 설정에서 알림을 활성화할 수 있습니다."
-        );
+        setLastMessage({
+          type: "error",
+          title: "알림 거부됨",
+          message: "언제든지 설정에서 알림을 활성화할 수 있습니다.",
+        });
       }
 
-      // 상태 업데이트 및 로컬스토리지에 기록
+      // 상태 업데이트 및 로컬스토리지에 타임스탬프 기록
       const storageKey = getStorageKey(user.id);
-      localStorage.setItem(storageKey, "true");
+      localStorage.setItem(storageKey, Date.now().toString());
 
       setState((prev) => ({
         ...prev,
@@ -106,8 +128,12 @@ export function useNotificationPermission() {
         showDialog: false,
       }));
     } catch (error) {
-      devLog.error("알림 권한 요청 실패:", error);
-      toast.showCustomError("오류 발생", "알림 설정 중 오류가 발생했습니다.");
+      handleError(error, "알림 권한 요청");
+      setLastMessage({
+        type: "error",
+        title: "오류 발생",
+        message: "알림 설정 중 오류가 발생했습니다.",
+      });
     }
   };
 
@@ -116,7 +142,7 @@ export function useNotificationPermission() {
     if (!user) return;
 
     const storageKey = getStorageKey(user.id);
-    localStorage.setItem(storageKey, "true");
+    localStorage.setItem(storageKey, Date.now().toString());
 
     setState((prev) => ({
       ...prev,
@@ -124,10 +150,11 @@ export function useNotificationPermission() {
       showDialog: false,
     }));
 
-    toast.showCustomSuccess(
-      "알림 설정 건너뜀",
-      "언제든지 설정 페이지에서 알림을 활성화할 수 있습니다."
-    );
+    setLastMessage({
+      type: "success",
+      title: "알림 설정 건너뜀",
+      message: "언제든지 설정 페이지에서 알림을 활성화할 수 있습니다.",
+    });
   };
 
   // 웹푸시 구독 초기화
@@ -144,13 +171,13 @@ export function useNotificationPermission() {
       }
 
       // VAPID 키 가져오기
-      const vapidResponse = await fetch("/api/push/vapid");
-      if (!vapidResponse.ok) {
-        devLog.warn("VAPID 키를 가져올 수 없습니다.");
-        return;
-      }
-
-      const { publicKey } = await vapidResponse.json();
+      const { publicKey } = await apiClient("/api/push/vapid", {
+        method: "GET",
+        context: "VAPID 키 조회",
+        onError: (error, context) => {
+          handleError(error, context);
+        },
+      });
       if (!publicKey) {
         devLog.warn("VAPID 공개 키가 설정되지 않았습니다.");
         return;
@@ -169,7 +196,7 @@ export function useNotificationPermission() {
       });
 
       // 서버에 구독 정보 전송 (전체 구독)
-      const response = await fetch("/api/push/subscription", {
+      await apiClient("/api/push/subscription", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -178,13 +205,15 @@ export function useNotificationPermission() {
           subscription: subscription.toJSON(),
           // farmId 없음 = 전체 구독
         }),
+        context: "푸시 구독 등록",
+        onError: (error, context) => {
+          handleError(error, context);
+        },
       });
 
-      if (response.ok) {
-        devLog.log("웹푸시 구독이 성공적으로 등록되었습니다.");
-      }
+      devLog.log("웹푸시 구독이 성공적으로 등록되었습니다.");
     } catch (error) {
-      devLog.error("웹푸시 구독 초기화 실패:", error);
+      handleError(error, "웹푸시 구독 초기화");
     }
   };
 
@@ -241,22 +270,40 @@ export function useNotificationPermission() {
     if (!user) return null;
 
     const storageKey = getStorageKey(user.id);
-    const hasAskedBefore = localStorage.getItem(storageKey) === "true";
+    const lastAsked = localStorage.getItem(storageKey);
+    const sevenDaysAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
+    const canReAsk = !lastAsked || parseInt(lastAsked) < sevenDaysAgo;
+
+    const supportCheck = checkPushSupport();
 
     return {
       userId: user.id,
       storageKey,
-      hasAskedBefore,
+      lastAsked: lastAsked
+        ? new Date(parseInt(lastAsked)).toLocaleString()
+        : "없음",
+      canReAsk,
+      daysUntilReAsk: lastAsked
+        ? Math.ceil(
+            (parseInt(lastAsked) + 7 * 24 * 60 * 60 * 1000 - Date.now()) /
+              (24 * 60 * 60 * 1000)
+          )
+        : 0,
       currentPermission: Notification.permission,
       notificationSupported: "Notification" in window,
       serviceWorkerSupported: "serviceWorker" in navigator,
       pushManagerSupported: "PushManager" in window,
+      // PWA 관련 정보 추가
+      isPWA: supportCheck.details.isPWA,
+      displayMode: supportCheck.details.displayMode,
+      iosVersion: supportCheck.details.iosVersion,
+      pushSupported: supportCheck.supported,
       state: state,
     };
   };
 
   /**
-   * 브라우저 푸시 알림 지원 여부를 엄격하게 검사
+   * 브라우저 푸시 알림 지원 여부를 엄격하게 검사 (PWA 포함)
    * @returns 지원 여부와 상세 정보
    */
   function checkPushSupport(): {
@@ -267,15 +314,51 @@ export function useNotificationPermission() {
       notification: boolean;
       permissions: boolean;
       userAgent: string;
+      isPWA: boolean;
+      displayMode: string;
+      iosVersion?: number;
     };
   } {
+    const userAgent = navigator.userAgent;
+    const isIOS = /iPad|iPhone|iPod/.test(userAgent);
+    const isSafari = /Safari/.test(userAgent) && !/Chrome/.test(userAgent);
+
+    // iOS Safari 버전 체크
+    let iosVersion: number | undefined;
+    if (isIOS && isSafari) {
+      const match = userAgent.match(/OS (\d+)_(\d+)_?(\d+)?/);
+      if (match) {
+        iosVersion = parseInt(match[1]) + parseInt(match[2]) / 10;
+      }
+    }
+
+    // PWA 모드 체크
+    const isPWA =
+      window.matchMedia("(display-mode: standalone)").matches ||
+      (window.navigator as any).standalone === true;
+
+    const displayMode = isPWA ? "standalone" : "browser";
+
     const details = {
       serviceWorker: "serviceWorker" in navigator,
       pushManager: "PushManager" in window,
       notification: "Notification" in window,
       permissions: "permissions" in navigator,
-      userAgent: navigator.userAgent,
+      userAgent: userAgent,
+      isPWA: isPWA,
+      displayMode: displayMode,
+      iosVersion: iosVersion,
     };
+
+    // iOS Safari 16.4 미만은 웹푸시 미지원
+    if (isIOS && isSafari && iosVersion && iosVersion < 16.4) {
+      return {
+        supported: false,
+        details: {
+          ...details,
+        },
+      };
+    }
 
     const supported =
       details.serviceWorker &&
@@ -293,6 +376,8 @@ export function useNotificationPermission() {
     handleAllow,
     handleDeny,
     closeDialog,
+    lastMessage,
+    clearLastMessage: () => setLastMessage(null),
     // 디버깅/테스트용 함수들
     showDialogForce,
     resetPermissionState,

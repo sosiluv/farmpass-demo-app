@@ -6,6 +6,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Send } from "lucide-react";
 import { useCommonToast } from "@/lib/utils/notification/toast-messages";
 import { devLog } from "@/lib/utils/logging/dev-logger";
+import { apiClient } from "@/lib/utils/api-client";
+import { handleError } from "@/lib/utils/handleError";
 import SettingsCardHeader from "../SettingsCardHeader";
 import { BroadcastForm, BroadcastAlert, BroadcastResult } from "./broadcast";
 
@@ -22,7 +24,7 @@ interface BroadcastFormData {
 }
 
 export default function BroadcastSection({ isLoading }: BroadcastSectionProps) {
-  const { showCustomSuccess, showCustomError } = useCommonToast();
+  const toast = useCommonToast();
   const [formData, setFormData] = useState<BroadcastFormData>({
     title: "",
     message: "",
@@ -51,16 +53,28 @@ export default function BroadcastSection({ isLoading }: BroadcastSectionProps) {
       !formData.message.trim() ||
       !formData.notificationType
     ) {
-      showCustomError(
-        "푸시 알림 발송 실패",
+      toast.showWarning(
+        "입력 누락",
         "제목, 메시지, 알림 유형을 모두 입력해주세요."
       );
       return;
     }
 
+    // 긴급 알림인 경우 경고 메시지
+    if (formData.notificationType === "emergency") {
+      toast.showWarning(
+        "긴급 알림 발송",
+        "이 알림은 모든 사용자에게 즉시 전송됩니다. 신중하게 발송해주세요."
+      );
+    }
+
     setIsSending(true);
+
+    // 발송 시작 알림
+    toast.showInfo("알림 발송 시작", "푸시 알림을 발송하는 중입니다...");
+
     try {
-      const response = await fetch("/api/admin/broadcast", {
+      const result = await apiClient("/api/admin/broadcast", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -72,49 +86,55 @@ export default function BroadcastSection({ isLoading }: BroadcastSectionProps) {
           requireInteraction: formData.requireInteraction,
           notificationType: formData.notificationType,
         }),
+        context: "푸시 알림 브로드캐스트",
+        onError: (error, context) => {
+          handleError(error, context);
+          setLastSendResult({
+            success: false,
+            sentCount: 0,
+            failureCount: 0,
+            timestamp: new Date(),
+          });
+
+          toast.showCustomError(
+            "푸시 알림 발송 실패",
+            error instanceof Error
+              ? error.message
+              : "알 수 없는 오류가 발생했습니다."
+          );
+        },
       });
 
-      const result = await response.json();
-
-      if (response.ok) {
-        setLastSendResult({
-          success: true,
-          sentCount: result.sentCount || 0,
-          failureCount: result.failureCount || 0,
-          timestamp: new Date(),
-        });
-
-        showCustomSuccess(
-          "푸시 알림 발송 완료",
-          `${result.sentCount}명에게 알림을 발송했습니다.`
-        );
-
-        // 폼 초기화
-        setFormData({
-          title: "",
-          message: "",
-          requireInteraction: false,
-          url: "/admin/dashboard",
-          notificationType: "notice",
-        });
-      } else {
-        throw new Error(result.error || "알림 발송에 실패했습니다.");
-      }
-    } catch (error) {
-      devLog.error("브로드캐스트 발송 오류:", error);
       setLastSendResult({
-        success: false,
-        sentCount: 0,
-        failureCount: 0,
+        success: true,
+        sentCount: result.sentCount || 0,
+        failureCount: result.failureCount || 0,
         timestamp: new Date(),
       });
 
-      showCustomError(
-        "푸시 알림 발송 실패",
-        error instanceof Error
-          ? error.message
-          : "알 수 없는 오류가 발생했습니다."
+      // 실패가 있는 경우 경고 메시지 추가
+      if (result.failureCount > 0) {
+        toast.showWarning(
+          "일부 발송 실패",
+          `${result.sentCount}명에게 발송 성공, ${result.failureCount}명에게 발송 실패`
+        );
+      }
+
+      toast.showCustomSuccess(
+        "푸시 알림 발송 완료",
+        `${result.sentCount}명에게 알림을 발송했습니다.`
       );
+
+      // 폼 초기화
+      setFormData({
+        title: "",
+        message: "",
+        requireInteraction: false,
+        url: "/admin/dashboard",
+        notificationType: "notice",
+      });
+    } catch {
+      // onError에서 이미 처리함
     } finally {
       setIsSending(false);
     }

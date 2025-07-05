@@ -96,11 +96,12 @@ export function PageHeader({
       </div>
 
       <div className="relative space-y-2 sm:space-y-3 p-3 sm:p-4 md:p-5 lg:p-6 w-full max-w-full overflow-hidden">
-        {/* 브레드크럼 */}
+        {/* 브레드크럼 및 액션 */}
         <motion.div
           initial={{ opacity: 0, x: -30 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ duration: 0.6, delay: 0.1, ease: [0.22, 1, 0.36, 1] }}
+          className="flex items-center justify-between"
         >
           <Breadcrumb>
             <BreadcrumbList className="flex-wrap gap-0.5 sm:gap-1">
@@ -161,6 +162,22 @@ export function PageHeader({
               ))}
             </BreadcrumbList>
           </Breadcrumb>
+
+          {/* 브레드크럼 row의 오른쪽 액션 */}
+          {actions && (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9, x: 20 }}
+              animate={{ opacity: 1, scale: 1, x: 0 }}
+              transition={{
+                duration: 0.5,
+                delay: 0.3,
+                ease: [0.22, 1, 0.36, 1],
+              }}
+              className="flex items-center space-x-1 sm:space-x-2 md:space-x-3 flex-shrink-0"
+            >
+              {actions}
+            </motion.div>
+          )}
         </motion.div>
 
         {/* 페이지 제목 및 액션 */}
@@ -237,23 +254,6 @@ export function PageHeader({
               </motion.div>
             </div>
           </div>
-
-          {actions && (
-            <motion.div
-              initial={{ opacity: 0, scale: 0.9, y: 20 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              transition={{
-                duration: 0.5,
-                delay: 0.7,
-                ease: [0.22, 1, 0.36, 1],
-              }}
-              className="flex items-start justify-end flex-shrink-0 pt-0.5"
-            >
-              <div className="flex items-center space-x-1 sm:space-x-2 md:space-x-3">
-                {actions}
-              </div>
-            </motion.div>
-          )}
         </div>
       </div>
 

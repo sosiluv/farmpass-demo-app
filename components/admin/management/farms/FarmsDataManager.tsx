@@ -16,7 +16,7 @@ interface FarmsDataManagerProps {
 }
 
 export function FarmsDataManager({ children }: FarmsDataManagerProps) {
-  const { showCustomError } = useCommonToast();
+  const { showCustomError, showInfo } = useCommonToast();
   const [farms, setFarms] = useState<ExtendedFarm[]>([]);
   const [lastUpdate, setLastUpdate] = useState<Date>(new Date());
   const [isFetching, setIsFetching] = useState(false);
@@ -34,6 +34,7 @@ export function FarmsDataManager({ children }: FarmsDataManagerProps) {
       return;
     }
 
+    showInfo("농장 정보 로딩 시작", "농장 정보를 불러오는 중입니다...");
     try {
       setIsFetching(true);
       const { data, error } = await supabase.from("farms").select(`

@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { useCommonToast } from "@/lib/utils/notification/toast-messages";
 import { devLog } from "@/lib/utils/logging/dev-logger";
 import { useAuth } from "@/components/providers/auth-provider";
 import {
@@ -13,6 +12,7 @@ import {
   ALLOWED_IMAGE_TYPES,
   MAX_UPLOAD_SIZE_MB,
 } from "@/lib/constants/upload";
+import { apiClient } from "@/lib/utils/api-client";
 
 interface UseAccountActionsProps {
   profile: Profile;
@@ -26,19 +26,19 @@ interface SaveResult {
 
 export function useAccountActions({ profile, userId }: UseAccountActionsProps) {
   const [isLoading, setIsLoading] = useState(false);
-  const toast = useCommonToast();
   const router = useRouter();
   const { changePassword, refreshProfile, signOut } = useAuth();
 
-  // 공통 에러 처리 함수
+  // 공통 에러 처리 함수 (토스트 제거)
   const handleError = (error: Error, title: string) => {
     devLog.error(`${title} error:`, error);
-    toast.showCustomError(title, error.message);
+    // toast 호출 제거 - 컴포넌트에서 처리
   };
 
   // 공통 성공 처리 함수
   const handleSuccess = (title: string, description: string) => {
-    toast.showCustomSuccess(title, description);
+    devLog.log(`${title}: ${description}`);
+    // 성공 로그만 기록 - 토스트는 컴포넌트에서 처리
   };
 
   // 공통 저장 로직
@@ -50,18 +50,19 @@ export function useAccountActions({ profile, userId }: UseAccountActionsProps) {
     try {
       setIsLoading(true);
 
-      const response = await fetch("/api/profile", {
+      await apiClient("/api/profile", {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify(data),
+        context: "프로필 정보 저장",
+        onError: (error, context) => {
+          handleError(error, "프로필 정보 저장");
+          devLog.error(`${actionType} error:`, error);
+          // toast 호출 제거 - 컴포넌트에서 처리
+        },
       });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || "프로필 정보 저장에 실패했습니다");
-      }
 
       handleSuccess("저장 완료", successMessage);
 
@@ -70,7 +71,7 @@ export function useAccountActions({ profile, userId }: UseAccountActionsProps) {
 
       return { success: true };
     } catch (error) {
-      handleError(error as Error, "프로필 정보 저장에 실패했습니다");
+      // 에러는 이미 onError에서 처리됨
       return { success: false, error: (error as Error).message };
     } finally {
       setIsLoading(false);
@@ -96,7 +97,7 @@ export function useAccountActions({ profile, userId }: UseAccountActionsProps) {
 
       const cacheBustedUrl = `${result.publicUrl}?t=${Date.now()}`;
 
-      const response = await fetch("/api/profile", {
+      await apiClient("/api/profile", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -105,14 +106,13 @@ export function useAccountActions({ profile, userId }: UseAccountActionsProps) {
           publicUrl: result.publicUrl,
           fileName: result.fileName,
         }),
+        context: "프로필 이미지 업로드",
+        onError: (error, context) => {
+          handleError(error, "프로필 이미지 업로드");
+          devLog.error("프로필 이미지 업로드 실패:", error);
+          // toast 호출 제거 - 컴포넌트에서 처리
+        },
       });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(
-          errorData.error || "프로필 이미지 업로드에 실패했습니다"
-        );
-      }
 
       handleSuccess(
         "프로필 이미지 업로드 완료",
@@ -124,7 +124,7 @@ export function useAccountActions({ profile, userId }: UseAccountActionsProps) {
 
       return { publicUrl: cacheBustedUrl, fileName: result.fileName };
     } catch (error: any) {
-      handleError(error, "프로필 이미지 업로드에 실패했습니다");
+      // 에러는 이미 onError에서 처리됨
       throw error;
     } finally {
       setIsLoading(false);
@@ -144,21 +144,18 @@ export function useAccountActions({ profile, userId }: UseAccountActionsProps) {
       devLog.log(`[HANDLE_IMAGE_DELETE] Storage cleanup completed`);
 
       // 2. 서버 API를 통해 데이터베이스에서 profile_image_url을 null로 설정
-      const response = await fetch("/api/profile", {
+      await apiClient("/api/profile", {
         method: "DELETE",
         headers: {
           "Content-Type": "application/json",
         },
+        context: "프로필 이미지 삭제",
+        onError: (error, context) => {
+          handleError(error, "프로필 이미지 삭제");
+          devLog.error("[HANDLE_IMAGE_DELETE] Database update failed:", error);
+          // toast 호출 제거 - 컴포넌트에서 처리
+        },
       });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        devLog.error(
-          "[HANDLE_IMAGE_DELETE] Database update failed:",
-          errorData.error
-        );
-        throw new Error(errorData.error || "프로필 이미지 삭제에 실패했습니다");
-      }
 
       devLog.log(`[HANDLE_IMAGE_DELETE] Database update completed`);
 
@@ -174,8 +171,7 @@ export function useAccountActions({ profile, userId }: UseAccountActionsProps) {
 
       devLog.log(`[HANDLE_IMAGE_DELETE] Image deletion completed successfully`);
     } catch (error: any) {
-      devLog.error("[HANDLE_IMAGE_DELETE] Error during image deletion:", error);
-      handleError(error, "프로필 이미지 삭제에 실패했습니다");
+      // 에러는 이미 onError에서 처리됨
       throw error;
     } finally {
       setIsLoading(false);

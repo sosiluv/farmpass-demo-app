@@ -104,11 +104,15 @@ export function VisitorActionMenu({
         <DropdownMenuTrigger asChild>
           <Button
             variant="ghost"
-            className="h-8 w-8 p-0"
+            className="h-8 w-8 p-0 dark:text-white !important dark:disabled:text-slate-600"
+            style={{ color: "#fff" }}
             disabled={isProcessing}
           >
             <span className="sr-only">메뉴 열기</span>
-            <MoreHorizontal className="h-4 w-4" />
+            <MoreHorizontal
+              className="h-4 w-4 dark:text-white !important dark:disabled:text-slate-600"
+              style={{ color: "#fff" }}
+            />
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">

@@ -34,8 +34,6 @@ const nextConfig = {
       allowedOrigins: [
         "localhost:3000", // 로컬 개발 환경
         "*.vercel.app", // Vercel 배포 환경
-        "*.netlify.app", // Netlify 배포 환경
-        "*.railway.app", // Railway 배포 환경
         "www.samwon1141.com", // FarmPass 프로덕션 도메인
         "samwon1141.com", // FarmPass 도메인 (www 없이)
       ],

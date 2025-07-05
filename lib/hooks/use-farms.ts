@@ -1,8 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useFarmsStore } from "@/store/use-farms-store";
-import { useCommonToast } from "@/lib/utils/notification/toast-messages";
 import { devLog } from "@/lib/utils/logging/dev-logger";
 import type { FarmFormValues } from "@/lib/utils/validation";
 
@@ -27,7 +26,9 @@ export interface Farm {
 }
 
 export function useFarms(userId?: string) {
-  const toast = useCommonToast();
+  const [error, setError] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
+
   const {
     farms,
     fetchState,
@@ -66,10 +67,12 @@ export function useFarms(userId?: string) {
 
       if (!userIdToUse) {
         devLog.error("[useFarms] userId 없이 농장 조회 시도");
+        setError("농장 목록을 불러오는 중 오류가 발생했습니다.");
         return;
       }
 
       try {
+        setError(null);
         isFetchingRef.current = true;
         lastUserIdRef.current = userIdToUse;
 
@@ -79,16 +82,12 @@ export function useFarms(userId?: string) {
       } catch (error) {
         devLog.error("Failed to fetch farms:", error);
         hasDataRef.current = false;
-
-        toast.showCustomError(
-          "농장 목록 조회 실패",
-          "농장 목록을 불러오는 중 오류가 발생했습니다."
-        );
+        setError("농장 목록을 불러오는 중 오류가 발생했습니다.");
       } finally {
         isFetchingRef.current = false;
       }
     },
-    [userId, storeFetchFarms, toast]
+    [userId, storeFetchFarms]
   );
 
   const refetch = useCallback(() => {
@@ -103,9 +102,10 @@ export function useFarms(userId?: string) {
   }, [userId]);
 
   useEffect(() => {
-    if (userId !== undefined) {
-      fetchFarms();
+    if (userId === undefined || userId === null) {
+      return;
     }
+    fetchFarms();
   }, [userId, fetchFarms]);
 
   const addFarm = useCallback(
@@ -113,84 +113,75 @@ export function useFarms(userId?: string) {
       const userIdToUse = targetUserId || userId;
       if (!userIdToUse) {
         devLog.error("[useFarms] userId 없이 농장 등록 시도");
-        toast.showCustomError("권한 없음", "농장을 등록할 권한이 없습니다.");
+        setError("농장을 등록할 권한이 없습니다.");
         return null;
       }
 
       try {
+        setError(null);
         const farm = await storeFarmAdd(userIdToUse, values);
         if (farm) {
-          toast.showCustomSuccess(
-            "농장 등록 완료",
-            "농장이 성공적으로 등록되었습니다."
-          );
+          setSuccessMessage("농장이 성공적으로 등록되었습니다.");
         }
         return farm;
       } catch (error) {
         devLog.error("Failed to add farm:", error);
-
-        toast.showCustomError(
-          "농장 등록 실패",
-          "농장을 등록하는 중 오류가 발생했습니다."
-        );
+        setError("농장을 등록하는 중 오류가 발생했습니다.");
         return null;
       }
     },
-    [storeFarmAdd, toast, userId]
+    [storeFarmAdd, userId]
   );
 
   const updateFarm = useCallback(
     async (farmId: string, values: Partial<Farm>) => {
       try {
+        setError(null);
         await storeFarmUpdate(farmId, values);
-        toast.showCustomSuccess(
-          "농장 수정 완료",
-          "농장 정보가 성공적으로 수정되었습니다."
-        );
+        setSuccessMessage("농장 정보가 성공적으로 수정되었습니다.");
       } catch (error) {
         devLog.error("Failed to update farm:", error);
-
-        toast.showCustomError(
-          "농장 수정 실패",
-          "농장을 수정하는 중 오류가 발생했습니다."
-        );
+        setError("농장을 수정하는 중 오류가 발생했습니다.");
       }
     },
-    [storeFarmUpdate, toast]
+    [storeFarmUpdate]
   );
 
   const deleteFarm = useCallback(
     async (farmId: string) => {
       try {
+        setError(null);
         await storeFarmDelete(farmId);
-        toast.showCustomSuccess(
-          "농장 삭제 완료",
-          "농장이 성공적으로 삭제되었습니다."
-        );
+        setSuccessMessage("농장이 성공적으로 삭제되었습니다.");
       } catch (error) {
         devLog.error("Failed to delete farm:", error);
-
-        toast.showCustomError(
-          "농장 삭제 실패",
-          "농장을 삭제하는 중 오류가 발생했습니다."
-        );
+        setError("농장을 삭제하는 중 오류가 발생했습니다.");
       }
     },
-    [storeFarmDelete, toast]
+    [storeFarmDelete]
   );
 
   const generateQRCodeUrl = useCallback((farmId: string) => {
     return `${window.location.origin}/visit/${farmId}`;
   }, []);
 
+  // 메시지 초기화 함수
+  const clearMessages = useCallback(() => {
+    setError(null);
+    setSuccessMessage(null);
+  }, []);
+
   return {
     farms,
     fetchState,
+    error,
+    successMessage,
     fetchFarms,
     addFarm,
     updateFarm,
     deleteFarm,
     generateQRCodeUrl,
     refetch,
+    clearMessages,
   };
 }

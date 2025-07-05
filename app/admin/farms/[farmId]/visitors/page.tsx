@@ -16,6 +16,7 @@ import {
   VisitorTable,
 } from "@/components/admin/visitors";
 import type { Farm } from "@/store/use-farms-store";
+import { useCommonToast } from "@/lib/utils/notification/toast-messages";
 
 // 새로운 Zustand Store 사용
 import {
@@ -41,7 +42,14 @@ export default function FarmVisitorsPage() {
   const { state } = useAuth();
   const user = state.status === "authenticated" ? state.user : null;
   const farmId = params.farmId as string;
-  const { farms, fetchState } = useFarms(user?.id);
+  const toast = useCommonToast();
+  const {
+    farms,
+    fetchState,
+    error: farmsError,
+    successMessage: farmsSuccessMessage,
+    clearMessages: clearFarmsMessages,
+  } = useFarms(user?.id);
 
   const [currentFarm, setCurrentFarm] = useState<Farm | null>(null);
   const [isInitialized, setIsInitialized] = useState(false);
@@ -63,6 +71,21 @@ export default function FarmVisitorsPage() {
     setFilters: visitorStoreSetFilters,
     fetchVisitors: visitorStoreFetchVisitors,
   } = useVisitorStore();
+
+  // 농장 관련 토스트 처리
+  useEffect(() => {
+    if (farmsError) {
+      toast.showCustomError("오류", farmsError);
+      clearFarmsMessages();
+    }
+  }, [farmsError, toast, clearFarmsMessages]);
+
+  useEffect(() => {
+    if (farmsSuccessMessage) {
+      toast.showCustomSuccess("성공", farmsSuccessMessage);
+      clearFarmsMessages();
+    }
+  }, [farmsSuccessMessage, toast, clearFarmsMessages]);
 
   // 공통 방문자 액션 훅 사용
   const { handleEdit, handleDelete, handleExport } = useVisitorActions({

@@ -143,11 +143,18 @@ export async function GET(request: NextRequest) {
       }
     );
 
-    return NextResponse.json({
-      members: members || [],
-      farm_ids: farmIdArray,
-      total_count: members?.length || 0,
-    });
+    return NextResponse.json(
+      {
+        members: members || [],
+        farm_ids: farmIdArray,
+        total_count: members?.length || 0,
+      },
+      {
+        headers: {
+          "Cache-Control": "no-store",
+        },
+      }
+    );
   } catch (error) {
     devLog.error("Error in bulk farm members fetch:", error);
 

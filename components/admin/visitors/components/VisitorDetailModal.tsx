@@ -47,7 +47,7 @@ export function VisitorDetailModal({
           size="lg"
         />
         <div className="text-center sm:text-left">
-          <h3 className="text-base sm:text-lg md:text-xl font-bold text-gray-900 break-all leading-tight">
+          <h3 className="text-base sm:text-lg md:text-xl font-bold text-gray-900 dark:text-white break-all leading-tight">
             {visitor.visitor_name}
           </h3>
           <p className="text-xs sm:text-sm text-gray-500 font-medium">

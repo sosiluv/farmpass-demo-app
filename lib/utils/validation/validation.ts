@@ -7,6 +7,8 @@
 import { getSystemSettings } from "@/lib/cache/system-settings-cache";
 import { devLog } from "@/lib/utils/logging/dev-logger";
 import { PHONE_PATTERN } from "@/lib/constants/input-rules";
+import { apiClient } from "@/lib/utils/api-client";
+import { handleError } from "@/lib/utils/handleError";
 
 // 기본 비밀번호 규칙 (보수적인 설정)
 const DEFAULT_PASSWORD_RULES = {
@@ -67,20 +69,22 @@ export const validateEmail = (email: string) => {
  */
 export const checkEmailDuplicate = async (email: string) => {
   try {
-    const response = await fetch(
-      `/api/auth/check-email?email=${encodeURIComponent(email)}`
+    const data = await apiClient(
+      `/api/auth/check-email?email=${encodeURIComponent(email)}`,
+      {
+        context: "이메일 중복 검사",
+        onError: (error, context) => {
+          handleError(error, context);
+        },
+      }
     );
-    if (!response.ok) {
-      throw new Error("Failed to check email");
-    }
-    const data = await response.json();
 
     return {
       isValid: !data.isDuplicate,
       message: data.message || "",
     };
   } catch (err) {
-    devLog.error("Email check failed:", err);
+    // 에러는 이미 onError에서 처리됨
     return {
       isValid: false,
       message: "이메일 확인 중 오류가 발생했습니다.",

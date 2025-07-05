@@ -34,6 +34,10 @@ export function useExportDialog({
 
     try {
       setIsExporting(true);
+
+      // 내보내기 시작 알림
+      toast.showInfo("내보내기 시작", "데이터를 내보내는 중입니다...");
+
       await onExport(options);
 
       toast.showCustomSuccess("내보내기 완료", successMessage);

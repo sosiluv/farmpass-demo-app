@@ -41,7 +41,17 @@ export default function TestErrorsPage() {
   }
 
   const triggerError = (type: string) => {
-    setShowError(type);
+    toast.showWarning(
+      "에러 테스트 시작",
+      `${type} 에러를 발생시키는 중입니다...`
+    );
+
+    // 에러 발생 전 정보 알림
+    toast.showInfo("에러 발생 예정", "3초 후 에러가 발생합니다.");
+
+    setTimeout(() => {
+      throw new Error(`테스트 에러: ${type}`);
+    }, 3000);
   };
 
   const resetError = () => {

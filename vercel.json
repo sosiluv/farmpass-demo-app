@@ -43,5 +43,6 @@
       "source": "/api/:path*",
       "destination": "/api/:path*"
     }
-  ]
+  ],
+  "regions": ["icn1"]
 }

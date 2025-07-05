@@ -54,7 +54,7 @@ export async function GET(
     } = await supabase.auth.getUser();
 
     if (authError || !user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      return NextResponse.json({ error: "권한이 없습니다." }, { status: 401 });
     }
 
     // 시스템 관리자 체크
@@ -77,7 +77,10 @@ export async function GET(
         (access.owner_id !== user.id &&
           !(await isFarmMember(supabase, params.farmId, user.id)))
       ) {
-        return NextResponse.json({ error: "Access denied" }, { status: 403 });
+        return NextResponse.json(
+          { error: "접근이 거절되었습니다." },
+          { status: 403 }
+        );
       }
     }
 
@@ -114,7 +117,14 @@ export async function GET(
       action_type: "member_management",
     });
 
-    return NextResponse.json({ members });
+    return NextResponse.json(
+      { members },
+      {
+        headers: {
+          "Cache-Control": "no-store",
+        },
+      }
+    );
   } catch (error) {
     devLog.error("Error fetching farm members:", error);
 
@@ -129,8 +139,8 @@ export async function GET(
     );
 
     return NextResponse.json(
-      { error: "Failed to fetch members" },
-      { status: 500 }
+      { error: "멤버 조회에 실패했습니다." },
+      { status: 500, headers: { "Cache-Control": "no-store" } }
     );
   }
 }
@@ -162,7 +172,7 @@ export async function POST(
     } = await supabase.auth.getUser();
 
     if (authError || !authUser) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      return NextResponse.json({ error: "권한이 없습니다." }, { status: 401 });
     }
 
     user = authUser;
@@ -176,7 +186,10 @@ export async function POST(
       .single();
 
     if (farmError || !farm) {
-      return NextResponse.json({ error: "Farm not found" }, { status: 404 });
+      return NextResponse.json(
+        { error: "농장을 찾을 수 없습니다." },
+        { status: 404 }
+      );
     }
 
     // 소유자가 아닌 경우 관리자 권한 확인
@@ -190,7 +203,7 @@ export async function POST(
 
       if (!memberRole || memberRole.role !== "manager") {
         return NextResponse.json(
-          { error: "Only farm owners and managers can add members" },
+          { error: "농장 소유자 또는 관리자만 구성원을 추가할 수 있습니다." },
           { status: 403 }
         );
       }
@@ -205,7 +218,7 @@ export async function POST(
 
     if (profileError || !profileData) {
       return NextResponse.json(
-        { error: "User not found with this email" },
+        { error: "이메일을 찾을 수 없습니다." },
         { status: 404 }
       );
     }
@@ -220,7 +233,7 @@ export async function POST(
 
     if (existingMember) {
       return NextResponse.json(
-        { error: "User is already a member of this farm" },
+        { error: "이미 농장의 구성원입니다." },
         { status: 409 }
       );
     }
@@ -272,7 +285,15 @@ export async function POST(
       },
     };
 
-    return NextResponse.json({ member: memberWithProfile }, { status: 201 });
+    return NextResponse.json(
+      { member: memberWithProfile },
+      {
+        status: 201,
+        headers: {
+          "Cache-Control": "no-store",
+        },
+      }
+    );
   } catch (error) {
     devLog.error("Error adding farm member:", error);
 
@@ -287,8 +308,8 @@ export async function POST(
     );
 
     return NextResponse.json(
-      { error: "Failed to add member" },
-      { status: 500 }
+      { error: "멤버 추가에 실패했습니다." },
+      { status: 500, headers: { "Cache-Control": "no-store" } }
     );
   }
 }

@@ -23,6 +23,7 @@ import { useCommonToast } from "@/lib/utils/notification/toast-messages";
 import { devLog } from "@/lib/utils/logging/dev-logger";
 import { useFarmsStore } from "@/store/use-farms-store";
 import { useAuth } from "@/components/providers/auth-provider";
+import { apiClient } from "@/lib/utils/api-client";
 import {
   Bell,
   Send,
@@ -159,8 +160,17 @@ export default function PushNotificationTestPage() {
 
   const checkSubscriptionStatus = async () => {
     try {
-      const response = await fetch("/api/push/subscription");
-      const data = await response.json();
+      const data = await apiClient("/api/push/subscription", {
+        context: "푸시 구독 상태 확인",
+        onError: (error) => {
+          addTestResult({
+            type: "구독 상태 확인",
+            status: "error",
+            message: "구독 상태 확인 실패",
+            details: error,
+          });
+        },
+      });
       setSubscriptionStatus(data);
 
       addTestResult({
@@ -181,8 +191,17 @@ export default function PushNotificationTestPage() {
 
   const getVapidKey = async () => {
     try {
-      const response = await fetch("/api/push/vapid");
-      const data = await response.json();
+      const data = await apiClient("/api/push/vapid", {
+        context: "VAPID 키 조회",
+        onError: (error) => {
+          addTestResult({
+            type: "VAPID 키 확인",
+            status: "error",
+            message: "VAPID 키 조회 실패",
+            details: error,
+          });
+        },
+      });
       setVapidKey(data.publicKey || "");
 
       addTestResult({
@@ -202,6 +221,10 @@ export default function PushNotificationTestPage() {
   };
 
   const testNotificationPermission = async () => {
+    toast.showInfo(
+      "알림 권한 확인",
+      "브라우저 알림 권한을 확인하는 중입니다..."
+    );
     addTestResult({
       type: "권한 테스트",
       status: "pending",
@@ -210,6 +233,10 @@ export default function PushNotificationTestPage() {
 
     try {
       if (!("Notification" in window)) {
+        toast.showWarning(
+          "브라우저 미지원",
+          "이 브라우저는 알림을 지원하지 않습니다."
+        );
         throw new Error("이 브라우저는 알림을 지원하지 않습니다.");
       }
 
@@ -297,17 +324,20 @@ export default function PushNotificationTestPage() {
         message: "구독 정보를 서버에 등록 중...",
       });
 
-      const response = await fetch("/api/push/subscription", {
+      await apiClient("/api/push/subscription", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          subscription: subscription.toJSON(),
-        }),
+        body: JSON.stringify({ subscription: subscription.toJSON() }),
+        context: "푸시 구독 생성",
+        onError: (error) => {
+          addTestResult({
+            type: "푸시 구독 테스트",
+            status: "error",
+            message: error instanceof Error ? error.message : "구독 생성 실패",
+            details: error,
+          });
+        },
       });
-
-      if (!response.ok) {
-        throw new Error("구독 등록 실패");
-      }
 
       addTestResult({
         type: "푸시 구독 테스트",
@@ -352,31 +382,47 @@ export default function PushNotificationTestPage() {
 
       devLog.log("커스텀 알림 발송 페이로드:", payload);
 
-      const response = await fetch("/api/push/send", {
+      const result = await apiClient("/api/push/send", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
+        context: "커스텀 푸시 알림 발송",
+        onError: (error) => {
+          addTestResult({
+            type: "커스텀 알림 발송",
+            status: "error",
+            message: error instanceof Error ? error.message : "발송 실패",
+            details: error,
+          });
+          toast.showCustomError(
+            "테스트 알림 발송 실패",
+            "테스트 알림 발송에 실패했습니다."
+          );
+        },
       });
 
-      const result = await response.json();
+      addTestResult({
+        type: "커스텀 알림 발송",
+        status: "success",
+        message: `알림 발송 성공: ${result.sentCount}명`,
+        details: {
+          ...result,
+          sentPayload: payload,
+        },
+      });
 
-      if (response.ok) {
-        addTestResult({
-          type: "커스텀 알림 발송",
-          status: "success",
-          message: `알림 발송 성공: ${result.sentCount}명`,
-          details: {
-            ...result,
-            sentPayload: payload,
-          },
-        });
-        toast.showCustomSuccess(
-          "테스트 알림 발송 완료",
-          "테스트 알림이 성공적으로 발송되었습니다."
+      // 실패가 있는 경우 경고
+      if (result.failureCount > 0) {
+        toast.showWarning(
+          "일부 발송 실패",
+          `${result.sentCount}명에게 발송 성공, ${result.failureCount}명에게 발송 실패`
         );
-      } else {
-        throw new Error(result.error || "알림 발송 실패");
       }
+
+      toast.showCustomSuccess(
+        "테스트 알림 발송 완료",
+        "테스트 알림이 성공적으로 발송되었습니다."
+      );
     } catch (error) {
       addTestResult({
         type: "커스텀 알림 발송",
@@ -425,42 +471,50 @@ export default function PushNotificationTestPage() {
         dataRetentionDays: 30,
       };
 
-      const response = await fetch(
+      const result = await apiClient(
         `/api/farms/${visitorTestForm.farmId}/visitors`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(visitorData),
+          context: "방문자 등록 테스트",
+          onError: (error) => {
+            addTestResult({
+              type: "방문자 폼 등록 테스트",
+              status: "error",
+              message:
+                error instanceof Error ? error.message : "방문자 등록 실패",
+              details: error,
+            });
+            toast.showCustomError(
+              "방문자 등록 실패",
+              "방문자를 등록하는 중 오류가 발생했습니다."
+            );
+          },
         }
       );
 
-      const result = await response.json();
-
-      if (response.ok) {
-        addTestResult({
-          type: "방문자 폼 등록 테스트",
-          status: "success",
-          message: `방문자 등록 성공! 농장 멤버들에게 알림 발송됨`,
-          details: {
-            visitorId: result.visitor?.id,
-            farmId: visitorTestForm.farmId,
-            notificationSent: true,
-            visitorData: {
-              name: visitorTestForm.visitorName,
-              phone: visitorTestForm.visitorPhone,
-              purpose: visitorTestForm.visitorPurpose,
-              company: "테스트 회사",
-              registeredAt: new Date().toISOString(),
-            },
+      addTestResult({
+        type: "방문자 폼 등록 테스트",
+        status: "success",
+        message: `방문자 등록 성공! 농장 멤버들에게 알림 발송됨`,
+        details: {
+          visitorId: result.visitor?.id,
+          farmId: visitorTestForm.farmId,
+          notificationSent: true,
+          visitorData: {
+            name: visitorTestForm.visitorName,
+            phone: visitorTestForm.visitorPhone,
+            purpose: visitorTestForm.visitorPurpose,
+            company: "테스트 회사",
+            registeredAt: new Date().toISOString(),
           },
-        });
-        toast.showCustomSuccess(
-          "방문자 등록 완료",
-          "방문자가 성공적으로 등록되었습니다."
-        );
-      } else {
-        throw new Error(result.message || result.error || "방문자 등록 실패");
-      }
+        },
+      });
+      toast.showCustomSuccess(
+        "방문자 등록 완료",
+        "방문자가 성공적으로 등록되었습니다."
+      );
     } catch (error) {
       devLog.error(error);
       addTestResult({
@@ -498,24 +552,27 @@ export default function PushNotificationTestPage() {
 
       devLog.log(`${type} 테스트 페이로드:`, payload);
 
-      const response = await fetch("/api/push/send", {
+      const result = await apiClient("/api/push/send", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
+        context: `${type} 푸시 알림 테스트`,
+        onError: (error) => {
+          addTestResult({
+            type: `${type} 테스트`,
+            status: "error",
+            message: error instanceof Error ? error.message : "테스트 실패",
+            details: error,
+          });
+        },
       });
 
-      const result = await response.json();
-
-      if (response.ok) {
-        addTestResult({
-          type: `${type} 테스트`,
-          status: "success",
-          message: `테스트 성공: ${result.sentCount}명에게 발송`,
-          details: { ...result, sentPayload: payload },
-        });
-      } else {
-        throw new Error(result.error || "테스트 실패");
-      }
+      addTestResult({
+        type: `${type} 테스트`,
+        status: "success",
+        message: `테스트 성공: ${result.sentCount}명에게 발송`,
+        details: { ...result, sentPayload: payload },
+      });
     } catch (error) {
       addTestResult({
         type: `${type} 테스트`,
@@ -545,24 +602,27 @@ export default function PushNotificationTestPage() {
 
       devLog.log(`${test.name} 테스트 페이로드:`, payload);
 
-      const response = await fetch("/api/push/send", {
+      const result = await apiClient("/api/push/send", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
+        context: `${test.name} 테스트`,
+        onError: (error) => {
+          addTestResult({
+            type: test.name,
+            status: "error",
+            message: error instanceof Error ? error.message : "테스트 실패",
+            details: error,
+          });
+        },
       });
 
-      const result = await response.json();
-
-      if (response.ok) {
-        addTestResult({
-          type: test.name,
-          status: "success",
-          message: `테스트 성공: ${result.sentCount}명에게 발송`,
-          details: { ...result, sentPayload: payload },
-        });
-      } else {
-        throw new Error(result.error || "테스트 실패");
-      }
+      addTestResult({
+        type: test.name,
+        status: "success",
+        message: `테스트 성공: ${result.sentCount}명에게 발송`,
+        details: { ...result, sentPayload: payload },
+      });
     } catch (error) {
       addTestResult({
         type: test.name,

@@ -279,7 +279,12 @@ export async function GET(request: NextRequest) {
       user.id
     );
 
-    return NextResponse.json(responseData);
+    return NextResponse.json(responseData, {
+      headers: {
+        ...createRateLimitHeaders(rateLimitResult),
+        "Cache-Control": "no-store",
+      },
+    });
   } catch (error) {
     const duration = await monitor.finish();
     devLog.error("전체 방문자 조회 실패:", error);

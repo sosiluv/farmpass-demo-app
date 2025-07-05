@@ -124,13 +124,20 @@ export async function PUT(
       }
     );
 
-    return NextResponse.json({
-      message: "Member role updated successfully",
-      member: {
-        ...memberToUpdate,
-        role: role,
+    return NextResponse.json(
+      {
+        message: "Member role updated successfully",
+        member: {
+          ...memberToUpdate,
+          role: role,
+        },
       },
-    });
+      {
+        headers: {
+          "Cache-Control": "no-store",
+        },
+      }
+    );
   } catch (error) {
     devLog.error("Error updating member role:", error);
 
@@ -267,10 +274,17 @@ export async function DELETE(
       action_type: "member_management",
     });
 
-    return NextResponse.json({
-      message: "Member removed successfully",
-      removedMember: memberToRemove,
-    });
+    return NextResponse.json(
+      {
+        message: "Member removed successfully",
+        removedMember: memberToRemove,
+      },
+      {
+        headers: {
+          "Cache-Control": "no-store",
+        },
+      }
+    );
   } catch (error) {
     devLog.error("Error removing member:", error);
 

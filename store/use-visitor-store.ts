@@ -12,9 +12,10 @@ import type {
   VisitorWithFarm,
   CreateVisitorData,
   UpdateVisitorData,
-  VisitorStatistics,
 } from "@/lib/types/visitor";
-import type { Farm } from "@/lib/types/visitor";
+
+import { apiClient } from "@/lib/utils/api-client";
+import { handleError } from "@/lib/utils/handleError";
 
 // 통합된 방문자 타입 (기존 VisitorEntryWithFarm 호환)
 export type Visitor = VisitorWithFarm;
@@ -224,15 +225,16 @@ export const useVisitorStore = create<VisitorState>()(
           // 필터 적용
           get().applyFilters();
         } catch (error) {
-          const errorMessage =
-            error instanceof Error ? error.message : "방문자 데이터 조회 실패";
-
-          set((state) => ({
-            loading: { ...state.loading, visitors: false },
-            error: { ...state.error, visitors: errorMessage },
-            cache: { ...state.cache, isFetching: false },
-          }));
-
+          handleError(error, {
+            context: "방문자 데이터 조회",
+            onStateUpdate: (errorMessage) => {
+              set((state) => ({
+                loading: { ...state.loading, visitors: false },
+                error: { ...state.error, visitors: errorMessage },
+                cache: { ...state.cache, isFetching: false },
+              }));
+            },
+          });
           throw error;
         }
       },
@@ -245,21 +247,30 @@ export const useVisitorStore = create<VisitorState>()(
         }));
 
         try {
-          const response = await fetch(`/api/farms/${data.farm_id}/visitors`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(data),
-          });
-
-          if (!response.ok) {
-            const errorData = await response.json();
-            throw new Error(errorData.message || "방문자 등록 실패");
-          }
-
-          const newVisitor = await response.json();
+          const visitor = await apiClient(
+            `/api/farms/${data.farm_id}/visitors`,
+            {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(data),
+              context: "방문자 등록",
+              onError: (error, context) => {
+                handleError(error, {
+                  context,
+                  onStateUpdate: (errorMessage) => {
+                    set((state) => ({
+                      loading: { ...state.loading, create: false },
+                      error: { ...state.error, create: errorMessage },
+                    }));
+                  },
+                });
+                // 토스트는 컴포넌트에서 처리
+              },
+            }
+          );
 
           set((state) => ({
-            visitors: [newVisitor, ...state.visitors],
+            visitors: [visitor, ...state.visitors],
             loading: { ...state.loading, create: false },
           }));
 
@@ -269,16 +280,9 @@ export const useVisitorStore = create<VisitorState>()(
           // 필터 재적용
           get().applyFilters();
 
-          return newVisitor;
+          return visitor;
         } catch (error) {
-          const errorMessage =
-            error instanceof Error ? error.message : "방문자 등록 실패";
-
-          set((state) => ({
-            loading: { ...state.loading, create: false },
-            error: { ...state.error, create: errorMessage },
-          }));
-
+          // 에러는 이미 onError에서 처리됨
           throw error;
         }
       },
@@ -295,22 +299,30 @@ export const useVisitorStore = create<VisitorState>()(
         }));
 
         try {
-          const response = await fetch(`/api/farms/${farmId}/visitors/${id}`, {
-            method: "PUT",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(data),
-          });
-
-          if (!response.ok) {
-            const errorData = await response.json();
-            throw new Error(errorData.message || "방문자 수정 실패");
-          }
-
-          const updatedVisitor = await response.json();
+          const visitor = await apiClient(
+            `/api/farms/${farmId}/visitors/${id}`,
+            {
+              method: "PUT",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(data),
+              context: "방문자 수정",
+              onError: (error, context) => {
+                handleError(error, {
+                  context,
+                  onStateUpdate: (errorMessage) => {
+                    set((state) => ({
+                      loading: { ...state.loading, update: false },
+                      error: { ...state.error, update: errorMessage },
+                    }));
+                  },
+                });
+              },
+            }
+          );
 
           set((state) => ({
-            visitors: state.visitors.map((visitor) =>
-              visitor.id === id ? { ...visitor, ...updatedVisitor } : visitor
+            visitors: state.visitors.map((v) =>
+              v.id === id ? { ...v, ...visitor } : v
             ),
             loading: { ...state.loading, update: false },
           }));
@@ -321,16 +333,9 @@ export const useVisitorStore = create<VisitorState>()(
           // 필터 재적용
           get().applyFilters();
 
-          return updatedVisitor;
+          return visitor;
         } catch (error) {
-          const errorMessage =
-            error instanceof Error ? error.message : "방문자 수정 실패";
-
-          set((state) => ({
-            loading: { ...state.loading, update: false },
-            error: { ...state.error, update: errorMessage },
-          }));
-
+          // 에러는 이미 onError에서 처리됨
           throw error;
         }
       },
@@ -343,17 +348,24 @@ export const useVisitorStore = create<VisitorState>()(
         }));
 
         try {
-          const response = await fetch(`/api/farms/${farmId}/visitors/${id}`, {
+          await apiClient(`/api/farms/${farmId}/visitors/${id}`, {
             method: "DELETE",
+            context: "방문자 삭제",
+            onError: (error, context) => {
+              handleError(error, {
+                context,
+                onStateUpdate: (errorMessage) => {
+                  set((state) => ({
+                    loading: { ...state.loading, delete: false },
+                    error: { ...state.error, delete: errorMessage },
+                  }));
+                },
+              });
+            },
           });
 
-          if (!response.ok) {
-            const errorData = await response.json();
-            throw new Error(errorData.message || "방문자 삭제 실패");
-          }
-
           set((state) => ({
-            visitors: state.visitors.filter((visitor) => visitor.id !== id),
+            visitors: state.visitors.filter((v) => v.id !== id),
             loading: { ...state.loading, delete: false },
           }));
 
@@ -363,14 +375,7 @@ export const useVisitorStore = create<VisitorState>()(
           // 필터 재적용
           get().applyFilters();
         } catch (error) {
-          const errorMessage =
-            error instanceof Error ? error.message : "방문자 삭제 실패";
-
-          set((state) => ({
-            loading: { ...state.loading, delete: false },
-            error: { ...state.error, delete: errorMessage },
-          }));
-
+          // 에러는 이미 onError에서 처리됨
           throw error;
         }
       },

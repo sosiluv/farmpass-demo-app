@@ -26,10 +26,14 @@ export const useVisitorActions = ({
   // 방문자 수정 핸들러
   const handleEdit = useCallback(
     async (visitor: Visitor) => {
+      toast.showInfo(
+        "방문자 정보 수정 시작",
+        "방문자 정보를 수정하는 중입니다..."
+      );
       if (!visitor.id || !visitor.farm_id) {
-        toast.showCustomError(
-          "방문자 정보 수정 실패",
-          "방문자 정보를 수정하는 중 오류가 발생했습니다."
+        toast.showWarning(
+          "입력 오류",
+          "방문자 ID 또는 농장 ID가 누락되었습니다."
         );
         return;
       }
@@ -62,10 +66,11 @@ export const useVisitorActions = ({
   // 방문자 삭제 핸들러
   const handleDelete = useCallback(
     async (visitor: Visitor) => {
+      toast.showInfo("방문자 삭제 시작", "방문자를 삭제하는 중입니다...");
       if (!visitor.id || !visitor.farm_id) {
-        toast.showCustomError(
-          "방문자 삭제 실패",
-          "방문자를 삭제하는 중 오류가 발생했습니다."
+        toast.showWarning(
+          "입력 오류",
+          "방문자 ID 또는 농장 ID가 누락되었습니다."
         );
         return;
       }
@@ -89,6 +94,7 @@ export const useVisitorActions = ({
   // CSV 내보내기 핸들러
   const handleExport = useCallback(
     async (options: VisitorsExportOptions) => {
+      toast.showInfo("내보내기 시작", "방문자 데이터를 내보내는 중입니다...");
       let dataToExport = allVisitors;
 
       // 농장 필터 적용

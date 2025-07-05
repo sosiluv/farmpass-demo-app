@@ -1,10 +1,10 @@
 import { useState, useEffect } from "react";
-import { useCommonToast } from "@/lib/utils/notification/toast-messages";
 import { devLog } from "@/lib/utils/logging/dev-logger";
 import type { CleanupStatus } from "@/lib/types/settings";
+import { apiClient } from "@/lib/utils/api-client";
+import { handleError } from "@/lib/utils/handleError";
 
 export function useCleanupManager() {
-  const toast = useCommonToast();
   const [cleanupStatus, setCleanupStatus] = useState<CleanupStatus | null>(
     null
   );
@@ -13,42 +13,31 @@ export function useCleanupManager() {
   const [lastCleanupSuccess, setLastCleanupSuccess] = useState<string | null>(
     null
   );
+  const [error, setError] = useState<string | null>(null);
 
   // 정리 상태 조회
   const fetchCleanupStatus = async () => {
     try {
       setStatusLoading(true);
+      setError(null);
       devLog.log("정리 상태 조회 시작");
 
-      const response = await fetch("/api/admin/logs/cleanup");
-      devLog.log("응답 받음:", response.status, response.statusText);
+      const data = await apiClient("/api/admin/logs/cleanup", {
+        context: "정리 상태 조회",
+        onError: (error, context) => {
+          handleError(error, {
+            context,
+            onStateUpdate: (errorMessage) => {
+              setError(errorMessage);
+            },
+          });
+        },
+      });
 
-      if (!response.ok) {
-        const errorText = await response.text();
-        devLog.error("응답 오류:", errorText);
-        throw new Error(`정리 상태 조회에 실패했습니다. (${response.status})`);
-      }
-
-      const contentType = response.headers.get("content-type");
-      devLog.log("Content-Type:", contentType);
-
-      if (!contentType?.includes("application/json")) {
-        const responseText = await response.text();
-        devLog.error("JSON이 아닌 응답:", responseText.substring(0, 200));
-        throw new Error("서버에서 올바르지 않은 응답을 받았습니다.");
-      }
-
-      const data = await response.json();
       devLog.log("정리 상태 데이터:", data);
       setCleanupStatus(data);
     } catch (error) {
-      devLog.error("정리 상태 조회 오류:", error);
-      toast.showCustomError(
-        "오류",
-        error instanceof Error
-          ? error.message
-          : "정리 상태를 조회할 수 없습니다."
-      );
+      // 에러는 이미 onError에서 처리됨
     } finally {
       setStatusLoading(false);
     }
@@ -58,43 +47,27 @@ export function useCleanupManager() {
   const executeCleanup = async (type: "system_logs" | "all") => {
     try {
       setCleanupLoading(true);
+      setError(null);
       devLog.log("정리 작업 시작:", type);
 
-      const response = await fetch("/api/admin/logs/cleanup", {
+      const data = await apiClient("/api/admin/logs/cleanup", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({ type }),
+        context: "정리 작업 실행",
+        onError: (error, context) => {
+          handleError(error, {
+            context,
+            onStateUpdate: (errorMessage) => {
+              setError(errorMessage);
+            },
+          });
+        },
       });
 
-      devLog.log("정리 작업 응답:", response.status, response.statusText);
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        devLog.error("정리 작업 응답 오류:", errorText);
-        throw new Error(`정리 작업에 실패했습니다. (${response.status})`);
-      }
-
-      const contentType = response.headers.get("content-type");
-      devLog.log("정리 작업 Content-Type:", contentType);
-
-      if (!contentType?.includes("application/json")) {
-        const responseText = await response.text();
-        devLog.error(
-          "정리 작업 - JSON이 아닌 응답:",
-          responseText.substring(0, 200)
-        );
-        throw new Error("서버에서 올바르지 않은 응답을 받았습니다.");
-      }
-
-      const data = await response.json();
       devLog.log("정리 작업 완료:", data);
-
-      toast.showCustomSuccess(
-        "✅ 정리 완료",
-        `${data.message}\n상태가 자동으로 새로고침되었습니다.`
-      );
 
       // 성공 상태 표시
       setLastCleanupSuccess(type === "all" ? "모든 데이터" : "시스템 로그");
@@ -107,13 +80,7 @@ export function useCleanupManager() {
         setLastCleanupSuccess(null);
       }, 3000);
     } catch (error) {
-      devLog.error("로그 정리 오류:", error);
-      toast.showCustomError(
-        "오류",
-        error instanceof Error
-          ? error.message
-          : "정리 작업 중 오류가 발생했습니다."
-      );
+      // 에러는 이미 onError에서 처리됨
     } finally {
       setCleanupLoading(false);
     }
@@ -129,6 +96,7 @@ export function useCleanupManager() {
     cleanupLoading,
     statusLoading,
     lastCleanupSuccess,
+    error,
     fetchCleanupStatus,
     executeCleanup,
   };

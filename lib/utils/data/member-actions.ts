@@ -3,7 +3,9 @@
  * Quick Action(승격/강등/삭제) 로직 중앙화
  */
 
-// import { apiClient } from "@/lib/utils/api/api-client";
+import { apiClient } from "@/lib/utils/api-client";
+import { devLog } from "@/lib/utils/logging/dev-logger";
+import { handleError } from "@/lib/utils/handleError";
 
 export type MemberRole = "owner" | "manager" | "viewer";
 
@@ -28,13 +30,16 @@ export async function updateMemberRole(
   newRole: "manager" | "viewer"
 ): Promise<MemberActionResult> {
   try {
-    const response = await fetch(`/api/farms/${farmId}/members/${memberId}`, {
+    await apiClient(`/api/farms/${farmId}/members/${memberId}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ role: newRole }),
+      context: "멤버 역할 변경",
+      onError: (error, context) => {
+        handleError(error, context);
+      },
     });
-    if (!response.ok) throw new Error("권한 변경 중 오류가 발생했습니다.");
-    // 성공 시 별도 데이터 파싱 불필요
+
     return {
       success: true,
       message: `권한이 ${
@@ -58,10 +63,19 @@ export async function removeMember(
   memberId: string
 ): Promise<MemberActionResult> {
   try {
-    const response = await fetch(`/api/farms/${farmId}/members/${memberId}`, {
+    await apiClient(`/api/farms/${farmId}/members/${memberId}`, {
       method: "DELETE",
+      context: "멤버 삭제",
+      onError: (error, context) => {
+        handleError(error, {
+          context,
+          onStateUpdate: (errorMessage) => {
+            devLog.error("멤버 삭제 실패:", errorMessage);
+          },
+        });
+      },
     });
-    if (!response.ok) throw new Error("구성원 삭제 중 오류가 발생했습니다.");
+
     return {
       success: true,
       message: "구성원이 삭제되었습니다.",

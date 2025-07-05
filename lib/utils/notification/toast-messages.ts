@@ -12,11 +12,48 @@ export function useCommonToast() {
   const { toast } = useToast();
 
   return {
+    // 성공 메시지
+    showSuccess: (title: string, description?: string) => {
+      toast({
+        title,
+        description,
+        variant: "success",
+      });
+    },
+
+    // 에러 메시지
+    showError: (title: string, description?: string) => {
+      toast({
+        title,
+        description,
+        variant: "destructive",
+      });
+    },
+
+    // 경고 메시지
+    showWarning: (title: string, description?: string) => {
+      toast({
+        title,
+        description,
+        variant: "warning",
+      });
+    },
+
+    // 정보 메시지
+    showInfo: (title: string, description?: string) => {
+      toast({
+        title,
+        description,
+        variant: "info",
+      });
+    },
+
     // 커스텀 성공 메시지
     showCustomSuccess: (title: string, description?: string) => {
       toast({
         title,
         description,
+        variant: "success",
       });
     },
 

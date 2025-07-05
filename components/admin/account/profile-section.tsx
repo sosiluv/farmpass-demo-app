@@ -49,7 +49,7 @@ export function ProfileSection({
       : null
   );
 
-  const { showCustomError } = useCommonToast();
+  const toast = useCommonToast();
 
   // profile prop이 변경될 때마다 프리뷰 업데이트
   useEffect(() => {
@@ -81,17 +81,15 @@ export function ProfileSection({
   };
 
   const handleImageDelete = async () => {
+    toast.showInfo("이미지 삭제 시작", "프로필 이미지를 삭제하는 중입니다...");
     try {
       await onImageDelete();
-
       // 삭제 성공 시에만 UI 상태 업데이트
       setProfileImagePreview(null);
     } catch (error) {
       devLog.error("[PROFILE_SECTION] Failed to delete image:", error);
-
       // 에러 발생 시 UI 상태를 원래대로 유지
       // setProfileImagePreview는 변경하지 않음
-
       // 사용자에게 에러 메시지를 표시하기 위해 에러를 다시 던짐
       throw error;
     }
@@ -120,14 +118,18 @@ export function ProfileSection({
               <ImageUpload
                 onUpload={async (file) => {
                   if (!file) return;
+                  toast.showInfo(
+                    "이미지 업로드 시작",
+                    "프로필 이미지를 업로드하는 중입니다..."
+                  );
                   // 허용 타입 검사 (프로필 사진)
                   if (
                     !(ALLOWED_IMAGE_TYPES as readonly string[]).includes(
                       file.type
                     )
                   ) {
-                    showCustomError(
-                      "이미지 업로드 실패",
+                    toast.showWarning(
+                      "파일 형식 오류",
                       `허용되지 않은 파일 형식입니다. ${ALLOWED_IMAGE_EXTENSIONS.join(
                         ", "
                       )} 만 업로드 가능합니다.`

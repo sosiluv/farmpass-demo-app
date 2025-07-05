@@ -40,26 +40,37 @@ export async function GET(request: NextRequest) {
       // 데이터가 없는 경우 (PGRST116 오류)
       if (error.code === "PGRST116") {
         devLog.log("알림 설정이 없음, 기본값 반환");
-        return NextResponse.json({
-          id: null,
-          user_id: user.id,
-          notification_method: "push",
-          visitor_alerts: true,
-          notice_alerts: true,
-          emergency_alerts: true,
-          maintenance_alerts: true,
-          kakao_user_id: null,
-          is_active: false,
-          created_at: null,
-          updated_at: null,
-        });
+        return NextResponse.json(
+          {
+            id: null,
+            user_id: user.id,
+            notification_method: "push",
+            visitor_alerts: true,
+            notice_alerts: true,
+            emergency_alerts: true,
+            maintenance_alerts: true,
+            kakao_user_id: null,
+            is_active: false,
+            created_at: null,
+            updated_at: null,
+          },
+          {
+            headers: {
+              "Cache-Control": "no-store",
+            },
+          }
+        );
       }
 
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
     devLog.log("알림 설정 조회 성공:", settings);
-    return NextResponse.json(settings || {});
+    return NextResponse.json(settings || {}, {
+      headers: {
+        "Cache-Control": "no-store",
+      },
+    });
   } catch (error) {
     devLog.error("알림 설정 조회 중 예외 발생:", error);
     return NextResponse.json(

@@ -9,6 +9,7 @@ import { useNotificationService } from "@/hooks/useNotificationService";
 import { renderNotificationStatus } from "./status/NotificationStatus";
 import NotificationCardHeader from "./NotificationCardHeader";
 import { Zap } from "lucide-react";
+import { useCommonToast } from "@/lib/utils/notification/toast-messages";
 
 interface WebPushSubscriptionProps {
   farms?: Farm[];
@@ -28,7 +29,10 @@ export function WebPushSubscription({
     cleanupSubscriptions,
     handleUnsubscription,
     getSubscriptionStatus,
+    lastMessage,
+    clearLastMessage,
   } = useNotificationService();
+  const toast = useCommonToast();
 
   // props로 받은 농장 데이터 처리
   useEffect(() => {
@@ -44,11 +48,25 @@ export function WebPushSubscription({
     initializeNotifications();
   }, []);
 
+  useEffect(() => {
+    if (lastMessage) {
+      if (lastMessage.type === "success") {
+        toast.showCustomSuccess(lastMessage.title, lastMessage.message);
+      } else {
+        toast.showCustomError(lastMessage.title, lastMessage.message);
+      }
+      clearLastMessage();
+    }
+  }, [lastMessage, toast, clearLastMessage]);
+
   const initializeNotifications = async () => {
     try {
       // Service Worker 지원 여부 확인
       if (!("serviceWorker" in navigator) || !("PushManager" in window)) {
-        devLog.log("브라우저에서 푸시 알림 미지원");
+        toast.showWarning(
+          "브라우저 미지원",
+          "이 브라우저는 푸시 알림을 지원하지 않습니다."
+        );
         setStatus("unsupported");
         return;
       }
@@ -124,6 +142,7 @@ export function WebPushSubscription({
   };
 
   const handleAllow = async () => {
+    toast.showInfo("알림 권한 요청", "알림 권한을 요청하는 중입니다...");
     const success = await requestNotificationPermission();
     if (success) {
       await checkNotificationStatus();
@@ -131,6 +150,7 @@ export function WebPushSubscription({
   };
 
   const handleUnsubscribe = async () => {
+    toast.showInfo("구독 해제 시작", "푸시 구독을 해제하는 중입니다...");
     try {
       const registration = await navigator.serviceWorker.ready;
       const subscription = await registration.pushManager.getSubscription();

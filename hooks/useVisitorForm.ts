@@ -3,13 +3,14 @@ import {
   uploadImageUniversal,
   deleteImageUniversal,
 } from "@/lib/utils/media/image-upload";
-import { useCommonToast } from "@/lib/utils/notification/toast-messages";
 import type { VisitorFormData, VisitorSettings } from "@/lib/types/visitor";
 import type { Farm as VisitorFarm } from "@/lib/types/visitor";
 import {
   ALLOWED_IMAGE_TYPES,
   MAX_UPLOAD_SIZE_MB,
 } from "@/lib/constants/upload";
+import { apiClient } from "@/lib/utils/api-client";
+import { handleError } from "@/lib/utils/handleError";
 
 const initialFormData: VisitorFormData = {
   fullName: "",
@@ -25,7 +26,6 @@ const initialFormData: VisitorFormData = {
 };
 
 export const useVisitorForm = (farmId: string, settings: VisitorSettings) => {
-  const toast = useCommonToast();
   const [formData, setFormData] = useState<VisitorFormData>(initialFormData);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
@@ -38,31 +38,24 @@ export const useVisitorForm = (farmId: string, settings: VisitorSettings) => {
   const [farmError, setFarmError] = useState<string | null>(null);
   const [isInitialized, setIsInitialized] = useState(false);
 
-  // 공통 에러 처리 함수
-  const handleError = useCallback(
-    (error: Error, title: string) => {
-      toast.showCustomError(title, error.message);
-    },
-    [toast]
-  );
-
-  // 공통 성공 처리 함수
-  const handleSuccess = useCallback(
-    (title: string, description: string) => {
-      toast.showCustomSuccess(title, description);
-    },
-    [toast]
-  );
-
   // 세션 기반 재방문 체크 함수 (useCallback으로 메모이제이션)
   const checkSession = useCallback(async () => {
     try {
-      const response = await fetch(
-        `/api/farms/${farmId}/visitors/check-session`
+      const data = await apiClient(
+        `/api/farms/${farmId}/visitors/check-session`,
+        {
+          method: "GET",
+          context: "세션 체크",
+          onError: (error, context) => {
+            handleError(error, {
+              context,
+              onStateUpdate: (errorMessage) => {
+                setError(errorMessage);
+              },
+            });
+          },
+        }
       );
-      if (!response.ok) throw new Error("Failed to check session");
-
-      const data = await response.json();
 
       // 첫 방문이 아닌 경우, 이전 방문 정보로 폼 초기화
       if (!data.isFirstVisit && data.lastVisit) {
@@ -86,12 +79,12 @@ export const useVisitorForm = (farmId: string, settings: VisitorSettings) => {
           visitPurpose: lastVisit.visitPurpose || "",
         });
       }
-    } catch (err) {
-      handleError(err as Error, "Session check");
+    } catch (error) {
+      // 에러는 이미 onError에서 처리됨
     } finally {
       setIsLoading(false);
     }
-  }, [farmId, handleError]);
+  }, [farmId]);
 
   // 세션 기반 재방문 체크 (한 번만 실행)
   useEffect(() => {
@@ -113,12 +106,18 @@ export const useVisitorForm = (farmId: string, settings: VisitorSettings) => {
       setFarmLoading(true);
       setFarmError(null);
 
-      const response = await fetch(`/api/farms/${farmId}`);
-      const result = await response.json();
-
-      if (!response.ok) {
-        throw new Error(result.error || "농장 정보를 가져오는데 실패했습니다.");
-      }
+      const result = await apiClient(`/api/farms/${farmId}`, {
+        method: "GET",
+        context: "농장 정보 조회",
+        onError: (error, context) => {
+          handleError(error, {
+            context,
+            onStateUpdate: (errorMessage) => {
+              setFarmError(errorMessage);
+            },
+          });
+        },
+      });
 
       const farmData: VisitorFarm = {
         id: result.farm.id,
@@ -131,16 +130,11 @@ export const useVisitorForm = (farmId: string, settings: VisitorSettings) => {
 
       setFarm(farmData);
     } catch (error) {
-      setFarmError(
-        error instanceof Error
-          ? error.message
-          : "농장 정보를 가져오는데 실패했습니다."
-      );
-      handleError(error as Error, "Farm fetch");
+      // 에러는 이미 onError에서 처리됨
     } finally {
       setFarmLoading(false);
     }
-  }, [farmId, handleError]);
+  }, [farmId]);
 
   // 농장 정보 가져오기 (한 번만 실행)
   useEffect(() => {
@@ -193,23 +187,27 @@ export const useVisitorForm = (farmId: string, settings: VisitorSettings) => {
 
     try {
       // 일일 방문자 수 체크
-      const visitorCountResponse = await fetch(
-        `/api/farms/${farmId}/visitors/count-today`
-      );
-      if (visitorCountResponse.ok) {
-        const { count, farm_name } = await visitorCountResponse.json();
-        if (count >= settings.maxVisitorsPerDay) {
-          setError(
-            `일일 방문자 수 초과: ${count} / ${settings.maxVisitorsPerDay}`
-          );
-          handleError(
-            new Error(
-              `일일 방문자 수 초과: ${count} / ${settings.maxVisitorsPerDay}`
-            ),
-            "일일 방문자 수 초과"
-          );
-          return;
+      const { count = 0, farm_name } = await apiClient(
+        `/api/farms/${farmId}/visitors/count-today`,
+        {
+          method: "GET",
+          context: "일일 방문자 수 체크",
+          onError: (error, context) => {
+            handleError(error, {
+              context,
+              onStateUpdate: (errorMessage) => {
+                setError(errorMessage);
+              },
+            });
+          },
         }
+      );
+
+      if (count >= settings.maxVisitorsPerDay) {
+        const errorMessage = `일일 방문자 수 초과: ${count} / ${settings.maxVisitorsPerDay}`;
+        setError(errorMessage);
+        handleError(new Error(errorMessage), "일일 방문자 수 초과");
+        return;
       }
 
       // 프로필 사진 업로드
@@ -220,13 +218,13 @@ export const useVisitorForm = (farmId: string, settings: VisitorSettings) => {
           profile_photo_url = result?.publicUrl || null;
         } catch (error) {
           setError("이미지 업로드에 실패했습니다");
-          handleError(error as Error, "이미지 업로드에 실패했습니다");
+          handleError(error as Error, "이미지 업로드");
           return;
         }
       }
 
       // 방문자 등록
-      const response = await fetch(`/api/farms/${farmId}/visitors`, {
+      await apiClient(`/api/farms/${farmId}/visitors`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -235,26 +233,23 @@ export const useVisitorForm = (farmId: string, settings: VisitorSettings) => {
           ...formData,
           profile_photo_url,
         }),
+        context: "방문자 등록",
+        onError: (error, context) => {
+          handleError(error, {
+            context,
+            onStateUpdate: (errorMessage) => {
+              setError(errorMessage);
+            },
+          });
+        },
       });
-
-      if (!response.ok) {
-        const data = await response.json();
-        handleError(
-          new Error(data.message || "방문자 등록에 실패했습니다"),
-          "방문자 등록에 실패했습니다"
-        );
-        throw new Error(data.message || "방문자 등록에 실패했습니다");
-      }
 
       setIsSubmitted(true);
       setFormData(initialFormData);
       setUploadedImageUrl(null);
-      handleSuccess("방문 등록 완료", "방문 등록이 성공적으로 완료되었습니다.");
+      // 토스트는 컴포넌트에서 처리
     } catch (err) {
-      setError(
-        err instanceof Error ? err.message : "방문자 등록에 실패했습니다"
-      );
-      handleError(err as Error, "방문자 등록에 실패했습니다");
+      // 에러는 이미 onError에서 처리됨
     } finally {
       setIsSubmitting(false);
     }
@@ -283,13 +278,10 @@ export const useVisitorForm = (farmId: string, settings: VisitorSettings) => {
       });
 
       setUploadedImageUrl(result.publicUrl);
-      handleSuccess(
-        "이미지 업로드 완료",
-        "이미지가 성공적으로 업로드되었습니다."
-      );
+      // 토스트는 컴포넌트에서 처리
       return result;
     } catch (error) {
-      handleError(error as Error, "이미지 업로드에 실패했습니다");
+      handleError(error as Error, "이미지 업로드");
       throw error;
     } finally {
       setIsImageUploading(false);
@@ -304,9 +296,9 @@ export const useVisitorForm = (farmId: string, settings: VisitorSettings) => {
         fileName,
       });
       setUploadedImageUrl(null);
-      handleSuccess("이미지 삭제 완료", "이미지가 성공적으로 삭제되었습니다.");
+      // 토스트는 컴포넌트에서 처리
     } catch (error) {
-      handleError(error as Error, "이미지 삭제에 실패했습니다");
+      handleError(error as Error, "이미지 삭제");
       throw error;
     }
   };

@@ -40,7 +40,7 @@ import {
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useMemo } from "react";
-import { Logo } from "@/components/common";
+import { Logo, ThemeToggle } from "@/components/common";
 import { DEFAULT_SYSTEM_SETTINGS } from "@/lib/types/settings";
 
 export function AdminSidebar() {
@@ -133,12 +133,6 @@ export function AdminSidebar() {
         icon: User,
         badge: null,
       },
-      // {
-      //   title: "푸시 알림 테스트",
-      //   url: "/admin/test-push",
-      //   icon: TestTube,
-      //   badge: null,
-      // },
     ];
 
     // admin만 볼 수 있는 메뉴 아이템
@@ -373,23 +367,27 @@ export function AdminSidebar() {
               </div>
             </div>
           </SidebarMenuItem>
-          <SidebarMenuItem>
-            <Button
-              variant="ghost"
-              className="w-full justify-start mx-2 mb-2 text-red-600 hover:text-red-700 hover:bg-red-50"
-              onClick={async () => {
-                // Auth Provider에서 모든 로그아웃 로직 처리
-                const result = await signOut();
 
-                // 성공적으로 로그아웃되면 로그인 페이지로 리다이렉트
-                if (result.success) {
-                  window.location.href = "/login";
-                }
-              }}
-            >
-              <LogOut className="mr-2 h-4 w-4" />
-              로그아웃
-            </Button>
+          <SidebarMenuItem>
+            <div className="flex items-center justify-between mx-2 mb-2">
+              <Button
+                variant="ghost"
+                className="flex-1 justify-start text-red-600 hover:text-red-700 hover:bg-red-50"
+                onClick={async () => {
+                  // Auth Provider에서 모든 로그아웃 로직 처리
+                  const result = await signOut();
+
+                  // 성공적으로 로그아웃되면 로그인 페이지로 리다이렉트
+                  if (result.success) {
+                    window.location.href = "/login";
+                  }
+                }}
+              >
+                <LogOut className="mr-2 h-4 w-4" />
+                로그아웃
+              </Button>
+              <ThemeToggle />
+            </div>
           </SidebarMenuItem>
         </SidebarMenu>
       </SidebarFooter>

@@ -163,9 +163,11 @@ export function SecuritySection({
     e.preventDefault();
 
     if (!(await validateForm())) {
+      toast.showWarning("입력 오류", "입력값을 확인해주세요.");
       return;
     }
 
+    toast.showInfo("비밀번호 변경 시작", "비밀번호를 변경하는 중입니다...");
     try {
       await onPasswordChange(passwords);
       // 비밀번호 필드 초기화

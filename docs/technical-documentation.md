@@ -269,6 +269,139 @@ export const generateQRCode = async (
 };
 ```
 
+### 3. PWA 설치 시스템
+
+```typescript
+// components/providers/pwa-provider.tsx
+export function usePWAInstall() {
+  const [installInfo, setInstallInfo] = useState<InstallInfo>({
+    canInstall: false,
+    platform: "Unknown",
+    method: "none",
+    isStandalone: false,
+    userAgent: "",
+  });
+
+  // 플랫폼별 설치 가능 여부 자동 감지
+  const checkInstallability = (): InstallInfo => {
+    const userAgent = navigator.userAgent;
+    const isStandalone = window.matchMedia(
+      "(display-mode: standalone)"
+    ).matches;
+    const isIOS = /iPad|iPhone|iPod/.test(userAgent);
+    const isAndroid = /Android/.test(userAgent);
+
+    // iOS Safari, Android Chrome, Desktop Chrome/Edge 등 지원
+    // 각 플랫폼별 맞춤형 설치 안내 제공
+  };
+
+  return installInfo;
+}
+```
+
+### 4. 다이얼로그 큐 시스템
+
+```typescript
+// Zustand 기반 다이얼로그 큐 관리
+interface DialogQueueState {
+  queue: DialogItem[];
+  currentDialog: DialogItem | null;
+  addDialog: (dialog: DialogItem) => void;
+  removeDialog: (id: string) => void;
+  showNext: () => void;
+}
+
+// 우선순위에 따라 다이얼로그 순차 표시
+// 알림 권한 → PWA 설치 → 기타 안내 순서
+```
+
+### 5. 자동 데이터 정리 시스템
+
+```sql
+-- pg_cron 기반 자동 정리 함수
+CREATE OR REPLACE FUNCTION cleanup_expired_visitor_entries()
+RETURNS TABLE(deleted_count INTEGER, retention_days INTEGER, cutoff_date TIMESTAMPTZ)
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+DECLARE
+  v_retention_days INTEGER;
+  v_cutoff_date TIMESTAMPTZ;
+  v_deleted_count INTEGER;
+BEGIN
+  -- 시스템 설정에서 보존 기간 가져오기
+  SELECT "visitorDataRetentionDays" INTO v_retention_days FROM "system_settings" LIMIT 1;
+
+  -- 만료된 방문자 데이터 삭제
+  DELETE FROM visitor_entries WHERE visit_datetime < v_cutoff_date;
+
+  -- 시스템 로그에 기록
+  INSERT INTO system_logs (level, action, message, metadata)
+  VALUES ('info', 'AUTO_CLEANUP_VISITORS', format('방문자 데이터 자동 정리 완료: %s건 삭제', v_deleted_count),
+          jsonb_build_object('deleted_count', v_deleted_count, 'retention_days', v_retention_days));
+
+  RETURN QUERY SELECT v_deleted_count, v_retention_days, v_cutoff_date;
+END;
+$$;
+
+-- 매일 새벽 2시 (한국시간) 자동 실행
+SELECT cron.schedule('cleanup-visitor-entries', '0 17 * * *', 'SELECT cleanup_expired_visitor_entries();');
+```
+
+### 6. 세션 관리 시스템
+
+```typescript
+// lib/auth/authService.ts
+export async function refreshToken(): Promise<boolean> {
+  if (isRefreshing && refreshPromise) {
+    return refreshPromise;
+  }
+
+  isRefreshing = true;
+  refreshPromise = (async () => {
+    try {
+      const supabase = createClient();
+      const { data, error } = await supabase.auth.refreshSession();
+
+      if (error || !data.session) {
+        devLog.warn("토큰 갱신 실패:", error);
+        return false;
+      }
+
+      devLog.log("토큰 갱신 성공");
+      return true;
+    } catch (error) {
+      devLog.error("토큰 갱신 중 오류:", error);
+      return false;
+    } finally {
+      isRefreshing = false;
+      refreshPromise = null;
+    }
+  })();
+
+  return refreshPromise;
+}
+
+// 세션 만료 시 자동 로그아웃 및 구독 정리
+export async function handleSessionExpired(): Promise<{
+  success: boolean;
+  message: string;
+}> {
+  try {
+    await logout(true); // 강제 로그아웃
+    return {
+      success: true,
+      message: "세션이 만료되었습니다. 보안을 위해 자동으로 로그아웃됩니다.",
+    };
+  } catch (error) {
+    return {
+      success: false,
+      message: "세션 만료 처리 중 오류가 발생했습니다.",
+    };
+  }
+}
+```
+
 ### 3. 실시간 통계 컴포넌트
 
 ```typescript
@@ -1078,6 +1211,102 @@ export const sanitizeInput = (input: string): string => {
 
 ## ⚡ 성능 최적화
 
+### 🚀 로그인 성능 최적화 (2025-7-5 최신)
+
+#### 병렬 처리 최적화
+
+```typescript
+// 기존: 순차적 처리 (2-4초)
+const attempts = await checkLoginAttempts(email);
+const {
+  data: { user, session },
+  error,
+} = await supabase.auth.signInWithPassword({ email, password });
+
+// 개선: 병렬 처리 (1-2초, 50-60% 개선)
+const [authResult, attempts] = await Promise.all([
+  supabase.auth.signInWithPassword({ email, password }),
+  checkLoginAttempts(email),
+]);
+```
+
+#### 비동기 로깅 최적화
+
+```typescript
+// 기존: 동기 로깅으로 응답 지연
+await logApiPerformance({...});
+return NextResponse.json(responseData);
+
+// 개선: 비동기 로깅으로 응답 지연 제거
+setTimeout(async () => {
+  await logApiPerformance({...});
+}, 0);
+return NextResponse.json(responseData);
+```
+
+#### DB 쿼리 최적화
+
+```typescript
+// 기존: 두 개의 별도 UPDATE 쿼리
+await Promise.all([
+  resetLoginAttempts(email, clientIP, userAgent),
+  updateLoginTime(user!.id, clientIP, userAgent),
+]);
+
+// 개선: 단일 쿼리로 통합
+await prisma.profiles.update({
+  where: { email },
+  data: {
+    login_attempts: 0,
+    last_failed_login: null,
+    last_login_attempt: null,
+    last_login_at: new Date(),
+  },
+});
+```
+
+#### 세션 설정 최적화
+
+```typescript
+// 기존: 클라이언트에서 세션 설정
+const { error: setSessionError } = await supabase.auth.setSession(session);
+
+// 개선: 서버에서 쿠키 직접 설정
+response.cookies.set("sb-access-token", session!.access_token, {
+  httpOnly: true,
+  secure: process.env.NODE_ENV === "production",
+  sameSite: "lax",
+  maxAge: session!.expires_at ? session!.expires_at * 1000 - Date.now() : 3600,
+});
+```
+
+#### 프로필 로드 최적화
+
+```typescript
+// 기존: 실패 시 1초 대기 후 재시도
+if (!profile) {
+  await new Promise((resolve) => setTimeout(resolve, 1000));
+  const retryProfile = await loadProfile(session.user.id);
+}
+
+// 개선: 즉시 재시도 + 백그라운드 로드
+if (!profile) {
+  const retryProfile = await loadProfile(result.user.id);
+  if (!retryProfile) {
+    // 백그라운드에서 프로필 로드 시도
+    loadProfile(result.user.id).then((bgProfile) => {
+      if (bgProfile) dispatch({ type: "UPDATE_PROFILE", profile: bgProfile });
+    });
+  }
+}
+```
+
+#### 성능 개선 효과
+
+- **로그인 처리**: 2-4초 → 1-2초 (50-60% 개선)
+- **대시보드 로딩**: 3-5초 → 2-3초 (40-50% 개선)
+- **총 소요 시간**: 5-9초 → 3-5초 (40-60% 개선)
+
 ### 1. React 컴포넌트 최적화
 
 ```typescript
@@ -1339,6 +1568,121 @@ const nextConfig = {
 };
 
 export default nextConfig;
+```
+
+### 4. 최신 최적화 기법
+
+#### apiClient 통일 및 에러 처리 최적화
+
+```typescript
+// lib/utils/api-client.ts
+export async function apiClient(input: RequestInfo, init?: ApiClientOptions) {
+  const {
+    onError,
+    context,
+    skipAuthRefresh = false,
+    ...fetchOptions
+  } = init || {};
+
+  try {
+    const response = await fetch(input, {
+      credentials: "include",
+      ...fetchOptions,
+    });
+
+    // 401: 인증 실패 (토큰 갱신 시도)
+    if (response.status === 401) {
+      const isLoginApi =
+        typeof input === "string" && input.includes("/api/auth/login");
+
+      if (!isLoginApi && !skipAuthRefresh) {
+        const refreshSuccess = await refreshToken();
+        if (refreshSuccess) {
+          return apiClient(input, { ...init, skipAuthRefresh: true });
+        }
+      }
+
+      if (!isLoginApi) {
+        const sessionResult = await handleSessionExpired();
+        const error = new Error(
+          sessionResult.message || ERROR_MESSAGES.UNAUTHORIZED
+        );
+        if (onError) onError(error, context);
+        throw error;
+      }
+    }
+
+    return response.json();
+  } catch (error) {
+    if (onError) onError(error as Error, context);
+    throw error;
+  }
+}
+```
+
+#### 다이얼로그 큐 시스템 최적화
+
+```typescript
+// Zustand 기반 우선순위 다이얼로그 관리
+const useDialogQueue = create<DialogQueueState>((set, get) => ({
+  queue: [],
+  currentDialog: null,
+
+  addDialog: (dialog) => {
+    const { queue } = get();
+    const newQueue = [...queue, dialog].sort((a, b) => b.priority - a.priority);
+    set({ queue: newQueue });
+
+    if (!get().currentDialog) {
+      get().showNext();
+    }
+  },
+
+  showNext: () => {
+    const { queue } = get();
+    if (queue.length > 0) {
+      const nextDialog = queue[0];
+      set({ currentDialog: nextDialog, queue: queue.slice(1) });
+    } else {
+      set({ currentDialog: null });
+    }
+  },
+}));
+```
+
+#### 자동 데이터 정리 성능 최적화
+
+```sql
+-- 인덱스 최적화로 정리 성능 향상
+CREATE INDEX CONCURRENTLY idx_visitor_entries_visit_datetime
+ON visitor_entries(visit_datetime) WHERE visit_datetime < NOW() - INTERVAL '1 year';
+
+-- 배치 처리로 대용량 데이터 정리 최적화
+CREATE OR REPLACE FUNCTION cleanup_expired_visitor_entries_batch(batch_size INTEGER DEFAULT 1000)
+RETURNS INTEGER
+LANGUAGE plpgsql
+AS $$
+DECLARE
+  v_deleted_count INTEGER := 0;
+  v_total_deleted INTEGER := 0;
+BEGIN
+  LOOP
+    DELETE FROM visitor_entries
+    WHERE visit_datetime < NOW() - INTERVAL '3 years'
+    LIMIT batch_size;
+
+    GET DIAGNOSTICS v_deleted_count = ROW_COUNT;
+    v_total_deleted := v_total_deleted + v_deleted_count;
+
+    EXIT WHEN v_deleted_count = 0;
+
+    -- 배치 간 잠시 대기로 DB 부하 분산
+    PERFORM pg_sleep(0.1);
+  END LOOP;
+
+  RETURN v_total_deleted;
+END;
+$$;
 ```
 
 ---
@@ -1729,35 +2073,17 @@ export class AppErrorBoundary extends Component<
 ```sql
 -- 방문자 데이터 자동 정리 함수
 CREATE OR REPLACE FUNCTION auto_cleanup_expired_visitor_entries()
-RETURNS TABLE(
-  execution_id UUID,
-  deleted_count INTEGER,
-  retention_days INTEGER,
-  cutoff_date TIMESTAMPTZ,
-  execution_time INTERVAL,
-  status TEXT
-)
+RETURNS TABLE(deleted_count INTEGER, retention_days INTEGER, cutoff_date TIMESTAMPTZ)
 LANGUAGE plpgsql
 SECURITY DEFINER
-SET search_path = public
 AS $$
 DECLARE
-  v_execution_id UUID := gen_random_uuid();
-  v_start_time TIMESTAMPTZ := NOW();
   v_retention_days INTEGER;
   v_cutoff_date TIMESTAMPTZ;
   v_deleted_count INTEGER;
-  v_execution_time INTERVAL;
-  v_admin_user_id UUID;
-  v_admin_email TEXT;
 BEGIN
   -- 첫 번째 admin 사용자 정보 가져오기
-  SELECT id, email
-  INTO v_admin_user_id, v_admin_email
-  FROM profiles
-  WHERE account_type = 'admin'
-  ORDER BY created_at
-  LIMIT 1;
+  SELECT "visitorDataRetentionDays" INTO v_retention_days FROM "system_settings" LIMIT 1;
 
   -- 실행 시작 로그
   INSERT INTO system_logs (
@@ -2043,3 +2369,95 @@ graph TB
 - **무료 모니터링**: 완전 무료로 프로덕션급 모니터링 구축
 
 이 문서를 통해 시스템의 기술적 우수성과 확장 가능성을 확인할 수 있습니다.
+
+#### apiClient/에러 처리 패턴
+
+- 모든 fetch 호출은 apiClient로 통일, context 옵션 및 onError 콜백 지원
+- 에러/토스트는 컴포넌트에서만 처리, 훅에서는 상태만 관리
+- 구조분해 할당 시 응답 구조에 주의(예: const { members = [] } = await apiClient(...))
+- 세션 만료/토큰 만료/자동 로그아웃/구독 해제/쿠키 정리/토큰 자동 갱신 등은 authService에서 일괄 관리
+
+#### 다크모드/테마/PWA 설치
+
+- next-themes 기반 ThemeProvider, 사이드바 하단 토글, 다크모드 가독성 개선 반복
+- usePWAInstall 훅, 플랫폼별 설치 안내, 다이얼로그 큐 시스템(Zustand)로 안내 중첩 방지
+- 디버그 패널, 자동 데이터 정리(pg_cron), 운영자 패널 등 운영 자동화/모니터링 기능 상세 기술
+
+## PWA (Progressive Web App) 구현
+
+### PWA Provider 최적화 (v1.2.1)
+
+#### 문제점
+
+- `usePWAInstall` 훅이 4개 컴포넌트에서 중복 호출
+- 각 컴포넌트마다 브라우저 환경 체크 반복
+- 불필요한 리렌더링 및 성능 저하
+
+#### 해결책
+
+```typescript
+// components/providers/pwa-provider.tsx
+export function PWAProvider({ children }: { children: ReactNode }) {
+  const [installInfo, setInstallInfo] = useState<InstallInfo>({...});
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const info = checkInstallability();
+      setInstallInfo(info);
+      setIsLoading(false);
+    }
+  }, []);
+
+  const contextValue = useMemo(() => ({
+    installInfo,
+    isLoading,
+  }), [installInfo, isLoading]);
+
+  return (
+    <PWAContext.Provider value={contextValue}>
+      {children}
+    </PWAContext.Provider>
+  );
+}
+```
+
+#### 최적화 효과
+
+- **중복 호출 제거**: 4개 → 1개 Provider에서 중앙 관리
+- **성능 향상**: 브라우저 환경 체크 1회만 실행
+- **메모리 효율성**: Context 값 메모이제이션
+- **SSR 호환성**: 브라우저 환경 체크 개선
+
+#### 사용법
+
+```typescript
+// 기존 방식 (중복 호출)
+import { usePWAInstall } from "@/components/providers/pwa-provider";
+
+// 새로운 방식 (최적화)
+import {
+  usePWAInstall,
+  usePWALoading,
+} from "@/components/providers/pwa-provider";
+
+const installInfo = usePWAInstall();
+const isLoading = usePWALoading();
+```
+
+### PWA 설치 프롬프트 시스템
+
+#### 다이얼로그 큐 통합
+
+- 전역 다이얼로그 관리자와 통합
+- 알림 권한 다이얼로그와 우선순위 관리
+- 중복 표시 방지 및 사용자 경험 개선
+
+#### 플랫폼별 지원
+
+- **iOS Safari**: 수동 설치 (공유 버튼)
+- **Android Chrome**: 자동 설치 배너
+- **Desktop Chrome/Edge**: 주소창 설치 아이콘
+- **기타 브라우저**: 수동 설치 가이드
+
+// ... existing code ...

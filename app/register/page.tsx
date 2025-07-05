@@ -90,10 +90,12 @@ export default function RegisterPage() {
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
+    toast.showInfo("회원가입 시도 중", "잠시만 기다려주세요.");
 
     // 폼 유효성 검증
     const validation = await validateRegistrationForm(formData);
     if (!validation.isValid) {
+      toast.showWarning("입력 오류", "입력값을 확인해주세요.");
       setErrors(validation.errors);
       return;
     }

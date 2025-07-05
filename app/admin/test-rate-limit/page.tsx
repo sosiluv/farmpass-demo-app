@@ -85,9 +85,6 @@ export default function TestRateLimitPage() {
     try {
       const response = await fetch("/api/health", {
         method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-        },
       });
 
       const data = await response.json();

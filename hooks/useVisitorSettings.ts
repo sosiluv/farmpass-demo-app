@@ -2,6 +2,8 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import type { VisitorSettings } from "@/lib/types/visitor";
 import { VISITOR_CONSTANTS } from "@/lib/constants/visitor";
 import { devLog } from "@/lib/utils/logging/dev-logger";
+import { apiClient } from "@/lib/utils/api-client";
+import { handleError } from "@/lib/utils/handleError";
 
 interface ApiVisitorSettings {
   visitor_revisit_interval: number;
@@ -56,10 +58,20 @@ export const useVisitorSettings = () => {
 
     try {
       isFetchingRef.current = true;
-      const response = await fetch("/api/settings/visitor");
-      if (!response.ok) throw new Error("Failed to fetch settings");
 
-      const data = (await response.json()) as ApiVisitorSettings;
+      const data = (await apiClient("/api/settings/visitor", {
+        method: "GET",
+        context: "방문자 설정 조회",
+        onError: (error, context) => {
+          handleError(error, {
+            context,
+            onStateUpdate: (errorMessage) => {
+              setError(errorMessage);
+            },
+          });
+        },
+      })) as ApiVisitorSettings;
+
       devLog.log("Loaded visitor settings:", data);
 
       // API 응답 필드를 클라이언트 필드명으로 매핑
@@ -82,8 +94,7 @@ export const useVisitorSettings = () => {
       setSettings(mappedSettings);
       setError(null);
     } catch (err) {
-      devLog.error("Error fetching settings:", err);
-      setError(err instanceof Error ? err.message : "Failed to load settings");
+      // 에러는 이미 onError에서 처리됨
     } finally {
       setIsLoading(false);
       isFetchingRef.current = false;

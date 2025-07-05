@@ -38,16 +38,19 @@ export async function GET(
     if (error || !farm) {
       return NextResponse.json(
         { error: "Farm not found or inactive" },
-        { status: 404 }
+        { status: 404, headers: { "Cache-Control": "no-store" } }
       );
     }
 
-    return NextResponse.json({ farm });
+    return NextResponse.json(
+      { farm },
+      { headers: { "Cache-Control": "no-store" } }
+    );
   } catch (error) {
     devLog.error("Error fetching farm:", error);
     return NextResponse.json(
       { error: "Failed to fetch farm" },
-      { status: 500 }
+      { status: 500, headers: { "Cache-Control": "no-store" } }
     );
   }
 }
@@ -122,7 +125,10 @@ export async function PUT(
       }
     );
 
-    return NextResponse.json({ farm });
+    return NextResponse.json(
+      { farm },
+      { headers: { "Cache-Control": "no-store" } }
+    );
   } catch (error) {
     devLog.error("Error updating farm:", error);
 
@@ -148,7 +154,7 @@ export async function PUT(
 
     return NextResponse.json(
       { error: "Failed to update farm" },
-      { status: 500 }
+      { status: 500, headers: { "Cache-Control": "no-store" } }
     );
   }
 }
@@ -247,7 +253,7 @@ export async function DELETE(
 
     return NextResponse.json(
       { error: "Failed to delete farm" },
-      { status: 500 }
+      { status: 500, headers: { "Cache-Control": "no-store" } }
     );
   }
 }

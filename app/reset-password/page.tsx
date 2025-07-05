@@ -20,6 +20,7 @@ import { useCommonToast } from "@/lib/utils/notification/toast-messages";
 import { devLog } from "@/lib/utils/logging/dev-logger";
 import { Logo } from "@/components/common";
 import { Loading } from "@/components/ui/loading";
+import { apiClient } from "@/lib/utils/api-client";
 
 export default function ResetPasswordPage() {
   const [email, setEmail] = useState("");
@@ -32,19 +33,18 @@ export default function ResetPasswordPage() {
     setLoading(true);
 
     try {
-      const response = await fetch("/api/auth/reset-password", {
+      const data = await apiClient("/api/auth/reset-password", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({ email }),
+        context: "비밀번호 재설정 요청",
+        onError: (error, context) => {
+          devLog.error("Password reset error:", error);
+          toast.showCustomError("오류", error.message);
+        },
       });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || "비밀번호 재설정 요청에 실패했습니다.");
-      }
 
       toast.showCustomSuccess(
         "이메일 전송 완료",
@@ -53,9 +53,8 @@ export default function ResetPasswordPage() {
 
       // 로그인 페이지로 리다이렉트
       router.push("/login");
-    } catch (error: any) {
-      devLog.error("Password reset error:", error);
-      toast.showCustomError("오류", error.message);
+    } catch (error) {
+      // 에러는 이미 onError에서 처리됨
     } finally {
       setLoading(false);
     }

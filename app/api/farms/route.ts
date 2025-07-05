@@ -126,7 +126,10 @@ export async function POST(request: NextRequest) {
     // 따라서 profiles.role 업데이트는 더 이상 필요하지 않음
 
     statusCode = 201;
-    return NextResponse.json({ farm }, { status: 201 });
+    return NextResponse.json(
+      { farm },
+      { status: 201, headers: { "Cache-Control": "no-store" } }
+    );
   } catch (error) {
     devLog.error("❌ Error creating farm:", error);
     statusCode = 500;
@@ -153,7 +156,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json(
       { error: "Failed to create farm" },
-      { status: 500 }
+      { status: 500, headers: { "Cache-Control": "no-store" } }
     );
   } finally {
     // 성능 모니터링 종료 및 로깅
@@ -252,7 +255,10 @@ export async function GET(request: NextRequest) {
       }
     );
 
-    return NextResponse.json({ farms });
+    return NextResponse.json(
+      { farms },
+      { headers: { "Cache-Control": "no-store" } }
+    );
   } catch (error) {
     devLog.error("Error fetching farms:", error);
     statusCode = 500;
@@ -277,7 +283,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json(
       { error: "Failed to fetch farms" },
-      { status: 500 }
+      { status: 500, headers: { "Cache-Control": "no-store" } }
     );
   } finally {
     // 성능 모니터링 종료 및 로깅

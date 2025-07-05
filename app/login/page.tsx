@@ -33,10 +33,46 @@ export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [redirecting, setRedirecting] = useState(false);
   const [errors, setErrors] = useState<FormErrors>({});
   const router = useRouter();
   const toast = useCommonToast();
   const { state, signIn } = useAuth();
+
+  // 세션 만료로 인한 로그인 페이지 진입 시 브라우저 구독 정리
+  useEffect(() => {
+    const cleanupBrowserSubscriptions = async () => {
+      try {
+        // Service Worker 등록 확인
+        if ("serviceWorker" in navigator && "PushManager" in window) {
+          const registration = await navigator.serviceWorker.getRegistration();
+          if (registration) {
+            // 기존 구독 해제
+            const subscription =
+              await registration.pushManager.getSubscription();
+            if (subscription) {
+              await subscription.unsubscribe();
+              devLog.log("[LOGIN] Browser push subscription cleaned");
+            }
+          }
+        }
+      } catch (error) {
+        devLog.warn("[LOGIN] Failed to clean browser subscriptions:", error);
+      }
+    };
+
+    // URL 파라미터로 세션 만료 여부 확인
+    const urlParams = new URLSearchParams(window.location.search);
+    const sessionExpired = urlParams.get("session_expired");
+
+    if (sessionExpired === "true") {
+      cleanupBrowserSubscriptions();
+      // URL에서 파라미터 제거
+      const newUrl = new URL(window.location.href);
+      newUrl.searchParams.delete("session_expired");
+      window.history.replaceState({}, "", newUrl.toString());
+    }
+  }, []);
 
   // 이미 로그인된 사용자는 대시보드로 리다이렉트
   useEffect(() => {
@@ -60,6 +96,7 @@ export default function LoginPage() {
     e.preventDefault();
     setLoading(true);
     setErrors({});
+    toast.showInfo("로그인 시도 중", "잠시만 기다려주세요.");
 
     try {
       // Auth Provider에서 모든 로그인 로직 처리
@@ -70,20 +107,23 @@ export default function LoginPage() {
 
       if (result.success) {
         toast.showCustomSuccess("로그인 성공", "대시보드로 이동합니다.");
-        // 로그인 성공 시 상태 업데이트 후 리다이렉트
-        setTimeout(() => {
-          router.replace("/admin/dashboard");
-        }, 100);
+        setRedirecting(true); // 리다이렉트 시작
+        // 즉시 리다이렉트 (setTimeout 제거)
+        router.replace("/admin/dashboard");
+        return; // setLoading(false) 실행 방지
       }
     } catch (error: any) {
       devLog.error("Login failed:", error);
-
-      // getAuthErrorMessage 함수를 사용하여 에러 메시지 처리
       const authError = getAuthErrorMessage(error);
       const errorMessage = authError.message;
-
       setErrors({ email: errorMessage });
       toast.showCustomError("로그인 실패", errorMessage);
+
+      if (authError.code === "INVALID_PASSWORD") {
+        toast.showWarning("비밀번호 오류", "비밀번호가 올바르지 않습니다.");
+      }
+
+      // 로그인 실패 시 입력 필드 초기화하지 않음 (사용자가 다시 시도할 수 있도록)
     } finally {
       setLoading(false);
     }
@@ -129,7 +169,7 @@ export default function LoginPage() {
                       className={`h-12 pl-10 input-focus ${
                         errors.email ? "border-red-500" : ""
                       }`}
-                      disabled={loading}
+                      disabled={loading || redirecting}
                     />
                   </div>
                   {errors.email && (
@@ -152,7 +192,7 @@ export default function LoginPage() {
                       className={`h-12 pl-10 input-focus ${
                         errors.password ? "border-red-500" : ""
                       }`}
-                      disabled={loading}
+                      disabled={loading || redirecting}
                     />
                   </div>
                   {errors.password && (
@@ -163,7 +203,7 @@ export default function LoginPage() {
                 <Button
                   type="submit"
                   className="h-12 w-full"
-                  disabled={loading}
+                  disabled={loading || redirecting}
                 >
                   {loading ? (
                     <>

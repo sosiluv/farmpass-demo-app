@@ -1,6 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { Check } from "lucide-react";
-import { Icons } from "@/components/common/icons";
+import { Check, Loader2 } from "lucide-react";
 import { PageHeader } from "@/components/layout";
 
 interface SettingsHeaderProps {
@@ -22,7 +21,7 @@ export function SettingsHeader({
     >
       {saving ? (
         <>
-          <Icons.spinner className="w-4 h-4 mr-2 animate-spin" />
+          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
           저장 중...
         </>
       ) : (

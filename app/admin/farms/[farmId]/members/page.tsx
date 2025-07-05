@@ -27,7 +27,14 @@ export default function MembersPage({ params }: PageProps) {
   const farmId = params.farmId as string;
   const { state } = useAuth();
   const user = state.status === "authenticated" ? state.user : null;
-  const { farms, fetchState } = useFarms(user?.id);
+  const toast = useCommonToast();
+  const {
+    farms,
+    fetchState,
+    error: farmsError,
+    successMessage: farmsSuccessMessage,
+    clearMessages: clearFarmsMessages,
+  } = useFarms(user?.id);
   const {
     members,
     loading,
@@ -37,12 +44,26 @@ export default function MembersPage({ params }: PageProps) {
     removeMember,
     refetch,
   } = useFarmMembersStore();
-  const toast = useCommonToast();
 
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [memberToDelete, setMemberToDelete] = useState<string | null>(null);
   const [isInitialized, setIsInitialized] = useState(false);
   const lastFetchedFarmId = useRef<string | null>(null);
+
+  // 농장 관련 토스트 처리
+  useEffect(() => {
+    if (farmsError) {
+      toast.showCustomError("오류", farmsError);
+      clearFarmsMessages();
+    }
+  }, [farmsError, toast, clearFarmsMessages]);
+
+  useEffect(() => {
+    if (farmsSuccessMessage) {
+      toast.showCustomSuccess("성공", farmsSuccessMessage);
+      clearFarmsMessages();
+    }
+  }, [farmsSuccessMessage, toast, clearFarmsMessages]);
 
   // 타임아웃 관리 - refetch 함수 사용
   const { timeoutReached, retry } = useDataFetchTimeout(
@@ -102,6 +123,7 @@ export default function MembersPage({ params }: PageProps) {
       }
 
       try {
+        toast.showInfo("구성원 추가 중", `${email}을(를) 추가하는 중입니다...`);
         await addMember(farmId, email, role);
         toast.showCustomSuccess(
           "구성원 추가 완료",
@@ -125,6 +147,7 @@ export default function MembersPage({ params }: PageProps) {
   const handleRoleChange = useCallback(
     async (memberId: string, newRole: "manager" | "viewer") => {
       try {
+        toast.showInfo("권한 변경 중", "구성원 권한을 변경하는 중입니다...");
         await updateMemberRole(farmId, memberId, newRole);
         toast.showCustomSuccess(
           "권한 변경 완료",
@@ -146,6 +169,7 @@ export default function MembersPage({ params }: PageProps) {
     if (!memberToDelete) return;
 
     try {
+      toast.showInfo("구성원 삭제 중", "구성원을 삭제하는 중입니다...");
       await removeMember(farmId, memberToDelete);
       setDeleteDialogOpen(false);
       setMemberToDelete(null);

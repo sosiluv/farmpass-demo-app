@@ -74,7 +74,10 @@ export default function NotificationPermissionDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[480px] w-[calc(100%-2rem)] p-0 gap-0 overflow-hidden">
+      <DialogContent
+        className="sm:max-w-[480px] w-[calc(100%-2rem)] p-0 gap-0 overflow-hidden"
+        data-notification-dialog="true"
+      >
         <div className="relative">
           {/* 헤더 배경 그라데이션 */}
           <div className="absolute inset-0 bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 h-28 sm:h-32" />

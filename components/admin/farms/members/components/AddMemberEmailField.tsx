@@ -44,7 +44,7 @@ export function AddMemberEmailField({
                 className="p-2 sm:p-3 hover:bg-gray-100 cursor-pointer border-b last:border-b-0"
                 onClick={() => onUserSelect(user)}
               >
-                <div className="font-medium text-xs sm:text-sm truncate">
+                <div className="font-medium text-xs sm:text-sm text-gray-500 truncate">
                   {user.name}
                 </div>
                 <div className="text-xs sm:text-sm text-gray-500 truncate">

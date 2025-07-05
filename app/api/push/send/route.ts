@@ -599,7 +599,12 @@ export async function POST(request: NextRequest) {
         failureCount,
         results,
       },
-      { status: 200 }
+      {
+        status: 200,
+        headers: {
+          "Cache-Control": "no-store",
+        },
+      }
     );
   } catch (error) {
     devLog.error("푸시 발송 API 오류:", error);

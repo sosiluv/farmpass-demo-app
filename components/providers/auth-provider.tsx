@@ -11,6 +11,8 @@ import { Session, User } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/client";
 import type { Profile } from "@/lib/types";
 import { devLog } from "@/lib/utils/logging/dev-logger";
+import { apiClient } from "@/lib/utils/api-client";
+import { handleError } from "@/lib/utils/handleError";
 
 import { useSubscriptionManager } from "@/hooks/useSubscriptionManager";
 
@@ -102,9 +104,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const isSigningOutRef = useRef<boolean>(false);
   const profileLoadingPromise = useRef<Promise<Profile | null> | null>(null);
 
-  // 구독 관리 훅 사용
-  const { switchSubscription, cleanupSubscription, setupErrorListener } =
-    useSubscriptionManager();
+  // 구독 관리 훅 사용 (로그아웃은 authService에서 처리)
+  const { switchSubscription, setupErrorListener } = useSubscriptionManager();
 
   // 프로필 로드 (개선된 버전)
   const loadProfile = async (userId: string): Promise<Profile | null> => {
@@ -263,10 +264,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           // signOut 함수에서 처리 중인 경우 스킵
           if (!isSigningOutRef.current && mounted) {
             devLog.log("External sign out detected");
-            if (state.status === "authenticated") {
-              // 구독 정리 (세션 정리 전에 수행)
-              await cleanupSubscription();
-            }
+            // 구독 정리는 authService에서 처리하므로 여기서는 상태만 변경
             dispatch({ type: "SET_UNAUTHENTICATED" });
           }
           break;
@@ -333,23 +331,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       dispatch({ type: "SET_LOADING" });
 
       // 새로운 통합 로그인 API 사용
-      const response = await fetch("/api/auth/login", {
+      const result = await apiClient("/api/auth/login", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({ email, password }),
+        context: "로그인",
+        onError: (error, context) => {
+          handleError(error, context);
+        },
       });
-
-      const result = await response.json();
 
       if (!result.success) {
         // 로그인 실패 시 에러 처리
-        if (response.status === 429) {
+        if (result.status === 429) {
           // 계정 잠금
           throw new Error(result.message || "계정이 잠겼습니다.");
-        } else if (response.status === 401) {
-          // 인증 실패
+        } else if (result.status === 401) {
+          // 인증 실패 - 로그인 API의 401은 세션 만료가 아닌 인증 실패
           throw new Error(
             result.message || "이메일 또는 비밀번호가 올바르지 않습니다."
           );
@@ -359,51 +359,66 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
       }
 
-      // 로그인 성공 시 세션 정보 가져오기
-      const {
-        data: { session },
-        error: sessionError,
-      } = await supabase.auth.getSession();
-
-      if (sessionError || !session) {
+      // API에서 반환된 세션 정보 사용
+      const session = result.session;
+      if (!session) {
         throw new Error("세션 정보를 가져올 수 없습니다.");
       }
 
-      // 프로필 로드
-      let profile = await loadProfile(session.user.id);
+      // 사용자 정보 안전하게 추출
+      if (!result.user || !result.user.id) {
+        throw new Error("사용자 정보를 가져올 수 없습니다.");
+      }
+
+      // 세션 쿠키가 이미 설정되었으므로 별도 세션 설정 불필요
+      // 원본 세션 객체 사용
+      const clientSession = session;
+
+      // 프로필 로드 최적화 - 즉시 재시도 (대기 시간 제거)
+      let profile = await loadProfile(result.user.id);
 
       if (!profile) {
-        // 프로필 로딩 실패 시 한 번 더 시도
-        devLog.warn("첫 번째 프로필 로딩 실패, 재시도 중...");
-        await new Promise((resolve) => setTimeout(resolve, 1000)); // 1초 대기
-        const retryProfile = await loadProfile(session.user.id);
+        // 즉시 재시도 (1초 대기 제거)
+        devLog.warn("첫 번째 프로필 로딩 실패, 즉시 재시도 중...");
+        const retryProfile = await loadProfile(result.user.id);
 
         if (!retryProfile) {
+          // 백그라운드에서 프로필 로드 시도
+          devLog.warn("프로필 로딩 실패, 백그라운드에서 재시도...");
+          loadProfile(result.user.id)
+            .then((bgProfile) => {
+              if (bgProfile) {
+                dispatch({ type: "UPDATE_PROFILE", profile: bgProfile });
+              }
+            })
+            .catch((error) => {
+              devLog.warn("Background profile loading failed:", error);
+            });
+
+          // 프로필 로드 실패 시 에러를 던지지 않고 기본값 사용
           throw new Error(
             "프로필을 불러올 수 없습니다. 네트워크 상태를 확인하고 다시 시도해주세요."
           );
+        } else {
+          profile = retryProfile;
         }
-
-        // 재시도 성공
-        profile = retryProfile;
       }
 
       // 구독 전환 (백그라운드에서 처리)
-      switchSubscription(session.user.id).catch((error) => {
+      switchSubscription(result.user.id).catch((error) => {
         devLog.warn("구독 전환 실패:", error);
         // 구독 실패해도 로그인은 계속 진행
       });
 
       dispatch({
         type: "SET_AUTHENTICATED",
-        session: session,
-        user: session.user,
+        session: clientSession,
+        user: result.user,
         profile,
       });
 
       return { success: true };
     } catch (error) {
-      devLog.error("Sign in error:", error);
       dispatch({ type: "SET_UNAUTHENTICATED" });
 
       throw error;
@@ -415,51 +430,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       isSigningOutRef.current = true;
       dispatch({ type: "SET_LOADING" });
 
-      // 타임아웃 설정 (5초)
-      const timeoutPromise = new Promise((_, reject) => {
-        setTimeout(() => reject(new Error("로그아웃 타임아웃")), 3000);
-      });
+      // AuthService 사용 (내부에서 구독 정리까지 처리)
+      const { logout } = await import("@/lib/auth/authService");
+      await logout(false);
 
-      // 로그아웃 작업들을 병렬로 실행하고 타임아웃 적용
-      const logoutPromise = (async () => {
-        // 구독 정리 (세션 정리 전에 수행)
-        if (state.status === "authenticated") {
-          try {
-            await cleanupSubscription();
-            devLog.log("구독 정리 완료");
-          } catch (error) {
-            devLog.warn("구독 정리 실패:", error);
-            // 구독 정리 실패해도 로그아웃은 계속 진행
-          }
-        }
-
-        // Supabase 로그아웃
-        try {
-          const result = (await Promise.race([
-            supabase.auth.signOut(),
-            timeoutPromise,
-          ])) as any;
-          if (result?.error) {
-            devLog.warn("Logout warning:", result.error);
-          }
-        } catch (error) {
-          devLog.warn("Supabase 로그아웃 실패:", error);
-        }
-      })();
-
-      // 전체 로그아웃 작업에 타임아웃 적용
-      await Promise.race([logoutPromise, timeoutPromise]);
-
-      // 상태 정리 (타임아웃이든 성공이든 항상 실행)
       dispatch({ type: "SET_UNAUTHENTICATED" });
-
       return { success: true };
     } catch (error) {
       devLog.error("SignOut error:", error);
-
-      // 에러 발생 시에도 상태 정리
       dispatch({ type: "SET_UNAUTHENTICATED" });
-
       return { success: false };
     } finally {
       isSigningOutRef.current = false;

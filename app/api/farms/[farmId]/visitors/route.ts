@@ -338,7 +338,11 @@ export async function POST(
       visitor.visit_datetime
     );
 
-    return NextResponse.json(visitor);
+    return NextResponse.json(visitor, {
+      headers: {
+        "Cache-Control": "no-store",
+      },
+    });
   } catch (error) {
     devLog.error("Error creating visitor:", error);
 

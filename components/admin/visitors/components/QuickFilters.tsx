@@ -59,13 +59,17 @@ export function QuickFilters({
             className={cn(
               "flex items-center gap-1 sm:gap-2 whitespace-nowrap transition-all duration-200 h-7 sm:h-9 md:h-10 px-2 sm:px-4 md:px-5 text-xs sm:text-sm md:text-base font-medium",
               isActive
-                ? `${filter.bgColor} ${filter.textColor} border-2 ${filter.borderColor} shadow-md hover:shadow-lg transform hover:scale-105`
-                : "border-gray-200 hover:border-gray-300 bg-white/90 hover:bg-white shadow-sm hover:shadow-md transform hover:scale-105"
+                ? `${filter.bgColor} ${filter.textColor} border-2 ${filter.borderColor} shadow-md hover:shadow-lg transform hover:scale-105 dark:bg-slate-800 dark:text-slate-100 dark:border-slate-500`
+                : "border-gray-200 dark:border-slate-600 hover:border-gray-300 dark:hover:border-slate-400 bg-white/90 dark:bg-slate-800 hover:bg-white dark:hover:bg-slate-700 shadow-sm hover:shadow-md transform hover:scale-105 dark:text-slate-100"
             )}
           >
-            <Icon className="h-3 w-3 sm:h-4 sm:w-4 md:h-4 md:w-4" />
-            <span className="hidden sm:inline">{filter.label}</span>
-            <span className="sm:hidden">{filter.label.charAt(0)}</span>
+            <Icon className="h-3 w-3 sm:h-4 sm:w-4 md:h-4 md:w-4 dark:text-slate-100" />
+            <span className="hidden sm:inline dark:text-slate-100">
+              {filter.label}
+            </span>
+            <span className="sm:hidden dark:text-slate-100">
+              {filter.label.charAt(0)}
+            </span>
           </Button>
         );
       })}
@@ -77,13 +81,13 @@ export function QuickFilters({
         className={cn(
           "flex items-center gap-1 sm:gap-2 whitespace-nowrap transition-all duration-200 h-7 sm:h-9 md:h-10 px-2 sm:px-4 md:px-5 text-xs sm:text-sm md:text-base font-medium",
           dateRange === "all"
-            ? "bg-gray-100 text-gray-700 border-2 border-gray-300 shadow-md"
-            : "border-gray-200 hover:border-gray-300 bg-white/90 hover:bg-white shadow-sm hover:shadow-md transform hover:scale-105"
+            ? "bg-gray-100 dark:bg-slate-800 text-gray-700 dark:text-slate-100 border-2 border-gray-300 dark:border-slate-500 shadow-md"
+            : "border-gray-200 dark:border-slate-600 hover:border-gray-300 dark:hover:border-slate-400 bg-white/90 dark:bg-slate-800 hover:bg-white dark:hover:bg-slate-700 shadow-sm hover:shadow-md transform hover:scale-105 dark:text-slate-100"
         )}
       >
-        <RotateCcw className="h-3 w-3 sm:h-4 sm:w-4" />
-        <span className="hidden sm:inline">전체</span>
-        <span className="sm:hidden">전</span>
+        <RotateCcw className="h-3 w-3 sm:h-4 sm:w-4 dark:text-slate-100" />
+        <span className="hidden sm:inline dark:text-slate-100">전체</span>
+        <span className="sm:hidden dark:text-slate-100">전</span>
       </Button>
 
       {activeFiltersCount > 0 && (
