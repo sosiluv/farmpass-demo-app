@@ -37,7 +37,6 @@ import {
   type ChangePasswordFormData,
 } from "@/lib/utils/validation/auth-validation";
 import type { PasswordFormData } from "@/lib/types/account";
-import { AUTH_LABELS, AUTH_PLACEHOLDERS } from "@/lib/constants/auth";
 import type { SecuritySectionProps } from "@/lib/types/account";
 import { supabase } from "@/lib/supabase/client";
 import { Loader2 } from "lucide-react";
@@ -221,8 +220,7 @@ export function SecuritySection({
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel className="text-sm text-gray-800">
-                        {AUTH_LABELS.CURRENT_PASSWORD}{" "}
-                        <span className="text-red-500">*</span>
+                        현재 비밀번호 <span className="text-red-500">*</span>
                       </FormLabel>
                       <div className="relative">
                         <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -230,7 +228,7 @@ export function SecuritySection({
                           <Input
                             {...field}
                             type="password"
-                            placeholder={AUTH_PLACEHOLDERS.CURRENT_PASSWORD}
+                            placeholder="현재 비밀번호를 입력하세요"
                             autoComplete="current-password"
                             className="h-10 pl-10"
                             disabled={loading}
@@ -248,8 +246,7 @@ export function SecuritySection({
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel className="text-sm text-gray-800">
-                        {AUTH_LABELS.PASSWORD}{" "}
-                        <span className="text-red-500">*</span>
+                        비밀번호 <span className="text-red-500">*</span>
                       </FormLabel>
                       <div className="relative">
                         <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -257,7 +254,7 @@ export function SecuritySection({
                           <Input
                             {...field}
                             type="password"
-                            placeholder={AUTH_PLACEHOLDERS.PASSWORD}
+                            placeholder="비밀번호를 입력하세요"
                             autoComplete="new-password"
                             className="h-10 pl-10"
                             disabled={loading}
@@ -276,8 +273,7 @@ export function SecuritySection({
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel className="text-sm text-gray-800">
-                        {AUTH_LABELS.CONFIRM_PASSWORD}{" "}
-                        <span className="text-red-500">*</span>
+                        비밀번호 확인 <span className="text-red-500">*</span>
                       </FormLabel>
                       <div className="relative">
                         <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -285,7 +281,7 @@ export function SecuritySection({
                           <Input
                             {...field}
                             type="password"
-                            placeholder={AUTH_PLACEHOLDERS.CONFIRM_PASSWORD}
+                            placeholder="비밀번호를 다시 입력하세요"
                             autoComplete="new-password"
                             className="h-10 pl-10"
                             disabled={loading}

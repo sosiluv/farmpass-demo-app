@@ -8,7 +8,6 @@ import { getSystemSettings } from "@/lib/cache/system-settings-cache";
 import { devLog } from "@/lib/utils/logging/dev-logger";
 import { apiClient } from "@/lib/utils/data/api-client";
 import { handleError } from "@/lib/utils/error";
-import { AUTH_AUTH_ERROR_MESSAGES } from "@/lib/constants/auth";
 
 /**
  * 전화번호 정규식 패턴
@@ -239,7 +238,7 @@ export function getAuthErrorMessage(
 
   // 기본 응답 객체
   const defaultResponse: AuthErrorResponse = {
-    message: AUTH_AUTH_ERROR_MESSAGES.DEFAULT,
+    message: "처리 중 오류가 발생했습니다. 다시 시도해주세요.",
     shouldRedirect: false,
   };
 
@@ -247,13 +246,14 @@ export function getAuthErrorMessage(
 
   if (errorMessage.toLowerCase().includes("account is locked")) {
     return {
-      message: AUTH_AUTH_ERROR_MESSAGES.ACCOUNT_LOCKED,
+      message:
+        "계정이 잠겼습니다. 관리자에게 문의하거나 잠시 후 다시 시도해주세요.",
       shouldRedirect: false,
     };
   }
   if (errorMessage.toLowerCase().includes("too many requests")) {
     return {
-      message: AUTH_AUTH_ERROR_MESSAGES.TOO_MANY_REQUESTS,
+      message: "너무 많은 로그인 시도가 있었습니다. 잠시 후 다시 시도해주세요.",
       shouldRedirect: false,
     };
   }
@@ -263,26 +263,27 @@ export function getAuthErrorMessage(
       .includes("new password should be different from the old password")
   ) {
     return {
-      message: AUTH_AUTH_ERROR_MESSAGES.PASSWORD_SAME,
+      message: "이전 비밀번호와 동일한 비밀번호로 변경할 수 없습니다.",
       shouldRedirect: false,
     };
   }
   if (errorMessage.toLowerCase().includes("session")) {
     return {
-      message: AUTH_AUTH_ERROR_MESSAGES.SESSION_EXPIRED,
+      message: "세션이 만료되었습니다. 다시 시도해주세요.",
       shouldRedirect: true,
       redirectTo: "/reset-password",
     };
   }
   if (errorMessage.toLowerCase().includes("password should be")) {
     return {
-      message: AUTH_AUTH_ERROR_MESSAGES.PASSWORD_RULE,
+      message:
+        "비밀번호는 최소 6자 이상이어야 하며, 영문, 숫자, 특수문자를 포함해야 합니다.",
       shouldRedirect: false,
     };
   }
   if (errorMessage.toLowerCase().includes("invalid login credentials")) {
     return {
-      message: AUTH_AUTH_ERROR_MESSAGES.INVALID_CREDENTIALS,
+      message: "인증에 실패했습니다. 다시 시도해주세요.",
       shouldRedirect: false,
     };
   }
@@ -297,27 +298,29 @@ export function getAuthErrorMessage(
     errorMessage.toLowerCase().includes("invalid token")
   ) {
     return {
-      message: AUTH_AUTH_ERROR_MESSAGES.TOKEN_EXPIRED,
+      message:
+        "비밀번호 재설정 링크가 만료되었거나 유효하지 않습니다. 새로운 링크를 요청해주세요.",
       shouldRedirect: true,
       redirectTo: "/reset-password",
     };
   }
   if (errorMessage.toLowerCase().includes("token has already been used")) {
     return {
-      message: AUTH_AUTH_ERROR_MESSAGES.TOKEN_USED,
+      message:
+        "이미 사용된 비밀번호 재설정 링크입니다. 새로운 링크를 요청해주세요.",
       shouldRedirect: true,
       redirectTo: "/reset-password",
     };
   }
   if (errorMessage.toLowerCase().includes("email not confirmed")) {
     return {
-      message: AUTH_AUTH_ERROR_MESSAGES.EMAIL_NOT_CONFIRMED,
+      message: "이메일 인증이 필요합니다. 이메일을 확인해주세요.",
       shouldRedirect: false,
     };
   }
   if (errorMessage.toLowerCase().includes("auth")) {
     return {
-      message: AUTH_AUTH_ERROR_MESSAGES.AUTH_ERROR,
+      message: "인증 처리 중 오류가 발생했습니다. 다시 시도해주세요.",
       shouldRedirect: false,
     };
   }

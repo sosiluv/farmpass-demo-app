@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import type { VisitorSettings } from "@/lib/types/visitor";
-import { VISITOR_CONSTANTS } from "@/lib/constants/visitor";
+import { VISITOR_DEFAULTS } from "@/lib/constants/defaults";
 import { devLog } from "@/lib/utils/logging/dev-logger";
 import { apiClient } from "@/lib/utils/data";
 import { handleError } from "@/lib/utils/error";
@@ -24,9 +24,7 @@ interface SettingsCache {
 const CACHE_TTL = 60000; // 1분 캐시
 
 export const useVisitorSettings = () => {
-  const [settings, setSettings] = useState<VisitorSettings>(
-    VISITOR_CONSTANTS.DEFAULT_SETTINGS
-  );
+  const [settings, setSettings] = useState<VisitorSettings>(VISITOR_DEFAULTS);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const cacheRef = useRef<SettingsCache>({

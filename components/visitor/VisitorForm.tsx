@@ -22,10 +22,6 @@ import { User, Phone, MapPin, Car, FileText, Shield } from "lucide-react";
 import type { VisitorSettings } from "@/lib/types/visitor";
 import type { VisitorFormData } from "@/lib/utils/validation/visitor-validation";
 import { createVisitorFormSchema } from "@/lib/utils/validation/visitor-validation";
-import {
-  VISITOR_CONSTANTS,
-  VISIT_PURPOSE_OPTIONS,
-} from "@/lib/constants/visitor";
 import { Loading } from "@/components/ui/loading";
 import {
   Select,
@@ -73,6 +69,39 @@ const FORM_FIELDS = {
   visitPurpose: { icon: FileText, required: true, fullWidth: false },
   notes: { icon: FileText, required: false, fullWidth: true },
 } as const;
+
+// 방문 목적 옵션 직접 선언
+const VISIT_PURPOSE_OPTIONS = [
+  "납품",
+  "점검",
+  "미팅",
+  "수의사 진료",
+  "사료 배송",
+  "방역",
+  "견학",
+  "기타",
+];
+
+// 라벨/플레이스홀더 직접 선언
+const LABELS = {
+  VISIT_PURPOSE: "방문목적",
+  FULL_NAME: "성명",
+  PHONE_NUMBER: "연락처",
+  ADDRESS: "주소",
+  CAR_PLATE: "차량번호",
+  DISINFECTION: "소독여부",
+  NOTES: "비고",
+  PROFILE_PHOTO: "프로필 사진",
+  CONSENT: "개인정보 수집 및 이용에 동의합니다.",
+};
+
+const PLACEHOLDERS = {
+  FULL_NAME: "홍길동",
+  PHONE_NUMBER: "010-0000-0000",
+  CAR_PLATE: "12가 3456 (선택사항)",
+  VISIT_PURPOSE: "방문 목적을 선택하세요.",
+  NOTES: "추가 사항이 있으면 입력해주세요.",
+};
 
 export const VisitorForm = ({
   settings,
@@ -129,11 +158,8 @@ export const VisitorForm = ({
   // 필드명을 라벨 키로 매핑
   const getLabelKey = (
     fieldName: keyof VisitorFormData
-  ): keyof typeof VISITOR_CONSTANTS.LABELS => {
-    const mapping: Record<
-      keyof VisitorFormData,
-      keyof typeof VISITOR_CONSTANTS.LABELS
-    > = {
+  ): keyof typeof LABELS => {
+    const mapping: Record<keyof VisitorFormData, keyof typeof LABELS> = {
       fullName: "FULL_NAME",
       phoneNumber: "PHONE_NUMBER",
       address: "ADDRESS",
@@ -151,10 +177,10 @@ export const VisitorForm = ({
   // 필드명을 플레이스홀더 키로 매핑
   const getPlaceholderKey = (
     fieldName: keyof VisitorFormData
-  ): keyof typeof VISITOR_CONSTANTS.PLACEHOLDERS | null => {
+  ): keyof typeof PLACEHOLDERS | null => {
     const mapping: Record<
       keyof VisitorFormData,
-      keyof typeof VISITOR_CONSTANTS.PLACEHOLDERS | null
+      keyof typeof PLACEHOLDERS | null
     > = {
       fullName: "FULL_NAME",
       phoneNumber: "PHONE_NUMBER",
@@ -193,7 +219,7 @@ export const VisitorForm = ({
           >
             <FormLabel className="flex items-center gap-2 font-semibold text-gray-800 text-sm">
               <Icon className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-              {VISITOR_CONSTANTS.LABELS[labelKey]}
+              {LABELS[labelKey]}
               {isRequired && <span className="text-red-500">*</span>}
             </FormLabel>
             <FormControl>
@@ -201,9 +227,7 @@ export const VisitorForm = ({
                 <Textarea
                   {...field}
                   placeholder={
-                    placeholderKey
-                      ? VISITOR_CONSTANTS.PLACEHOLDERS[placeholderKey]
-                      : ""
+                    placeholderKey ? PLACEHOLDERS[placeholderKey] : ""
                   }
                   rows={3}
                   className="resize-none bg-gray-50 border border-gray-200 text-sm"
@@ -213,9 +237,7 @@ export const VisitorForm = ({
                   {...field}
                   onChange={(e) => field.onChange(e.target.value.toUpperCase())}
                   placeholder={
-                    placeholderKey
-                      ? VISITOR_CONSTANTS.PLACEHOLDERS[placeholderKey]
-                      : ""
+                    placeholderKey ? PLACEHOLDERS[placeholderKey] : ""
                   }
                   className="h-10 sm:h-12 bg-gray-50 border border-gray-200 uppercase text-sm"
                 />
@@ -231,9 +253,7 @@ export const VisitorForm = ({
                 <Input
                   {...field}
                   placeholder={
-                    placeholderKey
-                      ? VISITOR_CONSTANTS.PLACEHOLDERS[placeholderKey]
-                      : ""
+                    placeholderKey ? PLACEHOLDERS[placeholderKey] : ""
                   }
                   className="h-10 sm:h-12 bg-gray-50 border border-gray-200 text-sm"
                 />
@@ -306,7 +326,7 @@ export const VisitorForm = ({
             render={({ field }) => (
               <FormItem className="mb-3 sm:mb-6 flex flex-col items-center">
                 <FormLabel className="sr-only">
-                  {VISITOR_CONSTANTS.LABELS.PROFILE_PHOTO}
+                  {LABELS.PROFILE_PHOTO}
                 </FormLabel>
                 <FormControl>
                   <ImageUpload
@@ -319,7 +339,7 @@ export const VisitorForm = ({
                     required={settings.requireVisitorPhoto}
                     showCamera={true}
                     avatarSize="md"
-                    label={VISITOR_CONSTANTS.LABELS.PROFILE_PHOTO}
+                    label={LABELS.PROFILE_PHOTO}
                     className="shadow border border-gray-100 bg-white rounded-lg sm:rounded-xl p-2 sm:p-4"
                   />
                 </FormControl>
@@ -353,7 +373,7 @@ export const VisitorForm = ({
                     <FormItem className="space-y-2 sm:space-y-2">
                       <FormLabel className="flex items-center gap-2 font-semibold text-gray-800 text-sm">
                         <FileText className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-                        {VISITOR_CONSTANTS.LABELS.VISIT_PURPOSE}
+                        {LABELS.VISIT_PURPOSE}
                         <span className="text-red-500">*</span>
                       </FormLabel>
                       <FormControl>
@@ -363,9 +383,7 @@ export const VisitorForm = ({
                         >
                           <SelectTrigger className="h-10 sm:h-12 bg-gray-50 border border-gray-200 text-sm">
                             <SelectValue
-                              placeholder={
-                                VISITOR_CONSTANTS.PLACEHOLDERS.VISIT_PURPOSE
-                              }
+                              placeholder={PLACEHOLDERS.VISIT_PURPOSE}
                             />
                           </SelectTrigger>
                           <SelectContent>
@@ -401,7 +419,7 @@ export const VisitorForm = ({
                       />
                       <Label className="flex items-center gap-1.5 sm:gap-2 font-medium text-sm sm:text-base">
                         <Shield className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-green-600" />
-                        {VISITOR_CONSTANTS.LABELS.DISINFECTION}
+                        {LABELS.DISINFECTION}
                       </Label>
                     </div>
                   </FormControl>
@@ -424,9 +442,7 @@ export const VisitorForm = ({
                         className="mt-1 w-4 h-4 sm:w-5 sm:h-5"
                       />
                       <Label className="text-xs sm:text-sm leading-relaxed">
-                        <span className="font-medium">
-                          {VISITOR_CONSTANTS.LABELS.CONSENT}
-                        </span>
+                        <span className="font-medium">{LABELS.CONSENT}</span>
                         <span className="text-red-500 ml-1">*</span>
                         <br />
                         <span className="text-xs text-muted-foreground mt-1 block">

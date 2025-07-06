@@ -43,11 +43,6 @@ import {
 import { PasswordStrength } from "@/components/ui/password-strength";
 import { Logo } from "@/components/common";
 import { Loading } from "@/components/ui/loading";
-import {
-  AUTH_LABELS,
-  AUTH_PLACEHOLDERS,
-  AUTH_GUIDE_MESSAGES,
-} from "@/lib/constants/auth";
 
 export default function RegisterPage() {
   const [loading, setLoading] = useState(false);
@@ -165,11 +160,9 @@ export default function RegisterPage() {
               <div className="mx-auto mb-4 flex justify-center">
                 <Logo size="xl" />
               </div>
-              <CardTitle className="text-3xl">
-                {AUTH_GUIDE_MESSAGES.SIGNUP_TITLE}
-              </CardTitle>
+              <CardTitle className="text-3xl">회원가입</CardTitle>
               <CardDescription>
-                {AUTH_GUIDE_MESSAGES.SIGNUP_DESCRIPTION}
+                농장 출입 관리 시스템에 가입하세요
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -184,8 +177,7 @@ export default function RegisterPage() {
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel className="text-sm text-gray-800">
-                          {AUTH_LABELS.EMAIL}{" "}
-                          <span className="text-red-500">*</span>
+                          아이디(이메일) <span className="text-red-500">*</span>
                         </FormLabel>
                         <div className="relative">
                           <Mail className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -193,7 +185,7 @@ export default function RegisterPage() {
                             <Input
                               {...field}
                               type="email"
-                              placeholder={AUTH_PLACEHOLDERS.EMAIL}
+                              placeholder="name@example.com"
                               onBlur={(e) => {
                                 field.onBlur();
                                 handleEmailBlur();
@@ -231,8 +223,7 @@ export default function RegisterPage() {
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel className="text-sm text-gray-800">
-                          {AUTH_LABELS.NAME}{" "}
-                          <span className="text-red-500">*</span>
+                          이름 <span className="text-red-500">*</span>
                         </FormLabel>
                         <div className="relative">
                           <User className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -240,7 +231,7 @@ export default function RegisterPage() {
                             <Input
                               {...field}
                               type="text"
-                              placeholder={AUTH_PLACEHOLDERS.NAME}
+                              placeholder="홍길동"
                               autoComplete="name"
                               className="h-12 pl-10 input-focus"
                               disabled={loading}
@@ -258,8 +249,7 @@ export default function RegisterPage() {
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel className="text-sm text-gray-800">
-                          {AUTH_LABELS.PASSWORD}{" "}
-                          <span className="text-red-500">*</span>
+                          비밀번호 <span className="text-red-500">*</span>
                         </FormLabel>
                         <div className="relative">
                           <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -267,7 +257,7 @@ export default function RegisterPage() {
                             <Input
                               {...field}
                               type="password"
-                              placeholder={AUTH_PLACEHOLDERS.PASSWORD}
+                              placeholder="비밀번호를 입력하세요"
                               autoComplete="new-password"
                               className="h-12 pl-10 input-focus"
                               disabled={loading}
@@ -286,8 +276,7 @@ export default function RegisterPage() {
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel className="text-sm text-gray-800">
-                          {AUTH_LABELS.CONFIRM_PASSWORD}{" "}
-                          <span className="text-red-500">*</span>
+                          비밀번호 확인 <span className="text-red-500">*</span>
                         </FormLabel>
                         <div className="relative">
                           <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -295,7 +284,7 @@ export default function RegisterPage() {
                             <Input
                               {...field}
                               type="password"
-                              placeholder={AUTH_PLACEHOLDERS.CONFIRM_PASSWORD}
+                              placeholder="비밀번호를 다시 입력하세요"
                               autoComplete="new-password"
                               className="h-12 pl-10 input-focus"
                               disabled={loading}
@@ -313,8 +302,7 @@ export default function RegisterPage() {
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel className="text-sm text-gray-800">
-                          {AUTH_LABELS.PHONE}{" "}
-                          <span className="text-red-500">*</span>
+                          휴대폰 번호 <span className="text-red-500">*</span>
                         </FormLabel>
                         <div className="relative">
                           <Phone className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -322,7 +310,7 @@ export default function RegisterPage() {
                             <Input
                               {...field}
                               type="tel"
-                              placeholder={AUTH_PLACEHOLDERS.PHONE}
+                              placeholder="010-0000-0000"
                               className="h-12 pl-10 input-focus"
                               disabled={loading}
                             />
@@ -357,12 +345,12 @@ export default function RegisterPage() {
             </CardContent>
             <CardFooter className="flex justify-center">
               <p className="text-sm text-muted-foreground">
-                {AUTH_GUIDE_MESSAGES.ALREADY_HAVE_ACCOUNT}{" "}
+                이미 계정이 있으신가요?{" "}
                 <Link
                   href="/login"
                   className="font-medium text-primary hover:underline"
                 >
-                  {AUTH_GUIDE_MESSAGES.GO_LOGIN}
+                  로그인
                 </Link>
               </p>
             </CardFooter>

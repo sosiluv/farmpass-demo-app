@@ -24,12 +24,7 @@ import { Logo } from "@/components/common";
 import { getAuthErrorMessage } from "@/lib/utils/validation/validation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import {
-  AUTH_LABELS,
-  AUTH_PLACEHOLDERS,
-  AUTH_GUIDE_MESSAGES,
-  AUTH_ERROR_MESSAGES,
-} from "@/lib/constants/auth";
+
 import {
   loginFormSchema,
   type LoginFormData,
@@ -144,11 +139,9 @@ export default function LoginPage() {
               <div className="mx-auto mb-4 flex justify-center">
                 <Logo size="xl" />
               </div>
-              <CardTitle className="text-3xl">
-                {AUTH_GUIDE_MESSAGES.LOGIN_TITLE}
-              </CardTitle>
+              <CardTitle className="text-3xl">로그인</CardTitle>
               <CardDescription>
-                {AUTH_GUIDE_MESSAGES.LOGIN_DESCRIPTION}
+                농장 출입 관리 시스템에 로그인하세요
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -163,8 +156,7 @@ export default function LoginPage() {
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel className="text-sm text-gray-800">
-                          {AUTH_LABELS.EMAIL}{" "}
-                          <span className="text-red-500">*</span>
+                          아이디(이메일) <span className="text-red-500">*</span>
                         </FormLabel>
                         <div className="relative">
                           <Mail className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -172,7 +164,7 @@ export default function LoginPage() {
                             <Input
                               {...field}
                               type="email"
-                              placeholder={AUTH_PLACEHOLDERS.EMAIL}
+                              placeholder="name@example.com"
                               autoComplete="username"
                               className="h-12 pl-10 input-focus"
                               disabled={loading || redirecting}
@@ -189,8 +181,7 @@ export default function LoginPage() {
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel className="text-sm text-gray-800">
-                          {AUTH_LABELS.PASSWORD}{" "}
-                          <span className="text-red-500">*</span>
+                          비밀번호 <span className="text-red-500">*</span>
                         </FormLabel>
                         <div className="relative">
                           <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -198,7 +189,7 @@ export default function LoginPage() {
                             <Input
                               {...field}
                               type="password"
-                              placeholder={AUTH_PLACEHOLDERS.PASSWORD}
+                              placeholder="비밀번호를 입력하세요"
                               autoComplete="current-password"
                               className="h-12 pl-10 input-focus"
                               disabled={loading || redirecting}
@@ -223,7 +214,7 @@ export default function LoginPage() {
                         로그인 중...
                       </>
                     ) : (
-                      AUTH_GUIDE_MESSAGES.LOGIN_TITLE
+                      "로그인"
                     )}
                   </Button>
                 </form>
@@ -239,9 +230,9 @@ export default function LoginPage() {
                 </Link>
               </div>
               <div className="text-center text-sm">
-                {AUTH_GUIDE_MESSAGES.ALREADY_HAVE_ACCOUNT}{" "}
+                계정이 없으신가요?{" "}
                 <Link href="/register" className="text-primary hover:underline">
-                  {AUTH_GUIDE_MESSAGES.GO_SIGNUP}
+                  회원가입
                 </Link>
               </div>
             </CardFooter>

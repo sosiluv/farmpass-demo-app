@@ -1,4 +1,3 @@
-import { AUTH_ERROR_MESSAGES } from "@/lib/constants/auth";
 import * as z from "zod";
 import {
   validateEmail,
@@ -65,13 +64,11 @@ const createPasswordValidationSchema = (
 ) => {
   const baseSchema: any = {
     ...(options.includeCurrentPassword && {
-      currentPassword: z
-        .string()
-        .min(1, AUTH_ERROR_MESSAGES.REQUIRED_CURRENT_PASSWORD),
+      currentPassword: z.string().min(1, "현재 비밀번호를 입력해주세요"),
     }),
     [options.passwordFieldName || "password"]: z
       .string()
-      .min(1, AUTH_ERROR_MESSAGES.REQUIRED_PASSWORD)
+      .min(1, "비밀번호를 입력해주세요")
       .min(
         passwordRules.passwordMinLength,
         `비밀번호는 최소 ${passwordRules.passwordMinLength}자 이상이어야 합니다`
@@ -82,7 +79,7 @@ const createPasswordValidationSchema = (
           message: getPasswordErrorMessage(passwordRules),
         }
       ),
-    confirmPassword: z.string().min(1, AUTH_ERROR_MESSAGES.REQUIRED_PASSWORD),
+    confirmPassword: z.string().min(1, "비밀번호를 입력해주세요"),
   };
 
   return z.object(baseSchema).refine(
@@ -91,7 +88,7 @@ const createPasswordValidationSchema = (
       return password === data.confirmPassword;
     },
     {
-      message: AUTH_ERROR_MESSAGES.PASSWORD_MISMATCH,
+      message: "비밀번호가 일치하지 않습니다",
       path: ["confirmPassword"],
     }
   );
@@ -105,19 +102,19 @@ export const createRegistrationFormSchema = (passwordRules: any) =>
     .object({
       email: z
         .string()
-        .min(1, AUTH_ERROR_MESSAGES.REQUIRED_EMAIL)
+        .min(1, "이메일을 입력해주세요")
         .refine((email) => validateEmail(email).isValid, {
-          message: AUTH_ERROR_MESSAGES.INVALID_EMAIL,
+          message: "유효한 이메일 주소를 입력해주세요",
         }),
       name: z
         .string()
-        .min(1, AUTH_ERROR_MESSAGES.REQUIRED_NAME)
+        .min(1, "이름을 입력해주세요")
         .refine((name) => validateName(name).isValid, {
-          message: AUTH_ERROR_MESSAGES.INVALID_NAME,
+          message: "이름은 2자 이상 50자 이하여야 합니다",
         }),
       password: z
         .string()
-        .min(1, AUTH_ERROR_MESSAGES.REQUIRED_PASSWORD)
+        .min(1, "비밀번호를 입력해주세요")
         .min(
           passwordRules.passwordMinLength,
           `비밀번호는 최소 ${passwordRules.passwordMinLength}자 이상이어야 합니다`
@@ -128,16 +125,16 @@ export const createRegistrationFormSchema = (passwordRules: any) =>
             message: getPasswordErrorMessage(passwordRules),
           }
         ),
-      confirmPassword: z.string().min(1, AUTH_ERROR_MESSAGES.REQUIRED_PASSWORD),
+      confirmPassword: z.string().min(1, "비밀번호를 입력해주세요"),
       phone: z
         .string()
-        .min(1, AUTH_ERROR_MESSAGES.REQUIRED_PHONE)
+        .min(1, "전화번호를 입력해주세요")
         .refine((phone) => validatePhone(phone), {
-          message: AUTH_ERROR_MESSAGES.INVALID_PHONE,
+          message: "올바른 전화번호 형식(010-XXXX-XXXX)을 입력해주세요",
         }),
     })
     .refine((data) => data.password === data.confirmPassword, {
-      message: AUTH_ERROR_MESSAGES.PASSWORD_MISMATCH,
+      message: "비밀번호가 일치하지 않습니다",
       path: ["confirmPassword"],
     });
 
@@ -147,9 +144,9 @@ export const createRegistrationFormSchema = (passwordRules: any) =>
 export const loginFormSchema = z.object({
   email: z
     .string()
-    .min(1, AUTH_ERROR_MESSAGES.REQUIRED_EMAIL)
-    .email(AUTH_ERROR_MESSAGES.INVALID_EMAIL),
-  password: z.string().min(1, AUTH_ERROR_MESSAGES.REQUIRED_PASSWORD),
+    .min(1, "이메일을 입력해주세요")
+    .email("유효한 이메일 주소를 입력해주세요"),
+  password: z.string().min(1, "비밀번호를 입력해주세요"),
 });
 
 /**
@@ -174,17 +171,15 @@ export const createChangePasswordFormSchema = (passwordRules: any) =>
  */
 export const changePasswordFormSchema = z
   .object({
-    currentPassword: z
-      .string()
-      .min(1, AUTH_ERROR_MESSAGES.REQUIRED_CURRENT_PASSWORD),
+    currentPassword: z.string().min(1, "현재 비밀번호를 입력해주세요"),
     newPassword: z
       .string()
-      .min(1, AUTH_ERROR_MESSAGES.REQUIRED_PASSWORD)
-      .min(6, AUTH_ERROR_MESSAGES.PASSWORD_MIN_LENGTH),
-    confirmPassword: z.string().min(1, AUTH_ERROR_MESSAGES.REQUIRED_PASSWORD),
+      .min(1, "비밀번호를 입력해주세요")
+      .min(6, "비밀번호는 최소 6자 이상이어야 합니다"),
+    confirmPassword: z.string().min(1, "비밀번호를 입력해주세요"),
   })
   .refine((data) => data.newPassword === data.confirmPassword, {
-    message: AUTH_ERROR_MESSAGES.PASSWORD_MISMATCH,
+    message: "비밀번호가 일치하지 않습니다",
     path: ["confirmPassword"],
   });
 
@@ -194,8 +189,8 @@ export const changePasswordFormSchema = z
 export const resetPasswordRequestFormSchema = z.object({
   email: z
     .string()
-    .min(1, AUTH_ERROR_MESSAGES.REQUIRED_EMAIL)
-    .email(AUTH_ERROR_MESSAGES.INVALID_EMAIL),
+    .min(1, "이메일을 입력해주세요")
+    .email("유효한 이메일 주소를 입력해주세요"),
 });
 
 /**

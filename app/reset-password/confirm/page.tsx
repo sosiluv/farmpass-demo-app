@@ -36,7 +36,7 @@ import {
   createDefaultResetPasswordFormSchema,
   type ResetPasswordFormData,
 } from "@/lib/utils/validation/auth-validation";
-import { AUTH_LABELS, AUTH_PLACEHOLDERS } from "@/lib/constants/auth";
+
 import { PasswordStrength } from "@/components/ui/password-strength";
 import { Loading } from "@/components/ui/loading";
 
@@ -277,8 +277,7 @@ export default function ResetPasswordConfirmPage() {
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel className="text-sm text-gray-800">
-                          {AUTH_LABELS.PASSWORD}{" "}
-                          <span className="text-red-500">*</span>
+                          비밀번호 <span className="text-red-500">*</span>
                         </FormLabel>
                         <div className="relative">
                           <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -286,7 +285,7 @@ export default function ResetPasswordConfirmPage() {
                             <Input
                               {...field}
                               type="password"
-                              placeholder={AUTH_PLACEHOLDERS.PASSWORD}
+                              placeholder="비밀번호를 입력하세요"
                               autoComplete="new-password"
                               className="h-12 pl-10 input-focus"
                               disabled={loading}
@@ -304,8 +303,7 @@ export default function ResetPasswordConfirmPage() {
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel className="text-sm text-gray-800">
-                          {AUTH_LABELS.CONFIRM_PASSWORD}{" "}
-                          <span className="text-red-500">*</span>
+                          비밀번호 확인 <span className="text-red-500">*</span>
                         </FormLabel>
                         <div className="relative">
                           <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -313,7 +311,7 @@ export default function ResetPasswordConfirmPage() {
                             <Input
                               {...field}
                               type="password"
-                              placeholder={AUTH_PLACEHOLDERS.CONFIRM_PASSWORD}
+                              placeholder="비밀번호를 다시 입력하세요"
                               autoComplete="new-password"
                               className="h-12 pl-10 input-focus"
                               disabled={loading}
