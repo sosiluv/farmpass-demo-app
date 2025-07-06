@@ -1,12 +1,7 @@
+import { VISITOR_DEFAULTS } from "./defaults";
+
 export const VISITOR_CONSTANTS = {
-  DEFAULT_SETTINGS: {
-    reVisitAllowInterval: 6,
-    maxVisitorsPerDay: 100,
-    visitorDataRetentionDays: 1095,
-    requireVisitorPhoto: false,
-    requireVisitorContact: true,
-    requireVisitPurpose: true,
-  },
+  DEFAULT_SETTINGS: VISITOR_DEFAULTS,
   ERROR_MESSAGES: {
     FARM_NOT_FOUND: "농장 정보를 찾을 수 없습니다.",
     REQUIRED_NAME: "성명을 입력해주세요.",
@@ -43,6 +38,20 @@ export const VISITOR_CONSTANTS = {
     NOTES: "추가 사항이 있으면 입력해주세요.",
   },
 };
+
+/**
+ * 방문 목적 옵션
+ */
+export const VISIT_PURPOSE_OPTIONS = [
+  "납품",
+  "점검",
+  "미팅",
+  "수의사 진료",
+  "사료 배송",
+  "방역",
+  "견학",
+  "기타",
+] as const;
 
 /**
  * 날짜 범위 라벨 매핑

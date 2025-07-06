@@ -1,6 +1,8 @@
 "use client";
 
-import React, { useState } from "react";
+import React from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 import {
   Card,
   CardContent,
@@ -13,21 +15,17 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AddressSearch } from "@/components/common/address-search";
 import { ImageUpload } from "@/components/ui/image-upload";
 import { Logo } from "@/components/common";
+import { User, Phone, MapPin, Car, FileText, Shield } from "lucide-react";
+import type { VisitorSettings } from "@/lib/types/visitor";
+import type { VisitorFormData } from "@/lib/utils/validation/visitor-validation";
+import { createVisitorFormSchema } from "@/lib/utils/validation/visitor-validation";
 import {
-  AlertTriangle,
-  User,
-  Phone,
-  MapPin,
-  Car,
-  FileText,
-  Shield,
-} from "lucide-react";
-import type { VisitorFormData, VisitorSettings } from "@/lib/types/visitor";
-import { VISITOR_CONSTANTS } from "@/lib/constants/visitor";
+  VISITOR_CONSTANTS,
+  VISIT_PURPOSE_OPTIONS,
+} from "@/lib/constants/visitor";
 import { Loading } from "@/components/ui/loading";
 import {
   Select,
@@ -43,19 +41,22 @@ import {
   ALLOWED_IMAGE_EXTENSIONS,
 } from "@/lib/constants/upload";
 import { useCommonToast } from "@/lib/utils/notification/toast-messages";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
 
 interface VisitorFormProps {
   settings: VisitorSettings;
   formData: VisitorFormData;
   isSubmitting: boolean;
   isLoading: boolean;
-  error: string | null;
   uploadedImageUrl: string | null;
-  onSubmit: (e: React.FormEvent) => Promise<void>;
-  onInputChange: (
-    field: keyof VisitorFormData,
-    value: string | boolean | File | null
-  ) => void;
+  onSubmit: (data: VisitorFormData) => Promise<void>;
   onImageUpload: (
     file: File
   ) => Promise<{ publicUrl: string; fileName: string } | void>;
@@ -63,21 +64,203 @@ interface VisitorFormProps {
   isImageUploading: boolean;
 }
 
+// 폼 필드 설정
+const FORM_FIELDS = {
+  fullName: { icon: User, required: true, fullWidth: false },
+  phoneNumber: { icon: Phone, required: true, fullWidth: false },
+  address: { icon: MapPin, required: true, fullWidth: true },
+  carPlateNumber: { icon: Car, required: false, fullWidth: false },
+  visitPurpose: { icon: FileText, required: true, fullWidth: false },
+  notes: { icon: FileText, required: false, fullWidth: true },
+} as const;
+
 export const VisitorForm = ({
   settings,
   formData,
   isSubmitting,
   isLoading,
-  error,
   uploadedImageUrl,
   onSubmit,
-  onInputChange,
   onImageUpload,
   onImageDelete,
   isImageUploading,
 }: VisitorFormProps) => {
-  const [logoError, setLogoError] = useState(false);
+  const [logoError, setLogoError] = React.useState(false);
   const { showInfo, showWarning } = useCommonToast();
+
+  // 동적 스키마 생성
+  const visitorSchema = createVisitorFormSchema(settings, uploadedImageUrl);
+
+  // React Hook Form 설정
+  const form = useForm<VisitorFormData>({
+    resolver: zodResolver(visitorSchema),
+    defaultValues: formData,
+  });
+
+  // 이미지 업로드 핸들러
+  const handleImageUpload = async (file: File) => {
+    showInfo("이미지 업로드 시작", "이미지를 업로드하는 중입니다...");
+
+    if (!(ALLOWED_IMAGE_TYPES as readonly string[]).includes(file.type)) {
+      showWarning(
+        "파일 형식 오류",
+        `허용되지 않은 파일 형식입니다. ${ALLOWED_IMAGE_EXTENSIONS.join(
+          ", "
+        )} 만 업로드 가능합니다.`
+      );
+      return;
+    }
+
+    await onImageUpload(file);
+  };
+
+  // 이미지 삭제 핸들러
+  const handleImageDelete = async () => {
+    showInfo("이미지 삭제 시작", "이미지를 삭제하는 중입니다...");
+
+    if (uploadedImageUrl) {
+      const fileName = uploadedImageUrl.split("/").pop();
+      if (fileName) {
+        onImageDelete(fileName).catch(devLog.error);
+      }
+    }
+  };
+
+  // 필드명을 라벨 키로 매핑
+  const getLabelKey = (
+    fieldName: keyof VisitorFormData
+  ): keyof typeof VISITOR_CONSTANTS.LABELS => {
+    const mapping: Record<
+      keyof VisitorFormData,
+      keyof typeof VISITOR_CONSTANTS.LABELS
+    > = {
+      fullName: "FULL_NAME",
+      phoneNumber: "PHONE_NUMBER",
+      address: "ADDRESS",
+      detailedAddress: "ADDRESS",
+      carPlateNumber: "CAR_PLATE",
+      visitPurpose: "VISIT_PURPOSE",
+      disinfectionCheck: "DISINFECTION",
+      notes: "NOTES",
+      profilePhoto: "PROFILE_PHOTO",
+      consentGiven: "CONSENT",
+    };
+    return mapping[fieldName];
+  };
+
+  // 필드명을 플레이스홀더 키로 매핑
+  const getPlaceholderKey = (
+    fieldName: keyof VisitorFormData
+  ): keyof typeof VISITOR_CONSTANTS.PLACEHOLDERS | null => {
+    const mapping: Record<
+      keyof VisitorFormData,
+      keyof typeof VISITOR_CONSTANTS.PLACEHOLDERS | null
+    > = {
+      fullName: "FULL_NAME",
+      phoneNumber: "PHONE_NUMBER",
+      address: null,
+      detailedAddress: null,
+      carPlateNumber: "CAR_PLATE",
+      visitPurpose: "VISIT_PURPOSE",
+      disinfectionCheck: null,
+      notes: "NOTES",
+      profilePhoto: null,
+      consentGiven: null,
+    };
+    return mapping[fieldName];
+  };
+
+  // 텍스트 필드 렌더링
+  const renderTextField = (
+    name: keyof VisitorFormData,
+    fieldConfig: (typeof FORM_FIELDS)[keyof typeof FORM_FIELDS]
+  ) => {
+    const Icon = fieldConfig.icon;
+    const isRequired = fieldConfig.required;
+    const isFullWidth = fieldConfig.fullWidth;
+    const labelKey = getLabelKey(name);
+    const placeholderKey = getPlaceholderKey(name);
+
+    return (
+      <FormField
+        control={form.control}
+        name={name}
+        render={({ field }) => (
+          <FormItem
+            className={`space-y-2 sm:space-y-2 ${
+              isFullWidth ? "md:col-span-2" : ""
+            }`}
+          >
+            <FormLabel className="flex items-center gap-2 font-semibold text-gray-800 text-sm">
+              <Icon className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+              {VISITOR_CONSTANTS.LABELS[labelKey]}
+              {isRequired && <span className="text-red-500">*</span>}
+            </FormLabel>
+            <FormControl>
+              {name === "notes" ? (
+                <Textarea
+                  {...field}
+                  placeholder={
+                    placeholderKey
+                      ? VISITOR_CONSTANTS.PLACEHOLDERS[placeholderKey]
+                      : ""
+                  }
+                  rows={3}
+                  className="resize-none bg-gray-50 border border-gray-200 text-sm"
+                />
+              ) : name === "carPlateNumber" ? (
+                <Input
+                  {...field}
+                  onChange={(e) => field.onChange(e.target.value.toUpperCase())}
+                  placeholder={
+                    placeholderKey
+                      ? VISITOR_CONSTANTS.PLACEHOLDERS[placeholderKey]
+                      : ""
+                  }
+                  className="h-10 sm:h-12 bg-gray-50 border border-gray-200 uppercase text-sm"
+                />
+              ) : name === "address" ? (
+                <AddressSearch
+                  onSelect={(address, detailedAddress) => {
+                    field.onChange(address);
+                    form.setValue("detailedAddress", detailedAddress);
+                  }}
+                  defaultDetailedAddress={formData.detailedAddress}
+                />
+              ) : (
+                <Input
+                  {...field}
+                  placeholder={
+                    placeholderKey
+                      ? VISITOR_CONSTANTS.PLACEHOLDERS[placeholderKey]
+                      : ""
+                  }
+                  className="h-10 sm:h-12 bg-gray-50 border border-gray-200 text-sm"
+                />
+              )}
+            </FormControl>
+            <FormMessage />
+            {name === "address" && field.value && (
+              <div className="mt-2 p-2.5 sm:p-3 bg-gray-50 border border-gray-200 rounded-lg">
+                <div className="text-xs sm:text-sm">
+                  <div className="font-medium text-gray-700">선택된 주소:</div>
+                  <div className="text-gray-600 mt-1">
+                    {field.value}
+                    {formData.detailedAddress && (
+                      <span className="text-blue-600">
+                        {" "}
+                        {formData.detailedAddress}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
+          </FormItem>
+        )}
+      />
+    );
+  };
 
   if (isLoading) {
     return (
@@ -113,273 +296,172 @@ export const VisitorForm = ({
           사용됩니다.
         </CardDescription>
       </CardHeader>
-      <CardContent className="pt-3 sm:pt-6 pb-3 sm:pb-6 px-4 sm:px-8">
-        {/* 프로필 사진 업로드 영역 */}
-        <div className="mb-3 sm:mb-6 flex flex-col items-center">
-          <ImageUpload
-            onUpload={async (file) => {
-              if (file) {
-                showInfo(
-                  "이미지 업로드 시작",
-                  "이미지를 업로드하는 중입니다..."
-                );
-                if (
-                  !(ALLOWED_IMAGE_TYPES as readonly string[]).includes(
-                    file.type
-                  )
-                ) {
-                  showWarning(
-                    "파일 형식 오류",
-                    `허용되지 않은 파일 형식입니다. ${ALLOWED_IMAGE_EXTENSIONS.join(
-                      ", "
-                    )} 만 업로드 가능합니다.`
-                  );
-                  return;
-                }
-                onInputChange("profilePhoto", file);
-                await onImageUpload(file);
-              }
-            }}
-            onDelete={async () => {
-              showInfo("이미지 삭제 시작", "이미지를 삭제하는 중입니다...");
-              if (uploadedImageUrl) {
-                const fileName = uploadedImageUrl.split("/").pop();
-                if (fileName) {
-                  onImageDelete(fileName).catch(devLog.error);
-                }
-              }
-              onInputChange("profilePhoto", null);
-            }}
-            currentImage={
-              uploadedImageUrl ||
-              (formData.profilePhoto
-                ? URL.createObjectURL(formData.profilePhoto)
-                : null)
-            }
-            required={settings.requireVisitorPhoto}
-            showCamera={true}
-            avatarSize="md"
-            label={VISITOR_CONSTANTS.LABELS.PROFILE_PHOTO}
-            className="shadow border border-gray-100 bg-white rounded-lg sm:rounded-xl p-2 sm:p-4"
-          />
-        </div>
-        <form onSubmit={onSubmit} className="space-y-3 sm:space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-6">
-            {/* 성명 */}
-            <div className="space-y-2 sm:space-y-2">
-              <Label
-                htmlFor="fullName"
-                className="flex items-center gap-2 font-semibold text-gray-800 text-sm"
-              >
-                <User className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-                {VISITOR_CONSTANTS.LABELS.FULL_NAME}
-                <span className="text-red-500">*</span>
-              </Label>
-              <Input
-                id="fullName"
-                value={formData.fullName}
-                onChange={(e) => onInputChange("fullName", e.target.value)}
-                placeholder={VISITOR_CONSTANTS.PLACEHOLDERS.FULL_NAME}
-                required
-                className="h-10 sm:h-12 bg-gray-50 border border-gray-200 text-sm"
-              />
-            </div>
-            {/* 연락처 */}
-            <div className="space-y-2 sm:space-y-2">
-              <Label
-                htmlFor="phoneNumber"
-                className="flex items-center gap-2 font-semibold text-gray-800 text-sm"
-              >
-                <Phone className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-                {VISITOR_CONSTANTS.LABELS.PHONE_NUMBER}
-                {settings.requireVisitorContact && (
-                  <span className="text-red-500">*</span>
-                )}
-              </Label>
-              <Input
-                id="phoneNumber"
-                value={formData.phoneNumber}
-                onChange={(e) => onInputChange("phoneNumber", e.target.value)}
-                placeholder={VISITOR_CONSTANTS.PLACEHOLDERS.PHONE_NUMBER}
-                className="h-10 sm:h-12 bg-gray-50 border border-gray-200 text-sm"
-              />
-            </div>
-            {/* 주소 */}
-            <div className="space-y-2 sm:space-y-2 md:col-span-2">
-              <Label className="flex items-center gap-2 font-semibold text-gray-800 text-sm">
-                <MapPin className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-                {VISITOR_CONSTANTS.LABELS.ADDRESS}
-                <span className="text-red-500">*</span>
-              </Label>
-              <AddressSearch
-                onSelect={(address, detailedAddress) => {
-                  onInputChange("address", address);
-                  onInputChange("detailedAddress", detailedAddress);
-                }}
-                defaultDetailedAddress={formData.detailedAddress}
-              />
-              {formData.address && (
-                <div className="mt-2 p-2.5 sm:p-3 bg-gray-50 border border-gray-200 rounded-lg">
-                  <div className="text-xs sm:text-sm">
-                    <div className="font-medium text-gray-700">
-                      선택된 주소:
-                    </div>
-                    <div className="text-gray-600 mt-1">
-                      {formData.address}
-                      {formData.detailedAddress && (
-                        <span className="text-blue-600">
-                          {" "}
-                          {formData.detailedAddress}
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
-            {/* 차량번호 */}
-            <div className="space-y-2 sm:space-y-2">
-              <Label
-                htmlFor="carPlateNumber"
-                className="flex items-center gap-2 font-semibold text-gray-800 text-sm"
-              >
-                <Car className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-                {VISITOR_CONSTANTS.LABELS.CAR_PLATE}
-              </Label>
-              <Input
-                id="carPlateNumber"
-                value={formData.carPlateNumber}
-                onChange={(e) =>
-                  onInputChange("carPlateNumber", e.target.value.toUpperCase())
-                }
-                placeholder={VISITOR_CONSTANTS.PLACEHOLDERS.CAR_PLATE}
-                className="h-10 sm:h-12 bg-gray-50 border border-gray-200 uppercase text-sm"
-              />
-            </div>
-            {/* 방문목적 */}
-            <div className="space-y-2 sm:space-y-2">
-              <Label
-                htmlFor="visitPurpose"
-                className="flex items-center gap-2 font-semibold text-gray-800 text-sm"
-              >
-                <FileText className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-                {VISITOR_CONSTANTS.LABELS.VISIT_PURPOSE}
-                {settings.requireVisitPurpose && (
-                  <span className="text-red-500">*</span>
-                )}
-              </Label>
-              <Select
-                value={formData.visitPurpose}
-                onValueChange={(value) => onInputChange("visitPurpose", value)}
-                required={settings.requireVisitPurpose}
-              >
-                <SelectTrigger className="h-10 sm:h-12 bg-gray-50 border border-gray-200 text-sm">
-                  <SelectValue
-                    placeholder={VISITOR_CONSTANTS.PLACEHOLDERS.VISIT_PURPOSE}
+
+      <CardContent className="p-3 sm:p-6">
+        {/* 프로필 사진 업로드 */}
+        {settings.requireVisitorPhoto && (
+          <FormField
+            control={form.control}
+            name="profilePhoto"
+            render={({ field }) => (
+              <FormItem className="mb-3 sm:mb-6 flex flex-col items-center">
+                <FormLabel className="sr-only">
+                  {VISITOR_CONSTANTS.LABELS.PROFILE_PHOTO}
+                </FormLabel>
+                <FormControl>
+                  <ImageUpload
+                    onUpload={handleImageUpload}
+                    onDelete={handleImageDelete}
+                    currentImage={
+                      uploadedImageUrl ||
+                      (field.value ? URL.createObjectURL(field.value) : null)
+                    }
+                    required={settings.requireVisitorPhoto}
+                    showCamera={true}
+                    avatarSize="md"
+                    label={VISITOR_CONSTANTS.LABELS.PROFILE_PHOTO}
+                    className="shadow border border-gray-100 bg-white rounded-lg sm:rounded-xl p-2 sm:p-4"
                   />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="납품">납품</SelectItem>
-                  <SelectItem value="점검">점검</SelectItem>
-                  <SelectItem value="미팅">미팅</SelectItem>
-                  <SelectItem value="수의사 진료">수의사 진료</SelectItem>
-                  <SelectItem value="사료 배송">사료 배송</SelectItem>
-                  <SelectItem value="방역">방역</SelectItem>
-                  <SelectItem value="견학">견학</SelectItem>
-                  <SelectItem value="기타">기타</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            {/* 비고 */}
-            <div className="space-y-2 sm:space-y-2 md:col-span-2">
-              <Label
-                htmlFor="notes"
-                className="flex items-center gap-2 font-semibold text-gray-800 text-sm"
-              >
-                <FileText className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-                {VISITOR_CONSTANTS.LABELS.NOTES}
-              </Label>
-              <Textarea
-                id="notes"
-                value={formData.notes}
-                onChange={(e) => onInputChange("notes", e.target.value)}
-                placeholder={VISITOR_CONSTANTS.PLACEHOLDERS.NOTES}
-                rows={3}
-                className="resize-none bg-gray-50 border border-gray-200 text-sm"
-              />
-            </div>
-          </div>
-          {/* 소독여부 - 개인정보 동의 위에 단독 배치 */}
-          <div className="flex items-center space-x-2 sm:space-x-3 p-2.5 sm:p-3 bg-green-50 border border-green-200 rounded-lg mb-3 sm:mb-4 mt-2">
-            <Checkbox
-              id="disinfectionCheck"
-              checked={formData.disinfectionCheck}
-              onCheckedChange={(checked) =>
-                onInputChange("disinfectionCheck", !!checked)
-              }
-              className="w-4 h-4 sm:w-5 sm:h-5"
-            />
-            <Label
-              htmlFor="disinfectionCheck"
-              className="flex items-center gap-1.5 sm:gap-2 font-medium text-sm sm:text-base"
-            >
-              <Shield className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-green-600" />
-              {VISITOR_CONSTANTS.LABELS.DISINFECTION}
-            </Label>
-          </div>
-          {/* 개인정보 동의 */}
-          <div className="mt-3 sm:mt-4">
-            <div className="flex items-start space-x-2 sm:space-x-3 p-3 sm:p-4 bg-blue-50 border border-blue-200 rounded-lg">
-              <Checkbox
-                id="consentGiven"
-                checked={formData.consentGiven}
-                onCheckedChange={(checked) =>
-                  onInputChange("consentGiven", !!checked)
-                }
-                className="mt-1 w-4 h-4 sm:w-5 sm:h-5"
-              />
-              <Label
-                htmlFor="consentGiven"
-                className="text-xs sm:text-sm leading-relaxed"
-              >
-                <span className="font-medium">
-                  {VISITOR_CONSTANTS.LABELS.CONSENT}
-                </span>
-                <span className="text-red-500 ml-1">*</span>
-                <br />
-                <span className="text-xs text-muted-foreground mt-1 block">
-                  수집된 정보는 방역 관리 목적으로만 사용되며, 관련 법령에 따라
-                  보관됩니다.
-                </span>
-              </Label>
-            </div>
-          </div>
-          {error && (
-            <Alert variant="destructive" className="mt-3 sm:mt-4">
-              <AlertTriangle className="h-4 w-4" />
-              <AlertDescription className="text-sm">{error}</AlertDescription>
-            </Alert>
-          )}
-          <Button
-            type="submit"
-            className="w-full h-11 sm:h-12 text-base sm:text-lg font-semibold bg-gradient-to-r from-blue-500 to-indigo-500 text-white shadow-md hover:from-blue-600 hover:to-indigo-600 transition-colors mt-4 sm:mt-6"
-            disabled={isSubmitting}
-          >
-            {isSubmitting ? (
-              <>
-                <Loading
-                  spinnerSize={16}
-                  showText={false}
-                  minHeight="auto"
-                  className="mr-2"
-                />
-                등록 중...
-              </>
-            ) : (
-              "방문 등록"
+                </FormControl>
+                <FormMessage />
+              </FormItem>
             )}
-          </Button>
-        </form>
+          />
+        )}
+
+        <Form {...form}>
+          <form
+            onSubmit={form.handleSubmit(onSubmit)}
+            className="space-y-3 sm:space-y-6"
+          >
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-6">
+              {/* 기본 필드들 */}
+              {renderTextField("fullName", FORM_FIELDS.fullName)}
+
+              {settings.requireVisitorContact &&
+                renderTextField("phoneNumber", FORM_FIELDS.phoneNumber)}
+
+              {renderTextField("address", FORM_FIELDS.address)}
+              {renderTextField("carPlateNumber", FORM_FIELDS.carPlateNumber)}
+
+              {/* 방문목적 */}
+              {settings.requireVisitPurpose && (
+                <FormField
+                  control={form.control}
+                  name="visitPurpose"
+                  render={({ field }) => (
+                    <FormItem className="space-y-2 sm:space-y-2">
+                      <FormLabel className="flex items-center gap-2 font-semibold text-gray-800 text-sm">
+                        <FileText className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                        {VISITOR_CONSTANTS.LABELS.VISIT_PURPOSE}
+                        <span className="text-red-500">*</span>
+                      </FormLabel>
+                      <FormControl>
+                        <Select
+                          onValueChange={field.onChange}
+                          value={field.value}
+                        >
+                          <SelectTrigger className="h-10 sm:h-12 bg-gray-50 border border-gray-200 text-sm">
+                            <SelectValue
+                              placeholder={
+                                VISITOR_CONSTANTS.PLACEHOLDERS.VISIT_PURPOSE
+                              }
+                            />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {VISIT_PURPOSE_OPTIONS.map((option) => (
+                              <SelectItem key={option} value={option}>
+                                {option}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              )}
+
+              {renderTextField("notes", FORM_FIELDS.notes)}
+            </div>
+
+            {/* 소독여부 */}
+            <FormField
+              control={form.control}
+              name="disinfectionCheck"
+              render={({ field }) => (
+                <FormItem>
+                  <FormControl>
+                    <div className="flex items-center space-x-2 sm:space-x-3 p-2.5 sm:p-3 bg-green-50 border border-green-200 rounded-lg mb-3 sm:mb-4 mt-2">
+                      <Checkbox
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                        className="w-4 h-4 sm:w-5 sm:h-5"
+                      />
+                      <Label className="flex items-center gap-1.5 sm:gap-2 font-medium text-sm sm:text-base">
+                        <Shield className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-green-600" />
+                        {VISITOR_CONSTANTS.LABELS.DISINFECTION}
+                      </Label>
+                    </div>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            {/* 개인정보 동의 */}
+            <FormField
+              control={form.control}
+              name="consentGiven"
+              render={({ field }) => (
+                <FormItem>
+                  <FormControl>
+                    <div className="flex items-start space-x-2 sm:space-x-3 p-3 sm:p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                      <Checkbox
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                        className="mt-1 w-4 h-4 sm:w-5 sm:h-5"
+                      />
+                      <Label className="text-xs sm:text-sm leading-relaxed">
+                        <span className="font-medium">
+                          {VISITOR_CONSTANTS.LABELS.CONSENT}
+                        </span>
+                        <span className="text-red-500 ml-1">*</span>
+                        <br />
+                        <span className="text-xs text-muted-foreground mt-1 block">
+                          수집된 정보는 방역 관리 목적으로만 사용되며, 관련
+                          법령에 따라 보관됩니다.
+                        </span>
+                      </Label>
+                    </div>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <Button
+              type="submit"
+              className="w-full h-11 sm:h-12 text-base sm:text-lg font-semibold bg-gradient-to-r from-blue-500 to-indigo-500 text-white shadow-md hover:from-blue-600 hover:to-indigo-600 transition-colors mt-4 sm:mt-6"
+              disabled={isSubmitting}
+            >
+              {isSubmitting ? (
+                <>
+                  <Loading
+                    spinnerSize={16}
+                    showText={false}
+                    minHeight="auto"
+                    className="mr-2"
+                  />
+                  등록 중...
+                </>
+              ) : (
+                "방문 등록"
+              )}
+            </Button>
+          </form>
+        </Form>
       </CardContent>
     </Card>
   );

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import crypto from "crypto";
-import { DEFAULT_SYSTEM_SETTINGS } from "@/lib/types/settings";
+import { DEFAULT_SYSTEM_SETTINGS } from "@/lib/constants/defaults";
 import { invalidateSystemSettingsCache } from "@/lib/cache/system-settings-cache";
 import {
   createSystemLog,

@@ -1,9 +1,16 @@
 import { useCallback, useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import * as z from "zod";
 import { useCommonToast } from "@/lib/utils/notification/toast-messages";
 import { devLog } from "@/lib/utils/logging/dev-logger";
+import {
+  VISITOR_CONSTANTS,
+  VISIT_PURPOSE_OPTIONS,
+} from "@/lib/constants/visitor";
+import {
+  visitorDialogFormSchema,
+  type VisitorDialogFormData,
+} from "@/lib/utils/validation/visitor-validation";
 
 import {
   Dialog,
@@ -34,16 +41,8 @@ import {
 } from "@/components/ui/select";
 import { AddressSearch } from "@/components/common/address-search";
 
-export interface VisitorFormValues {
-  visitor_name: string;
-  visitor_phone: string;
-  visitor_address: string;
-  visitor_detailed_address?: string;
-  visitor_purpose: string | null;
-  vehicle_number: string | null;
-  notes: string | null;
-  disinfection_check: boolean;
-}
+// VisitorDialogFormData 타입 사용
+export interface VisitorFormValues extends VisitorDialogFormData {}
 
 interface VisitorFormDialogProps {
   open: boolean;
@@ -53,17 +52,6 @@ interface VisitorFormDialogProps {
   farmId: string;
   onSuccess: (values: VisitorFormValues) => Promise<void>;
 }
-
-const visitorFormSchema = z.object({
-  visitor_name: z.string().min(1, "이름을 입력해주세요."),
-  visitor_phone: z.string().min(1, "연락처를 입력해주세요."),
-  visitor_address: z.string().min(1, "주소를 입력해주세요."),
-  visitor_detailed_address: z.string().optional(),
-  visitor_purpose: z.string().nullable(),
-  vehicle_number: z.string().nullable(),
-  notes: z.string().nullable(),
-  disinfection_check: z.boolean(),
-});
 
 export function VisitorFormDialog({
   open,
@@ -77,7 +65,7 @@ export function VisitorFormDialog({
   const { showInfo, showError } = useCommonToast();
 
   const form = useForm<VisitorFormValues>({
-    resolver: zodResolver(visitorFormSchema),
+    resolver: zodResolver(visitorDialogFormSchema),
     defaultValues: {
       visitor_name: "",
       visitor_phone: "",
@@ -207,8 +195,18 @@ export function VisitorFormDialog({
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            {renderField("visitor_name", "이름", "input", true)}
-            {renderField("visitor_phone", "연락처", "input", true)}
+            {renderField(
+              "visitor_name",
+              VISITOR_CONSTANTS.LABELS.FULL_NAME,
+              "input",
+              true
+            )}
+            {renderField(
+              "visitor_phone",
+              VISITOR_CONSTANTS.LABELS.PHONE_NUMBER,
+              "input",
+              true
+            )}
 
             {/* 주소 필드 */}
             <FormField
@@ -216,7 +214,7 @@ export function VisitorFormDialog({
               name="visitor_address"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>주소 *</FormLabel>
+                  <FormLabel>{VISITOR_CONSTANTS.LABELS.ADDRESS} *</FormLabel>
                   <FormControl>
                     <div className="space-y-2">
                       <AddressSearch
@@ -267,24 +265,27 @@ export function VisitorFormDialog({
               name="visitor_purpose"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>방문 목적 *</FormLabel>
+                  <FormLabel>
+                    {VISITOR_CONSTANTS.LABELS.VISIT_PURPOSE} *
+                  </FormLabel>
                   <FormControl>
                     <Select
                       value={field.value || ""}
                       onValueChange={field.onChange}
                     >
                       <SelectTrigger>
-                        <SelectValue placeholder="방문 목적을 선택하세요." />
+                        <SelectValue
+                          placeholder={
+                            VISITOR_CONSTANTS.PLACEHOLDERS.VISIT_PURPOSE
+                          }
+                        />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="납품">납품</SelectItem>
-                        <SelectItem value="점검">점검</SelectItem>
-                        <SelectItem value="미팅">미팅</SelectItem>
-                        <SelectItem value="수의사 진료">수의사 진료</SelectItem>
-                        <SelectItem value="사료 배송">사료 배송</SelectItem>
-                        <SelectItem value="방역">방역</SelectItem>
-                        <SelectItem value="견학">견학</SelectItem>
-                        <SelectItem value="기타">기타</SelectItem>
+                        {VISIT_PURPOSE_OPTIONS.map((option) => (
+                          <SelectItem key={option} value={option}>
+                            {option}
+                          </SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
                   </FormControl>
@@ -293,8 +294,8 @@ export function VisitorFormDialog({
               )}
             />
 
-            {renderField("vehicle_number", "차량 번호")}
-            {renderField("notes", "비고", "textarea")}
+            {renderField("vehicle_number", VISITOR_CONSTANTS.LABELS.CAR_PLATE)}
+            {renderField("notes", VISITOR_CONSTANTS.LABELS.NOTES, "textarea")}
 
             <FormField
               control={form.control}
@@ -308,7 +309,9 @@ export function VisitorFormDialog({
                       disabled={isSubmitting}
                     />
                   </FormControl>
-                  <FormLabel className="font-normal">소독 여부</FormLabel>
+                  <FormLabel className="font-normal">
+                    {VISITOR_CONSTANTS.LABELS.DISINFECTION}
+                  </FormLabel>
                 </FormItem>
               )}
             />

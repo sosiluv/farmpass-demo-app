@@ -1,5 +1,5 @@
 import { getSystemSettings } from "../cache/system-settings-cache";
-import { DEFAULT_SYSTEM_SETTINGS } from "../types/settings";
+import { DEFAULT_SYSTEM_SETTINGS } from "@/lib/constants/defaults";
 import { devLog } from "@/lib/utils/logging/dev-logger";
 
 export async function getMetadataSettings() {

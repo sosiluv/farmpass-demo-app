@@ -92,19 +92,6 @@ export interface VisitorSettings {
   requireVisitPurpose: boolean;
 }
 
-export interface VisitorFormData {
-  fullName: string;
-  phoneNumber: string;
-  address: string;
-  detailedAddress: string;
-  carPlateNumber: string;
-  visitPurpose: string;
-  disinfectionCheck: boolean;
-  notes: string;
-  consentGiven: boolean;
-  profilePhoto: File | null;
-}
-
 export interface VisitorStatistics {
   total: number;
   today: number;

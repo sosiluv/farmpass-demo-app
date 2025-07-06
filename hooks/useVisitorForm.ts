@@ -3,7 +3,8 @@ import {
   uploadImageUniversal,
   deleteImageUniversal,
 } from "@/lib/utils/media/image-upload";
-import type { VisitorFormData, VisitorSettings } from "@/lib/types/visitor";
+import type { VisitorSettings } from "@/lib/types/visitor";
+import type { VisitorFormData } from "@/lib/utils/validation/visitor-validation";
 import type { Farm as VisitorFarm } from "@/lib/types/visitor";
 import {
   ALLOWED_IMAGE_TYPES,
@@ -89,7 +90,7 @@ export const useVisitorForm = (farmId: string, settings: VisitorSettings) => {
   // 세션 기반 재방문 체크 (한 번만 실행)
   useEffect(() => {
     if (!isInitialized && farmId) {
-      //checkSession();
+      checkSession();
       setIsInitialized(true);
     }
   }, [farmId, isInitialized, checkSession]);
@@ -143,44 +144,9 @@ export const useVisitorForm = (farmId: string, settings: VisitorSettings) => {
     }
   }, [farmId, isInitialized, fetchFarm]);
 
-  const validateForm = async () => {
-    // 이름, 전화번호, 주소 등 단순 유효성 검사만 수행 (VisitorFormValidator 사용 금지)
-    if (!formData.fullName) {
-      setError("이름을 입력해주세요");
-      return false;
-    }
-    if (settings.requireVisitorContact && !formData.phoneNumber) {
-      setError("전화번호를 입력해주세요");
-      return false;
-    }
-    if (!formData.address) {
-      setError("주소를 입력해주세요");
-      return false;
-    }
-    if (settings.requireVisitPurpose && !formData.visitPurpose) {
-      setError("방문 목적을 입력해주세요");
-      return false;
-    }
-    if (
-      settings.requireVisitorPhoto &&
-      !formData.profilePhoto &&
-      !uploadedImageUrl
-    ) {
-      setError("프로필 사진을 등록해주세요");
-      return false;
-    }
-    if (!formData.consentGiven) {
-      setError("개인정보 수집 및 이용에 동의해주세요");
-      return false;
-    }
-    // 차량번호 등 기타 검증은 필요시 추가
-    return true;
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    const isValid = await validateForm();
-    if (!isValid) return;
+  const handleSubmit = async (data: VisitorFormData) => {
+    // React Hook Form에서 이미 검증된 데이터를 받음
+    setFormData(data);
 
     setIsSubmitting(true);
     setError(null);
@@ -212,9 +178,9 @@ export const useVisitorForm = (farmId: string, settings: VisitorSettings) => {
 
       // 프로필 사진 업로드
       let profile_photo_url = uploadedImageUrl;
-      if (formData.profilePhoto && !uploadedImageUrl) {
+      if (data.profilePhoto && !uploadedImageUrl) {
         try {
-          const result = await uploadImage(formData.profilePhoto);
+          const result = await uploadImage(data.profilePhoto);
           profile_photo_url = result?.publicUrl || null;
         } catch (error) {
           setError("이미지 업로드에 실패했습니다");
@@ -230,7 +196,7 @@ export const useVisitorForm = (farmId: string, settings: VisitorSettings) => {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          ...formData,
+          ...data,
           profile_photo_url,
         }),
         context: "방문자 등록",
@@ -255,14 +221,6 @@ export const useVisitorForm = (farmId: string, settings: VisitorSettings) => {
     }
   };
 
-  const handleInputChange = (
-    field: keyof VisitorFormData,
-    value: string | boolean | File | null
-  ) => {
-    setFormData((prev) => ({ ...prev, [field]: value }));
-    setError(null);
-  };
-
   // 이미지 업로드 함수
   const uploadImage = async (file: File) => {
     try {
@@ -272,7 +230,6 @@ export const useVisitorForm = (farmId: string, settings: VisitorSettings) => {
         file,
         bucket: "visitor-photos",
         farmId,
-        visitorName: formData.fullName,
         maxSizeMB: MAX_UPLOAD_SIZE_MB,
         allowedTypes: [...ALLOWED_IMAGE_TYPES],
       });
@@ -314,7 +271,6 @@ export const useVisitorForm = (farmId: string, settings: VisitorSettings) => {
     farmLoading,
     farmError,
     handleSubmit,
-    handleInputChange,
     uploadImage,
     deleteImage,
     isImageUploading,

@@ -27,6 +27,7 @@ import { useVisitorForm } from "@/hooks/useVisitorForm";
 import { VisitorForm } from "@/components/visitor/VisitorForm";
 import { useCommonToast } from "@/lib/utils/notification/toast-messages";
 import { useEffect } from "react";
+import { VisitorFormData } from "@/lib/utils/validation/visitor-validation";
 
 /**
  * 방문자 등록 페이지 메인 컴포넌트
@@ -56,7 +57,6 @@ export default function VisitPage() {
     farmLoading,
     farmError,
     handleSubmit,
-    handleInputChange,
     uploadImage,
     deleteImage,
     isImageUploading,
@@ -84,10 +84,10 @@ export default function VisitPage() {
   }, [settingsError, showError]);
 
   // 폼 제출 핸들러 래핑
-  const handleSubmitWrapped = async (e: React.FormEvent) => {
+  const handleSubmitWrapped = async (data: VisitorFormData) => {
     try {
       showInfo("방문자 등록 중", "방문자 정보를 등록하는 중입니다...");
-      await handleSubmit(e);
+      await handleSubmit(data);
       // 성공 시 토스트는 isSubmitted 상태 변경으로 처리
     } catch (error) {
       // 에러는 이미 error 상태로 처리됨
@@ -187,10 +187,8 @@ export default function VisitPage() {
             formData={formData}
             isSubmitting={isSubmitting}
             isLoading={isLoading}
-            error={error}
             uploadedImageUrl={uploadedImageUrl}
             onSubmit={handleSubmitWrapped}
-            onInputChange={handleInputChange}
             onImageUpload={handleImageUploadWrapped}
             onImageDelete={handleImageDeleteWrapped}
             isImageUploading={isImageUploading}

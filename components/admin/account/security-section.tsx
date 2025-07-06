@@ -1,6 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { motion } from "framer-motion";
 import {
   Shield,
@@ -15,41 +17,66 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import {
+  Form,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormControl,
+  FormMessage,
+} from "@/components/ui/form";
 import { Card, CardContent } from "@/components/ui/card";
 import { PasswordStrength } from "@/components/ui/password-strength";
 import { useCommonToast } from "@/lib/utils/notification/toast-messages";
 import { devLog } from "@/lib/utils/logging/dev-logger";
 import { ErrorBoundary } from "@/components/error/error-boundary";
+import { getPasswordRules, getAuthErrorMessage } from "@/lib/utils/validation";
 import {
-  validatePassword,
-  validatePasswordConfirm,
-} from "@/lib/utils/validation";
+  createChangePasswordFormSchema,
+  createDefaultChangePasswordFormSchema,
+  type ChangePasswordFormData,
+} from "@/lib/utils/validation/auth-validation";
+import type { PasswordFormData } from "@/lib/types/account";
+import { AUTH_LABELS, AUTH_PLACEHOLDERS } from "@/lib/constants/auth";
 import type { SecuritySectionProps } from "@/lib/types/account";
 import { supabase } from "@/lib/supabase/client";
-import { cn } from "@/lib/utils";
 import { Loader2 } from "lucide-react";
 import AccountCardHeader from "./AccountCardHeader";
-
-interface FormErrors {
-  currentPassword?: string;
-  newPassword?: string;
-  confirmPassword?: string;
-}
 
 export function SecuritySection({
   profile,
   loading,
   onPasswordChange,
 }: SecuritySectionProps) {
-  const [passwords, setPasswords] = useState({
-    currentPassword: "",
-    newPassword: "",
-    confirmPassword: "",
-  });
-  const [errors, setErrors] = useState<FormErrors>({});
+  const [schema, setSchema] = useState<any>(null);
   const [loginActivity, setLoginActivity] = useState<any[]>([]);
-  const { showInfo, showWarning, showError } = useCommonToast();
+  const { showInfo, showError } = useCommonToast();
+
+  // 시스템 설정에 따른 동적 스키마 생성
+  useEffect(() => {
+    const initSchema = async () => {
+      try {
+        const passwordRules = await getPasswordRules();
+        const dynamicSchema = createChangePasswordFormSchema(passwordRules);
+        setSchema(dynamicSchema);
+      } catch (error) {
+        devLog.error("Failed to load password rules:", error);
+        // 에러 시 기본 스키마 사용
+      }
+    };
+    initSchema();
+  }, []);
+
+  const form = useForm<ChangePasswordFormData>({
+    resolver: schema
+      ? zodResolver(schema)
+      : zodResolver(createDefaultChangePasswordFormSchema()),
+    defaultValues: {
+      currentPassword: "",
+      newPassword: "",
+      confirmPassword: "",
+    },
+  });
 
   // 시간 포맷 함수
   const formatTimeAgo = (date: Date) => {
@@ -132,65 +159,23 @@ export function SecuritySection({
     }
   };
 
-  const validateForm = async () => {
-    const newErrors: FormErrors = {};
-
-    // 현재 비밀번호 검증
-    if (!passwords.currentPassword) {
-      newErrors.currentPassword = "현재 비밀번호를 입력해주세요";
-    }
-
-    // 새 비밀번호 유효성 검사
-    const passwordValidation = await validatePassword(passwords.newPassword);
-    if (!passwordValidation.isValid) {
-      newErrors.newPassword = passwordValidation.message;
-    }
-
-    // 비밀번호 확인 검증
-    const confirmValidation = validatePasswordConfirm(
-      passwords.newPassword,
-      passwords.confirmPassword
-    );
-    if (!confirmValidation.isValid) {
-      newErrors.confirmPassword = confirmValidation.message;
-    }
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
-
-  const handlePasswordChange = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    if (!(await validateForm())) {
-      showWarning("입력 오류", "입력값을 확인해주세요.");
-      return;
-    }
-
+  const handlePasswordChange = async (data: ChangePasswordFormData) => {
     showInfo("비밀번호 변경 시작", "비밀번호를 변경하는 중입니다...");
     try {
-      await onPasswordChange(passwords);
+      // ChangePasswordFormData를 PasswordFormData로 변환
+      const passwordData: PasswordFormData = {
+        currentPassword: data.currentPassword,
+        newPassword: data.newPassword,
+        confirmPassword: data.confirmPassword,
+      };
+      await onPasswordChange(passwordData);
       // 비밀번호 필드 초기화
-      setPasswords({
-        currentPassword: "",
-        newPassword: "",
-        confirmPassword: "",
-      });
-      // 에러 상태도 초기화
-      setErrors({});
+      form.reset();
     } catch (error: any) {
       devLog.error("Password change error:", error);
-      showError(
-        "오류",
-        error.message || "비밀번호 변경 중 오류가 발생했습니다"
-      );
+      const authError = getAuthErrorMessage(error);
+      showError("오류", authError.message);
     }
-  };
-
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setPasswords((prev) => ({ ...prev, [name]: value }));
-    setErrors((prev) => ({ ...prev, [name]: "" }));
   };
 
   // Load login activity on mount
@@ -216,111 +201,122 @@ export function SecuritySection({
             description="계정 보안을 위해 정기적으로 비밀번호를 변경하세요. 변경 후 자동으로 로그아웃됩니다."
           />
           <CardContent>
-            <form onSubmit={handlePasswordChange} className="space-y-4">
-              <input
-                type="text"
-                name="username"
-                autoComplete="username"
-                value={profile?.email || ""}
-                readOnly
-                className="hidden"
-              />
+            <Form {...form}>
+              <form
+                onSubmit={form.handleSubmit(handlePasswordChange)}
+                className="space-y-4"
+              >
+                <input
+                  type="text"
+                  name="username"
+                  autoComplete="username"
+                  value={profile?.email || ""}
+                  readOnly
+                  className="hidden"
+                />
 
-              <div className="space-y-2">
-                <Label htmlFor="currentPassword">현재 비밀번호</Label>
-                <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                  <Input
-                    id="currentPassword"
-                    type="password"
-                    name="currentPassword"
-                    value={passwords.currentPassword}
-                    onChange={handleInputChange}
-                    autoComplete="current-password"
-                    className={cn(
-                      "h-10 pl-10",
-                      errors.currentPassword ? "border-red-500" : ""
-                    )}
-                    disabled={loading}
-                  />
-                </div>
-                {errors.currentPassword && (
-                  <p className="text-sm text-red-500">
-                    {errors.currentPassword}
-                  </p>
-                )}
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="newPassword">새 비밀번호</Label>
-                <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                  <Input
-                    id="newPassword"
-                    type="password"
-                    name="newPassword"
-                    value={passwords.newPassword}
-                    onChange={handleInputChange}
-                    autoComplete="new-password"
-                    className={cn(
-                      "h-10 pl-10",
-                      errors.newPassword ? "border-red-500" : ""
-                    )}
-                    disabled={loading}
-                  />
-                </div>
-                {errors.newPassword && (
-                  <p className="text-sm text-red-500">{errors.newPassword}</p>
-                )}
-                <PasswordStrength password={passwords.newPassword} />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="confirmPassword">새 비밀번호 확인</Label>
-                <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                  <Input
-                    id="confirmPassword"
-                    type="password"
-                    name="confirmPassword"
-                    value={passwords.confirmPassword}
-                    onChange={handleInputChange}
-                    autoComplete="new-password"
-                    className={cn(
-                      "h-10 pl-10",
-                      errors.confirmPassword ? "border-red-500" : ""
-                    )}
-                    disabled={loading}
-                  />
-                </div>
-                {errors.confirmPassword && (
-                  <p className="text-sm text-red-500">
-                    {errors.confirmPassword}
-                  </p>
-                )}
-              </div>
-              <div className="flex justify-end">
-                <Button
-                  type="submit"
-                  disabled={
-                    loading ||
-                    !passwords.currentPassword ||
-                    !passwords.newPassword ||
-                    !passwords.confirmPassword
-                  }
-                >
-                  {loading ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      변경 중...
-                    </>
-                  ) : (
-                    <>
-                      <Save className="mr-2 h-4 w-4" />
-                      비밀번호 변경
-                    </>
+                <FormField
+                  control={form.control}
+                  name="currentPassword"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-sm text-gray-800">
+                        {AUTH_LABELS.CURRENT_PASSWORD}{" "}
+                        <span className="text-red-500">*</span>
+                      </FormLabel>
+                      <div className="relative">
+                        <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                        <FormControl>
+                          <Input
+                            {...field}
+                            type="password"
+                            placeholder={AUTH_PLACEHOLDERS.CURRENT_PASSWORD}
+                            autoComplete="current-password"
+                            className="h-10 pl-10"
+                            disabled={loading}
+                          />
+                        </FormControl>
+                      </div>
+                      <FormMessage />
+                    </FormItem>
                   )}
-                </Button>
-              </div>
-            </form>
+                />
+
+                <FormField
+                  control={form.control}
+                  name="newPassword"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-sm text-gray-800">
+                        {AUTH_LABELS.PASSWORD}{" "}
+                        <span className="text-red-500">*</span>
+                      </FormLabel>
+                      <div className="relative">
+                        <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                        <FormControl>
+                          <Input
+                            {...field}
+                            type="password"
+                            placeholder={AUTH_PLACEHOLDERS.PASSWORD}
+                            autoComplete="new-password"
+                            className="h-10 pl-10"
+                            disabled={loading}
+                          />
+                        </FormControl>
+                      </div>
+                      <FormMessage />
+                      <PasswordStrength password={field.value} />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="confirmPassword"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-sm text-gray-800">
+                        {AUTH_LABELS.CONFIRM_PASSWORD}{" "}
+                        <span className="text-red-500">*</span>
+                      </FormLabel>
+                      <div className="relative">
+                        <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                        <FormControl>
+                          <Input
+                            {...field}
+                            type="password"
+                            placeholder={AUTH_PLACEHOLDERS.CONFIRM_PASSWORD}
+                            autoComplete="new-password"
+                            className="h-10 pl-10"
+                            disabled={loading}
+                          />
+                        </FormControl>
+                      </div>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <div className="flex justify-end">
+                  <Button
+                    type="submit"
+                    disabled={loading || !form.formState.isValid}
+                  >
+                    {loading ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        변경 중...
+                      </>
+                    ) : (
+                      <>
+                        <Save className="mr-2 h-4 w-4" />
+                        비밀번호 변경
+                      </>
+                    )}
+                  </Button>
+                </div>
+              </form>
+            </Form>
           </CardContent>
         </Card>
 

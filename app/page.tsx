@@ -11,7 +11,7 @@ import { ArrowRight, ChevronRight } from "lucide-react";
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { features, steps } from "./home-data";
-import { DEFAULT_SYSTEM_SETTINGS } from "@/lib/types/settings";
+import { DEFAULT_SYSTEM_SETTINGS } from "@/lib/constants/defaults";
 import { Logo } from "@/components/common";
 import { devLog } from "@/lib/utils/logging/dev-logger";
 

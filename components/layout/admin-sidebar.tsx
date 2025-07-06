@@ -41,7 +41,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useMemo } from "react";
 import { Logo, ThemeToggle } from "@/components/common";
-import { DEFAULT_SYSTEM_SETTINGS } from "@/lib/types/settings";
+import { DEFAULT_SYSTEM_SETTINGS } from "@/lib/constants/defaults";
 
 export function AdminSidebar() {
   const { state, signOut } = useAuth();

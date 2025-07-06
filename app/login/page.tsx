@@ -14,7 +14,6 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Mail, Lock, Loader2 } from "lucide-react";
 import { motion } from "framer-motion";
 import { useCommonToast } from "@/lib/utils/notification/toast-messages";
@@ -23,21 +22,42 @@ import { useAuth } from "@/components/providers/auth-provider";
 import { ErrorBoundary } from "@/components/error/error-boundary";
 import { Logo } from "@/components/common";
 import { getAuthErrorMessage } from "@/lib/utils/validation/validation";
-
-interface FormErrors {
-  email?: string;
-  password?: string;
-}
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import {
+  AUTH_LABELS,
+  AUTH_PLACEHOLDERS,
+  AUTH_GUIDE_MESSAGES,
+  AUTH_ERROR_MESSAGES,
+} from "@/lib/constants/auth";
+import {
+  loginFormSchema,
+  type LoginFormData,
+} from "@/lib/utils/validation/auth-validation";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
 
 export default function LoginPage() {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [redirecting, setRedirecting] = useState(false);
-  const [errors, setErrors] = useState<FormErrors>({});
+  const [formError, setFormError] = useState<string>("");
   const router = useRouter();
-  const { showInfo, showWarning, showSuccess, showError } = useCommonToast();
+  const { showInfo, showSuccess, showError } = useCommonToast();
   const { state, signIn } = useAuth();
+
+  const form = useForm<LoginFormData>({
+    resolver: zodResolver(loginFormSchema),
+    defaultValues: {
+      email: "",
+      password: "",
+    },
+  });
 
   // 세션 만료로 인한 로그인 페이지 진입 시 브라우저 구독 정리
   useEffect(() => {
@@ -82,48 +102,26 @@ export default function LoginPage() {
     }
   }, [state.status, router]);
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    if (name === "email") {
-      setEmail(value);
-    } else if (name === "password") {
-      setPassword(value);
-    }
-    setErrors((prev) => ({ ...prev, [name]: "" }));
-  };
-
-  const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleLogin = async (data: LoginFormData) => {
     setLoading(true);
-    setErrors({});
+    setFormError("");
     showInfo("로그인 시도 중", "잠시만 기다려주세요.");
-
     try {
-      // Auth Provider에서 모든 로그인 로직 처리
       const result = await signIn({
-        email: email,
-        password: password,
+        email: data.email,
+        password: data.password,
       });
-
       if (result.success) {
         showSuccess("로그인 성공", "대시보드로 이동합니다.");
-        setRedirecting(true); // 리다이렉트 시작
-        // 즉시 리다이렉트 (setTimeout 제거)
+        setRedirecting(true);
         router.replace("/admin/dashboard");
-        return; // setLoading(false) 실행 방지
+        return;
       }
     } catch (error: any) {
       devLog.error("Login failed:", error);
       const authError = getAuthErrorMessage(error);
-      const errorMessage = authError.message;
-      setErrors({ email: errorMessage });
-      showError("로그인 실패", errorMessage);
-
-      if (authError.message.includes("invalid")) {
-        showWarning("비밀번호 오류", "비밀번호가 올바르지 않습니다.");
-      }
-
-      // 로그인 실패 시 입력 필드 초기화하지 않음 (사용자가 다시 시도할 수 있도록)
+      setFormError(authError.message);
+      showError("로그인 실패", authError.message);
     } finally {
       setLoading(false);
     }
@@ -146,75 +144,90 @@ export default function LoginPage() {
               <div className="mx-auto mb-4 flex justify-center">
                 <Logo size="xl" />
               </div>
-              <CardTitle className="text-3xl">로그인</CardTitle>
+              <CardTitle className="text-3xl">
+                {AUTH_GUIDE_MESSAGES.LOGIN_TITLE}
+              </CardTitle>
               <CardDescription>
-                농장 출입 관리 시스템에 로그인하세요
+                {AUTH_GUIDE_MESSAGES.LOGIN_DESCRIPTION}
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <form onSubmit={handleLogin} className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="email">이메일</Label>
-                  <div className="relative">
-                    <Mail className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                    <Input
-                      id="email"
-                      name="email"
-                      type="email"
-                      placeholder="name@example.com"
-                      value={email}
-                      onChange={handleInputChange}
-                      required
-                      autoComplete="username"
-                      className={`h-12 pl-10 input-focus ${
-                        errors.email ? "border-red-500" : ""
-                      }`}
-                      disabled={loading || redirecting}
-                    />
-                  </div>
-                  {errors.email && (
-                    <p className="text-sm text-red-500">{errors.email}</p>
-                  )}
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="password">비밀번호</Label>
-                  <div className="relative">
-                    <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                    <Input
-                      id="password"
-                      name="password"
-                      type="password"
-                      value={password}
-                      onChange={handleInputChange}
-                      required
-                      autoComplete="current-password"
-                      className={`h-12 pl-10 input-focus ${
-                        errors.password ? "border-red-500" : ""
-                      }`}
-                      disabled={loading || redirecting}
-                    />
-                  </div>
-                  {errors.password && (
-                    <p className="text-sm text-red-500">{errors.password}</p>
-                  )}
-                </div>
-
-                <Button
-                  type="submit"
-                  className="h-12 w-full"
-                  disabled={loading || redirecting}
+              <Form {...form}>
+                <form
+                  onSubmit={form.handleSubmit(handleLogin)}
+                  className="space-y-4"
                 >
-                  {loading ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      로그인 중...
-                    </>
-                  ) : (
-                    "로그인"
+                  <FormField
+                    control={form.control}
+                    name="email"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-sm text-gray-800">
+                          {AUTH_LABELS.EMAIL}{" "}
+                          <span className="text-red-500">*</span>
+                        </FormLabel>
+                        <div className="relative">
+                          <Mail className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                          <FormControl>
+                            <Input
+                              {...field}
+                              type="email"
+                              placeholder={AUTH_PLACEHOLDERS.EMAIL}
+                              autoComplete="username"
+                              className="h-12 pl-10 input-focus"
+                              disabled={loading || redirecting}
+                            />
+                          </FormControl>
+                        </div>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="password"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-sm text-gray-800">
+                          {AUTH_LABELS.PASSWORD}{" "}
+                          <span className="text-red-500">*</span>
+                        </FormLabel>
+                        <div className="relative">
+                          <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                          <FormControl>
+                            <Input
+                              {...field}
+                              type="password"
+                              placeholder={AUTH_PLACEHOLDERS.PASSWORD}
+                              autoComplete="current-password"
+                              className="h-12 pl-10 input-focus"
+                              disabled={loading || redirecting}
+                            />
+                          </FormControl>
+                        </div>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  {formError && (
+                    <p className="text-sm text-red-500">{formError}</p>
                   )}
-                </Button>
-              </form>
+                  <Button
+                    type="submit"
+                    className="h-12 w-full"
+                    disabled={loading || redirecting}
+                  >
+                    {loading ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        로그인 중...
+                      </>
+                    ) : (
+                      AUTH_GUIDE_MESSAGES.LOGIN_TITLE
+                    )}
+                  </Button>
+                </form>
+              </Form>
             </CardContent>
             <CardFooter className="flex flex-col space-y-2">
               <div className="text-center text-sm">
@@ -226,9 +239,9 @@ export default function LoginPage() {
                 </Link>
               </div>
               <div className="text-center text-sm">
-                계정이 없으신가요?{" "}
+                {AUTH_GUIDE_MESSAGES.ALREADY_HAVE_ACCOUNT}{" "}
                 <Link href="/register" className="text-primary hover:underline">
-                  회원가입
+                  {AUTH_GUIDE_MESSAGES.GO_SIGNUP}
                 </Link>
               </div>
             </CardFooter>

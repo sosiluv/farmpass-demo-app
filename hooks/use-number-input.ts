@@ -1,10 +1,10 @@
 import { ChangeEvent, useState } from "react";
-import { NUMBER_INPUT_RULES } from "@/lib/constants/input-rules";
+import { INPUT_VALIDATION_RULES } from "@/lib/constants/defaults";
 
-type NumberInputKey = keyof typeof NUMBER_INPUT_RULES;
+type NumberInputKey = keyof typeof INPUT_VALIDATION_RULES;
 
 export function useNumberInput(key: NumberInputKey) {
-  const rules = NUMBER_INPUT_RULES[key];
+  const rules = INPUT_VALIDATION_RULES[key];
   const [isEditing, setIsEditing] = useState(false);
 
   const handleChange = (

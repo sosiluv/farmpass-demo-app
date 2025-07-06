@@ -6,12 +6,18 @@
 
 import { getSystemSettings } from "@/lib/cache/system-settings-cache";
 import { devLog } from "@/lib/utils/logging/dev-logger";
-import { PHONE_PATTERN } from "@/lib/constants/input-rules";
 import { apiClient } from "@/lib/utils/data/api-client";
 import { handleError } from "@/lib/utils/error";
+import { AUTH_AUTH_ERROR_MESSAGES } from "@/lib/constants/auth";
+
+/**
+ * 전화번호 정규식 패턴
+ * 010, 011, 016, 017, 018, 019로 시작하는 한국 휴대폰 번호 형식
+ */
+export const PHONE_PATTERN = /^01([0|1|6|7|8|9])-?([0-9]{3,4})-?([0-9]{4})$/;
 
 // 기본 비밀번호 규칙 (보수적인 설정)
-const DEFAULT_PASSWORD_RULES = {
+export const DEFAULT_PASSWORD_RULES = {
   passwordMinLength: 6, // 일반적인 보안 기준
   passwordRequireSpecialChar: true, // 더 강력한 보안을 위해
   passwordRequireNumber: true, // 더 강력한 보안을 위해
@@ -30,7 +36,7 @@ interface PasswordRules {
 /**
  * 비밀번호 규칙 가져오기
  */
-const getPasswordRules = async () => {
+export const getPasswordRules = async () => {
   try {
     const settings = await getSystemSettings();
     return {
@@ -90,107 +96,6 @@ export const checkEmailDuplicate = async (email: string) => {
       message: "이메일 확인 중 오류가 발생했습니다.",
     };
   }
-};
-
-/**
- * 비밀번호 복잡성 검증
- * @param password 검증할 비밀번호
- * @returns 검증 결과 객체
- */
-export const validatePassword = async (password: string) => {
-  try {
-    const rules = await getPasswordRules();
-    const {
-      passwordMinLength,
-      passwordRequireSpecialChar,
-      passwordRequireNumber,
-      passwordRequireUpperCase,
-      passwordRequireLowerCase,
-    } = rules;
-
-    const hasUpperCase = /[A-Z]/.test(password);
-    const hasLowerCase = /[a-z]/.test(password);
-    const hasNumbers = /\d/.test(password);
-    const hasSpecialChar = /[!@#$%^&*(),.?":{}|<>]/.test(password);
-
-    const checks = {
-      minLength: password.length >= passwordMinLength,
-      hasUpperCase: !passwordRequireUpperCase || hasUpperCase,
-      hasLowerCase: !passwordRequireLowerCase || hasLowerCase,
-      hasNumbers: !passwordRequireNumber || hasNumbers,
-      hasSpecialChar: !passwordRequireSpecialChar || hasSpecialChar,
-    };
-
-    const isValid = Object.values(checks).every(Boolean);
-
-    return {
-      isValid,
-      checks,
-      message: isValid
-        ? ""
-        : getPasswordErrorMessage(checks, passwordMinLength, rules),
-      rules,
-    };
-  } catch (error) {
-    // 예상치 못한 에러 발생 시 기본값으로 검증
-    devLog.error("Unexpected error during password validation:", error);
-    const rules = DEFAULT_PASSWORD_RULES;
-
-    const checks = {
-      minLength: password.length >= rules.passwordMinLength,
-      hasUpperCase: !rules.passwordRequireUpperCase || /[A-Z]/.test(password),
-      hasLowerCase: !rules.passwordRequireLowerCase || /[a-z]/.test(password),
-      hasNumbers: !rules.passwordRequireNumber || /\d/.test(password),
-      hasSpecialChar:
-        !rules.passwordRequireSpecialChar ||
-        /[!@#$%^&*(),.?":{}|<>]/.test(password),
-    };
-
-    const isValid = Object.values(checks).every(Boolean);
-
-    return {
-      isValid,
-      checks,
-      message: isValid
-        ? ""
-        : getPasswordErrorMessage(checks, rules.passwordMinLength, rules),
-      rules,
-    };
-  }
-};
-
-/**
- * 비밀번호 오류 메시지 생성
- */
-const getPasswordErrorMessage = (
-  checks: Record<string, boolean>,
-  minLength: number,
-  rules: PasswordRules
-): string => {
-  if (!checks.minLength) {
-    return `비밀번호는 최소 ${minLength}자 이상이어야 합니다.`;
-  }
-
-  const requirements: string[] = [];
-
-  if (rules.passwordRequireUpperCase && !checks.hasUpperCase) {
-    requirements.push("대문자");
-  }
-  if (rules.passwordRequireLowerCase && !checks.hasLowerCase) {
-    requirements.push("소문자");
-  }
-  if (rules.passwordRequireNumber && !checks.hasNumbers) {
-    requirements.push("숫자");
-  }
-  if (rules.passwordRequireSpecialChar && !checks.hasSpecialChar) {
-    requirements.push("특수문자");
-  }
-
-  if (requirements.length > 0) {
-    return `비밀번호는 ${requirements.join(", ")}를 포함해야 합니다.`;
-  }
-
-  return "";
 };
 
 /**
@@ -261,83 +166,6 @@ export const validateName = (
 };
 
 /**
- * 주소 검증
- * @param address 검증할 주소
- * @param minLength 최소 길이 (기본값: 5)
- * @param maxLength 최대 길이 (기본값: 200)
- * @returns 검증 결과
- */
-export const validateAddress = (
-  address: string,
-  minLength: number = 5,
-  maxLength: number = 200
-) => {
-  const trimmedAddress = address.trim();
-
-  if (trimmedAddress.length < minLength) {
-    return {
-      isValid: false,
-      message: "주소를 입력해주세요.",
-    };
-  }
-
-  if (trimmedAddress.length > maxLength) {
-    return {
-      isValid: false,
-      message: "주소가 너무 깁니다.",
-    };
-  }
-
-  return {
-    isValid: true,
-    message: "",
-  };
-};
-
-/**
- * 비밀번호 확인 검증
- * @param password 원본 비밀번호
- * @param confirmPassword 확인 비밀번호
- * @returns 검증 결과
- */
-export const validatePasswordConfirm = (
-  password: string,
-  confirmPassword: string
-) => {
-  if (password !== confirmPassword) {
-    return {
-      isValid: false,
-      message: "비밀번호가 일치하지 않습니다.",
-    };
-  }
-
-  return {
-    isValid: true,
-    message: "",
-  };
-};
-
-/**
- * 필수 필드 검증
- * @param value 검증할 값
- * @param fieldName 필드명
- * @returns 검증 결과
- */
-export const validateRequired = (value: string, fieldName: string) => {
-  if (!value || value.trim().length === 0) {
-    return {
-      isValid: false,
-      message: `${fieldName}을(를) 입력해주세요.`,
-    };
-  }
-
-  return {
-    isValid: true,
-    message: "",
-  };
-};
-
-/**
  * 차량번호 검증 (한국 차량번호 형식)
  * @param vehicleNumber 검증할 차량번호
  * @returns 검증 결과
@@ -363,131 +191,6 @@ export const validateVehicleNumber = (vehicleNumber: string) => {
   return {
     isValid: true,
     message: "",
-  };
-};
-
-/**
- * 날짜 범위 검증
- * @param startDate 시작 날짜
- * @param endDate 종료 날짜
- * @returns 검증 결과
- */
-export const validateDateRange = (startDate: string, endDate: string) => {
-  if (!startDate || !endDate) {
-    return {
-      isValid: false,
-      message: "시작 날짜와 종료 날짜를 모두 선택해주세요.",
-    };
-  }
-
-  const start = new Date(startDate);
-  const end = new Date(endDate);
-
-  if (start > end) {
-    return {
-      isValid: false,
-      message: "시작 날짜는 종료 날짜보다 이전이어야 합니다.",
-    };
-  }
-
-  // 최대 5년 범위 제한
-  const maxYears = 5;
-  const maxDays = maxYears * 365;
-  const diffDays = Math.ceil(
-    (end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)
-  );
-
-  if (diffDays > maxDays) {
-    return {
-      isValid: false,
-      message: `날짜 범위는 최대 ${maxYears}년까지 선택 가능합니다.`,
-    };
-  }
-
-  return {
-    isValid: true,
-    message: "",
-  };
-};
-
-/**
- * 폼 전체 검증 헬퍼
- * @param validations 검증 함수들의 배열
- * @returns 전체 검증 결과
- */
-export const validateForm = (
-  validations: Array<
-    () => { isValid: boolean; message: string; field?: string }
-  >
-) => {
-  const errors: Record<string, string> = {};
-  let isValid = true;
-
-  validations.forEach((validation) => {
-    const result = validation();
-    if (!result.isValid) {
-      isValid = false;
-      if (result.field) {
-        errors[result.field] = result.message;
-      }
-    }
-  });
-
-  return {
-    isValid,
-    errors,
-  };
-};
-
-/**
- * 회원가입 폼 전체 검증
- * @param formData 검증할 폼 데이터
- * @returns 검증 결과
- */
-export const validateRegistrationForm = async (formData: {
-  email: string;
-  name: string;
-  password: string;
-  confirmPassword: string;
-  phone: string;
-}) => {
-  const errors: Record<string, string> = {};
-
-  // 이메일 검증
-  const emailValidation = validateEmail(formData.email);
-  if (!emailValidation.isValid) {
-    errors.email = emailValidation.message;
-  }
-
-  // 이름 검증
-  const nameValidation = validateName(formData.name);
-  if (!nameValidation.isValid) {
-    errors.name = nameValidation.message;
-  }
-
-  // 비밀번호 검증
-  const passwordValidation = await validatePassword(formData.password);
-  if (!passwordValidation.isValid) {
-    errors.password = passwordValidation.message;
-  }
-
-  // 비밀번호 확인 검증
-  const confirmValidation = validatePasswordConfirm(
-    formData.password,
-    formData.confirmPassword
-  );
-  if (!confirmValidation.isValid) {
-    errors.confirmPassword = confirmValidation.message;
-  }
-
-  // 전화번호 검증
-  if (!validatePhone(formData.phone)) {
-    errors.phone = "올바른 전화번호 형식(010-XXXX-XXXX)을 입력해주세요.";
-  }
-
-  return {
-    isValid: Object.keys(errors).length === 0,
-    errors,
   };
 };
 
@@ -536,68 +239,53 @@ export function getAuthErrorMessage(
 
   // 기본 응답 객체
   const defaultResponse: AuthErrorResponse = {
-    message: "처리 중 오류가 발생했습니다. 다시 시도해주세요.",
+    message: AUTH_AUTH_ERROR_MESSAGES.DEFAULT,
     shouldRedirect: false,
   };
 
-  // 에러 메시지가 없는 경우 기본 응답 반환
   if (!errorMessage) return defaultResponse;
 
-  // 로그인 관련 에러들 (로그인 페이지에서 사용 중인 메시지들)
   if (errorMessage.toLowerCase().includes("account is locked")) {
     return {
-      message:
-        "계정이 잠겼습니다. 관리자에게 문의하거나 잠시 후 다시 시도해주세요.",
+      message: AUTH_AUTH_ERROR_MESSAGES.ACCOUNT_LOCKED,
       shouldRedirect: false,
     };
   }
-
   if (errorMessage.toLowerCase().includes("too many requests")) {
     return {
-      message: "너무 많은 로그인 시도가 있었습니다. 잠시 후 다시 시도해주세요.",
+      message: AUTH_AUTH_ERROR_MESSAGES.TOO_MANY_REQUESTS,
       shouldRedirect: false,
     };
   }
-
-  // 비밀번호 관련 에러
   if (
     errorMessage
       .toLowerCase()
       .includes("new password should be different from the old password")
   ) {
     return {
-      message: "이전 비밀번호와 동일한 비밀번호로 변경할 수 없습니다.",
+      message: AUTH_AUTH_ERROR_MESSAGES.PASSWORD_SAME,
       shouldRedirect: false,
     };
   }
-
-  // 세션 관련 에러
   if (errorMessage.toLowerCase().includes("session")) {
     return {
-      message: "세션이 만료되었습니다. 다시 시도해주세요.",
+      message: AUTH_AUTH_ERROR_MESSAGES.SESSION_EXPIRED,
       shouldRedirect: true,
       redirectTo: "/reset-password",
     };
   }
-
-  // 비밀번호 규칙 관련 에러
   if (errorMessage.toLowerCase().includes("password should be")) {
     return {
-      message:
-        "비밀번호는 최소 8자 이상이어야 하며, 영문, 숫자, 특수문자를 포함해야 합니다.",
+      message: AUTH_AUTH_ERROR_MESSAGES.PASSWORD_RULE,
       shouldRedirect: false,
     };
   }
-
-  // 인증 실패 에러
   if (errorMessage.toLowerCase().includes("invalid login credentials")) {
     return {
-      message: "인증에 실패했습니다. 다시 시도해주세요.",
+      message: AUTH_AUTH_ERROR_MESSAGES.INVALID_CREDENTIALS,
       shouldRedirect: false,
     };
   }
-
-  // 토큰 관련 에러 (대소문자 구분 없이 처리)
   if (
     errorMessage.toLowerCase().includes("token has expired") ||
     errorMessage.toLowerCase().includes("invalid reset password token") ||
@@ -609,38 +297,29 @@ export function getAuthErrorMessage(
     errorMessage.toLowerCase().includes("invalid token")
   ) {
     return {
-      message:
-        "비밀번호 재설정 링크가 만료되었거나 유효하지 않습니다. 새로운 링크를 요청해주세요.",
+      message: AUTH_AUTH_ERROR_MESSAGES.TOKEN_EXPIRED,
       shouldRedirect: true,
       redirectTo: "/reset-password",
     };
   }
-
-  // 토큰 사용됨 에러
   if (errorMessage.toLowerCase().includes("token has already been used")) {
     return {
-      message:
-        "이미 사용된 비밀번호 재설정 링크입니다. 새로운 링크를 요청해주세요.",
+      message: AUTH_AUTH_ERROR_MESSAGES.TOKEN_USED,
       shouldRedirect: true,
       redirectTo: "/reset-password",
     };
   }
-
-  // 이메일 인증 관련 에러
   if (errorMessage.toLowerCase().includes("email not confirmed")) {
     return {
-      message: "이메일 인증이 필요합니다. 이메일을 확인해주세요.",
+      message: AUTH_AUTH_ERROR_MESSAGES.EMAIL_NOT_CONFIRMED,
       shouldRedirect: false,
     };
   }
-
-  // 기타 인증 관련 에러
   if (errorMessage.toLowerCase().includes("auth")) {
     return {
-      message: "인증 처리 중 오류가 발생했습니다. 다시 시도해주세요.",
+      message: AUTH_AUTH_ERROR_MESSAGES.AUTH_ERROR,
       shouldRedirect: false,
     };
   }
-
   return defaultResponse;
 }

@@ -1,5 +1,6 @@
 import { useCommonToast } from "@/lib/utils/notification/toast-messages";
 import type { SystemSettings } from "@/lib/types/settings";
+import { INPUT_VALIDATION_RULES } from "@/lib/constants/defaults";
 
 interface SettingsValidatorProps {
   user: any;
@@ -8,23 +9,36 @@ interface SettingsValidatorProps {
 export function useSettingsValidator({ user }: SettingsValidatorProps) {
   const { showWarning } = useCommonToast();
 
-  // 입력 필드 유효성 검사 설정
+  // 입력 필드 유효성 검사 설정 - 공통 상수에서 가져옴
   const inputValidations = {
-    maxLoginAttempts: { min: 3, max: 10, name: "최대 로그인 시도 횟수" },
+    maxLoginAttempts: {
+      ...INPUT_VALIDATION_RULES.maxLoginAttempts,
+      name: "최대 로그인 시도 횟수",
+    },
     accountLockoutDurationMinutes: {
-      min: 5,
-      max: 1440,
+      ...INPUT_VALIDATION_RULES.accountLockoutDurationMinutes,
       name: "계정 잠금 시간",
     },
-    passwordMinLength: { min: 6, max: 32, name: "비밀번호 최소 길이" },
-    reVisitAllowInterval: { min: 0, max: 168, name: "재방문 허용 간격" },
-    maxVisitorsPerDay: { min: 1, max: 1000, name: "일일 최대 방문자 수" },
+    passwordMinLength: {
+      ...INPUT_VALIDATION_RULES.passwordMinLength,
+      name: "비밀번호 최소 길이",
+    },
+    reVisitAllowInterval: {
+      ...INPUT_VALIDATION_RULES.reVisitAllowInterval,
+      name: "재방문 허용 간격",
+    },
+    maxVisitorsPerDay: {
+      ...INPUT_VALIDATION_RULES.maxVisitorsPerDay,
+      name: "일일 최대 방문자 수",
+    },
     visitorDataRetentionDays: {
-      min: 30,
-      max: 3650,
+      ...INPUT_VALIDATION_RULES.visitorDataRetentionDays,
       name: "방문자 데이터 보존 기간",
     },
-    logRetentionDays: { min: 7, max: 365, name: "로그 보관 기간" },
+    logRetentionDays: {
+      ...INPUT_VALIDATION_RULES.logRetentionDays,
+      name: "로그 보관 기간",
+    },
   } as const;
 
   const validateSetting = async <K extends keyof SystemSettings>(

@@ -1,4 +1,5 @@
-import { SystemSettings, DEFAULT_SYSTEM_SETTINGS } from "@/lib/types/settings";
+import { SystemSettings } from "@/lib/types/settings";
+import { DEFAULT_SYSTEM_SETTINGS } from "@/lib/constants/defaults";
 import { devLog } from "@/lib/utils/logging/dev-logger";
 import { apiClient } from "@/lib/utils/data";
 import { handleError } from "@/lib/utils/error";
