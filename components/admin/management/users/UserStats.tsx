@@ -45,9 +45,9 @@ export function UserStats({
   return (
     <div className="mb-4">
       <CommonStatsGrid>
-        {statCards.map((card, index) => (
+        {(statCards || []).map((card) => (
           <StatCard
-            key={index}
+            key={card.title}
             title={card.title}
             value={card.value}
             description={card.description}

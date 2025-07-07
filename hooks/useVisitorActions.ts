@@ -18,7 +18,7 @@ export const useVisitorActions = ({
   isAdmin,
   profileId,
 }: UseVisitorActionsProps) => {
-  const toast = useCommonToast();
+  const { showInfo, showWarning, showSuccess, showError } = useCommonToast();
   const { updateVisitor, deleteVisitor, allVisitors } = useVisitors();
   const { state } = useAuth();
   const user = state.status === "authenticated" ? state.user : null;
@@ -26,11 +26,9 @@ export const useVisitorActions = ({
   // 방문자 수정 핸들러
   const handleEdit = useCallback(
     async (visitor: Visitor) => {
+      showInfo("방문자 정보 수정 시작", "방문자 정보를 수정하는 중입니다...");
       if (!visitor.id || !visitor.farm_id) {
-        toast.showCustomError(
-          "방문자 정보 수정 실패",
-          "방문자 정보를 수정하는 중 오류가 발생했습니다."
-        );
+        showWarning("입력 오류", "방문자 ID 또는 농장 ID가 누락되었습니다.");
         return;
       }
 
@@ -45,50 +43,46 @@ export const useVisitorActions = ({
           disinfection_check: visitor.disinfection_check,
         });
 
-        toast.showCustomSuccess(
+        showSuccess(
           "방문자 정보 수정 완료",
           "방문자 정보가 성공적으로 수정되었습니다."
         );
       } catch (error) {
-        toast.showCustomError(
+        showError(
           "방문자 정보 수정 실패",
           "방문자 정보를 수정하는 중 오류가 발생했습니다."
         );
       }
     },
-    [updateVisitor, toast]
+    [updateVisitor, showInfo, showWarning, showSuccess, showError]
   );
 
   // 방문자 삭제 핸들러
   const handleDelete = useCallback(
     async (visitor: Visitor) => {
+      showInfo("방문자 삭제 시작", "방문자를 삭제하는 중입니다...");
       if (!visitor.id || !visitor.farm_id) {
-        toast.showCustomError(
-          "방문자 삭제 실패",
-          "방문자를 삭제하는 중 오류가 발생했습니다."
-        );
+        showWarning("입력 오류", "방문자 ID 또는 농장 ID가 누락되었습니다.");
         return;
       }
 
       try {
         await deleteVisitor(visitor.id, visitor.farm_id);
-        toast.showCustomSuccess(
-          "방문자 삭제 완료",
-          "방문자가 성공적으로 삭제되었습니다."
-        );
+        showSuccess("방문자 삭제 완료", "방문자가 성공적으로 삭제되었습니다.");
       } catch (error) {
-        toast.showCustomError(
+        showError(
           "방문자 삭제 실패",
           "방문자를 삭제하는 중 오류가 발생했습니다."
         );
       }
     },
-    [deleteVisitor, toast]
+    [deleteVisitor, showInfo, showWarning, showSuccess, showError]
   );
 
   // CSV 내보내기 핸들러
   const handleExport = useCallback(
     async (options: VisitorsExportOptions) => {
+      showInfo("내보내기 시작", "방문자 데이터를 내보내는 중입니다...");
       let dataToExport = allVisitors;
 
       // 농장 필터 적용
@@ -138,18 +132,12 @@ export const useVisitorActions = ({
           useAdvancedParser: true,
         });
 
-        toast.showCustomSuccess(
-          "내보내기 완료",
-          "내보내기가 성공적으로 완료되었습니다."
-        );
+        showSuccess("내보내기 완료", "내보내기가 성공적으로 완료되었습니다.");
       } catch (error) {
-        toast.showCustomError(
-          "내보내기 실패",
-          "내보내기 중 오류가 발생했습니다."
-        );
+        showError("내보내기 실패", "내보내기 중 오류가 발생했습니다.");
       }
     },
-    [allVisitors, farms, isAdmin, toast]
+    [allVisitors, farms, isAdmin, showInfo, showSuccess, showError]
   );
 
   return {

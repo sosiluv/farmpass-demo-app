@@ -76,7 +76,7 @@ export function UserList({ users, onUserClick }: UserListProps) {
   return (
     <>
       <CommonListWrapper>
-        {users.map((user) => (
+        {(users || []).map((user) => (
           <CommonListItem
             key={user.id}
             avatar={

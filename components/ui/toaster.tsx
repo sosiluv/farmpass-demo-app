@@ -7,6 +7,7 @@ import {
   ToastDescription,
   ToastProvider,
   ToastTitle,
+  ToastIcon,
 } from "@/components/ui/toast";
 import { DynamicToastViewport } from "@/components/ui/dynamic-toast-viewport";
 
@@ -15,14 +16,24 @@ export function Toaster() {
 
   return (
     <ToastProvider>
-      {toasts.map(function ({ id, title, description, action, ...props }) {
+      {toasts.map(function ({
+        id,
+        title,
+        description,
+        action,
+        variant,
+        ...props
+      }) {
         return (
-          <Toast key={id} {...props}>
-            <div className="grid gap-1">
-              {title && <ToastTitle>{title}</ToastTitle>}
-              {description && (
-                <ToastDescription>{description}</ToastDescription>
-              )}
+          <Toast key={id} variant={variant} {...props}>
+            <div className="flex items-start space-x-3">
+              <ToastIcon variant={variant} />
+              <div className="flex-1 grid gap-1">
+                {title && <ToastTitle>{title}</ToastTitle>}
+                {description && (
+                  <ToastDescription>{description}</ToastDescription>
+                )}
+              </div>
             </div>
             {action}
             <ToastClose />

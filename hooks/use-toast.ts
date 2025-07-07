@@ -6,7 +6,7 @@ import * as React from "react";
 import type { ToastActionElement, ToastProps } from "@/components/ui/toast";
 
 const TOAST_LIMIT = 1;
-const TOAST_REMOVE_DELAY = 2000; // 2초 후 자동으로 사라짐
+const TOAST_REMOVE_DELAY = 4000; // 4초 후 자동으로 사라짐
 
 type ToasterToast = ToastProps & {
   id: string;

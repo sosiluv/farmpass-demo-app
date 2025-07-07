@@ -25,7 +25,7 @@ export function FarmsList({
 }: FarmsListProps) {
   return (
     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-      {farms.map((farm, index) => (
+      {(farms || []).map((farm, index) => (
         <FarmCard
           key={farm.id}
           farm={farm}

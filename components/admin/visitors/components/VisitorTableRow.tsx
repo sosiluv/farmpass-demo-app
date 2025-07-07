@@ -45,7 +45,7 @@ export function VisitorTableRow({
         <div className="flex items-center justify-center space-x-2">
           <Badge
             variant="outline"
-            className="text-[10px] sm:text-xs px-1 sm:px-1.5 py-0.5 font-medium"
+            className="text-[10px] sm:text-xs px-1 sm:px-1.5 py-0.5 font-bold dark:bg-slate-700 dark:text-white dark:border-slate-600"
           >
             #{index + 1}
           </Badge>

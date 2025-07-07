@@ -28,7 +28,7 @@ export function FarmSelector({
         </SelectTrigger>
         <SelectContent>
           {isAdmin && <SelectItem value="all">전체 농장</SelectItem>}
-          {availableFarms.map((farm) => (
+          {(availableFarms || []).map((farm) => (
             <SelectItem key={farm.id} value={farm.id}>
               {farm.farm_name}
             </SelectItem>

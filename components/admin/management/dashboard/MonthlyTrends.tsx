@@ -54,11 +54,11 @@ export function MonthlyTrends({ data = [] }: MonthlyTrendsProps) {
       <div className="flex-1 min-h-0 h-full w-full">
         <Line
           data={{
-            labels: data.map((item) => item.month),
+            labels: (data || []).map((item) => item.month),
             datasets: [
               {
                 label: "사용자",
-                data: data.map((item) => item.users),
+                data: (data || []).map((item) => item.users),
                 borderColor: "rgb(99, 102, 241)", // indigo
                 backgroundColor: "rgba(99, 102, 241, 0.2)",
                 tension: 0.4,
@@ -72,7 +72,7 @@ export function MonthlyTrends({ data = [] }: MonthlyTrendsProps) {
               },
               {
                 label: "농장",
-                data: data.map((item) => item.farms),
+                data: (data || []).map((item) => item.farms),
                 borderColor: "rgb(14, 165, 233)", // sky
                 backgroundColor: "rgba(14, 165, 233, 0.2)",
                 tension: 0.4,

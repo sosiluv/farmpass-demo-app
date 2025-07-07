@@ -59,7 +59,7 @@ export function LogList({ logs, onShowDetails, onDeleteLog }: LogListProps) {
   return (
     <CommonListWrapper>
       {logs.length > 0 ? (
-        logs.map((log) => (
+        (logs || []).map((log) => (
           <CommonListItem
             key={log.id}
             avatar={

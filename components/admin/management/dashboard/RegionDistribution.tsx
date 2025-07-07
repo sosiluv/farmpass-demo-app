@@ -35,11 +35,11 @@ export function RegionDistribution({ data = [] }: RegionDistributionProps) {
       <div className="flex-1 min-h-0 h-full w-full">
         <Bar
           data={{
-            labels: data.map((item) => item.region),
+            labels: (data || []).map((item) => item.region),
             datasets: [
               {
                 label: "농장 수",
-                data: data.map((item) => item.count),
+                data: (data || []).map((item) => item.count),
                 backgroundColor: "rgba(168, 85, 247, 0.8)", // purple
                 borderColor: "rgb(147, 51, 234)",
                 borderWidth: 1,

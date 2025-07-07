@@ -1,6 +1,9 @@
 import useSWR from "swr";
-import { SystemSettings, DEFAULT_SYSTEM_SETTINGS } from "@/lib/types/settings";
+import { apiClient } from "@/lib/utils/data";
 import { devLog } from "@/lib/utils/logging/dev-logger";
+import { SystemSettings } from "@/lib/types/settings";
+import { DEFAULT_SYSTEM_SETTINGS } from "@/lib/constants/defaults";
+import { handleError } from "@/lib/utils/error";
 
 const fetcher = async (url: string): Promise<SystemSettings> => {
   devLog.log("[useSystemSettings] Settings API 호출:", url);
@@ -9,16 +12,15 @@ const fetcher = async (url: string): Promise<SystemSettings> => {
   const baseUrl = typeof window !== "undefined" ? window.location.origin : "";
   const fullUrl = `${baseUrl}${url}`;
 
-  const response = await fetch(fullUrl, {
+  const data = await apiClient(fullUrl, {
     headers: {
       "Cache-Control": "no-cache", // 캐시된 응답을 사용하지 않도록
     },
+    context: "시스템 설정 조회",
+    onError: (error, context) => {
+      handleError(error, context);
+    },
   });
-
-  if (!response.ok) {
-    throw new Error("Failed to fetch settings");
-  }
-  const data = await response.json();
 
   devLog.log("[useSystemSettings] Settings API 응답 완료");
 
@@ -48,10 +50,21 @@ export function useSystemSettings() {
   // 즉시 캐시 무효화 함수
   const invalidateCache = async () => {
     try {
-      await fetch("/api/settings/invalidate-cache", { method: "POST" });
+      await apiClient("/api/settings/invalidate-cache", {
+        method: "POST",
+        context: "시스템 설정 캐시 무효화",
+        onError: (error, context) => {
+          handleError(error, {
+            context,
+            onStateUpdate: (errorMessage) => {
+              devLog.error("Failed to invalidate cache:", errorMessage);
+            },
+          });
+        },
+      });
       await mutate(); // SWR 캐시도 무효화
     } catch (error) {
-      devLog.error("Failed to invalidate cache:", error);
+      // 에러는 이미 onError에서 처리됨
     }
   };
 

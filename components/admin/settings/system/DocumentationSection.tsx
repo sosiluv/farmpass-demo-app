@@ -81,7 +81,7 @@ export function DocumentationSection() {
           </p>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {documentationLinks.map((doc) => (
+            {(documentationLinks || []).map((doc) => (
               <motion.div
                 key={doc.title}
                 whileHover={{ scale: 1.02 }}

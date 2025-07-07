@@ -215,7 +215,7 @@ export async function POST(request: NextRequest) {
         message: "푸시 알림 구독이 완료되었습니다.",
         subscription: newSubscription,
       },
-      { status: 201 }
+      { status: 201, headers: { "Cache-Control": "no-store" } }
     );
   } catch (error) {
     devLog.error("푸시 구독 API 오류:", error);
@@ -368,7 +368,10 @@ export async function GET(request: NextRequest) {
       userAgent
     );
 
-    return NextResponse.json(response, { status: 200 });
+    return NextResponse.json(response, {
+      status: 200,
+      headers: { "Cache-Control": "no-store" },
+    });
   } catch (error) {
     devLog.error("푸시 구독 조회 API 오류:", error);
     // API 에러 로그 기록

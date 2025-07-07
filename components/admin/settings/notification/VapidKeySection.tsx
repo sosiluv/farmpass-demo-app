@@ -25,24 +25,39 @@ const VapidKeySection = React.memo(function VapidKeySection({
   onGenerateKeys,
   isLoading,
 }: VapidKeySectionProps) {
-  const { showCustomSuccess, showCustomError } = useCommonToast();
+  const { showInfo, showSuccess, showError, showWarning } = useCommonToast();
   const [copiedKey, setCopiedKey] = React.useState<"public" | "private" | null>(
     null
   );
 
+  // VAPID 키 생성 핸들러 (토스트 처리 포함)
+  const handleGenerateKeys = async () => {
+    showInfo("VAPID 키 생성 시작", "VAPID 키를 생성하는 중입니다...");
+    try {
+      await onGenerateKeys();
+      showSuccess(
+        "VAPID 키 생성 완료",
+        "VAPID 키가 성공적으로 생성되었습니다."
+      );
+    } catch (error) {
+      showError("VAPID 키 생성 실패", "VAPID 키 생성 중 오류가 발생했습니다.");
+    }
+  };
+
   const handleCopyKey = async (keyType: "public" | "private") => {
+    showInfo("키 복사 시작", "키를 복사하는 중입니다...");
     const keyValue =
       keyType === "public" ? settings.vapidPublicKey : settings.vapidPrivateKey;
 
     if (!keyValue) {
-      showCustomError("키 복사 실패", "먼저 VAPID 키를 생성해주세요.");
+      showWarning("키 없음", "먼저 VAPID 키를 생성해주세요.");
       return;
     }
 
     try {
       await navigator.clipboard.writeText(keyValue);
       setCopiedKey(keyType);
-      showCustomSuccess(
+      showSuccess(
         "키 복사 완료",
         `${
           keyType === "public" ? "공개" : "비공개"
@@ -52,10 +67,7 @@ const VapidKeySection = React.memo(function VapidKeySection({
       // 2초 후 복사 상태 초기화
       setTimeout(() => setCopiedKey(null), 2000);
     } catch (error) {
-      showCustomError(
-        "키 복사 실패",
-        "키 복사에 실패했습니다. 다시 시도해주세요."
-      );
+      showError("키 복사 실패", "키 복사에 실패했습니다. 다시 시도해주세요.");
     }
   };
 
@@ -96,7 +108,7 @@ const VapidKeySection = React.memo(function VapidKeySection({
             </div>
             <Button
               variant="outline"
-              onClick={onGenerateKeys}
+              onClick={handleGenerateKeys}
               disabled={isLoading}
             >
               생성

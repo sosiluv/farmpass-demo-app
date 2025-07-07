@@ -2,19 +2,19 @@ import type React from "react";
 import { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
+import Script from "next/script";
 import { cn } from "@/lib/utils";
 import { Toaster } from "@/components/ui/toaster";
-import { ThemeProvider } from "@/components/common/theme-provider";
 import { AuthProvider } from "@/components/providers/auth-provider";
 import { ToastPositionProvider } from "@/components/providers/toast-position-provider";
 import { DebugProvider } from "@/components/providers/debug-provider";
 import { SystemMonitor } from "@/components/common/system-monitor";
 import { PWAUpdater } from "@/components/common/pwa-updater";
+import { DialogManager } from "@/components/common/DialogManager";
 import { getMetadataSettings } from "@/lib/server/metadata";
 import { ErrorBoundary } from "@/components/error/error-boundary";
 import { Analytics } from "@vercel/analytics/react";
-import Script from "next/script";
-import { FarmsProvider } from "@/components/providers/farms-provider";
+import { PWAProvider } from "@/components/providers/pwa-provider";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -93,27 +93,21 @@ export default async function RootLayout({
       </head>
       <body className={cn(inter.className, "min-h-screen bg-background")}>
         <ErrorBoundary
-          title="시스템 오류"
-          description="예상치 못한 오류가 발생했습니다. 페이지를 새로고침하거나 잠시 후 다시 시도해주세요."
+          title="앱 오류"
+          description="앱에서 예상치 못한 오류가 발생했습니다. 페이지를 새로고침하거나 잠시 후 다시 시도해주세요."
         >
           <PWAUpdater />
           <AuthProvider>
-            <ToastPositionProvider>
-              <DebugProvider>
-                <ThemeProvider
-                  attribute="class"
-                  defaultTheme="system"
-                  enableSystem
-                  disableTransitionOnChange
-                >
-                  <FarmsProvider>
-                    {children}
-                    <Toaster />
-                    <SystemMonitor />
-                  </FarmsProvider>
-                </ThemeProvider>
-              </DebugProvider>
-            </ToastPositionProvider>
+            <DebugProvider>
+              <PWAProvider>
+                <ToastPositionProvider>
+                  {children}
+                  <Toaster />
+                  <SystemMonitor />
+                  <DialogManager />
+                </ToastPositionProvider>
+              </PWAProvider>
+            </DebugProvider>
           </AuthProvider>
           <Analytics />
         </ErrorBoundary>

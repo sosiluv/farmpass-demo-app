@@ -53,7 +53,7 @@ export function NotificationTypesCard() {
       />
       <CardContent>
         <div className="space-y-4">
-          {NOTIFICATION_TYPES.map((type) => (
+          {(NOTIFICATION_TYPES || []).map((type) => (
             <div
               key={type.key}
               className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 rounded-lg border bg-card hover:bg-accent/5 transition-colors"

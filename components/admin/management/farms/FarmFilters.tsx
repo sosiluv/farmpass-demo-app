@@ -34,10 +34,12 @@ export function FarmFilters({ filters, onFiltersChange }: FarmFiltersProps) {
     return acc;
   }, {});
 
-  const farmTypeOptions = Object.values(FARM_TYPE_LABELS).map((label) => ({
-    value: label,
-    label,
-  }));
+  const farmTypeOptions = (Object.values(FARM_TYPE_LABELS) || []).map(
+    (label) => ({
+      value: label,
+      label,
+    })
+  );
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     onFiltersChange({ ...filters, search: e.target.value });

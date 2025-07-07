@@ -9,6 +9,8 @@ import { useNotificationService } from "@/hooks/useNotificationService";
 import { renderNotificationStatus } from "./status/NotificationStatus";
 import NotificationCardHeader from "./NotificationCardHeader";
 import { Zap } from "lucide-react";
+import { useCommonToast } from "@/lib/utils/notification/toast-messages";
+import { safeNotificationAccess } from "@/lib/utils/browser/safari-compat";
 
 interface WebPushSubscriptionProps {
   farms?: Farm[];
@@ -28,12 +30,15 @@ export function WebPushSubscription({
     cleanupSubscriptions,
     handleUnsubscription,
     getSubscriptionStatus,
+    lastMessage,
+    clearLastMessage,
   } = useNotificationService();
+  const { showInfo, showWarning, showSuccess, showError } = useCommonToast();
 
   // props로 받은 농장 데이터 처리
   useEffect(() => {
     setFarms(
-      propFarms.map((farm) => ({
+      (propFarms || []).map((farm) => ({
         ...farm,
         isSubscribed: false,
       }))
@@ -44,11 +49,25 @@ export function WebPushSubscription({
     initializeNotifications();
   }, []);
 
+  useEffect(() => {
+    if (lastMessage) {
+      if (lastMessage.type === "success") {
+        showSuccess(lastMessage.title, lastMessage.message);
+      } else {
+        showError(lastMessage.title, lastMessage.message);
+      }
+      clearLastMessage();
+    }
+  }, [lastMessage, clearLastMessage]); // 토스트 함수들을 의존성에서 제거
+
   const initializeNotifications = async () => {
     try {
       // Service Worker 지원 여부 확인
       if (!("serviceWorker" in navigator) || !("PushManager" in window)) {
-        devLog.log("브라우저에서 푸시 알림 미지원");
+        showWarning(
+          "브라우저 미지원",
+          "이 브라우저는 푸시 알림을 지원하지 않습니다."
+        );
         setStatus("unsupported");
         return;
       }
@@ -72,17 +91,19 @@ export function WebPushSubscription({
 
   const checkNotificationStatus = async () => {
     devLog.log("알림 상태 확인 시작");
-    devLog.log("현재 권한 상태:", Notification.permission);
+
+    const safeNotification = safeNotificationAccess();
+    devLog.log("현재 권한 상태:", safeNotification.permission);
 
     // 브라우저 지원 여부 확인
-    if (!("Notification" in window)) {
+    if (!safeNotification.isSupported) {
       devLog.log("브라우저에서 알림 미지원");
       setStatus("unsupported");
       return;
     }
 
     // 권한 상태 확인
-    switch (Notification.permission) {
+    switch (safeNotification.permission) {
       case "denied":
         devLog.log("알림 권한 거부됨");
         setStatus("denied");
@@ -98,13 +119,13 @@ export function WebPushSubscription({
           const { subscriptions } = await getSubscriptionStatus();
           if (subscriptions?.length > 0) {
             devLog.log("구독된 농장 정보:", subscriptions);
-            const subscribedFarms = subscriptions
+            const subscribedFarms = (subscriptions || [])
               .map((sub: any) => sub.farm)
               .filter(Boolean);
 
             // 기존 farms 상태와 구독 정보를 병합
             setFarms((prevFarms) =>
-              prevFarms.map((farm) => ({
+              (prevFarms || []).map((farm) => ({
                 ...farm,
                 isSubscribed: subscribedFarms.some(
                   (subFarm: { id: string }) => subFarm.id === farm.id
@@ -124,6 +145,7 @@ export function WebPushSubscription({
   };
 
   const handleAllow = async () => {
+    showInfo("알림 권한 요청", "알림 권한을 요청하는 중입니다...");
     const success = await requestNotificationPermission();
     if (success) {
       await checkNotificationStatus();
@@ -131,6 +153,7 @@ export function WebPushSubscription({
   };
 
   const handleUnsubscribe = async () => {
+    showInfo("구독 해제 시작", "푸시 구독을 해제하는 중입니다...");
     try {
       const registration = await navigator.serviceWorker.ready;
       const subscription = await registration.pushManager.getSubscription();
@@ -139,7 +162,7 @@ export function WebPushSubscription({
         await handleUnsubscription(subscription);
         setStatus("granted");
         setFarms((prevFarms) =>
-          prevFarms.map((farm) => ({
+          (prevFarms || []).map((farm) => ({
             ...farm,
             isSubscribed: false,
           }))

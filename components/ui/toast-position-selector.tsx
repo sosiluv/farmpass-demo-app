@@ -161,7 +161,7 @@ export function ToastPositionSelector({
         });
       }, 300);
     },
-    [position, setPosition, onPositionChange, toast]
+    [position, setPosition, onPositionChange] // toast를 의존성에서 제거
   );
 
   // useEffect는 ToastPositionProvider에서 처리하므로 제거
@@ -216,9 +216,9 @@ export function ToastPositionSelector({
                 <div className="mb-3">
                   <p className="text-xs text-gray-500 mb-2">사용하는 서비스:</p>
                   <div className="flex flex-wrap gap-1">
-                    {option.usedBy.map((service, index) => (
+                    {option.usedBy.map((service) => (
                       <div
-                        key={index}
+                        key={service.name}
                         className={`flex items-center gap-1 px-2 py-1 rounded text-white text-xs ${service.color}`}
                       >
                         {service.icon}

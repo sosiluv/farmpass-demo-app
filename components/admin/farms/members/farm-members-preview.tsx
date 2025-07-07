@@ -55,7 +55,7 @@ export function FarmMembersPreview({
       <div className="flex items-center space-x-1">
         {/* 구성원 아바타 */}
         <div className="flex -space-x-2">
-          {members.slice(0, 3).map((member: MemberData) => (
+          {(members || []).slice(0, 3).map((member: MemberData) => (
             <Avatar
               key={member.id}
               className={`w-6 h-6 border-2 border-background ${getRoleColor(

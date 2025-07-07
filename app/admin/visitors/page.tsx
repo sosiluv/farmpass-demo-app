@@ -24,6 +24,7 @@ import { ErrorBoundary } from "@/components/error/error-boundary";
 import { ResponsivePagination } from "@/components/common/responsive-pagination";
 import { AdminError } from "@/components/error/admin-error";
 import { useDataFetchTimeout } from "@/hooks/useTimeout";
+import { useCommonToast } from "@/lib/utils/notification/toast-messages";
 
 /**
  * 방문자 기록 조회 페이지
@@ -37,19 +38,25 @@ export default function VisitorsPage() {
   const { state } = useAuth();
   const profile = state.status === "authenticated" ? state.profile : null;
   const isAdmin = profile?.account_type === "admin";
+  const { showWarning, showSuccess, showError } = useCommonToast();
 
   // Store에서 데이터와 액션 가져오기
   const { visitors, allVisitors, loading, error, fetchVisitors } =
     useVisitors();
 
   // 농장 데이터 가져오기
-  const { farms: rawFarms } = useFarms(profile?.id);
+  const {
+    farms: rawFarms,
+    error: farmsError,
+    successMessage: farmsSuccessMessage,
+    clearMessages: clearFarmsMessages,
+  } = useFarms(profile?.id);
 
   // Farm 타입 변환 (메모이제이션 최적화)
   const farms: Farm[] = useMemo(() => {
     if (!rawFarms || rawFarms.length === 0) return [];
 
-    return rawFarms.map((farm) => ({
+    return (rawFarms || []).map((farm) => ({
       id: farm.id,
       farm_name: farm.farm_name,
       farm_type: farm.farm_type || undefined,
@@ -69,6 +76,21 @@ export default function VisitorsPage() {
 
   const { reset } = useVisitorStore();
 
+  // 농장 관련 토스트 처리
+  useEffect(() => {
+    if (farmsError) {
+      showError("오류", farmsError);
+      clearFarmsMessages();
+    }
+  }, [farmsError, showError, clearFarmsMessages]);
+
+  useEffect(() => {
+    if (farmsSuccessMessage) {
+      showSuccess("성공", farmsSuccessMessage);
+      clearFarmsMessages();
+    }
+  }, [farmsSuccessMessage, showSuccess, clearFarmsMessages]);
+
   /**
    * 커스텀 날짜 초기화 핸들러
    */
@@ -78,7 +100,7 @@ export default function VisitorsPage() {
 
   // 공통 방문자 액션 훅 사용
   const { handleEdit, handleDelete, handleExport } = useVisitorActions({
-    farms: farms.map((farm) => ({
+    farms: (farms || []).map((farm) => ({
       id: farm.id,
       farm_name: farm.farm_name,
       description: null,
@@ -155,6 +177,10 @@ export default function VisitorsPage() {
   ]);
 
   if (timeoutReached) {
+    showWarning(
+      "데이터 로딩 지연",
+      "네트워크 상태를 확인하거나 다시 시도해 주세요."
+    );
     return (
       <AdminError
         title="데이터를 불러오지 못했습니다"
@@ -192,7 +218,7 @@ export default function VisitorsPage() {
           ]}
           actions={
             <VisitorExportRefactored
-              farms={farms.map((farm) => ({
+              farms={(farms || []).map((farm) => ({
                 id: farm.id,
                 farm_name: farm.farm_name,
                 farm_type: farm.farm_type || null,

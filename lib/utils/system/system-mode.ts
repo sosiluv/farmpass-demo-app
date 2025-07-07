@@ -1,35 +1,176 @@
 import { getSystemSettings } from "@/lib/cache/system-settings-cache";
 import { createClient } from "@/lib/supabase/server";
 import { devLog } from "@/lib/utils/logging/dev-logger";
+
+/**
+ * 🚀 성능 최적화 캐시 관리
+ *
+ * 유지보수 모드와 관리자 권한 체크 결과를 캐싱하여 DB 조회를 최소화합니다.
+ */
+const SystemCache = {
+  // 유지보수 모드 캐시
+  maintenanceModeCache: null as { value: boolean; timestamp: number } | null,
+
+  // 관리자 권한 캐시 (Map으로 사용자별 캐시)
+  adminUserCache: new Map<string, { value: boolean; timestamp: number }>(),
+
+  // 캐시 유효 시간 (5분)
+  CACHE_DURATION: 5 * 60 * 1000,
+
+  // 캐시 최대 크기 (메모리 누수 방지)
+  MAX_CACHE_SIZE: 1000,
+
+  /**
+   * 유지보수 모드 상태를 캐시와 함께 조회
+   */
+  async getMaintenanceMode(bypassCache = false): Promise<boolean> {
+    // 캐시 우회 요청인 경우 DB에서 직접 조회
+    if (bypassCache) {
+      devLog.log("[CACHE] Bypassing cache for maintenance mode check");
+      return await SystemCache.fetchMaintenanceModeFromDB();
+    }
+
+    // 캐시가 유효한 경우 캐시 값 반환
+    if (
+      this.maintenanceModeCache &&
+      Date.now() - this.maintenanceModeCache.timestamp < this.CACHE_DURATION
+    ) {
+      devLog.log("[CACHE] Maintenance mode cache hit");
+      return this.maintenanceModeCache.value;
+    }
+
+    // 캐시가 없거나 만료된 경우 DB에서 조회
+    devLog.log("[CACHE] Maintenance mode cache miss, fetching from DB");
+    const mode = await SystemCache.fetchMaintenanceModeFromDB();
+
+    // 캐시 업데이트
+    this.maintenanceModeCache = { value: mode, timestamp: Date.now() };
+
+    return mode;
+  },
+
+  /**
+   * 사용자의 관리자 권한을 캐시와 함께 조회
+   */
+  async getAdminStatus(userId: string, bypassCache = false): Promise<boolean> {
+    if (!userId) {
+      devLog.log(`[CACHE] No userId provided, not admin`);
+      return false;
+    }
+
+    // 캐시 우회 요청인 경우 DB에서 직접 조회
+    if (bypassCache) {
+      devLog.log(`[CACHE] Bypassing cache for admin status check: ${userId}`);
+      return await SystemCache.fetchAdminStatusFromDB(userId);
+    }
+
+    // 캐시가 유효한 경우 캐시 값 반환
+    const cached = this.adminUserCache.get(userId);
+    if (cached && Date.now() - cached.timestamp < this.CACHE_DURATION) {
+      devLog.log(`[CACHE] Admin status cache hit for user ${userId}`);
+      return cached.value;
+    }
+
+    // 캐시가 없거나 만료된 경우 DB에서 조회
+    devLog.log(
+      `[CACHE] Admin status cache miss for user ${userId}, fetching from DB`
+    );
+    const isAdmin = await SystemCache.fetchAdminStatusFromDB(userId);
+
+    // 캐시 업데이트 (메모리 누수 방지)
+    this.cleanupAdminCache();
+    this.adminUserCache.set(userId, { value: isAdmin, timestamp: Date.now() });
+
+    return isAdmin;
+  },
+
+  /**
+   * DB에서 유지보수 모드 상태 조회 (system-settings-cache 활용)
+   */
+  async fetchMaintenanceModeFromDB(): Promise<boolean> {
+    try {
+      // system-settings-cache를 활용하여 중복 DB 조회 방지
+      const settings = await getSystemSettings();
+      return Boolean(settings.maintenanceMode);
+    } catch (error) {
+      devLog.error(
+        "[SYSTEM-MODE] Failed to fetch maintenance mode from cache:",
+        error
+      );
+      return false;
+    }
+  },
+
+  /**
+   * DB에서 관리자 권한 조회
+   */
+  async fetchAdminStatusFromDB(userId: string): Promise<boolean> {
+    try {
+      const supabase = await createClient();
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("account_type")
+        .eq("id", userId)
+        .single();
+
+      const isAdmin = profile?.account_type === "admin";
+      devLog.log(
+        `[SYSTEM-MODE] User ${userId} admin check: ${isAdmin} (account_type: ${profile?.account_type})`
+      );
+      return isAdmin;
+    } catch (error) {
+      devLog.error(
+        "[SYSTEM-MODE] Failed to fetch admin status from DB:",
+        error
+      );
+      return false;
+    }
+  },
+
+  /**
+   * 관리자 캐시 정리 (메모리 누수 방지)
+   */
+  cleanupAdminCache(): void {
+    if (this.adminUserCache.size <= this.MAX_CACHE_SIZE) return;
+
+    const now = Date.now();
+    const expiredEntries: string[] = [];
+
+    // 만료된 항목 찾기
+    this.adminUserCache.forEach((cache, userId) => {
+      if (now - cache.timestamp > this.CACHE_DURATION) {
+        expiredEntries.push(userId);
+      }
+    });
+
+    // 만료된 항목 삭제
+    expiredEntries.forEach((userId) => {
+      this.adminUserCache.delete(userId);
+    });
+
+    // 여전히 크기가 초과하면 가장 오래된 항목부터 삭제
+    if (this.adminUserCache.size > this.MAX_CACHE_SIZE) {
+      const entries = Array.from(this.adminUserCache.entries());
+      entries.sort((a, b) => a[1].timestamp - b[1].timestamp);
+
+      const deleteCount = this.adminUserCache.size - this.MAX_CACHE_SIZE + 100; // 여유분 확보
+      for (let i = 0; i < deleteCount && i < entries.length; i++) {
+        this.adminUserCache.delete(entries[i][0]);
+      }
+    }
+
+    devLog.log(
+      `[CACHE] Admin cache cleaned up, current size: ${this.adminUserCache.size}`
+    );
+  },
+};
+
 /**
  * 현재 유지보수 모드 상태 확인
  * @param bypassCache 캐시를 우회하고 DB에서 직접 조회할지 여부 (기본값: false)
  */
 export async function isMaintenanceMode(bypassCache = false): Promise<boolean> {
-  try {
-    if (bypassCache) {
-      const supabase = await createClient();
-
-      const { data: settings } = await supabase
-        .from("system_settings")
-        .select("maintenanceMode")
-        .single();
-
-      return Boolean(settings?.maintenanceMode);
-    }
-
-    const settings = await getSystemSettings();
-    return Boolean(settings.maintenanceMode);
-  } catch (error) {
-    devLog.error("[SYSTEM-MODE] Failed to check maintenance mode:", error);
-    devLog.error("[SYSTEM-MODE] Error details:", {
-      name: error instanceof Error ? error.name : "Unknown",
-      message: error instanceof Error ? error.message : String(error),
-    });
-
-    // 에러 시에는 false를 반환하여 정상 동작하도록 함
-    return false;
-  }
+  return await SystemCache.getMaintenanceMode(bypassCache);
 }
 
 /**
@@ -49,35 +190,19 @@ export async function isDebugMode(): Promise<boolean> {
 
 /**
  * 사용자가 관리자인지 확인
+ * @param userId 사용자 ID
+ * @param bypassCache 캐시를 우회하고 DB에서 직접 조회할지 여부 (기본값: false)
  */
-export async function isAdminUser(userId?: string): Promise<boolean> {
+export async function isAdminUser(
+  userId?: string,
+  bypassCache = false
+): Promise<boolean> {
   if (!userId) {
     devLog.log(`[SYSTEM-MODE] No userId provided, not admin`);
     return false;
   }
 
-  try {
-    const { createClient } = await import("@/lib/supabase/server");
-    const supabase = await createClient();
-
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("account_type")
-      .eq("id", userId)
-      .single();
-
-    const isAdmin = profile?.account_type === "admin";
-    devLog.log(
-      `[SYSTEM-MODE] User ${userId} admin check: ${isAdmin} (account_type: ${profile?.account_type})`
-    );
-
-    return isAdmin;
-  } catch (error) {
-    devLog.error("[SYSTEM-MODE] Failed to check admin status:", error);
-
-    // 에러 시에는 false를 반환하여 정상 동작하도록 함
-    return false;
-  }
+  return await SystemCache.getAdminStatus(userId, bypassCache);
 }
 
 /**

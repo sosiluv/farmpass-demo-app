@@ -38,11 +38,18 @@ export async function GET(request: NextRequest) {
       { ip, userAgent } // context 추가
     );
 
-    return NextResponse.json({
-      ip,
-      userAgent,
-      timestamp: new Date().toISOString(),
-    });
+    return NextResponse.json(
+      {
+        ip,
+        userAgent,
+        timestamp: new Date().toISOString(),
+      },
+      {
+        headers: {
+          "Cache-Control": "no-store",
+        },
+      }
+    );
   } catch (error) {
     devLog.error("Error getting user info:", error);
 
@@ -64,7 +71,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json(
       { error: "Failed to get user info" },
-      { status: statusCode }
+      { status: statusCode, headers: { "Cache-Control": "no-store" } }
     );
   } finally {
     // 성능 모니터링 종료 및 로깅

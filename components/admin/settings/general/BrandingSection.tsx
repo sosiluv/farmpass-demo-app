@@ -32,7 +32,7 @@ export function BrandingSection({
   onImageUpload,
   loading,
 }: BrandingSectionProps) {
-  const { showCustomError } = useCommonToast();
+  const { showInfo, showError } = useCommonToast();
 
   // 이미지 프리뷰 상태 관리
   const [logoPreview, setLogoPreview] = useState<string | null>(
@@ -91,14 +91,18 @@ export function BrandingSection({
                 <ImageUpload
                   onUpload={async (file) => {
                     if (!file) return;
+                    showInfo(
+                      "로고 업로드 시작",
+                      "사이트 로고를 업로드하는 중입니다..."
+                    );
                     // 허용 타입 검사 (로고)
                     if (
                       !(ALLOWED_LOGO_TYPES as readonly string[]).includes(
                         file.type
                       )
                     ) {
-                      showCustomError(
-                        "이미지 업로드 실패",
+                      showError(
+                        "파일 형식 오류",
                         `허용되지 않은 파일 형식입니다. ${ALLOWED_LOGO_EXTENSIONS.join(
                           ", "
                         )} 만 업로드 가능합니다.`
@@ -112,7 +116,13 @@ export function BrandingSection({
                       onSettingChange("logo", result.url);
                     }
                   }}
-                  onDelete={async () => handleImageDelete("logo")}
+                  onDelete={async () => {
+                    showInfo(
+                      "로고 삭제 시작",
+                      "사이트 로고를 삭제하는 중입니다..."
+                    );
+                    await handleImageDelete("logo");
+                  }}
                   currentImage={logoPreview}
                   avatarSize="md"
                   label="사이트 로고"
@@ -139,14 +149,18 @@ export function BrandingSection({
                 <ImageUpload
                   onUpload={async (file) => {
                     if (!file) return;
+                    showInfo(
+                      "파비콘 업로드 시작",
+                      "파비콘을 업로드하는 중입니다..."
+                    );
                     // 허용 타입 검사 (파비콘)
                     if (
                       !(ALLOWED_FAVICON_TYPES as readonly string[]).includes(
                         file.type
                       )
                     ) {
-                      showCustomError(
-                        "이미지 업로드 실패",
+                      showError(
+                        "파일 형식 오류",
                         `허용되지 않은 파일 형식입니다. ${ALLOWED_FAVICON_EXTENSIONS.join(
                           ", "
                         )} 만 업로드 가능합니다.`
@@ -160,7 +174,13 @@ export function BrandingSection({
                       onSettingChange("favicon", result.url);
                     }
                   }}
-                  onDelete={async () => handleImageDelete("favicon")}
+                  onDelete={async () => {
+                    showInfo(
+                      "파비콘 삭제 시작",
+                      "파비콘을 삭제하는 중입니다..."
+                    );
+                    await handleImageDelete("favicon");
+                  }}
                   currentImage={faviconPreview}
                   avatarSize="md"
                   label="파비콘"

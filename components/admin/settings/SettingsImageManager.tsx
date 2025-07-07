@@ -36,7 +36,7 @@ export function useSettingsImageManager({
   settings,
   onSettingsUpdate,
 }: SettingsImageManagerProps) {
-  const { showCustomError, showCustomSuccess } = useCommonToast();
+  const { showWarning, showInfo, showSuccess, showError } = useCommonToast();
   const { invalidateCache } = useSystemSettings();
 
   // 설정 새로고침 함수
@@ -160,31 +160,33 @@ export function useSettingsImageManager({
     type: "favicon" | "logo" | "notificationIcon" | "notificationBadge"
   ) => {
     if (!settings?.id) {
-      showCustomError("설정 오류", "시스템 설정 정보가 올바르지 않습니다.");
+      showWarning("설정 오류", "시스템 설정 정보가 올바르지 않습니다.");
       return;
     }
     if (!file) {
+      showInfo("이미지 삭제 시작", "이미지를 삭제하는 중입니다...");
       await handleImageDelete(type);
       return;
     }
+    showInfo("이미지 업로드 시작", "이미지를 업로드하는 중입니다...");
     try {
       if (type === "logo") {
         const result = await logoManager.handleImageUpload(file);
         await refreshSettings();
         if (result?.publicUrl) {
-          showCustomSuccess("로고 업로드 완료", "로고가 업로드되었습니다.");
+          showSuccess("로고 업로드 완료", "로고가 업로드되었습니다.");
         }
       } else if (type === "favicon") {
         const result = await faviconManager.handleImageUpload(file);
         await refreshSettings();
         if (result?.publicUrl) {
-          showCustomSuccess("파비콘 업로드 완료", "파비콘이 업로드되었습니다.");
+          showSuccess("파비콘 업로드 완료", "파비콘이 업로드되었습니다.");
         }
       } else if (type === "notificationIcon") {
         const result = await notificationIconManager.handleImageUpload(file);
         await refreshSettings();
         if (result?.publicUrl) {
-          showCustomSuccess(
+          showSuccess(
             "알림 아이콘 업로드 완료",
             "알림 아이콘이 업로드되었습니다."
           );
@@ -194,7 +196,7 @@ export function useSettingsImageManager({
         const result = await notificationBadgeManager.handleImageUpload(file);
         await refreshSettings();
         if (result?.publicUrl) {
-          showCustomSuccess(
+          showSuccess(
             "배지 아이콘 업로드 완료",
             "배지 아이콘이 업로드되었습니다."
           );
@@ -219,7 +221,7 @@ export function useSettingsImageManager({
       } else if (typeof error === "string") {
         message = error;
       }
-      showCustomError("이미지 업로드 실패", message);
+      showError("이미지 업로드 실패", message);
     }
   };
 
@@ -227,32 +229,27 @@ export function useSettingsImageManager({
     type: "favicon" | "logo" | "notificationIcon" | "notificationBadge"
   ) => {
     if (!settings?.id) {
-      showCustomError("설정 오류", "시스템 설정 정보가 올바르지 않습니다.");
+      showWarning("설정 오류", "시스템 설정 정보가 올바르지 않습니다.");
       return;
     }
+    showInfo("이미지 삭제 시작", "이미지를 삭제하는 중입니다...");
     try {
       if (type === "logo") {
         await logoManager.handleImageDelete();
         await refreshSettings();
-        showCustomSuccess("로고 삭제 완료", "로고가 삭제되었습니다.");
+        showSuccess("로고 삭제 완료", "로고가 삭제되었습니다.");
       } else if (type === "favicon") {
         await faviconManager.handleImageDelete();
         await refreshSettings();
-        showCustomSuccess("파비콘 삭제 완료", "파비콘이 삭제되었습니다.");
+        showSuccess("파비콘 삭제 완료", "파비콘이 삭제되었습니다.");
       } else if (type === "notificationIcon") {
         await notificationIconManager.handleImageDelete();
         await refreshSettings();
-        showCustomSuccess(
-          "알림 아이콘 삭제 완료",
-          "알림 아이콘이 삭제되었습니다."
-        );
+        showSuccess("알림 아이콘 삭제 완료", "알림 아이콘이 삭제되었습니다.");
       } else if (type === "notificationBadge") {
         await notificationBadgeManager.handleImageDelete();
         await refreshSettings();
-        showCustomSuccess(
-          "배지 아이콘 삭제 완료",
-          "배지 아이콘이 삭제되었습니다."
-        );
+        showSuccess("배지 아이콘 삭제 완료", "배지 아이콘이 삭제되었습니다.");
       }
     } catch (error) {
       let message = "알 수 없는 오류가 발생했습니다.";
@@ -272,7 +269,7 @@ export function useSettingsImageManager({
       } else if (typeof error === "string") {
         message = error;
       }
-      showCustomError("이미지 삭제 실패", message);
+      showError("이미지 삭제 실패", message);
     }
   };
 

@@ -274,7 +274,7 @@ export function VisitorTable({
   }
 
   // 빈 상태
-  if (visitors.length === 0) {
+  if (!visitors || visitors.length === 0) {
     return <VisitorTableEmpty />;
   }
 
@@ -289,7 +289,7 @@ export function VisitorTable({
               isAdmin={isAdmin}
             />
             <TableBody>
-              {visitors.map((visitor, index) => (
+              {(visitors || []).map((visitor, index) => (
                 <VisitorTableRow
                   key={visitor.id}
                   visitor={visitor}
@@ -308,7 +308,7 @@ export function VisitorTable({
 
       {/* 모바일 카드 뷰 */}
       <div className="xl:hidden space-y-3 sm:space-y-4 w-full max-w-full overflow-x-hidden">
-        {visitors.map((visitor, index) => (
+        {(visitors || []).map((visitor, index) => (
           <MobileVisitorCard
             key={visitor.id}
             visitor={visitor}

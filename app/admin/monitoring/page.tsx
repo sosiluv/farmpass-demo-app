@@ -17,6 +17,8 @@ import {
 } from "@/components/admin/monitoring";
 import { AdminError } from "@/components/error/admin-error";
 import { useDataFetchTimeout } from "@/hooks/useTimeout";
+import { apiClient } from "@/lib/utils/data";
+import { handleError } from "@/lib/utils/error";
 
 interface MonitoringData {
   timestamp: string;
@@ -111,15 +113,21 @@ export default function MonitoringDashboard() {
 
   const fetchData = useCallback(async () => {
     try {
-      const response = await fetch("/api/monitoring/dashboard", {
-        cache: "no-store",
+      const result = await apiClient("/api/monitoring/dashboard", {
+        context: "시스템 모니터링 데이터 조회",
+        onError: (error, context) => {
+          handleError(error, {
+            context,
+            onStateUpdate: (errorMessage) => {
+              setError(errorMessage);
+            },
+          });
+        },
       });
-      if (!response.ok) throw new Error("Failed to fetch monitoring data");
-      const result = await response.json();
       setData(result);
       setError(null);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Unknown error occurred");
+      // 에러는 이미 onError에서 처리됨
     } finally {
       setLoading(false);
     }

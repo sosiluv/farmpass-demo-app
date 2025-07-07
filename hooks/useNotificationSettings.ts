@@ -2,42 +2,47 @@ import { useState, useEffect, useCallback, useMemo } from "react";
 import type { NotificationSettings } from "@/lib/types/notification";
 import type { SystemSettings } from "@/lib/types/settings";
 import { devLog } from "@/lib/utils/logging/dev-logger";
-import { useCommonToast } from "@/lib/utils/notification/toast-messages";
+import { apiClient } from "@/lib/utils/data";
+import { handleError } from "@/lib/utils/error";
 
 // 알림 설정 조회 훅 (사용자용)
 export function useNotificationSettings() {
   const [data, setData] = useState<NotificationSettings | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
-  const toast = useCommonToast();
 
   useEffect(() => {
     let isMounted = true;
     setLoading(true);
     setError(null);
-    fetch("/api/notifications/settings")
-      .then(async (res) => {
-        if (!res.ok)
-          throw new Error("알림 설정을 불러오는 중 오류가 발생했습니다.");
-        const json = await res.json();
+
+    apiClient("/api/notifications/settings", {
+      method: "GET",
+      context: "알림 설정 조회",
+      onError: (error, context) => {
+        if (isMounted) {
+          handleError(error, {
+            context,
+            onStateUpdate: (errorMessage) => {
+              setError(new Error(errorMessage));
+            },
+          });
+        }
+      },
+    })
+      .then((json) => {
         if (isMounted) {
           setData(json);
           devLog.info("알림 설정 로드 성공:", json);
         }
       })
       .catch((err) => {
-        if (isMounted) {
-          setError(err);
-          devLog.error("알림 설정 로드 실패:", err);
-          toast.showCustomError(
-            "알림 설정 로드 실패",
-            "알림 설정을 불러오는 중 오류가 발생했습니다."
-          );
-        }
+        // 에러는 이미 onError에서 처리됨
       })
       .finally(() => {
         if (isMounted) setLoading(false);
       });
+
     return () => {
       isMounted = false;
     };
@@ -69,7 +74,6 @@ export function useSystemNotificationSettings(options: {
     handleImageUpload,
     handleImageDelete,
   } = options;
-  const toast = useCommonToast();
   const [uploadStates, setUploadStates] = useState({
     icon: false,
     badge: false,
@@ -104,25 +108,17 @@ export function useSystemNotificationSettings(options: {
           const uploadType =
             type === "icon" ? "notificationIcon" : "notificationBadge";
           await handleImageUpload(file, uploadType);
-          toast.showCustomSuccess(
-            "파일 업로드 성공",
-            `${
-              type === "icon" ? "알림 아이콘" : "배지 아이콘"
-            }이 업로드되었습니다.`
-          );
+          // 토스트는 컴포넌트에서 처리
         } catch (error) {
-          devLog.error("파일 업로드 중 오류:", error);
-          toast.showCustomError(
-            "파일 업로드 실패",
-            "파일 업로드 중 오류가 발생했습니다."
-          );
+          handleError(error, "파일 업로드");
+          // 토스트는 컴포넌트에서 처리
         } finally {
           setUploadStates((prev) => ({ ...prev, [type]: false }));
         }
       };
       input.click();
     },
-    [handleImageUpload, toast]
+    [handleImageUpload]
   );
 
   // 알림/배지 아이콘 제거 핸들러
@@ -138,30 +134,27 @@ export function useSystemNotificationSettings(options: {
   // VAPID 키 생성
   const handleGenerateVapidKeys = useCallback(async () => {
     try {
-      const response = await fetch("/api/push/vapid", {
+      const data = await apiClient("/api/push/vapid", {
         method: "POST",
+        context: "VAPID 키 생성",
+        onError: (error, context) => {
+          handleError(error, {
+            context,
+            onStateUpdate: (errorMessage) => {
+              // 에러 상태 업데이트가 필요한 경우 여기서 처리
+            },
+          });
+        },
       });
 
-      if (!response.ok) {
-        throw new Error("VAPID 키 생성에 실패했습니다.");
-      }
-
-      const data = await response.json();
       onUpdate("vapidPublicKey", data.publicKey);
       onUpdate("vapidPrivateKey", data.privateKey);
 
-      toast.showCustomSuccess(
-        "VAPID 키 생성 완료",
-        "새로운 VAPID 키가 생성되었습니다."
-      );
+      // 토스트는 컴포넌트에서 처리
     } catch (error) {
-      devLog.error("VAPID 키 생성 중 오류:", error);
-      toast.showCustomError(
-        "VAPID 키 생성 실패",
-        "VAPID 키를 생성하는 중 오류가 발생했습니다."
-      );
+      // 에러는 이미 onError에서 처리됨
     }
-  }, [onUpdate, toast]);
+  }, [onUpdate]);
 
   // 타임스탬프 업데이트
   const updateTimestamp = useCallback((type: "icon" | "badge") => {

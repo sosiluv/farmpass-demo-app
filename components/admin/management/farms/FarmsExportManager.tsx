@@ -40,7 +40,7 @@ export function FarmsExportManager({
     }
 
     // CSV 데이터 생성
-    const csvData = exportFarms.map((farm) => {
+    const csvData = (exportFarms || []).map((farm) => {
       const row: Record<string, any> = {};
 
       if (options.includeBasic) {

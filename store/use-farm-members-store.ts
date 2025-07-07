@@ -1,6 +1,8 @@
 import { create } from "zustand";
 import type { FarmMember } from "@/lib/types";
 import { devLog } from "@/lib/utils/logging/dev-logger";
+import { apiClient } from "@/lib/utils/data/api-client";
+import { handleError } from "@/lib/utils/error";
 
 interface FarmMembersState {
   members: FarmMember[];
@@ -62,22 +64,22 @@ export const useFarmMembersStore = create<FarmMembersState>((set, get) => ({
 
       devLog.log(`Fetching members for farmId: ${farmId}`);
 
-      // API 라우트를 통해 멤버 목록 조회 (로그 기록 포함)
-      const response = await fetch(`/api/farms/${farmId}/members`, {
+      const { members } = await apiClient(`/api/farms/${farmId}/members`, {
         method: "GET",
-        headers: {
-          "Content-Type": "application/json",
+        context: "농장 멤버 조회",
+        onError: (error, context) => {
+          handleError(error, {
+            context,
+            onStateUpdate: (errorMessage) => {
+              state.isFetchingRef.current = false;
+              set({ error: new Error(errorMessage), loading: false });
+            },
+          });
+          // 토스트는 컴포넌트에서 처리
         },
       });
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || "Failed to fetch members");
-      }
-
-      const { members: membersData } = await response.json();
-
-      const members: FarmMember[] = membersData.map((member: any) => ({
+      const membersData: FarmMember[] = members.map((member: any) => ({
         id: member.id,
         farm_id: member.farm_id,
         user_id: member.user_id,
@@ -94,8 +96,8 @@ export const useFarmMembersStore = create<FarmMembersState>((set, get) => ({
 
       // owner가 맨 위에 오도록 정렬
       const sortedMembers = [
-        ...members.filter((m) => m.role === "owner"),
-        ...members.filter((m) => m.role !== "owner"),
+        ...membersData.filter((m) => m.role === "owner"),
+        ...membersData.filter((m) => m.role !== "owner"),
       ];
 
       set({
@@ -109,10 +111,7 @@ export const useFarmMembersStore = create<FarmMembersState>((set, get) => ({
       state.isFetchingRef.current = false;
       state.hasDataRef.current = true;
     } catch (error) {
-      // finally 블록처럼 ref 값들 초기화
-      state.isFetchingRef.current = false;
-      set({ error: error as Error, loading: false });
-      devLog.error("Farm members fetch error:", error);
+      // 에러는 이미 onError에서 처리됨
       throw error;
     }
   },
@@ -126,20 +125,22 @@ export const useFarmMembersStore = create<FarmMembersState>((set, get) => ({
       set({ loading: true, error: null });
 
       // API 라우트를 통해 멤버 추가 (로그 기록 포함)
-      const response = await fetch(`/api/farms/${farmId}/members`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ email, role }),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || "Failed to add member");
-      }
-
-      const { member: newMemberData } = await response.json();
+      const { member: newMemberData } = await apiClient(
+        `/api/farms/${farmId}/members`,
+        {
+          method: "POST",
+          body: JSON.stringify({ email, role }),
+          context: "농장 멤버 추가",
+          onError: (error, context) => {
+            handleError(error, {
+              context,
+              onStateUpdate: (errorMessage) => {
+                set({ error: new Error(errorMessage), loading: false });
+              },
+            });
+          },
+        }
+      );
 
       const memberWithProfile: FarmMember = {
         id: newMemberData.id,
@@ -167,8 +168,7 @@ export const useFarmMembersStore = create<FarmMembersState>((set, get) => ({
       );
       return memberWithProfile;
     } catch (error: any) {
-      devLog.error("Member addition error:", error);
-      set({ error: error as Error, loading: false });
+      // 에러는 이미 onError에서 처리됨
       throw error;
     }
   },
@@ -182,21 +182,22 @@ export const useFarmMembersStore = create<FarmMembersState>((set, get) => ({
       set({ loading: true, error: null });
 
       // API 라우트를 통해 멤버 역할 변경 (로그 기록 포함)
-      const response = await fetch(`/api/farms/${farmId}/members/${memberId}`, {
+      await apiClient(`/api/farms/${farmId}/members/${memberId}`, {
         method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-        },
         body: JSON.stringify({ role }),
+        context: "농장 멤버 역할 변경",
+        onError: (error, context) => {
+          handleError(error, {
+            context,
+            onStateUpdate: (errorMessage) => {
+              set({ error: new Error(errorMessage), loading: false });
+            },
+          });
+        },
       });
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || "Failed to update member role");
-      }
-
       set((state) => ({
-        members: state.members.map((member) =>
+        members: (state.members || []).map((member) =>
           member.id === memberId ? { ...member, role } : member
         ),
         loading: false,
@@ -207,8 +208,7 @@ export const useFarmMembersStore = create<FarmMembersState>((set, get) => ({
         memberId
       );
     } catch (error) {
-      set({ error: error as Error, loading: false });
-      devLog.error("Member role update error:", error);
+      // 에러는 이미 onError에서 처리됨
       throw error;
     }
   },
@@ -218,14 +218,18 @@ export const useFarmMembersStore = create<FarmMembersState>((set, get) => ({
       set({ loading: true, error: null });
 
       // API 라우트를 통해 멤버 제거 (로그 기록 포함)
-      const response = await fetch(`/api/farms/${farmId}/members/${memberId}`, {
+      await apiClient(`/api/farms/${farmId}/members/${memberId}`, {
         method: "DELETE",
+        context: "농장 멤버 제거",
+        onError: (error, context) => {
+          handleError(error, {
+            context,
+            onStateUpdate: (errorMessage) => {
+              set({ error: new Error(errorMessage), loading: false });
+            },
+          });
+        },
       });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || "Failed to remove member");
-      }
 
       set((state) => ({
         members: state.members.filter((member) => member.id !== memberId),
@@ -234,8 +238,7 @@ export const useFarmMembersStore = create<FarmMembersState>((set, get) => ({
 
       devLog.success("Member removed successfully via API route:", memberId);
     } catch (error) {
-      set({ error: error as Error, loading: false });
-      devLog.error("Member removal error:", error);
+      // 에러는 이미 onError에서 처리됨
       throw error;
     }
   },

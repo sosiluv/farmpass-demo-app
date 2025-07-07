@@ -55,7 +55,7 @@ export function useQuickActions({
   farmId,
 }: UseQuickActionsProps): UseQuickActionsReturn {
   const [isLoading, setIsLoading] = useState(false);
-  const { showCustomSuccess, showCustomError } = useCommonToast();
+  const { showInfo, showSuccess, showError } = useCommonToast();
   const { fetchMembers } = useFarmMembersStore();
 
   /**
@@ -74,32 +74,27 @@ export function useQuickActions({
    */
   const handlePromote = useCallback(
     async (memberId: string) => {
+      showInfo("멤버 승격 시작", "멤버를 승격하는 중입니다...");
       setIsLoading(true);
       try {
         const result = await promoteMember(farmId, memberId);
 
         if (result.success) {
-          showCustomSuccess(
-            "멤버 승격 완료",
-            "멤버가 성공적으로 승격되었습니다."
-          );
+          showSuccess("멤버 승격 완료", "멤버가 성공적으로 승격되었습니다.");
           await refreshData();
         } else {
-          showCustomError(
+          showError(
             "멤버 승격 실패",
             "멤버를 승격하는 중 오류가 발생했습니다."
           );
         }
       } catch (error) {
-        showCustomError(
-          "멤버 승격 실패",
-          "멤버를 승격하는 중 오류가 발생했습니다."
-        );
+        showError("멤버 승격 실패", "멤버를 승격하는 중 오류가 발생했습니다.");
       } finally {
         setIsLoading(false);
       }
     },
-    [farmId, showCustomSuccess, showCustomError, refreshData]
+    [farmId, showInfo, showSuccess, showError, refreshData]
   );
 
   /**
@@ -107,32 +102,27 @@ export function useQuickActions({
    */
   const handleDemote = useCallback(
     async (memberId: string) => {
+      showInfo("멤버 강등 시작", "멤버를 강등하는 중입니다...");
       setIsLoading(true);
       try {
         const result = await demoteMember(farmId, memberId);
 
         if (result.success) {
-          showCustomSuccess(
-            "멤버 강등 완료",
-            "멤버가 성공적으로 강등되었습니다."
-          );
+          showSuccess("멤버 강등 완료", "멤버가 성공적으로 강등되었습니다.");
           await refreshData();
         } else {
-          showCustomError(
+          showError(
             "멤버 강등 실패",
             "멤버를 강등하는 중 오류가 발생했습니다."
           );
         }
       } catch (error) {
-        showCustomError(
-          "멤버 강등 실패",
-          "멤버를 강등하는 중 오류가 발생했습니다."
-        );
+        showError("멤버 강등 실패", "멤버를 강등하는 중 오류가 발생했습니다.");
       } finally {
         setIsLoading(false);
       }
     },
-    [farmId, showCustomSuccess, showCustomError, refreshData]
+    [farmId, showInfo, showSuccess, showError, refreshData]
   );
 
   /**
@@ -140,32 +130,27 @@ export function useQuickActions({
    */
   const handleDelete = useCallback(
     async (memberId: string) => {
+      showInfo("멤버 삭제 시작", "멤버를 삭제하는 중입니다...");
       setIsLoading(true);
       try {
         const result = await removeMember(farmId, memberId);
 
         if (result.success) {
-          showCustomSuccess(
-            "멤버 삭제 완료",
-            "멤버가 성공적으로 삭제되었습니다."
-          );
+          showSuccess("멤버 삭제 완료", "멤버가 성공적으로 삭제되었습니다.");
           await refreshData();
         } else {
-          showCustomError(
+          showError(
             "멤버 삭제 실패",
             "멤버를 삭제하는 중 오류가 발생했습니다."
           );
         }
       } catch (error) {
-        showCustomError(
-          "멤버 삭제 실패",
-          "멤버를 삭제하는 중 오류가 발생했습니다."
-        );
+        showError("멤버 삭제 실패", "멤버를 삭제하는 중 오류가 발생했습니다.");
       } finally {
         setIsLoading(false);
       }
     },
-    [farmId, showCustomSuccess, showCustomError, refreshData]
+    [farmId, showInfo, showSuccess, showError, refreshData]
   );
 
   /**
@@ -173,35 +158,27 @@ export function useQuickActions({
    */
   const handleRoleChange = useCallback(
     async (memberId: string, newRole: "manager" | "viewer") => {
+      showInfo("멤버 역할 변경 시작", "멤버 역할을 변경하는 중입니다...");
       setIsLoading(true);
       try {
         const result = await updateMemberRole(farmId, memberId, newRole);
         if (result.success) {
           if (newRole === "manager") {
-            showCustomSuccess(
-              "멤버 승격 완료",
-              "멤버가 성공적으로 승격되었습니다."
-            );
+            showSuccess("멤버 승격 완료", "멤버가 성공적으로 승격되었습니다.");
           } else {
-            showCustomSuccess(
-              "멤버 강등 완료",
-              "멤버가 성공적으로 강등되었습니다."
-            );
+            showSuccess("멤버 강등 완료", "멤버가 성공적으로 강등되었습니다.");
           }
           await refreshData();
         } else {
-          showCustomError(
-            "멤버 작업 실패",
-            "멤버 작업 중 오류가 발생했습니다."
-          );
+          showError("멤버 작업 실패", "멤버 작업 중 오류가 발생했습니다.");
         }
       } catch (error) {
-        showCustomError("멤버 작업 실패", "멤버 작업 중 오류가 발생했습니다.");
+        showError("멤버 작업 실패", "멤버 작업 중 오류가 발생했습니다.");
       } finally {
         setIsLoading(false);
       }
     },
-    [farmId, showCustomSuccess, showCustomError, refreshData]
+    [farmId, showInfo, showSuccess, showError, refreshData]
   );
 
   /**
@@ -209,29 +186,24 @@ export function useQuickActions({
    */
   const handleBulkPromote = useCallback(
     async (memberIds: string[]) => {
+      showInfo("멤버 일괄 승격 시작", "멤버들을 승격하는 중입니다...");
       setIsLoading(true);
       try {
         const result = await bulkPromoteMembers(farmId, memberIds);
 
         if (result.success > 0) {
-          showCustomSuccess(
-            "멤버 승격 완료",
-            "멤버가 성공적으로 승격되었습니다."
-          );
+          showSuccess("멤버 승격 완료", "멤버가 성공적으로 승격되었습니다.");
           await refreshData();
         } else {
-          showCustomError(
-            "멤버 작업 실패",
-            "멤버 작업 중 오류가 발생했습니다."
-          );
+          showError("멤버 작업 실패", "멤버 작업 중 오류가 발생했습니다.");
         }
       } catch (error) {
-        showCustomError("멤버 작업 실패", "멤버 작업 중 오류가 발생했습니다.");
+        showError("멤버 작업 실패", "멤버 작업 중 오류가 발생했습니다.");
       } finally {
         setIsLoading(false);
       }
     },
-    [farmId, showCustomSuccess, showCustomError, refreshData]
+    [farmId, showInfo, showSuccess, showError, refreshData]
   );
 
   /**
@@ -239,29 +211,24 @@ export function useQuickActions({
    */
   const handleBulkDemote = useCallback(
     async (memberIds: string[]) => {
+      showInfo("멤버 일괄 강등 시작", "멤버들을 강등하는 중입니다...");
       setIsLoading(true);
       try {
         const result = await bulkDemoteMembers(farmId, memberIds);
 
         if (result.success > 0) {
-          showCustomSuccess(
-            "멤버 강등 완료",
-            "멤버가 성공적으로 강등되었습니다."
-          );
+          showSuccess("멤버 강등 완료", "멤버가 성공적으로 강등되었습니다.");
           await refreshData();
         } else {
-          showCustomError(
-            "멤버 작업 실패",
-            "멤버 작업 중 오류가 발생했습니다."
-          );
+          showError("멤버 작업 실패", "멤버 작업 중 오류가 발생했습니다.");
         }
       } catch (error) {
-        showCustomError("멤버 작업 실패", "멤버 작업 중 오류가 발생했습니다.");
+        showError("멤버 작업 실패", "멤버 작업 중 오류가 발생했습니다.");
       } finally {
         setIsLoading(false);
       }
     },
-    [farmId, showCustomSuccess, showCustomError, refreshData]
+    [farmId, showInfo, showSuccess, showError, refreshData]
   );
 
   /**
@@ -269,29 +236,24 @@ export function useQuickActions({
    */
   const handleBulkDelete = useCallback(
     async (memberIds: string[]) => {
+      showInfo("멤버 일괄 삭제 시작", "멤버들을 삭제하는 중입니다...");
       setIsLoading(true);
       try {
         const result = await bulkRemoveMembers(farmId, memberIds);
 
         if (result.success > 0) {
-          showCustomSuccess(
-            "멤버 삭제 완료",
-            "멤버가 성공적으로 삭제되었습니다."
-          );
+          showSuccess("멤버 삭제 완료", "멤버가 성공적으로 삭제되었습니다.");
           await refreshData();
         } else {
-          showCustomError(
-            "멤버 작업 실패",
-            "멤버 작업 중 오류가 발생했습니다."
-          );
+          showError("멤버 작업 실패", "멤버 작업 중 오류가 발생했습니다.");
         }
       } catch (error) {
-        showCustomError("멤버 작업 실패", "멤버 작업 중 오류가 발생했습니다.");
+        showError("멤버 작업 실패", "멤버 작업 중 오류가 발생했습니다.");
       } finally {
         setIsLoading(false);
       }
     },
-    [farmId, showCustomSuccess, showCustomError, refreshData]
+    [farmId, showInfo, showSuccess, showError, refreshData]
   );
 
   return {

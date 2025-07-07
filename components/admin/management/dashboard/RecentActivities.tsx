@@ -114,7 +114,7 @@ export function RecentActivities({ activities = [] }: RecentActivitiesProps) {
       variant="info"
     >
       <div className="space-y-2 sm:space-y-3 lg:space-y-4 overflow-y-auto h-80">
-        {activities.map((activity) => (
+        {(activities || []).map((activity) => (
           <div
             key={activity.id}
             className="flex items-start gap-2 sm:gap-3 lg:gap-4 border-b border-slate-200 dark:border-slate-700 pb-2 sm:pb-3 lg:pb-4 last:border-0 hover:bg-slate-50 dark:hover:bg-slate-800/50 rounded-lg p-2 transition-colors duration-200"

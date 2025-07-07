@@ -1,7 +1,7 @@
 "use client";
 
 import { useSystemSettings } from "@/lib/hooks/use-system-settings";
-import { DEFAULT_SYSTEM_SETTINGS } from "@/lib/types/settings";
+import { DEFAULT_SYSTEM_SETTINGS } from "@/lib/constants/defaults";
 import { useMemo } from "react";
 
 interface LogoInfo {

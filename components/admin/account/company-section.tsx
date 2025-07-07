@@ -18,11 +18,23 @@ import {
 import { AddressSearch } from "@/components/common/address-search";
 import { ErrorBoundary } from "@/components/error/error-boundary";
 import type { CompanySectionProps, CompanyFormData } from "@/lib/types/account";
-import {
-  EMPLOYEE_COUNT_OPTIONS,
-  BUSINESS_TYPE_OPTIONS,
-} from "@/lib/constants/account";
 import AccountCardHeader from "./AccountCardHeader";
+
+// 상수 정의
+const EMPLOYEE_COUNT_OPTIONS = [
+  { value: "10", label: "1-10명" },
+  { value: "50", label: "10-50명" },
+  { value: "100", label: "50-100명" },
+  { value: "500", label: "100명 이상" },
+] as const;
+
+const BUSINESS_TYPE_OPTIONS = [
+  { value: "축산업", label: "축산업" },
+  { value: "농업", label: "농업" },
+  { value: "원예업", label: "원예업" },
+  { value: "수산업", label: "수산업" },
+  { value: "기타", label: "기타" },
+] as const;
 
 export function CompanySection({
   profile,
@@ -103,7 +115,7 @@ export function CompanySection({
                     <SelectValue placeholder="업종 선택" />
                   </SelectTrigger>
                   <SelectContent>
-                    {BUSINESS_TYPE_OPTIONS.map((option) => (
+                    {(BUSINESS_TYPE_OPTIONS || []).map((option) => (
                       <SelectItem key={option.value} value={option.value}>
                         {option.label}
                       </SelectItem>
@@ -166,7 +178,7 @@ export function CompanySection({
                     <SelectValue placeholder="직원 수 선택" />
                   </SelectTrigger>
                   <SelectContent>
-                    {EMPLOYEE_COUNT_OPTIONS.map((option) => (
+                    {(EMPLOYEE_COUNT_OPTIONS || []).map((option) => (
                       <SelectItem key={option.value} value={option.value}>
                         {option.label}
                       </SelectItem>
@@ -205,14 +217,19 @@ export function CompanySection({
                   }))
                 }
                 placeholder="회사 및 농장에 대한 간단한 소개를 입력하세요"
+                rows={4}
                 disabled={loading}
               />
             </div>
 
             <div className="flex justify-end">
-              <Button onClick={() => onSave(companyData)} disabled={loading}>
+              <Button
+                onClick={() => onSave(companyData)}
+                disabled={loading}
+                className="btn-hover"
+              >
                 <Save className="mr-2 h-4 w-4" />
-                {loading ? "저장 중..." : "회사 정보 저장"}
+                저장
               </Button>
             </div>
           </CardContent>

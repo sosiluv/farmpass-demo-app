@@ -27,6 +27,14 @@
         {
           "key": "Referrer-Policy",
           "value": "origin-when-cross-origin"
+        },
+        {
+          "key": "Permissions-Policy",
+          "value": "camera=(), microphone=(), geolocation=()"
+        },
+        {
+          "key": "X-Permitted-Cross-Domain-Policies",
+          "value": "none"
         }
       ]
     }
@@ -42,6 +50,19 @@
     {
       "source": "/api/:path*",
       "destination": "/api/:path*"
+    },
+    {
+      "source": "/wordpress/:path*",
+      "destination": "/api/404-handler"
+    },
+    {
+      "source": "/wp-:path*",
+      "destination": "/api/404-handler"
+    },
+    {
+      "source": "/(.*)\\.php$",
+      "destination": "/api/404-handler"
     }
-  ]
+  ],
+  "regions": ["icn1"]
 }

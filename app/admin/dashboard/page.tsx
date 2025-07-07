@@ -13,6 +13,7 @@ import {
 } from "@/components/admin/dashboard";
 import { NotificationPermissionDialog } from "@/components/admin/notifications";
 import { useNotificationPermission } from "@/hooks/useNotificationPermission";
+import { useCommonToast } from "@/lib/utils/notification/toast-messages";
 import { Button } from "@/components/ui/button";
 import { Bell, Bug, RotateCcw, BarChart3, TrendingUp } from "lucide-react";
 import { ErrorBoundary } from "@/components/error/error-boundary";
@@ -20,10 +21,13 @@ import { calculateUnifiedChartData } from "@/lib/utils/data/common-stats";
 import { devLog } from "@/lib/utils/logging/dev-logger";
 import { AdminError } from "@/components/error/admin-error";
 import { useMultipleLoadingTimeout } from "@/hooks/useTimeout";
+import { InstallGuide } from "@/components/common/InstallGuide";
+import { usePWAInstall } from "@/components/providers/pwa-provider";
 
 export default function DashboardPage() {
   const { state } = useAuth();
   const { farms: availableFarms, fetchState } = useFarms();
+  const installInfo = usePWAInstall();
 
   // state에서 profile 추출 및 admin 여부 확인 - useMemo로 최적화
   const profile = state.status === "authenticated" ? state.profile : null;
@@ -46,12 +50,9 @@ export default function DashboardPage() {
     }
   }, [fetchState.loading, availableFarms, isAdmin]);
 
-  // selectedFarm 상태를 초기값으로 설정하여 중복 호출 방지
-  const [selectedFarm, setSelectedFarm] = useState<string>(() => {
-    // 초기값을 즉시 설정하여 useEffect에서의 중복 설정 방지
-    if (isAdmin) return "all";
-    return "";
-  });
+  // selectedFarm 상태 관리 개선
+  const [selectedFarm, setSelectedFarm] = useState<string>("");
+  const [isInitialized, setIsInitialized] = useState(false);
 
   // 농장 선택 콜백 - useCallback으로 최적화
   const handleFarmSelect = useCallback((farmId: string) => {
@@ -67,25 +68,42 @@ export default function DashboardPage() {
     showDialogForce,
     resetPermissionState,
     getDebugInfo,
+    lastMessage,
+    clearLastMessage,
   } = useNotificationPermission();
 
-  // selectedFarm 상태 업데이트 - 더 안정적인 조건
+  const { showWarning, showSuccess, showError } = useCommonToast();
+
+  // 초기 농장 선택 설정 - 한 번만 실행
   useEffect(() => {
     if (
+      !isInitialized &&
       initialSelectedFarm &&
-      selectedFarm === "" && // 빈 문자열일 때만 업데이트
       !fetchState.loading &&
       availableFarms.length > 0
     ) {
       setSelectedFarm(initialSelectedFarm);
+      setIsInitialized(true);
       devLog.log(`Initial farm selected: ${initialSelectedFarm}`);
     }
   }, [
     initialSelectedFarm,
-    selectedFarm,
     fetchState.loading,
     availableFarms.length,
+    isInitialized,
   ]);
+
+  // 알림 메시지 처리
+  useEffect(() => {
+    if (lastMessage) {
+      if (lastMessage.type === "success") {
+        showSuccess(lastMessage.title, lastMessage.message);
+      } else {
+        showError(lastMessage.title, lastMessage.message);
+      }
+      clearLastMessage();
+    }
+  }, [lastMessage, showSuccess, showError, clearLastMessage]);
 
   // useFarmVisitors 호출을 메모화하여 불필요한 재호출 방지
   const memoizedSelectedFarm = useMemo(() => {
@@ -106,9 +124,24 @@ export default function DashboardPage() {
     [visitors]
   );
 
-  // 로딩 조건을 더 명확하게 수정
-  const shouldShowSkeleton =
-    userLoading || fetchState.loading || (visitorsLoading && selectedFarm);
+  // 초기 로딩 상태 최적화 - 데이터가 있으면 스켈레톤 숨김
+  const isInitialLoading = useMemo(() => {
+    return (
+      userLoading ||
+      (fetchState.loading && availableFarms.length === 0) ||
+      (visitorsLoading &&
+        selectedFarm &&
+        selectedFarm !== "" &&
+        visitors.length === 0)
+    );
+  }, [
+    userLoading,
+    fetchState.loading,
+    availableFarms.length,
+    visitorsLoading,
+    selectedFarm,
+    visitors.length,
+  ]);
 
   // 데이터 재페칭 함수
   const handleDataRefetch = useCallback(() => {
@@ -123,6 +156,12 @@ export default function DashboardPage() {
   );
 
   if (timeoutReached) {
+    // 타임아웃 시 경고 메시지 표시
+    showWarning(
+      "데이터 로딩 지연",
+      "네트워크 상태를 확인하거나 다시 시도해 주세요."
+    );
+
     return (
       <AdminError
         title="데이터를 불러오지 못했습니다"
@@ -133,7 +172,7 @@ export default function DashboardPage() {
     );
   }
 
-  if (shouldShowSkeleton) {
+  if (isInitialLoading) {
     return <DashboardSkeleton />;
   }
 
@@ -150,22 +189,25 @@ export default function DashboardPage() {
               title="대시보드"
               description="농장 방문자 현황과 통계를 한눈에 확인하세요"
               breadcrumbs={[{ label: "대시보드" }]}
-              actions={
-                <FarmSelector
-                  selectedFarm={selectedFarm}
-                  onFarmChange={handleFarmSelect}
-                  availableFarms={availableFarms}
-                  isAdmin={isAdmin}
-                />
-              }
+              actions={installInfo.canInstall ? <InstallGuide /> : null}
             />
           </div>
 
           {/* 통계 카드 섹션 */}
           <section className="space-y-4 lg:space-y-6">
-            <div className="flex items-center gap-2 text-lg font-semibold text-slate-900 dark:text-slate-100">
-              <BarChart3 className="w-5 h-5 text-blue-600 dark:text-blue-400" />
-              <span>핵심 통계</span>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2 text-lg font-semibold text-slate-900 dark:text-slate-100">
+                <BarChart3 className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+                <span>핵심 통계</span>
+              </div>
+
+              {/* 농장 선택기를 핵심통계 제목과 같은 행에 배치 */}
+              <FarmSelector
+                selectedFarm={selectedFarm}
+                onFarmChange={handleFarmSelect}
+                availableFarms={availableFarms}
+                isAdmin={isAdmin}
+              />
             </div>
             {/* 기존 StatsGrid 디자인 유지 */}
             <StatsGrid stats={dashboardStats} />
@@ -225,9 +267,19 @@ export default function DashboardPage() {
                       alert(
                         `디버깅 정보:\n\n권한: ${
                           debugInfo?.currentPermission
-                        }\n이전 요청: ${
-                          debugInfo?.hasAskedBefore ? "YES" : "NO"
-                        }\n다이얼로그 표시: ${
+                        }\n마지막 요청: ${debugInfo?.lastAsked}\n재요청 가능: ${
+                          debugInfo?.canReAsk ? "YES" : "NO"
+                        }\n재요청까지 남은 일수: ${
+                          debugInfo?.daysUntilReAsk
+                        }\n\nPWA 정보:\nPWA 모드: ${
+                          debugInfo?.isPWA ? "YES" : "NO"
+                        }\n표시 모드: ${debugInfo?.displayMode}\n웹푸시 지원: ${
+                          debugInfo?.pushSupported ? "YES" : "NO"
+                        }${
+                          debugInfo?.iosVersion
+                            ? `\niOS 버전: ${debugInfo.iosVersion}`
+                            : ""
+                        }\n\n다이얼로그 표시: ${
                           debugInfo?.state.showDialog ? "YES" : "NO"
                         }\n\n자세한 정보는 콘솔을 확인하세요.`
                       );
@@ -240,11 +292,9 @@ export default function DashboardPage() {
                 </div>
 
                 <div className="text-xs text-slate-600 dark:text-slate-400 space-y-1">
-                  <p className="font-medium">
-                    PC 크롬에서 다이얼로그가 안 보이는 이유:
-                  </p>
-                  <p>• 이미 알림 권한을 설정했거나 요청했던 기록이 있음</p>
-                  <p>• 브라우저 설정에서 권한이 미리 결정되어 있음</p>
+                  <p className="font-medium">알림 권한 재요청 정책:</p>
+                  <p>• 권한이 허용된 경우: 더 이상 요청하지 않음</p>
+                  <p>• 권한이 거부되거나 미설정인 경우: 7일 간격으로 재요청</p>
                   <p>• 위 버튼들로 강제 테스트 가능</p>
                 </div>
               </div>

@@ -142,23 +142,29 @@ export function PasswordStrength({ password }: PasswordStrengthProps) {
 
   return (
     <div className="space-y-2">
-      <div className="flex justify-between text-sm">
-        <div className="flex flex-wrap gap-1">
+      <div className="flex justify-between text-sm flex-col gap-1 sm:flex-row sm:items-center">
+        <div
+          className="flex flex-wrap gap-1 min-w-0 max-w-full overflow-x-auto"
+          style={{ rowGap: 4, columnGap: 4 }}
+        >
           {requirements.map((req) => (
             <span
               key={req.id}
-              className={`inline-flex items-center rounded px-2 py-1 text-xs ${
+              className={`inline-flex items-center rounded px-2 py-1 text-xs whitespace-nowrap ${
                 req.validator(password)
                   ? "bg-green-100 text-green-700"
                   : "bg-gray-100 text-gray-700"
               }`}
+              style={{ minWidth: 40 }}
             >
               {req.shortLabel}
               {req.optional && " (선택)"}
             </span>
           ))}
         </div>
-        <span className={`text-sm font-medium ${getStrengthTextColor()}`}>
+        <span
+          className={`text-sm font-medium ${getStrengthTextColor()} mt-1 sm:mt-0`}
+        >
           {getStrengthText()}
         </span>
       </div>

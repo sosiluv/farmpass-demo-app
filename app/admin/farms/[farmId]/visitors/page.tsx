@@ -16,6 +16,7 @@ import {
   VisitorTable,
 } from "@/components/admin/visitors";
 import type { Farm } from "@/store/use-farms-store";
+import { useCommonToast } from "@/lib/utils/notification/toast-messages";
 
 // 새로운 Zustand Store 사용
 import {
@@ -41,7 +42,14 @@ export default function FarmVisitorsPage() {
   const { state } = useAuth();
   const user = state.status === "authenticated" ? state.user : null;
   const farmId = params.farmId as string;
-  const { farms, fetchState } = useFarms(user?.id);
+  const { showSuccess, showError } = useCommonToast();
+  const {
+    farms,
+    fetchState,
+    error: farmsError,
+    successMessage: farmsSuccessMessage,
+    clearMessages: clearFarmsMessages,
+  } = useFarms(user?.id);
 
   const [currentFarm, setCurrentFarm] = useState<Farm | null>(null);
   const [isInitialized, setIsInitialized] = useState(false);
@@ -64,9 +72,24 @@ export default function FarmVisitorsPage() {
     fetchVisitors: visitorStoreFetchVisitors,
   } = useVisitorStore();
 
+  // 농장 관련 토스트 처리
+  useEffect(() => {
+    if (farmsError) {
+      showError("오류", farmsError);
+      clearFarmsMessages();
+    }
+  }, [farmsError, showError, clearFarmsMessages]);
+
+  useEffect(() => {
+    if (farmsSuccessMessage) {
+      showSuccess("성공", farmsSuccessMessage);
+      clearFarmsMessages();
+    }
+  }, [farmsSuccessMessage, showSuccess, clearFarmsMessages]);
+
   // 공통 방문자 액션 훅 사용
   const { handleEdit, handleDelete, handleExport } = useVisitorActions({
-    farms: farms.map((f) => ({
+    farms: (farms || []).map((f) => ({
       id: f.id,
       farm_name: f.farm_name,
       description: null,
@@ -244,7 +267,7 @@ export default function FarmVisitorsPage() {
               <div className="min-w-0">
                 <VisitorExportRefactored
                   farms={
-                    farms.map((f) => ({
+                    (farms || []).map((f) => ({
                       id: f.id,
                       farm_name: f.farm_name,
                       farm_type: f.farm_type ?? null,

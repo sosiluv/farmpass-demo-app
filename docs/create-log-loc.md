@@ -159,9 +159,9 @@
 
 - ✅ **캐시 무효화 실패**: `logApiError("/api/settings/invalidate-cache", "POST|GET", error)` - 실패시
 
-**위치**: `app/api/settings/visitor/route.ts`
+**위치**: `app/api/settings/route.ts` (통합됨)
 
-- ✅ **방문자 설정 조회 실패**: `logApiError("/api/settings/visitor", "GET", error)` - 실패시
+- ✅ **방문자 설정 조회 실패**: `logApiError("/api/settings", "GET", error)` - 실패시 (방문자 설정 포함)
 
 ### **6. 프로필 관리 로그** ✅ **완전 구현**
 

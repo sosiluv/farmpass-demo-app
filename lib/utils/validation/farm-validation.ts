@@ -1,6 +1,6 @@
 import * as z from "zod";
 import { isValidFarmType } from "@/lib/constants/farm-types";
-import { PHONE_PATTERN } from "@/lib/constants/input-rules";
+import { validatePhone } from "@/lib/utils/validation/validation";
 
 export const farmFormSchema = z.object({
   farm_name: z.string().min(1, "농장 이름을 입력해주세요"),
@@ -23,7 +23,9 @@ export const farmFormSchema = z.object({
     .string({
       required_error: "관리자 연락처를 입력해주세요",
     })
-    .regex(PHONE_PATTERN, "(010-0000-0000)휴대폰 형식으로 입력해주세요"),
+    .refine((value) => validatePhone(value), {
+      message: "(010-0000-0000)휴대폰 형식으로 입력해주세요",
+    }),
 });
 
 export type FarmFormValues = z.infer<typeof farmFormSchema>;

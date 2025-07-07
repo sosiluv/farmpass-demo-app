@@ -1,18 +1,8 @@
-import { SystemSettings, DEFAULT_SYSTEM_SETTINGS } from "@/lib/types/settings";
+import { SystemSettings } from "@/lib/types/settings";
+import { DEFAULT_SYSTEM_SETTINGS } from "@/lib/constants/defaults";
 import { devLog } from "@/lib/utils/logging/dev-logger";
-
-type CacheEntry = {
-  data: SystemSettings;
-  timestamp: number;
-  expiry: number;
-};
-
-type CacheInfo = {
-  size: number;
-  lastUpdated: string | null;
-  isStale: boolean;
-  nextRefreshDue: string | null;
-};
+import { apiClient } from "@/lib/utils/data";
+import { handleError } from "@/lib/utils/error";
 
 export class SystemSettingsCache {
   private cache: SystemSettings | null = null;
@@ -56,17 +46,15 @@ export class SystemSettingsCache {
           ? window.location.origin
           : "http://localhost:3000";
 
-      const response = await fetch(`${baseUrl}/api/settings`, {
-        headers: {
-          "Cache-Control": "no-cache",
+      const settings = await apiClient(`${baseUrl}/api/settings`, {
+        context: "시스템 설정 조회",
+        onError: (error, context) => {
+          handleError(error, context);
+          if (process.env.NODE_ENV === "development") {
+            devLog.error("Failed to refresh settings cache, using defaults");
+          }
         },
       });
-
-      if (!response.ok) {
-        throw new Error(`API 요청 실패: ${response.status}`);
-      }
-
-      const settings = await response.json();
 
       // ✅ 캐시 데이터 새로고침 성공 로그 (개발 환경에서만)
       if (process.env.NODE_ENV === "development") {

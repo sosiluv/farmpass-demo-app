@@ -28,9 +28,9 @@ function ErrorComponent(): never {
 }
 
 export default function TestErrorsPage() {
-  const [showError, setShowError] = useState<string | null>(null);
+  const [showsError, setShowsError] = useState<string | null>(null);
   const [shouldCrash, setShouldCrash] = useState(false);
-  const toast = useCommonToast();
+  const { showWarning, showInfo, showSuccess, showError } = useCommonToast();
   const { state } = useAuth();
   const profile = state.status === "authenticated" ? state.profile : null;
   const loading = state.status === "loading";
@@ -41,12 +41,19 @@ export default function TestErrorsPage() {
   }
 
   const triggerError = (type: string) => {
-    setShowError(type);
+    showWarning("에러 테스트 시작", `${type} 에러를 발생시키는 중입니다...`);
+
+    // 에러 발생 전 정보 알림
+    showInfo("에러 발생 예정", "3초 후 에러가 발생합니다.");
+
+    setTimeout(() => {
+      throw new Error(`테스트 에러: ${type}`);
+    }, 3000);
   };
 
   const resetError = () => {
     // 모든 에러 상태 초기화
-    setShowError(null);
+    setShowsError(null);
     setShouldCrash(false);
 
     // 브라우저 콘솔 클리어 (선택적)
@@ -64,21 +71,21 @@ export default function TestErrorsPage() {
       }
     }
 
-    toast.showCustomSuccess(
+    showSuccess(
       "에러 초기화 완료",
       "모든 테스트 에러 상태가 초기화되었습니다."
     );
   };
 
   const showToastError = () => {
-    toast.showCustomError(
+    showError(
       "토스트 에러 테스트",
       "이것은 토스트 알림으로 표시되는 에러 메시지입니다."
     );
   };
 
   const triggerPageCrash = () => {
-    toast.showCustomError(
+    showError(
       "페이지 크래시 테스트",
       "2초 후 컴포넌트 에러가 발생하여 500 에러 페이지로 이동합니다..."
     );
@@ -168,7 +175,7 @@ export default function TestErrorsPage() {
               size="sm"
               onClick={() => {
                 const state = (window as any).checkAuthState?.();
-                toast.showCustomSuccess(
+                showSuccess(
                   "인증 상태 확인",
                   `로딩: ${state?.loading}, 프로필: ${
                     state?.profile ? "있음" : "없음"
@@ -183,10 +190,7 @@ export default function TestErrorsPage() {
               size="sm"
               onClick={() => {
                 (window as any).resetAuthState?.();
-                toast.showCustomSuccess(
-                  "인증 상태 리셋",
-                  "인증 상태가 리셋되었습니다."
-                );
+                showSuccess("인증 상태 리셋", "인증 상태가 리셋되었습니다.");
               }}
             >
               상태 리셋
@@ -197,9 +201,9 @@ export default function TestErrorsPage() {
               onClick={async () => {
                 const result = await (window as any).refreshSession?.();
                 if (result) {
-                  toast.showCustomSuccess("세션 새로고침", "성공");
+                  showSuccess("세션 새로고침", "성공");
                 } else {
-                  toast.showCustomError("세션 새로고침", "실패");
+                  showError("세션 새로고침", "실패");
                 }
               }}
             >
@@ -304,7 +308,7 @@ export default function TestErrorsPage() {
           </div>
 
           {/* 에러 표시 영역 */}
-          {showError === "admin-error" && (
+          {showsError === "admin-error" && (
             <AdminError
               error={new Error("테스트용 관리 영역 에러입니다.")}
               reset={resetError}
@@ -313,7 +317,7 @@ export default function TestErrorsPage() {
             />
           )}
 
-          {showError === "access-denied" && (
+          {showsError === "access-denied" && (
             <AccessDenied
               title="테스트 접근 거부"
               description="이것은 접근 권한 에러 컴포넌트 테스트입니다."
@@ -322,7 +326,7 @@ export default function TestErrorsPage() {
             />
           )}
 
-          {showError === "error-boundary" && (
+          {showsError === "error-boundary" && (
             <ErrorBoundary
               title="Error Boundary 테스트"
               description="이것은 Error Boundary 컴포넌트 테스트입니다."

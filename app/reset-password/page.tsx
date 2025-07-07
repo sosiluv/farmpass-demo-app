@@ -3,6 +3,8 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -12,50 +14,63 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Loader2, Mail } from "lucide-react";
+import { Mail } from "lucide-react";
 import { motion } from "framer-motion";
 import { useCommonToast } from "@/lib/utils/notification/toast-messages";
 import { devLog } from "@/lib/utils/logging/dev-logger";
 import { Logo } from "@/components/common";
 import { Loading } from "@/components/ui/loading";
+import { apiClient } from "@/lib/utils/data";
+import { resetPasswordRequestFormSchema } from "@/lib/utils/validation/auth-validation";
+import type { ResetPasswordRequestFormData } from "@/lib/utils/validation/auth-validation";
 
 export default function ResetPasswordPage() {
-  const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
   const router = useRouter();
-  const toast = useCommonToast();
+  const { showSuccess, showError } = useCommonToast();
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const form = useForm<ResetPasswordRequestFormData>({
+    resolver: zodResolver(resetPasswordRequestFormSchema),
+    defaultValues: {
+      email: "",
+    },
+  });
+
+  const handleSubmit = async (data: ResetPasswordRequestFormData) => {
     setLoading(true);
 
     try {
-      const response = await fetch("/api/auth/reset-password", {
+      await apiClient("/api/auth/reset-password", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ email }),
+        body: JSON.stringify({ email: data.email }),
+        context: "비밀번호 재설정 요청",
+        onError: (error, context) => {
+          devLog.error("Password reset error:", error);
+          showError("오류", error.message);
+        },
       });
 
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || "비밀번호 재설정 요청에 실패했습니다.");
-      }
-
-      toast.showCustomSuccess(
+      showSuccess(
         "이메일 전송 완료",
         "비밀번호 재설정 링크가 이메일로 전송되었습니다."
       );
 
       // 로그인 페이지로 리다이렉트
       router.push("/login");
-    } catch (error: any) {
-      devLog.error("Password reset error:", error);
-      toast.showCustomError("오류", error.message);
+    } catch (error) {
+      // 에러는 이미 onError에서 처리됨
     } finally {
       setLoading(false);
     }
@@ -80,41 +95,58 @@ export default function ResetPasswordPage() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="email">이메일</Label>
-                <div className="relative">
-                  <Mail className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                  <Input
-                    id="email"
-                    type="email"
-                    placeholder="name@example.com"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    required
-                    autoComplete="username"
-                    className="h-12 pl-10 input-focus"
-                    disabled={loading}
-                  />
-                </div>
-              </div>
+            <Form {...form}>
+              <form
+                onSubmit={form.handleSubmit(handleSubmit)}
+                className="space-y-4"
+              >
+                <FormField
+                  control={form.control}
+                  name="email"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-sm text-gray-800">
+                        이메일 <span className="text-red-500">*</span>
+                      </FormLabel>
+                      <div className="relative">
+                        <Mail className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                        <FormControl>
+                          <Input
+                            {...field}
+                            type="email"
+                            placeholder="name@example.com"
+                            autoComplete="username"
+                            className="h-12 pl-10 input-focus"
+                            disabled={loading}
+                          />
+                        </FormControl>
+                      </div>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
 
-              <Button type="submit" className="h-12 w-full" disabled={loading}>
-                {loading ? (
-                  <>
-                    <Loading
-                      spinnerSize={16}
-                      showText={false}
-                      minHeight="auto"
-                      className="mr-2"
-                    />
-                    처리 중...
-                  </>
-                ) : (
-                  "비밀번호 재설정 링크 받기"
-                )}
-              </Button>
-            </form>
+                <Button
+                  type="submit"
+                  className="h-12 w-full"
+                  disabled={loading}
+                >
+                  {loading ? (
+                    <>
+                      <Loading
+                        spinnerSize={16}
+                        showText={false}
+                        minHeight="auto"
+                        className="mr-2"
+                      />
+                      처리 중...
+                    </>
+                  ) : (
+                    "비밀번호 재설정 링크 받기"
+                  )}
+                </Button>
+              </form>
+            </Form>
           </CardContent>
           <CardFooter className="flex flex-col">
             <div className="mt-2 text-center text-sm">

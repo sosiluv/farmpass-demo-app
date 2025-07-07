@@ -30,7 +30,10 @@ export function DebugLogsSection({ logs, onClearLogs }: DebugLogsSectionProps) {
           </div>
         ) : (
           logs.map((log, index) => (
-            <div key={index} className="text-orange-700 font-mono text-xs">
+            <div
+              key={`log-${index}-${log.substring(0, 50)}`}
+              className="text-orange-700 font-mono text-xs"
+            >
               {log}
             </div>
           ))

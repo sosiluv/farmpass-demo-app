@@ -95,7 +95,14 @@ export async function GET(request: Request) {
       }
     );
 
-    return NextResponse.json({ users: filteredUsers });
+    return NextResponse.json(
+      { users: filteredUsers },
+      {
+        headers: {
+          "Cache-Control": "no-store",
+        },
+      }
+    );
   } catch (error) {
     devLog.error("Error searching users:", error);
 

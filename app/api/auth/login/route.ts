@@ -200,89 +200,6 @@ async function incrementLoginAttempts(
   }
 }
 
-/**
- * 로그인 성공 시 시도 횟수 초기화
- */
-async function resetLoginAttempts(
-  email: string,
-  clientIP: string,
-  userAgent: string
-): Promise<void> {
-  // 현재 상태 확인 (로그를 위해)
-  const currentProfile = await prisma.profiles.findUnique({
-    where: { email },
-    select: { id: true, login_attempts: true, last_failed_login: true },
-  });
-
-  // 로그인 시도 횟수 초기화
-  await prisma.$executeRaw`
-    UPDATE profiles
-    SET login_attempts = 0,
-        last_failed_login = NULL,
-        last_login_attempt = NULL
-    WHERE email = ${email}
-  `;
-
-  // 로그인 성공 로그 기록
-  await createAuthLog(
-    "LOGIN_SUCCESS",
-    `로그인 성공: ${email}`,
-    email,
-    currentProfile?.id,
-    {
-      previous_attempts: currentProfile?.login_attempts || 0,
-      reset_reason: "successful_login",
-      action_type: "security_event",
-      reset_at: new Date().toISOString(),
-    },
-    { ip: clientIP, userAgent }
-  );
-}
-
-/**
- * 로그인 시간 업데이트
- */
-async function updateLoginTime(
-  userId: string,
-  clientIP: string,
-  userAgent: string
-): Promise<void> {
-  try {
-    await prisma.profiles.update({
-      where: { id: userId },
-      data: {
-        last_login_at: new Date(),
-      },
-    });
-
-    // 로그인 시간 업데이트 로그 기록
-    await createAuthLog(
-      "LOGIN_TIME_UPDATED",
-      `로그인 시간 업데이트: ${userId}`,
-      userId,
-      userId,
-      {
-        update_type: "last_login_at",
-        update_time: new Date().toISOString(),
-        action_type: "user_activity",
-      },
-      { ip: clientIP, userAgent }
-    );
-  } catch (error) {
-    logApiError(
-      "auth_update_login_time",
-      error instanceof Error ? error.message : String(error),
-      "로그인 시간 업데이트 실패",
-      userId as string,
-      {
-        ip: clientIP,
-        userAgent: userAgent,
-      }
-    );
-    // 로그인 시간 업데이트 실패는 치명적이지 않으므로 에러를 던지지 않음
-  }
-}
-
 export async function POST(request: NextRequest) {
   const monitor = new PerformanceMonitor("auth_login_integrated");
 
@@ -312,27 +229,18 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 1. 로그인 시도 횟수 확인
+    // 1. 로그인 시도 횟수 확인과 Supabase 인증을 병렬로 처리
     const dbMonitor = new PerformanceMonitor("auth_login_attempts_check");
-    const attempts = await checkLoginAttempts(email);
+    const supabase = await createClient();
+
+    const [authResult, attempts] = await Promise.all([
+      supabase.auth.signInWithPassword({ email, password }),
+      checkLoginAttempts(email),
+    ]);
+
     const dbDuration = await dbMonitor.finish();
 
-    await logDatabasePerformance(
-      {
-        query: "SELECT profiles login_attempts check",
-        table: "profiles",
-        duration_ms: dbDuration,
-        row_count: 1,
-      },
-      undefined,
-      {
-        ip: clientIP,
-        email: email,
-        userAgent: userAgent,
-      }
-    );
-
-    // 계정이 잠겨있는 경우
+    // 계정이 잠겨있는 경우 (인증 성공 여부와 관계없이 체크)
     if (attempts.isBlocked) {
       const duration = await monitor.finish();
       await logApiPerformance({
@@ -357,15 +265,10 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 2. Supabase 로그인 시도
-    const supabase = await createClient();
     const {
-      data: { user },
+      data: { user, session },
       error,
-    } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
+    } = authResult;
 
     // 3. 로그인 결과에 따른 처리
     if (error) {
@@ -412,54 +315,95 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 로그인 성공: 시도 횟수 초기화 + 로그인 시간 업데이트
+    // 로그인 성공: 단일 쿼리로 시도 횟수 초기화와 로그인 시간 업데이트 통합
     const resetMonitor = new PerformanceMonitor(
       "auth_reset_attempts_and_update_time"
     );
 
-    // 병렬로 처리하여 성능 향상
-    await Promise.all([
-      resetLoginAttempts(email, clientIP, userAgent),
-      updateLoginTime(user!.id, clientIP, userAgent),
-    ]);
+    // 단일 쿼리로 통합하여 성능 향상
+    await prisma.profiles.update({
+      where: { email },
+      data: {
+        login_attempts: 0,
+        last_failed_login: null,
+        last_login_attempt: null,
+        last_login_at: new Date(),
+      },
+    });
+
+    // 로그인 성공 로그 기록 (백그라운드에서 처리)
+    setTimeout(async () => {
+      try {
+        await createAuthLog(
+          "LOGIN_SUCCESS",
+          `로그인 성공: ${email}`,
+          email,
+          user!.id,
+          {
+            previous_attempts:
+              attempts.maxAttempts - attempts.remainingAttempts,
+            reset_reason: "successful_login",
+            action_type: "security_event",
+            reset_at: new Date().toISOString(),
+          },
+          { ip: clientIP, userAgent }
+        );
+      } catch (logError) {
+        devLog.warn("Login success log failed:", logError);
+      }
+    }, 0);
 
     const resetDuration = await resetMonitor.finish();
 
-    await logDatabasePerformance(
-      {
-        query: "UPDATE profiles login_attempts reset + last_login_at",
-        table: "profiles",
-        duration_ms: resetDuration,
-        row_count: 1,
-      },
-      user?.id,
-      {
-        ip: clientIP,
-        email: email,
-        userAgent: userAgent,
-      }
-    );
-
     const duration = await monitor.finish();
-    const responseData = {
+
+    // Supabase 기본 쿠키 사용 (중복 쿠키 설정 제거)
+    const response = NextResponse.json({
       success: true,
       user: {
         id: user?.id,
         email: user?.email,
         created_at: user?.created_at,
       },
+      session: {
+        access_token: session!.access_token,
+        refresh_token: session!.refresh_token,
+        expires_at: session!.expires_at,
+      },
       remainingAttempts: attempts.maxAttempts,
-    };
-
-    await logApiPerformance({
-      endpoint: "/api/auth/login",
-      method: "POST",
-      duration_ms: duration,
-      status_code: 200,
-      response_size: JSON.stringify(responseData).length,
     });
 
-    return NextResponse.json(responseData);
+    // 성능 로깅을 비동기로 처리하여 응답 지연 방지
+    setTimeout(async () => {
+      try {
+        await logDatabasePerformance(
+          {
+            query: "UPDATE profiles login_attempts reset + last_login_at",
+            table: "profiles",
+            duration_ms: resetDuration,
+            row_count: 1,
+          },
+          user?.id,
+          {
+            ip: clientIP,
+            email: email,
+            userAgent: userAgent,
+          }
+        );
+
+        await logApiPerformance({
+          endpoint: "/api/auth/login",
+          method: "POST",
+          duration_ms: duration,
+          status_code: 200,
+          response_size: JSON.stringify(response).length,
+        });
+      } catch (logError) {
+        devLog.warn("Performance logging failed:", logError);
+      }
+    }, 0);
+
+    return response;
   } catch (err) {
     const duration = await monitor.finish();
     devLog.error("Integrated login error:", err);

@@ -35,10 +35,6 @@ export function validateServiceRoleConfig() {
   const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
   if (!supabaseUrl || !supabaseKey) {
-    console.warn("⚠️ Service Role 환경 변수가 설정되지 않았습니다:", {
-      hasUrl: !!supabaseUrl,
-      hasKey: !!supabaseKey,
-    });
     return false;
   }
 

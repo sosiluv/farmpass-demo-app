@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import crypto from "crypto";
-import { DEFAULT_SYSTEM_SETTINGS } from "@/lib/types/settings";
+import { DEFAULT_SYSTEM_SETTINGS } from "@/lib/constants/defaults";
 import { invalidateSystemSettingsCache } from "@/lib/cache/system-settings-cache";
 import {
   createSystemLog,
@@ -54,7 +54,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json(newSettings, {
         headers: {
           "Content-Type": "application/json",
-          "Cache-Control": "max-age=300, s-maxage=300", // 5분 캐시
+          "Cache-Control": "no-store",
         },
       });
     }
@@ -62,7 +62,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json(settings, {
       headers: {
         "Content-Type": "application/json",
-        "Cache-Control": "max-age=300, s-maxage=300", // 5분 캐시
+        "Cache-Control": "no-store",
       },
     });
   } catch (error) {

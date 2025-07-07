@@ -3,6 +3,7 @@
 import React, { Component, ReactNode } from "react";
 import { AdminError } from "./admin-error";
 import { devLog } from "@/lib/utils/logging/dev-logger";
+import { handleError } from "@/lib/utils/error";
 
 interface Props {
   children: ReactNode;
@@ -33,6 +34,9 @@ export class ErrorBoundary extends Component<Props, State> {
     const newErrorCount = errorCount + 1;
 
     devLog.error("ErrorBoundary caught an error:", error, errorInfo);
+
+    // ✅ 공통 에러 핸들러 연동 (토스트, Sentry 등)
+    handleError(error, "ErrorBoundary");
 
     // 에러 카운트 업데이트
     this.setState({ errorCount: newErrorCount });

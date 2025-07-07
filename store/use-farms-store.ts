@@ -6,6 +6,8 @@ import {
   PerformanceMonitor,
   logDatabasePerformance,
 } from "@/lib/utils/logging/system-log";
+import { handleError } from "@/lib/utils/error";
+import { apiClient } from "@/lib/utils/data";
 
 export interface Farm {
   id: string;
@@ -96,19 +98,25 @@ export const useFarmsStore = create<FarmsState>()(
           });
 
           // API 라우트를 통해 농장 목록 조회 (로그 기록 포함)
-          const response = await fetch("/api/farms", {
+          const { farms } = await apiClient("/api/farms", {
             method: "GET",
-            headers: {
-              "Content-Type": "application/json",
+
+            context: "농장 목록 조회",
+            onError: (error, context) => {
+              handleError(error, {
+                context,
+                onStateUpdate: (errorMessage) => {
+                  set((state) => ({
+                    fetchState: {
+                      ...state.fetchState,
+                      loading: false,
+                      error: new Error(errorMessage),
+                    },
+                  }));
+                },
+              });
             },
           });
-
-          if (!response.ok) {
-            const errorData = await response.json();
-            throw new Error(errorData.error || "Failed to fetch farms");
-          }
-
-          const { farms } = await response.json();
 
           // 성능 로깅
           const duration = await monitor.finish(300); // 300ms 임계값
@@ -137,17 +145,7 @@ export const useFarmsStore = create<FarmsState>()(
             farms?.length || 0
           );
         } catch (error) {
-          devLog.error("Failed to fetch farms:", error);
-          set((state) => ({
-            fetchState: {
-              ...state.fetchState,
-              loading: false,
-              error:
-                error instanceof Error
-                  ? error
-                  : new Error("Failed to fetch farms"),
-            },
-          }));
+          // 에러는 이미 onError에서 처리됨
           throw error;
         }
       },
@@ -155,20 +153,28 @@ export const useFarmsStore = create<FarmsState>()(
       addFarm: async (userId: string, farmData: FarmFormValues) => {
         try {
           // API 라우트를 통해 농장 등록 (farm_members 자동 등록 포함)
-          const response = await fetch("/api/farms", {
+          const { farm } = await apiClient("/api/farms", {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
             },
             body: JSON.stringify(farmData),
+            context: "농장 등록",
+            onError: (error, context) => {
+              handleError(error, {
+                context,
+                onStateUpdate: (errorMessage) => {
+                  set((state) => ({
+                    fetchState: {
+                      ...state.fetchState,
+                      loading: false,
+                      error: new Error(errorMessage),
+                    },
+                  }));
+                },
+              });
+            },
           });
-
-          if (!response.ok) {
-            const errorData = await response.json();
-            throw new Error(errorData.error || "Failed to create farm");
-          }
-
-          const { farm } = await response.json();
 
           if (farm) {
             // 농장 소유자 정보를 포함하여 상태 업데이트
@@ -195,7 +201,7 @@ export const useFarmsStore = create<FarmsState>()(
 
           return null;
         } catch (error) {
-          devLog.error("Failed to add farm:", error);
+          // 에러는 이미 onError에서 처리됨
           throw error;
         }
       },
@@ -203,20 +209,31 @@ export const useFarmsStore = create<FarmsState>()(
       updateFarm: async (farmId: string, farmData: Partial<Farm>) => {
         try {
           // API 라우트를 통해 농장 수정 (로그 기록 포함)
-          const response = await fetch(`/api/farms/${farmId}`, {
-            method: "PUT",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify(farmData),
-          });
-
-          if (!response.ok) {
-            const errorData = await response.json();
-            throw new Error(errorData.error || "Failed to update farm");
-          }
-
-          const { farm: updatedFarm } = await response.json();
+          const { farm: updatedFarm } = await apiClient(
+            `/api/farms/${farmId}`,
+            {
+              method: "PUT",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify(farmData),
+              context: "농장 수정",
+              onError: (error, context) => {
+                handleError(error, {
+                  context,
+                  onStateUpdate: (errorMessage) => {
+                    set((state) => ({
+                      fetchState: {
+                        ...state.fetchState,
+                        loading: false,
+                        error: new Error(errorMessage),
+                      },
+                    }));
+                  },
+                });
+              },
+            }
+          );
 
           set((state) => ({
             farms: state.farms.map((farm) =>
@@ -230,7 +247,7 @@ export const useFarmsStore = create<FarmsState>()(
 
           devLog.success("Farm updated successfully via API route:", farmId);
         } catch (error) {
-          devLog.error("Failed to update farm:", error);
+          // 에러는 이미 onError에서 처리됨
           throw error;
         }
       },
@@ -238,14 +255,24 @@ export const useFarmsStore = create<FarmsState>()(
       deleteFarm: async (farmId: string) => {
         try {
           // API 라우트를 통해 농장 삭제 (로그 기록 포함)
-          const response = await fetch(`/api/farms/${farmId}`, {
+          await apiClient(`/api/farms/${farmId}`, {
             method: "DELETE",
+            context: "농장 삭제",
+            onError: (error, context) => {
+              handleError(error, {
+                context,
+                onStateUpdate: (errorMessage) => {
+                  set((state) => ({
+                    fetchState: {
+                      ...state.fetchState,
+                      loading: false,
+                      error: new Error(errorMessage),
+                    },
+                  }));
+                },
+              });
+            },
           });
-
-          if (!response.ok) {
-            const errorData = await response.json();
-            throw new Error(errorData.error || "Failed to delete farm");
-          }
 
           set((state) => ({
             farms: state.farms.filter((farm) => farm.id !== farmId),
@@ -257,7 +284,7 @@ export const useFarmsStore = create<FarmsState>()(
 
           devLog.success("Farm deleted successfully via API route:", farmId);
         } catch (error) {
-          devLog.error("Failed to delete farm:", error);
+          // 에러는 이미 onError에서 처리됨
           throw error;
         }
       },

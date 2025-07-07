@@ -1,10 +1,11 @@
 "use client";
 
 import type React from "react";
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback, useEffect } from "react";
 import { type FarmFormValues } from "@/lib/utils/validation";
 import { useFarms, type Farm } from "@/lib/hooks/use-farms";
 import { useAuth } from "@/components/providers/auth-provider";
+import { useCommonToast } from "@/lib/utils/notification/toast-messages";
 
 import { useFarmsContext } from "@/components/providers/farms-provider";
 import { StatsSkeleton, TableSkeleton } from "@/components/common/skeletons";
@@ -31,8 +32,18 @@ interface FarmMembersData {
 export default function FarmsPage() {
   const { state } = useAuth();
   const profile = state.status === "authenticated" ? state.profile : null;
-  const { farms, fetchState, addFarm, updateFarm, deleteFarm, refetch } =
-    useFarms(profile?.id);
+  const { showSuccess, showError } = useCommonToast();
+  const {
+    farms,
+    fetchState,
+    error,
+    successMessage,
+    addFarm,
+    updateFarm,
+    deleteFarm,
+    refetch,
+    clearMessages,
+  } = useFarms(profile?.id);
   const { isLoading } = useFarmsContext();
 
   // 로컬 상태 관리
@@ -47,6 +58,22 @@ export default function FarmsPage() {
     refetch,
     { timeout: 10000 }
   );
+
+  // 에러 토스트 처리
+  useEffect(() => {
+    if (error) {
+      showError("오류", error);
+      clearMessages();
+    }
+  }, [error, showError, clearMessages]);
+
+  // 성공 토스트 처리
+  useEffect(() => {
+    if (successMessage) {
+      showSuccess("성공", successMessage);
+      clearMessages();
+    }
+  }, [successMessage, showSuccess, clearMessages]);
 
   // 소유자 확인 함수 메모이제이션
   const isOwner = useCallback(

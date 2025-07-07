@@ -23,7 +23,6 @@ export interface UniversalUploadOptions {
   path?: string | ((file: File) => string);
   userId?: string;
   farmId?: string;
-  visitorName?: string;
   maxSizeMB?: number;
   allowedTypes: string[];
   cacheControl?: string;
@@ -46,7 +45,6 @@ export async function uploadImageUniversal({
   path,
   userId,
   farmId,
-  visitorName,
   maxSizeMB = MAX_UPLOAD_SIZE_MB,
   allowedTypes,
   cacheControl = DEFAULT_IMAGE_CACHE_CONTROL,
@@ -81,7 +79,6 @@ export async function uploadImageUniversal({
         bucket,
         userId,
         farmId,
-        visitorName,
       });
     }
 
@@ -131,13 +128,11 @@ function generateFileName({
   bucket,
   userId,
   farmId,
-  visitorName,
 }: {
   file: File;
   bucket: string;
   userId?: string;
   farmId?: string;
-  visitorName?: string;
 }): string {
   const fileExt = file.name.split(".").pop()?.toLowerCase() || "jpg";
   const timestamp = Date.now();

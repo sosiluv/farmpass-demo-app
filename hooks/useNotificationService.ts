@@ -1,10 +1,17 @@
 import { useState, useCallback } from "react";
-import { useCommonToast } from "@/lib/utils/notification/toast-messages";
 import { devLog } from "@/lib/utils/logging/dev-logger";
 import type { NotificationPayload } from "@/lib/types/notification";
+import { apiClient } from "@/lib/utils/data";
+import { handleError } from "@/lib/utils/error";
+import { safeNotificationAccess } from "@/lib/utils/browser/safari-compat";
 
 export function useNotificationService() {
-  const toast = useCommonToast();
+  // 토스트 대신 메시지 상태만 반환
+  const [lastMessage, setLastMessage] = useState<{
+    type: "success" | "error";
+    title: string;
+    message: string;
+  } | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
   // VAPID 키 관리
@@ -12,13 +19,18 @@ export function useNotificationService() {
     try {
       devLog.log("[NOTIFICATION] VAPID 키 조회 시작");
 
-      const response = await fetch("/api/push/vapid");
-      if (!response.ok) throw new Error("VAPID 키 조회 실패");
+      const data = await apiClient("/api/push/vapid", {
+        method: "GET",
+        context: "VAPID 키 조회",
+        onError: (error, context) => {
+          handleError(error, "VAPID 키 조회");
+          devLog.error("VAPID 키 조회 실패:", error);
+        },
+      });
 
-      const data = await response.json();
       return data.publicKey;
     } catch (error) {
-      devLog.error("VAPID 키 조회 실패:", error);
+      // 에러는 이미 onError에서 처리됨
       return null;
     }
   };
@@ -32,28 +44,41 @@ export function useNotificationService() {
       setIsLoading(true);
       devLog.log("[NOTIFICATION] 푸시 알림 구독 시작", { farmId });
 
-      const response = await fetch("/api/push/subscription", {
+      const result = await apiClient("/api/push/subscription", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ subscription: subscription.toJSON(), farmId }),
+        context: "푸시 알림 구독",
+        onError: (error, context) => {
+          handleError(error, "푸시 알림 구독");
+          devLog.error("구독 실패:", error);
+          setLastMessage({
+            type: "error",
+            title: "구독 실패",
+            message: "푸시 알림 구독에 실패했습니다",
+          });
+        },
       });
 
-      if (!response.ok) throw new Error("구독 처리 실패");
-
-      const result = await response.json();
-
       // 구독 성공 시 is_active를 true로 설정
-      await fetch("/api/notifications/settings", {
+      await apiClient("/api/notifications/settings", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ is_active: true }),
+        context: "알림 설정 업데이트",
+        onError: (error, context) => {
+          handleError(error, "알림 설정 업데이트");
+        },
       });
 
-      toast.showCustomSuccess("구독 성공", "알림 구독이 완료되었습니다");
+      setLastMessage({
+        type: "success",
+        title: "구독 성공",
+        message: "알림 구독이 완료되었습니다",
+      });
       return result;
     } catch (error) {
-      devLog.error("구독 실패:", error);
-      toast.showCustomError("구독 실패", "푸시 알림 구독에 실패했습니다");
+      // 에러는 이미 onError에서 처리됨
       throw error;
     } finally {
       setIsLoading(false);
@@ -67,26 +92,41 @@ export function useNotificationService() {
   ) => {
     try {
       setIsLoading(true);
-      const response = await fetch("/api/push/subscription", {
+      const result = await apiClient("/api/push/subscription", {
         method: "DELETE",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ endpoint: subscription.endpoint, farmId }),
+        context: "푸시 알림 구독 해제",
+        onError: (error, context) => {
+          handleError(error, "푸시 알림 구독 해제");
+          devLog.error("구독 해제 실패:", error);
+          setLastMessage({
+            type: "error",
+            title: "구독 해제 실패",
+            message: "구독 해제에 실패했습니다",
+          });
+        },
       });
 
-      if (!response.ok) throw new Error("구독 해제 처리 실패");
-
       // 구독 해제 성공 시 is_active를 false로 설정
-      await fetch("/api/notifications/settings", {
+      await apiClient("/api/notifications/settings", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ is_active: false }),
+        context: "알림 설정 업데이트",
+        onError: (error, context) => {
+          handleError(error, "알림 설정 업데이트");
+        },
       });
 
-      toast.showCustomSuccess("구독 해제", "알림 구독이 해제되었습니다");
-      return await response.json();
+      setLastMessage({
+        type: "success",
+        title: "구독 해제",
+        message: "알림 구독이 해제되었습니다",
+      });
+      return result;
     } catch (error) {
-      devLog.error("구독 해제 실패:", error);
-      toast.showCustomError("구독 해제 실패", "구독 해제에 실패했습니다");
+      // 에러는 이미 onError에서 처리됨
       throw error;
     } finally {
       setIsLoading(false);
@@ -96,11 +136,17 @@ export function useNotificationService() {
   // 구독 상태 조회
   const getSubscriptionStatus = async () => {
     try {
-      const response = await fetch("/api/push/subscription");
-      if (!response.ok) throw new Error("구독 상태 조회 실패");
-      return await response.json();
+      const result = await apiClient("/api/push/subscription", {
+        method: "GET",
+        context: "구독 상태 조회",
+        onError: (error, context) => {
+          handleError(error, "구독 상태 조회");
+          devLog.error("구독 상태 조회 실패:", error);
+        },
+      });
+      return result;
     } catch (error) {
-      devLog.error("구독 상태 조회 실패:", error);
+      // 에러는 이미 onError에서 처리됨
       return { subscriptions: [] };
     }
   };
@@ -108,7 +154,7 @@ export function useNotificationService() {
   // 테스트 알림 발송
   const sendTestNotification = async () => {
     try {
-      const response = await fetch("/api/push/send", {
+      await apiClient("/api/push/send", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -117,39 +163,56 @@ export function useNotificationService() {
           test: true,
           notificationType: "visitor",
         } as NotificationPayload),
+        context: "테스트 알림 발송",
+        onError: (error, context) => {
+          handleError(error, "테스트 알림 발송");
+          devLog.error("테스트 알림 발송 실패:", error);
+          setLastMessage({
+            type: "error",
+            title: "테스트 실패",
+            message: "테스트 알림 발송에 실패했습니다",
+          });
+        },
       });
 
-      if (!response.ok) throw new Error("테스트 알림 발송 실패");
-
-      toast.showCustomSuccess(
-        "테스트 알림 발송",
-        "테스트 알림이 발송되었습니다"
-      );
+      setLastMessage({
+        type: "success",
+        title: "테스트 알림 발송",
+        message: "테스트 알림이 발송되었습니다",
+      });
     } catch (error) {
-      devLog.error("테스트 알림 발송 실패:", error);
-      toast.showCustomError("테스트 실패", "테스트 알림 발송에 실패했습니다");
+      // 에러는 이미 onError에서 처리됨
     }
   };
 
   // 구독 정리
   const cleanupSubscriptions = async () => {
     try {
-      const response = await fetch("/api/push/subscription/cleanup", {
+      const result = await apiClient("/api/push/subscription/cleanup", {
         method: "POST",
+        context: "구독 정리",
+        onError: (error, context) => {
+          handleError(error, "구독 정리");
+          devLog.error("구독 정리 실패:", error);
+          setLastMessage({
+            type: "error",
+            title: "구독 정리 실패",
+            message:
+              error instanceof Error
+                ? error.message
+                : "알 수 없는 오류가 발생했습니다",
+          });
+        },
       });
-      const result = await response.json();
 
-      if (!response.ok) throw new Error(result.error || "구독 정리 실패");
-      toast.showCustomSuccess("구독 정리 완료", result.message);
+      setLastMessage({
+        type: "success",
+        title: "구독 정리 완료",
+        message: result.message,
+      });
       return result;
     } catch (error) {
-      devLog.error("구독 정리 실패:", error);
-      toast.showCustomError(
-        "구독 정리 실패",
-        error instanceof Error
-          ? error.message
-          : "알 수 없는 오류가 발생했습니다"
-      );
+      // 에러는 이미 onError에서 처리됨
       throw error;
     }
   };
@@ -158,16 +221,18 @@ export function useNotificationService() {
   const requestNotificationPermission = useCallback(async () => {
     setIsLoading(true);
     try {
-      if (!("Notification" in window)) {
+      const safeNotification = safeNotificationAccess();
+
+      if (!safeNotification.isSupported) {
         throw new Error("이 브라우저는 알림을 지원하지 않습니다.");
       }
 
-      if (Notification.permission === "denied") {
+      if (safeNotification.permission === "denied") {
         throw new Error("알림 권한이 거부되었습니다.");
       }
 
       // 권한 요청
-      const permission = await Notification.requestPermission();
+      const permission = await safeNotification.requestPermission();
 
       if (permission === "granted") {
         const vapidKey = await getVapidPublicKey();
@@ -186,17 +251,19 @@ export function useNotificationService() {
       }
     } catch (error) {
       devLog.error("알림 권한 요청 실패:", error);
-      toast.showCustomError(
-        "알림 설정 실패",
-        error instanceof Error
-          ? error.message
-          : "알 수 없는 오류가 발생했습니다"
-      );
+      setLastMessage({
+        type: "error",
+        title: "알림 설정 실패",
+        message:
+          error instanceof Error
+            ? error.message
+            : "알 수 없는 오류가 발생했습니다",
+      });
       return false;
     } finally {
       setIsLoading(false);
     }
-  }, [toast]);
+  }, []);
 
   // Base64 to Uint8Array 변환
   const urlBase64ToUint8Array = (base64String: string) => {
@@ -223,5 +290,7 @@ export function useNotificationService() {
     sendTestNotification,
     cleanupSubscriptions,
     requestNotificationPermission,
+    lastMessage,
+    clearLastMessage: () => setLastMessage(null),
   };
 }

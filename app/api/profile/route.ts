@@ -44,7 +44,14 @@ export async function PATCH(request: NextRequest) {
         userAgent,
       }
     );
-    return NextResponse.json({ success: true });
+    return NextResponse.json(
+      { success: true },
+      {
+        headers: {
+          "Cache-Control": "no-store",
+        },
+      }
+    );
   } catch (error) {
     devLog.error("[API] PROFILE_UPDATE 실패:", error);
     await logDataChange(
@@ -67,7 +74,7 @@ export async function PATCH(request: NextRequest) {
     );
     return NextResponse.json(
       { error: "프로필 정보 저장 실패" },
-      { status: 500 }
+      { status: 500, headers: { "Cache-Control": "no-store" } }
     );
   }
 }
@@ -113,7 +120,14 @@ export async function POST(request: NextRequest) {
         userAgent,
       }
     );
-    return NextResponse.json({ success: true });
+    return NextResponse.json(
+      { success: true },
+      {
+        headers: {
+          "Cache-Control": "no-store",
+        },
+      }
+    );
   } catch (error) {
     devLog.error("[API] PROFILE_IMAGE_UPLOAD 실패:", error);
     await logDataChange(
@@ -136,7 +150,7 @@ export async function POST(request: NextRequest) {
     );
     return NextResponse.json(
       { error: "프로필 이미지 업로드 실패" },
-      { status: 500 }
+      { status: 500, headers: { "Cache-Control": "no-store" } }
     );
   }
 }
@@ -180,7 +194,14 @@ export async function DELETE(request: NextRequest) {
         userAgent,
       }
     );
-    return NextResponse.json({ success: true });
+    return NextResponse.json(
+      { success: true },
+      {
+        headers: {
+          "Cache-Control": "no-store",
+        },
+      }
+    );
   } catch (error) {
     devLog.error("[API] PROFILE_IMAGE_DELETE 실패:", error);
     await logDataChange(
@@ -203,7 +224,7 @@ export async function DELETE(request: NextRequest) {
     );
     return NextResponse.json(
       { error: "프로필 이미지 삭제 실패" },
-      { status: 500 }
+      { status: 500, headers: { "Cache-Control": "no-store" } }
     );
   }
 }

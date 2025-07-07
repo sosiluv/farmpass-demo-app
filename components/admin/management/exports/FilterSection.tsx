@@ -49,7 +49,7 @@ export function FilterSection({
       </CardHeader>
       <CardContent className="space-y-2 sm:space-y-3 pt-0">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3">
-          {filters.map((filter) => (
+          {(filters || []).map((filter) => (
             <div key={filter.key} className="space-y-1 sm:space-y-1.5">
               <Label className="text-[10px] sm:text-xs md:text-sm font-medium">
                 {filter.label}
@@ -59,7 +59,7 @@ export function FilterSection({
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {filter.options.map((option) => (
+                  {(filter.options || []).map((option) => (
                     <SelectItem key={option.value} value={option.value}>
                       {option.label}
                     </SelectItem>

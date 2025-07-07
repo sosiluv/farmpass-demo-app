@@ -2,6 +2,8 @@ import { useEffect, useState, useRef, useCallback } from "react";
 import { devLog } from "@/lib/utils/logging/dev-logger";
 import type { FarmMember } from "@/lib/types";
 import isEqual from "lodash/isEqual";
+import { apiClient } from "@/lib/utils/data";
+import { handleError } from "@/lib/utils/error";
 
 export interface MemberWithProfile extends FarmMember {
   name: string;
@@ -44,22 +46,42 @@ export function useFarmMembersPreview(farmIds: string[]) {
       const uniqueFarmIds = Array.from(new Set(farmIds));
 
       // API 엔드포인트를 통한 구성원 조회 (보안 강화)
-      const response = await fetch(
+      const { members } = await apiClient(
         `/api/farm-members?farmIds=${uniqueFarmIds.join(",")}`,
         {
           method: "GET",
           headers: {
             "Content-Type": "application/json",
           },
+          context: "농장 구성원 조회",
+          onError: (error, context) => {
+            handleError(error, {
+              context,
+              onStateUpdate: (errorMessage) => {
+                devLog.error("멤버 데이터 조회 실패:", errorMessage);
+
+                // 에러 발생 시 모든 농장에 에러 상태 설정
+                const errorResults: Record<string, FarmMembers> = {};
+                const uniqueFarmIds = Array.from(new Set(farmIds));
+
+                uniqueFarmIds.forEach((farmId) => {
+                  errorResults[farmId] = {
+                    count: 0,
+                    members: [],
+                    loading: false,
+                    error:
+                      error instanceof Error ? error : new Error(errorMessage),
+                  };
+                });
+
+                if (isMountedRef.current) {
+                  setFarmMembers(errorResults);
+                }
+              },
+            });
+          },
         }
       );
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || "Failed to fetch members");
-      }
-
-      const { members } = await response.json();
 
       // 농장별로 데이터 그룹화
       const results: Record<string, FarmMembers> = {};
@@ -95,27 +117,7 @@ export function useFarmMembersPreview(farmIds: string[]) {
         setFarmMembers(results);
       }
     } catch (error) {
-      devLog.error("멤버 데이터 조회 실패:", error);
-
-      // 에러 발생 시 모든 농장에 에러 상태 설정
-      const errorResults: Record<string, FarmMembers> = {};
-      const uniqueFarmIds = Array.from(new Set(farmIds));
-
-      uniqueFarmIds.forEach((farmId) => {
-        errorResults[farmId] = {
-          count: 0,
-          members: [],
-          loading: false,
-          error:
-            error instanceof Error
-              ? error
-              : new Error("Failed to fetch members"),
-        };
-      });
-
-      if (isMountedRef.current) {
-        setFarmMembers(errorResults);
-      }
+      // 에러는 이미 onError에서 처리됨
     } finally {
       if (isMountedRef.current) {
         setLoading(false);

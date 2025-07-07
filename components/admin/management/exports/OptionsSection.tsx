@@ -50,7 +50,7 @@ export function OptionsSection({
       </CardHeader>
       <CardContent className="space-y-2 sm:space-y-3 pt-0">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3">
-          {options.map((option) => (
+          {(options || []).map((option) => (
             <div
               key={option.key}
               className="flex items-start space-x-2 sm:space-x-3"

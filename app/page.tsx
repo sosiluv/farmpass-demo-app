@@ -1,3 +1,5 @@
+"use client";
+
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -9,48 +11,69 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { ArrowRight, ChevronRight } from "lucide-react";
 import Link from "next/link";
-import { prisma } from "@/lib/prisma";
+import { useRouter } from "next/navigation";
+import { useEffect } from "react";
 import { features, steps } from "./home-data";
-import { DEFAULT_SYSTEM_SETTINGS } from "@/lib/types/settings";
+import { DEFAULT_SYSTEM_SETTINGS } from "@/lib/constants/defaults";
 import { Logo } from "@/components/common";
-import { devLog } from "@/lib/utils/logging/dev-logger";
+import { useAuth } from "@/components/providers/auth-provider";
+import { PageLoading } from "@/components/ui/loading";
+import { useSystemSettings } from "@/lib/hooks/use-system-settings";
 
-// 동적 렌더링 강제
-export const dynamic = "force-dynamic";
+// 클라이언트 컴포넌트로 변경
+export default function HomePage() {
+  const router = useRouter();
+  const { state } = useAuth();
+  const { settings, loading: settingsLoading } = useSystemSettings();
 
-// 서버 컴포넌트로 변경
-export default async function HomePage() {
-  // 서버 사이드에서 직접 설정 가져오기 (에러 처리 추가)
-  let settings;
-  try {
-    settings = await prisma.$queryRaw`
-      SELECT 
-        "siteName",
-        "siteDescription",
-        "logo"
-      FROM "public"."system_settings"
-      LIMIT 1
-    `;
-  } catch (error) {
-    devLog.warn("데이터베이스 연결 실패, 기본값 사용:", error);
-    settings = [DEFAULT_SYSTEM_SETTINGS];
+  // 인증된 사용자 리다이렉트를 useEffect로 처리
+  useEffect(() => {
+    if (state.status === "authenticated") {
+      router.replace("/admin/dashboard");
+    }
+  }, [state.status, router]);
+
+  // 로딩 상태를 먼저 체크 (페이지 렌더링 전에)
+  if (
+    state.status === "loading" ||
+    state.status === "initializing" ||
+    settingsLoading
+  ) {
+    return (
+      <PageLoading
+        text={
+          state.status === "initializing"
+            ? "인증 확인 중..."
+            : settingsLoading
+            ? "설정을 불러오는 중..."
+            : "자동 로그인 중..."
+        }
+        subText="잠시만 기다려주세요"
+        variant="gradient"
+        fullScreen={true}
+      />
+    );
   }
 
-  // 실제 사용할 설정
-  const displaySettings =
-    settings && Array.isArray(settings) && settings.length > 0
-      ? {
-          siteName: settings[0].siteName || DEFAULT_SYSTEM_SETTINGS.siteName,
-          siteDescription:
-            settings[0].siteDescription ||
-            DEFAULT_SYSTEM_SETTINGS.siteDescription,
-          logo: settings[0].logo || null,
-        }
-      : {
-          siteName: DEFAULT_SYSTEM_SETTINGS.siteName,
-          siteDescription: DEFAULT_SYSTEM_SETTINGS.siteDescription,
-          logo: null,
-        };
+  // 인증된 사용자는 로딩 표시
+  if (state.status === "authenticated") {
+    return (
+      <PageLoading
+        text="대시보드로 이동 중..."
+        subText="잠시만 기다려주세요"
+        variant="gradient"
+        fullScreen={true}
+      />
+    );
+  }
+
+  // 시스템 설정 사용
+  const displaySettings = {
+    siteName: settings.siteName || DEFAULT_SYSTEM_SETTINGS.siteName,
+    siteDescription:
+      settings.siteDescription || DEFAULT_SYSTEM_SETTINGS.siteDescription,
+    logo: settings.logo || null,
+  };
 
   return (
     <div className="min-h-screen bg-gradient-farm">

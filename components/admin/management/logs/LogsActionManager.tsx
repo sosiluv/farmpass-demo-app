@@ -1,5 +1,6 @@
 import { useCommonToast } from "@/lib/utils/notification/toast-messages";
-import { devLog } from "@/lib/utils/logging/dev-logger";
+import { apiClient } from "@/lib/utils/data";
+import { handleError } from "@/lib/utils/error";
 import type { SystemLog } from "@/lib/types/system";
 
 interface LogsActionManagerProps {
@@ -17,12 +18,13 @@ export function LogsActionManager({
   setLogs,
   children,
 }: LogsActionManagerProps) {
-  const { showCustomSuccess, showCustomError } = useCommonToast();
+  const { showSuccess, showError, showInfo, showWarning } = useCommonToast();
 
   // 로그 삭제 처리
   const handleDeleteLog = async (id: string) => {
+    showInfo("로그 삭제 시작", "로그를 삭제하는 중입니다...");
     try {
-      const response = await fetch("/api/admin/logs/delete", {
+      await apiClient("/api/admin/logs/delete", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -31,33 +33,31 @@ export function LogsActionManager({
           action: "delete_single",
           logId: id,
         }),
+        context: "로그 삭제",
+        onError: (error, context) => {
+          handleError(error, context);
+          showError("로그 삭제 실패", "로그 삭제 중 오류가 발생했습니다.");
+        },
       });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || "로그 삭제에 실패했습니다.");
-      }
-
-      const result = await response.json();
-
-      // 로컬 상태 업데이트
       setLogs((prevLogs: SystemLog[]) =>
         prevLogs.filter((log: SystemLog) => log.id !== id)
       );
-
-      showCustomSuccess("로그 삭제 완료", "로그가 삭제되었습니다.");
-    } catch (err) {
-      showCustomError("로그 삭제 실패", "로그 삭제 중 오류가 발생했습니다.");
-      devLog.error("Error deleting log:", err);
+      showSuccess("로그 삭제 완료", "로그가 삭제되었습니다.");
+    } catch {
+      // onError에서 이미 처리함
     }
   };
 
   // 전체 로그 삭제 처리
   const handleDeleteAllLogs = async () => {
+    if (logs.length === 0) {
+      showWarning("삭제할 로그 없음", "삭제할 로그가 없습니다.");
+      return;
+    }
+    showInfo("전체 로그 삭제 시작", "모든 로그를 삭제하는 중입니다...");
     try {
       const beforeCount = logs.length;
-
-      const response = await fetch("/api/admin/logs/delete", {
+      await apiClient("/api/admin/logs/delete", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -66,32 +66,30 @@ export function LogsActionManager({
           action: "delete_all",
           beforeCount,
         }),
+        context: "전체 로그 삭제",
+        onError: (error, context) => {
+          handleError(error, context);
+          showError("로그 삭제 실패", "로그 삭제 중 오류가 발생했습니다.");
+        },
       });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || "전체 로그 삭제에 실패했습니다.");
-      }
-
-      const result = await response.json();
-
-      // 로컬 상태 업데이트 - 모든 로그 제거
       setLogs([]);
-
-      showCustomSuccess(
+      showSuccess(
         "로그 삭제 완료",
         `모든 로그가 삭제되었습니다. (총 ${beforeCount}개)`
       );
-    } catch (err) {
-      devLog.error("Error deleting all logs:", err);
-      showCustomError("로그 삭제 실패", "로그 삭제 중 오류가 발생했습니다.");
+    } catch {
+      // onError에서 이미 처리함
     }
   };
 
   // 30일 이전 로그 삭제 처리
   const handleDeleteOldLogs = async () => {
+    showInfo(
+      "30일 이전 로그 삭제 시작",
+      "30일 이전 로그를 삭제하는 중입니다..."
+    );
     try {
-      const response = await fetch("/api/admin/logs/delete", {
+      const result = await apiClient("/api/admin/logs/delete", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -99,33 +97,22 @@ export function LogsActionManager({
         body: JSON.stringify({
           action: "delete_old",
         }),
+        context: "30일 이전 로그 삭제",
+        onError: (error, context) => {
+          handleError(error, context);
+          showError("로그 삭제 실패", "로그 삭제 중 오류가 발생했습니다.");
+        },
       });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(
-          errorData.error || "30일 이전 로그 삭제에 실패했습니다."
-        );
-      }
-
-      const result = await response.json();
-
       if (result.result.deleted) {
-        // 삭제된 로그 개수만큼 로컬 상태에서 제거 (정확한 개수는 서버에서 계산)
-        // 실제로는 페이지를 새로고침하거나 로그를 다시 불러오는 것이 좋음
-        showCustomSuccess(
+        showSuccess(
           "로그 삭제 완료",
           `30일 이전 로그가 삭제되었습니다. (총 ${result.result.count}개)`
         );
       } else {
-        showCustomSuccess(
-          "로그 삭제 완료",
-          "삭제할 30일 이전 로그가 없습니다."
-        );
+        showSuccess("로그 삭제 완료", "삭제할 30일 이전 로그가 없습니다.");
       }
-    } catch (err) {
-      devLog.error("Error deleting old logs:", err);
-      showCustomError("로그 삭제 실패", "로그 삭제 중 오류가 발생했습니다.");
+    } catch {
+      // onError에서 이미 처리함
     }
   };
 

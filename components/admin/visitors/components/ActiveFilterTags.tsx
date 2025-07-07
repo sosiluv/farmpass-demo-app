@@ -3,8 +3,15 @@ import { X, Search, Calendar, MapPin } from "lucide-react";
 import { format } from "date-fns";
 import { ko } from "date-fns/locale";
 import { getFarmTypeInfo } from "@/lib/constants/farm-types";
-import { DATE_RANGE_LABELS } from "@/lib/constants/visitor";
 import type { Farm } from "@/lib/types/visitor";
+
+const DATE_RANGE_LABELS: Record<string, string> = {
+  today: "오늘",
+  week: "최근 7일",
+  month: "최근 30일",
+  custom: "사용자 지정",
+  all: "전체",
+};
 
 interface ActiveFilterTagsProps {
   searchTerm: string;
@@ -126,7 +133,7 @@ export function ActiveFilterTags({
       </div>
 
       <div className="flex flex-wrap items-center gap-2 sm:gap-3">
-        {activeTags.map((tag) => {
+        {(activeTags || []).map((tag) => {
           const Icon = tag.icon;
           return (
             <Badge

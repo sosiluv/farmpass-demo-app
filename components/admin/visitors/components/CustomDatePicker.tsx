@@ -32,14 +32,17 @@ export function CustomDatePicker({
           <Button
             variant="outline"
             className={cn(
-              "h-9 sm:h-10 md:h-11 border-slate-200 focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 transition-all duration-300 bg-white/90 backdrop-blur-sm text-xs sm:text-sm md:text-base shadow-sm hover:shadow-md",
-              customStartDate && "border-indigo-400 bg-indigo-50"
+              "h-9 sm:h-10 md:h-11 border-slate-200 dark:border-slate-600 focus:border-indigo-400 dark:focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 dark:focus:ring-indigo-900 transition-all duration-300 bg-white/90 dark:bg-slate-800 backdrop-blur-sm text-xs sm:text-sm md:text-base shadow-sm hover:shadow-md dark:text-slate-100 dark:placeholder:text-slate-400 dark:disabled:text-slate-500",
+              customStartDate &&
+                "border-indigo-400 dark:border-indigo-500 bg-indigo-50 dark:bg-indigo-900"
             )}
           >
-            <CalendarIcon className="h-3 w-3 sm:h-4 sm:w-4 mr-2 text-indigo-600" />
-            {customStartDate
-              ? format(customStartDate, "yyyy년 MM월 dd일", { locale: ko })
-              : "시작일 선택"}
+            <CalendarIcon className="h-3 w-3 sm:h-4 sm:w-4 mr-2 text-indigo-600 dark:text-indigo-300" />
+            {customStartDate ? (
+              format(customStartDate, "yyyy년 MM월 dd일", { locale: ko })
+            ) : (
+              <span className="dark:text-slate-400">시작일 선택</span>
+            )}
           </Button>
         </PopoverTrigger>
         <PopoverContent className="w-auto p-0" align="start">
@@ -60,14 +63,17 @@ export function CustomDatePicker({
           <Button
             variant="outline"
             className={cn(
-              "h-9 sm:h-10 md:h-11 border-slate-200 focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 transition-all duration-300 bg-white/90 backdrop-blur-sm text-xs sm:text-sm md:text-base shadow-sm hover:shadow-md",
-              customEndDate && "border-indigo-400 bg-indigo-50"
+              "h-9 sm:h-10 md:h-11 border-slate-200 dark:border-slate-600 focus:border-indigo-400 dark:focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 dark:focus:ring-indigo-900 transition-all duration-300 bg-white/90 dark:bg-slate-800 backdrop-blur-sm text-xs sm:text-sm md:text-base shadow-sm hover:shadow-md dark:text-slate-100 dark:placeholder:text-slate-400 dark:disabled:text-slate-500",
+              customEndDate &&
+                "border-indigo-400 dark:border-indigo-500 bg-indigo-50 dark:bg-indigo-900"
             )}
           >
-            <CalendarIcon className="h-3 w-3 sm:h-4 sm:w-4 mr-2 text-indigo-600" />
-            {customEndDate
-              ? format(customEndDate, "yyyy년 MM월 dd일", { locale: ko })
-              : "종료일 선택"}
+            <CalendarIcon className="h-3 w-3 sm:h-4 sm:w-4 mr-2 text-indigo-600 dark:text-indigo-300" />
+            {customEndDate ? (
+              format(customEndDate, "yyyy년 MM월 dd일", { locale: ko })
+            ) : (
+              <span className="dark:text-slate-400">종료일 선택</span>
+            )}
           </Button>
         </PopoverTrigger>
         <PopoverContent className="w-auto p-0" align="start">

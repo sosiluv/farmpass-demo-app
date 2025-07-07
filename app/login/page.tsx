@@ -14,7 +14,6 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Mail, Lock, Loader2 } from "lucide-react";
 import { motion } from "framer-motion";
 import { useCommonToast } from "@/lib/utils/notification/toast-messages";
@@ -23,67 +22,132 @@ import { useAuth } from "@/components/providers/auth-provider";
 import { ErrorBoundary } from "@/components/error/error-boundary";
 import { Logo } from "@/components/common";
 import { getAuthErrorMessage } from "@/lib/utils/validation/validation";
+import { PageLoading } from "@/components/ui/loading";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { safariLoginRetry } from "@/lib/utils/browser/safari-debug";
 
-interface FormErrors {
-  email?: string;
-  password?: string;
-}
+import {
+  loginFormSchema,
+  type LoginFormData,
+} from "@/lib/utils/validation/auth-validation";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
 
 export default function LoginPage() {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
-  const [errors, setErrors] = useState<FormErrors>({});
+  const [redirecting, setRedirecting] = useState(false);
+  const [formError, setFormError] = useState<string>("");
   const router = useRouter();
-  const toast = useCommonToast();
+  const { showInfo, showSuccess, showError } = useCommonToast();
   const { state, signIn } = useAuth();
 
-  // 이미 로그인된 사용자는 대시보드로 리다이렉트
+  // 인증된 사용자 리다이렉트를 useEffect로 처리 (redirecting 상태 고려)
   useEffect(() => {
-    if (state.status === "authenticated") {
-      // 로딩 화면 없이 즉시 리다이렉트
+    if (state.status === "authenticated" && !loading && !redirecting) {
+      setRedirecting(true);
       router.replace("/admin/dashboard");
     }
-  }, [state.status, router]);
+  }, [state.status, router, loading, redirecting]);
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    if (name === "email") {
-      setEmail(value);
-    } else if (name === "password") {
-      setPassword(value);
+  const form = useForm<LoginFormData>({
+    resolver: zodResolver(loginFormSchema),
+    defaultValues: {
+      email: "",
+      password: "",
+    },
+  });
+
+  // 세션 만료로 인한 로그인 페이지 진입 시 브라우저 구독 정리
+  useEffect(() => {
+    const cleanupBrowserSubscriptions = async () => {
+      try {
+        // Service Worker 등록 확인
+        if ("serviceWorker" in navigator && "PushManager" in window) {
+          const registration = await navigator.serviceWorker.getRegistration();
+          if (registration) {
+            // 기존 구독 해제
+            const subscription =
+              await registration.pushManager.getSubscription();
+            if (subscription) {
+              await subscription.unsubscribe();
+              devLog.log("[LOGIN] Browser push subscription cleaned");
+            }
+          }
+        }
+      } catch (error) {
+        devLog.warn("[LOGIN] Failed to clean browser subscriptions:", error);
+      }
+    };
+
+    // URL 파라미터로 세션 만료 여부 확인
+    const urlParams = new URLSearchParams(window.location.search);
+    const sessionExpired = urlParams.get("session_expired");
+
+    if (sessionExpired === "true") {
+      cleanupBrowserSubscriptions();
+      // URL에서 파라미터 제거
+      const newUrl = new URL(window.location.href);
+      newUrl.searchParams.delete("session_expired");
+      window.history.replaceState({}, "", newUrl.toString());
     }
-    setErrors((prev) => ({ ...prev, [name]: "" }));
-  };
+  }, []);
 
-  const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
+  // 로딩 상태를 먼저 체크 (페이지 렌더링 전에)
+  if (
+    state.status === "loading" ||
+    state.status === "initializing" ||
+    redirecting
+  ) {
+    return (
+      <PageLoading
+        text={
+          redirecting
+            ? "대시보드로 이동 중..."
+            : state.status === "initializing"
+            ? "인증 확인 중..."
+            : "자동 로그인 중..."
+        }
+        subText="잠시만 기다려주세요"
+        variant="gradient"
+        fullScreen={true}
+      />
+    );
+  }
+
+  const handleLogin = async (data: LoginFormData) => {
     setLoading(true);
-    setErrors({});
+    setFormError("");
+    showInfo("로그인 시도 중", "잠시만 기다려주세요.");
 
     try {
-      // Auth Provider에서 모든 로그인 로직 처리
-      const result = await signIn({
-        email: email,
-        password: password,
+      // Safari에서 재시도 로직을 포함한 로그인 수행
+      const result = await safariLoginRetry(async () => {
+        return await signIn({
+          email: data.email,
+          password: data.password,
+        });
       });
 
       if (result.success) {
-        toast.showCustomSuccess("로그인 성공", "대시보드로 이동합니다.");
-        // 로그인 성공 시 상태 업데이트 후 리다이렉트
-        setTimeout(() => {
-          router.replace("/admin/dashboard");
-        }, 100);
+        showSuccess("로그인 성공", "대시보드로 이동합니다.");
+        // 리다이렉트는 useEffect에서 처리하므로 여기서는 제거
+        // setRedirecting(true);
+        // router.replace("/admin/dashboard");
+        return;
       }
     } catch (error: any) {
       devLog.error("Login failed:", error);
 
-      // getAuthErrorMessage 함수를 사용하여 에러 메시지 처리
       const authError = getAuthErrorMessage(error);
-      const errorMessage = authError.message;
-
-      setErrors({ email: errorMessage });
-      toast.showCustomError("로그인 실패", errorMessage);
+      setFormError(authError.message);
+      showError("로그인 실패", authError.message);
     } finally {
       setLoading(false);
     }
@@ -112,69 +176,80 @@ export default function LoginPage() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <form onSubmit={handleLogin} className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="email">이메일</Label>
-                  <div className="relative">
-                    <Mail className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                    <Input
-                      id="email"
-                      name="email"
-                      type="email"
-                      placeholder="name@example.com"
-                      value={email}
-                      onChange={handleInputChange}
-                      required
-                      autoComplete="username"
-                      className={`h-12 pl-10 input-focus ${
-                        errors.email ? "border-red-500" : ""
-                      }`}
-                      disabled={loading}
-                    />
-                  </div>
-                  {errors.email && (
-                    <p className="text-sm text-red-500">{errors.email}</p>
-                  )}
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="password">비밀번호</Label>
-                  <div className="relative">
-                    <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                    <Input
-                      id="password"
-                      name="password"
-                      type="password"
-                      value={password}
-                      onChange={handleInputChange}
-                      required
-                      autoComplete="current-password"
-                      className={`h-12 pl-10 input-focus ${
-                        errors.password ? "border-red-500" : ""
-                      }`}
-                      disabled={loading}
-                    />
-                  </div>
-                  {errors.password && (
-                    <p className="text-sm text-red-500">{errors.password}</p>
-                  )}
-                </div>
-
-                <Button
-                  type="submit"
-                  className="h-12 w-full"
-                  disabled={loading}
+              <Form {...form}>
+                <form
+                  onSubmit={form.handleSubmit(handleLogin)}
+                  className="space-y-4"
                 >
-                  {loading ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      로그인 중...
-                    </>
-                  ) : (
-                    "로그인"
+                  <FormField
+                    control={form.control}
+                    name="email"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-sm text-gray-800">
+                          아이디(이메일) <span className="text-red-500">*</span>
+                        </FormLabel>
+                        <div className="relative">
+                          <Mail className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                          <FormControl>
+                            <Input
+                              {...field}
+                              type="email"
+                              placeholder="name@example.com"
+                              autoComplete="username"
+                              className="h-12 pl-10 input-focus"
+                              disabled={loading || redirecting}
+                            />
+                          </FormControl>
+                        </div>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="password"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-sm text-gray-800">
+                          비밀번호 <span className="text-red-500">*</span>
+                        </FormLabel>
+                        <div className="relative">
+                          <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                          <FormControl>
+                            <Input
+                              {...field}
+                              type="password"
+                              placeholder="비밀번호를 입력하세요"
+                              autoComplete="current-password"
+                              className="h-12 pl-10 input-focus"
+                              disabled={loading || redirecting}
+                            />
+                          </FormControl>
+                        </div>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  {formError && (
+                    <p className="text-sm text-red-500">{formError}</p>
                   )}
-                </Button>
-              </form>
+                  <Button
+                    type="submit"
+                    className="h-12 w-full"
+                    disabled={loading || redirecting}
+                  >
+                    {loading || redirecting ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        {redirecting ? "이동 중..." : "로그인 중..."}
+                      </>
+                    ) : (
+                      "로그인"
+                    )}
+                  </Button>
+                </form>
+              </Form>
             </CardContent>
             <CardFooter className="flex flex-col space-y-2">
               <div className="text-center text-sm">

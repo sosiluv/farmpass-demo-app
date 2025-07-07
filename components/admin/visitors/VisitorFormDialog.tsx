@@ -1,9 +1,13 @@
 import { useCallback, useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import * as z from "zod";
 import { useCommonToast } from "@/lib/utils/notification/toast-messages";
 import { devLog } from "@/lib/utils/logging/dev-logger";
+
+import {
+  visitorDialogFormSchema,
+  type VisitorDialogFormData,
+} from "@/lib/utils/validation/visitor-validation";
 
 import {
   Dialog,
@@ -34,16 +38,8 @@ import {
 } from "@/components/ui/select";
 import { AddressSearch } from "@/components/common/address-search";
 
-export interface VisitorFormValues {
-  visitor_name: string;
-  visitor_phone: string;
-  visitor_address: string;
-  visitor_detailed_address?: string;
-  visitor_purpose: string | null;
-  vehicle_number: string | null;
-  notes: string | null;
-  disinfection_check: boolean;
-}
+// VisitorDialogFormData 타입 사용
+export interface VisitorFormValues extends VisitorDialogFormData {}
 
 interface VisitorFormDialogProps {
   open: boolean;
@@ -54,16 +50,17 @@ interface VisitorFormDialogProps {
   onSuccess: (values: VisitorFormValues) => Promise<void>;
 }
 
-const visitorFormSchema = z.object({
-  visitor_name: z.string().min(1, "이름을 입력해주세요."),
-  visitor_phone: z.string().min(1, "연락처를 입력해주세요."),
-  visitor_address: z.string().min(1, "주소를 입력해주세요."),
-  visitor_detailed_address: z.string().optional(),
-  visitor_purpose: z.string().nullable(),
-  vehicle_number: z.string().nullable(),
-  notes: z.string().nullable(),
-  disinfection_check: z.boolean(),
-});
+// 방문 목적 옵션 직접 선언
+const VISIT_PURPOSE_OPTIONS = [
+  "납품",
+  "점검",
+  "미팅",
+  "수의사 진료",
+  "사료 배송",
+  "방역",
+  "견학",
+  "기타",
+];
 
 export function VisitorFormDialog({
   open,
@@ -74,10 +71,10 @@ export function VisitorFormDialog({
   onSuccess,
 }: VisitorFormDialogProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const { showCustomError } = useCommonToast();
+  const { showInfo, showError } = useCommonToast();
 
   const form = useForm<VisitorFormValues>({
-    resolver: zodResolver(visitorFormSchema),
+    resolver: zodResolver(visitorDialogFormSchema),
     defaultValues: {
       visitor_name: "",
       visitor_phone: "",
@@ -115,11 +112,12 @@ export function VisitorFormDialog({
         disinfection_check: false,
       });
     }
-  }, [open, mode, initialData, form]);
+  }, [open, mode, initialData]); // form을 의존성에서 제거
 
   const onSubmit = async (values: VisitorFormValues) => {
     if (isSubmitting) return;
 
+    showInfo("폼 제출 시작", "방문자 정보를 저장하는 중입니다...");
     try {
       setIsSubmitting(true);
       await onSuccess({
@@ -132,7 +130,7 @@ export function VisitorFormDialog({
       onOpenChange(false);
     } catch (error) {
       devLog.error("폼 제출 실패:", error);
-      showCustomError(
+      showError(
         "폼 제출 실패",
         error instanceof Error ? error.message : "오류가 발생했습니다."
       );
@@ -206,7 +204,7 @@ export function VisitorFormDialog({
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            {renderField("visitor_name", "이름", "input", true)}
+            {renderField("visitor_name", "성명", "input", true)}
             {renderField("visitor_phone", "연락처", "input", true)}
 
             {/* 주소 필드 */}
@@ -266,7 +264,7 @@ export function VisitorFormDialog({
               name="visitor_purpose"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>방문 목적 *</FormLabel>
+                  <FormLabel>방문목적 *</FormLabel>
                   <FormControl>
                     <Select
                       value={field.value || ""}
@@ -276,14 +274,11 @@ export function VisitorFormDialog({
                         <SelectValue placeholder="방문 목적을 선택하세요." />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="납품">납품</SelectItem>
-                        <SelectItem value="점검">점검</SelectItem>
-                        <SelectItem value="미팅">미팅</SelectItem>
-                        <SelectItem value="수의사 진료">수의사 진료</SelectItem>
-                        <SelectItem value="사료 배송">사료 배송</SelectItem>
-                        <SelectItem value="방역">방역</SelectItem>
-                        <SelectItem value="견학">견학</SelectItem>
-                        <SelectItem value="기타">기타</SelectItem>
+                        {(VISIT_PURPOSE_OPTIONS || []).map((option) => (
+                          <SelectItem key={option} value={option}>
+                            {option}
+                          </SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
                   </FormControl>
@@ -292,7 +287,7 @@ export function VisitorFormDialog({
               )}
             />
 
-            {renderField("vehicle_number", "차량 번호")}
+            {renderField("vehicle_number", "차량번호")}
             {renderField("notes", "비고", "textarea")}
 
             <FormField
@@ -307,7 +302,7 @@ export function VisitorFormDialog({
                       disabled={isSubmitting}
                     />
                   </FormControl>
-                  <FormLabel className="font-normal">소독 여부</FormLabel>
+                  <FormLabel className="font-normal">소독여부</FormLabel>
                 </FormItem>
               )}
             />

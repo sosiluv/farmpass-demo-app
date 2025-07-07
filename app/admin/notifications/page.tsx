@@ -16,6 +16,7 @@ import {
 } from "@/components/admin/notifications";
 import { useNotificationSettingsStore } from "@/store/use-notification-settings-store";
 import { useNotificationSettings } from "@/hooks/useNotificationSettings";
+import { useCommonToast } from "@/lib/utils/notification/toast-messages";
 
 export default function NotificationsPage() {
   const { state } = useAuth();
@@ -23,17 +24,26 @@ export default function NotificationsPage() {
   const { farms, fetchFarms, fetchState } = useFarmsStore();
   const [isSubscribed, setIsSubscribed] = useState(false);
   const { setSettings } = useNotificationSettingsStore();
-  const { data: settings } = useNotificationSettings();
+  const { data: settings, error: settingsError } = useNotificationSettings();
+  const { showInfo, showError } = useCommonToast();
 
   // 농장 데이터 로드
   useEffect(() => {
     if (user?.id && !fetchState.loading && farms.length === 0) {
+      showInfo("농장 정보 로딩 시작", "농장 정보를 불러오는 중입니다...");
       fetchFarms(user.id);
     }
-  }, [user?.id, fetchFarms, fetchState.loading, farms.length]);
+  }, [user?.id, fetchFarms, fetchState.loading, farms.length, showInfo]);
+
+  // 알림 설정 에러 처리
+  useEffect(() => {
+    if (settingsError) {
+      showError("알림 설정 로드 실패", "알림 설정을 불러오는데 실패했습니다.");
+    }
+  }, [settingsError, showError]);
 
   // 농장 데이터를 WebPushSubscription 컴포넌트 형식으로 변환
-  const farmData: Farm[] = farms.map((farm) => ({
+  const farmData: Farm[] = (farms || []).map((farm) => ({
     id: farm.id,
     farm_name: farm.farm_name,
     address: farm.farm_address,
