@@ -5,7 +5,7 @@ import { useState } from "react";
 import { FileText } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useAdminLogs } from "@/hooks/admin/useAdminLogs";
+import { useAdminLogsQueryCompat } from "@/lib/hooks/query/use-admin-logs-query";
 import { StatsSkeleton, TableSkeleton } from "@/components/common/skeletons";
 
 import type { SystemLog } from "@/lib/types/system";
@@ -32,11 +32,13 @@ import { AdminError } from "@/components/error/admin-error";
 import { useDataFetchTimeout } from "@/hooks/useTimeout";
 
 export function LogsTab() {
-  const { stats, loading, refetch } = useAdminLogs();
+  const { stats, loading, refetch } = useAdminLogsQueryCompat();
   const [selectedLog, setSelectedLog] = useState<SystemLog | null>(null);
 
   // 타임아웃 관리
-  const { timeoutReached, retry } = useDataFetchTimeout(loading, refetch, {
+  const { timeoutReached, retry } = useDataFetchTimeout(loading, async () => {
+    await refetch();
+  }, {
     timeout: 10000,
   });
 

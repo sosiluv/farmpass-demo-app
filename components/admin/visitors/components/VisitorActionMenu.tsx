@@ -19,12 +19,12 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { VisitorFormDialog, VisitorFormValues } from "../VisitorFormDialog";
-import { VisitorEntryWithFarm } from "@/store/use-visitor-store";
+import { VisitorWithFarm } from "@/lib/types/visitor";
 
 interface VisitorActionMenuProps {
-  visitor: VisitorEntryWithFarm;
-  onEdit?: (visitor: VisitorEntryWithFarm) => Promise<void>;
-  onDelete?: (visitor: VisitorEntryWithFarm) => Promise<void>;
+  visitor: VisitorWithFarm;
+  onEdit?: (visitor: VisitorWithFarm) => Promise<void>;
+  onDelete?: (visitor: VisitorWithFarm) => Promise<void>;
   onSuccess?: () => void;
 }
 
@@ -49,7 +49,7 @@ export function VisitorActionMenu({
       onSuccess?.();
     } catch (error) {
       devLog.error("Error in handleDelete:", error);
-      // 토스트는 hook에서 처리됨
+      // ?�스?�는 hook?�서 처리??
     } finally {
       setIsProcessing(false);
     }
@@ -68,8 +68,8 @@ export function VisitorActionMenu({
       setShowEditDialog(false);
       onSuccess?.();
     } catch (error) {
-      devLog.error("방문자 수정 실패:", error);
-      // 토스트는 hook에서 처리됨
+      devLog.error("방문???�정 ?�패:", error);
+      // ?�스?�는 hook?�서 처리??
     } finally {
       setIsProcessing(false);
     }
@@ -108,7 +108,7 @@ export function VisitorActionMenu({
             style={{ color: "#fff" }}
             disabled={isProcessing}
           >
-            <span className="sr-only">메뉴 열기</span>
+            <span className="sr-only">메뉴 ?�기</span>
             <MoreHorizontal
               className="h-4 w-4 dark:text-white !important dark:disabled:text-slate-600"
               style={{ color: "#fff" }}
@@ -118,7 +118,7 @@ export function VisitorActionMenu({
         <DropdownMenuContent align="end">
           <DropdownMenuItem onClick={handleEditClick} disabled={isProcessing}>
             <Pencil className="mr-2 h-4 w-4" />
-            수정
+            ?�정
           </DropdownMenuItem>
           <DropdownMenuItem
             onClick={handleDeleteClick}
@@ -126,7 +126,7 @@ export function VisitorActionMenu({
             disabled={isProcessing}
           >
             <Trash className="mr-2 h-4 w-4" />
-            삭제
+            ??��
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
@@ -134,10 +134,10 @@ export function VisitorActionMenu({
       <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>방문자 삭제</AlertDialogTitle>
+            <AlertDialogTitle>방문????��</AlertDialogTitle>
             <AlertDialogDescription>
-              {visitor.visitor_name} 방문자의 정보를 삭제하시겠습니까?
-              <br />이 작업은 되돌릴 수 없습니다.
+              {visitor.visitor_name} 방문?�의 ?�보�???��?�시겠습?�까?
+              <br />???�업?� ?�돌�????�습?�다.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -147,7 +147,7 @@ export function VisitorActionMenu({
               className="bg-destructive hover:bg-destructive/90"
               disabled={isProcessing}
             >
-              {isProcessing ? "삭제 중..." : "삭제"}
+              {isProcessing ? "??�� �?.." : "??��"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

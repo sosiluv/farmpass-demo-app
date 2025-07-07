@@ -2,7 +2,7 @@
 
 import React from "react";
 import { Building2 } from "lucide-react";
-import { useAdminFarms } from "@/hooks/admin/useAdminFarms";
+import { useAdminFarmsQueryCompat } from "@/lib/hooks/query/use-admin-farms-query";
 import { StatsSkeleton, TableSkeleton } from "@/components/common/skeletons";
 import { formatDateTime } from "@/lib/utils/datetime/date";
 import {
@@ -21,10 +21,12 @@ import { AdminError } from "@/components/error/admin-error";
 import { useDataFetchTimeout } from "@/hooks/useTimeout";
 
 export function FarmsTab() {
-  const { stats, loading, refetch } = useAdminFarms();
+  const { stats, loading, refetch } = useAdminFarmsQueryCompat();
 
   // 타임아웃 관리
-  const { timeoutReached, retry } = useDataFetchTimeout(loading, refetch, {
+  const { timeoutReached, retry } = useDataFetchTimeout(loading, async () => {
+    await refetch();
+  }, {
     timeout: 10000,
   });
 

@@ -12,7 +12,7 @@ import {
   ALLOWED_IMAGE_TYPES,
   MAX_UPLOAD_SIZE_MB,
 } from "@/lib/constants/upload";
-import { apiClient } from "@/lib/utils/data";
+import { useAccountMutations } from "@/lib/hooks/query/use-account-mutations";
 
 interface UseAccountActionsProps {
   profile: Profile;
@@ -25,15 +25,9 @@ interface SaveResult {
 }
 
 export function useAccountActions({ profile, userId }: UseAccountActionsProps) {
-  const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
-  const { changePassword, refreshProfile, signOut } = useAuth();
-
-  // 공통 에러 처리 함수 (토스트 제거)
-  const handleError = (error: Error, title: string) => {
-    devLog.error(`${title} error:`, error);
-    // toast 호출 제거 - 컴포넌트에서 처리
-  };
+  const { signOut } = useAuth();
+  const accountMutations = useAccountMutations();
 
   // 공통 성공 처리 함수
   const handleSuccess = (title: string, description: string) => {
@@ -41,52 +35,13 @@ export function useAccountActions({ profile, userId }: UseAccountActionsProps) {
     // 성공 로그만 기록 - 토스트는 컴포넌트에서 처리
   };
 
-  // 공통 저장 로직
-  const saveProfileData = async (
-    data: Record<string, any>,
-    actionType: string,
-    successMessage: string
-  ): Promise<SaveResult> => {
-    try {
-      setIsLoading(true);
-
-      await apiClient("/api/profile", {
-        method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(data),
-        context: "프로필 정보 저장",
-        onError: (error, context) => {
-          handleError(error, "프로필 정보 저장");
-          devLog.error(`${actionType} error:`, error);
-          // toast 호출 제거 - 컴포넌트에서 처리
-        },
-      });
-
-      handleSuccess("저장 완료", successMessage);
-
-      // 프로필 데이터 새로고침
-      await refreshProfile();
-
-      return { success: true };
-    } catch (error) {
-      // 에러는 이미 onError에서 처리됨
-      return { success: false, error: (error as Error).message };
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  // 이미지 업로드 함수
+  // 이미지 업로드 함수 (React Query mutation 사용)
   const handleImageUpload = async (
     file: File | null
   ): Promise<{ publicUrl: string; fileName: string } | void> => {
     if (!file) return;
 
     try {
-      setIsLoading(true);
-
       const result = await uploadImageUniversal({
         file,
         bucket: "profiles",
@@ -97,21 +52,10 @@ export function useAccountActions({ profile, userId }: UseAccountActionsProps) {
 
       const cacheBustedUrl = `${result.publicUrl}?t=${Date.now()}`;
 
-      await apiClient("/api/profile", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          publicUrl: result.publicUrl,
-          fileName: result.fileName,
-        }),
-        context: "프로필 이미지 업로드",
-        onError: (error, context) => {
-          handleError(error, "프로필 이미지 업로드");
-          devLog.error("프로필 이미지 업로드 실패:", error);
-          // toast 호출 제거 - 컴포넌트에서 처리
-        },
+      // React Query mutation 사용
+      await accountMutations.uploadImageAsync({
+        publicUrl: result.publicUrl,
+        fileName: result.fileName,
       });
 
       handleSuccess(
@@ -119,22 +63,16 @@ export function useAccountActions({ profile, userId }: UseAccountActionsProps) {
         "프로필 이미지가 성공적으로 업데이트되었습니다."
       );
 
-      // 프로필 데이터 새로고침
-      await refreshProfile();
-
       return { publicUrl: cacheBustedUrl, fileName: result.fileName };
     } catch (error: any) {
-      // 에러는 이미 onError에서 처리됨
+      devLog.error("프로필 이미지 업로드 실패:", error);
       throw error;
-    } finally {
-      setIsLoading(false);
     }
   };
 
-  // 이미지 삭제 함수
+  // 이미지 삭제 함수 (React Query mutation 사용)
   const handleImageDelete = async (): Promise<void> => {
     try {
-      setIsLoading(true);
       devLog.log(
         `[HANDLE_IMAGE_DELETE] Starting image deletion for user: ${userId}`
       );
@@ -143,42 +81,24 @@ export function useAccountActions({ profile, userId }: UseAccountActionsProps) {
       await deleteExistingProfileImage(userId);
       devLog.log(`[HANDLE_IMAGE_DELETE] Storage cleanup completed`);
 
-      // 2. 서버 API를 통해 데이터베이스에서 profile_image_url을 null로 설정
-      await apiClient("/api/profile", {
-        method: "DELETE",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        context: "프로필 이미지 삭제",
-        onError: (error, context) => {
-          handleError(error, "프로필 이미지 삭제");
-          devLog.error("[HANDLE_IMAGE_DELETE] Database update failed:", error);
-          // toast 호출 제거 - 컴포넌트에서 처리
-        },
-      });
+      // 2. React Query mutation 사용
+      await accountMutations.deleteImageAsync();
 
       devLog.log(`[HANDLE_IMAGE_DELETE] Database update completed`);
-
-      devLog.log(`[HANDLE_IMAGE_DELETE] Logging completed`);
 
       handleSuccess(
         "프로필 이미지 삭제 완료",
         "프로필 이미지가 성공적으로 삭제되었습니다."
       );
 
-      // 프로필 데이터 새로고침
-      await refreshProfile();
-
       devLog.log(`[HANDLE_IMAGE_DELETE] Image deletion completed successfully`);
     } catch (error: any) {
-      // 에러는 이미 onError에서 처리됨
+      devLog.error("[HANDLE_IMAGE_DELETE] Failed:", error);
       throw error;
-    } finally {
-      setIsLoading(false);
     }
   };
 
-  // 프로필 정보 저장
+  // 프로필 정보 저장 (React Query mutation 사용)
   const handleProfileSave = async (data: {
     name: string;
     phoneNumber: string;
@@ -186,22 +106,22 @@ export function useAccountActions({ profile, userId }: UseAccountActionsProps) {
     department: string;
     bio: string;
   }): Promise<SaveResult> => {
-    const profileData = {
-      name: data.name,
-      phone: data.phoneNumber,
-      position: data.position,
-      department: data.department,
-      bio: data.bio,
-    };
+    try {
+      await accountMutations.updateProfileAsync(data);
+      
+      handleSuccess(
+        "저장 완료",
+        "변경사항이 성공적으로 저장되었습니다."
+      );
 
-    return saveProfileData(
-      profileData,
-      "profile_info_update",
-      "변경사항이 성공적으로 저장되었습니다."
-    );
+      return { success: true };
+    } catch (error: any) {
+      devLog.error("프로필 정보 저장 실패:", error);
+      return { success: false, error: error.message };
+    }
   };
 
-  // 회사 정보 저장
+  // 회사 정보 저장 (React Query mutation 사용)
   const handleCompanySave = async (data: {
     companyName: string;
     companyAddress: string;
@@ -211,63 +131,48 @@ export function useAccountActions({ profile, userId }: UseAccountActionsProps) {
     employee_count: string;
     company_website: string;
   }): Promise<SaveResult> => {
-    const companyData = {
-      company_name: data.companyName,
-      company_address: data.companyAddress,
-      business_type: data.businessType,
-      company_description: data.company_description,
-      establishment_date: data.establishment_date,
-      employee_count: parseInt(data.employee_count),
-      company_website: data.company_website,
-    };
+    try {
+      await accountMutations.updateCompanyAsync(data);
+      
+      handleSuccess(
+        "저장 완료",
+        "변경사항이 성공적으로 저장되었습니다."
+      );
 
-    return saveProfileData(
-      companyData,
-      "company_info_update",
-      "변경사항이 성공적으로 저장되었습니다."
-    );
+      return { success: true };
+    } catch (error: any) {
+      devLog.error("회사 정보 저장 실패:", error);
+      return { success: false, error: error.message };
+    }
   };
 
-  // 비밀번호 변경
+  // 비밀번호 변경 (React Query mutation 사용)
   const handlePasswordChange = async (
     data: PasswordFormData
   ): Promise<SaveResult> => {
     try {
-      setIsLoading(true);
-
-      const result = await changePassword({
-        newPassword: data.newPassword,
-        currentPassword: data.currentPassword,
-        email: profile?.email || "",
-      });
-
-      if (!result.success) {
-        throw new Error(result.error || "비밀번호 변경에 실패했습니다.");
-      }
+      await accountMutations.changePasswordAsync(data);
 
       handleSuccess(
         "비밀번호 변경 완료",
         "새로운 비밀번호로 변경되었습니다. 보안을 위해 자동으로 로그아웃됩니다."
       );
 
-      // 비밀번호 변경 성공 후 자동 로그아웃 (로딩 상태 유지)
+      // 비밀번호 변경 성공 후 자동 로그아웃
       setTimeout(async () => {
         await signOut();
-        // 로그인 페이지로 리다이렉트
         router.push("/login");
       }, 2000); // 2초 후 로그아웃
 
-      // 로딩 상태를 유지하여 버튼이 비활성화된 상태로 유지
       return { success: true };
     } catch (error: any) {
-      handleError(error, "비밀번호 변경에 실패했습니다");
-      setIsLoading(false); // 실패 시에만 로딩 상태 해제
+      devLog.error("비밀번호 변경 실패:", error);
       return { success: false, error: error.message };
     }
   };
 
   return {
-    isLoading,
+    isLoading: accountMutations.isLoading,
     handleImageUpload,
     handleImageDelete,
     handleProfileSave,

@@ -1,7 +1,8 @@
 import { Bell } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import NotificationCardHeader from "./NotificationCardHeader";
-import { useNotificationSettingsStore } from "@/store/use-notification-settings-store";
+import { useNotificationSettingsQueryCompat } from "@/lib/hooks/query/use-notification-settings-query";
+import { useNotificationMutations } from "@/lib/hooks/query/use-notification-mutations";
 import { BellRing, MessageSquare } from "lucide-react";
 import NotificationTypeCard from "@/components/admin/notifications/NotificationTypeCard";
 
@@ -25,11 +26,16 @@ const notificationTypeOptions = [
 ];
 
 export function NotificationMethodsCard() {
-  const { unsavedSettings, updateUnsavedSettings } =
-    useNotificationSettingsStore();
+  const { data: settings } = useNotificationSettingsQueryCompat();
+  const { saveSettings } = useNotificationMutations();
 
-  const handleMethodChange = (value: string) => {
-    updateUnsavedSettings("notification_method", value);
+  const handleOptionSelect = (value: string) => {
+    if (!settings) return;
+    
+    saveSettings.mutate({
+      ...settings,
+      notification_method: value as "push" | "kakao",
+    });
   };
 
   return (
@@ -49,14 +55,21 @@ export function NotificationMethodsCard() {
                 description={option.description}
                 icon={option.icon}
                 value={option.value}
-                selected={unsavedSettings?.notification_method === option.value}
+                selected={settings?.notification_method === option.value}
                 onClick={() =>
-                  !option.disabled && handleMethodChange(option.value)
+                  !option.disabled && handleOptionSelect(option.value)
                 }
-                badge={option.badge}
                 disabled={option.disabled}
+                badge={option.badge}
               />
             ))}
+          </div>
+          <div className="text-sm text-muted-foreground">
+            <p>
+              • 웹 푸시: 브라우저에서 실시간 알림을 받으려면 알림 권한을 허용해야
+              합니다.
+            </p>
+            <p>• 카카오톡: 카카오톡 비즈니스 API를 통한 알림입니다. (추후 지원)</p>
           </div>
         </div>
       </CardContent>

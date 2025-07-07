@@ -14,20 +14,20 @@ import { Car, FileText, Eye, Calendar, Sparkles } from "lucide-react";
 import { getFarmTypeInfo } from "@/lib/constants/farm-types";
 import { formatPhoneNumber } from "@/lib/utils/validation";
 import { VisitorAvatar, StatusBadge, VisitorActionMenu } from "./index";
-import type { VisitorEntryWithFarm } from "@/store/use-visitor-store";
+import type { VisitorWithFarm } from "@/lib/types/visitor";
 
 interface VisitorTableRowProps {
-  visitor: VisitorEntryWithFarm;
+  visitor: VisitorWithFarm;
   index: number;
   showFarmColumn: boolean;
-  onViewDetails: (visitor: VisitorEntryWithFarm) => void;
+  onViewDetails: (visitor: VisitorWithFarm) => void;
   isAdmin?: boolean;
-  onEdit?: (visitor: VisitorEntryWithFarm) => Promise<void>;
-  onDelete?: (visitor: VisitorEntryWithFarm) => Promise<void>;
+  onEdit?: (visitor: VisitorWithFarm) => Promise<void>;
+  onDelete?: (visitor: VisitorWithFarm) => Promise<void>;
 }
 
 /**
- * 방문자 테이블 데스크톱 행 컴포넌트
+ * 방문???�이�??�스?�톱 ??컴포?�트
  */
 export function VisitorTableRow({
   visitor,
@@ -52,7 +52,7 @@ export function VisitorTableRow({
         </div>
       </TableCell>
 
-      {/* 방문자 정보 */}
+      {/* 방문???�보 */}
       <TableCell className="w-32 sm:w-40">
         <div className="flex items-center space-x-2 sm:space-x-3">
           <VisitorAvatar
@@ -88,7 +88,7 @@ export function VisitorTableRow({
         </div>
       </TableCell>
 
-      {/* 농장 정보 (조건부 표시) */}
+      {/* ?�장 ?�보 (조건부 ?�시) */}
       {showFarmColumn && (
         <TableCell className="w-32 sm:w-40">
           {visitor.farms && (
@@ -123,7 +123,7 @@ export function VisitorTableRow({
         </TableCell>
       )}
 
-      {/* 방문일시 */}
+      {/* 방문?�시 */}
       <TableCell className="w-24 sm:w-28">
         <div className="flex items-start space-x-2 sm:space-x-3">
           <Calendar className="w-3 h-3 sm:w-4 sm:h-4 text-blue-500 flex-shrink-0 mt-0.5" />
@@ -136,11 +136,11 @@ export function VisitorTableRow({
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <div className="cursor-help">
-                        {/* 년도/날짜 - 항상 한 줄로 표시 */}
+                        {/* ?�도/?�짜 - ??�� ??줄로 ?�시 */}
                         <p className="text-xs sm:text-sm font-medium text-gray-900 leading-tight">
                           {datePart}
                         </p>
-                        {/* 시간 - 다음 줄에 표시 */}
+                        {/* ?�간 - ?�음 줄에 ?�시 */}
                         <p className="text-[10px] sm:text-xs text-gray-600 leading-tight">
                           {timePart}
                         </p>
@@ -164,11 +164,11 @@ export function VisitorTableRow({
           <Tooltip>
             <TooltipTrigger asChild>
               <span className="text-xs sm:text-sm font-medium text-gray-700 truncate max-w-[120px] sm:max-w-[150px] cursor-help">
-                {visitor.visitor_purpose || "기타"}
+                {visitor.visitor_purpose || "기�?"}
               </span>
             </TooltipTrigger>
             <TooltipContent>
-              <p>{visitor.visitor_purpose || "기타"}</p>
+              <p>{visitor.visitor_purpose || "기�?"}</p>
             </TooltipContent>
           </Tooltip>
         </div>
@@ -195,7 +195,7 @@ export function VisitorTableRow({
         )}
       </TableCell>
 
-      {/* 방역 완료 상태 */}
+      {/* 방역 ?�료 ?�태 */}
       <TableCell className="w-20 sm:w-24">
         <div className="flex items-center space-x-2">
           <StatusBadge isCompleted={visitor.disinfection_check} />
@@ -205,7 +205,7 @@ export function VisitorTableRow({
         </div>
       </TableCell>
 
-      {/* 액션 */}
+      {/* ?�션 */}
       <TableCell className="w-16 sm:w-20 text-center">
         <div className="flex items-center justify-center space-x-2">
           <TooltipProvider>
@@ -219,7 +219,7 @@ export function VisitorTableRow({
                 </button>
               </TooltipTrigger>
               <TooltipContent>
-                <p>상세 보기</p>
+                <p>?�세 보기</p>
               </TooltipContent>
             </Tooltip>
           </TooltipProvider>

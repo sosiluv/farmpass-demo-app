@@ -4,6 +4,7 @@ import type { SystemSettings } from "@/lib/types/settings";
 import { devLog } from "@/lib/utils/logging/dev-logger";
 import { apiClient } from "@/lib/utils/data";
 import { handleError } from "@/lib/utils/error";
+import { useNotificationMutations } from "@/lib/hooks/query/use-notification-mutations";
 
 // 알림 설정 조회 훅 (사용자용)
 export function useNotificationSettings() {
@@ -132,29 +133,20 @@ export function useSystemNotificationSettings(options: {
   );
 
   // VAPID 키 생성
+  const notificationMutations = useNotificationMutations();
+  
   const handleGenerateVapidKeys = useCallback(async () => {
     try {
-      const data = await apiClient("/api/push/vapid", {
-        method: "POST",
-        context: "VAPID 키 생성",
-        onError: (error, context) => {
-          handleError(error, {
-            context,
-            onStateUpdate: (errorMessage) => {
-              // 에러 상태 업데이트가 필요한 경우 여기서 처리
-            },
-          });
-        },
-      });
+      const data = await notificationMutations.generateVapidKeysAsync();
 
       onUpdate("vapidPublicKey", data.publicKey);
       onUpdate("vapidPrivateKey", data.privateKey);
 
       // 토스트는 컴포넌트에서 처리
     } catch (error) {
-      // 에러는 이미 onError에서 처리됨
+      // 에러는 이미 mutation에서 처리됨
     }
-  }, [onUpdate]);
+  }, [onUpdate, notificationMutations]);
 
   // 타임스탬프 업데이트
   const updateTimestamp = useCallback((type: "icon" | "badge") => {

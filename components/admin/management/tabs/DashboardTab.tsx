@@ -9,7 +9,7 @@ import { RegionDistribution } from "../dashboard/RegionDistribution";
 import { MonthlyTrends } from "../dashboard/MonthlyTrends";
 import { SystemUsage } from "../dashboard/SystemUsage";
 import { RecentActivities } from "../dashboard/RecentActivities";
-import { useAdminDashboard } from "@/hooks/admin/useAdminDashboard";
+import { useAdminDashboardQueryCompat } from "@/lib/hooks/query/use-admin-dashboard-query";
 import { ErrorBoundary } from "@/components/error/error-boundary";
 import { StatsSkeleton } from "@/components/common/skeletons";
 import { BarChart3, TrendingUp } from "lucide-react";
@@ -17,10 +17,12 @@ import { AdminError } from "@/components/error/admin-error";
 import { useDataFetchTimeout } from "@/hooks/useTimeout";
 
 export function DashboardTab() {
-  const { stats, loading, refetch } = useAdminDashboard();
+  const { stats, loading, refetch } = useAdminDashboardQueryCompat();
 
   // 타임아웃 관리
-  const { timeoutReached, retry } = useDataFetchTimeout(loading, refetch, {
+  const { timeoutReached, retry } = useDataFetchTimeout(loading, async () => {
+    await refetch();
+  }, {
     timeout: 10000,
   });
 

@@ -2,7 +2,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import { NotificationSettings } from "@/lib/types/notification";
 import NotificationCardHeader from "./NotificationCardHeader";
-import { useNotificationSettingsStore } from "@/store/use-notification-settings-store";
+import { useNotificationSettingsQueryCompat } from "@/lib/hooks/query/use-notification-settings-query";
+import { useNotificationMutations } from "@/lib/hooks/query/use-notification-mutations";
 import { Bell, AlertTriangle, Wrench, Megaphone } from "lucide-react";
 
 const NOTIFICATION_TYPES = [
@@ -37,11 +38,16 @@ const NOTIFICATION_TYPES = [
 ] as const;
 
 export function NotificationTypesCard() {
-  const { unsavedSettings, updateUnsavedSettings } =
-    useNotificationSettingsStore();
+  const { data: settings } = useNotificationSettingsQueryCompat();
+  const { saveSettings } = useNotificationMutations();
 
   const handleToggle = (key: string, value: boolean) => {
-    updateUnsavedSettings(key as keyof NotificationSettings, value);
+    if (!settings) return;
+    
+    saveSettings.mutate({
+      ...settings,
+      [key]: value,
+    } as NotificationSettings);
   };
 
   return (
@@ -71,7 +77,7 @@ export function NotificationTypesCard() {
               </div>
               <Switch
                 checked={Boolean(
-                  unsavedSettings?.[type.key as keyof NotificationSettings]
+                  settings?.[type.key as keyof NotificationSettings]
                 )}
                 onCheckedChange={(checked) => handleToggle(type.key, checked)}
                 className="ml-auto"

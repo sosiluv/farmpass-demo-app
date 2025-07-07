@@ -1,4 +1,4 @@
-import type { Visitor } from "@/store/use-visitor-store";
+import type { VisitorWithFarm as Visitor } from "@/lib/types/visitor";
 import type { VisitorEntry } from "@/lib/types";
 import { getRegionFromAddress } from "../system/region";
 import { getKSTTodayRange } from "@/lib/utils/datetime/date";

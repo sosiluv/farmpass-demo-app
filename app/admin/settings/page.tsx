@@ -13,7 +13,7 @@ import {
   NotificationTab,
   SystemTab,
 } from "@/components/admin/settings/tabs";
-import { useSystemSettings } from "@/lib/hooks/use-system-settings";
+import { useSystemSettingsQueryCompat } from "@/lib/hooks/query/use-system-settings-query";
 import { useDynamicFavicon } from "@/hooks/use-dynamic-favicon";
 import { useSystemMode } from "@/components/providers/debug-provider";
 import { useAuth } from "@/components/providers/auth-provider";
@@ -26,7 +26,7 @@ import {
 } from "@/components/admin/settings";
 
 export default function SettingsPage() {
-  const { settings, loading, refetch } = useSystemSettings();
+  const { settings, loading, refetch } = useSystemSettingsQueryCompat();
 
   // 설정 페이지에서만 동적 파비콘 업데이트 (기본 파비콘 포함)
   useDynamicFavicon(settings.favicon || "/favicon.ico");
@@ -72,7 +72,10 @@ export default function SettingsPage() {
     onSettingsUpdate: setLocalSettings,
     onUnsavedChangesChange: setUnsavedChanges,
     refreshSystemModes,
-    refetch,
+    refetch: async () => {
+      const result = await refetch();
+      return result.data;
+    },
   });
 
   const handleSettingChange = <K extends keyof SystemSettings>(

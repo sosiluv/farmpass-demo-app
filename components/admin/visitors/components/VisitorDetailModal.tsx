@@ -20,10 +20,10 @@ import { formatResponsiveDateTime } from "@/lib/utils/datetime/date";
 import { VisitorAvatar } from "./VisitorAvatar";
 import { StatusBadge } from "./StatusBadge";
 import { useAuth } from "@/components/providers/auth-provider";
-import type { VisitorEntryWithFarm } from "@/store/use-visitor-store";
+import type { VisitorWithFarm } from "@/lib/types/visitor";
 
 interface VisitorDetailModalProps {
-  visitor: VisitorEntryWithFarm | null;
+  visitor: VisitorWithFarm | null;
   onClose: () => void;
 }
 

@@ -66,6 +66,16 @@ export interface UpdateVisitorData {
   disinfection_check?: boolean;
 }
 
+export interface VisitorFilters {
+  searchTerm: string;
+  farmId?: string;
+  dateRange: string; // "all" | "today" | "week" | "month" | "custom"
+  dateStart?: string;
+  dateEnd?: string;
+  disinfectionCheck?: boolean;
+  consentGiven?: boolean;
+}
+
 export interface VisitorFilter {
   farmId?: string;
   startDate?: string;

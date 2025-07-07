@@ -11,11 +11,11 @@ import {
   VisitorExportRefactored,
   VisitorTable,
 } from "@/components/admin/visitors";
-import type { Farm } from "@/store/use-farms-store";
+import type { Farm } from "@/lib/types/farm";
 import { useCommonToast } from "@/lib/utils/notification/toast-messages";
 
 // Zustand Store 사용
-import { useVisitorFiltersStore } from "@/store/use-visitor-store";
+import { useVisitorFiltersStore } from "@/lib/hooks/query/use-visitor-filters";
 import { useVisitorActions } from "@/hooks/useVisitorActions";
 import { generateFarmVisitorPageStats } from "@/lib/utils/data/common-stats";
 import { ErrorBoundary } from "@/components/error/error-boundary";

@@ -2,7 +2,7 @@
 
 import { useAuth } from "@/components/providers/auth-provider";
 import { StatsSkeleton, TableSkeleton } from "@/components/common/skeletons";
-import { useVisitorFiltersStore } from "@/store/use-visitor-store";
+import { useVisitorFiltersStore } from "@/lib/hooks/query/use-visitor-filters";
 import type { Farm } from "@/lib/types/visitor";
 import {
   VisitorTable,

@@ -4,7 +4,8 @@ import { devLog } from "@/lib/utils/logging/dev-logger";
 import { useEffect, useRef } from "react";
 import { supabase } from "@/lib/supabase/client";
 import type { SystemSettings } from "@/lib/types/settings";
-import { useSystemSettings } from "@/lib/hooks/use-system-settings";
+import { useQueryClient } from "@tanstack/react-query";
+import { settingsKeys } from "@/lib/hooks/query/query-keys";
 
 interface SettingsImageManagerProps {
   settings: SystemSettings;
@@ -37,12 +38,12 @@ export function useSettingsImageManager({
   onSettingsUpdate,
 }: SettingsImageManagerProps) {
   const { showWarning, showInfo, showSuccess, showError } = useCommonToast();
-  const { invalidateCache } = useSystemSettings();
+  const queryClient = useQueryClient();
 
   // 설정 새로고침 함수
   const refreshSettings = async () => {
     try {
-      await invalidateCache(); // 서버 캐시와 SWR 캐시 모두 무효화
+      await queryClient.invalidateQueries({ queryKey: settingsKeys.general() });
     } catch (error) {
       devLog.error("Failed to refresh settings:", error);
     }

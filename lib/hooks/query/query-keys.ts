@@ -82,6 +82,7 @@ export const dashboardKeys = {
   // 전체 통계
   stats: () => [...dashboardKeys.all, "stats"] as const,
   globalStats: () => [...dashboardKeys.stats(), "global"] as const,
+  adminStats: () => [...dashboardKeys.stats(), "admin"] as const,
   
   // 차트 데이터
   charts: () => [...dashboardKeys.all, "charts"] as const,

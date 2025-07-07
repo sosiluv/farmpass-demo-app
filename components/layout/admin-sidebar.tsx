@@ -2,7 +2,7 @@
 
 import { useAuth } from "@/components/providers/auth-provider";
 import { useFarmsQuery } from "@/lib/hooks/query/use-farms-query";
-import { useSystemSettings } from "@/lib/hooks/use-system-settings";
+import { useSystemSettingsQueryCompat } from "@/lib/hooks/query/use-system-settings-query";
 import { getFarmTypeLabel, getFarmTypeIcon } from "@/lib/constants/farm-types";
 import {
   Sidebar,
@@ -46,7 +46,7 @@ import { DEFAULT_SYSTEM_SETTINGS } from "@/lib/constants/defaults";
 export function AdminSidebar() {
   const { state, signOut } = useAuth();
   const { farms } = useFarmsQuery();
-  const { settings } = useSystemSettings();
+  const { settings } = useSystemSettingsQueryCompat();
   const { isMobile, setOpenMobile } = useSidebar();
 
   const profile = state.status === "authenticated" ? state.profile : null;

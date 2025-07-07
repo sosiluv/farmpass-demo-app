@@ -17,8 +17,7 @@ import {
 } from "@/components/admin/monitoring";
 import { AdminError } from "@/components/error/admin-error";
 import { useDataFetchTimeout } from "@/hooks/useTimeout";
-import { apiClient } from "@/lib/utils/data";
-import { handleError } from "@/lib/utils/error";
+import { useMonitoringQueryCompat } from "@/lib/hooks/query/use-monitoring-query";
 
 interface MonitoringData {
   timestamp: string;
@@ -92,9 +91,7 @@ interface MonitoringData {
 }
 
 export default function MonitoringDashboard() {
-  const [data, setData] = useState<MonitoringData | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const { data, loading, error, refetch } = useMonitoringQueryCompat();
 
   const router = useRouter();
   const { state } = useAuth();
@@ -111,40 +108,12 @@ export default function MonitoringDashboard() {
     }
   }, [isAdmin, router]);
 
-  const fetchData = useCallback(async () => {
-    try {
-      const result = await apiClient("/api/monitoring/dashboard", {
-        context: "시스템 모니터링 데이터 조회",
-        onError: (error, context) => {
-          handleError(error, {
-            context,
-            onStateUpdate: (errorMessage) => {
-              setError(errorMessage);
-            },
-          });
-        },
-      });
-      setData(result);
-      setError(null);
-    } catch (err) {
-      // 에러는 이미 onError에서 처리됨
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
   // 타임아웃 관리
-  const { timeoutReached, retry } = useDataFetchTimeout(loading, fetchData, {
+  const { timeoutReached, retry } = useDataFetchTimeout(loading, async () => {
+    await refetch();
+  }, {
     timeout: 10000,
   });
-
-  useEffect(() => {
-    fetchData();
-    const interval = setInterval(fetchData, 30 * 60 * 1000); // 30분마다 갱신
-    return () => {
-      clearInterval(interval);
-    };
-  }, [fetchData]);
 
   // 권한이 없는 경우
   if (!isAdmin) {
