@@ -1,6 +1,6 @@
 "use client";
 
-import { useSystemSettings } from "@/lib/hooks/use-system-settings";
+import { useSystemSettingsQueryCompat } from "@/lib/hooks/query/use-system-settings-query";
 import { DEFAULT_SYSTEM_SETTINGS } from "@/lib/constants/defaults";
 import { useMemo } from "react";
 
@@ -15,7 +15,7 @@ interface LogoInfo {
  * 업로드된 로고가 있으면 해당 URL을, 없으면 null을 반환
  */
 export function useLogo(): LogoInfo {
-  const { settings } = useSystemSettings();
+  const { settings } = useSystemSettingsQueryCompat();
 
   const imageUrl = useMemo(() => {
     if (!settings?.logo) return null;
