@@ -1,13 +1,10 @@
 "use client";
 
 import React from "react";
-import {
-  useAuthenticatedQuery,
-  queryKeys,
-  createFarmQueryKey,
-} from "@/lib/hooks/query-utils";
+import { useAuthenticatedQuery } from "@/lib/hooks/query-utils";
 import { useAuth } from "@/components/providers/auth-provider";
 import { apiClient } from "@/lib/utils/data/api-client";
+import { farmsKeys } from "./query-keys";
 import type { Farm } from "@/lib/hooks/use-farms";
 
 /**
@@ -26,9 +23,9 @@ export function useFarmsQuery(userId?: string) {
     return undefined;
   }, [userId, state]);
 
-  // 농장 목록 쿼리 - 기존 방식과 동일한 API 호출
+  // 농장 목록 쿼리 - 새로운 Query Key 체계 사용
   const farmsQuery = useAuthenticatedQuery(
-    createFarmQueryKey(targetUserId),
+    farmsKeys.list({ userId: targetUserId }),
     async (): Promise<Farm[]> => {
       // 기존 Store와 동일한 API 엔드포인트 사용
       const { farms } = await apiClient("/api/farms", {

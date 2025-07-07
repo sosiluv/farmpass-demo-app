@@ -33,7 +33,7 @@ dev (메인 개발 브랜치)
 - [x] Feature Flag 기반 점진적 전환
 - [x] UI에 현재 모드 표시
 
-### Phase 4: 고급 기능 구현 🔄
+### Phase 4: 고급 기능 구현 ✅
 
 - [x] **Mutation Hook 구현**
   - [x] `use-visitor-mutations.ts`: 방문자 CRUD 작업 (토스트 메시지 분리)
@@ -52,15 +52,28 @@ dev (메인 개발 브랜치)
 - [x] **농장별 방문자 페이지 필터링 적용**
   - [x] `/admin/farms/[farmId]/visitors` 페이지에 필터링 Hook 적용
   - [x] 농장별 특화 필터 옵션 지원
-- [ ] Infinite Query (페이지네이션)
-- [ ] Background Sync
-- [ ] Cache Invalidation 전략
+- [x] **Infinite Query (페이지네이션)**
+  - [x] `use-infinite-visitors-query.ts`: 무한 스크롤 구현
+  - [x] 커서 기반 페이지네이션
+  - [x] 성능 최적화된 대용량 데이터 로딩
+- [x] **Background Sync**
+  - [x] `use-background-sync.ts`: 백그라운드 동기화
+  - [x] 네트워크 재연결 시 자동 refetch
+  - [x] Supabase Realtime 연동
+  - [x] 탭 활성화 시 stale 데이터 갱신
+- [x] **Cache Invalidation 전략**
+  - [x] `query-keys.ts`: 체계적인 Query Key 관리
+  - [x] Factory Pattern으로 타입 안전한 키 생성
+  - [x] 스마트 캐시 무효화 헬퍼 함수들
+  - [x] 연관 데이터 자동 무효화
 
-### Phase 5: 성능 최적화 및 정리
+### Phase 5: 성능 최적화 및 정리 🔄
 
+- [x] Query Key 체계 최적화
+- [x] DevTools 활용 모니터링 설정
 - [ ] 불필요한 Zustand Store 제거
-- [ ] Query Key 체계 최적화
-- [ ] DevTools 활용 모니터링
+- [ ] 성능 측정 및 벤치마크
+- [ ] 프로덕션 배포 준비
 
 ## 🔄 마이그레이션 방법
 
@@ -280,10 +293,29 @@ const useReactQuery = process.env.NEXT_PUBLIC_USE_REACT_QUERY === "true";
 
 ### 📊 마이그레이션 진행률
 
-- 📊 **Query Hook**: 95% 완료
-- 🎯 **서비스 페이지**: 80% 완료
-- 🔄 **Mutation Hook**: 95% 완료
-- 🚀 **고급 기능**: 70% 완료
-- 🧹 **코드 정리**: 10% 완료
+- 📊 **Query Hook**: 100% 완료
+- 🎯 **서비스 페이지**: 100% 완료
+- 🔄 **Mutation Hook**: 100% 완료
+- 🚀 **고급 기능**: 100% 완료
+- 🧹 **코드 정리**: 30% 진행중
 
-**전체 진행률**: 약 **85%** 완료
+**전체 진행률**: 약 **95%** 완료
+
+## 🎉 다음 단계 작업
+
+### 1. 성능 측정 및 벤치마크
+- [ ] React Query vs Zustand 성능 비교
+- [ ] 메모리 사용량 측정
+- [ ] 초기 로딩 시간 비교
+- [ ] 캐싱 효과 분석
+
+### 2. 불필요한 코드 제거
+- [ ] 기존 Zustand Store 파일 정리
+- [ ] 중복된 타입 정의 통합
+- [ ] 사용하지 않는 유틸리티 함수 제거
+
+### 3. 프로덕션 배포 준비
+- [ ] Feature Flag 기반 점진적 활성화
+- [ ] 모니터링 및 알림 설정
+- [ ] 롤백 계획 수립
+- [ ] 사용자 가이드 작성
