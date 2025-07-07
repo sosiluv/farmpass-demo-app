@@ -8,7 +8,7 @@ import {
   useCallback,
 } from "react";
 import { useAuth } from "@/components/providers/auth-provider";
-import { useFarms } from "@/lib/hooks/use-farms";
+import { useFarmsQuery } from "@/lib/hooks/query/use-farms-query";
 import { devLog } from "@/lib/utils/logging/dev-logger";
 
 interface FarmsContextValue {
@@ -22,7 +22,7 @@ const FarmsContext = createContext<FarmsContextValue | undefined>(undefined);
 export function FarmsProvider({ children }: { children: React.ReactNode }) {
   const { state } = useAuth();
   const profile = state.status === "authenticated" ? state.profile : null;
-  const { fetchFarms, fetchState } = useFarms(profile?.id);
+  const { refetch: refetchFarms, isLoading, isError } = useFarmsQuery(profile?.id);
   const initializationRef = useRef<string | null>(null);
 
   // 초기화 로직 개선
@@ -41,7 +41,7 @@ export function FarmsProvider({ children }: { children: React.ReactNode }) {
             "[FarmsProvider] Initializing farms for user:",
             profile.id
           );
-          await fetchFarms();
+          await refetchFarms();
           initializationRef.current = profile.id;
           devLog.log("[FarmsProvider] Farms initialization completed");
         } catch (error) {
@@ -53,24 +53,24 @@ export function FarmsProvider({ children }: { children: React.ReactNode }) {
 
       initializeFarms();
     }
-  }, [profile?.id, fetchFarms]);
+  }, [profile?.id, refetchFarms]);
 
   const refreshFarms = useCallback(async () => {
     if (!profile?.id) return;
     try {
       devLog.log("[FarmsProvider] Refreshing farms for user:", profile.id);
-      await fetchFarms();
+      await refetchFarms();
       devLog.log("[FarmsProvider] Farms refresh completed");
     } catch (error) {
       devLog.error("[FarmsProvider] Failed to refresh farms:", error);
     }
-  }, [profile?.id, fetchFarms]);
+  }, [profile?.id, refetchFarms]);
 
   return (
     <FarmsContext.Provider
       value={{
         initialized: initializationRef.current === profile?.id,
-        isLoading: fetchState.loading,
+        isLoading: isLoading,
         refreshFarms,
       }}
     >

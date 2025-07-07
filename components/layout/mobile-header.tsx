@@ -1,13 +1,13 @@
 "use client";
 
 import { useAuth } from "@/components/providers/auth-provider";
-import { useFarms } from "@/lib/hooks/use-farms";
+import { useFarmsQuery } from "@/lib/hooks/query/use-farms-query";
 import { Logo } from "@/components/common";
 
 export function MobileHeader() {
   const { state } = useAuth();
   const profile = state.status === "authenticated" ? state.profile : null;
-  const { farms } = useFarms();
+  const { farms } = useFarmsQuery();
 
   return (
     <header className="flex h-16 items-center justify-between border-b bg-background px-4 md:hidden">

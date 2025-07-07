@@ -7,7 +7,7 @@ import {
   createFarmQueryKey,
   createVisitorQueryKey,
 } from "@/lib/hooks/query-utils";
-import type { Farm } from "@/lib/hooks/use-farms";
+import type { Farm } from "@/lib/types/farm";
 
 export interface CreateFarmRequest {
   farm_name: string;

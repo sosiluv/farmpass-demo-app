@@ -1,9 +1,7 @@
 "use client";
 
 import { useAuth } from "@/components/providers/auth-provider";
-import { useFarms } from "@/lib/hooks/use-farms";
 import { useEffect, useState, useMemo, useCallback } from "react";
-import { useFarmVisitors } from "@/lib/hooks/use-farm-visitors";
 import { PageHeader } from "@/components/layout";
 import {
   DashboardSkeleton,
@@ -24,25 +22,21 @@ import { useMultipleLoadingTimeout } from "@/hooks/useTimeout";
 import { InstallGuide } from "@/components/common/InstallGuide";
 import { usePWAInstall } from "@/components/providers/pwa-provider";
 
-// React Query Hooks
+// React Query Hooks (100% 마이그레이션 완료)
 import { useFarmsQuery } from "@/lib/hooks/query/use-farms-query";
 import { useFarmVisitorsQuery } from "@/lib/hooks/query/use-farm-visitors-query";
 
 export default function DashboardPage() {
   const { state } = useAuth();
 
-  // Feature Flag: React Query vs 기존 Hook
-  const useReactQuery = process.env.NEXT_PUBLIC_USE_REACT_QUERY === "true";
-
-  // 기존 Hook (Feature Flag가 false일 때)
-  const legacyFarmsHook = useFarms();
-
-  // React Query Hook (Feature Flag가 true일 때)
-  const reactQueryFarmsHook = useFarmsQuery();
-
-  // Feature Flag에 따른 데이터 선택
-  const finalFarmsHook = useReactQuery ? reactQueryFarmsHook : legacyFarmsHook;
-  const { farms: availableFarms, fetchState } = finalFarmsHook;
+  // React Query 100% 마이그레이션 완료 - 더 이상 Feature Flag 불필요
+  const {
+    farms: availableFarms,
+    isLoading: farmsLoading,
+    isError: farmsError,
+    error: farmsErrorDetails,
+    refetch: refetchFarms,
+  } = useFarmsQuery();
 
   const installInfo = usePWAInstall();
 
@@ -56,7 +50,7 @@ export default function DashboardPage() {
 
   // 초기 농장 선택 - useMemo로 최적화
   const initialSelectedFarm = useMemo(() => {
-    if (fetchState.loading || availableFarms.length === 0) {
+    if (farmsLoading || availableFarms.length === 0) {
       return "";
     }
 
@@ -65,7 +59,7 @@ export default function DashboardPage() {
     } else {
       return availableFarms[0]?.id || "";
     }
-  }, [fetchState.loading, availableFarms, isAdmin]);
+  }, [farmsLoading, availableFarms, isAdmin]);
 
   // selectedFarm 상태 관리 개선
   const [selectedFarm, setSelectedFarm] = useState<string>("");
@@ -96,19 +90,14 @@ export default function DashboardPage() {
     if (
       !isInitialized &&
       initialSelectedFarm &&
-      !fetchState.loading &&
+      !farmsLoading &&
       availableFarms.length > 0
     ) {
       setSelectedFarm(initialSelectedFarm);
       setIsInitialized(true);
       devLog.log(`Initial farm selected: ${initialSelectedFarm}`);
     }
-  }, [
-    initialSelectedFarm,
-    fetchState.loading,
-    availableFarms.length,
-    isInitialized,
-  ]);
+  }, [initialSelectedFarm, farmsLoading, availableFarms.length, isInitialized]);
 
   // 알림 메시지 처리
   useEffect(() => {
@@ -122,28 +111,19 @@ export default function DashboardPage() {
     }
   }, [lastMessage, showSuccess, showError, clearLastMessage]);
 
-  // useFarmVisitors 호출을 메모화하여 불필요한 재호출 방지
+  // useFarmVisitorsQuery 호출을 메모화하여 불필요한 재호출 방지
   const memoizedSelectedFarm = useMemo(() => {
     return selectedFarm === "all" ? null : selectedFarm;
   }, [selectedFarm]);
 
-  // 기존 방문자 Hook (Feature Flag가 false일 때)
-  const legacyVisitorsHook = useFarmVisitors(memoizedSelectedFarm);
-
-  // React Query 방문자 Hook (Feature Flag가 true일 때)
-  const reactQueryVisitorsHook = useFarmVisitorsQuery(memoizedSelectedFarm);
-
-  // Feature Flag에 따른 데이터 선택
-  const finalVisitorsHook = useReactQuery
-    ? reactQueryVisitorsHook
-    : legacyVisitorsHook;
+  // React Query 방문자 Hook (100% 마이그레이션 완료)
   const {
     loading: visitorsLoading,
     visitors,
     dashboardStats,
     visitorTrend,
     refetch: refetchVisitors,
-  } = finalVisitorsHook;
+  } = useFarmVisitorsQuery(memoizedSelectedFarm);
 
   // 통합 차트 데이터 계산 - useMemo로 최적화
   const chartData = useMemo(
@@ -155,7 +135,7 @@ export default function DashboardPage() {
   const isInitialLoading = useMemo(() => {
     return (
       userLoading ||
-      (fetchState.loading && availableFarms.length === 0) ||
+      (farmsLoading && availableFarms.length === 0) ||
       (visitorsLoading &&
         selectedFarm &&
         selectedFarm !== "" &&
@@ -163,7 +143,7 @@ export default function DashboardPage() {
     );
   }, [
     userLoading,
-    fetchState.loading,
+    farmsLoading,
     availableFarms.length,
     visitorsLoading,
     selectedFarm,
@@ -177,7 +157,7 @@ export default function DashboardPage() {
 
   // 다중 로딩 상태 타임아웃 관리
   const { timeoutReached, retry } = useMultipleLoadingTimeout(
-    [visitorsLoading, fetchState.loading],
+    [visitorsLoading, farmsLoading],
     handleDataRefetch,
     { timeout: 10000 }
   );
@@ -216,22 +196,7 @@ export default function DashboardPage() {
               title="대시보드"
               description="농장 방문자 현황과 통계를 한눈에 확인하세요"
               breadcrumbs={[{ label: "대시보드" }]}
-              actions={
-                <div className="flex items-center gap-3">
-                  {/* 데이터 페칭 모드 표시 */}
-                  <div className="flex items-center gap-2 px-3 py-1 bg-slate-100 dark:bg-slate-800 rounded-full text-xs font-medium">
-                    <div
-                      className={`w-2 h-2 rounded-full ${
-                        useReactQuery ? "bg-blue-500" : "bg-amber-500"
-                      }`}
-                    />
-                    <span className="text-slate-700 dark:text-slate-300">
-                      {useReactQuery ? "React Query" : "Legacy Hook"}
-                    </span>
-                  </div>
-                  {installInfo.canInstall && <InstallGuide />}
-                </div>
-              }
+              actions={installInfo.canInstall ? <InstallGuide /> : null}
             />
           </div>
 

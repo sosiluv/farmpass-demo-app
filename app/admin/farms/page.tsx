@@ -6,13 +6,13 @@ import { useFarmsRQ } from "@/lib/hooks/query/use-farms-query";
 import { useFarmMutations } from "@/lib/hooks/query/use-farm-mutations";
 import { useAuth } from "@/components/providers/auth-provider";
 import { useCommonToast } from "@/lib/utils/notification/toast-messages";
-import { Farm } from "@/lib/hooks/use-farms";
+import { Farm } from "@/lib/types/farm";
 import { FarmsList } from "@/components/admin/farms/FarmsList";
 import { FarmsPageHeader } from "@/components/admin/farms/FarmsPageHeader";
 import { EmptyFarmsState } from "@/components/admin/farms/EmptyFarmsState";
 import { DeleteConfirmDialog } from "@/components/admin/farms/DeleteConfirmDialog";
 import { Input } from "@/components/ui/input";
-import { useFarmMembersPreview } from "@/lib/hooks/use-farm-members-preview-safe";
+import { useFarmMembersQuery } from "@/lib/hooks/query/use-farm-members-query";
 import { StatsSkeleton, TableSkeleton } from "@/components/common/skeletons";
 import { ErrorBoundary } from "@/components/error/error-boundary";
 import { ResponsivePagination } from "@/components/common/responsive-pagination";
@@ -32,9 +32,8 @@ export default function FarmsPage() {
   const { createFarmAsync, updateFarmAsync, deleteFarmAsync } =
     useFarmMutations();
 
-  // 농장별 멤버 데이터 가져오기
-  const farmIds = farms.map((farm) => farm.id);
-  const membersPreview = useFarmMembersPreview(farmIds);
+  // 농장별 멤버 데이터는 각 FarmCard에서 개별적으로 로딩
+  // 여기서는 전체적인 농장 목록만 관리
 
   // 검색 필터링
   const filteredFarms = farms.filter(
@@ -42,17 +41,6 @@ export default function FarmsPage() {
       farm.farm_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       farm.farm_address.toLowerCase().includes(searchTerm.toLowerCase())
   );
-
-  // FarmsList가 기대하는 형태로 데이터 변환
-  const farmMembersData = farmIds.reduce((acc, farmId) => {
-    const memberData = membersPreview.getMembersForFarm(farmId);
-    acc[farmId] = {
-      count: memberData.count,
-      members: memberData.members,
-      loading: memberData.loading,
-    };
-    return acc;
-  }, {} as Record<string, { count: number; members: any[]; loading: boolean }>);
 
   const handleAddClick = () => {
     setEditingFarm(null);
@@ -189,7 +177,6 @@ export default function FarmsPage() {
                   isOwner={isOwner}
                   onEdit={handleEdit}
                   onDelete={handleDelete}
-                  farmMembersData={farmMembersData}
                 />
                 {/* 모바일 무한 스크롤 로딩 상태는 ResponsivePagination에서 처리 */}
               </div>

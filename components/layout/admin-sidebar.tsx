@@ -1,7 +1,7 @@
 "use client";
 
 import { useAuth } from "@/components/providers/auth-provider";
-import { useFarms } from "@/lib/hooks/use-farms";
+import { useFarmsQuery } from "@/lib/hooks/query/use-farms-query";
 import { useSystemSettings } from "@/lib/hooks/use-system-settings";
 import { getFarmTypeLabel, getFarmTypeIcon } from "@/lib/constants/farm-types";
 import {
@@ -45,7 +45,7 @@ import { DEFAULT_SYSTEM_SETTINGS } from "@/lib/constants/defaults";
 
 export function AdminSidebar() {
   const { state, signOut } = useAuth();
-  const { farms } = useFarms();
+  const { farms } = useFarmsQuery();
   const { settings } = useSystemSettings();
   const { isMobile, setOpenMobile } = useSidebar();
 

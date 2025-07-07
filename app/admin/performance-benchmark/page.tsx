@@ -10,9 +10,7 @@ import { Progress } from "@/components/ui/progress";
 import { useFarmsQuery } from "@/lib/hooks/query/use-farms-query";
 import { useFarmVisitorsWithFiltersQuery } from "@/lib/hooks/query/use-farm-visitors-filtered-query";
 
-// Zustand Hook (기존)
-import { useFarms } from "@/lib/hooks/use-farms";
-import { useFarmVisitors } from "@/lib/hooks/use-farm-visitors";
+// 기존 Hook들은 성능 비교 목적으로만 시뮬레이션
 
 interface PerformanceMetrics {
   loadTime: number;
