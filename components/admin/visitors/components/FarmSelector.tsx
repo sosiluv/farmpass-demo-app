@@ -111,7 +111,7 @@ export function FarmSelector({
                       </div>
                     </SelectItem>
                   )}
-                  {farms.map((farm) => {
+                  {(farms || []).map((farm) => {
                     const { Icon } = getFarmTypeInfo(farm.farm_type ?? null);
                     return (
                       <SelectItem key={farm.id} value={farm.id}>

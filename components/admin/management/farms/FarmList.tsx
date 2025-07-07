@@ -43,7 +43,7 @@ export function FarmList({ farms }: FarmListProps) {
   return (
     <>
       <CommonListWrapper>
-        {farms.map((farm) => (
+        {(farms || []).map((farm) => (
           <CommonListItem
             key={farm.id}
             avatar={

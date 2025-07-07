@@ -40,7 +40,7 @@ export function UptimeCard({ monitors }: UptimeCardProps) {
       </CardHeader>
       <CardContent>
         <div className="space-y-6">
-          {monitors.map((monitor) => (
+          {(monitors || []).map((monitor) => (
             <div
               key={monitor.friendly_name}
               className="relative flex items-center gap-4 rounded-lg bg-muted/50 p-4"

@@ -114,7 +114,7 @@ export function VisitorExportRefactored({
                     value: farmFilter,
                     options: [
                       { value: "all", label: "전체 농장" },
-                      ...farms.map((farm) => ({
+                      ...(farms || []).map((farm) => ({
                         value: farm.id,
                         label: farm.farm_name,
                       })),

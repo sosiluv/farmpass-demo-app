@@ -525,8 +525,8 @@ export const calculateDisinfectionTrend = (visitors: Visitor[]): string => {
 export const calculateUnifiedBaseStats = (
   visitors: Visitor[] | VisitorEntry[]
 ): BaseStats => {
-  // 타입 호환성을 위한 변환
-  const visitorData = visitors as any[];
+  // 안전한 방문자 데이터 처리
+  const visitorData = (visitors || []) as any[];
   const stats = calculateVisitorStats({ visitors: visitorData });
   return {
     totalVisitors: stats.total,
@@ -543,8 +543,8 @@ export const calculateUnifiedBaseStats = (
 export const calculateUnifiedTrends = (
   visitors: Visitor[] | VisitorEntry[]
 ): TrendData => {
-  // 타입 호환성을 위한 변환
-  const visitorData = visitors as any[];
+  // 안전한 방문자 데이터 처리
+  const visitorData = (visitors || []) as any[];
   return {
     totalVisitorsTrend: calculateMonthlyTrend(visitorData),
     todayVisitorsTrend: calculateDailyTrend(visitorData),
@@ -560,8 +560,8 @@ export const calculateUnifiedTrends = (
 export const calculateUnifiedChartData = (
   visitors: Visitor[] | VisitorEntry[]
 ) => {
-  // 타입 호환성을 위한 변환
-  const visitorData = visitors as any[];
+  // 안전한 방문자 데이터 처리
+  const visitorData = (visitors || []) as any[];
 
   // 방문 목적 통계 (표준화)
   const purposeStats = calculatePurposeStats(visitorData).map((stat) => ({
@@ -599,7 +599,8 @@ export const calculateUnifiedChartData = (
     .map((item) => ({
       category: item.region,
       count: item.count,
-      percentage: (item.count / visitorData.length) * 100,
+      percentage:
+        visitorData.length > 0 ? (item.count / visitorData.length) * 100 : 0,
     }))
     .sort((a, b) => b.count - a.count);
 
@@ -657,7 +658,7 @@ export const calculateUnifiedInsights = (
   };
 
   // 가장 많은 방문 목적
-  const visitorData = visitors as any[];
+  const visitorData = (visitors || []) as any[];
   const purposeStats = calculatePurposeStats(visitorData);
   const topPurpose =
     purposeStats.length > 0
@@ -735,8 +736,8 @@ const calculateAveragePerFarm = (
 export const generateDashboardStats = (
   visitors: Visitor[] | VisitorEntry[]
 ) => {
-  const stats = calculateUnifiedBaseStats(visitors);
-  const trends = calculateUnifiedTrends(visitors);
+  const stats = calculateUnifiedBaseStats(visitors || []);
+  const trends = calculateUnifiedTrends(visitors || []);
 
   return {
     totalVisitors: stats.totalVisitors,
@@ -759,8 +760,8 @@ export const generateVisitorPageStats = (
     showDisinfectionRate?: boolean;
   }
 ) => {
-  const stats = calculateUnifiedBaseStats(visitors);
-  const trends = calculateUnifiedTrends(visitors);
+  const stats = calculateUnifiedBaseStats(visitors || []);
+  const trends = calculateUnifiedTrends(visitors || []);
 
   return {
     totalVisitors: stats.totalVisitors,
@@ -788,8 +789,8 @@ export const generateFarmVisitorPageStats = (
     showDisinfectionRate?: boolean;
   } = {}
 ) => {
-  const stats = calculateUnifiedBaseStats(visitors);
-  const trends = calculateUnifiedTrends(visitors);
+  const stats = calculateUnifiedBaseStats(visitors || []);
+  const trends = calculateUnifiedTrends(visitors || []);
 
   return {
     totalVisitors: stats.totalVisitors,
@@ -1228,7 +1229,7 @@ export const generateUnifiedTrendData = (
   numericTrends?: NumericTrendData
 ): UnifiedTrendData => {
   // 기본 문자열 트렌드 계산
-  const stringTrends = calculateUnifiedTrends(visitors);
+  const stringTrends = calculateUnifiedTrends(visitors || []);
 
   // 숫자 트렌드가 제공된 경우 병합
   const result: UnifiedTrendData = {
@@ -1307,7 +1308,7 @@ export const generateCompleteUnifiedStats = (config: {
   } = config;
 
   // 기본 통계 계산
-  const baseStats = calculateUnifiedBaseStats(visitors);
+  const baseStats = calculateUnifiedBaseStats(visitors || []);
 
   // 확장 통계 생성
   const extendedStats: ExtendedStats = {
@@ -1318,13 +1319,13 @@ export const generateCompleteUnifiedStats = (config: {
   };
 
   // 통합 트렌드 계산
-  const trends = generateUnifiedTrendData(visitors, customTrends);
+  const trends = generateUnifiedTrendData(visitors || [], customTrends);
 
   // 차트 데이터 계산
-  const chartData = calculateUnifiedChartData(visitors);
+  const chartData = calculateUnifiedChartData(visitors || []);
 
   // 인사이트 계산
-  const insights = calculateUnifiedInsights(visitors, totalFarms);
+  const insights = calculateUnifiedInsights(visitors || [], totalFarms);
 
   return {
     stats: extendedStats,
@@ -1351,7 +1352,7 @@ export const calculateAdvancedTrends = (
   quarterly: { current: number; trend: number };
 } => {
   const now = new Date();
-  const visitorData = visitors as any[];
+  const visitorData = (visitors || []) as any[];
 
   // 7일 트렌드
   const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
@@ -1418,8 +1419,8 @@ export const calculatePerformanceMetrics = (
   growth: number; // 성장 지수 (0-100)
   engagement: number; // 참여도 지수 (0-100)
 } => {
-  const visitorData = visitors as any[];
-  const trends = calculateAdvancedTrends(visitors);
+  const visitorData = (visitors || []) as any[];
+  const trends = calculateAdvancedTrends(visitors || []);
 
   // 일관성 지수 - 주간, 월간, 분기 트렌드의 편차
   const trendVariance =
@@ -1433,7 +1434,7 @@ export const calculatePerformanceMetrics = (
   const growth = Math.min(100, Math.max(0, 50 + avgTrend));
 
   // 참여도 지수 - 방역 완료율과 방문 빈도
-  const stats = calculateUnifiedBaseStats(visitors);
+  const stats = calculateUnifiedBaseStats(visitors || []);
   const engagement = Math.min(
     100,
     stats.disinfectionRate +

@@ -38,7 +38,7 @@ export function AddMemberEmailField({
         )}
         {availableUsers.length > 0 && (
           <div className="absolute w-full mt-1 bg-white border rounded-md shadow-lg z-50 max-h-[200px] overflow-y-auto">
-            {availableUsers.map((user) => (
+            {(availableUsers || []).map((user) => (
               <div
                 key={user.id}
                 className="p-2 sm:p-3 hover:bg-gray-100 cursor-pointer border-b last:border-b-0"

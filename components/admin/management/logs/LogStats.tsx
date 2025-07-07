@@ -33,7 +33,7 @@ export function LogStats({ stats }: LogStatsProps) {
 
   return (
     <CommonStatsGrid>
-      {statCards.map((card, index) => (
+      {(statCards || []).map((card, index) => (
         <StatCard
           key={index}
           title={card.title}

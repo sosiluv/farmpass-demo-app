@@ -529,7 +529,7 @@ export const VisitorVirtualizedTable = memo(function VisitorVirtualizedTable({
   }
 
   // 빈 상태
-  if (visitors.length === 0) {
+  if (!visitors || visitors.length === 0) {
     return <VisitorTableEmpty />;
   }
 
@@ -551,7 +551,7 @@ export const VisitorVirtualizedTable = memo(function VisitorVirtualizedTable({
 
       {/* 태블릿/모바일 카드 뷰 */}
       <div className="lg:hidden space-y-3 sm:space-y-4">
-        {visitors.map(renderMobileCard)}
+        {(visitors || []).map(renderMobileCard)}
       </div>
 
       {/* 방문자 상세 모달 */}

@@ -261,7 +261,7 @@ export function AdminSidebar() {
             </SidebarGroupLabel>
             <SidebarGroupContent>
               <SidebarMenu>
-                {farms.map((farm) => (
+                {(farms || []).map((farm) => (
                   <SidebarMenuItem key={farm.id}>
                     <Link
                       href={`/admin/farms/${farm.id}/visitors`}

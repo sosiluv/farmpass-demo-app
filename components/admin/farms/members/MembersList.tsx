@@ -66,7 +66,7 @@ export function MembersList({
 
   return (
     <div className="space-y-2 sm:space-y-3 md:space-y-4">
-      {members.map((member) => (
+      {(members || []).map((member) => (
         <MemberCard
           key={member.id}
           member={member}

@@ -83,7 +83,7 @@ export function ErrorLogsCard({ errors }: ErrorLogsCardProps) {
                 </p>
               </div>
             ) : (
-              errors.map((error, index) => {
+              (errors || []).map((error, index) => {
                 const ErrorIcon = getErrorIcon(error.level);
                 return (
                   <div

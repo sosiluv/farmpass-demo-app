@@ -58,7 +58,7 @@ export function SystemUsage({ data = [] }: SystemUsageProps) {
       variant="warning"
     >
       <div className="grid gap-4 h-80">
-        {data.map((item) => (
+        {(data || []).map((item) => (
           <div
             key={item.status}
             className="flex items-center justify-between p-3 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800/50 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors duration-200"

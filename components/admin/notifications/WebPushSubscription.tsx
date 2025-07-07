@@ -37,7 +37,7 @@ export function WebPushSubscription({
   // props로 받은 농장 데이터 처리
   useEffect(() => {
     setFarms(
-      propFarms.map((farm) => ({
+      (propFarms || []).map((farm) => ({
         ...farm,
         isSubscribed: false,
       }))
@@ -116,13 +116,13 @@ export function WebPushSubscription({
           const { subscriptions } = await getSubscriptionStatus();
           if (subscriptions?.length > 0) {
             devLog.log("구독된 농장 정보:", subscriptions);
-            const subscribedFarms = subscriptions
+            const subscribedFarms = (subscriptions || [])
               .map((sub: any) => sub.farm)
               .filter(Boolean);
 
             // 기존 farms 상태와 구독 정보를 병합
             setFarms((prevFarms) =>
-              prevFarms.map((farm) => ({
+              (prevFarms || []).map((farm) => ({
                 ...farm,
                 isSubscribed: subscribedFarms.some(
                   (subFarm: { id: string }) => subFarm.id === farm.id
@@ -159,7 +159,7 @@ export function WebPushSubscription({
         await handleUnsubscription(subscription);
         setStatus("granted");
         setFarms((prevFarms) =>
-          prevFarms.map((farm) => ({
+          (prevFarms || []).map((farm) => ({
             ...farm,
             isSubscribed: false,
           }))

@@ -324,7 +324,7 @@ export function SecuritySection({
           />
           <CardContent className="space-y-6">
             <div className="space-y-4">
-              {loginActivity.map((activity) => (
+              {(loginActivity || []).map((activity) => (
                 <div
                   key={activity.id}
                   className={`flex flex-col sm:flex-row sm:items-center sm:justify-between p-4 rounded-lg ${

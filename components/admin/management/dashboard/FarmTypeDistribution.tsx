@@ -35,11 +35,11 @@ export function FarmTypeDistribution({ data = [] }: FarmTypeDistributionProps) {
       <div className="flex-1 min-h-0 h-full w-full">
         <Bar
           data={{
-            labels: data.map((item) => item.type),
+            labels: (data || []).map((item) => item.type),
             datasets: [
               {
                 label: "농장 수",
-                data: data.map((item) => item.count),
+                data: (data || []).map((item) => item.count),
                 backgroundColor: [
                   "rgba(99, 102, 241, 0.8)", // indigo
                   "rgba(14, 165, 233, 0.8)", // sky

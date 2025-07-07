@@ -133,7 +133,7 @@ export function ActiveFilterTags({
       </div>
 
       <div className="flex flex-wrap items-center gap-2 sm:gap-3">
-        {activeTags.map((tag) => {
+        {(activeTags || []).map((tag) => {
           const Icon = tag.icon;
           return (
             <Badge

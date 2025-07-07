@@ -224,7 +224,7 @@ export const SubscribedStatus = ({
         </div>
 
         <div className="grid gap-3 grid-cols-1 xl:grid-cols-2 2xl:grid-cols-3">
-          {farms.map((farm) => (
+          {(farms || []).map((farm) => (
             <div
               key={farm.id}
               className="flex items-center justify-between p-4 rounded-xl border bg-primary/5 border-primary/30 gap-3"

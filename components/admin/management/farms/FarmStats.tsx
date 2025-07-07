@@ -44,7 +44,7 @@ export function FarmStats({
 
   return (
     <CommonStatsGrid>
-      {statCards.map((card, index) => (
+      {(statCards || []).map((card, index) => (
         <StatCard
           key={index}
           title={card.title}

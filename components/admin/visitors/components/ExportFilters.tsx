@@ -45,7 +45,7 @@ export function ExportFilters({
               </SelectTrigger>
               <SelectContent className="bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100">
                 <SelectItem value="all">모든 농장</SelectItem>
-                {farms.map((farm) => (
+                {(farms || []).map((farm) => (
                   <SelectItem key={farm.id} value={farm.id}>
                     <div className="flex items-center space-x-2">
                       <Building2 className="h-3 w-3" />
