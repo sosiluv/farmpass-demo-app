@@ -65,7 +65,7 @@ export function BroadcastForm({
             <SelectValue placeholder="알림 유형을 선택하세요" />
           </SelectTrigger>
           <SelectContent>
-            {NOTIFICATION_TYPES.map((type) => (
+            {(NOTIFICATION_TYPES || []).map((type) => (
               <SelectItem key={type.value} value={type.value}>
                 {type.label}
               </SelectItem>

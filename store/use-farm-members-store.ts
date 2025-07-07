@@ -197,7 +197,7 @@ export const useFarmMembersStore = create<FarmMembersState>((set, get) => ({
       });
 
       set((state) => ({
-        members: state.members.map((member) =>
+        members: (state.members || []).map((member) =>
           member.id === memberId ? { ...member, role } : member
         ),
         loading: false,

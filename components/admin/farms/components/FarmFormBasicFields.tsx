@@ -50,7 +50,7 @@ export function FarmFormBasicFields({ form }: FarmFormBasicFieldsProps) {
                 </SelectTrigger>
               </FormControl>
               <SelectContent>
-                {FARM_TYPE_OPTIONS.map((option) => (
+                {(FARM_TYPE_OPTIONS || []).map((option) => (
                   <SelectItem key={option.value} value={option.value}>
                     {option.label}
                   </SelectItem>

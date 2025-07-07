@@ -54,7 +54,7 @@ export function LoggingLevelSelect({
           </SelectValue>
         </SelectTrigger>
         <SelectContent>
-          {options.map((option) => (
+          {(options || []).map((option) => (
             <SelectItem
               key={option.value}
               value={option.value}

@@ -15,7 +15,7 @@ export function InstallStepsCard({ currentGuide }: InstallStepsCardProps) {
       </CardHeader>
       <CardContent>
         <div className="space-y-4">
-          {currentGuide.steps.map((step, index) => (
+          {(currentGuide.steps || []).map((step, index) => (
             <motion.div
               key={step.step}
               initial={{ opacity: 0, x: -20 }}

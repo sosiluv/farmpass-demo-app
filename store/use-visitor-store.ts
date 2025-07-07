@@ -320,7 +320,7 @@ export const useVisitorStore = create<VisitorState>()(
           );
 
           set((state) => ({
-            visitors: state.visitors.map((v) =>
+            visitors: (state.visitors || []).map((v) =>
               v.id === id ? { ...v, ...visitor } : v
             ),
             loading: { ...state.loading, update: false },

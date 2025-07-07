@@ -25,9 +25,9 @@ export function CommonStatsGrid({
     <div
       className={`grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 ${className}`}
     >
-      {statConfigs.map((config, index) => (
+      {statConfigs.map((config) => (
         <CommonStatCard
-          key={index}
+          key={config.title}
           title={config.title}
           value={config.value}
           description={config.description}

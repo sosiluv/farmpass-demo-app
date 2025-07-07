@@ -93,7 +93,7 @@ export function FarmsExportRefactored({ farms, onExport }: FarmsExportProps) {
   // 농장 유형 옵션 생성
   const farmTypeOptions = [
     { value: "all", label: "모든 유형" },
-    ...Object.entries(FARM_TYPE_LABELS).map(([value, label]) => ({
+    ...Object.entries(FARM_TYPE_LABELS || {}).map(([value, label]) => ({
       value,
       label,
     })),

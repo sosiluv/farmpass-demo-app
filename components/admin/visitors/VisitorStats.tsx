@@ -128,8 +128,8 @@ export function VisitorStats({
   return (
     <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-4 gap-2 sm:gap-4">
       {/* 통계 카드들 */}
-      {(baseStats || []).map((stat, index) => (
-        <StatCard key={index} {...stat} />
+      {(baseStats || []).map((stat) => (
+        <StatCard key={stat.title} {...stat} />
       ))}
 
       {/* 인사이트 카드 */}

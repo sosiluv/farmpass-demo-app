@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import {
   Dialog,
   DialogContent,
@@ -32,6 +32,34 @@ export default function NotificationPermissionDialog({
 }: NotificationPermissionDialogProps) {
   const [isAllowing, setIsAllowing] = useState(false);
 
+  // benefits 배열을 useMemo로 메모이제이션
+  const benefits = useMemo(
+    () => [
+      {
+        icon: Users,
+        title: "방문자 알림",
+        description: "새로운 방문자 등록 시 즉시 알림",
+        color: "text-blue-600",
+        bgColor: "bg-blue-50",
+      },
+      {
+        icon: Activity,
+        title: "실시간 현황",
+        description: "농장 활동 및 중요 이벤트 알림",
+        color: "text-green-600",
+        bgColor: "bg-green-50",
+      },
+      {
+        icon: Shield,
+        title: "보안 알림",
+        description: "계정 보안 및 시스템 알림",
+        color: "text-orange-600",
+        bgColor: "bg-orange-50",
+      },
+    ],
+    []
+  );
+
   const handleAllow = async () => {
     setIsAllowing(true);
     try {
@@ -47,30 +75,6 @@ export default function NotificationPermissionDialog({
     onDeny();
     onOpenChange(false);
   };
-
-  const benefits = [
-    {
-      icon: Users,
-      title: "방문자 알림",
-      description: "새로운 방문자 등록 시 즉시 알림",
-      color: "text-blue-600",
-      bgColor: "bg-blue-50",
-    },
-    {
-      icon: Activity,
-      title: "실시간 현황",
-      description: "농장 활동 및 중요 이벤트 알림",
-      color: "text-green-600",
-      bgColor: "bg-green-50",
-    },
-    {
-      icon: Shield,
-      title: "보안 알림",
-      description: "계정 보안 및 시스템 알림",
-      color: "text-orange-600",
-      bgColor: "bg-orange-50",
-    },
-  ];
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -111,33 +115,31 @@ export default function NotificationPermissionDialog({
           <div className="px-4 sm:px-6 pb-4 sm:pb-6">
             {/* 혜택 목록 */}
             <div className="space-y-2 sm:space-y-3 mb-4 sm:mb-6">
-              <AnimatePresence>
-                {benefits.map((benefit, index) => (
-                  <motion.div
-                    key={benefit.title}
-                    initial={{ opacity: 0, x: -20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: index * 0.1 + 0.2 }}
-                    className="flex items-start gap-2 sm:gap-3 p-2 sm:p-3 rounded-xl bg-white border border-gray-100 shadow-sm hover:shadow-md transition-all duration-200"
+              {benefits.map((benefit, index) => (
+                <motion.div
+                  key={benefit.title}
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: index * 0.1 + 0.2 }}
+                  className="flex items-start gap-2 sm:gap-3 p-2 sm:p-3 rounded-xl bg-white border border-gray-100 shadow-sm hover:shadow-md transition-all duration-200"
+                >
+                  <div
+                    className={`p-1.5 sm:p-2 rounded-lg ${benefit.bgColor} shrink-0`}
                   >
-                    <div
-                      className={`p-1.5 sm:p-2 rounded-lg ${benefit.bgColor} shrink-0`}
-                    >
-                      <benefit.icon
-                        className={`h-4 w-4 sm:h-5 sm:w-5 ${benefit.color}`}
-                      />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <h4 className="font-semibold text-gray-900 text-sm">
-                        {benefit.title}
-                      </h4>
-                      <p className="text-xs text-gray-600 mt-0.5">
-                        {benefit.description}
-                      </p>
-                    </div>
-                  </motion.div>
-                ))}
-              </AnimatePresence>
+                    <benefit.icon
+                      className={`h-4 w-4 sm:h-5 sm:w-5 ${benefit.color}`}
+                    />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <h4 className="font-semibold text-gray-900 text-sm">
+                      {benefit.title}
+                    </h4>
+                    <p className="text-xs text-gray-600 mt-0.5">
+                      {benefit.description}
+                    </p>
+                  </div>
+                </motion.div>
+              ))}
             </div>
 
             {/* 보안 안내 */}

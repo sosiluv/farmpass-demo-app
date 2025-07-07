@@ -6,11 +6,12 @@ import { QuickActionButtons } from "@/components/user/quick-action-buttons";
 function getInitials(name: string): string {
   if (!name) return "?";
   return name
-    .split(" ")
-    .map((part) => part[0])
-    .join("")
-    .toUpperCase()
-    .slice(0, 2);
+    ? (name.split(" ") || [])
+        .map((part) => part[0])
+        .join("")
+        .toUpperCase()
+        .slice(0, 2)
+    : "?";
 }
 
 // 역할별 아바타 스타일 설정

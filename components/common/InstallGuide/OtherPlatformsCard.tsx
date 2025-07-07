@@ -20,7 +20,7 @@ export function OtherPlatformsCard() {
 
           <TabsContent value="ios">
             <div className="space-y-3">
-              {platformGuides[0].steps.map((step) => (
+              {(platformGuides[0].steps || []).map((step) => (
                 <div
                   key={step.step}
                   className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg"
@@ -39,7 +39,7 @@ export function OtherPlatformsCard() {
 
           <TabsContent value="android">
             <div className="space-y-3">
-              {platformGuides[1].steps.map((step) => (
+              {(platformGuides[1].steps || []).map((step) => (
                 <div
                   key={step.step}
                   className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg"
@@ -58,7 +58,7 @@ export function OtherPlatformsCard() {
 
           <TabsContent value="samsung">
             <div className="space-y-3">
-              {platformGuides[2].steps.map((step) => (
+              {(platformGuides[2].steps || []).map((step) => (
                 <div
                   key={step.step}
                   className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg"
@@ -77,7 +77,7 @@ export function OtherPlatformsCard() {
 
           <TabsContent value="desktop">
             <div className="space-y-3">
-              {platformGuides[3].steps.map((step) => (
+              {(platformGuides[3].steps || []).map((step) => (
                 <div
                   key={step.step}
                   className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg"

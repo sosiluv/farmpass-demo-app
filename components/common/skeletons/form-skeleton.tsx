@@ -11,7 +11,7 @@ export function FormSkeleton({
 }: FormSkeletonProps) {
   return (
     <div className={`space-y-6 ${className}`}>
-      {Array.from({ length: fields }).map((_, i) => (
+      {(Array.from({ length: fields }) || []).map((_, i) => (
         <div key={i} className="space-y-2">
           <Skeleton className="h-4 w-[100px]" />
           <Skeleton className="h-10 w-full" />

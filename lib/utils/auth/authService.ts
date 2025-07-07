@@ -3,6 +3,10 @@ import { devLog } from "@/lib/utils/logging/dev-logger";
 
 import { apiClient } from "@/lib/utils/data";
 import { clearClientCookies } from "@/lib/utils/auth";
+import {
+  safeLocalStorageAccess,
+  safeSessionStorageAccess,
+} from "@/lib/utils/browser/safari-compat";
 
 // 구독 해제를 위한 브라우저 API 직접 호출 (훅 대신)
 async function cleanupBrowserSubscription(): Promise<{
@@ -105,62 +109,81 @@ export async function handleSessionExpired(): Promise<{
 export async function logout(isForceLogout = false): Promise<void> {
   let logoutError = null;
 
+  // Supabase 로그아웃 (타임아웃 적용)
   try {
     const supabase = createClient();
-    await supabase.auth.signOut();
+
+    // 5초 타임아웃 적용
+    const logoutPromise = supabase.auth.signOut();
+    const timeoutPromise = new Promise((_, reject) => {
+      setTimeout(() => reject(new Error("Supabase 로그아웃 타임아웃")), 5000);
+    });
+
+    await Promise.race([logoutPromise, timeoutPromise]);
     devLog.log("Supabase 로그아웃 성공");
   } catch (error) {
     devLog.warn("Supabase 로그아웃 실패:", error);
     logoutError = error;
   }
 
-  // 구독 정리 (브라우저 + 서버)
+  // 구독 정리 (브라우저 + 서버) - 타임아웃 적용
   if (typeof window !== "undefined") {
     try {
-      // 1. 브라우저 구독 해제
-      const browserResult = await cleanupBrowserSubscription();
+      // 구독 정리 타임아웃 (3초)
+      const cleanupPromise = (async () => {
+        // 1. 브라우저 구독 해제
+        const browserResult = await cleanupBrowserSubscription();
 
-      // 2. 서버 구독 정리 (API 사용)
-      if (browserResult.success && browserResult.endpoint) {
-        // 브라우저 구독이 있었으면 서버에서도 정리
-        try {
-          // 세션 만료 시에도 API 호출 가능하도록 fetch 직접 사용
-          const response = await fetch("/api/push/subscription", {
-            method: "DELETE",
-            headers: {
-              "Content-Type": "application/json",
-              // 세션 만료 시에도 요청이 가능하도록 헤더 추가
-            },
-            body: JSON.stringify({ endpoint: browserResult.endpoint }),
-          });
+        // 2. 서버 구독 정리 (API 사용)
+        if (browserResult.success && browserResult.endpoint) {
+          // 브라우저 구독이 있었으면 서버에서도 정리
+          try {
+            // 세션 만료 시에도 API 호출 가능하도록 fetch 직접 사용
+            const response = await fetch("/api/push/subscription", {
+              method: "DELETE",
+              headers: {
+                "Content-Type": "application/json",
+                // 세션 만료 시에도 요청이 가능하도록 헤더 추가
+              },
+              body: JSON.stringify({ endpoint: browserResult.endpoint }),
+            });
 
-          if (response.ok) {
-            devLog.log("서버 구독 정리 완료");
-          } else {
-            devLog.warn("서버 구독 정리 실패:", response.status);
+            if (response.ok) {
+              devLog.log("서버 구독 정리 완료");
+            } else {
+              devLog.warn("서버 구독 정리 실패:", response.status);
+            }
+          } catch (error) {
+            devLog.warn("서버 구독 정리 실패:", error);
+            // 구독 정리 실패해도 로그아웃은 계속 진행
           }
-        } catch (error) {
-          devLog.warn("서버 구독 정리 실패:", error);
-          // 구독 정리 실패해도 로그아웃은 계속 진행
         }
-      }
+      })();
+
+      const cleanupTimeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => reject(new Error("구독 정리 타임아웃")), 3000);
+      });
+
+      await Promise.race([cleanupPromise, cleanupTimeoutPromise]);
     } catch (error) {
       devLog.warn("구독 정리 실패:", error);
       // 구독 정리 실패해도 로그아웃은 계속 진행
     }
   }
 
-  // 강제 로그아웃이거나 Supabase 실패 시 추가 정리
-  if (isForceLogout || logoutError) {
+  // 강제 로그아웃이거나 Supabase 실패 시 또는 타임아웃 시 추가 정리
+  if (isForceLogout || logoutError || typeof window !== "undefined") {
     if (typeof window !== "undefined") {
-      localStorage.clear();
-      sessionStorage.clear();
-      clearSessionCookies();
-      devLog.log("강제 로그아웃: 로컬 스토리지 및 쿠키 정리 완료");
+      try {
+        // 쿠키 정리 (인증 토큰 등)
+        clearSessionCookies();
+      } catch (error) {
+        devLog.warn("클라이언트 상태 정리 실패:", error);
+      }
     }
   }
 
-  // 클라이언트 사이드에서 리다이렉트 (조건부)
+  // 클라이언트 사이드에서 리다이렉트 (강제 로그아웃 시에만)
   if (typeof window !== "undefined" && isForceLogout) {
     // 강제 로그아웃 시에만 리다이렉트
     window.location.replace("/login");

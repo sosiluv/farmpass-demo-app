@@ -42,7 +42,7 @@ export function NotificationMethodsCard() {
       <CardContent>
         <div className="space-y-4">
           <div className="grid gap-4 md:grid-cols-2">
-            {notificationTypeOptions.map((option) => (
+            {(notificationTypeOptions || []).map((option) => (
               <NotificationTypeCard
                 key={option.value}
                 title={option.title}

@@ -387,7 +387,7 @@ export const VisitorForm = ({
                             />
                           </SelectTrigger>
                           <SelectContent>
-                            {VISIT_PURPOSE_OPTIONS.map((option) => (
+                            {(VISIT_PURPOSE_OPTIONS || []).map((option) => (
                               <SelectItem key={option} value={option}>
                                 {option}
                               </SelectItem>

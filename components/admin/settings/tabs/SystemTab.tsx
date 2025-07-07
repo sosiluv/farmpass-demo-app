@@ -46,7 +46,7 @@ export default function SystemTab({
     if (error) {
       showError("오류", error);
     }
-  }, [error, showError]);
+  }, [error]); // showError를 의존성에서 제거
 
   // 성공 토스트 처리
   useEffect(() => {
@@ -56,21 +56,21 @@ export default function SystemTab({
         `${lastCleanupSuccess} 정리가 완료되었습니다.\n상태가 자동으로 새로고침되었습니다.`
       );
     }
-  }, [lastCleanupSuccess, showSuccess]);
+  }, [lastCleanupSuccess]); // showSuccess를 의존성에서 제거
 
   // 로그 정리 시작 시 정보 알림
   useEffect(() => {
     if (cleanupLoading) {
       showInfo("로그 정리 시작", "시스템 로그를 정리하는 중입니다...");
     }
-  }, [cleanupLoading, showInfo]);
+  }, [cleanupLoading]); // showInfo를 의존성에서 제거
 
   // 상태 로딩 시 정보 알림
   useEffect(() => {
     if (statusLoading) {
       showInfo("상태 확인 중", "정리 상태를 확인하는 중입니다...");
     }
-  }, [statusLoading, showInfo]);
+  }, [statusLoading]); // showInfo를 의존성에서 제거
 
   return (
     <ErrorBoundary

@@ -49,6 +49,19 @@ const checkInstallability = (): InstallInfo => {
     };
   }
 
+  // 이전에 설치 완료된 경우 (localStorage 체크)
+  const installCompleted = localStorage.getItem("pwa_install_completed");
+  if (installCompleted) {
+    return {
+      canInstall: false,
+      platform: "Unknown",
+      method: "none",
+      reason: "이미 설치 완료됨",
+      isStandalone: false,
+      userAgent,
+    };
+  }
+
   // iOS Safari
   if (isIOS && isSafari) {
     return {
@@ -149,6 +162,95 @@ export function PWAProvider({ children }: { children: ReactNode }) {
       setInstallInfo(info);
       setIsLoading(false);
       devLog.log("PWA 설치 가능 여부 체크 (Provider):", info);
+
+      // PWA 삭제 감지 및 localStorage 정리 함수
+      const checkPWAUninstall = () => {
+        const installCompleted = localStorage.getItem("pwa_install_completed");
+        const isStandalone = window.matchMedia(
+          "(display-mode: standalone)"
+        ).matches;
+
+        // 설치 완료 기록이 있지만 standalone 모드가 아닌 경우
+        // → 사용자가 PWA를 삭제했을 가능성 있음
+        if (installCompleted && !isStandalone) {
+          // beforeinstallprompt 이벤트 재확인
+          let canReinstall = false;
+
+          const testPrompt = (e: Event) => {
+            canReinstall = true;
+            e.preventDefault();
+          };
+
+          window.addEventListener("beforeinstallprompt", testPrompt);
+
+          // 짧은 시간 후 이벤트 확인
+          setTimeout(() => {
+            window.removeEventListener("beforeinstallprompt", testPrompt);
+
+            if (canReinstall) {
+              devLog.log("PWA 삭제 감지됨 - localStorage 정리");
+              // PWA가 삭제된 것으로 판단, localStorage 정리
+              localStorage.removeItem("pwa_install_completed");
+              localStorage.removeItem("pwa_install_dismissed");
+
+              // 설치 가능 상태로 업데이트
+              const updatedInfo = checkInstallability();
+              setInstallInfo(updatedInfo);
+            }
+          }, 1000);
+        }
+      };
+
+      // beforeinstallprompt 이벤트 리스너 추가 (더 정확한 설치 상태 감지)
+      const handleBeforeInstallPrompt = (e: Event) => {
+        e.preventDefault();
+        devLog.log("beforeinstallprompt 이벤트 감지 - 아직 설치되지 않음");
+        // 이벤트가 발생하면 아직 설치되지 않은 것으로 판단
+        const updatedInfo = checkInstallability();
+        if (updatedInfo.canInstall) {
+          setInstallInfo(updatedInfo);
+        }
+      };
+
+      const handleAppInstalled = () => {
+        devLog.log("appinstalled 이벤트 감지 - PWA 설치 완료");
+        // 설치 완료 시 localStorage에 저장
+        localStorage.setItem("pwa_install_completed", Date.now().toString());
+        setInstallInfo({
+          canInstall: false,
+          platform: "Unknown",
+          method: "none",
+          reason: "설치 완료됨",
+          isStandalone: false,
+          userAgent: navigator.userAgent,
+        });
+      };
+
+      // 페이지 로드 시 PWA 삭제 체크
+      checkPWAUninstall();
+
+      // 포커스 이벤트로 PWA 삭제 재체크 (사용자가 다른 탭에서 돌아올 때)
+      const handleVisibilityChange = () => {
+        if (document.visibilityState === "visible") {
+          setTimeout(checkPWAUninstall, 500);
+        }
+      };
+
+      window.addEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
+      window.addEventListener("appinstalled", handleAppInstalled);
+      document.addEventListener("visibilitychange", handleVisibilityChange);
+
+      return () => {
+        window.removeEventListener(
+          "beforeinstallprompt",
+          handleBeforeInstallPrompt
+        );
+        window.removeEventListener("appinstalled", handleAppInstalled);
+        document.removeEventListener(
+          "visibilitychange",
+          handleVisibilityChange
+        );
+      };
     }
   }, []);
 

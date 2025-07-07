@@ -24,6 +24,7 @@ import { devLog } from "@/lib/utils/logging/dev-logger";
 import { useFarmsStore } from "@/store/use-farms-store";
 import { useAuth } from "@/components/providers/auth-provider";
 import { apiClient } from "@/lib/utils/data";
+import { safeNotificationAccess } from "@/lib/utils/browser/safari-compat";
 import {
   Bell,
   Send,
@@ -229,7 +230,9 @@ export default function PushNotificationTestPage() {
     });
 
     try {
-      if (!("Notification" in window)) {
+      const safeNotification = safeNotificationAccess();
+
+      if (!safeNotification.isSupported) {
         showWarning(
           "브라우저 미지원",
           "이 브라우저는 알림을 지원하지 않습니다."
@@ -237,7 +240,7 @@ export default function PushNotificationTestPage() {
         throw new Error("이 브라우저는 알림을 지원하지 않습니다.");
       }
 
-      const permission = Notification.permission;
+      const permission = safeNotification.permission;
 
       addTestResult({
         type: "권한 테스트",
@@ -247,7 +250,7 @@ export default function PushNotificationTestPage() {
       });
 
       if (permission === "default") {
-        const newPermission = await Notification.requestPermission();
+        const newPermission = await safeNotification.requestPermission();
         addTestResult({
           type: "권한 요청",
           status: newPermission === "granted" ? "success" : "error",
@@ -711,7 +714,7 @@ export default function PushNotificationTestPage() {
                       <SelectValue placeholder="농장을 선택하세요" />
                     </SelectTrigger>
                     <SelectContent>
-                      {farms.map((farm) => (
+                      {(farms || []).map((farm) => (
                         <SelectItem key={farm.id} value={farm.id}>
                           {farm.farm_name}
                         </SelectItem>
@@ -1036,20 +1039,24 @@ export default function PushNotificationTestPage() {
                 <div className="space-y-2">
                   <div className="flex justify-between">
                     <span>알림 권한:</span>
-                    <Badge
-                      variant={
-                        typeof window !== "undefined" &&
-                        "Notification" in window
-                          ? Notification.permission === "granted"
-                            ? "default"
-                            : "destructive"
-                          : "secondary"
-                      }
-                    >
-                      {typeof window !== "undefined" && "Notification" in window
-                        ? Notification.permission
-                        : "미지원"}
-                    </Badge>
+                    {(() => {
+                      const safeNotification = safeNotificationAccess();
+                      return (
+                        <Badge
+                          variant={
+                            safeNotification.isSupported
+                              ? safeNotification.permission === "granted"
+                                ? "default"
+                                : "destructive"
+                              : "secondary"
+                          }
+                        >
+                          {safeNotification.isSupported
+                            ? safeNotification.permission
+                            : "미지원"}
+                        </Badge>
+                      );
+                    })()}
                   </div>
                   <div className="flex justify-between">
                     <span>Service Worker:</span>

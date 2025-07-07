@@ -16,9 +16,9 @@ export function TipsCard({ currentGuide }: TipsCardProps) {
       </CardHeader>
       <CardContent>
         <ul className="space-y-2">
-          {currentGuide.tips.map((tip, index) => (
+          {(currentGuide.tips || []).map((tip, index) => (
             <motion.li
-              key={index}
+              key={`tip-${index}-${tip.substring(0, 20)}`}
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: 0.5 + index * 0.1 }}

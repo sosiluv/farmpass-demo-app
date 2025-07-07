@@ -21,7 +21,13 @@ export function DialogManager() {
       addDialog({
         type: "notification",
         priority: 100, // 최고 우선순위
-        data: { showDialog, handleAllow, handleDeny, closeDialog },
+        data: {
+          showDialog,
+          handleAllow,
+          handleDeny,
+          closeDialog,
+          farmCount: 0, // 기본값, 실제로는 농장 개수를 가져와야 함
+        },
         isSystemDialog: true,
       });
     }

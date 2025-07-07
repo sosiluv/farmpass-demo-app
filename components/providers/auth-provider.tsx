@@ -14,6 +14,7 @@ import { devLog } from "@/lib/utils/logging/dev-logger";
 import { apiClient } from "@/lib/utils/data/api-client";
 import { useSubscriptionManager } from "@/hooks/useSubscriptionManager";
 import { handleError } from "@/lib/utils/error";
+import { logout } from "@/lib/utils/auth/authService";
 
 // 통합된 인증 상태 정의
 type AuthState =
@@ -158,23 +159,58 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         } = await supabase.auth.getSession();
 
         if (session && mounted) {
-          const profile = await loadProfile(session.user.id);
+          // 추가 세션 유효성 검증
+          try {
+            const {
+              data: { user },
+              error,
+            } = await supabase.auth.getUser();
 
-          if (profile && mounted) {
-            dispatch({
-              type: "SET_AUTHENTICATED",
-              session,
-              user: session.user,
-              profile,
-            });
-          } else if (mounted) {
-            dispatch({ type: "SET_UNAUTHENTICATED" });
+            // 세션은 있지만 유저 정보를 가져올 수 없으면 세션이 유효하지 않음
+            if (error || !user) {
+              devLog.warn("세션은 있지만 유저 정보 검증 실패, 로그아웃 처리");
+              await logout(true); // 강제 로그아웃으로 클라이언트 상태 정리
+              if (mounted) {
+                dispatch({ type: "SET_UNAUTHENTICATED" });
+              }
+              return;
+            }
+
+            const profile = await loadProfile(session.user.id);
+
+            if (profile && mounted) {
+              dispatch({
+                type: "SET_AUTHENTICATED",
+                session,
+                user: session.user,
+                profile,
+              });
+            } else if (mounted) {
+              devLog.warn("프로필 로드 실패, 로그아웃 처리");
+              await logout(true); // 강제 로그아웃으로 클라이언트 상태 정리
+              dispatch({ type: "SET_UNAUTHENTICATED" });
+            }
+          } catch (userError) {
+            devLog.warn("사용자 정보 검증 중 오류:", userError);
+            await logout(true); // 강제 로그아웃으로 클라이언트 상태 정리
+            if (mounted) {
+              dispatch({ type: "SET_UNAUTHENTICATED" });
+            }
           }
         } else if (mounted) {
           dispatch({ type: "SET_UNAUTHENTICATED" });
         }
       } catch (error) {
         if (mounted) {
+          // 모든 초기화 오류의 경우 클라이언트 상태를 정리하고 unauthenticated로 처리
+          devLog.warn("초기화 중 오류 발생, 클라이언트 상태 정리:", error);
+
+          try {
+            await logout(true); // 강제 로그아웃으로 클라이언트 상태 정리
+          } catch (logoutError) {
+            devLog.error("초기화 오류 시 로그아웃 실패:", logoutError);
+          }
+
           // 네트워크 관련 에러의 경우 unauthenticated로 처리
           if (
             error instanceof Error &&
@@ -231,8 +267,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           if (!isSigningOutRef.current && mounted) {
             if (state.status === "authenticated") {
               // 구독 정리 (세션 정리 전에 수행)
-              await cleanupSubscription();
+              try {
+                await cleanupSubscription();
+              } catch (error) {
+                devLog.warn("SIGNED_OUT 이벤트 중 구독 정리 실패:", error);
+              }
             }
+
             dispatch({ type: "SET_UNAUTHENTICATED" });
           }
           break;
@@ -381,9 +422,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       isSigningOutRef.current = true;
       dispatch({ type: "SET_LOADING" });
 
-      // 타임아웃 설정 (5초)
+      // 타임아웃 설정 (10초)
       const timeoutPromise = new Promise((_, reject) => {
-        setTimeout(() => reject(new Error("로그아웃 타임아웃")), 3000);
+        setTimeout(() => reject(new Error("로그아웃 타임아웃")), 10000);
       });
 
       // 로그아웃 작업들을 병렬로 실행하고 타임아웃 적용
@@ -400,33 +441,36 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
         // Supabase 로그아웃
         try {
-          const result = (await Promise.race([
-            supabase.auth.signOut(),
-            timeoutPromise,
-          ])) as any;
-          if (result?.error) {
-            devLog.warn("Logout warning:", result.error);
-          }
+          await logout(false);
         } catch (error) {
           devLog.warn("Supabase 로그아웃 실패:", error);
         }
       })();
 
       // 전체 로그아웃 작업에 타임아웃 적용
-      await Promise.race([logoutPromise, timeoutPromise]);
-
-      // 상태 정리 (타임아웃이든 성공이든 항상 실행)
-      dispatch({ type: "SET_UNAUTHENTICATED" });
+      try {
+        await Promise.race([logoutPromise, timeoutPromise]);
+      } catch (error) {
+        devLog.warn("로그아웃 타임아웃 또는 실패:", error);
+        // 타임아웃이나 에러 발생 시 강제로 클라이언트 상태 정리
+        await logout(true); // 강제 로그아웃으로 로컬 스토리지와 쿠키 정리
+      }
 
       return { success: true };
     } catch (error) {
       devLog.error("SignOut error:", error);
 
-      // 에러 발생 시에도 상태 정리
-      dispatch({ type: "SET_UNAUTHENTICATED" });
+      // 에러 발생 시에도 강제로 클라이언트 상태 정리
+      try {
+        await logout(true); // 강제 로그아웃으로 로컬 스토리지와 쿠키 정리
+      } catch (cleanupError) {
+        devLog.error("강제 정리 실패:", cleanupError);
+      }
 
       return { success: false };
     } finally {
+      // 상태 정리 (타임아웃이든 성공이든 에러든 항상 실행)
+      dispatch({ type: "SET_UNAUTHENTICATED" });
       isSigningOutRef.current = false;
     }
   };

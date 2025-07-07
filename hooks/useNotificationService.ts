@@ -3,6 +3,7 @@ import { devLog } from "@/lib/utils/logging/dev-logger";
 import type { NotificationPayload } from "@/lib/types/notification";
 import { apiClient } from "@/lib/utils/data";
 import { handleError } from "@/lib/utils/error";
+import { safeNotificationAccess } from "@/lib/utils/browser/safari-compat";
 
 export function useNotificationService() {
   // 토스트 대신 메시지 상태만 반환
@@ -220,16 +221,18 @@ export function useNotificationService() {
   const requestNotificationPermission = useCallback(async () => {
     setIsLoading(true);
     try {
-      if (!("Notification" in window)) {
+      const safeNotification = safeNotificationAccess();
+
+      if (!safeNotification.isSupported) {
         throw new Error("이 브라우저는 알림을 지원하지 않습니다.");
       }
 
-      if (Notification.permission === "denied") {
+      if (safeNotification.permission === "denied") {
         throw new Error("알림 권한이 거부되었습니다.");
       }
 
       // 권한 요청
-      const permission = await Notification.requestPermission();
+      const permission = await safeNotification.requestPermission();
 
       if (permission === "granted") {
         const vapidKey = await getVapidPublicKey();

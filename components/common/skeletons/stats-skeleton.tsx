@@ -13,7 +13,7 @@ export function StatsSkeleton({
     <div
       className={`grid grid-cols-1 md:grid-cols-2 lg:grid-cols-${columns} gap-4 ${className}`}
     >
-      {Array.from({ length: columns }).map((_, i) => (
+      {(Array.from({ length: columns }) || []).map((_, i) => (
         <div key={i} className="p-4 space-y-3 border rounded-lg">
           <Skeleton className="h-8 w-[100px]" />
           <Skeleton className="h-10 w-[150px]" />

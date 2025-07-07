@@ -48,7 +48,7 @@ export function LogsExportManager({ logs, children }: LogsExportManagerProps) {
       }
 
       // CSV 데이터 생성
-      const csvData = exportLogs.map((log) => {
+      const csvData = (exportLogs || []).map((log) => {
         const row: Record<string, any> = {};
 
         if (options.includeBasic) {

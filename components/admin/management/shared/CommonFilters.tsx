@@ -57,7 +57,7 @@ export function CommonFilters({
           </Button>
         )}
       </div>
-      {selects.map((select, idx) => (
+      {(selects || []).map((select, idx) => (
         <Select key={idx} value={select.value} onValueChange={select.onChange}>
           <SelectTrigger
             className={
@@ -68,7 +68,7 @@ export function CommonFilters({
             <SelectValue placeholder={select.placeholder} />
           </SelectTrigger>
           <SelectContent>
-            {select.options.map((opt) => (
+            {(select.options || []).map((opt) => (
               <SelectItem key={opt.value} value={opt.value}>
                 {opt.label}
               </SelectItem>

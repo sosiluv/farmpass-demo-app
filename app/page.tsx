@@ -12,6 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import { ArrowRight, ChevronRight } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useEffect } from "react";
 import { features, steps } from "./home-data";
 import { DEFAULT_SYSTEM_SETTINGS } from "@/lib/constants/defaults";
 import { Logo } from "@/components/common";
@@ -24,6 +25,13 @@ export default function HomePage() {
   const router = useRouter();
   const { state } = useAuth();
   const { settings, loading: settingsLoading } = useSystemSettings();
+
+  // 인증된 사용자 리다이렉트를 useEffect로 처리
+  useEffect(() => {
+    if (state.status === "authenticated") {
+      router.replace("/admin/dashboard");
+    }
+  }, [state.status, router]);
 
   // 로딩 상태를 먼저 체크 (페이지 렌더링 전에)
   if (
@@ -47,10 +55,8 @@ export default function HomePage() {
     );
   }
 
-  // 인증된 사용자는 즉시 리다이렉트 (useEffect 대신 조건부 렌더링)
+  // 인증된 사용자는 로딩 표시
   if (state.status === "authenticated") {
-    // 리다이렉트 중에도 로딩 표시
-    router.replace("/admin/dashboard");
     return (
       <PageLoading
         text="대시보드로 이동 중..."

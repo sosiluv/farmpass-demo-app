@@ -48,9 +48,31 @@ export function InstallPrompt({
     }
   }, [installInfo.canInstall, delay, isDismissed]);
 
-  // 로컬스토리지에서 이전에 거부했는지 확인
+  // 로컬스토리지에서 이전에 거부했거나 설치했는지 확인
   useEffect(() => {
     const dismissed = localStorage.getItem("pwa_install_dismissed");
+    const completed = localStorage.getItem("pwa_install_completed");
+
+    // 설치 완료된 경우 프롬프트 표시 안함
+    if (completed) {
+      // 추가 검증: 정말로 설치되어 있는지 확인
+      const isStandalone = window.matchMedia(
+        "(display-mode: standalone)"
+      ).matches;
+      const now = Date.now();
+      const completedTime = parseInt(completed);
+
+      // 설치 완료 후 1분 이내이거나 standalone 모드면 프롬프트 숨김
+      if (isStandalone || now - completedTime < 60000) {
+        setIsDismissed(true);
+        return;
+      }
+
+      // 설치 완료 기록이 있지만 standalone 모드가 아니고 시간이 지났으면
+      // PWA가 삭제되었을 가능성 - localStorage 정리는 PWAProvider에서 처리
+    }
+
+    // 거부된 경우 24시간 체크
     if (dismissed) {
       const dismissedTime = parseInt(dismissed);
       const oneDayAgo = Date.now() - 24 * 60 * 60 * 1000;
@@ -73,6 +95,9 @@ export function InstallPrompt({
 
   const handleInstall = () => {
     setShowPrompt(false);
+    setIsDismissed(true);
+    // 설치 버튼 클릭 시에도 localStorage에 저장 (설치 완료 상태로)
+    localStorage.setItem("pwa_install_completed", Date.now().toString());
     onInstall?.();
   };
 

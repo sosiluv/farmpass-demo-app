@@ -10,6 +10,7 @@ import { renderNotificationStatus } from "./status/NotificationStatus";
 import NotificationCardHeader from "./NotificationCardHeader";
 import { Zap } from "lucide-react";
 import { useCommonToast } from "@/lib/utils/notification/toast-messages";
+import { safeNotificationAccess } from "@/lib/utils/browser/safari-compat";
 
 interface WebPushSubscriptionProps {
   farms?: Farm[];
@@ -57,7 +58,7 @@ export function WebPushSubscription({
       }
       clearLastMessage();
     }
-  }, [lastMessage, showSuccess, showError, clearLastMessage]);
+  }, [lastMessage, clearLastMessage]); // 토스트 함수들을 의존성에서 제거
 
   const initializeNotifications = async () => {
     try {
@@ -90,17 +91,19 @@ export function WebPushSubscription({
 
   const checkNotificationStatus = async () => {
     devLog.log("알림 상태 확인 시작");
-    devLog.log("현재 권한 상태:", Notification.permission);
+
+    const safeNotification = safeNotificationAccess();
+    devLog.log("현재 권한 상태:", safeNotification.permission);
 
     // 브라우저 지원 여부 확인
-    if (!("Notification" in window)) {
+    if (!safeNotification.isSupported) {
       devLog.log("브라우저에서 알림 미지원");
       setStatus("unsupported");
       return;
     }
 
     // 권한 상태 확인
-    switch (Notification.permission) {
+    switch (safeNotification.permission) {
       case "denied":
         devLog.log("알림 권한 거부됨");
         setStatus("denied");

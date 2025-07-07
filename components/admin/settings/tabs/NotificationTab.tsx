@@ -67,7 +67,7 @@ const NotificationTab = React.memo(function NotificationTab({
         throw error; // 에러를 다시 던져서 원래 핸들러에서도 처리할 수 있도록
       }
     },
-    [handleImageUpload, showInfo, showWarning, showSuccess, showError]
+    [handleImageUpload] // 토스트 함수들을 의존성에서 제거
   );
 
   // 이미지 삭제 핸들러 (토스트 처리 포함)
@@ -91,7 +91,7 @@ const NotificationTab = React.memo(function NotificationTab({
         throw error; // 에러를 다시 던져서 원래 핸들러에서도 처리할 수 있도록
       }
     },
-    [handleImageDelete, showSuccess, showError]
+    [handleImageDelete] // 토스트 함수들을 의존성에서 제거
   );
 
   // 템플릿 미리보기 함수
@@ -120,7 +120,7 @@ const NotificationTab = React.memo(function NotificationTab({
         "템플릿 미리보기를 생성하는 중 오류가 발생했습니다."
       );
     }
-  }, [settings.visitTemplate, showSuccess, showError]);
+  }, [settings.visitTemplate]); // 토스트 함수들을 의존성에서 제거
 
   return (
     <ErrorBoundary

@@ -39,7 +39,7 @@ export function UsersExportManager({
     }
 
     // CSV 데이터 생성
-    const csvData = exportUsers.map((user) => {
+    const csvData = (exportUsers || []).map((user) => {
       const row: Record<string, any> = {};
 
       if (options.includeBasic) {

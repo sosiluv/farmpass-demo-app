@@ -5,10 +5,14 @@ import { useAuth } from "@/components/providers/auth-provider";
 import { devLog } from "@/lib/utils/logging/dev-logger";
 import { apiClient } from "@/lib/utils/data";
 import { handleError } from "@/lib/utils/error";
+import {
+  safeLocalStorageAccess,
+  safeNotificationAccess,
+} from "@/lib/utils/browser/safari-compat";
 
 interface NotificationPermissionState {
   hasAsked: boolean;
-  permission: NotificationPermission;
+  permission: NotificationPermission | "unsupported";
   showDialog: boolean;
 }
 
@@ -26,7 +30,7 @@ export function useNotificationPermission() {
     authState.status === "authenticated" ? authState.profile : null;
   const [state, setState] = useState<NotificationPermissionState>({
     hasAsked: false,
-    permission: "default",
+    permission: "default" as NotificationPermission | "unsupported",
     showDialog: false,
   });
 
@@ -39,11 +43,13 @@ export function useNotificationPermission() {
 
     const checkNotificationPermission = () => {
       const storageKey = getStorageKey(user.id);
-      const lastAsked = localStorage.getItem(storageKey);
-      const currentPermission = Notification.permission;
+      const safeLocalStorage = safeLocalStorageAccess();
+      const safeNotification = safeNotificationAccess();
+      const lastAsked = safeLocalStorage.getItem(storageKey);
+      const currentPermission = safeNotification.permission;
 
       // 브라우저에서 알림을 지원하지 않는 경우
-      if (!("Notification" in window)) {
+      if (!safeNotification.isSupported) {
         setState({
           hasAsked: true,
           permission: "denied",
@@ -97,8 +103,9 @@ export function useNotificationPermission() {
     if (!user) return;
 
     try {
-      // 브라우저 알림 권한 요청
-      const permission = await Notification.requestPermission();
+      // 브라우저 알림 권한 요청 (Safari 호환성 고려)
+      const safeNotification = safeNotificationAccess();
+      const permission = await safeNotification.requestPermission();
 
       if (permission === "granted") {
         // 웹푸시 구독 시작
@@ -108,6 +115,12 @@ export function useNotificationPermission() {
           type: "success",
           title: "알림 허용됨",
           message: "중요한 농장 관리 알림을 받으실 수 있습니다.",
+        });
+      } else if (permission === "unsupported") {
+        setLastMessage({
+          type: "error",
+          title: "알림 미지원",
+          message: "현재 브라우저에서는 알림 기능을 지원하지 않습니다.",
         });
       } else {
         setLastMessage({
@@ -119,7 +132,8 @@ export function useNotificationPermission() {
 
       // 상태 업데이트 및 로컬스토리지에 타임스탬프 기록
       const storageKey = getStorageKey(user.id);
-      localStorage.setItem(storageKey, Date.now().toString());
+      const safeLocalStorage = safeLocalStorageAccess();
+      safeLocalStorage.setItem(storageKey, Date.now().toString());
 
       setState((prev) => ({
         ...prev,
@@ -142,7 +156,8 @@ export function useNotificationPermission() {
     if (!user) return;
 
     const storageKey = getStorageKey(user.id);
-    localStorage.setItem(storageKey, Date.now().toString());
+    const safeLocalStorage = safeLocalStorageAccess();
+    safeLocalStorage.setItem(storageKey, Date.now().toString());
 
     setState((prev) => ({
       ...prev,
@@ -254,11 +269,15 @@ export function useNotificationPermission() {
     if (!user) return;
 
     const storageKey = getStorageKey(user.id);
-    localStorage.removeItem(storageKey);
+    const safeLocalStorage = safeLocalStorageAccess();
+    const safeNotification = safeNotificationAccess();
+    safeLocalStorage.removeItem(storageKey);
 
     setState({
       hasAsked: false,
-      permission: Notification.permission,
+      permission: safeNotification.permission as
+        | NotificationPermission
+        | "unsupported",
       showDialog: true,
     });
 
@@ -270,7 +289,9 @@ export function useNotificationPermission() {
     if (!user) return null;
 
     const storageKey = getStorageKey(user.id);
-    const lastAsked = localStorage.getItem(storageKey);
+    const safeLocalStorage = safeLocalStorageAccess();
+    const safeNotification = safeNotificationAccess();
+    const lastAsked = safeLocalStorage.getItem(storageKey);
     const sevenDaysAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
     const canReAsk = !lastAsked || parseInt(lastAsked) < sevenDaysAgo;
 
@@ -289,8 +310,8 @@ export function useNotificationPermission() {
               (24 * 60 * 60 * 1000)
           )
         : 0,
-      currentPermission: Notification.permission,
-      notificationSupported: "Notification" in window,
+      currentPermission: safeNotification.permission,
+      notificationSupported: safeNotification.isSupported,
       serviceWorkerSupported: "serviceWorker" in navigator,
       pushManagerSupported: "PushManager" in window,
       // PWA 관련 정보 추가

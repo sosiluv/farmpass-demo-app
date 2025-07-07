@@ -56,7 +56,7 @@ export default function VisitorsPage() {
   const farms: Farm[] = useMemo(() => {
     if (!rawFarms || rawFarms.length === 0) return [];
 
-    return rawFarms.map((farm) => ({
+    return (rawFarms || []).map((farm) => ({
       id: farm.id,
       farm_name: farm.farm_name,
       farm_type: farm.farm_type || undefined,
@@ -100,7 +100,7 @@ export default function VisitorsPage() {
 
   // 공통 방문자 액션 훅 사용
   const { handleEdit, handleDelete, handleExport } = useVisitorActions({
-    farms: farms.map((farm) => ({
+    farms: (farms || []).map((farm) => ({
       id: farm.id,
       farm_name: farm.farm_name,
       description: null,
@@ -218,7 +218,7 @@ export default function VisitorsPage() {
           ]}
           actions={
             <VisitorExportRefactored
-              farms={farms.map((farm) => ({
+              farms={(farms || []).map((farm) => ({
                 id: farm.id,
                 farm_name: farm.farm_name,
                 farm_type: farm.farm_type || null,

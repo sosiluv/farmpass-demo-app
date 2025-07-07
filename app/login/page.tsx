@@ -25,6 +25,7 @@ import { getAuthErrorMessage } from "@/lib/utils/validation/validation";
 import { PageLoading } from "@/components/ui/loading";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { safariLoginRetry } from "@/lib/utils/browser/safari-debug";
 
 import {
   loginFormSchema,
@@ -46,6 +47,14 @@ export default function LoginPage() {
   const router = useRouter();
   const { showInfo, showSuccess, showError } = useCommonToast();
   const { state, signIn } = useAuth();
+
+  // 인증된 사용자 리다이렉트를 useEffect로 처리 (redirecting 상태 고려)
+  useEffect(() => {
+    if (state.status === "authenticated" && !loading && !redirecting) {
+      setRedirecting(true);
+      router.replace("/admin/dashboard");
+    }
+  }, [state.status, router, loading, redirecting]);
 
   const form = useForm<LoginFormData>({
     resolver: zodResolver(loginFormSchema),
@@ -91,28 +100,20 @@ export default function LoginPage() {
   }, []);
 
   // 로딩 상태를 먼저 체크 (페이지 렌더링 전에)
-  if (state.status === "loading" || state.status === "initializing") {
+  if (
+    state.status === "loading" ||
+    state.status === "initializing" ||
+    redirecting
+  ) {
     return (
       <PageLoading
         text={
-          state.status === "initializing"
+          redirecting
+            ? "대시보드로 이동 중..."
+            : state.status === "initializing"
             ? "인증 확인 중..."
             : "자동 로그인 중..."
         }
-        subText="잠시만 기다려주세요"
-        variant="gradient"
-        fullScreen={true}
-      />
-    );
-  }
-
-  // 인증된 사용자는 즉시 리다이렉트 (useEffect 대신 조건부 렌더링)
-  if (state.status === "authenticated") {
-    // 리다이렉트 중에도 로딩 표시
-    router.replace("/admin/dashboard");
-    return (
-      <PageLoading
-        text="대시보드로 이동 중..."
         subText="잠시만 기다려주세요"
         variant="gradient"
         fullScreen={true}
@@ -124,19 +125,26 @@ export default function LoginPage() {
     setLoading(true);
     setFormError("");
     showInfo("로그인 시도 중", "잠시만 기다려주세요.");
+
     try {
-      const result = await signIn({
-        email: data.email,
-        password: data.password,
+      // Safari에서 재시도 로직을 포함한 로그인 수행
+      const result = await safariLoginRetry(async () => {
+        return await signIn({
+          email: data.email,
+          password: data.password,
+        });
       });
+
       if (result.success) {
         showSuccess("로그인 성공", "대시보드로 이동합니다.");
-        setRedirecting(true);
-        router.replace("/admin/dashboard");
+        // 리다이렉트는 useEffect에서 처리하므로 여기서는 제거
+        // setRedirecting(true);
+        // router.replace("/admin/dashboard");
         return;
       }
     } catch (error: any) {
       devLog.error("Login failed:", error);
+
       const authError = getAuthErrorMessage(error);
       setFormError(authError.message);
       showError("로그인 실패", authError.message);
@@ -231,10 +239,10 @@ export default function LoginPage() {
                     className="h-12 w-full"
                     disabled={loading || redirecting}
                   >
-                    {loading ? (
+                    {loading || redirecting ? (
                       <>
                         <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        로그인 중...
+                        {redirecting ? "이동 중..." : "로그인 중..."}
                       </>
                     ) : (
                       "로그인"

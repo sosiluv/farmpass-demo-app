@@ -14,6 +14,7 @@ const supabaseDomain = supabaseUrl
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  productionBrowserSourceMaps: true, // Source maps 활성화
   /**
    * 🔬 실험적 기능 설정
    * Next.js의 최신 기능들을 안전하게 테스트할 수 있도록 허용
@@ -48,7 +49,7 @@ const nextConfig = {
    *
    * @see https://react.dev/reference/react/StrictMode
    */
-  reactStrictMode: false,
+  reactStrictMode: true, // 개발 환경에서 문제 감지를 위해 활성화
 
   /**
    * 🖼️ 이미지 최적화 설정

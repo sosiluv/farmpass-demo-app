@@ -89,7 +89,7 @@ export default function FarmVisitorsPage() {
 
   // 공통 방문자 액션 훅 사용
   const { handleEdit, handleDelete, handleExport } = useVisitorActions({
-    farms: farms.map((f) => ({
+    farms: (farms || []).map((f) => ({
       id: f.id,
       farm_name: f.farm_name,
       description: null,
@@ -267,7 +267,7 @@ export default function FarmVisitorsPage() {
               <div className="min-w-0">
                 <VisitorExportRefactored
                   farms={
-                    farms.map((f) => ({
+                    (farms || []).map((f) => ({
                       id: f.id,
                       farm_name: f.farm_name,
                       farm_type: f.farm_type ?? null,

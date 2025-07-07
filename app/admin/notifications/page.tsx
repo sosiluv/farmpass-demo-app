@@ -43,7 +43,7 @@ export default function NotificationsPage() {
   }, [settingsError, showError]);
 
   // 농장 데이터를 WebPushSubscription 컴포넌트 형식으로 변환
-  const farmData: Farm[] = farms.map((farm) => ({
+  const farmData: Farm[] = (farms || []).map((farm) => ({
     id: farm.id,
     farm_name: farm.farm_name,
     address: farm.farm_address,

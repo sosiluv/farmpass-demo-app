@@ -112,7 +112,7 @@ export function VisitorFormDialog({
         disinfection_check: false,
       });
     }
-  }, [open, mode, initialData, form]);
+  }, [open, mode, initialData]); // form을 의존성에서 제거
 
   const onSubmit = async (values: VisitorFormValues) => {
     if (isSubmitting) return;
@@ -274,7 +274,7 @@ export function VisitorFormDialog({
                         <SelectValue placeholder="방문 목적을 선택하세요." />
                       </SelectTrigger>
                       <SelectContent>
-                        {VISIT_PURPOSE_OPTIONS.map((option) => (
+                        {(VISIT_PURPOSE_OPTIONS || []).map((option) => (
                           <SelectItem key={option} value={option}>
                             {option}
                           </SelectItem>

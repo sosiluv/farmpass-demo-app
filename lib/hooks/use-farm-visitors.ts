@@ -154,7 +154,7 @@ export function useFarmVisitors(farmId: string | null) {
           })
           .reverse();
 
-        const trendData = last30Days.map((date) => {
+        const trendData = (last30Days || []).map((date) => {
           const nextDate = new Date(date);
           nextDate.setDate(date.getDate() + 1);
 

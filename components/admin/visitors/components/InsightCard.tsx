@@ -83,11 +83,11 @@ export function InsightCard({
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-3">
-          {(insights || []).map((insight, index) => {
+          {(insights || []).map((insight) => {
             const Icon = insight.icon;
             return (
               <div
-                key={index}
+                key={insight.label}
                 className={`flex items-center space-x-2 sm:space-x-3 p-2 sm:p-3 rounded-lg ${insight.bgColor} group-hover:shadow-sm transition-all duration-200`}
               >
                 <Icon

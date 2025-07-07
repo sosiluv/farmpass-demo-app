@@ -27,26 +27,26 @@ export function ChartGrid({
 }: ChartGridProps) {
   // 통합 데이터를 기존 차트 형식으로 변환
   const adaptedPurposeStats =
-    purposeStats?.map((stat) => ({
+    (purposeStats || []).map((stat) => ({
       purpose: stat.category,
       count: stat.count,
       percentage: stat.percentage,
     })) || [];
 
   const adaptedTimeStats =
-    timeStats?.map((stat) => ({
+    (timeStats || []).map((stat) => ({
       hour: stat.label,
       count: stat.value,
     })) || [];
 
   const adaptedRegionStats =
-    regionStats?.map((stat) => ({
+    (regionStats || []).map((stat) => ({
       region: stat.category,
       count: stat.count,
     })) || [];
 
   const adaptedWeekdayStats =
-    weekdayStats?.map((stat) => ({
+    (weekdayStats || []).map((stat) => ({
       day: stat.label,
       count: stat.value,
       average: stat.value, // 평균값은 동일하게 설정

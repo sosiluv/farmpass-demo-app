@@ -115,7 +115,7 @@ export function CompanySection({
                     <SelectValue placeholder="업종 선택" />
                   </SelectTrigger>
                   <SelectContent>
-                    {BUSINESS_TYPE_OPTIONS.map((option) => (
+                    {(BUSINESS_TYPE_OPTIONS || []).map((option) => (
                       <SelectItem key={option.value} value={option.value}>
                         {option.label}
                       </SelectItem>
@@ -178,7 +178,7 @@ export function CompanySection({
                     <SelectValue placeholder="직원 수 선택" />
                   </SelectTrigger>
                   <SelectContent>
-                    {EMPLOYEE_COUNT_OPTIONS.map((option) => (
+                    {(EMPLOYEE_COUNT_OPTIONS || []).map((option) => (
                       <SelectItem key={option.value} value={option.value}>
                         {option.label}
                       </SelectItem>

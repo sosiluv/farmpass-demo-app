@@ -123,7 +123,7 @@ export function PageHeader({
               {/* 추가 브레드크럼 아이템들 */}
               {breadcrumbs.map((item, index) => (
                 <motion.div
-                  key={index}
+                  key={item.href || item.label}
                   className="flex items-center gap-0.5 sm:gap-1"
                   initial={{ opacity: 0, x: -20 }}
                   animate={{ opacity: 1, x: 0 }}
