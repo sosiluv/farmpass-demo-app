@@ -31,18 +31,18 @@ import {
   VisitorTableRow,
   VisitorTableHeader,
 } from "./components";
-import type { VisitorEntryWithFarm } from "@/store/use-visitor-store";
+import type { VisitorWithFarm } from "@/lib/types/visitor";
 
 interface VisitorTableProps {
-  visitors: VisitorEntryWithFarm[];
+  visitors: VisitorWithFarm[];
   showFarmColumn?: boolean;
   loading?: boolean;
   isAdmin?: boolean;
-  onEdit?: (visitor: VisitorEntryWithFarm) => Promise<void>;
-  onDelete?: (visitor: VisitorEntryWithFarm) => Promise<void>;
+  onEdit?: (visitor: VisitorWithFarm) => Promise<void>;
+  onDelete?: (visitor: VisitorWithFarm) => Promise<void>;
 }
 
-// 모바일 카드 뷰 컴포넌트
+// 모바??카드 �?컴포?�트
 function MobileVisitorCard({
   visitor,
   index,
@@ -52,13 +52,13 @@ function MobileVisitorCard({
   onEdit,
   onDelete,
 }: {
-  visitor: VisitorEntryWithFarm;
+  visitor: VisitorWithFarm;
   index: number;
   showFarmColumn: boolean;
-  onViewDetails: (visitor: VisitorEntryWithFarm) => void;
+  onViewDetails: (visitor: VisitorWithFarm) => void;
   isAdmin?: boolean;
-  onEdit?: (visitor: VisitorEntryWithFarm) => Promise<void>;
-  onDelete?: (visitor: VisitorEntryWithFarm) => Promise<void>;
+  onEdit?: (visitor: VisitorWithFarm) => Promise<void>;
+  onDelete?: (visitor: VisitorWithFarm) => Promise<void>;
 }) {
   return (
     <Card className="border border-gray-200/60 hover:border-gray-300 hover:shadow-lg transition-all duration-300 bg-white/80 backdrop-blur-sm overflow-hidden group">
@@ -135,11 +135,11 @@ function MobileVisitorCard({
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <div className="cursor-help">
-                        {/* 년도/날짜 - 항상 한 줄로 표시 */}
+                        {/* ?�도/?�짜 - ??�� ??줄로 ?�시 */}
                         <p className="font-medium text-gray-700 leading-tight">
                           {datePart}
                         </p>
-                        {/* 시간 - 다음 줄에 표시 */}
+                        {/* ?�간 - ?�음 줄에 ?�시 */}
                         <p className="text-[10px] sm:text-xs text-gray-600 leading-tight">
                           {timePart}
                         </p>
@@ -189,7 +189,7 @@ function MobileVisitorCard({
             <Tooltip delayDuration={300}>
               <TooltipTrigger asChild>
                 <span className="font-medium text-gray-700 truncate flex-1 cursor-help touch-manipulation">
-                  {visitor.visitor_purpose || "기타"}
+                  {visitor.visitor_purpose || "기�?"}
                 </span>
               </TooltipTrigger>
               <TooltipContent
@@ -198,7 +198,7 @@ function MobileVisitorCard({
                 className="max-w-[200px] z-[9999]"
                 sideOffset={8}
               >
-                <p>{visitor.visitor_purpose || "기타"}</p>
+                <p>{visitor.visitor_purpose || "기�?"}</p>
               </TooltipContent>
             </Tooltip>
           </div>
@@ -230,14 +230,14 @@ function MobileVisitorCard({
                 <Sparkles className="w-3 h-3 sm:w-4 sm:h-4 text-green-500 flex-shrink-0" />
               )}
               <span className="text-[10px] sm:text-xs text-gray-500 truncate">
-                방역 {visitor.disinfection_check ? "완료" : "미완료"}
+                방역 {visitor.disinfection_check ? "?�료" : "미완�?}
               </span>
             </div>
             <button
               onClick={() => onViewDetails(visitor)}
               className="text-[10px] sm:text-xs text-blue-600 hover:text-blue-800 font-medium flex-shrink-0 ml-2"
             >
-              상세보기
+              ?�세보기
             </button>
           </div>
         </div>
@@ -255,10 +255,10 @@ export function VisitorTable({
   onDelete,
 }: VisitorTableProps) {
   const [selectedVisitor, setSelectedVisitor] =
-    useState<VisitorEntryWithFarm | null>(null);
+    useState<VisitorWithFarm | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
-  const handleViewDetails = (visitor: VisitorEntryWithFarm) => {
+  const handleViewDetails = (visitor: VisitorWithFarm) => {
     setSelectedVisitor(visitor);
     setIsModalOpen(true);
   };
@@ -268,19 +268,19 @@ export function VisitorTable({
     setSelectedVisitor(null);
   };
 
-  // 로딩 상태
+  // 로딩 ?�태
   if (loading) {
     return <VisitorTableLoading />;
   }
 
-  // 빈 상태
+  // �??�태
   if (!visitors || visitors.length === 0) {
     return <VisitorTableEmpty />;
   }
 
   return (
     <>
-      {/* 데스크톱 테이블 뷰 */}
+      {/* ?�스?�톱 ?�이�?�?*/}
       <div className="hidden xl:block">
         <div className="w-full overflow-x-auto rounded-lg border border-gray-200 bg-white shadow-sm">
           <Table className="table-fixed min-w-[900px]">
@@ -306,7 +306,7 @@ export function VisitorTable({
         </div>
       </div>
 
-      {/* 모바일 카드 뷰 */}
+      {/* 모바??카드 �?*/}
       <div className="xl:hidden space-y-3 sm:space-y-4 w-full max-w-full overflow-x-hidden">
         {(visitors || []).map((visitor, index) => (
           <MobileVisitorCard
@@ -322,17 +322,17 @@ export function VisitorTable({
         ))}
       </div>
 
-      {/* 방문자 상세 모달 */}
+      {/* 방문???�세 모달 */}
       <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
         <DialogContent className="w-[92vw] max-w-[360px] sm:max-w-[480px] md:max-w-[580px] lg:max-w-[680px] h-[92vh] max-h-[92vh] sm:h-[85vh] sm:max-h-[85vh] overflow-hidden p-3 sm:p-4 md:p-5 flex flex-col gap-0">
           <DialogHeader className="sr-only">
             <DialogTitle>
               {selectedVisitor
-                ? `${selectedVisitor.visitor_name} 방문자 상세 정보`
-                : "방문자 상세 정보"}
+                ? `${selectedVisitor.visitor_name} 방문???�세 ?�보`
+                : "방문???�세 ?�보"}
             </DialogTitle>
             <DialogDescription>
-              방문자의 기본 정보, 방문 정보, 방역 상태 등을 확인할 수 있습니다.
+              방문?�의 기본 ?�보, 방문 ?�보, 방역 ?�태 ?�을 ?�인?????�습?�다.
             </DialogDescription>
           </DialogHeader>
           <VisitorDetailModal
