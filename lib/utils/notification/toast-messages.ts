@@ -5,50 +5,62 @@
  * 중복된 toast 메시지들을 표준화하고 일관성 제공
  */
 
+import { useCallback } from "react";
 import { useToast } from "@/hooks/use-toast";
 
 // Toast 메시지 표시 헬퍼 함수들
 export function useCommonToast() {
   const { toast } = useToast();
 
-  return {
-    // 성공 메시지
-    showSuccess: (title: string, description?: string) => {
+  const showSuccess = useCallback(
+    (title: string, description?: string) => {
       toast({
         title,
         description,
         variant: "success",
       });
     },
+    [toast]
+  );
 
-    // 에러 메시지
-    showError: (title: string, description?: string) => {
+  const showError = useCallback(
+    (title: string, description?: string) => {
       toast({
         title,
         description,
         variant: "destructive",
       });
     },
+    [toast]
+  );
 
-    // 경고 메시지
-    showWarning: (title: string, description?: string) => {
+  const showWarning = useCallback(
+    (title: string, description?: string) => {
       toast({
         title,
         description,
         variant: "warning",
       });
     },
+    [toast]
+  );
 
-    // 정보 메시지
-    showInfo: (title: string, description?: string) => {
+  const showInfo = useCallback(
+    (title: string, description?: string) => {
       toast({
         title,
         description,
         variant: "info",
       });
     },
+    [toast]
+  );
 
-    // 원본 toast 함수 (특수한 경우에만 사용)
+  return {
+    showSuccess,
+    showError,
+    showWarning,
+    showInfo,
     toast,
   };
 }

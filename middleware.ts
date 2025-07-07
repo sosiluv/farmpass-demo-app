@@ -129,6 +129,9 @@ async function cleanupUserSubscriptions(userId: string) {
  * @throws 인증 오류, 유지보수 모드 오류 등이 발생할 수 있지만 모두 적절히 처리됩니다.
  */
 export async function middleware(request: NextRequest) {
+  // 🌐 클라이언트 정보 추출 (보안 로깅용)
+  const clientIP = getClientIP(request); // 실제 클라이언트 IP (프록시 고려)
+  const userAgent = getUserAgent(request); // 브라우저/앱 정보
   // ⏱️ 성능 측정 시작
   const start = Date.now();
 
@@ -149,9 +152,6 @@ export async function middleware(request: NextRequest) {
   ];
 
   if (maliciousPatterns.some((pattern) => pattern.test(pathname))) {
-    const clientIP = getClientIP(request);
-    const userAgent = getUserAgent(request);
-
     // 악성 봇 Rate Limiting 적용
     const botLimitResult = maliciousBotRateLimiter.checkLimit(clientIP);
     if (!botLimitResult.allowed) {
@@ -181,15 +181,18 @@ export async function middleware(request: NextRequest) {
     });
   }
 
-  // 🌐 클라이언트 정보 추출 (보안 로깅용)
-  const clientIP = getClientIP(request); // 실제 클라이언트 IP (프록시 고려)
-  const userAgent = getUserAgent(request); // 브라우저/앱 정보
-
   // 📝 요청 처리 시작 로그
   devLog.log(`[MIDDLEWARE] Processing: ${pathname} from IP: ${clientIP}`);
 
+  // ✅ 퍼블릭 경로는 인증/권한/유지보수 체크 없이 바로 통과
+  if (PathMatcher.isPublicPath(pathname)) {
+    devLog.log(
+      `[MIDDLEWARE] Public path detected, skipping auth/maintenance checks: ${pathname}`
+    );
+    return NextResponse.next();
+  }
+
   // 🔧 Supabase 클라이언트 생성 및 응답 객체 준비
-  // NextResponse.next()는 요청을 다음 단계로 전달하는 기본 응답을 생성합니다.
   let supabaseResponse = NextResponse.next({ request });
   const supabase = await createClient();
 
@@ -200,11 +203,8 @@ export async function middleware(request: NextRequest) {
   try {
     // 토큰 검증 및 갱신 시도 (authService 사용)
     const { isValid, user: authUser } = await validateAndRefreshToken(supabase);
-
     user = authUser;
     isAuthenticated = isValid;
-
-    // 인증 상태 로깅 (개발 환경에서만)
     devLog.log(
       `[MIDDLEWARE] User: ${
         user?.id ? "authenticated" : "anonymous"
@@ -229,7 +229,6 @@ export async function middleware(request: NextRequest) {
       return response;
     }
   } catch (error) {
-    // 인증 오류가 발생해도 공개 경로는 접근 가능하도록 계속 진행
     devLog.error(`[MIDDLEWARE] Auth error: ${error}`);
   }
 

@@ -1130,7 +1130,7 @@ interface UserPermissions {
 
 // 해결책: 컨텍스트 기반 권한 시스템
 const usePermissions = (farmId?: number) => {
-  const { user } = useAuth();
+  const { user } = useAuthContext();
 
   return useMemo(() => {
     if (user.globalRole === "admin") return { canManageAll: true };

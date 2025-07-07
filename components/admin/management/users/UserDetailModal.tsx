@@ -24,12 +24,8 @@ interface UserDetailModalProps {
 }
 
 export function UserDetailModal({ user, open, onClose }: UserDetailModalProps) {
-  const { state } = useAuth();
   const [loading, setLoading] = useState(false);
   const { showSuccess, showError, showInfo } = useCommonToast();
-
-  const accessToken =
-    state.status === "authenticated" ? state.session.access_token : undefined;
 
   const getRoleColor = (accountType: string) => {
     switch (accountType) {
@@ -89,7 +85,6 @@ export function UserDetailModal({ user, open, onClose }: UserDetailModalProps) {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
         },
         body: JSON.stringify({
           email: user?.email,

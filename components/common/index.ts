@@ -11,3 +11,6 @@ export {
 // PWA Install components
 export { InstallPrompt } from "./InstallPrompt";
 export { InstallGuide } from "./InstallGuide";
+
+// Security components
+export { Turnstile } from "./turnstile";

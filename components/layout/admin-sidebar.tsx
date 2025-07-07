@@ -375,12 +375,7 @@ export function AdminSidebar() {
                 className="flex-1 justify-start text-red-600 hover:text-red-700 hover:bg-red-50"
                 onClick={async () => {
                   // Auth Provider에서 모든 로그아웃 로직 처리
-                  const result = await signOut();
-
-                  // 성공적으로 로그아웃되면 로그인 페이지로 리다이렉트
-                  if (result.success) {
-                    window.location.href = "/login";
-                  }
+                  await signOut();
                 }}
               >
                 <LogOut className="mr-2 h-4 w-4" />

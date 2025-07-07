@@ -22,6 +22,7 @@ import { useAuth } from "@/components/providers/auth-provider";
 import { ErrorBoundary } from "@/components/error/error-boundary";
 import { Logo } from "@/components/common";
 import { getAuthErrorMessage } from "@/lib/utils/validation/validation";
+import { PageLoading } from "@/components/ui/loading";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 
@@ -89,13 +90,35 @@ export default function LoginPage() {
     }
   }, []);
 
-  // 이미 로그인된 사용자는 대시보드로 리다이렉트
-  useEffect(() => {
-    if (state.status === "authenticated") {
-      // 로딩 화면 없이 즉시 리다이렉트
-      router.replace("/admin/dashboard");
-    }
-  }, [state.status, router]);
+  // 로딩 상태를 먼저 체크 (페이지 렌더링 전에)
+  if (state.status === "loading" || state.status === "initializing") {
+    return (
+      <PageLoading
+        text={
+          state.status === "initializing"
+            ? "인증 확인 중..."
+            : "자동 로그인 중..."
+        }
+        subText="잠시만 기다려주세요"
+        variant="gradient"
+        fullScreen={true}
+      />
+    );
+  }
+
+  // 인증된 사용자는 즉시 리다이렉트 (useEffect 대신 조건부 렌더링)
+  if (state.status === "authenticated") {
+    // 리다이렉트 중에도 로딩 표시
+    router.replace("/admin/dashboard");
+    return (
+      <PageLoading
+        text="대시보드로 이동 중..."
+        subText="잠시만 기다려주세요"
+        variant="gradient"
+        fullScreen={true}
+      />
+    );
+  }
 
   const handleLogin = async (data: LoginFormData) => {
     setLoading(true);
