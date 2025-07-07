@@ -10,8 +10,15 @@ import {
   ALLOWED_IMAGE_TYPES,
   MAX_UPLOAD_SIZE_MB,
 } from "@/lib/constants/upload";
-import { apiClient } from "@/lib/utils/data";
 import { handleError } from "@/lib/utils/error";
+
+// React Query Hooks
+import {
+  useFarmInfoQuery,
+  useVisitorSessionQuery,
+  useDailyVisitorCountQuery,
+  useCreateVisitorMutation,
+} from "@/lib/hooks/query/use-visitor-form-query";
 
 const initialFormData: VisitorFormData = {
   fullName: "",
@@ -31,36 +38,34 @@ export const useVisitorForm = (farmId: string, settings: VisitorSettings) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
   const [uploadedImageUrl, setUploadedImageUrl] = useState<string | null>(null);
   const [isImageUploading, setIsImageUploading] = useState(false);
-  const [farm, setFarm] = useState<VisitorFarm | null>(null);
-  const [farmLoading, setFarmLoading] = useState(true);
-  const [farmError, setFarmError] = useState<string | null>(null);
   const [isInitialized, setIsInitialized] = useState(false);
 
-  // 세션 기반 재방문 체크 함수 (useCallback으로 메모이제이션)
-  const checkSession = useCallback(async () => {
-    try {
-      const data = await apiClient(
-        `/api/farms/${farmId}/visitors/check-session`,
-        {
-          method: "GET",
-          context: "세션 체크",
-          onError: (error, context) => {
-            handleError(error, {
-              context,
-              onStateUpdate: (errorMessage) => {
-                setError(errorMessage);
-              },
-            });
-          },
-        }
-      );
+  // React Query Hooks
+  const {
+    data: farm,
+    isLoading: farmLoading,
+    error: farmError,
+  } = useFarmInfoQuery(farmId);
 
+  const { data: sessionData, isLoading: sessionLoading } =
+    useVisitorSessionQuery(farmId, !isInitialized && !!farmId);
+
+  const { data: dailyCountData, refetch: refetchDailyCount } =
+    useDailyVisitorCountQuery(farmId, false); // 수동으로 조회
+
+  const createVisitorMutation = useCreateVisitorMutation();
+
+  // isLoading은 세션 로딩 상태를 참조
+  const isLoading = sessionLoading;
+
+  // 세션 기반 재방문 체크 (React Query 사용)
+  useEffect(() => {
+    if (!isInitialized && farmId && sessionData) {
       // 첫 방문이 아닌 경우, 이전 방문 정보로 폼 초기화
-      if (!data.isFirstVisit && data.lastVisit) {
-        const { lastVisit, sessionInfo } = data;
+      if (!sessionData.isFirstVisit && sessionData.lastVisit) {
+        const { lastVisit, sessionInfo } = sessionData;
 
         // 재방문 제한 메시지에 남은 시간 표시
         setError(
@@ -80,69 +85,10 @@ export const useVisitorForm = (farmId: string, settings: VisitorSettings) => {
           visitPurpose: lastVisit.visitPurpose || "",
         });
       }
-    } catch (error) {
-      // 에러는 이미 onError에서 처리됨
-    } finally {
-      setIsLoading(false);
-    }
-  }, [farmId]);
 
-  // 세션 기반 재방문 체크 (한 번만 실행)
-  useEffect(() => {
-    if (!isInitialized && farmId) {
-      checkSession();
       setIsInitialized(true);
     }
-  }, [farmId, isInitialized, checkSession]);
-
-  // 농장 정보 가져오기 함수 (useCallback으로 메모이제이션)
-  const fetchFarm = useCallback(async () => {
-    if (!farmId) {
-      setFarmError("농장 ID가 없습니다.");
-      setFarmLoading(false);
-      return;
-    }
-
-    try {
-      setFarmLoading(true);
-      setFarmError(null);
-
-      const result = await apiClient(`/api/farms/${farmId}`, {
-        method: "GET",
-        context: "농장 정보 조회",
-        onError: (error, context) => {
-          handleError(error, {
-            context,
-            onStateUpdate: (errorMessage) => {
-              setFarmError(errorMessage);
-            },
-          });
-        },
-      });
-
-      const farmData: VisitorFarm = {
-        id: result.farm.id,
-        farm_name: result.farm.farm_name,
-        farm_address: result.farm.farm_address,
-        manager_name: result.farm.manager_name || "",
-        manager_phone: result.farm.manager_phone || "",
-        farm_type: result.farm.farm_type || undefined,
-      };
-
-      setFarm(farmData);
-    } catch (error) {
-      // 에러는 이미 onError에서 처리됨
-    } finally {
-      setFarmLoading(false);
-    }
-  }, [farmId]);
-
-  // 농장 정보 가져오기 (한 번만 실행)
-  useEffect(() => {
-    if (!isInitialized && farmId) {
-      fetchFarm();
-    }
-  }, [farmId, isInitialized, fetchFarm]);
+  }, [sessionData, farmId, isInitialized]);
 
   const handleSubmit = async (data: VisitorFormData) => {
     // React Hook Form에서 이미 검증된 데이터를 받음
@@ -152,22 +98,9 @@ export const useVisitorForm = (farmId: string, settings: VisitorSettings) => {
     setError(null);
 
     try {
-      // 일일 방문자 수 체크
-      const { count = 0, farm_name } = await apiClient(
-        `/api/farms/${farmId}/visitors/count-today`,
-        {
-          method: "GET",
-          context: "일일 방문자 수 체크",
-          onError: (error, context) => {
-            handleError(error, {
-              context,
-              onStateUpdate: (errorMessage) => {
-                setError(errorMessage);
-              },
-            });
-          },
-        }
-      );
+      // 일일 방문자 수 체크 (React Query 사용)
+      const { data: countData } = await refetchDailyCount();
+      const { count = 0 } = countData || {};
 
       if (count >= settings.maxVisitorsPerDay) {
         const errorMessage = `일일 방문자 수 초과: ${count} / ${settings.maxVisitorsPerDay}`;
@@ -189,25 +122,11 @@ export const useVisitorForm = (farmId: string, settings: VisitorSettings) => {
         }
       }
 
-      // 방문자 등록
-      await apiClient(`/api/farms/${farmId}/visitors`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          ...data,
-          profile_photo_url,
-        }),
-        context: "방문자 등록",
-        onError: (error, context) => {
-          handleError(error, {
-            context,
-            onStateUpdate: (errorMessage) => {
-              setError(errorMessage);
-            },
-          });
-        },
+      // 방문자 등록 (React Query Mutation 사용)
+      await createVisitorMutation.mutateAsync({
+        farmId,
+        visitorData: data,
+        profilePhotoUrl: profile_photo_url,
       });
 
       setIsSubmitted(true);
@@ -215,7 +134,8 @@ export const useVisitorForm = (farmId: string, settings: VisitorSettings) => {
       setUploadedImageUrl(null);
       // 토스트는 컴포넌트에서 처리
     } catch (err) {
-      // 에러는 이미 onError에서 처리됨
+      setError("방문자 등록에 실패했습니다");
+      handleError(err as Error, "방문자 등록");
     } finally {
       setIsSubmitting(false);
     }

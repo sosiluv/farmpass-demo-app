@@ -72,7 +72,10 @@ export default function VisitPage() {
   // 농장 에러에 따른 토스트 처리
   useEffect(() => {
     if (farmError) {
-      showError("농장 정보 조회 실패", farmError);
+      showError(
+        "농장 정보 조회 실패",
+        farmError.message || "알 수 없는 오류가 발생했습니다"
+      );
     }
   }, [farmError, showError]);
 

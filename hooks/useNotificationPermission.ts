@@ -3,12 +3,15 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "@/components/providers/auth-provider";
 import { devLog } from "@/lib/utils/logging/dev-logger";
-import { apiClient } from "@/lib/utils/data";
 import { handleError } from "@/lib/utils/error";
 import {
   safeLocalStorageAccess,
   safeNotificationAccess,
 } from "@/lib/utils/browser/safari-compat";
+import {
+  useVapidKeyQuery,
+  useCreateSubscriptionMutation,
+} from "@/lib/hooks/query/use-push-mutations";
 
 interface NotificationPermissionState {
   hasAsked: boolean;
@@ -18,6 +21,11 @@ interface NotificationPermissionState {
 
 export function useNotificationPermission() {
   const { state: authState } = useAuth();
+
+  // React Query hooks
+  const { data: vapidData } = useVapidKeyQuery();
+  const createSubscriptionMutation = useCreateSubscriptionMutation();
+
   // 토스트 대신 메시지 상태만 반환
   const [lastMessage, setLastMessage] = useState<{
     type: "success" | "error";
@@ -185,14 +193,8 @@ export function useNotificationPermission() {
         return;
       }
 
-      // VAPID 키 가져오기
-      const { publicKey } = await apiClient("/api/push/vapid", {
-        method: "GET",
-        context: "VAPID 키 조회",
-        onError: (error, context) => {
-          handleError(error, context);
-        },
-      });
+      // VAPID 키 가져오기 (React Query 사용)
+      const publicKey = vapidData?.publicKey;
       if (!publicKey) {
         devLog.warn("VAPID 공개 키가 설정되지 않았습니다.");
         return;
@@ -210,20 +212,10 @@ export function useNotificationPermission() {
         applicationServerKey: urlBase64ToUint8Array(publicKey),
       });
 
-      // 서버에 구독 정보 전송 (전체 구독)
-      await apiClient("/api/push/subscription", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          subscription: subscription.toJSON(),
-          // farmId 없음 = 전체 구독
-        }),
-        context: "푸시 구독 등록",
-        onError: (error, context) => {
-          handleError(error, context);
-        },
+      // 서버에 구독 정보 전송 (React Query Mutation 사용)
+      await createSubscriptionMutation.mutateAsync({
+        subscription: subscription.toJSON(),
+        // farmId 없음 = 전체 구독
       });
 
       devLog.log("웹푸시 구독이 성공적으로 등록되었습니다.");

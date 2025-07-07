@@ -1,8 +1,34 @@
 "use client";
 
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiClient } from "@/lib/utils/data/api-client";
-import type { NotificationSettings, UpdateNotificationSettingsDTO } from "@/lib/types/notification";
+import type {
+  NotificationSettings,
+  UpdateNotificationSettingsDTO,
+} from "@/lib/types/notification";
+
+/**
+ * 알림 설정 조회 Query Hook
+ */
+export function useNotificationSettingsQuery() {
+  return useQuery({
+    queryKey: ["notification-settings"],
+    queryFn: async (): Promise<NotificationSettings | null> => {
+      try {
+        const data = await apiClient("/api/notifications/settings", {
+          method: "GET",
+          context: "알림 설정 조회",
+        });
+        return data;
+      } catch (error) {
+        // 에러 발생 시 null 반환 (useSubscriptionManager에서 null 체크 로직 있음)
+        return null;
+      }
+    },
+    staleTime: 5 * 60 * 1000, // 5분간 fresh 유지
+    retry: 1,
+  });
+}
 
 /**
  * 알림 설정 저장 Mutation Hook
@@ -11,7 +37,9 @@ export function useSaveNotificationSettingsMutation() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (settings: UpdateNotificationSettingsDTO): Promise<NotificationSettings> => {
+    mutationFn: async (
+      settings: UpdateNotificationSettingsDTO
+    ): Promise<NotificationSettings> => {
       const response = await apiClient("/api/notifications/settings", {
         method: "PUT",
         body: JSON.stringify(settings),
@@ -32,7 +60,9 @@ export function useSaveNotificationSettingsMutation() {
  */
 export function useSubscribePushMutation() {
   return useMutation({
-    mutationFn: async (subscription: PushSubscription): Promise<{ success: boolean }> => {
+    mutationFn: async (
+      subscription: PushSubscription
+    ): Promise<{ success: boolean }> => {
       await apiClient("/api/push/subscription", {
         method: "POST",
         body: JSON.stringify({ subscription: subscription.toJSON() }),
@@ -47,7 +77,10 @@ export function useSubscribePushMutation() {
  */
 export function useUnsubscribePushMutation() {
   return useMutation({
-    mutationFn: async (data: { endpoint: string; farmId?: string }): Promise<{ success: boolean }> => {
+    mutationFn: async (data: {
+      endpoint: string;
+      farmId?: string;
+    }): Promise<{ success: boolean }> => {
       await apiClient("/api/push/subscription", {
         method: "DELETE",
         body: JSON.stringify(data),
@@ -85,7 +118,9 @@ export function useUpdateNotificationStatusMutation() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (data: { is_active: boolean }): Promise<NotificationSettings> => {
+    mutationFn: async (data: {
+      is_active: boolean;
+    }): Promise<NotificationSettings> => {
       const response = await apiClient("/api/notifications/settings", {
         method: "PUT",
         body: JSON.stringify(data),
@@ -108,7 +143,10 @@ export function useGenerateVapidKeysMutation() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (): Promise<{ publicKey: string; privateKey: string }> => {
+    mutationFn: async (): Promise<{
+      publicKey: string;
+      privateKey: string;
+    }> => {
       const response = await apiClient("/api/push/vapid", {
         method: "POST",
       });
@@ -151,7 +189,7 @@ export function useNotificationMutations() {
     generateVapidKeysAsync: generateVapidKeys.mutateAsync,
 
     // 로딩 상태
-    isLoading: 
+    isLoading:
       saveSettings.isPending ||
       subscribePush.isPending ||
       unsubscribePush.isPending ||

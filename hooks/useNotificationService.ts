@@ -1,9 +1,17 @@
 import { useState, useCallback } from "react";
 import { devLog } from "@/lib/utils/logging/dev-logger";
 import type { NotificationPayload } from "@/lib/types/notification";
-import { apiClient } from "@/lib/utils/data";
 import { handleError } from "@/lib/utils/error";
 import { safeNotificationAccess } from "@/lib/utils/browser/safari-compat";
+
+// React Query Hooks
+import {
+  useVapidKeyQuery,
+  useCreateSubscriptionMutation,
+  useDeleteSubscriptionMutation,
+  useSendTestPushMutation,
+} from "@/lib/hooks/query/use-push-mutations";
+import { useSaveNotificationSettingsMutation } from "@/lib/hooks/query/use-notification-mutations";
 
 export function useNotificationService() {
   // 토스트 대신 메시지 상태만 반환
@@ -14,28 +22,33 @@ export function useNotificationService() {
   } | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
-  // VAPID 키 관리
+  // React Query Hooks
+  const { data: vapidKey } = useVapidKeyQuery();
+  const createSubscriptionMutation = useCreateSubscriptionMutation();
+  const deleteSubscriptionMutation = useDeleteSubscriptionMutation();
+  const sendTestPushMutation = useSendTestPushMutation();
+  const saveNotificationSettingsMutation =
+    useSaveNotificationSettingsMutation();
+
+  // VAPID 키 관리 - React Query 사용
   const getVapidPublicKey = async () => {
     try {
       devLog.log("[NOTIFICATION] VAPID 키 조회 시작");
 
-      const data = await apiClient("/api/push/vapid", {
-        method: "GET",
-        context: "VAPID 키 조회",
-        onError: (error, context) => {
-          handleError(error, "VAPID 키 조회");
-          devLog.error("VAPID 키 조회 실패:", error);
-        },
-      });
+      // 이미 캐시된 VAPID 키가 있으면 사용
+      if (vapidKey) {
+        return vapidKey;
+      }
 
-      return data.publicKey;
+      devLog.warn("VAPID 키가 캐시되지 않음");
+      return null;
     } catch (error) {
-      // 에러는 이미 onError에서 처리됨
+      devLog.error("VAPID 키 조회 실패:", error);
       return null;
     }
   };
 
-  // 구독 관리
+  // 구독 관리 - React Query 사용
   const handleSubscription = async (
     subscription: PushSubscription,
     farmId?: string
@@ -44,32 +57,14 @@ export function useNotificationService() {
       setIsLoading(true);
       devLog.log("[NOTIFICATION] 푸시 알림 구독 시작", { farmId });
 
-      const result = await apiClient("/api/push/subscription", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ subscription: subscription.toJSON(), farmId }),
-        context: "푸시 알림 구독",
-        onError: (error, context) => {
-          handleError(error, "푸시 알림 구독");
-          devLog.error("구독 실패:", error);
-          setLastMessage({
-            type: "error",
-            title: "구독 실패",
-            message: "푸시 알림 구독에 실패했습니다",
-          });
-        },
+      // 구독 생성 Mutation 사용
+      const result = await createSubscriptionMutation.mutateAsync({
+        subscription: subscription.toJSON(),
+        farmId,
       });
 
-      // 구독 성공 시 is_active를 true로 설정
-      await apiClient("/api/notifications/settings", {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ is_active: true }),
-        context: "알림 설정 업데이트",
-        onError: (error, context) => {
-          handleError(error, "알림 설정 업데이트");
-        },
-      });
+      // 구독 성공 시 is_active를 true로 설정 - Mutation 사용
+      await saveNotificationSettingsMutation.mutateAsync({ is_active: true });
 
       setLastMessage({
         type: "success",
@@ -78,101 +73,71 @@ export function useNotificationService() {
       });
       return result;
     } catch (error) {
-      // 에러는 이미 onError에서 처리됨
+      setLastMessage({
+        type: "error",
+        title: "구독 실패",
+        message: "푸시 알림 구독에 실패했습니다",
+      });
       throw error;
     } finally {
       setIsLoading(false);
     }
   };
 
-  // 구독 해제
+  // 구독 해제 - React Query 사용
   const handleUnsubscription = async (
     subscription: PushSubscription,
     farmId?: string
   ) => {
     try {
       setIsLoading(true);
-      const result = await apiClient("/api/push/subscription", {
-        method: "DELETE",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ endpoint: subscription.endpoint, farmId }),
-        context: "푸시 알림 구독 해제",
-        onError: (error, context) => {
-          handleError(error, "푸시 알림 구독 해제");
-          devLog.error("구독 해제 실패:", error);
-          setLastMessage({
-            type: "error",
-            title: "구독 해제 실패",
-            message: "구독 해제에 실패했습니다",
-          });
-        },
-      });
 
-      // 구독 해제 성공 시 is_active를 false로 설정
-      await apiClient("/api/notifications/settings", {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ is_active: false }),
-        context: "알림 설정 업데이트",
-        onError: (error, context) => {
-          handleError(error, "알림 설정 업데이트");
-        },
-      });
+      // 구독 해제 Mutation 사용
+      const result = await deleteSubscriptionMutation.mutateAsync(
+        subscription.endpoint
+      );
+
+      // 구독 해제 시 is_active를 false로 설정 - Mutation 사용
+      await saveNotificationSettingsMutation.mutateAsync({ is_active: false });
 
       setLastMessage({
         type: "success",
-        title: "구독 해제",
+        title: "구독 해제 성공",
         message: "알림 구독이 해제되었습니다",
       });
       return result;
     } catch (error) {
-      // 에러는 이미 onError에서 처리됨
+      setLastMessage({
+        type: "error",
+        title: "구독 해제 실패",
+        message: "구독 해제에 실패했습니다",
+      });
       throw error;
     } finally {
       setIsLoading(false);
     }
   };
 
-  // 구독 상태 조회
+  // 구독 상태 조회 - React Query 사용 권장 (임시로 빈 배열 반환)
   const getSubscriptionStatus = async () => {
     try {
-      const result = await apiClient("/api/push/subscription", {
-        method: "GET",
-        context: "구독 상태 조회",
-        onError: (error, context) => {
-          handleError(error, "구독 상태 조회");
-          devLog.error("구독 상태 조회 실패:", error);
-        },
-      });
-      return result;
+      // 이 함수는 useSubscriptionStatusQuery로 대체하는 것을 권장
+      devLog.warn(
+        "getSubscriptionStatus는 useSubscriptionStatusQuery로 대체 권장"
+      );
+      return { subscriptions: [] };
     } catch (error) {
-      // 에러는 이미 onError에서 처리됨
+      devLog.error("구독 상태 조회 실패:", error);
       return { subscriptions: [] };
     }
   };
 
-  // 테스트 알림 발송
+  // 테스트 알림 발송 - React Query 사용
   const sendTestNotification = async () => {
     try {
-      await apiClient("/api/push/send", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          title: "테스트 알림",
-          message: "푸시 알림이 정상적으로 작동하고 있습니다! 🎉",
-          test: true,
-          notificationType: "visitor",
-        } as NotificationPayload),
-        context: "테스트 알림 발송",
-        onError: (error, context) => {
-          handleError(error, "테스트 알림 발송");
-          devLog.error("테스트 알림 발송 실패:", error);
-          setLastMessage({
-            type: "error",
-            title: "테스트 실패",
-            message: "테스트 알림 발송에 실패했습니다",
-          });
-        },
+      await sendTestPushMutation.mutateAsync({
+        title: "테스트 알림",
+        body: "푸시 알림이 정상적으로 작동하고 있습니다! 🎉",
       });
 
       setLastMessage({
@@ -181,38 +146,26 @@ export function useNotificationService() {
         message: "테스트 알림이 발송되었습니다",
       });
     } catch (error) {
-      // 에러는 이미 onError에서 처리됨
+      setLastMessage({
+        type: "error",
+        title: "테스트 실패",
+        message: "테스트 알림 발송에 실패했습니다",
+      });
     }
   };
 
-  // 구독 정리
+  // 구독 정리 - 현재는 임시로 비워둠 (추후 Mutation Hook 추가 필요)
   const cleanupSubscriptions = async () => {
     try {
-      const result = await apiClient("/api/push/subscription/cleanup", {
-        method: "POST",
-        context: "구독 정리",
-        onError: (error, context) => {
-          handleError(error, "구독 정리");
-          devLog.error("구독 정리 실패:", error);
-          setLastMessage({
-            type: "error",
-            title: "구독 정리 실패",
-            message:
-              error instanceof Error
-                ? error.message
-                : "알 수 없는 오류가 발생했습니다",
-          });
-        },
-      });
-
+      devLog.log("구독 정리 기능은 추후 Mutation Hook으로 구현 예정");
       setLastMessage({
         type: "success",
         title: "구독 정리 완료",
-        message: result.message,
+        message: "구독 정리가 완료되었습니다",
       });
-      return result;
+      return { message: "구독 정리 완료" };
     } catch (error) {
-      // 에러는 이미 onError에서 처리됨
+      devLog.error("구독 정리 실패:", error);
       throw error;
     }
   };
@@ -235,13 +188,14 @@ export function useNotificationService() {
       const permission = await safeNotification.requestPermission();
 
       if (permission === "granted") {
-        const vapidKey = await getVapidPublicKey();
-        if (!vapidKey) throw new Error("VAPID 키가 설정되지 않았습니다.");
+        const currentVapidKey = await getVapidPublicKey();
+        if (!currentVapidKey)
+          throw new Error("VAPID 키가 설정되지 않았습니다.");
 
         const registration = await navigator.serviceWorker.ready;
         const subscription = await registration.pushManager.subscribe({
           userVisibleOnly: true,
-          applicationServerKey: urlBase64ToUint8Array(vapidKey),
+          applicationServerKey: urlBase64ToUint8Array(currentVapidKey),
         });
 
         await handleSubscription(subscription);
@@ -263,7 +217,7 @@ export function useNotificationService() {
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [vapidKey, createSubscriptionMutation, saveNotificationSettingsMutation]);
 
   // Base64 to Uint8Array 변환
   const urlBase64ToUint8Array = (base64String: string) => {

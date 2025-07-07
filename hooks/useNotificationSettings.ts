@@ -2,52 +2,21 @@ import { useState, useEffect, useCallback, useMemo } from "react";
 import type { NotificationSettings } from "@/lib/types/notification";
 import type { SystemSettings } from "@/lib/types/settings";
 import { devLog } from "@/lib/utils/logging/dev-logger";
-import { apiClient } from "@/lib/utils/data";
 import { handleError } from "@/lib/utils/error";
-import { useNotificationMutations } from "@/lib/hooks/query/use-notification-mutations";
+import {
+  useNotificationSettingsQuery,
+  useNotificationMutations,
+} from "@/lib/hooks/query/use-notification-mutations";
 
-// 알림 설정 조회 훅 (사용자용)
+// 알림 설정 조회 훅 (사용자용) - React Query 기반으로 변경
 export function useNotificationSettings() {
-  const [data, setData] = useState<NotificationSettings | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<Error | null>(null);
+  const {
+    data,
+    isLoading: loading,
+    error: queryError,
+  } = useNotificationSettingsQuery();
 
-  useEffect(() => {
-    let isMounted = true;
-    setLoading(true);
-    setError(null);
-
-    apiClient("/api/notifications/settings", {
-      method: "GET",
-      context: "알림 설정 조회",
-      onError: (error, context) => {
-        if (isMounted) {
-          handleError(error, {
-            context,
-            onStateUpdate: (errorMessage) => {
-              setError(new Error(errorMessage));
-            },
-          });
-        }
-      },
-    })
-      .then((json) => {
-        if (isMounted) {
-          setData(json);
-          devLog.info("알림 설정 로드 성공:", json);
-        }
-      })
-      .catch((err) => {
-        // 에러는 이미 onError에서 처리됨
-      })
-      .finally(() => {
-        if (isMounted) setLoading(false);
-      });
-
-    return () => {
-      isMounted = false;
-    };
-  }, []);
+  const error = queryError ? new Error(queryError.message) : null;
 
   return { data, loading, error };
 }
@@ -134,7 +103,7 @@ export function useSystemNotificationSettings(options: {
 
   // VAPID 키 생성
   const notificationMutations = useNotificationMutations();
-  
+
   const handleGenerateVapidKeys = useCallback(async () => {
     try {
       const data = await notificationMutations.generateVapidKeysAsync();
