@@ -6,6 +6,7 @@ import Script from "next/script";
 import { cn } from "@/lib/utils";
 import { Toaster } from "@/components/ui/toaster";
 import { AuthProvider } from "@/components/providers/auth-provider";
+import { QueryProvider } from "@/components/providers/query-provider";
 import { ToastPositionProvider } from "@/components/providers/toast-position-provider";
 import { DebugProvider } from "@/components/providers/debug-provider";
 import { SystemMonitor } from "@/components/common/system-monitor";
@@ -97,18 +98,20 @@ export default async function RootLayout({
           description="앱에서 예상치 못한 오류가 발생했습니다. 페이지를 새로고침하거나 잠시 후 다시 시도해주세요."
         >
           <PWAUpdater />
-          <AuthProvider>
-            <DebugProvider>
-              <PWAProvider>
-                <ToastPositionProvider>
-                  {children}
-                  <Toaster />
-                  <SystemMonitor />
-                  <DialogManager />
-                </ToastPositionProvider>
-              </PWAProvider>
-            </DebugProvider>
-          </AuthProvider>
+          <QueryProvider>
+            <AuthProvider>
+              <DebugProvider>
+                <PWAProvider>
+                  <ToastPositionProvider>
+                    {children}
+                    <Toaster />
+                    <SystemMonitor />
+                    <DialogManager />
+                  </ToastPositionProvider>
+                </PWAProvider>
+              </DebugProvider>
+            </AuthProvider>
+          </QueryProvider>
           <Analytics />
         </ErrorBoundary>
       </body>
