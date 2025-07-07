@@ -2,33 +2,37 @@
 
 import { Users } from "lucide-react";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
-import type { MemberWithProfile as MemberData } from "@/lib/hooks/use-farm-members-preview-safe";
-
-// 타입 정의
-interface FarmMembersData {
-  count: number;
-  members: MemberData[];
-  loading: boolean;
-}
+import { useFarmMembersQuery } from "@/lib/hooks/query/use-farm-members-query";
+import { generateInitials } from "@/lib/utils/text";
+import type { MemberWithProfile } from "@/lib/hooks/query/use-farm-members-query";
 
 interface FarmMembersPreviewProps {
   farmId: string;
-  membersData: FarmMembersData;
 }
 
 export function FarmMembersPreview({
   farmId,
-  membersData,
 }: FarmMembersPreviewProps) {
-  const { count: memberCount, members, loading } = membersData;
+  const { members, isLoading, error } = useFarmMembersQuery(farmId);
 
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="h-8 flex items-center justify-center">
         <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary"></div>
       </div>
     );
   }
+
+  if (error || !members) {
+    return (
+      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+        <Users className="w-4 h-4" />
+        <span>멤버 정보 불러오기 실패</span>
+      </div>
+    );
+  }
+
+  const memberCount = members.length;
 
   const getRoleColor = (role: string) => {
     switch (role) {
@@ -55,23 +59,23 @@ export function FarmMembersPreview({
       <div className="flex items-center space-x-1">
         {/* 구성원 아바타 */}
         <div className="flex -space-x-2">
-          {(members || []).slice(0, 3).map((member: MemberData) => (
+          {(members || []).slice(0, 3).map((member: MemberWithProfile) => (
             <Avatar
               key={member.id}
               className={`w-6 h-6 border-2 border-background ${getRoleColor(
                 member.role
               )}`}
-              title={`${member.name} (${member.role})`}
+              title={`${member.representative_name} (${member.role})`}
             >
               <AvatarImage
                 src={member.profile_image_url || ""}
-                alt={member.name}
+                alt={member.representative_name}
                 className="object-cover"
               />
               <AvatarFallback
                 className={`text-xs font-medium ${getRoleColor(member.role)}`}
               >
-                {member.name.charAt(0).toUpperCase()}
+                {generateInitials(member.representative_name)}
               </AvatarFallback>
             </Avatar>
           ))}
@@ -87,17 +91,17 @@ export function FarmMembersPreview({
         {/* 역할 요약 배지 */}
         {memberCount > 0 && (
           <div className="flex space-x-1 ml-2">
-            {members.some((m: MemberData) => m.role === "owner") && (
+            {members.some((m: MemberWithProfile) => m.role === "owner") && (
               <span className="text-xs" title="소유자">
                 🛡️
               </span>
             )}
-            {members.some((m: MemberData) => m.role === "manager") && (
+            {members.some((m: MemberWithProfile) => m.role === "manager") && (
               <span className="text-xs" title="관리자">
                 👨‍💼
               </span>
             )}
-            {members.some((m: MemberData) => m.role === "viewer") && (
+            {members.some((m: MemberWithProfile) => m.role === "viewer") && (
               <span className="text-xs" title="조회자">
                 👁️
               </span>

@@ -1,7 +1,6 @@
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { motion } from "framer-motion";
 import type { Farm } from "@/lib/types/farm";
-import { useFarmMembersQuery } from "@/lib/hooks/query/use-farm-members-query";
 import {
   FarmCardHeader,
   FarmCardActions,
@@ -24,15 +23,6 @@ export function FarmCard({
   onEdit,
   onDelete,
 }: FarmCardProps) {
-  // React Query로 멤버 데이터 로딩
-  const { members, isLoading, error } = useFarmMembersQuery(farm.id);
-  
-  const membersData = {
-    count: members.length,
-    members,
-    loading: isLoading,
-    error,
-  };
   return (
     <motion.div
       key={farm.id}
@@ -52,7 +42,7 @@ export function FarmCard({
         </CardHeader>
         <CardContent>
           <FarmCardDetails farm={farm} />
-          <FarmCardPreview farmId={farm.id} membersData={membersData} />
+          <FarmCardPreview farmId={farm.id} />
         </CardContent>
       </Card>
     </motion.div>
