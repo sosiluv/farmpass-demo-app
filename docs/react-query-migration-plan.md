@@ -10,28 +10,54 @@ dev (메인 개발 브랜치)
 ## 🎯 마이그레이션 단계별 계획
 
 ### Phase 1: 기반 구조 설정 ✅
+
 - [x] React Query 패키지 설치
 - [x] QueryProvider 설정
 - [x] Auth 연동 유틸리티 생성
 - [x] 첫 번째 Hook 마이그레이션 (Farm Visitors)
 
-### Phase 2: 핵심 데이터 Hook 마이그레이션
-- [ ] `use-farm-visitors.ts` → `use-farm-visitors-query.ts`
-- [ ] `use-farms.ts` → `use-farms-query.ts`
-- [ ] `use-farm-members.ts` → `use-farm-members-query.ts`
+### Phase 2: 핵심 데이터 Hook 마이그레이션 ✅
 
-### Phase 3: Store와 Hook 병행 사용
-- [ ] Zustand Store 유지
-- [ ] React Query Hook 새로 생성
-- [ ] 컴포넌트별 점진적 교체
+- [x] `use-farm-visitors.ts` → `use-farm-visitors-query.ts`
+- [x] `use-farms.ts` → `use-farms-query.ts`
+- [x] `use-farm-members-preview-safe.ts` → `use-farm-members-query.ts`
+- [x] 비교 테스트 컴포넌트 생성
+- [x] 테스트 페이지 구축
 
-### Phase 4: 고급 기능 구현
-- [ ] Optimistic Updates
+### Phase 3: 실제 서비스 페이지 적용 ✅
+
+- [x] 대시보드 페이지 (`/admin/dashboard`)
+- [x] 방문자 페이지 (`/admin/visitors`)
+- [x] 농장별 방문자 페이지 (`/admin/farms/[farmId]/visitors`)
+- [x] 농장별 멤버 페이지 (`/admin/farms/[farmId]/members`)
+- [x] Feature Flag 기반 점진적 전환
+- [x] UI에 현재 모드 표시
+
+### Phase 4: 고급 기능 구현 🔄
+
+- [x] **Mutation Hook 구현**
+  - [x] `use-visitor-mutations.ts`: 방문자 CRUD 작업 (토스트 메시지 분리)
+  - [x] `use-farm-mutations.ts`: 농장 CRUD 작업
+  - [x] `use-farm-member-mutations.ts`: 멤버 관리 작업
+- [x] **Optimistic Updates**
+  - [x] `use-optimistic-visitor-mutations.ts`: 낙관적 업데이트 적용
+  - [x] 실시간 UI 업데이트 (네트워크 응답 대기 없음)
+  - [x] 에러 시 자동 롤백 기능
+- [x] **필터링 기능**
+  - [x] `use-farm-visitors-filtered-query.ts`: 고급 필터링 지원
+  - [x] 검색, 날짜 범위, 방역 여부, 동의 여부, 방문 목적 필터
+  - [x] 실시간 필터링 및 클라이언트 사이드 검색
+  - [x] 방문 목적 옵션 자동 조회
+  - [x] **실제 서비스 페이지 적용**: 방문자 페이지에 필터링 기능 적용
+- [x] **농장별 방문자 페이지 필터링 적용**
+  - [x] `/admin/farms/[farmId]/visitors` 페이지에 필터링 Hook 적용
+  - [x] 농장별 특화 필터 옵션 지원
 - [ ] Infinite Query (페이지네이션)
 - [ ] Background Sync
 - [ ] Cache Invalidation 전략
 
 ### Phase 5: 성능 최적화 및 정리
+
 - [ ] 불필요한 Zustand Store 제거
 - [ ] Query Key 체계 최적화
 - [ ] DevTools 활용 모니터링
@@ -39,6 +65,7 @@ dev (메인 개발 브랜치)
 ## 🔄 마이그레이션 방법
 
 ### 1. 기존 Hook과 병행 사용
+
 ```typescript
 // 기존 Hook (유지)
 import { useFarmVisitors } from "@/lib/hooks/use-farm-visitors";
@@ -48,22 +75,25 @@ import { useFarmVisitorsQuery } from "@/lib/hooks/query/use-farm-visitors-query"
 
 function FarmVisitorsPage() {
   // 기존 방식
-  const { visitors: oldVisitors, loading: oldLoading } = useFarmVisitors(farmId);
-  
+  const { visitors: oldVisitors, loading: oldLoading } =
+    useFarmVisitors(farmId);
+
   // 새로운 방식 (테스트)
-  const { visitors: newVisitors, isLoading: newLoading } = useFarmVisitorsQuery(farmId);
-  
+  const { visitors: newVisitors, isLoading: newLoading } =
+    useFarmVisitorsQuery(farmId);
+
   // 환경변수나 플래그로 전환 제어
   const useNewQuery = process.env.NEXT_PUBLIC_USE_REACT_QUERY === "true";
-  
+
   const visitors = useNewQuery ? newVisitors : oldVisitors;
   const loading = useNewQuery ? newLoading : oldLoading;
-  
+
   return <VisitorsList visitors={visitors} loading={loading} />;
 }
 ```
 
 ### 2. 점진적 컴포넌트 교체
+
 ```typescript
 // 1단계: 새로운 Hook 생성
 // 2단계: 기존 Hook과 병행 사용
@@ -74,31 +104,37 @@ function FarmVisitorsPage() {
 ## 📊 마이그레이션 우선순위
 
 ### 🔥 High Priority (복잡한 상태 관리)
+
 1. **Farm Visitors** - 복잡한 통계 및 필터링
 2. **Farm Members** - CRUD 작업 많음
 3. **Dashboard Stats** - 실시간 업데이트 필요
 
 ### 🟡 Medium Priority (단순한 데이터 페칭)
+
 4. **Farms List** - 캐싱 혜택 큼
 5. **Notification Settings** - 사용자별 설정
 
 ### 🟢 Low Priority (안정적인 기능)
+
 6. **Admin Hooks** - 이미 안정적
 7. **Static Data** - 자주 변경되지 않음
 
 ## 🧪 테스트 전략
 
 ### 1. 기능 테스트
+
 - [ ] 기존 기능과 동일한 동작 확인
 - [ ] 에러 처리 동작 확인
 - [ ] 로딩 상태 확인
 
 ### 2. 성능 테스트
+
 - [ ] 초기 로딩 시간 비교
 - [ ] 캐싱 효과 측정
 - [ ] 메모리 사용량 확인
 
 ### 3. 사용자 경험 테스트
+
 - [ ] 실시간 업데이트 확인
 - [ ] 네트워크 재연결 시 동작
 - [ ] 백그라운드 동기화
@@ -106,6 +142,7 @@ function FarmVisitorsPage() {
 ## 🔧 개발 가이드라인
 
 ### 1. 명명 규칙
+
 ```typescript
 // 기존 Hook: use-farm-visitors.ts
 // 새로운 Hook: use-farm-visitors-query.ts
@@ -113,6 +150,7 @@ function FarmVisitorsPage() {
 ```
 
 ### 2. 타입 안전성
+
 ```typescript
 // 엄격한 타입 정의
 interface QueryResult<T> {
@@ -125,6 +163,7 @@ interface QueryResult<T> {
 ```
 
 ### 3. 에러 처리
+
 ```typescript
 // 일관된 에러 처리
 - 인증 에러: 재시도 안함
@@ -135,16 +174,19 @@ interface QueryResult<T> {
 ## 📈 성공 지표
 
 ### 1. 개발자 경험
+
 - [ ] 코드 라인 수 30% 감소
 - [ ] 중복 로직 제거
 - [ ] 디버깅 도구 개선
 
 ### 2. 사용자 경험
+
 - [ ] 로딩 시간 20% 단축
 - [ ] 캐싱으로 데이터 응답 개선
 - [ ] 실시간 동기화 향상
 
 ### 3. 유지보수성
+
 - [ ] 상태 관리 복잡도 감소
 - [ ] 일관된 에러 처리
 - [ ] 테스트 커버리지 향상
@@ -152,17 +194,20 @@ interface QueryResult<T> {
 ## 🚀 배포 전략
 
 ### 1. Feature Flag 활용
+
 ```typescript
 const useReactQuery = process.env.NEXT_PUBLIC_USE_REACT_QUERY === "true";
 ```
 
 ### 2. 점진적 롤아웃
+
 1. 개발 환경에서 충분한 테스트
 2. 스테이징 환경에서 통합 테스트
 3. 프로덕션에서 일부 기능부터 활성화
 4. 모니터링 후 전체 활성화
 
 ### 3. 롤백 계획
+
 - 기존 Hook 유지로 빠른 롤백 가능
 - Feature Flag로 즉시 전환 가능
 - 모니터링 알림 설정
@@ -170,3 +215,75 @@ const useReactQuery = process.env.NEXT_PUBLIC_USE_REACT_QUERY === "true";
 ---
 
 **목표**: 안정적이고 성능이 우수한 React Query 마이그레이션을 통해 개발자 경험과 사용자 경험 모두 향상
+
+## 🎯 현재 마이그레이션 상태
+
+### ✅ 완료된 작업
+
+1. **기반 구조 설정**
+
+   - React Query v5 설치 및 설정
+   - QueryProvider 및 DevTools 설정
+   - 글로벌 에러 핸들러 (이벤트 기반)
+   - 인증 연동 유틸리티
+
+2. **핵심 Hook 마이그레이션**
+
+   - `useFarmVisitorsQuery`: 방문자 통계 및 데이터 조회
+   - `useFarmsQuery`: 농장 목록 조회
+   - `useFarmMembersQuery`: 농장 멤버 관리
+
+3. **서비스 페이지 적용**
+
+   - 대시보드 페이지 (`/admin/dashboard`)
+   - 방문자 페이지 (`/admin/visitors`)
+   - 농장별 방문자 페이지 (`/admin/farms/[farmId]/visitors`)
+   - 농장별 멤버 페이지 (`/admin/farms/[farmId]/members`)
+   - Feature Flag 기반 점진적 전환 (`NEXT_PUBLIC_USE_REACT_QUERY`)
+
+4. **에러 처리 및 UX**
+   - 글로벌 에러 처리 (React Query v5 이벤트 기반)
+   - 컴포넌트별 에러 상태 표시
+   - 유명 웹서비스 사례 참고 (Netflix, Airbnb 등)
+   - UI에 현재 데이터 페칭 모드 표시
+
+### 🔄 다음 단계 계획
+
+1. **실제 서비스 페이지에 필터 적용**
+
+   - 방문자 페이지에 새로운 필터링 Hook 적용
+   - 기존 Zustand Store 필터와 React Query 필터 병행 사용
+   - Feature Flag로 점진적 전환
+
+2. **Infinite Query 구현**
+
+   - 무한 스크롤 방문자 목록
+   - 페이지네이션 최적화
+   - 성능 향상
+
+3. **Background Sync**
+
+   - 오프라인 지원
+   - 백그라운드 데이터 동기화
+   - 네트워크 재연결 시 자동 동기화
+
+4. **Cache Invalidation 전략**
+
+   - 스마트 캐시 무효화
+   - 연관 데이터 자동 업데이트
+   - 메모리 최적화
+
+5. **성능 최적화**
+   - Query Key 체계 최적화
+   - 불필요한 Store 코드 정리
+   - DevTools 모니터링 및 최적화
+
+### 📊 마이그레이션 진행률
+
+- 📊 **Query Hook**: 95% 완료
+- 🎯 **서비스 페이지**: 80% 완료
+- 🔄 **Mutation Hook**: 95% 완료
+- 🚀 **고급 기능**: 70% 완료
+- 🧹 **코드 정리**: 10% 완료
+
+**전체 진행률**: 약 **85%** 완료

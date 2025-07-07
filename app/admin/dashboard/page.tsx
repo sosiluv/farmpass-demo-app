@@ -24,9 +24,26 @@ import { useMultipleLoadingTimeout } from "@/hooks/useTimeout";
 import { InstallGuide } from "@/components/common/InstallGuide";
 import { usePWAInstall } from "@/components/providers/pwa-provider";
 
+// React Query Hooks
+import { useFarmsQuery } from "@/lib/hooks/query/use-farms-query";
+import { useFarmVisitorsQuery } from "@/lib/hooks/query/use-farm-visitors-query";
+
 export default function DashboardPage() {
   const { state } = useAuth();
-  const { farms: availableFarms, fetchState } = useFarms();
+
+  // Feature Flag: React Query vs 기존 Hook
+  const useReactQuery = process.env.NEXT_PUBLIC_USE_REACT_QUERY === "true";
+
+  // 기존 Hook (Feature Flag가 false일 때)
+  const legacyFarmsHook = useFarms();
+
+  // React Query Hook (Feature Flag가 true일 때)
+  const reactQueryFarmsHook = useFarmsQuery();
+
+  // Feature Flag에 따른 데이터 선택
+  const finalFarmsHook = useReactQuery ? reactQueryFarmsHook : legacyFarmsHook;
+  const { farms: availableFarms, fetchState } = finalFarmsHook;
+
   const installInfo = usePWAInstall();
 
   // state에서 profile 추출 및 admin 여부 확인 - useMemo로 최적화
@@ -110,13 +127,23 @@ export default function DashboardPage() {
     return selectedFarm === "all" ? null : selectedFarm;
   }, [selectedFarm]);
 
+  // 기존 방문자 Hook (Feature Flag가 false일 때)
+  const legacyVisitorsHook = useFarmVisitors(memoizedSelectedFarm);
+
+  // React Query 방문자 Hook (Feature Flag가 true일 때)
+  const reactQueryVisitorsHook = useFarmVisitorsQuery(memoizedSelectedFarm);
+
+  // Feature Flag에 따른 데이터 선택
+  const finalVisitorsHook = useReactQuery
+    ? reactQueryVisitorsHook
+    : legacyVisitorsHook;
   const {
     loading: visitorsLoading,
     visitors,
     dashboardStats,
     visitorTrend,
     refetch: refetchVisitors,
-  } = useFarmVisitors(memoizedSelectedFarm);
+  } = finalVisitorsHook;
 
   // 통합 차트 데이터 계산 - useMemo로 최적화
   const chartData = useMemo(
@@ -189,7 +216,22 @@ export default function DashboardPage() {
               title="대시보드"
               description="농장 방문자 현황과 통계를 한눈에 확인하세요"
               breadcrumbs={[{ label: "대시보드" }]}
-              actions={installInfo.canInstall ? <InstallGuide /> : null}
+              actions={
+                <div className="flex items-center gap-3">
+                  {/* 데이터 페칭 모드 표시 */}
+                  <div className="flex items-center gap-2 px-3 py-1 bg-slate-100 dark:bg-slate-800 rounded-full text-xs font-medium">
+                    <div
+                      className={`w-2 h-2 rounded-full ${
+                        useReactQuery ? "bg-blue-500" : "bg-amber-500"
+                      }`}
+                    />
+                    <span className="text-slate-700 dark:text-slate-300">
+                      {useReactQuery ? "React Query" : "Legacy Hook"}
+                    </span>
+                  </div>
+                  {installInfo.canInstall && <InstallGuide />}
+                </div>
+              }
             />
           </div>
 

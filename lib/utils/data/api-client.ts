@@ -69,6 +69,17 @@ export async function apiClient(input: RequestInfo, init?: ApiClientOptions) {
       throw error;
     }
 
+    // 204 No Content 응답 처리 (body가 없음)
+    if (response.status === 204) {
+      return { success: true };
+    }
+
+    // Content-Length가 0이거나 빈 응답 처리
+    const contentLength = response.headers.get("content-length");
+    if (contentLength === "0") {
+      return { success: true };
+    }
+
     return response.json();
   } catch (error) {
     // 네트워크 에러나 JSON 파싱 에러는 여기서 처리

@@ -7,7 +7,6 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { UserPlus } from "lucide-react";
-import { supabase } from "@/lib/supabase/client";
 import { devLog } from "@/lib/utils/logging/dev-logger";
 import {
   AddMemberDialogHeader,
@@ -18,11 +17,13 @@ import {
 interface AddMemberDialogProps {
   canManageMembers: boolean;
   onAddMember: (email: string, role: "manager" | "viewer") => Promise<void>;
+  farmId: string; // farmId 추가
 }
 
 export function AddMemberDialog({
   canManageMembers,
   onAddMember,
+  farmId,
 }: AddMemberDialogProps) {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [email, setEmail] = useState("");
@@ -34,33 +35,45 @@ export function AddMemberDialog({
   // 사용자 검색 기능
   useEffect(() => {
     const searchUsers = async () => {
-      if (!searchTerm.trim()) {
+      // 최소 2글자부터 검색 (이메일 검색의 경우 적절한 최소 길이)
+      if (!searchTerm.trim() || searchTerm.length < 2) {
         setAvailableUsers([]);
         return;
       }
 
       try {
-        const { data: users, error } = await supabase
-          .from("profiles")
-          .select("id, email, name")
-          .ilike("email", `%${searchTerm}%`)
-          .limit(5);
+        // API 라우트를 통해 사용자 검색 (농장 구성원 제외)
+        const response = await fetch(
+          `/api/users/search?q=${encodeURIComponent(
+            searchTerm
+          )}&farmId=${farmId}`,
+          {
+            method: "GET",
+            credentials: "include",
+          }
+        );
 
-        if (error) throw error;
-        setAvailableUsers(users || []);
+        if (response.ok) {
+          const searchResult = await response.json();
+          setAvailableUsers(searchResult.users || []);
+        } else {
+          throw new Error("사용자 검색 API 호출 실패");
+        }
       } catch (error) {
-        devLog.error("사용자 검색 오류:", error);
+        devLog.error("사용자 검색 실패:", error);
+        setAvailableUsers([]);
       }
     };
 
     const debounceTimer = setTimeout(searchUsers, 300);
     return () => clearTimeout(debounceTimer);
-  }, [searchTerm]);
+  }, [searchTerm, farmId]);
 
   // 사용자 선택 핸들러
   const handleUserSelect = useCallback((user: any) => {
     setEmail(user.email);
     setSearchTerm(user.email);
+    // 검색 결과를 즉시 숨김
     setAvailableUsers([]);
   }, []);
 

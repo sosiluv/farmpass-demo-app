@@ -21,7 +21,7 @@ export function AddMemberEmailField({
       <Label className="text-xs sm:text-sm">이메일</Label>
       <div className="relative">
         <Input
-          placeholder="이메일 주소 입력"
+          placeholder="이메일 주소 입력 (최소 2글자)"
           value={searchTerm}
           onChange={(e) => onSearchTermChange(e.target.value)}
           className="h-8 sm:h-9 md:h-10 text-xs sm:text-sm"
@@ -41,8 +41,12 @@ export function AddMemberEmailField({
             {(availableUsers || []).map((user) => (
               <div
                 key={user.id}
-                className="p-2 sm:p-3 hover:bg-gray-100 cursor-pointer border-b last:border-b-0"
-                onClick={() => onUserSelect(user)}
+                className="p-2 sm:p-3 hover:bg-gray-100 cursor-pointer border-b last:border-b-0 transition-colors duration-150"
+                onClick={() => {
+                  onUserSelect(user);
+                  // input에서 포커스 제거
+                  (document.activeElement as HTMLElement)?.blur();
+                }}
               >
                 <div className="font-medium text-xs sm:text-sm text-gray-500 truncate">
                   {user.name}

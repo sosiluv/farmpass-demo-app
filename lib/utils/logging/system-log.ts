@@ -63,11 +63,6 @@ const LOG_LEVEL_PRIORITY: Record<LogLevel, number> = {
 async function validateConfig() {
   if (!isConfigValidated) {
     isConfigValidated = validateServiceRoleConfig();
-    if (!isConfigValidated) {
-      devLog.warn(
-        "Service Role 환경 변수가 설정되지 않아 로깅이 비활성화됩니다."
-      );
-    }
   }
   return isConfigValidated;
 }

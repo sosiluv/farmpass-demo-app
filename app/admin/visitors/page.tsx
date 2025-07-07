@@ -2,13 +2,8 @@
 
 import { useAuth } from "@/components/providers/auth-provider";
 import { StatsSkeleton, TableSkeleton } from "@/components/common/skeletons";
-import {
-  useVisitors,
-  useVisitorFiltersStore,
-  useVisitorStore,
-} from "@/store/use-visitor-store";
+import { useVisitorFiltersStore } from "@/store/use-visitor-store";
 import type { Farm } from "@/lib/types/visitor";
-import { useFarms } from "@/lib/hooks/use-farms";
 import {
   VisitorTable,
   VisitorFilters,
@@ -16,15 +11,16 @@ import {
   VisitorExportRefactored,
 } from "@/components/admin/visitors";
 import { PageHeader } from "@/components/layout";
-import { useMemo, useEffect, useCallback } from "react";
+import { useMemo, useEffect } from "react";
 import { useVisitorActions } from "@/hooks/useVisitorActions";
-import { calculateVisitorStats } from "@/lib/utils/data/common-stats";
 import { generateVisitorPageStats } from "@/lib/utils/data/common-stats";
 import { ErrorBoundary } from "@/components/error/error-boundary";
 import { ResponsivePagination } from "@/components/common/responsive-pagination";
-import { AdminError } from "@/components/error/admin-error";
-import { useDataFetchTimeout } from "@/hooks/useTimeout";
 import { useCommonToast } from "@/lib/utils/notification/toast-messages";
+
+// React Query Hooks
+import { useFarmsQuery } from "@/lib/hooks/query/use-farms-query";
+import { useFarmVisitorsWithFiltersQuery } from "@/lib/hooks/query/use-farm-visitors-filtered-query";
 
 /**
  * 방문자 기록 조회 페이지
@@ -40,30 +36,8 @@ export default function VisitorsPage() {
   const isAdmin = profile?.account_type === "admin";
   const { showWarning, showSuccess, showError } = useCommonToast();
 
-  // Store에서 데이터와 액션 가져오기
-  const { visitors, allVisitors, loading, error, fetchVisitors } =
-    useVisitors();
-
-  // 농장 데이터 가져오기
-  const {
-    farms: rawFarms,
-    error: farmsError,
-    successMessage: farmsSuccessMessage,
-    clearMessages: clearFarmsMessages,
-  } = useFarms(profile?.id);
-
-  // Farm 타입 변환 (메모이제이션 최적화)
-  const farms: Farm[] = useMemo(() => {
-    if (!rawFarms || rawFarms.length === 0) return [];
-
-    return (rawFarms || []).map((farm) => ({
-      id: farm.id,
-      farm_name: farm.farm_name,
-      farm_type: farm.farm_type || undefined,
-      farm_address: farm.farm_address,
-      owner_id: farm.owner_id,
-    }));
-  }, [rawFarms]);
+  // React Query Hooks
+  const farmsQuery = useFarmsQuery();
 
   // 필터 Store
   const {
@@ -74,22 +48,48 @@ export default function VisitorsPage() {
     resetFilters,
   } = useVisitorFiltersStore();
 
-  const { reset } = useVisitorStore();
+  // React Query 필터링 Hook
+  const visitorsFilteredQuery = useFarmVisitorsWithFiltersQuery({
+    farmId: filters.farmId || null,
+    searchTerm: filters.searchTerm || "",
+    dateRange: filters.dateRange || "all",
+    dateStart: filters.dateStart || undefined,
+    dateEnd: filters.dateEnd || undefined,
+  });
 
-  // 농장 관련 토스트 처리
-  useEffect(() => {
-    if (farmsError) {
-      showError("오류", farmsError);
-      clearFarmsMessages();
-    }
-  }, [farmsError, showError, clearFarmsMessages]);
+  // 데이터 선택
+  const farms = farmsQuery.farms || [];
+  const visitors = visitorsFilteredQuery.visitors || [];
+  const allVisitors = visitorsFilteredQuery.allVisitors || [];
+  const loading = visitorsFilteredQuery.loading || farmsQuery.loading;
+  const error = visitorsFilteredQuery.error || farmsQuery.error;
 
+  // Farm 타입 변환
+  const typedFarms: Farm[] = useMemo(() => {
+    if (!farms || farms.length === 0) return [];
+
+    return farms.map((farm) => ({
+      id: farm.id,
+      farm_name: farm.farm_name,
+      farm_type: farm.farm_type || undefined,
+      farm_address: farm.farm_address,
+      owner_id: farm.owner_id,
+    }));
+  }, [farms]);
+
+  // 에러 처리
   useEffect(() => {
-    if (farmsSuccessMessage) {
-      showSuccess("성공", farmsSuccessMessage);
-      clearFarmsMessages();
+    if (error) {
+      showError(
+        "오류",
+        error instanceof Error
+          ? error.message
+          : typeof error === "string"
+          ? error
+          : "데이터를 불러오지 못했습니다."
+      );
     }
-  }, [farmsSuccessMessage, showSuccess, clearFarmsMessages]);
+  }, [error, showError]);
 
   /**
    * 커스텀 날짜 초기화 핸들러
@@ -100,7 +100,7 @@ export default function VisitorsPage() {
 
   // 공통 방문자 액션 훅 사용
   const { handleEdit, handleDelete, handleExport } = useVisitorActions({
-    farms: (farms || []).map((farm) => ({
+    farms: typedFarms.map((farm) => ({
       id: farm.id,
       farm_name: farm.farm_name,
       description: null,
@@ -116,39 +116,20 @@ export default function VisitorsPage() {
     })),
     isAdmin,
     profileId: profile?.id,
+    allVisitors: allVisitors.map((v) => ({
+      ...v,
+      registered_by: v.registered_by || undefined,
+    })),
   });
 
-  // 방문자 데이터 로드 함수 (useCallback으로 메모이제이션)
-  const loadVisitors = useCallback(() => {
-    if (profile?.id) {
-      fetchVisitors({ includeAllFarms: isAdmin });
-    }
-  }, [fetchVisitors, isAdmin, profile?.id]);
-
-  // 컴포넌트 마운트 시 데이터 로드 (의존성 최적화)
-  useEffect(() => {
-    reset();
-    loadVisitors();
-  }, [reset, loadVisitors]);
-
-  // 타임아웃 관리
-  const { timeoutReached, retry } = useDataFetchTimeout(loading, loadVisitors, {
-    timeout: 10000,
-  });
-
-  // 통계 계산 (메모이제이션)
-  const visitorStats = useMemo(() => {
-    return calculateVisitorStats({ visitors: allVisitors });
-  }, [allVisitors]);
-
-  // 통계 카드용 데이터 생성 (메모이제이션)
+  // 통계 계산
   const statsForCards = useMemo(() => {
     return generateVisitorPageStats(allVisitors, {
       showFarmCount: true,
       showDisinfectionRate: true,
-      totalFarms: farms.length,
+      totalFarms: typedFarms.length,
     });
-  }, [allVisitors, farms.length]);
+  }, [allVisitors, typedFarms.length]);
 
   // 정렬 함수 (최신순)
   const sortFn = useMemo(() => {
@@ -157,39 +138,15 @@ export default function VisitorsPage() {
       new Date(a.visit_datetime).getTime();
   }, []);
 
-  // 필터 카운트 계산 (메모이제이션)
+  // 필터 카운트 계산
   const activeFiltersCount = useMemo(() => {
     return (
       (filters.searchTerm ? 1 : 0) +
       (filters.farmId ? 1 : 0) +
       (filters.dateStart ? 1 : 0) +
-      (filters.dateEnd ? 1 : 0) +
-      (filters.disinfectionCheck !== undefined ? 1 : 0) +
-      (filters.consentGiven !== undefined ? 1 : 0)
+      (filters.dateEnd ? 1 : 0)
     );
-  }, [
-    filters.searchTerm,
-    filters.farmId,
-    filters.dateStart,
-    filters.dateEnd,
-    filters.disinfectionCheck,
-    filters.consentGiven,
-  ]);
-
-  if (timeoutReached) {
-    showWarning(
-      "데이터 로딩 지연",
-      "네트워크 상태를 확인하거나 다시 시도해 주세요."
-    );
-    return (
-      <AdminError
-        title="데이터를 불러오지 못했습니다"
-        description="네트워크 상태를 확인하거나 다시 시도해 주세요."
-        retry={retry}
-        error={new Error("Timeout: 데이터 로딩 10초 초과")}
-      />
-    );
-  }
+  }, [filters.searchTerm, filters.farmId, filters.dateStart, filters.dateEnd]);
 
   if (loading) {
     return (
@@ -218,7 +175,7 @@ export default function VisitorsPage() {
           ]}
           actions={
             <VisitorExportRefactored
-              farms={(farms || []).map((farm) => ({
+              farms={typedFarms.map((farm) => ({
                 id: farm.id,
                 farm_name: farm.farm_name,
                 farm_type: farm.farm_type || null,
@@ -274,7 +231,7 @@ export default function VisitorsPage() {
             setCustomDateRange(currentStart, date);
           }}
           onClearCustomDates={handleClearCustomDates}
-          farms={farms}
+          farms={typedFarms}
           activeFiltersCount={activeFiltersCount}
           filteredCount={visitors.length}
           totalCount={allVisitors.length}
@@ -283,16 +240,6 @@ export default function VisitorsPage() {
           showAllOption={isAdmin}
           isAdmin={isAdmin}
         />
-
-        {/* 방문자 목록 */}
-        {/* <VisitorVirtualizedTable
-          visitors={visitors}
-          farms={farms}
-          sortFn={sortFn}
-          onEdit={handleEdit}
-          onDelete={handleDelete}
-          isAdmin={isAdmin}
-        /> */}
 
         {/* 방문자 테이블 (페이징 적용) */}
         <ResponsivePagination
@@ -303,7 +250,7 @@ export default function VisitorsPage() {
           {({ paginatedData, isLoadingMore, hasMore }) => (
             <VisitorTable
               visitors={paginatedData}
-              showFarmColumn={isAdmin || farms.length > 1} // 관리자이거나 농장이 여러 개인 경우 농장 컬럼 표시
+              showFarmColumn={isAdmin || typedFarms.length > 1} // 관리자이거나 농장이 여러 개인 경우 농장 컬럼 표시
               loading={loading}
               isAdmin={isAdmin}
               onEdit={handleEdit}

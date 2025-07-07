@@ -2,16 +2,26 @@ import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { RoleBadge, UserRole } from "@/components/user/role-badge";
 import { QuickActionButtons } from "@/components/user/quick-action-buttons";
 
-// 이니셜 생성 함수
-function getInitials(name: string): string {
-  if (!name) return "?";
-  return name
-    ? (name.split(" ") || [])
-        .map((part) => part[0])
-        .join("")
-        .toUpperCase()
-        .slice(0, 2)
-    : "?";
+// 이니셜 생성 함수 - 한글/영문 지원, null/빈값 처리 강화
+function getInitials(name: string | null | undefined): string {
+  if (!name || typeof name !== "string" || name.trim() === "") return "?";
+
+  const trimmedName = name.trim();
+  if (trimmedName === "알 수 없음") return "?";
+
+  // 한글인 경우 성과 이름의 첫 글자
+  if (/[가-힣]/.test(trimmedName)) {
+    return trimmedName.length >= 2 ? trimmedName.slice(0, 2) : trimmedName;
+  }
+
+  // 영문인 경우 각 단어의 첫 글자
+  const words = trimmedName.split(/\s+/).filter((word) => word.length > 0);
+  if (words.length === 0) return "?";
+
+  return words
+    .slice(0, 2) // 최대 2개 단어만
+    .map((word) => word.charAt(0).toUpperCase())
+    .join("");
 }
 
 // 역할별 아바타 스타일 설정

@@ -191,10 +191,21 @@ export async function DELETE(
       .single();
 
     if (farmCheckError || !farm) {
+      devLog.error(
+        `Farm not found for deletion: ${params.farmId}`,
+        farmCheckError
+      );
       return NextResponse.json({ error: "Farm not found" }, { status: 404 });
     }
 
+    devLog.log(
+      `Farm ownership check for deletion - Farm: ${params.farmId}, Owner: ${farm.owner_id}, User: ${user.id}`
+    );
+
     if (farm.owner_id !== user.id) {
+      devLog.error(
+        `Unauthorized farm deletion - Farm: ${params.farmId}, Owner: ${farm.owner_id}, User: ${user.id}`
+      );
       return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
     }
 

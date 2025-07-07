@@ -1,11 +1,7 @@
 "use client";
 
-import { useEffect, useState, useRef, useCallback } from "react";
-import { useFarmMembersStore } from "@/store/use-farm-members-store";
-import { useFarms } from "@/lib/hooks/use-farms";
+import { useState, useCallback } from "react";
 import { useCommonToast } from "@/lib/utils/notification/toast-messages";
-import { devLog } from "@/lib/utils/logging/dev-logger";
-import { supabase } from "@/lib/supabase/client";
 import { useAuth } from "@/components/providers/auth-provider";
 import {
   MembersPageHeader,
@@ -13,9 +9,20 @@ import {
   DeleteMemberDialog,
 } from "@/components/admin/farms/members";
 import { ErrorBoundary } from "@/components/error/error-boundary";
-import { CardSkeleton } from "@/components/common/skeletons";
+import { StatsSkeleton, TableSkeleton } from "@/components/common/skeletons";
 import { AdminError } from "@/components/error/admin-error";
 import { useDataFetchTimeout } from "@/hooks/useTimeout";
+
+// React Query Hooks
+import { useFarmsQuery } from "@/lib/hooks/query/use-farms-query";
+import { useFarmMembersQuery } from "@/lib/hooks/query/use-farm-members-query";
+
+// React Query Mutations
+import {
+  useInviteMemberMutation,
+  useUpdateMemberRoleMutation,
+  useRemoveMemberMutation,
+} from "@/lib/hooks/query/use-farm-member-mutations";
 
 interface PageProps {
   params: {
@@ -28,89 +35,52 @@ export default function MembersPage({ params }: PageProps) {
   const { state } = useAuth();
   const user = state.status === "authenticated" ? state.user : null;
   const { showInfo, showSuccess, showError } = useCommonToast();
-  const {
-    farms,
-    fetchState,
-    error: farmsError,
-    successMessage: farmsSuccessMessage,
-    clearMessages: clearFarmsMessages,
-  } = useFarms(user?.id);
-  const {
-    members,
-    loading,
-    fetchMembers,
-    addMember,
-    updateMemberRole,
-    removeMember,
-    refetch,
-  } = useFarmMembersStore();
+
+  // React Query Hooks
+  const farmsQuery = useFarmsQuery();
+  const membersQuery = useFarmMembersQuery(farmId);
+
+  // React Query Mutations
+  const inviteMemberMutation = useInviteMemberMutation();
+  const updateMemberRoleMutation = useUpdateMemberRoleMutation();
+  const removeMemberMutation = useRemoveMemberMutation();
+
+  // 데이터 선택
+  const farms = farmsQuery.farms || [];
+  const members = membersQuery.members || [];
+  const membersLoading = membersQuery.loading;
+  const farmsLoading = farmsQuery.loading;
 
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [memberToDelete, setMemberToDelete] = useState<string | null>(null);
-  const [isInitialized, setIsInitialized] = useState(false);
-  const lastFetchedFarmId = useRef<string | null>(null);
 
-  // 농장 관련 토스트 처리
-  useEffect(() => {
-    if (farmsError) {
-      showError("오류", farmsError);
-      clearFarmsMessages();
-    }
-  }, [farmsError, showError, clearFarmsMessages]);
-
-  useEffect(() => {
-    if (farmsSuccessMessage) {
-      showSuccess("성공", farmsSuccessMessage);
-      clearFarmsMessages();
-    }
-  }, [farmsSuccessMessage, showSuccess, clearFarmsMessages]);
-
-  // 타임아웃 관리 - refetch 함수 사용
+  // 타임아웃 관리
   const { timeoutReached, retry } = useDataFetchTimeout(
-    loading || fetchState.loading,
-    refetch,
+    membersLoading || farmsLoading,
+    () => {
+      farmsQuery.refetch();
+      membersQuery.refetch();
+    },
     { timeout: 10000 }
   );
 
   const farm = farms.find((f) => f.id === farmId);
 
-  // 현재 사용자가 농장 소유자 또는 관리자인지 확인 (메모이제이션)
+  // 현재 사용자가 농장 소유자 또는 관리자인지 확인
   const canManageMembers = useCallback(() => {
     if (!user || !farm) return false;
 
     return (
       farm.owner_id === user.id ||
       members.some(
-        (member) => member.user_id === user.id && member.role === "manager"
+        (member) =>
+          member.user_id === user.id &&
+          (member.role === "owner" || member.role === "manager")
       )
     );
   }, [user, farm, members]);
 
-  // 초기 데이터 로드 (한 번만 실행)
-  useEffect(() => {
-    if (!isInitialized && farmId && !fetchState.loading && user?.id) {
-      const loadMembers = async () => {
-        try {
-          await fetchMembers(farmId);
-          lastFetchedFarmId.current = farmId;
-          setIsInitialized(true);
-        } catch (error) {
-          devLog.error("Failed to fetch members:", error);
-        }
-      };
-
-      loadMembers();
-    }
-  }, [farmId, isInitialized, fetchState.loading, fetchMembers, user?.id]);
-
-  // farmId 변경 시 초기화
-  useEffect(() => {
-    if (isInitialized && farmId !== lastFetchedFarmId.current) {
-      setIsInitialized(false);
-      lastFetchedFarmId.current = null;
-    }
-  }, [farmId, isInitialized]);
-
+  // 멤버 추가 핸들러
   const handleAddMember = useCallback(
     async (email: string, role: "manager" | "viewer") => {
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -121,7 +91,11 @@ export default function MembersPage({ params }: PageProps) {
 
       try {
         showInfo("구성원 추가 중", `${email}을(를) 추가하는 중입니다...`);
-        await addMember(farmId, email, role);
+        await inviteMemberMutation.mutateAsync({
+          farm_id: farmId,
+          email,
+          role,
+        });
         showSuccess(
           "구성원 추가 완료",
           `${email}이 ${
@@ -133,19 +107,23 @@ export default function MembersPage({ params }: PageProps) {
         if (error.message) {
           errorMessage = error.message;
         }
-
         showError("구성원 추가 실패", errorMessage);
-        throw error; // 다이얼로그에서 처리하기 위해 에러를 다시 던짐
+        throw error;
       }
     },
-    [farmId, addMember, showInfo, showSuccess]
+    [farmId, inviteMemberMutation, showInfo, showSuccess, showError]
   );
 
+  // 역할 변경 핸들러
   const handleRoleChange = useCallback(
     async (memberId: string, newRole: "manager" | "viewer") => {
       try {
         showInfo("권한 변경 중", "구성원 권한을 변경하는 중입니다...");
-        await updateMemberRole(farmId, memberId, newRole);
+        await updateMemberRoleMutation.mutateAsync({
+          farm_id: farmId,
+          member_id: memberId,
+          role: newRole,
+        });
         showSuccess(
           "권한 변경 완료",
           `구성원 권한이 ${
@@ -159,15 +137,19 @@ export default function MembersPage({ params }: PageProps) {
         );
       }
     },
-    [farmId, updateMemberRole, showInfo, showSuccess]
+    [farmId, updateMemberRoleMutation, showInfo, showSuccess, showError]
   );
 
+  // 멤버 삭제 핸들러
   const handleDelete = useCallback(async () => {
     if (!memberToDelete) return;
 
     try {
       showInfo("구성원 삭제 중", "구성원을 삭제하는 중입니다...");
-      await removeMember(farmId, memberToDelete);
+      await removeMemberMutation.mutateAsync({
+        farmId: farmId,
+        memberId: memberToDelete,
+      });
       setDeleteDialogOpen(false);
       setMemberToDelete(null);
       showSuccess("구성원 삭제 완료", "구성원이 삭제되었습니다.");
@@ -177,7 +159,14 @@ export default function MembersPage({ params }: PageProps) {
         error.message || "구성원 삭제에 실패했습니다."
       );
     }
-  }, [farmId, memberToDelete, removeMember, showInfo, showSuccess]);
+  }, [
+    farmId,
+    memberToDelete,
+    removeMemberMutation,
+    showInfo,
+    showSuccess,
+    showError,
+  ]);
 
   const handleDeleteRequest = useCallback((id: string) => {
     setMemberToDelete(id);
@@ -196,20 +185,18 @@ export default function MembersPage({ params }: PageProps) {
     );
   }
 
-  // 로딩 상태 처리 (farms 로딩도 포함)
-  if (loading || fetchState.loading || !farm) {
+  // 로딩 상태 처리
+  if (membersLoading || farmsLoading || !farm) {
     return (
       <div className="flex-1 space-y-3 sm:space-y-4 md:space-y-6 p-2 sm:p-4 md:p-6 lg:p-8 pt-3 sm:pt-4 md:pt-6">
-        <CardSkeleton
-          count={3}
-          className="grid-cols-1 md:grid-cols-2 lg:grid-cols-3"
-        />
+        <StatsSkeleton columns={3} />
+        <TableSkeleton rows={5} columns={4} />
       </div>
     );
   }
 
-  // farms 로딩이 완료되었지만 해당 농장을 찾을 수 없는 경우
-  if (!fetchState.loading && farms.length > 0 && !farm) {
+  // 농장을 찾을 수 없는 경우
+  if (!farmsLoading && farms.length > 0 && !farm) {
     const farmExists = farms.some((f) => f.id === farmId);
     if (!farmExists) {
       return (
@@ -237,7 +224,7 @@ export default function MembersPage({ params }: PageProps) {
 
         <MembersList
           members={members}
-          loading={loading}
+          loading={membersLoading}
           canManageMembers={canManageMembers()}
           onDelete={handleDeleteRequest}
           onRoleChange={handleRoleChange}
