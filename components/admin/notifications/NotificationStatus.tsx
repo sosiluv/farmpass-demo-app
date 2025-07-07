@@ -1,3 +1,0 @@
-{(farms || []).map((farm) => (
-  // ... existing code ...
-))} 
