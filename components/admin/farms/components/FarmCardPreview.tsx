@@ -1,5 +1,5 @@
 import { FarmMembersPreview } from "../members/farm-members-preview";
-import type { MemberWithProfile } from "@/lib/hooks/use-farm-members-preview-safe";
+import type { MemberWithProfile } from "@/lib/types/farm";
 
 interface FarmMembersData {
   count: number;

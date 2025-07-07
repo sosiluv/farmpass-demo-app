@@ -5,7 +5,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import type { Farm } from "@/lib/hooks/use-farms";
+import type { Farm } from "@/lib/types/farm";
 
 interface FarmSelectorProps {
   selectedFarm: string;

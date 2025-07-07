@@ -67,13 +67,23 @@ dev (메인 개발 브랜치)
   - [x] 스마트 캐시 무효화 헬퍼 함수들
   - [x] 연관 데이터 자동 무효화
 
-### Phase 5: 성능 최적화 및 정리 🔄
+### Phase 5: 성능 최적화 및 정리 ✅
 
 - [x] Query Key 체계 최적화
 - [x] DevTools 활용 모니터링 설정
-- [ ] 불필요한 Zustand Store 제거
+- [x] 불필요한 Zustand Store 제거
+- [x] 테스트 컴포넌트 및 페이지 정리
+- [x] 공통 타입 정의 분리
+- [x] Feature Flag 제거 및 완전 마이그레이션
 - [ ] 성능 측정 및 벤치마크
 - [ ] 프로덕션 배포 준비
+
+### Phase 6: 최종 정리 및 문서화 🔄
+
+- [ ] 사용하지 않는 Hook 파일 정리
+- [ ] 타입 정의 통합 및 최적화
+- [ ] 성능 벤치마크 실제 데이터 테스트
+- [ ] 사용자 가이드 작성
 
 ## 🔄 마이그레이션 방법
 
@@ -229,67 +239,50 @@ const useReactQuery = process.env.NEXT_PUBLIC_USE_REACT_QUERY === "true";
 
 **목표**: 안정적이고 성능이 우수한 React Query 마이그레이션을 통해 개발자 경험과 사용자 경험 모두 향상
 
-## 🎯 현재 마이그레이션 상태
+## � 마이그레이션 완료 현황
 
-### ✅ 완료된 작업
+### ✅ 완료된 작업 (97%)
 
 1. **기반 구조 설정**
-
    - React Query v5 설치 및 설정
    - QueryProvider 및 DevTools 설정
    - 글로벌 에러 핸들러 (이벤트 기반)
    - 인증 연동 유틸리티
 
 2. **핵심 Hook 마이그레이션**
-
    - `useFarmVisitorsQuery`: 방문자 통계 및 데이터 조회
    - `useFarmsQuery`: 농장 목록 조회
    - `useFarmMembersQuery`: 농장 멤버 관리
 
 3. **서비스 페이지 적용**
-
-   - 대시보드 페이지 (`/admin/dashboard`)
+   - 대시보드 페이지 (`/admin/dashboard`) - Feature Flag 제거 완료
    - 방문자 페이지 (`/admin/visitors`)
    - 농장별 방문자 페이지 (`/admin/farms/[farmId]/visitors`)
    - 농장별 멤버 페이지 (`/admin/farms/[farmId]/members`)
-   - Feature Flag 기반 점진적 전환 (`NEXT_PUBLIC_USE_REACT_QUERY`)
+   - 농장 목록 페이지 (`/admin/farms`) - 개별 컴포넌트 데이터 로딩
 
-4. **에러 처리 및 UX**
-   - 글로벌 에러 처리 (React Query v5 이벤트 기반)
-   - 컴포넌트별 에러 상태 표시
-   - 유명 웹서비스 사례 참고 (Netflix, Airbnb 등)
-   - UI에 현재 데이터 페칭 모드 표시
+4. **고급 기능 구현**
+   - Infinite Query (무한 스크롤)
+   - Background Sync 및 실시간 동기화
+   - Query Key 표준화 체계
+   - Cache Invalidation 전략
 
-### 🔄 다음 단계 계획
+5. **코드 정리 및 최적화**
+   - 테스트 컴포넌트 및 페이지 정리
+   - 공통 타입 정의 분리 (`lib/types/farm.ts`)
+   - Feature Flag 제거
+   - 레이아웃 컴포넌트들 React Query 전환
 
-1. **실제 서비스 페이지에 필터 적용**
+### 🔄 남은 작업 (3%)
 
-   - 방문자 페이지에 새로운 필터링 Hook 적용
-   - 기존 Zustand Store 필터와 React Query 필터 병행 사용
-   - Feature Flag로 점진적 전환
+1. **최종 정리**
+   - [ ] 사용하지 않는 기존 Hook 파일들 정리
+   - [ ] 타입 정의 통합 완료
+   - [ ] 성능 벤치마크 실제 데이터 테스트
 
-2. **Infinite Query 구현**
-
-   - 무한 스크롤 방문자 목록
-   - 페이지네이션 최적화
-   - 성능 향상
-
-3. **Background Sync**
-
-   - 오프라인 지원
-   - 백그라운드 데이터 동기화
-   - 네트워크 재연결 시 자동 동기화
-
-4. **Cache Invalidation 전략**
-
-   - 스마트 캐시 무효화
-   - 연관 데이터 자동 업데이트
-   - 메모리 최적화
-
-5. **성능 최적화**
-   - Query Key 체계 최적화
-   - 불필요한 Store 코드 정리
-   - DevTools 모니터링 및 최적화
+2. **문서화**
+   - [ ] 사용자 가이드 작성
+   - [ ] API 문서 업데이트
 
 ### 📊 마이그레이션 진행률
 
@@ -297,9 +290,9 @@ const useReactQuery = process.env.NEXT_PUBLIC_USE_REACT_QUERY === "true";
 - 🎯 **서비스 페이지**: 100% 완료
 - 🔄 **Mutation Hook**: 100% 완료
 - 🚀 **고급 기능**: 100% 완료
-- 🧹 **코드 정리**: 30% 진행중
+- 🧹 **코드 정리**: 85% 완료
 
-**전체 진행률**: 약 **95%** 완료
+**전체 진행률**: 약 **97%** 완료
 
 ## 🎉 다음 단계 작업
 

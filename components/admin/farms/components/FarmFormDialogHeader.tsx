@@ -3,7 +3,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import type { Farm } from "@/lib/hooks/use-farms";
+import type { Farm } from "@/lib/types/farm";
 
 interface FarmFormDialogHeaderProps {
   editingFarm: Farm | null;

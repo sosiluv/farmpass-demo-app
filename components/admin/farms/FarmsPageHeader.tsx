@@ -1,6 +1,6 @@
 import { PageHeader } from "@/components/layout";
 import { FarmFormDialog } from "./FarmFormDialog";
-import type { Farm } from "@/lib/hooks/use-farms";
+import type { Farm } from "@/lib/types/farm";
 import type { FarmFormValues } from "@/lib/utils/validation";
 
 interface FarmsPageHeaderProps {

@@ -11,7 +11,7 @@ import {
   getFarmTypeIcon,
   getFarmTypeColor,
 } from "@/lib/constants/farm-types";
-import type { Farm } from "@/lib/hooks/use-farms";
+import type { Farm } from "@/lib/types/farm";
 
 interface FarmCardHeaderProps {
   farm: Farm;

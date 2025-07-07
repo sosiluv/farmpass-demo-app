@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Form } from "@/components/ui/form";
 import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
 import { Plus } from "lucide-react";
-import type { Farm } from "@/lib/hooks/use-farms";
+import type { Farm } from "@/lib/types/farm";
 import type { FarmType } from "@/lib/constants/farm-types";
 import {
   FarmFormDialogHeader,
