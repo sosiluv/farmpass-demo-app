@@ -48,7 +48,8 @@ export function useFarmVisitorsWithFiltersQuery(filters: VisitorFilters = {}) {
     async (): Promise<VisitorEntry[]> => {
       let query = supabase
         .from("visitor_entries")
-        .select(`
+        .select(
+          `
           *,
           farms!inner(
             id,
@@ -56,7 +57,8 @@ export function useFarmVisitorsWithFiltersQuery(filters: VisitorFilters = {}) {
             farm_type,
             farm_address
           )
-        `)
+        `
+        )
         .order("visit_datetime", { ascending: false });
 
       // farmId가 있으면 해당 농장의 데이터만 조회
@@ -92,6 +94,11 @@ export function useFarmVisitorsWithFiltersQuery(filters: VisitorFilters = {}) {
         purposeStats: [],
         weekdayStats: [],
         revisitStats: [],
+        topPurpose: {
+          purpose: "데이터 없음",
+          count: 0,
+          percentage: 0,
+        },
         dashboardStats: {
           totalVisitors: 0,
           todayVisitors: 0,
@@ -189,6 +196,12 @@ export function useFarmVisitorsWithFiltersQuery(filters: VisitorFilters = {}) {
     const weekdayStats = calculateWeekdayStats(compatibleVisitors);
     const revisitStats = calculateRevisitStats(compatibleVisitors);
 
+    // 최다 방문 목적 계산
+    const topPurpose = {
+      purpose: purposeStats[0]?.purpose || "데이터 없음",
+      count: purposeStats[0]?.count || 0,
+      percentage: purposeStats[0]?.percentage || 0,
+    };
     // 30일 트렌드
     const dates = Array.from({ length: 30 }, (_, i) => {
       const date = new Date();
@@ -220,6 +233,7 @@ export function useFarmVisitorsWithFiltersQuery(filters: VisitorFilters = {}) {
       weekdayStats,
       revisitStats,
       dashboardStats,
+      topPurpose,
     };
   }, [visitorsQuery.data, filters]);
 
@@ -232,6 +246,7 @@ export function useFarmVisitorsWithFiltersQuery(filters: VisitorFilters = {}) {
     weekdayStats: computedStats.weekdayStats,
     revisitStats: computedStats.revisitStats,
     dashboardStats: computedStats.dashboardStats,
+    topPurpose: computedStats.topPurpose,
 
     // 상태
     loading: visitorsQuery.isLoading,

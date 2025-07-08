@@ -143,19 +143,22 @@ export function useAdminDashboardQuery() {
         users?.reduce((acc: { role: string; count: number }[], user) => {
           let role = "일반 사용자";
 
-          // 관리자 확인
+          // 시스템 관리자 확인
           if (user.account_type === "admin") {
-            role = "관리자";
+            role = "시스템 관리자";
           }
-          // farm_members 테이블에서 농장주 역할 확인
+          // farm_members 테이블에서 역할 확인
           else if (user.farm_members && user.farm_members.length > 0) {
             const farmMemberRole = user.farm_members[0]?.role;
-            if (farmMemberRole === "owner" || farmMemberRole === "farm_owner") {
+            if (farmMemberRole === "owner") {
               role = "농장주";
+            } else if (farmMemberRole === "manager") {
+              role = "농장 관리자";
+            } else if (farmMemberRole === "viewer") {
+              role = "농장 조회자";
             }
-          } else if (user.account_type === "farm_owner") {
-            role = "농장주";
           }
+          // farm_members에 없고 account_type이 "user"이면 일반 사용자
 
           const existing = acc.find((item) => item.role === role);
           if (existing) {

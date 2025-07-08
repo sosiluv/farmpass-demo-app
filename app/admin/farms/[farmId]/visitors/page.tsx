@@ -62,6 +62,7 @@ export default function FarmVisitorsPage() {
   const farms = farmsQuery.farms || [];
   const visitors = visitorsFilteredQuery.visitors || [];
   const allVisitors = visitorsFilteredQuery.allVisitors || [];
+  const topPurpose = visitorsFilteredQuery.topPurpose;
   const loading = visitorsFilteredQuery.loading || farmsQuery.loading;
   const error = visitorsFilteredQuery.error || farmsQuery.error;
 
@@ -125,29 +126,6 @@ export default function FarmVisitorsPage() {
     return generateFarmVisitorPageStats(allVisitors, {
       showDisinfectionRate: true,
     });
-  }, [allVisitors]);
-
-  // 최다 방문 목적 계산
-  const topPurpose = useMemo(() => {
-    if (!allVisitors.length) return null;
-
-    const purposeCount: Record<string, number> = {};
-    allVisitors.forEach((visitor) => {
-      const purpose = visitor.visitor_purpose || "기타";
-      purposeCount[purpose] = (purposeCount[purpose] || 0) + 1;
-    });
-
-    const sorted = Object.entries(purposeCount).sort(([, a], [, b]) => b - a);
-    if (sorted.length === 0) return null;
-
-    const [topPurposeName, count] = sorted[0];
-    const percentage = Math.round((count / allVisitors.length) * 100);
-
-    return {
-      purpose: topPurposeName,
-      count,
-      percentage,
-    };
   }, [allVisitors]);
 
   // 커스텀 날짜 초기화 핸들러
