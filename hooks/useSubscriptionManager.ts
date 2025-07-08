@@ -2,6 +2,8 @@ import { useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { devLog } from "@/lib/utils/logging/dev-logger";
 import { handleError } from "@/lib/utils/error";
+import { useQueryClient } from "@tanstack/react-query";
+import { apiClient } from "@/lib/utils/data/api-client";
 
 // React Query Hooks
 import {
@@ -10,17 +12,46 @@ import {
   useDeleteSubscriptionMutation,
   useSubscriptionStatusQuery,
 } from "@/lib/hooks/query/use-push-mutations";
-import { useNotificationSettingsQuery } from "@/lib/hooks/query/use-notification-mutations";
+import { settingsKeys } from "@/lib/hooks/query/query-keys";
 
-export function useSubscriptionManager() {
+export function useSubscriptionManager(enableVapidKey: boolean = false) {
   const router = useRouter();
+  const queryClient = useQueryClient();
 
-  // React Query Hooks
-  const { data: vapidKey } = useVapidKeyQuery();
+  // React Query Hooks - VAPID key는 필요할 때만 조회
+  const { data: vapidKey } = useVapidKeyQuery({ enabled: enableVapidKey });
   const { data: subscriptions } = useSubscriptionStatusQuery(false); // 수동으로 조회할 때만 사용
   const createSubscriptionMutation = useCreateSubscriptionMutation();
   const deleteSubscriptionMutation = useDeleteSubscriptionMutation();
-  const { data: notificationSettings } = useNotificationSettingsQuery();
+
+  // 알림 설정을 동적으로 조회하는 함수 (React Query 사용)
+  const getUserNotificationSettings = async (userId: string) => {
+    try {
+      // React Query 캐시에서 먼저 확인
+      const cachedData = queryClient.getQueryData(settingsKeys.notifications());
+      if (cachedData) {
+        return cachedData;
+      }
+
+      // 캐시에 없으면 수동으로 fetch
+      const data = await queryClient.fetchQuery({
+        queryKey: settingsKeys.notifications(),
+        queryFn: async () => {
+          const response = await apiClient("/api/notifications/settings", {
+            method: "GET",
+            context: "알림 설정 조회 (구독 관리용)",
+          });
+          return response;
+        },
+        staleTime: 1000 * 60 * 5, // 5분간 stale하지 않음
+      });
+
+      return data;
+    } catch (error) {
+      devLog.error("알림 설정 조회 실패:", error);
+      return null;
+    }
+  };
 
   // VAPID 키 가져오기 (React Query 사용)
   const getVapidKey = async (): Promise<string | null> => {
@@ -107,7 +138,7 @@ export function useSubscriptionManager() {
         // 2. 기존 구독 해제
         await unsubscribeCurrent();
 
-        // 3. 사용자의 알림 설정 확인 (React Query 사용)
+        // 3. 사용자의 알림 설정 확인
         const currentNotificationSettings = await getUserNotificationSettings(
           userId
         );
@@ -120,7 +151,7 @@ export function useSubscriptionManager() {
           devLog.log(
             `사용자 ${userId}의 알림 설정이 비활성화되어 있어 구독을 생성하지 않습니다.`
           );
-          return false;
+          return true; // 설정상 구독하지 않는 것이므로 성공으로 처리
         }
 
         // 5. VAPID 키 가져오기 (React Query 사용)
@@ -151,22 +182,6 @@ export function useSubscriptionManager() {
     },
     [unsubscribeCurrent, getVapidKey, createSubscriptionMutation]
   );
-
-  // 사용자의 알림 설정 조회 - React Query 사용
-  const getUserNotificationSettings = async (userId: string) => {
-    try {
-      // 이미 캐시된 알림 설정이 있으면 사용
-      if (notificationSettings) {
-        return notificationSettings;
-      }
-
-      devLog.warn("알림 설정이 캐시되지 않음 - React Query로 조회 필요");
-      return null;
-    } catch (error) {
-      devLog.error("알림 설정 조회 실패:", error);
-      return null;
-    }
-  };
 
   // 로그아웃 시 구독 정리
   const cleanupSubscription = useCallback(async (): Promise<boolean> => {

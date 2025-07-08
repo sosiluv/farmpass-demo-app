@@ -13,6 +13,7 @@ import {
 } from "@/components/admin/visitors";
 import type { Farm } from "@/lib/types/farm";
 import { useCommonToast } from "@/lib/utils/notification/toast-messages";
+import { AccessDenied } from "@/components/error/access-denied";
 
 // Zustand Store 사용
 import { useVisitorFiltersStore } from "@/lib/hooks/query/use-visitor-filters";
@@ -207,16 +208,12 @@ export default function FarmVisitorsPage() {
   // 농장 접근 권한 확인
   if (!farms.some((f) => f.id === farmId)) {
     return (
-      <div className="flex-1 space-y-4 p-4 sm:p-6 md:p-8">
-        <div className="text-center">
-          <h2 className="text-lg font-semibold text-gray-900">
-            접근 권한이 없습니다
-          </h2>
-          <p className="mt-2 text-sm text-gray-600">
-            이 농장에 접근할 권한이 없습니다.
-          </p>
-        </div>
-      </div>
+      <AccessDenied
+        title="농장 접근 권한이 없습니다"
+        description="이 농장에 대한 접근 권한이 없습니다. 농장 소유자나 관리자에게 문의하세요."
+        requiredRole="농장 소유자 또는 관리자"
+        currentRole="일반 사용자"
+      />
     );
   }
 

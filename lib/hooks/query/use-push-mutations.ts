@@ -9,7 +9,7 @@ import { devLog } from "@/lib/utils/logging/dev-logger";
 import { handleError } from "@/lib/utils/error";
 
 // VAPID 키 조회 (Query)
-export const useVapidKeyQuery = () => {
+export const useVapidKeyQuery = (options?: { enabled?: boolean }) => {
   return useQuery({
     queryKey: ["vapid-key"],
     queryFn: async () => {
@@ -27,6 +27,7 @@ export const useVapidKeyQuery = () => {
     },
     staleTime: 5 * 60 * 1000, // 5분간 fresh 유지
     retry: 2,
+    enabled: options?.enabled ?? true, // 기본값은 true
   });
 };
 

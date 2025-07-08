@@ -3,6 +3,7 @@
 import { useLogo } from "@/hooks/use-logo";
 import { cn } from "@/lib/utils";
 import Image from "next/image";
+import type { SystemSettings } from "@/lib/types/settings";
 
 interface LogoProps {
   className?: string;
@@ -10,6 +11,7 @@ interface LogoProps {
   showText?: boolean;
   textClassName?: string;
   size?: "sm" | "md" | "lg" | "xl" | "xxl";
+  settings?: SystemSettings | null; // 중복 query 방지용
 }
 
 const sizeMap = {
@@ -50,8 +52,9 @@ export function Logo({
   showText = false,
   textClassName,
   size = "md",
+  settings, // 중복 query 방지용
 }: LogoProps) {
-  const { logoUrl, siteName, hasLogo } = useLogo();
+  const { logoUrl, siteName, hasLogo } = useLogo(settings);
   const sizeConfig = sizeMap[size];
 
   if (hasLogo && logoUrl) {

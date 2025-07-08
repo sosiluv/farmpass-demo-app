@@ -29,32 +29,34 @@ export default function VisitorTab({
   const maxVisitorsPerDay = useNumberInput("maxVisitorsPerDay");
   const visitorDataRetentionDays = useNumberInput("visitorDataRetentionDays");
 
-  // 디스플레이용 상태
+  // 디스플레이용 상태 (안전한 처리)
   const [reVisitAllowIntervalDisplay, setReVisitAllowIntervalDisplay] =
-    useState(settings.reVisitAllowInterval.toString());
+    useState((settings.reVisitAllowInterval ?? 0).toString());
   const [maxVisitorsPerDayDisplay, setMaxVisitorsPerDayDisplay] = useState(
-    settings.maxVisitorsPerDay.toString()
+    (settings.maxVisitorsPerDay ?? 0).toString()
   );
   const [visitorDataRetentionDaysDisplay, setVisitorDataRetentionDaysDisplay] =
-    useState(settings.visitorDataRetentionDays.toString());
+    useState((settings.visitorDataRetentionDays ?? 0).toString());
 
-  // settings가 변경될 때 디스플레이 값 업데이트
+  // settings가 변경될 때 디스플레이 값 업데이트 (안전한 처리)
   useEffect(() => {
     if (!reVisitAllowInterval.isEditing) {
-      setReVisitAllowIntervalDisplay(settings.reVisitAllowInterval.toString());
+      setReVisitAllowIntervalDisplay(
+        (settings.reVisitAllowInterval ?? 0).toString()
+      );
     }
   }, [settings.reVisitAllowInterval, reVisitAllowInterval.isEditing]);
 
   useEffect(() => {
     if (!maxVisitorsPerDay.isEditing) {
-      setMaxVisitorsPerDayDisplay(settings.maxVisitorsPerDay.toString());
+      setMaxVisitorsPerDayDisplay((settings.maxVisitorsPerDay ?? 0).toString());
     }
   }, [settings.maxVisitorsPerDay, maxVisitorsPerDay.isEditing]);
 
   useEffect(() => {
     if (!visitorDataRetentionDays.isEditing) {
       setVisitorDataRetentionDaysDisplay(
-        settings.visitorDataRetentionDays.toString()
+        (settings.visitorDataRetentionDays ?? 0).toString()
       );
     }
   }, [settings.visitorDataRetentionDays, visitorDataRetentionDays.isEditing]);

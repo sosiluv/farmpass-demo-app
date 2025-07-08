@@ -145,19 +145,11 @@ export const VisitorFilters = memo(function VisitorFilters({
               {/* 농장 선택 */}
               {showFarmFilter && (
                 <div className="space-y-1.5 sm:space-y-3 min-w-0">
-                  <label
-                    className="text-xs sm:text-sm font-semibold text-slate-700 dark:text-white !important flex items-center space-x-1.5 sm:space-x-2"
-                    style={{ color: "#fff" }}
-                  >
+                  <label className="text-xs sm:text-sm font-semibold text-foreground flex items-center space-x-1.5 sm:space-x-2">
                     <div className="p-0.5 sm:p-1 bg-gradient-to-br from-indigo-100 to-purple-100 dark:from-indigo-900 dark:to-purple-900 rounded-md">
                       <Building2 className="h-3 w-3 sm:h-4 sm:w-4 text-indigo-600 dark:text-indigo-300" />
                     </div>
-                    <span
-                      className="dark:text-white !important"
-                      style={{ color: "#fff" }}
-                    >
-                      농장 선택
-                    </span>
+                    <span>농장 선택</span>
                   </label>
                   <div className="min-w-0">
                     <VisitorFarmSelector
@@ -172,19 +164,11 @@ export const VisitorFilters = memo(function VisitorFilters({
 
               {/* 커스텀 날짜 선택 */}
               <div className="space-y-1.5 sm:space-y-3 min-w-0">
-                <label
-                  className="text-xs sm:text-sm font-semibold text-slate-700 dark:text-white !important flex items-center space-x-1.5 sm:space-x-2"
-                  style={{ color: "#fff" }}
-                >
+                <label className="text-xs sm:text-sm font-semibold text-foreground flex items-center space-x-1.5 sm:space-x-2">
                   <div className="p-0.5 sm:p-1 bg-gradient-to-br from-blue-100 to-indigo-100 dark:from-blue-900 dark:to-indigo-900 rounded-md">
                     <CalendarIcon className="h-3 w-3 sm:h-4 sm:w-4 text-blue-600 dark:text-blue-300" />
                   </div>
-                  <span
-                    className="dark:text-white !important"
-                    style={{ color: "#fff" }}
-                  >
-                    기간 설정
-                  </span>
+                  <span>기간 설정</span>
                 </label>
                 <div className="min-w-0">
                   <CustomDatePicker

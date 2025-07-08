@@ -2,13 +2,12 @@
 
 import { useEffect, useMemo, useState, useCallback } from "react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Skeleton } from "@/components/ui/skeleton";
-import { AlertCircle, Activity, Bug } from "lucide-react";
+import { StatsSkeleton, CardSkeleton } from "@/components/common/skeletons";
+import { AlertCircle } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/components/providers/auth-provider";
 import { AccessDenied } from "@/components/error/access-denied";
 import { PageHeader } from "@/components/layout";
-import { Button } from "@/components/ui/button";
 import {
   SystemStatusCard,
   UptimeCard,
@@ -17,7 +16,7 @@ import {
 } from "@/components/admin/monitoring";
 import { AdminError } from "@/components/error/admin-error";
 import { useDataFetchTimeout } from "@/hooks/useTimeout";
-import { useMonitoringQueryCompat } from "@/lib/hooks/query/use-monitoring-query";
+import { useMonitoringQuery } from "@/lib/hooks/query/use-monitoring-query";
 
 interface MonitoringData {
   timestamp: string;
@@ -91,7 +90,7 @@ interface MonitoringData {
 }
 
 export default function MonitoringDashboard() {
-  const { data, loading, error, refetch } = useMonitoringQueryCompat();
+  const { data, isLoading: loading, error, refetch } = useMonitoringQuery();
 
   const router = useRouter();
   const { state } = useAuth();
@@ -109,11 +108,15 @@ export default function MonitoringDashboard() {
   }, [isAdmin, router]);
 
   // 타임아웃 관리
-  const { timeoutReached, retry } = useDataFetchTimeout(loading, async () => {
-    await refetch();
-  }, {
-    timeout: 10000,
-  });
+  const { timeoutReached, retry } = useDataFetchTimeout(
+    loading,
+    async () => {
+      await refetch();
+    },
+    {
+      timeout: 10000,
+    }
+  );
 
   // 권한이 없는 경우
   if (!isAdmin) {
@@ -146,11 +149,11 @@ export default function MonitoringDashboard() {
           description="서버 상태, 가동시간, 에러 로그를 실시간으로 모니터링하세요"
           breadcrumbs={[{ label: "시스템 모니터링" }]}
         />
-        <Skeleton className="h-[125px] w-full" />
+        <CardSkeleton />
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          <Skeleton className="h-[200px] w-full" />
-          <Skeleton className="h-[200px] w-full" />
-          <Skeleton className="h-[200px] w-full" />
+          <CardSkeleton />
+          <CardSkeleton />
+          <CardSkeleton />
         </div>
       </div>
     );
@@ -167,7 +170,9 @@ export default function MonitoringDashboard() {
         <Alert variant="destructive">
           <AlertCircle className="h-4 w-4" />
           <AlertTitle>Error</AlertTitle>
-          <AlertDescription>{error}</AlertDescription>
+          <AlertDescription>
+            {error?.message || "알 수 없는 오류가 발생했습니다."}
+          </AlertDescription>
         </Alert>
       </div>
     );

@@ -3,8 +3,7 @@
 import { useAuthenticatedQuery } from "@/lib/hooks/query-utils";
 import { useAuth } from "@/components/providers/auth-provider";
 import { supabase } from "@/lib/supabase/client";
-import { getKSTTodayRange } from "@/lib/utils/datetime/date";
-import { usersKeys } from "./query-keys";
+import { settingsKeys } from "./query-keys";
 
 // 클라이언트 전용 가드
 const isClient = typeof window !== "undefined";
@@ -40,102 +39,147 @@ export function useAdminUsersQuery() {
   const profile = state.status === "authenticated" ? state.profile : null;
 
   return useAuthenticatedQuery(
-    usersKeys.list({ type: "admin-stats" }),
+    [...settingsKeys.all, "users", "admin-stats"],
     async (): Promise<UserStats> => {
       if (!isClient) {
         throw new Error("이 함수는 클라이언트에서만 실행할 수 있습니다.");
       }
 
-      // 오늘 날짜 범위 (KST)
-      const { start: startOfDay, end: endOfDay } = getKSTTodayRange();
+      // 사용자 통계 (farm_members와 조인하여 정확한 역할 파악)
+      const { data: users, error: usersError } = await supabase
+        .from("profiles")
+        .select(`*, farm_members(role)`);
 
-      // 이번 달과 지난 달 범위 계산
+      if (usersError) throw usersError;
+
+      const totalUsers = users?.length ?? 0;
+      const activeUsers = users?.filter((u) => u.is_active).length ?? 0;
+
+      // 농장주 수 계산 (account_type과 farm_members.role을 함께 고려)
+      const farmOwners =
+        users?.filter((user) => {
+          if (user.account_type === "farm_owner") return true;
+          if (user.farm_members && user.farm_members.length > 0) {
+            const farmMemberRole = user.farm_members[0]?.role;
+            return (
+              farmMemberRole === "owner" || farmMemberRole === "farm_owner"
+            );
+          }
+          return false;
+        }).length ?? 0;
+
+      // 오늘 로그인 수 (시스템 로그에서 로그인 관련 액션 조회)
+      const today = new Date().toISOString().split("T")[0];
+      const { data: todayLogs } = await supabase
+        .from("system_logs")
+        .select("*")
+        .like("action", "%LOGIN%")
+        .gte("created_at", today);
+
+      const todayLogins = todayLogs?.length ?? 0;
+
+      // 트렌드 계산을 위한 데이터
       const now = new Date();
-      const thisMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
-      const thisMonthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
-      const lastMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-      const lastMonthEnd = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59, 999);
+      const thisMonthEnd = new Date(
+        now.getFullYear(),
+        now.getMonth(),
+        now.getDate(),
+        23,
+        59,
+        59
+      );
+      const lastMonthEnd = new Date(
+        now.getFullYear(),
+        now.getMonth() - 1,
+        0,
+        23,
+        59,
+        59
+      );
 
-      // 병렬 쿼리 실행
-      const [
-        // 현재 통계
-        totalUsersResult,
-        activeUsersResult,
-        farmOwnersResult,
-        todayLoginsResult,
-        
-        // 지난 달 통계 (트렌드 계산용)
-        lastMonthUsersResult,
-        lastMonthActiveUsersResult,
-        lastMonthFarmOwnersResult,
-        lastMonthLoginsResult,
-      ] = await Promise.all([
-        // 현재 통계
-        supabase.from("users").select("*", { count: "exact", head: true }),
-        
-        supabase
-          .from("users")
-          .select("*", { count: "exact", head: true })
-          .gte("last_sign_in_at", new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString()), // 지난 30일 내 활동
-        
-        supabase
-          .from("profiles")
-          .select("*", { count: "exact", head: true })
-          .eq("account_type", "farmer"),
-        
-        supabase
-          .from("activity_logs")
-          .select("*", { count: "exact", head: true })
-          .eq("action", "login")
-          .gte("created_at", startOfDay.toISOString())
-          .lte("created_at", endOfDay.toISOString()),
+      // 이번 달까지의 총 수 (누적)
+      const totalUsersThisMonth =
+        users?.filter((u) => new Date(u.created_at) <= thisMonthEnd).length ??
+        0;
+      const activeUsersThisMonth =
+        users?.filter(
+          (u) => u.is_active && new Date(u.created_at) <= thisMonthEnd
+        ).length ?? 0;
 
-        // 지난 달 통계
-        supabase
-          .from("users")
-          .select("*", { count: "exact", head: true })
-          .gte("created_at", lastMonthStart.toISOString())
-          .lte("created_at", lastMonthEnd.toISOString()),
+      // 농장주 수 계산 (이번 달까지)
+      const farmOwnersThisMonth =
+        users?.filter((user) => {
+          if (new Date(user.created_at) > thisMonthEnd) return false;
+          if (user.account_type === "farm_owner") return true;
+          if (user.farm_members && user.farm_members.length > 0) {
+            const farmMemberRole = user.farm_members[0]?.role;
+            return (
+              farmMemberRole === "owner" || farmMemberRole === "farm_owner"
+            );
+          }
+          return false;
+        }).length ?? 0;
 
-        supabase
-          .from("users")
-          .select("*", { count: "exact", head: true })
-          .gte("last_sign_in_at", lastMonthStart.toISOString())
-          .lte("last_sign_in_at", lastMonthEnd.toISOString()),
+      // 오늘 로그인 관련 로그
+      const todayLoginsThisMonth =
+        todayLogs?.filter((l) => new Date(l.created_at) <= thisMonthEnd)
+          .length ?? 0;
 
-        supabase
-          .from("profiles")
-          .select("*", { count: "exact", head: true })
-          .eq("account_type", "farmer")
-          .gte("created_at", lastMonthStart.toISOString())
-          .lte("created_at", lastMonthEnd.toISOString()),
+      // 지난 달까지의 총 수 (누적)
+      const totalUsersLastMonth =
+        users?.filter((u) => new Date(u.created_at) <= lastMonthEnd).length ??
+        0;
+      const activeUsersLastMonth =
+        users?.filter(
+          (u) => u.is_active && new Date(u.created_at) <= lastMonthEnd
+        ).length ?? 0;
 
-        supabase
-          .from("activity_logs")
-          .select("*", { count: "exact", head: true })
-          .eq("action", "login")
-          .gte("created_at", lastMonthStart.toISOString())
-          .lte("created_at", lastMonthEnd.toISOString()),
-      ]);
+      // 농장주 수 계산 (지난 달까지)
+      const farmOwnersLastMonth =
+        users?.filter((user) => {
+          if (new Date(user.created_at) > lastMonthEnd) return false;
+          if (user.account_type === "farm_owner") return true;
+          if (user.farm_members && user.farm_members.length > 0) {
+            const farmMemberRole = user.farm_members[0]?.role;
+            return (
+              farmMemberRole === "owner" || farmMemberRole === "farm_owner"
+            );
+          }
+          return false;
+        }).length ?? 0;
 
-      // 현재 통계
-      const totalUsers = totalUsersResult.count || 0;
-      const activeUsers = activeUsersResult.count || 0;
-      const farmOwners = farmOwnersResult.count || 0;
-      const todayLogins = todayLoginsResult.count || 0;
-
-      // 지난 달 통계
-      const lastMonthUsers = lastMonthUsersResult.count || 0;
-      const lastMonthActiveUsers = lastMonthActiveUsersResult.count || 0;
-      const lastMonthFarmOwners = lastMonthFarmOwnersResult.count || 0;
-      const lastMonthLogins = lastMonthLoginsResult.count || 0;
+      // 지난 달 로그인 로그 (같은 날짜 범위로 비교)
+      const lastMonthDate = new Date(
+        now.getFullYear(),
+        now.getMonth() - 1,
+        now.getDate()
+      );
+      const lastMonthStart = lastMonthDate.toISOString().split("T")[0];
+      const { data: lastMonthLogs } = await supabase
+        .from("system_logs")
+        .select("*")
+        .like("action", "%LOGIN%")
+        .gte("created_at", lastMonthStart)
+        .lt(
+          "created_at",
+          new Date(lastMonthDate.getTime() + 24 * 60 * 60 * 1000)
+            .toISOString()
+            .split("T")[0]
+        );
+      const todayLoginsLastMonth = lastMonthLogs?.length ?? 0;
 
       // 트렌드 계산
       const trends = {
-        userGrowth: calculateTrend(totalUsers, lastMonthUsers),
-        activeUsersTrend: calculateTrend(activeUsers, lastMonthActiveUsers),
-        farmOwnersTrend: calculateTrend(farmOwners, lastMonthFarmOwners),
-        loginsTrend: calculateTrend(todayLogins, lastMonthLogins),
+        userGrowth: calculateTrend(totalUsersThisMonth, totalUsersLastMonth),
+        activeUsersTrend: calculateTrend(
+          activeUsersThisMonth,
+          activeUsersLastMonth
+        ),
+        farmOwnersTrend: calculateTrend(
+          farmOwnersThisMonth,
+          farmOwnersLastMonth
+        ),
+        loginsTrend: calculateTrend(todayLoginsThisMonth, todayLoginsLastMonth),
       };
 
       return {
@@ -148,10 +192,11 @@ export function useAdminUsersQuery() {
     },
     {
       enabled: !!user && profile?.account_type === "admin",
-      staleTime: 1000 * 60 * 5, // 5분간 stale하지 않음
-      gcTime: 1000 * 60 * 10, // 10분간 캐시 유지
-      refetchOnWindowFocus: true,
-      refetchInterval: 1000 * 60 * 10, // 10분마다 자동 갱신
+      staleTime: 1000 * 60 * 5, // 5분간 stale하지 않음 (사용자 데이터는 자주 변경됨)
+      gcTime: 1000 * 60 * 15, // 15분간 캐시 유지
+      refetchOnWindowFocus: false, // 윈도우 포커스 시 refetch 비활성화
+      refetchInterval: 1000 * 60 * 15, // 15분마다 자동 갱신
+      refetchOnMount: false, // 마운트 시 refetch 비활성화 (캐시 우선)
     }
   );
 }
@@ -177,4 +222,47 @@ export function useAdminUsersQueryCompat() {
       return result.data;
     },
   };
+}
+
+/**
+ * 관리자 사용자 목록 조회 Hook
+ */
+export function useAdminUsersListQuery() {
+  const { state } = useAuth();
+  const user = state.status === "authenticated" ? state.user : null;
+  const profile = state.status === "authenticated" ? state.profile : null;
+
+  return useAuthenticatedQuery(
+    [...settingsKeys.all, "users", "admin-list"],
+    async (): Promise<any[]> => {
+      if (!isClient) {
+        throw new Error("이 함수는 클라이언트에서만 실행할 수 있습니다.");
+      }
+
+      // 사용자 목록 조회 (farm_members와 조인하여 역할 정보 포함)
+      const { data: users, error: usersError } = await supabase.from("profiles")
+        .select(`
+          *,
+          farm_members(
+            id,
+            role,
+            created_at,
+            farms(
+              id,
+              farm_name
+            )
+          )
+        `);
+
+      if (usersError) throw usersError;
+
+      return users || [];
+    },
+    {
+      enabled: !!user && profile?.account_type === "admin",
+      staleTime: 1000 * 60 * 5, // 5분간 stale하지 않음
+      gcTime: 1000 * 60 * 10, // 10분간 캐시 유지
+      refetchOnWindowFocus: true,
+    }
+  );
 }

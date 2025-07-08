@@ -36,8 +36,9 @@ export function useFarmsQuery(userId?: string) {
     },
     {
       enabled: state.status === "authenticated" && !!targetUserId,
-      staleTime: 5 * 60 * 1000, // 5분 캐싱 (농장 데이터는 자주 변경되지 않음)
-      refetchOnWindowFocus: true,
+      staleTime: 10 * 60 * 1000, // 10분 캐싱 (농장 데이터는 자주 변경되지 않음)
+      gcTime: 20 * 60 * 1000, // 20분간 캐시 유지
+      refetchOnWindowFocus: false, // 윈도우 포커스 시 refetch 비활성화
       refetchOnReconnect: true,
       retry: (failureCount, error) => {
         // 인증 에러는 재시도 안함

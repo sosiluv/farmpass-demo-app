@@ -32,7 +32,7 @@ export function WebPushSubscription({
     getSubscriptionStatus,
     lastMessage,
     clearLastMessage,
-  } = useNotificationService();
+  } = useNotificationService(true); // VAPID key 필요
   const { showInfo, showWarning, showSuccess, showError } = useCommonToast();
 
   // props로 받은 농장 데이터 처리

@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
-import { useFarmsRQ } from "@/lib/hooks/query/use-farms-query";
+import { useFarmsContext } from "@/components/providers/farms-provider";
 import { useFarmMutations } from "@/lib/hooks/query/use-farm-mutations";
 import { useAuth } from "@/components/providers/auth-provider";
 import { useCommonToast } from "@/lib/utils/notification/toast-messages";
@@ -28,7 +28,7 @@ export default function FarmsPage() {
   const [farmToDelete, setFarmToDelete] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
 
-  const { farms, isLoading, error } = useFarmsRQ();
+  const { farms, isLoading, error } = useFarmsContext();
   const { createFarmAsync, updateFarmAsync, deleteFarmAsync } =
     useFarmMutations();
 
@@ -169,7 +169,7 @@ export default function FarmsPage() {
         ) : farms.length === 0 ? (
           <EmptyFarmsState onAddClick={handleAddClick} />
         ) : (
-          <ResponsivePagination data={filteredFarms} itemsPerPage={12}>
+          <ResponsivePagination<Farm> data={filteredFarms} itemsPerPage={12}>
             {({ paginatedData, isLoadingMore, hasMore }) => (
               <div className="space-y-4">
                 <FarmsList

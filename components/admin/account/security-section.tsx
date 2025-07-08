@@ -159,16 +159,31 @@ export function SecuritySection({
   };
 
   const handlePasswordChange = async (data: ChangePasswordFormData) => {
-    showInfo("비밀번호 변경 시작", "비밀번호를 변경하는 중입니다...");
+    showInfo("비밀번호 변경 시작", "현재 비밀번호를 확인하는 중입니다...");
+
     try {
-      // ChangePasswordFormData를 PasswordFormData로 변환
+      // 현재 비밀번호 검증
+      if (!profile?.email) {
+        throw new Error("사용자 이메일을 찾을 수 없습니다.");
+      }
+
+      const { error: verifyError } = await supabase.auth.signInWithPassword({
+        email: profile.email,
+        password: data.currentPassword,
+      });
+
+      if (verifyError) {
+        showError("인증 실패", "현재 비밀번호가 올바르지 않습니다.");
+        return;
+      }
+
+      // 기존 로직 사용
       const passwordData: PasswordFormData = {
         currentPassword: data.currentPassword,
         newPassword: data.newPassword,
         confirmPassword: data.confirmPassword,
       };
       await onPasswordChange(passwordData);
-      // 비밀번호 필드 초기화
       form.reset();
     } catch (error: any) {
       devLog.error("Password change error:", error);

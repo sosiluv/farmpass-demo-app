@@ -4,9 +4,10 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/components/providers/auth-provider";
 import { apiClient } from "@/lib/utils/data/api-client";
 import {
-  createFarmQueryKey,
-  createVisitorQueryKey,
-} from "@/lib/hooks/query-utils";
+  farmsKeys,
+  visitorsKeys,
+  dashboardKeys,
+} from "@/lib/hooks/query/query-keys";
 import type { Farm } from "@/lib/types/farm";
 
 export interface CreateFarmRequest {
@@ -43,7 +44,7 @@ export function useCreateFarmMutation() {
       const userId =
         state.status === "authenticated" ? state.user?.id : undefined;
       queryClient.invalidateQueries({
-        queryKey: createFarmQueryKey(userId),
+        queryKey: farmsKeys.list({ userId }),
       });
     },
   });
@@ -69,7 +70,7 @@ export function useUpdateFarmMutation() {
       const userId =
         state.status === "authenticated" ? state.user?.id : undefined;
       queryClient.invalidateQueries({
-        queryKey: createFarmQueryKey(userId),
+        queryKey: farmsKeys.list({ userId }),
       });
     },
   });
@@ -96,12 +97,12 @@ export function useDeleteFarmMutation() {
       const userId =
         state.status === "authenticated" ? state.user?.id : undefined;
       queryClient.invalidateQueries({
-        queryKey: createFarmQueryKey(userId),
+        queryKey: farmsKeys.list({ userId }),
       });
 
       // 2. 농장 목록에서 삭제된 농장 제거 (즉시 반영)
       queryClient.setQueryData(
-        createFarmQueryKey(userId),
+        farmsKeys.list({ userId }),
         (oldData: Farm[] | undefined) => {
           if (!oldData) return [];
           return oldData.filter((farm) => farm.id !== farmId);
@@ -115,16 +116,15 @@ export function useDeleteFarmMutation() {
           const [type, id] = queryKey;
           return (
             (type === "visitors" && id === farmId) ||
-            (type === "farmMembers" && id === farmId) ||
-            (type === "dashboardStats" && id === farmId) ||
-            (type === "farm" && id === farmId)
+            (type === "farms" && queryKey.includes(farmId)) ||
+            (type === "dashboard" && queryKey.includes(farmId))
           );
         },
       });
 
-      // 4. 전체 농장 목록 쿼리도 무효화 (다른 사용자의 농장 목록도 업데이트)
+      // 4. 전체 농장 목록 쿼리도 무효화
       queryClient.invalidateQueries({
-        queryKey: ["farms"],
+        queryKey: farmsKeys.all,
         exact: false,
       });
     },
@@ -134,7 +134,7 @@ export function useDeleteFarmMutation() {
         const userId =
           state.status === "authenticated" ? state.user?.id : undefined;
         queryClient.setQueryData(
-          createFarmQueryKey(userId),
+          farmsKeys.list({ userId }),
           (oldData: Farm[] | undefined) => {
             if (!oldData) return [];
             return oldData.filter((farm) => farm.id !== farmId);
@@ -142,7 +142,7 @@ export function useDeleteFarmMutation() {
         );
 
         queryClient.invalidateQueries({
-          queryKey: createFarmQueryKey(userId),
+          queryKey: farmsKeys.list({ userId }),
         });
       }
     },
@@ -175,7 +175,7 @@ export function useToggleFarmStatusMutation() {
       const userId =
         state.status === "authenticated" ? state.user?.id : undefined;
       queryClient.invalidateQueries({
-        queryKey: createFarmQueryKey(userId),
+        queryKey: farmsKeys.list({ userId }),
       });
     },
   });

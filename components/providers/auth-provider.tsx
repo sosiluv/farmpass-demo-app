@@ -103,9 +103,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const isSigningOutRef = useRef<boolean>(false);
   const profileLoadingPromise = useRef<Promise<Profile | null> | null>(null);
 
-  // 구독 관리 훅 사용
+  // 구독 관리 훅 사용 (VAPID key는 불필요)
   const { switchSubscription, cleanupSubscription, setupErrorListener } =
-    useSubscriptionManager();
+    useSubscriptionManager(false);
 
   // 프로필 로드 (최적화된 버전)
   const loadProfile = async (userId: string): Promise<Profile | null> => {
@@ -396,7 +396,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
 
       // 구독 전환 (백그라운드에서 처리)
-      switchSubscription(session.user.id).catch((error) => {
+      switchSubscription(session.user.id).catch((error: any) => {
         devLog.warn("구독 전환 실패:", error);
         // 구독 실패해도 로그인은 계속 진행
       });

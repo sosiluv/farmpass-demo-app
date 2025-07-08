@@ -1,6 +1,7 @@
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { motion } from "framer-motion";
 import type { Farm } from "@/lib/types/farm";
+import type { FarmMembers } from "@/lib/hooks/query/use-farm-members-query";
 import {
   FarmCardHeader,
   FarmCardActions,
@@ -14,6 +15,7 @@ interface FarmCardProps {
   isOwner: boolean;
   onEdit: (farm: Farm) => void;
   onDelete: (farmId: string) => void;
+  membersData?: FarmMembers;
 }
 
 export function FarmCard({
@@ -22,6 +24,7 @@ export function FarmCard({
   isOwner,
   onEdit,
   onDelete,
+  membersData,
 }: FarmCardProps) {
   return (
     <motion.div
@@ -42,7 +45,7 @@ export function FarmCard({
         </CardHeader>
         <CardContent>
           <FarmCardDetails farm={farm} />
-          <FarmCardPreview farmId={farm.id} />
+          <FarmCardPreview farmId={farm.id} membersData={membersData} />
         </CardContent>
       </Card>
     </motion.div>

@@ -9,10 +9,10 @@ function makeQueryClient() {
   const queryClient = new QueryClient({
     defaultOptions: {
       queries: {
-        // 5분 캐싱 (staleTime)
-        staleTime: 5 * 60 * 1000,
-        // 10분 후 가비지 컬렉션
-        gcTime: 10 * 60 * 1000,
+        // 15분 캐싱 (staleTime) - 중복 호출 방지
+        staleTime: 15 * 60 * 1000,
+        // 30분 후 가비지 컬렉션
+        gcTime: 30 * 60 * 1000,
         // 네트워크 에러 시 3번 재시도
         retry: (failureCount, error) => {
           // 인증 에러는 재시도 안함
@@ -24,9 +24,11 @@ function makeQueryClient() {
           }
           return failureCount < 3;
         },
-        // 네트워크 재연결 시 자동 refetch
+        // 윈도우 포커스 시 자동 refetch 비활성화 (중복 호출 방지)
         refetchOnWindowFocus: false,
         refetchOnReconnect: true,
+        // 마운트 시 refetch 비활성화 (캐시 우선)
+        refetchOnMount: false,
       },
       mutations: {
         // Mutation 에러 시 1번 재시도
@@ -58,8 +60,14 @@ function handleGlobalQueryError(error: any, queryKey: readonly unknown[]) {
     error?.message?.includes("401") ||
     error?.message?.includes("Unauthorized")
   ) {
-    console.warn("� Authentication error detected:", queryKey);
-    // TODO: 로그인 페이지로 리다이렉트
+    console.warn("🔐 Authentication error detected:", queryKey);
+    // 인증이 필요한 페이지에서는 로그인 페이지로 리다이렉트
+    if (
+      typeof window !== "undefined" &&
+      window.location.pathname.startsWith("/admin")
+    ) {
+      window.location.href = "/login";
+    }
     return;
   }
 
@@ -69,24 +77,25 @@ function handleGlobalQueryError(error: any, queryKey: readonly unknown[]) {
     error?.message?.includes("Forbidden")
   ) {
     console.warn("🚫 Permission denied:", queryKey);
-    // TODO: 권한 없음 토스트
+    // 권한 에러는 조용히 처리 (컴포넌트 레벨에서 처리)
     return;
   }
 
   // 서버 에러 (500번대)
   if (error?.message?.includes("500")) {
     console.error("🔥 Server error:", queryKey, error);
-    // TODO: "서버에 문제가 발생했습니다" 토스트
+    // 서버 에러는 조용히 처리 (너무 많은 토스트 방지)
     return;
   }
 
   // 네트워크 에러
   if (
     error?.message?.includes("네트워크") ||
-    error?.message?.includes("fetch")
+    error?.message?.includes("fetch") ||
+    error?.message?.includes("Network")
   ) {
     console.error("📡 Network error:", queryKey, error);
-    // TODO: "네트워크 연결을 확인해주세요" 토스트
+    // 네트워크 에러는 조용히 처리 (연결 문제일 가능성)
     return;
   }
 

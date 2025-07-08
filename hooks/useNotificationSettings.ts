@@ -1,25 +1,8 @@
-import { useState, useEffect, useCallback, useMemo } from "react";
-import type { NotificationSettings } from "@/lib/types/notification";
+import { useState, useCallback, useMemo } from "react";
 import type { SystemSettings } from "@/lib/types/settings";
 import { devLog } from "@/lib/utils/logging/dev-logger";
 import { handleError } from "@/lib/utils/error";
-import {
-  useNotificationSettingsQuery,
-  useNotificationMutations,
-} from "@/lib/hooks/query/use-notification-mutations";
-
-// 알림 설정 조회 훅 (사용자용) - React Query 기반으로 변경
-export function useNotificationSettings() {
-  const {
-    data,
-    isLoading: loading,
-    error: queryError,
-  } = useNotificationSettingsQuery();
-
-  const error = queryError ? new Error(queryError.message) : null;
-
-  return { data, loading, error };
-}
+import { useNotificationMutations } from "@/lib/hooks/query/use-notification-mutations";
 
 // 시스템 설정용 알림 설정 훅 (시스템 관리자용)
 export function useSystemNotificationSettings(options: {

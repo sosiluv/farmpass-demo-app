@@ -2,7 +2,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import { NotificationSettings } from "@/lib/types/notification";
 import NotificationCardHeader from "./NotificationCardHeader";
-import { useNotificationSettingsQueryCompat } from "@/lib/hooks/query/use-notification-settings-query";
+import { useNotificationSettingsQuery } from "@/lib/hooks/query/use-notification-settings-query";
 import { useNotificationMutations } from "@/lib/hooks/query/use-notification-mutations";
 import { Bell, AlertTriangle, Wrench, Megaphone } from "lucide-react";
 
@@ -38,12 +38,12 @@ const NOTIFICATION_TYPES = [
 ] as const;
 
 export function NotificationTypesCard() {
-  const { data: settings } = useNotificationSettingsQueryCompat();
+  const { data: settings } = useNotificationSettingsQuery();
   const { saveSettings } = useNotificationMutations();
 
   const handleToggle = (key: string, value: boolean) => {
     if (!settings) return;
-    
+
     saveSettings.mutate({
       ...settings,
       [key]: value,

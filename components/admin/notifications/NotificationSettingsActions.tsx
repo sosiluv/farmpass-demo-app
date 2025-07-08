@@ -1,13 +1,13 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { useNotificationSettingsQueryCompat } from "@/lib/hooks/query/use-notification-settings-query";
+import { useNotificationSettingsQuery } from "@/lib/hooks/query/use-notification-settings-query";
 import { useCommonToast } from "@/lib/utils/notification/toast-messages";
 import { useNotificationMutations } from "@/lib/hooks/query/use-notification-mutations";
 import { Save, Loader2 } from "lucide-react";
 
 export function NotificationSettingsActions() {
   const [justSaved, setJustSaved] = useState(false);
-  const { data: settings } = useNotificationSettingsQueryCompat();
+  const { data: settings } = useNotificationSettingsQuery();
   const { showInfo, showError, showSuccess } = useCommonToast();
   const { saveSettings } = useNotificationMutations();
 
@@ -15,11 +15,14 @@ export function NotificationSettingsActions() {
     if (!settings) return;
 
     showInfo("알림 설정 저장 시작", "알림 설정을 저장하는 중입니다...");
-    
+
     try {
       await saveSettings.mutateAsync(settings);
       setJustSaved(true);
-      showSuccess("알림 설정 저장 완료", "알림 설정이 성공적으로 저장되었습니다.");
+      showSuccess(
+        "알림 설정 저장 완료",
+        "알림 설정이 성공적으로 저장되었습니다."
+      );
     } catch (error) {
       console.error("알림 설정 저장 오류:", error);
       showError("저장 실패", "알림 설정 저장 중 오류가 발생했습니다.");

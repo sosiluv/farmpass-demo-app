@@ -16,6 +16,7 @@ import { getMetadataSettings } from "@/lib/server/metadata";
 import { ErrorBoundary } from "@/components/error/error-boundary";
 import { Analytics } from "@vercel/analytics/react";
 import { PWAProvider } from "@/components/providers/pwa-provider";
+import { SystemSettingsProvider } from "@/components/providers/system-settings-provider";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -100,16 +101,18 @@ export default async function RootLayout({
           <PWAUpdater />
           <QueryProvider>
             <AuthProvider>
-              <DebugProvider>
-                <PWAProvider>
-                  <ToastPositionProvider>
-                    {children}
-                    <Toaster />
-                    <SystemMonitor />
-                    <DialogManager />
-                  </ToastPositionProvider>
-                </PWAProvider>
-              </DebugProvider>
+              <SystemSettingsProvider>
+                <DebugProvider>
+                  <PWAProvider>
+                    <ToastPositionProvider>
+                      {children}
+                      <Toaster />
+                      <SystemMonitor />
+                      <DialogManager />
+                    </ToastPositionProvider>
+                  </PWAProvider>
+                </DebugProvider>
+              </SystemSettingsProvider>
             </AuthProvider>
           </QueryProvider>
           <Analytics />

@@ -1,11 +1,8 @@
 "use client";
 
 import React from "react";
-import {
-  useAuthenticatedQuery,
-  queryKeys,
-  createVisitorQueryKey,
-} from "@/lib/hooks/query-utils";
+import { useAuthenticatedQuery } from "@/lib/hooks/query-utils";
+import { visitorsKeys } from "@/lib/hooks/query/query-keys";
 import { useAuth } from "@/components/providers/auth-provider";
 import { createClient } from "@/lib/supabase/client";
 import type { VisitorEntry } from "@/lib/types";
@@ -29,7 +26,7 @@ export function useFarmVisitorsQuery(farmId: string | null) {
 
   // 방문자 데이터 쿼리
   const visitorsQuery = useAuthenticatedQuery(
-    createVisitorQueryKey(farmId),
+    visitorsKeys.farm(farmId || "all"),
     async (): Promise<VisitorEntry[]> => {
       let query = supabase
         .from("visitor_entries")

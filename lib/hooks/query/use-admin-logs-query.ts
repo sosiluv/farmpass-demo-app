@@ -47,69 +47,82 @@ export function useAdminLogsQuery() {
         throw new Error("이 함수는 클라이언트에서만 실행할 수 있습니다.");
       }
 
-      // 이번 달과 지난 달 범위 계산
+      // 로그 통계
+      const { data: logs, error: logsError } = await supabase
+        .from("system_logs")
+        .select("*")
+        .order("created_at", { ascending: false });
+
+      if (logsError) throw logsError;
+
+      const totalLogs = logs?.length ?? 0;
+      const infoLogs = logs?.filter((l) => l.level === "info").length ?? 0;
+      const warningLogs = logs?.filter((l) => l.level === "warn").length ?? 0;
+      const errorLogs = logs?.filter((l) => l.level === "error").length ?? 0;
+
+      // 트렌드 계산을 위한 데이터
       const now = new Date();
-      const thisMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
-      const thisMonthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
-      const lastMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-      const lastMonthEnd = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59, 999);
+      const thisMonthEnd = new Date(
+        now.getFullYear(),
+        now.getMonth(),
+        now.getDate(),
+        23,
+        59,
+        59
+      );
+      const lastMonthEnd = new Date(
+        now.getFullYear(),
+        now.getMonth() - 1,
+        0,
+        23,
+        59,
+        59
+      );
 
-      // 병렬 쿼리 실행
-      const [
-        // 현재 통계
-        totalLogsResult,
-        logsByLevelResult,
-        
-        // 지난 달 통계 (트렌드 계산용)
-        lastMonthLogsResult,
-        lastMonthLogsByLevelResult,
-      ] = await Promise.all([
-        // 현재 통계
-        supabase
-          .from("activity_logs")
-          .select("*", { count: "exact", head: true }),
-        
-        supabase.from("activity_logs").select("level"),
+      // 이번 달까지의 로그 수 (누적)
+      const totalLogsThisMonth =
+        logs?.filter((l) => new Date(l.created_at) <= thisMonthEnd).length ?? 0;
+      const infoLogsThisMonth =
+        logs?.filter(
+          (l) => new Date(l.created_at) <= thisMonthEnd && l.level === "info"
+        ).length ?? 0;
+      const warningLogsThisMonth =
+        logs?.filter(
+          (l) => new Date(l.created_at) <= thisMonthEnd && l.level === "warn"
+        ).length ?? 0;
+      const errorLogsThisMonthTotal =
+        logs?.filter(
+          (l) => new Date(l.created_at) <= thisMonthEnd && l.level === "error"
+        ).length ?? 0;
 
-        // 지난 달 통계
-        supabase
-          .from("activity_logs")
-          .select("*", { count: "exact", head: true })
-          .gte("created_at", lastMonthStart.toISOString())
-          .lte("created_at", lastMonthEnd.toISOString()),
-
-        supabase
-          .from("activity_logs")
-          .select("level")
-          .gte("created_at", lastMonthStart.toISOString())
-          .lte("created_at", lastMonthEnd.toISOString()),
-      ]);
-
-      // 현재 통계
-      const totalLogs = totalLogsResult.count || 0;
-
-      // 로그 레벨별 집계
-      const logLevels = logsByLevelResult.data || [];
-      const errorLogs = logLevels.filter((log) => log.level === "error").length;
-      const warningLogs = logLevels.filter((log) => log.level === "warning").length;
-      const infoLogs = logLevels.filter((log) => log.level === "info").length;
-
-      // 지난 달 통계
-      const lastMonthTotalLogs = lastMonthLogsResult.count || 0;
-      const lastMonthLogLevels = lastMonthLogsByLevelResult.data || [];
-      const lastMonthErrorLogs = lastMonthLogLevels.filter((log) => log.level === "error").length;
-      const lastMonthWarningLogs = lastMonthLogLevels.filter((log) => log.level === "warning").length;
-      const lastMonthInfoLogs = lastMonthLogLevels.filter((log) => log.level === "info").length;
+      // 지난 달까지의 로그 수 (누적)
+      const totalLogsLastMonth =
+        logs?.filter((l) => new Date(l.created_at) <= lastMonthEnd).length ?? 0;
+      const infoLogsLastMonth =
+        logs?.filter(
+          (l) => new Date(l.created_at) <= lastMonthEnd && l.level === "info"
+        ).length ?? 0;
+      const warningLogsLastMonth =
+        logs?.filter(
+          (l) => new Date(l.created_at) <= lastMonthEnd && l.level === "warn"
+        ).length ?? 0;
+      const errorLogsLastMonth =
+        logs?.filter(
+          (l) => new Date(l.created_at) <= lastMonthEnd && l.level === "error"
+        ).length ?? 0;
 
       // 트렌드 계산
       const trends = {
-        logGrowth: calculateTrend(totalLogs, lastMonthTotalLogs),
+        logGrowth: calculateTrend(totalLogsThisMonth, totalLogsLastMonth),
       };
 
       const logTrends = {
-        errorTrend: calculateTrend(errorLogs, lastMonthErrorLogs),
-        warningTrend: calculateTrend(warningLogs, lastMonthWarningLogs),
-        infoTrend: calculateTrend(infoLogs, lastMonthInfoLogs),
+        errorTrend: calculateTrend(errorLogsThisMonthTotal, errorLogsLastMonth),
+        warningTrend: calculateTrend(
+          warningLogsThisMonth,
+          warningLogsLastMonth
+        ),
+        infoTrend: calculateTrend(infoLogsThisMonth, infoLogsLastMonth),
       };
 
       return {
@@ -124,9 +137,10 @@ export function useAdminLogsQuery() {
     {
       enabled: !!user && profile?.account_type === "admin",
       staleTime: 1000 * 60 * 2, // 2분간 stale하지 않음 (로그는 더 자주 변경될 수 있음)
-      gcTime: 1000 * 60 * 5, // 5분간 캐시 유지
-      refetchOnWindowFocus: true,
-      refetchInterval: 1000 * 60 * 5, // 5분마다 자동 갱신
+      gcTime: 1000 * 60 * 10, // 10분간 캐시 유지
+      refetchOnWindowFocus: false, // 윈도우 포커스 시 refetch 비활성화
+      refetchInterval: 1000 * 60 * 10, // 10분마다 자동 갱신
+      refetchOnMount: false, // 마운트 시 refetch 비활성화 (캐시 우선)
     }
   );
 }

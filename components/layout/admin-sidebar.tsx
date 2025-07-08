@@ -1,9 +1,10 @@
 "use client";
 
 import { useAuth } from "@/components/providers/auth-provider";
-import { useFarmsQuery } from "@/lib/hooks/query/use-farms-query";
-import { useSystemSettingsQueryCompat } from "@/lib/hooks/query/use-system-settings-query";
+import { useFarmsContext } from "@/components/providers/farms-provider";
+import { useSystemSettings } from "@/components/providers/system-settings-provider";
 import { getFarmTypeLabel, getFarmTypeIcon } from "@/lib/constants/farm-types";
+import type { Farm } from "@/lib/types/farm";
 import {
   Sidebar,
   SidebarContent,
@@ -41,13 +42,16 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useMemo } from "react";
 import { Logo, ThemeToggle } from "@/components/common";
-import { DEFAULT_SYSTEM_SETTINGS } from "@/lib/constants/defaults";
+import { useLogo } from "@/hooks/use-logo";
 
 export function AdminSidebar() {
   const { state, signOut } = useAuth();
-  const { farms } = useFarmsQuery();
-  const { settings } = useSystemSettingsQueryCompat();
+  const { farms } = useFarmsContext();
+  const settings = useSystemSettings();
   const { isMobile, setOpenMobile } = useSidebar();
+
+  // useLogo에 settings 전달하여 중복 query 방지
+  const { logoUrl, siteName } = useLogo(settings || null);
 
   const profile = state.status === "authenticated" ? state.profile : null;
 
@@ -169,16 +173,16 @@ export function AdminSidebar() {
     >
       <SidebarHeader className="bg-background border-b">
         <div className="flex flex-col items-center gap-2 px-2 py-4">
-          <Logo size="lg" />
+          <Logo size="lg" settings={settings || null} />
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
                 <span className="text-sm font-semibold truncate cursor-help text-center block w-full">
-                  {settings.siteName || DEFAULT_SYSTEM_SETTINGS.siteName}
+                  {siteName}
                 </span>
               </TooltipTrigger>
               <TooltipContent>
-                <p>{settings.siteName || DEFAULT_SYSTEM_SETTINGS.siteName}</p>
+                <p>{siteName}</p>
               </TooltipContent>
             </Tooltip>
           </TooltipProvider>
@@ -261,7 +265,7 @@ export function AdminSidebar() {
             </SidebarGroupLabel>
             <SidebarGroupContent>
               <SidebarMenu>
-                {(farms || []).map((farm) => (
+                {(farms || []).map((farm: Farm) => (
                   <SidebarMenuItem key={farm.id}>
                     <Link
                       href={`/admin/farms/${farm.id}/visitors`}

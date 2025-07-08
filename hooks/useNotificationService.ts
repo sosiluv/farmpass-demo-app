@@ -1,7 +1,5 @@
 import { useState, useCallback } from "react";
 import { devLog } from "@/lib/utils/logging/dev-logger";
-import type { NotificationPayload } from "@/lib/types/notification";
-import { handleError } from "@/lib/utils/error";
 import { safeNotificationAccess } from "@/lib/utils/browser/safari-compat";
 
 // React Query Hooks
@@ -13,7 +11,7 @@ import {
 } from "@/lib/hooks/query/use-push-mutations";
 import { useSaveNotificationSettingsMutation } from "@/lib/hooks/query/use-notification-mutations";
 
-export function useNotificationService() {
+export function useNotificationService(enableVapidKey: boolean = false) {
   // 토스트 대신 메시지 상태만 반환
   const [lastMessage, setLastMessage] = useState<{
     type: "success" | "error";
@@ -22,25 +20,25 @@ export function useNotificationService() {
   } | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
-  // React Query Hooks
-  const { data: vapidKey } = useVapidKeyQuery();
+  // React Query Hooks - VAPID key는 필요할 때만 조회
+  const { data: vapidKey } = useVapidKeyQuery({ enabled: enableVapidKey });
   const createSubscriptionMutation = useCreateSubscriptionMutation();
   const deleteSubscriptionMutation = useDeleteSubscriptionMutation();
   const sendTestPushMutation = useSendTestPushMutation();
   const saveNotificationSettingsMutation =
     useSaveNotificationSettingsMutation();
 
-  // VAPID 키 관리 - React Query 사용
+  // VAPID 키 관리 - React Query 캐시 사용
   const getVapidPublicKey = async () => {
     try {
       devLog.log("[NOTIFICATION] VAPID 키 조회 시작");
 
-      // 이미 캐시된 VAPID 키가 있으면 사용
+      // React Query 캐시된 데이터 사용
       if (vapidKey) {
         return vapidKey;
       }
 
-      devLog.warn("VAPID 키가 캐시되지 않음");
+      devLog.warn("VAPID 키가 아직 로드되지 않음");
       return null;
     } catch (error) {
       devLog.error("VAPID 키 조회 실패:", error);
@@ -217,7 +215,7 @@ export function useNotificationService() {
     } finally {
       setIsLoading(false);
     }
-  }, [vapidKey, createSubscriptionMutation, saveNotificationSettingsMutation]);
+  }, [createSubscriptionMutation, saveNotificationSettingsMutation]);
 
   // Base64 to Uint8Array 변환
   const urlBase64ToUint8Array = (base64String: string) => {

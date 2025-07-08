@@ -53,17 +53,6 @@ export function useFarmMembersQuery(farmId: string | null) {
         // API 응답 구조에 따라 데이터 처리
         const farmMembers = (membersArray || [])
           .map((member: any) => {
-            // 디버깅: member 객체의 전체 구조 출력
-            console.log(`🔍 Raw member object structure:`, {
-              member,
-              memberKeys: Object.keys(member),
-              memberValues: member,
-              profiles: member.profiles,
-              profilesKeys: member.profiles
-                ? Object.keys(member.profiles)
-                : null,
-            });
-
             return {
               ...member,
               representative_name:
@@ -87,8 +76,6 @@ export function useFarmMembersQuery(farmId: string | null) {
             const nameB = b.representative_name || "";
             return nameA.localeCompare(nameB);
           });
-
-        console.log(`🔍 Processed members for ${farmId}:`, farmMembers);
 
         return {
           count: farmMembers.length,
@@ -158,7 +145,6 @@ export function useFarmMembersPreviewQuery(farmIds: string[]) {
 
       try {
         const uniqueFarmIds = Array.from(new Set(farmIds));
-        console.log("🔍 Farm Members Preview Query - farmIds:", uniqueFarmIds);
 
         const response = await apiClient(
           `/api/farm-members?farmIds=${uniqueFarmIds.join(",")}`,

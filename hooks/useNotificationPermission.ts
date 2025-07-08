@@ -21,9 +21,12 @@ interface NotificationPermissionState {
 
 export function useNotificationPermission() {
   const { state: authState } = useAuth();
+  const [needsVapidKey, setNeedsVapidKey] = useState(false);
 
-  // React Query hooks
-  const { data: vapidData } = useVapidKeyQuery();
+  // React Query hooks - 처음에는 비활성화
+  const { data: vapidData } = useVapidKeyQuery({
+    enabled: needsVapidKey,
+  });
   const createSubscriptionMutation = useCreateSubscriptionMutation();
 
   // 토스트 대신 메시지 상태만 반환
@@ -111,6 +114,9 @@ export function useNotificationPermission() {
     if (!user) return;
 
     try {
+      // VAPID key가 필요한 시점에서 조회 시작
+      setNeedsVapidKey(true);
+
       // 브라우저 알림 권한 요청 (Safari 호환성 고려)
       const safeNotification = safeNotificationAccess();
       const permission = await safeNotification.requestPermission();
@@ -250,6 +256,7 @@ export function useNotificationPermission() {
 
   // 강제로 다이얼로그 표시 (디버깅/테스트용)
   const showDialogForce = () => {
+    setNeedsVapidKey(true); // VAPID key 활성화
     setState((prev) => ({
       ...prev,
       showDialog: true,

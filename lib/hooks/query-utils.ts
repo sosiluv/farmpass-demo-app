@@ -21,6 +21,10 @@ export function useAuthenticatedQuery<TData = unknown, TError = Error>(
   return useQuery({
     queryKey,
     queryFn,
+    // 기본 최적화 설정
+    staleTime: 5 * 60 * 1000, // 5분간 stale하지 않음
+    gcTime: 10 * 60 * 1000, // 10분간 캐시 유지
+    refetchOnWindowFocus: false, // 윈도우 포커스시 자동 refetch 안함
     ...options,
     enabled: state.status === "authenticated" && (options?.enabled ?? true),
     retry: (failureCount, error) => {

@@ -78,7 +78,10 @@ export const useVisitorActions = ({
       }
 
       try {
-        await deleteVisitorMutation.mutateAsync(visitor.id);
+        await deleteVisitorMutation.mutateAsync({
+          visitorId: visitor.id,
+          farmId: visitor.farm_id,
+        });
         showSuccess("방문자 삭제 완료", "방문자가 성공적으로 삭제되었습니다.");
       } catch (error) {
         showError(

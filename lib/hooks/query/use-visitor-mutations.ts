@@ -3,10 +3,7 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/components/providers/auth-provider";
 import { apiClient } from "@/lib/utils/data/api-client";
-import {
-  createVisitorQueryKey,
-  createDashboardStatsQueryKey,
-} from "@/lib/hooks/query-utils";
+import { visitorsKeys, dashboardKeys } from "@/lib/hooks/query/query-keys";
 import type { VisitorEntry } from "@/lib/types";
 
 export interface CreateVisitorRequest {
@@ -22,6 +19,7 @@ export interface CreateVisitorRequest {
 
 export interface UpdateVisitorRequest extends Partial<CreateVisitorRequest> {
   id: string;
+  farm_id: string; // farm_id 필수로 추가
 }
 
 /**
@@ -42,16 +40,13 @@ export function useCreateVisitorMutation() {
     onSuccess: (newVisitor, variables) => {
       // 관련 쿼리 무효화만 수행
       queryClient.invalidateQueries({
-        queryKey: createVisitorQueryKey(variables.farm_id),
+        queryKey: visitorsKeys.farm(variables.farm_id),
       });
       queryClient.invalidateQueries({
-        queryKey: createVisitorQueryKey(null),
+        queryKey: visitorsKeys.farm("all"),
       });
       queryClient.invalidateQueries({
-        queryKey: createDashboardStatsQueryKey(variables.farm_id),
-      });
-      queryClient.invalidateQueries({
-        queryKey: createDashboardStatsQueryKey(undefined),
+        queryKey: dashboardKeys.stats(),
       });
     },
   });
@@ -65,24 +60,25 @@ export function useUpdateVisitorMutation() {
 
   return useMutation({
     mutationFn: async (data: UpdateVisitorRequest): Promise<VisitorEntry> => {
-      const response = await apiClient(`/api/visitors/${data.id}`, {
-        method: "PUT",
-        body: JSON.stringify(data),
-      });
-      return response.visitor;
+      const response = await apiClient(
+        `/api/farms/${data.farm_id}/visitors/${data.id}`,
+        {
+          method: "PUT",
+          body: JSON.stringify(data),
+        }
+      );
+      return response;
     },
     onSuccess: (updatedVisitor, variables) => {
+      // 관련 쿼리 무효화
       queryClient.invalidateQueries({
-        queryKey: createVisitorQueryKey(updatedVisitor.farm_id),
+        queryKey: visitorsKeys.farm(updatedVisitor.farm_id),
       });
       queryClient.invalidateQueries({
-        queryKey: createVisitorQueryKey(null),
+        queryKey: visitorsKeys.farm("all"),
       });
       queryClient.invalidateQueries({
-        queryKey: createDashboardStatsQueryKey(updatedVisitor.farm_id),
-      });
-      queryClient.invalidateQueries({
-        queryKey: createDashboardStatsQueryKey(undefined),
+        queryKey: dashboardKeys.stats(),
       });
     },
   });
@@ -95,21 +91,29 @@ export function useDeleteVisitorMutation() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (
-      visitorId: string
-    ): Promise<{ success: boolean; visitor?: VisitorEntry }> => {
-      const response = await apiClient(`/api/visitors/${visitorId}`, {
-        method: "DELETE",
-      });
+    mutationFn: async ({
+      visitorId,
+      farmId,
+    }: {
+      visitorId: string;
+      farmId: string;
+    }): Promise<{ success: boolean; visitor?: VisitorEntry }> => {
+      const response = await apiClient(
+        `/api/farms/${farmId}/visitors/${visitorId}`,
+        {
+          method: "DELETE",
+        }
+      );
       return response;
     },
     onSuccess: (result, visitorId) => {
       // 모든 방문자 관련 쿼리 무효화
       queryClient.invalidateQueries({
-        predicate: (query) => {
-          const [type] = query.queryKey;
-          return type === "visitors" || type === "dashboardStats";
-        },
+        queryKey: visitorsKeys.all,
+        exact: false,
+      });
+      queryClient.invalidateQueries({
+        queryKey: dashboardKeys.stats(),
       });
     },
   });
@@ -126,18 +130,19 @@ export function useBulkDeleteVisitorsMutation() {
       visitorIds: string[]
     ): Promise<{ success: boolean; deletedCount: number }> => {
       const response = await apiClient("/api/visitors/bulk-delete", {
-        method: "POST",
-        body: JSON.stringify({ ids: visitorIds }),
+        method: "DELETE",
+        body: JSON.stringify({ visitorIds }),
       });
       return response;
     },
     onSuccess: (result, visitorIds) => {
       // 모든 방문자 관련 쿼리 무효화
       queryClient.invalidateQueries({
-        predicate: (query) => {
-          const [type] = query.queryKey;
-          return type === "visitors" || type === "dashboardStats";
-        },
+        queryKey: visitorsKeys.all,
+        exact: false,
+      });
+      queryClient.invalidateQueries({
+        queryKey: dashboardKeys.stats(),
       });
     },
   });

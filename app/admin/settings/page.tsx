@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Settings, Shield, UserCheck, Bell, Terminal } from "lucide-react";
 import { CardSkeleton } from "@/components/common/skeletons";
@@ -13,10 +13,11 @@ import {
   NotificationTab,
   SystemTab,
 } from "@/components/admin/settings/tabs";
-import { useSystemSettingsQueryCompat } from "@/lib/hooks/query/use-system-settings-query";
+import { useSystemSettingsContext } from "@/components/providers/system-settings-provider";
 import { useDynamicFavicon } from "@/hooks/use-dynamic-favicon";
 import { useSystemMode } from "@/components/providers/debug-provider";
 import { useAuth } from "@/components/providers/auth-provider";
+import { DEFAULT_SYSTEM_SETTINGS } from "@/lib/constants/defaults";
 import type { SystemSettings } from "@/lib/types/settings";
 import {
   useSettingsImageManager,
@@ -26,18 +27,70 @@ import {
 } from "@/components/admin/settings";
 
 export default function SettingsPage() {
-  const { settings, loading, refetch } = useSystemSettingsQueryCompat();
+  const {
+    settings,
+    isLoading: loading,
+    refetch,
+  } = useSystemSettingsContext();
 
   // 설정 페이지에서만 동적 파비콘 업데이트 (기본 파비콘 포함)
-  useDynamicFavicon(settings.favicon || "/favicon.ico");
+  useDynamicFavicon(settings?.favicon || "/favicon.ico");
 
   const { refreshSystemModes } = useSystemMode();
-  const [unsavedChanges, setUnsavedChanges] = useState(false);
-  const [activeTab, setActiveTab] = useState("general");
-  const [localSettings, setLocalSettings] = useState<SystemSettings>(settings);
   const { state } = useAuth();
   const user = state.status === "authenticated" ? state.user : null;
   const profile = state.status === "authenticated" ? state.profile : null;
+
+  const [unsavedChanges, setUnsavedChanges] = useState(false);
+  const [activeTab, setActiveTab] = useState("general");
+  const [localSettings, setLocalSettings] = useState<SystemSettings | null>(
+    null
+  );
+
+  // settings가 로드되면 localSettings 업데이트
+  useEffect(() => {
+    if (settings) {
+      setLocalSettings(settings);
+    }
+  }, [settings]);
+
+  // 모든 hook을 먼저 호출 (조건부 호출 방지)
+  const { handleImageUpload, handleImageDelete } = useSettingsImageManager({
+    settings:
+      localSettings ||
+      ({
+        ...DEFAULT_SYSTEM_SETTINGS,
+        id: "",
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      } as SystemSettings),
+    onSettingsUpdate: (updatedSettings) => {
+      setLocalSettings((prev) =>
+        prev ? { ...prev, ...updatedSettings } : prev
+      );
+    },
+  });
+
+  const { validateSetting, inputValidations } = useSettingsValidator({ user });
+
+  const { saving, handleSaveAll } = useSettingsSaver({
+    onSettingsUpdate: setLocalSettings,
+    onUnsavedChangesChange: setUnsavedChanges,
+    refreshSystemModes,
+    refetch: async () => {
+      refetch();
+      return settings;
+    },
+  });
+
+  // 설정이 로딩 중이거나 localSettings가 없으면 로딩 표시
+  if (loading || !localSettings) {
+    return (
+      <div className="flex-1 space-y-4 p-4 md:p-6 pt-2 md:pt-4">
+        <CardSkeleton count={5} />
+      </div>
+    );
+  }
 
   // admin 권한 체크
   if (profile && profile.account_type !== "admin") {
@@ -51,47 +104,24 @@ export default function SettingsPage() {
     );
   }
 
-  // settings가 로드되면 localSettings 업데이트
-  useEffect(() => {
-    if (settings) {
-      setLocalSettings(settings);
-    }
-  }, [settings]);
-
-  // 분리된 훅들 사용
-  const { handleImageUpload, handleImageDelete } = useSettingsImageManager({
-    settings: localSettings,
-    onSettingsUpdate: (updatedSettings) => {
-      setLocalSettings((prev) => ({ ...prev, ...updatedSettings }));
-    },
-  });
-
-  const { validateSetting, inputValidations } = useSettingsValidator({ user });
-
-  const { saving, handleSaveAll } = useSettingsSaver({
-    onSettingsUpdate: setLocalSettings,
-    onUnsavedChangesChange: setUnsavedChanges,
-    refreshSystemModes,
-    refetch: async () => {
-      const result = await refetch();
-      return result.data;
-    },
-  });
-
   const handleSettingChange = <K extends keyof SystemSettings>(
     key: K,
     value: SystemSettings[K]
   ) => {
+    if (!localSettings) return;
+
     // 로컬 상태 즉시 업데이트
-    setLocalSettings((prev) => ({ ...prev, [key]: value }));
+    setLocalSettings((prev) => (prev ? { ...prev, [key]: value } : prev));
     setUnsavedChanges(true);
 
     // 숫자 입력 필드에 대해서만 비동기 유효성 검사 수행
     if (key in inputValidations) {
       validateSetting(key, value).then((isValid) => {
-        if (!isValid) {
+        if (!isValid && settings) {
           // 유효하지 않은 경우 이전 값으로 복원
-          setLocalSettings((prev) => ({ ...prev, [key]: settings[key] }));
+          setLocalSettings((prev) =>
+            prev ? { ...prev, [key]: settings[key] } : prev
+          );
           setUnsavedChanges(false);
         }
       });
@@ -99,16 +129,10 @@ export default function SettingsPage() {
   };
 
   const handleSave = () => {
-    handleSaveAll(localSettings);
+    if (localSettings) {
+      handleSaveAll(localSettings);
+    }
   };
-
-  if (loading) {
-    return (
-      <div className="flex-1 space-y-4 p-4 md:p-6 pt-2 md:pt-4">
-        <CardSkeleton count={5} />
-      </div>
-    );
-  }
 
   return (
     <ErrorBoundary

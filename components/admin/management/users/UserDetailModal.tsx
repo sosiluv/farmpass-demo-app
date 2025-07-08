@@ -14,8 +14,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/components/providers/auth-provider";
 import { useCommonToast } from "@/lib/utils/notification/toast-messages";
-import { apiClient } from "@/lib/utils/data";
-import { handleError } from "@/lib/utils/error";
+import { useResetLoginAttemptsMutation } from "@/lib/hooks/query/use-auth-mutations";
 
 interface UserDetailModalProps {
   user: Profile | null;
@@ -77,33 +76,26 @@ export function UserDetailModal({ user, open, onClose }: UserDetailModalProps) {
     return colors[index];
   };
 
+  const resetAttemptsMutation = useResetLoginAttemptsMutation();
+
   const handleUnlock = async () => {
     showInfo("계정 잠금 해제 시작", "계정 잠금을 해제하는 중입니다...");
     setLoading(true);
     try {
-      const data = await apiClient("/api/auth/reset-attempts", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          email: user?.email,
-          reason: "관리자 수동 잠금 해제",
-        }),
-        context: "계정 잠금 해제",
-        onError: (error, context) => {
-          handleError(error, context);
-          showError("잠금 해제 실패", error.message || "잠금 해제 실패");
-        },
+      await resetAttemptsMutation.mutateAsync({
+        email: user?.email || "",
+        reason: "관리자 수동 잠금 해제",
       });
-
       showSuccess(
-        "계정 잠금 해제",
-        data.message || "계정 잠금이 해제되었습니다!"
+        "계정 잠금 해제 완료",
+        "계정 잠금이 성공적으로 해제되었습니다."
       );
       onClose();
-    } catch {
-      // onError에서 이미 처리함
+    } catch (error) {
+      showError(
+        "계정 잠금 해제 실패",
+        "계정 잠금 해제 중 오류가 발생했습니다."
+      );
     } finally {
       setLoading(false);
     }

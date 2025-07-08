@@ -10,10 +10,15 @@ import {
 import { useAuth } from "@/components/providers/auth-provider";
 import { useFarmsQuery } from "@/lib/hooks/query/use-farms-query";
 import { devLog } from "@/lib/utils/logging/dev-logger";
+import type { Farm } from "@/lib/types/farm";
 
 interface FarmsContextValue {
+  farms: Farm[];
   initialized: boolean;
   isLoading: boolean;
+  isError: boolean;
+  error: Error | null;
+  refetch: () => Promise<any>;
   refreshFarms: () => Promise<void>;
 }
 
@@ -22,7 +27,13 @@ const FarmsContext = createContext<FarmsContextValue | undefined>(undefined);
 export function FarmsProvider({ children }: { children: React.ReactNode }) {
   const { state } = useAuth();
   const profile = state.status === "authenticated" ? state.profile : null;
-  const { refetch: refetchFarms, isLoading, isError } = useFarmsQuery(profile?.id);
+  const {
+    farms,
+    refetch: refetchFarms,
+    isLoading,
+    isError,
+    error,
+  } = useFarmsQuery(profile?.id);
   const initializationRef = useRef<string | null>(null);
 
   // 초기화 로직 개선
@@ -69,8 +80,12 @@ export function FarmsProvider({ children }: { children: React.ReactNode }) {
   return (
     <FarmsContext.Provider
       value={{
+        farms,
         initialized: initializationRef.current === profile?.id,
         isLoading: isLoading,
+        isError,
+        error,
+        refetch: refetchFarms,
         refreshFarms,
       }}
     >

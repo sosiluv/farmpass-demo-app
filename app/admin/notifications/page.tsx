@@ -4,8 +4,9 @@ import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { PageHeader } from "@/components/layout";
 import { WebPushSubscription } from "@/components/admin/notifications/WebPushSubscription";
+import { useFarmsContext } from "@/components/providers/farms-provider";
 import { useFarmsQuery } from "@/lib/hooks/query/use-farms-query";
-import { useNotificationSettingsQueryCompat } from "@/lib/hooks/query/use-notification-settings-query";
+import { useNotificationSettingsQuery } from "@/lib/hooks/query/use-notification-settings-query";
 import { useAuth } from "@/components/providers/auth-provider";
 import { Farm } from "@/lib/types/notification";
 import { ErrorBoundary } from "@/components/error/error-boundary";
@@ -20,9 +21,15 @@ import { useCommonToast } from "@/lib/utils/notification/toast-messages";
 export default function NotificationsPage() {
   const { state } = useAuth();
   const user = state.status === "authenticated" ? state.user : null;
-  const { farms, isLoading: farmsLoading, error: farmsError, refetch: refetchFarms } = useFarmsQuery();
+  const {
+    farms,
+    isLoading: farmsLoading,
+    error: farmsError,
+    refetch: refetchFarms,
+  } = useFarmsContext();
   const [isSubscribed, setIsSubscribed] = useState(false);
-  const { data: settings, error: settingsError } = useNotificationSettingsQueryCompat();
+  const { data: settings, error: settingsError } =
+    useNotificationSettingsQuery();
   const { showInfo, showError } = useCommonToast();
 
   // 농장 데이터 로드

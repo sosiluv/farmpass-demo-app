@@ -1,5 +1,5 @@
 import { CommonListItem } from "../shared/CommonListItem";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -34,11 +34,6 @@ interface FarmListProps {
 
 export function FarmList({ farms }: FarmListProps) {
   const [selectedFarm, setSelectedFarm] = useState<ExtendedFarm | null>(null);
-  const [imgErrorMap, setImgErrorMap] = useState<Record<string, boolean>>({});
-
-  const handleImgError = (id: string) => {
-    setImgErrorMap((prev) => ({ ...prev, [id]: true }));
-  };
 
   return (
     <>
@@ -48,21 +43,12 @@ export function FarmList({ farms }: FarmListProps) {
             key={farm.id}
             avatar={
               <Avatar className="h-6 w-6 sm:h-10 sm:w-10 lg:h-12 lg:w-12 flex-shrink-0">
-                {!imgErrorMap[farm.id] ? (
-                  <img
-                    src={`https://picsum.photos/seed/${farm.id}/200/200`}
-                    alt="farm"
-                    className="w-full h-full object-cover rounded-full"
-                    onError={() => handleImgError(farm.id)}
-                  />
-                ) : farm.farm_type ? (
-                  <AvatarFallback className="bg-blue-100 flex items-center justify-center w-full h-full">
-                    {(() => {
-                      const Icon = getFarmTypeIcon(farm.farm_type);
-                      return <Icon className="h-4 w-4 text-blue-600" />;
-                    })()}
-                  </AvatarFallback>
-                ) : null}
+                <AvatarFallback className="bg-blue-100 dark:bg-blue-900 flex items-center justify-center w-full h-full">
+                  {(() => {
+                    const Icon = getFarmTypeIcon(farm.farm_type || undefined);
+                    return <Icon className="h-4 w-4 sm:h-6 sm:w-6 lg:h-7 lg:w-7 text-blue-600 dark:text-blue-300" />;
+                  })()}
+                </AvatarFallback>
               </Avatar>
             }
             primary={farm.farm_name}

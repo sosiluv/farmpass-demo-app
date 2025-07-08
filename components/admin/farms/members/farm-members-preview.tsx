@@ -2,18 +2,23 @@
 
 import { Users } from "lucide-react";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
-import { useFarmMembersQuery } from "@/lib/hooks/query/use-farm-members-query";
+import { CardSkeleton } from "@/components/common/skeletons";
+import { type FarmMembers } from "@/lib/hooks/query/use-farm-members-query";
 import { generateInitials } from "@/lib/utils/text";
 import type { MemberWithProfile } from "@/lib/hooks/query/use-farm-members-query";
 
 interface FarmMembersPreviewProps {
   farmId: string;
+  membersData?: FarmMembers;
 }
 
 export function FarmMembersPreview({
   farmId,
+  membersData,
 }: FarmMembersPreviewProps) {
-  const { members, isLoading, error } = useFarmMembersQuery(farmId);
+  // 오직 상위에서 전달받은 데이터만 사용 (개별 쿼리 완전 제거)
+  const members = membersData?.members || [];
+  const isLoading = !membersData;
 
   if (isLoading) {
     return (
@@ -23,11 +28,11 @@ export function FarmMembersPreview({
     );
   }
 
-  if (error || !members) {
+  if (!members || members.length === 0) {
     return (
       <div className="flex items-center gap-2 text-sm text-muted-foreground">
         <Users className="w-4 h-4" />
-        <span>멤버 정보 불러오기 실패</span>
+        <span>멤버 없음</span>
       </div>
     );
   }

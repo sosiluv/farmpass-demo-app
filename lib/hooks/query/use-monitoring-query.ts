@@ -103,26 +103,3 @@ export function useMonitoringQuery() {
     }
   );
 }
-
-/**
- * Legacy 코드와의 호환성을 위한 Wrapper
- * 기존 코드와 동일한 인터페이스를 제공합니다.
- */
-export function useMonitoringQueryCompat() {
-  const {
-    data,
-    isLoading: loading,
-    error,
-    refetch,
-  } = useMonitoringQuery();
-
-  return {
-    data,
-    loading,
-    error: error ? error.message : null,
-    refetch: async () => {
-      const result = await refetch();
-      return result.data;
-    },
-  };
-}

@@ -2,7 +2,7 @@
 
 import React from "react";
 import { Users } from "lucide-react";
-import { useAdminUsersQueryCompat } from "@/lib/hooks/query/use-admin-users-query";
+import { useAdminUsersQuery } from "@/lib/hooks/query/use-admin-users-query";
 import { StatsSkeleton, TableSkeleton } from "@/components/common/skeletons";
 import { formatDateTime } from "@/lib/utils/datetime/date";
 import {
@@ -22,14 +22,18 @@ import { AdminError } from "@/components/error/admin-error";
 import { useDataFetchTimeout } from "@/hooks/useTimeout";
 
 export function UsersTab() {
-  const { stats, loading, refetch } = useAdminUsersQueryCompat();
+  const { data: stats, isLoading: loading, refetch } = useAdminUsersQuery();
 
   // 타임아웃 관리
-  const { timeoutReached, retry } = useDataFetchTimeout(loading, async () => {
-    await refetch();
-  }, {
-    timeout: 10000,
-  });
+  const { timeoutReached, retry } = useDataFetchTimeout(
+    loading,
+    async () => {
+      await refetch();
+    },
+    {
+      timeout: 10000,
+    }
+  );
 
   if (timeoutReached) {
     return (

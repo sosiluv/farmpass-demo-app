@@ -19,6 +19,7 @@ import { ResponsivePagination } from "@/components/common/responsive-pagination"
 import { useCommonToast } from "@/lib/utils/notification/toast-messages";
 
 // React Query Hooks
+import { useFarmsContext } from "@/components/providers/farms-provider";
 import { useFarmsQuery } from "@/lib/hooks/query/use-farms-query";
 import { useFarmVisitorsWithFiltersQuery } from "@/lib/hooks/query/use-farm-visitors-filtered-query";
 
@@ -37,7 +38,7 @@ export default function VisitorsPage() {
   const { showWarning, showSuccess, showError } = useCommonToast();
 
   // React Query Hooks
-  const farmsQuery = useFarmsQuery();
+  const farmsQuery = useFarmsContext();
 
   // 필터 Store
   const {
@@ -61,7 +62,7 @@ export default function VisitorsPage() {
   const farms = farmsQuery.farms || [];
   const visitors = visitorsFilteredQuery.visitors || [];
   const allVisitors = visitorsFilteredQuery.allVisitors || [];
-  const loading = visitorsFilteredQuery.loading || farmsQuery.loading;
+  const loading = visitorsFilteredQuery.loading || farmsQuery.isLoading;
   const error = visitorsFilteredQuery.error || farmsQuery.error;
 
   // Farm 타입 변환

@@ -1,34 +1,11 @@
 "use client";
 
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiClient } from "@/lib/utils/data/api-client";
 import type {
   NotificationSettings,
   UpdateNotificationSettingsDTO,
 } from "@/lib/types/notification";
-
-/**
- * 알림 설정 조회 Query Hook
- */
-export function useNotificationSettingsQuery() {
-  return useQuery({
-    queryKey: ["notification-settings"],
-    queryFn: async (): Promise<NotificationSettings | null> => {
-      try {
-        const data = await apiClient("/api/notifications/settings", {
-          method: "GET",
-          context: "알림 설정 조회",
-        });
-        return data;
-      } catch (error) {
-        // 에러 발생 시 null 반환 (useSubscriptionManager에서 null 체크 로직 있음)
-        return null;
-      }
-    },
-    staleTime: 5 * 60 * 1000, // 5분간 fresh 유지
-    retry: 1,
-  });
-}
 
 /**
  * 알림 설정 저장 Mutation Hook

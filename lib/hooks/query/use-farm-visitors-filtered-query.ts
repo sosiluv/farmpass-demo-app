@@ -1,10 +1,8 @@
 "use client";
 
 import React from "react";
-import {
-  useAuthenticatedQuery,
-  createVisitorQueryKey,
-} from "@/lib/hooks/query-utils";
+import { useAuthenticatedQuery } from "@/lib/hooks/query-utils";
+import { visitorsKeys } from "@/lib/hooks/query/query-keys";
 import { useAuth } from "@/components/providers/auth-provider";
 import { createClient } from "@/lib/supabase/client";
 import type { VisitorEntry } from "@/lib/types";
@@ -40,7 +38,7 @@ export function useFarmVisitorsWithFiltersQuery(filters: VisitorFilters = {}) {
 
   // 쿼리 키 - farmId 변경 시 새로운 쿼리 실행
   const queryKey = React.useMemo(() => {
-    const baseKey = createVisitorQueryKey(filters.farmId || null);
+    const baseKey = visitorsKeys.farm(filters.farmId || "all", { filters });
     return [...baseKey, "filtered", filters.farmId || "all"];
   }, [filters.farmId]);
 
@@ -50,7 +48,15 @@ export function useFarmVisitorsWithFiltersQuery(filters: VisitorFilters = {}) {
     async (): Promise<VisitorEntry[]> => {
       let query = supabase
         .from("visitor_entries")
-        .select("*")
+        .select(`
+          *,
+          farms!inner(
+            id,
+            farm_name,
+            farm_type,
+            farm_address
+          )
+        `)
         .order("visit_datetime", { ascending: false });
 
       // farmId가 있으면 해당 농장의 데이터만 조회
@@ -68,8 +74,9 @@ export function useFarmVisitorsWithFiltersQuery(filters: VisitorFilters = {}) {
     },
     {
       enabled: state.status === "authenticated",
-      staleTime: 2 * 60 * 1000, // 2분
-      refetchOnWindowFocus: true,
+      staleTime: 10 * 60 * 1000, // 10분 (중복 호출 방지)
+      gcTime: 20 * 60 * 1000, // 20분간 캐시 유지
+      refetchOnWindowFocus: false, // 윈도우 포커스 시 refetch 비활성화
       refetchOnReconnect: true,
     }
   );
