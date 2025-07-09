@@ -3,7 +3,6 @@
 import React from "react";
 import {
   useAuthenticatedQuery,
-  queryKeys,
   createFarmMemberQueryKey,
 } from "@/lib/hooks/query-utils";
 import { useAuth } from "@/components/providers/auth-provider";
@@ -43,7 +42,6 @@ export function useFarmMembersQuery(farmId: string | null) {
       }
 
       try {
-        // 기존 Zustand store와 동일한 API 엔드포인트 사용
         const response = await apiClient(`/api/farms/${farmId}/members`, {
           method: "GET",
         });
@@ -122,11 +120,6 @@ export function useFarmMembersQuery(farmId: string | null) {
     // 액션
     refetch: membersQuery.refetch,
     fetchMembers: membersQuery.refetch,
-
-    // TODO: Mutation 기능들 (다음 단계에서 구현)
-    // addMember: () => {},
-    // updateMember: () => {},
-    // removeMember: () => {},
   };
 }
 

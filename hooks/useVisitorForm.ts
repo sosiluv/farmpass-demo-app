@@ -5,7 +5,6 @@ import {
 } from "@/lib/utils/media/image-upload";
 import type { VisitorSettings } from "@/lib/types/visitor";
 import type { VisitorFormData } from "@/lib/utils/validation/visitor-validation";
-import type { Farm as VisitorFarm } from "@/lib/types/visitor";
 import {
   ALLOWED_IMAGE_TYPES,
   MAX_UPLOAD_SIZE_MB,

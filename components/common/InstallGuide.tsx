@@ -24,9 +24,10 @@ export function InstallGuide() {
 
   const currentGuide = getCurrentPlatformGuide(installInfo);
 
-  if (!installInfo.canInstall) {
-    return null;
-  }
+  // 디버깅을 위해 조건 체크 제거 - 항상 표시
+  // if (!installInfo.canInstall) {
+  //   return null;
+  // }
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>

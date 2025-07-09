@@ -52,6 +52,8 @@ export function useNotificationPermission() {
   useEffect(() => {
     if (!user || !profile) return;
 
+    let timeoutId: NodeJS.Timeout | null = null;
+
     const checkNotificationPermission = () => {
       const storageKey = getStorageKey(user.id);
       const safeLocalStorage = safeLocalStorageAccess();
@@ -86,15 +88,22 @@ export function useNotificationPermission() {
 
         if (canReAsk) {
           // 로그인 후 2초 후에 표시 (사용자 경험 개선)
-          const timer = setTimeout(() => {
-            setState({
-              hasAsked: false,
-              permission: currentPermission,
-              showDialog: true,
+          timeoutId = setTimeout(() => {
+            setState((prev) => {
+              // 이미 다이얼로그가 표시되고 있다면 상태 변경하지 않음
+              if (prev.showDialog) {
+                console.log("🚫 알림 다이얼로그 이미 표시 중 - 중복 방지");
+                return prev;
+              }
+              console.log("✅ 알림 다이얼로그 표시 요청");
+              return {
+                ...prev,
+                hasAsked: false,
+                permission: currentPermission,
+                showDialog: true,
+              };
             });
           }, 2000);
-
-          return () => clearTimeout(timer);
         } else {
           // 아직 재요청 기간이 되지 않은 경우
           setState({
@@ -107,11 +116,24 @@ export function useNotificationPermission() {
     };
 
     checkNotificationPermission();
-  }, [user, profile]);
+
+    // cleanup 함수
+    return () => {
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+      }
+    };
+  }, [user?.id, profile?.id]); // user와 profile 객체 전체가 아닌 id만 의존성으로
 
   // 알림 허용 처리
   const handleAllow = async () => {
     if (!user) return;
+
+    // 중복 실행 방지
+    if (state.hasAsked) {
+      console.log("🚫 알림 권한 이미 처리됨 - 중복 실행 방지");
+      return;
+    }
 
     try {
       // VAPID key가 필요한 시점에서 조회 시작
@@ -169,6 +191,13 @@ export function useNotificationPermission() {
   const handleDeny = () => {
     if (!user) return;
 
+    // 중복 실행 방지
+    if (state.hasAsked) {
+      console.log("🚫 알림 권한 이미 처리됨 - 중복 실행 방지");
+      return;
+    }
+
+    console.log("✅ 알림 권한 거부 처리 시작");
     const storageKey = getStorageKey(user.id);
     const safeLocalStorage = safeLocalStorageAccess();
     safeLocalStorage.setItem(storageKey, Date.now().toString());

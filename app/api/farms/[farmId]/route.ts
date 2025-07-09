@@ -3,6 +3,10 @@ import { NextRequest, NextResponse } from "next/server";
 import { logDataChange } from "@/lib/utils/logging/system-log";
 import { devLog } from "@/lib/utils/logging/dev-logger";
 import { getClientIP, getUserAgent } from "@/lib/server/ip-helpers";
+import {
+  getAuthenticatedUser,
+  checkSystemAdmin,
+} from "@/lib/server/auth-utils";
 
 export async function GET(
   request: NextRequest,
@@ -80,19 +84,49 @@ export async function PUT(
     user = authUser;
     farmData = await request.json();
 
-    // Verify ownership
-    const { data: existingFarm, error: farmCheckError } = await supabase
-      .from("farms")
-      .select("owner_id")
-      .eq("id", params.farmId)
+    // 사용자 권한 확인 (프로필에서 account_type 조회)
+    const { data: userProfile, error: profileError } = await supabase
+      .from("profiles")
+      .select("account_type")
+      .eq("id", user.id)
       .single();
 
-    if (farmCheckError || !existingFarm) {
-      return NextResponse.json({ error: "Farm not found" }, { status: 404 });
+    if (profileError) {
+      devLog.error("Error fetching user profile:", profileError);
+      return NextResponse.json(
+        { error: "User profile not found" },
+        { status: 404 }
+      );
     }
 
-    if (existingFarm.owner_id !== user.id) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
+    const isAdmin = userProfile.account_type === "admin";
+
+    // Verify ownership (관리자가 아닌 경우에만 소유권 확인)
+    if (!isAdmin) {
+      const { data: existingFarm, error: farmCheckError } = await supabase
+        .from("farms")
+        .select("owner_id")
+        .eq("id", params.farmId)
+        .single();
+
+      if (farmCheckError || !existingFarm) {
+        return NextResponse.json({ error: "Farm not found" }, { status: 404 });
+      }
+
+      if (existingFarm.owner_id !== user.id) {
+        return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
+      }
+    } else {
+      // 관리자인 경우에도 농장 존재 여부는 확인
+      const { data: existingFarm, error: farmCheckError } = await supabase
+        .from("farms")
+        .select("id")
+        .eq("id", params.farmId)
+        .single();
+
+      if (farmCheckError || !existingFarm) {
+        return NextResponse.json({ error: "Farm not found" }, { status: 404 });
+      }
     }
 
     // Update farm
@@ -117,6 +151,7 @@ export async function PUT(
         updated_fields: Object.keys(farmData),
         farm_name: farm.farm_name,
         action_type: "farm_management",
+        admin_action: isAdmin, // 관리자 액션 여부 기록
       },
       {
         ip: clientIP,
@@ -169,6 +204,7 @@ export async function DELETE(
 
   let user: any = null;
   let existingFarm: any = null;
+  let isAdmin = false;
 
   try {
     const supabase = await createClient();
@@ -183,12 +219,40 @@ export async function DELETE(
 
     user = authUser;
 
-    // Verify ownership and get farm info for logging
-    const { data: farm, error: farmCheckError } = await supabase
+    // 사용자 권한 확인 (프로필에서 account_type 조회)
+    const { data: userProfile, error: profileError } = await supabase
+      .from("profiles")
+      .select("account_type")
+      .eq("id", user.id)
+      .single();
+
+    if (profileError) {
+      devLog.error("Error fetching user profile:", profileError);
+      return NextResponse.json(
+        { error: "User profile not found" },
+        { status: 404 }
+      );
+    }
+
+    isAdmin = userProfile.account_type === "admin";
+
+    // Verify ownership and get farm info for logging (관리자가 아닌 경우에만 소유권 확인)
+    let farmQuery = supabase
       .from("farms")
       .select("owner_id, farm_name")
       .eq("id", params.farmId)
       .single();
+
+    if (isAdmin) {
+      // 관리자인 경우 farm_name만 조회
+      farmQuery = supabase
+        .from("farms")
+        .select("farm_name")
+        .eq("id", params.farmId)
+        .single();
+    }
+
+    const { data: farm, error: farmCheckError } = await farmQuery;
 
     if (farmCheckError || !farm) {
       devLog.error(
@@ -198,15 +262,22 @@ export async function DELETE(
       return NextResponse.json({ error: "Farm not found" }, { status: 404 });
     }
 
-    devLog.log(
-      `Farm ownership check for deletion - Farm: ${params.farmId}, Owner: ${farm.owner_id}, User: ${user.id}`
-    );
-
-    if (farm.owner_id !== user.id) {
-      devLog.error(
-        `Unauthorized farm deletion - Farm: ${params.farmId}, Owner: ${farm.owner_id}, User: ${user.id}`
+    // 소유권 확인 (관리자가 아닌 경우에만)
+    if (!isAdmin) {
+      devLog.log(
+        `Farm ownership check for deletion - Farm: ${params.farmId}, Owner: ${farm.owner_id}, User: ${user.id}`
       );
-      return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
+
+      if (farm.owner_id !== user.id) {
+        devLog.error(
+          `Unauthorized farm deletion - Farm: ${params.farmId}, Owner: ${farm.owner_id}, User: ${user.id}`
+        );
+        return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
+      }
+    } else {
+      devLog.log(
+        `Admin farm deletion - Farm: ${params.farmId}, Admin User: ${user.id}`
+      );
     }
 
     existingFarm = farm;
@@ -220,6 +291,7 @@ export async function DELETE(
         farm_id: params.farmId,
         farm_name: existingFarm.farm_name || "Unknown",
         action_type: "farm_management",
+        admin_action: isAdmin, // 관리자 액션 여부 기록
       },
       {
         ip: clientIP,
@@ -253,6 +325,7 @@ export async function DELETE(
         farm_name: existingFarm?.farm_name || "Unknown",
         action_type: "farm_management",
         status: "failed",
+        admin_action: user ? isAdmin : false, // 관리자 액션 여부 기록
       },
       {
         ip: clientIP,

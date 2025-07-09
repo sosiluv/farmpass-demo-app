@@ -2,6 +2,10 @@ import { createClient } from "@/lib/supabase/server";
 import { NextResponse } from "next/server";
 import { logUserActivity } from "@/lib/utils/logging/system-log";
 import { devLog } from "@/lib/utils/logging/dev-logger";
+import {
+  getAuthenticatedUser,
+  checkSystemAdmin,
+} from "@/lib/server/auth-utils";
 
 // 동적 렌더링 강제
 export const dynamic = "force-dynamic";
@@ -16,41 +20,56 @@ export async function GET(request: Request) {
       return NextResponse.json({ users: [] });
     }
 
-    const supabase = await createClient();
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser();
-
-    if (authError || !user) {
+    // 인증된 사용자 확인
+    const authResult = await getAuthenticatedUser();
+    if (!authResult.user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    // 농장 ID가 제공된 경우, 해당 농장의 소유자/구성원인지 확인
-    if (farmId) {
-      const { data: farm } = await supabase
-        .from("farms")
-        .select("owner_id")
-        .eq("id", farmId)
-        .single();
+    const user = authResult.user;
+    const supabase = await createClient();
 
-      if (!farm) {
-        return NextResponse.json({ error: "Farm not found" }, { status: 404 });
+    // 농장 ID가 제공된 경우, 해당 농장에 대한 접근 권한 확인
+    if (farmId) {
+      // 시스템 관리자 권한 확인
+      const adminResult = await checkSystemAdmin(user.id);
+
+      if (adminResult.error) {
+        return NextResponse.json(
+          { error: "Failed to verify permissions" },
+          { status: 500 }
+        );
       }
 
-      // 농장 소유자이거나 구성원인지 확인
-      const { data: membership } = await supabase
-        .from("farm_members")
-        .select("role")
-        .eq("farm_id", farmId)
-        .eq("user_id", user.id)
-        .single();
+      // 시스템 관리자가 아닌 경우에만 농장별 권한 확인
+      if (!adminResult.isAdmin) {
+        const { data: farm } = await supabase
+          .from("farms")
+          .select("owner_id")
+          .eq("id", farmId)
+          .single();
 
-      const isOwner = farm.owner_id === user.id;
-      const isMember = !!membership;
+        if (!farm) {
+          return NextResponse.json(
+            { error: "Farm not found" },
+            { status: 404 }
+          );
+        }
 
-      if (!isOwner && !isMember) {
-        return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
+        // 농장 소유자이거나 구성원인지 확인
+        const { data: membership } = await supabase
+          .from("farm_members")
+          .select("role")
+          .eq("farm_id", farmId)
+          .eq("user_id", user.id)
+          .single();
+
+        const isOwner = farm.owner_id === user.id;
+        const isMember = !!membership;
+
+        if (!isOwner && !isMember) {
+          return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
+        }
       }
     }
 

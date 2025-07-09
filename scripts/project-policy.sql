@@ -112,9 +112,7 @@ CREATE POLICY "Users can manage own farms" ON public.farms
         public.is_system_admin() OR
         owner_id = auth.uid()
     );
-
-CREATE POLICY "Admins can all profiles" ON public.profiles
-    FOR ALL USING (public.is_system_admin());    
+  
 
 COMMENT ON POLICY "Users can view own farms" ON public.farms IS 
 '사용자는 자신이 소유한 농장만 조회 가능, 관리자는 모든 농장 조회 가능';
@@ -122,8 +120,6 @@ COMMENT ON POLICY "Users can view own farms" ON public.farms IS
 COMMENT ON POLICY "Users can manage own farms" ON public.farms IS 
 '사용자는 자신이 소유한 농장만 관리 가능, 관리자는 모든 농장 관리 가능';
 
-COMMENT ON POLICY "Admins can all profiles" ON public.profiles IS 
-'관리자는 모든 프로필을 조회 및 수정할 수 있음 (is_system_admin() 함수
 
 
 -- =================================

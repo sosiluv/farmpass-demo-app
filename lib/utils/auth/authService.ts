@@ -1,12 +1,6 @@
 import { createClient } from "@/lib/supabase/client";
 import { devLog } from "@/lib/utils/logging/dev-logger";
-
-import { apiClient } from "@/lib/utils/data";
 import { clearClientCookies } from "@/lib/utils/auth";
-import {
-  safeLocalStorageAccess,
-  safeSessionStorageAccess,
-} from "@/lib/utils/browser/safari-compat";
 
 // 구독 해제를 위한 브라우저 API 직접 호출 (훅 대신)
 async function cleanupBrowserSubscription(): Promise<{

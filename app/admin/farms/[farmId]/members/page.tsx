@@ -33,7 +33,7 @@ interface PageProps {
 export default function MembersPage({ params }: PageProps) {
   const farmId = params.farmId as string;
   const { state } = useAuth();
-  const user = state.status === "authenticated" ? state.user : null;
+  const profile = state.status === "authenticated" ? state.profile : null;
   const { showInfo, showSuccess, showError } = useCommonToast();
 
   // React Query Hooks
@@ -66,19 +66,23 @@ export default function MembersPage({ params }: PageProps) {
 
   const farm = farms.find((f) => f.id === farmId);
 
-  // 현재 사용자가 농장 소유자 또는 관리자인지 확인
+  // 현재 사용자가 농장 소유자, 관리자 또는 시스템 관리자인지 확인
   const canManageMembers = useCallback(() => {
-    if (!user || !farm) return false;
+    if (!profile || !farm) return false;
 
+    // 시스템 관리자인 경우 모든 농장의 구성원 관리 가능
+    if (profile.account_type == "admin") return true;
+
+    // 농장 소유자이거나 농장 관리자인 경우
     return (
-      farm.owner_id === user.id ||
+      farm.owner_id === profile.id ||
       members.some(
         (member) =>
-          member.user_id === user.id &&
+          member.user_id === profile.id &&
           (member.role === "owner" || member.role === "manager")
       )
     );
-  }, [user, farm, members]);
+  }, [profile, farm, members]);
 
   // 멤버 추가 핸들러
   const handleAddMember = useCallback(
@@ -105,8 +109,25 @@ export default function MembersPage({ params }: PageProps) {
       } catch (error: any) {
         let errorMessage = "구성원 추가에 실패했습니다.";
         if (error.message) {
-          errorMessage = error.message;
+          if (error.message.includes("User not found")) {
+            errorMessage = "해당 이메일로 등록된 사용자를 찾을 수 없습니다.";
+          } else if (
+            error.message.includes("already exists") ||
+            error.message.includes("already a member")
+          ) {
+            errorMessage = "이미 농장의 구성원입니다.";
+          } else if (error.message.includes("Invalid email")) {
+            errorMessage = "유효하지 않은 이메일 주소입니다.";
+          } else if (
+            error.message.includes("Unauthorized") ||
+            error.message.includes("permission")
+          ) {
+            errorMessage = "구성원을 추가할 권한이 없습니다.";
+          } else {
+            errorMessage = error.message;
+          }
         }
+
         showError("구성원 추가 실패", errorMessage);
         throw error;
       }

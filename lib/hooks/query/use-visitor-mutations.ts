@@ -23,36 +23,6 @@ export interface UpdateVisitorRequest extends Partial<CreateVisitorRequest> {
 }
 
 /**
- * 방문자 생성 Mutation Hook
- * 페이지에서 토스트 메시지 처리
- */
-export function useCreateVisitorMutation() {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: async (data: CreateVisitorRequest): Promise<VisitorEntry> => {
-      const response = await apiClient("/api/visitors", {
-        method: "POST",
-        body: JSON.stringify(data),
-      });
-      return response.visitor;
-    },
-    onSuccess: (newVisitor, variables) => {
-      // 관련 쿼리 무효화만 수행
-      queryClient.invalidateQueries({
-        queryKey: visitorsKeys.farm(variables.farm_id),
-      });
-      queryClient.invalidateQueries({
-        queryKey: visitorsKeys.farm("all"),
-      });
-      queryClient.invalidateQueries({
-        queryKey: dashboardKeys.stats(),
-      });
-    },
-  });
-}
-
-/**
  * 방문자 수정 Mutation Hook
  */
 export function useUpdateVisitorMutation() {
@@ -152,18 +122,11 @@ export function useBulkDeleteVisitorsMutation() {
  * 방문자 Mutation Hook들을 통합한 객체
  */
 export function useVisitorMutations() {
-  const createMutation = useCreateVisitorMutation();
   const updateMutation = useUpdateVisitorMutation();
   const deleteMutation = useDeleteVisitorMutation();
   const bulkDeleteMutation = useBulkDeleteVisitorsMutation();
 
   return {
-    // 생성
-    createVisitor: createMutation.mutate,
-    createVisitorAsync: createMutation.mutateAsync,
-    isCreating: createMutation.isPending,
-    createError: createMutation.error,
-
     // 수정
     updateVisitor: updateMutation.mutate,
     updateVisitorAsync: updateMutation.mutateAsync,
@@ -184,7 +147,6 @@ export function useVisitorMutations() {
 
     // 전체 상태
     isLoading:
-      createMutation.isPending ||
       updateMutation.isPending ||
       deleteMutation.isPending ||
       bulkDeleteMutation.isPending,

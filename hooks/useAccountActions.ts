@@ -24,7 +24,7 @@ interface SaveResult {
   error?: string;
 }
 
-export function useAccountActions({ profile, userId }: UseAccountActionsProps) {
+export function useAccountActions({ userId }: UseAccountActionsProps) {
   const router = useRouter();
   const { signOut } = useAuth();
   const accountMutations = useAccountMutations();
@@ -108,11 +108,8 @@ export function useAccountActions({ profile, userId }: UseAccountActionsProps) {
   }): Promise<SaveResult> => {
     try {
       await accountMutations.updateProfileAsync(data);
-      
-      handleSuccess(
-        "저장 완료",
-        "변경사항이 성공적으로 저장되었습니다."
-      );
+
+      handleSuccess("저장 완료", "변경사항이 성공적으로 저장되었습니다.");
 
       return { success: true };
     } catch (error: any) {
@@ -133,11 +130,8 @@ export function useAccountActions({ profile, userId }: UseAccountActionsProps) {
   }): Promise<SaveResult> => {
     try {
       await accountMutations.updateCompanyAsync(data);
-      
-      handleSuccess(
-        "저장 완료",
-        "변경사항이 성공적으로 저장되었습니다."
-      );
+
+      handleSuccess("저장 완료", "변경사항이 성공적으로 저장되었습니다.");
 
       return { success: true };
     } catch (error: any) {

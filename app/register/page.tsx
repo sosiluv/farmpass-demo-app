@@ -30,11 +30,10 @@ import { supabase } from "@/lib/supabase/client";
 import { useCommonToast } from "@/lib/utils/notification/toast-messages";
 import { devLog } from "@/lib/utils/logging/dev-logger";
 import { ErrorBoundary } from "@/components/error/error-boundary";
-import { apiClient } from "@/lib/utils/data";
+import { usePasswordRules } from "@/lib/utils/validation/usePasswordRules";
 import {
   checkEmailDuplicate,
   getRegistrationErrorMessage,
-  getPasswordRules,
 } from "@/lib/utils/validation";
 import {
   createRegistrationFormSchema,
@@ -266,32 +265,26 @@ export default function RegisterPage() {
   const [loading, setLoading] = useState(false);
   const [isCheckingEmail, setIsCheckingEmail] = useState(false);
   const [emailError, setEmailError] = useState<string>("");
-  const [schema, setSchema] = useState<any>(null);
-  const [isSchemaLoading, setIsSchemaLoading] = useState(true);
   const [turnstileToken, setTurnstileToken] = useState<string>("");
   const [turnstileError, setTurnstileError] = useState<string>("");
   const router = useRouter();
   const { showInfo, showSuccess, showError } = useCommonToast();
 
-  // 시스템 설정에 따른 동적 스키마 생성 - 최적화됨
-  useEffect(() => {
-    const initSchema = async () => {
-      if (schema) return; // 이미 로드된 경우 스킵
+  // 시스템 설정에서 비밀번호 규칙 가져오기 (React Query 기반)
+  const { rules: passwordRules, isLoading: isPasswordRulesLoading } =
+    usePasswordRules();
 
-      try {
-        setIsSchemaLoading(true);
-        const passwordRules = await getPasswordRules();
-        const dynamicSchema = createRegistrationFormSchema(passwordRules);
-        setSchema(dynamicSchema);
-      } catch (error) {
-        devLog.error("Failed to load password rules:", error);
-        // 에러 시 기본 스키마 사용
-      } finally {
-        setIsSchemaLoading(false);
-      }
-    };
-    initSchema();
-  }, [schema]);
+  // 동적 스키마 생성 - React Query 기반으로 최적화
+  const schema = useMemo(() => {
+    if (isPasswordRulesLoading) return null;
+
+    try {
+      return createRegistrationFormSchema(passwordRules);
+    } catch (error) {
+      devLog.error("Failed to create registration schema:", error);
+      return createDefaultRegistrationFormSchema();
+    }
+  }, [passwordRules, isPasswordRulesLoading]);
 
   // 메모이제이션된 폼 설정
   const formConfig = useMemo(
@@ -431,7 +424,7 @@ export default function RegisterPage() {
   }, [loading, emailError, turnstileToken]);
 
   // 스키마 로딩 중이면 스켈레톤 표시
-  if (isSchemaLoading) {
+  if (isPasswordRulesLoading) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-gradient-farm p-4">
         <div className="w-full max-w-md">

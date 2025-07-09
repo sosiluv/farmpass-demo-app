@@ -72,15 +72,5 @@ export function useFarmsQuery(userId?: string) {
     // 액션
     refetch: farmsQuery.refetch,
     fetchFarms: farmsQuery.refetch,
-
-    // TODO: Mutation 기능들 (다음 단계에서 구현)
-    // addFarm: () => {},
-    // updateFarm: () => {},
-    // deleteFarm: () => {},
   };
 }
-
-/**
- * 기존 Hook과의 호환성을 위한 alias
- */
-export { useFarmsQuery as useFarmsRQ };

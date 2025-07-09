@@ -3,11 +3,7 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/components/providers/auth-provider";
 import { apiClient } from "@/lib/utils/data/api-client";
-import {
-  farmsKeys,
-  visitorsKeys,
-  dashboardKeys,
-} from "@/lib/hooks/query/query-keys";
+import { farmsKeys } from "@/lib/hooks/query/query-keys";
 import type { Farm } from "@/lib/types/farm";
 
 export interface CreateFarmRequest {
@@ -150,45 +146,12 @@ export function useDeleteFarmMutation() {
 }
 
 /**
- * 농장 활성/비활성 상태 변경 Mutation Hook
- */
-export function useToggleFarmStatusMutation() {
-  const queryClient = useQueryClient();
-  const { state } = useAuth();
-
-  return useMutation({
-    mutationFn: async ({
-      farmId,
-      isActive,
-    }: {
-      farmId: string;
-      isActive: boolean;
-    }): Promise<Farm> => {
-      const response = await apiClient(`/api/farms/${farmId}/status`, {
-        method: "PATCH",
-        body: JSON.stringify({ is_active: isActive }),
-      });
-      return response.farm;
-    },
-    onSuccess: (updatedFarm, variables) => {
-      // 사용자의 농장 목록 쿼리 무효화
-      const userId =
-        state.status === "authenticated" ? state.user?.id : undefined;
-      queryClient.invalidateQueries({
-        queryKey: farmsKeys.list({ userId }),
-      });
-    },
-  });
-}
-
-/**
  * 농장 Mutation Hook들을 통합한 객체
  */
 export function useFarmMutations() {
   const createMutation = useCreateFarmMutation();
   const updateMutation = useUpdateFarmMutation();
   const deleteMutation = useDeleteFarmMutation();
-  const toggleStatusMutation = useToggleFarmStatusMutation();
 
   return {
     // 생성
@@ -209,17 +172,10 @@ export function useFarmMutations() {
     isDeleting: deleteMutation.isPending,
     deleteError: deleteMutation.error,
 
-    // 상태 변경
-    toggleFarmStatus: toggleStatusMutation.mutate,
-    toggleFarmStatusAsync: toggleStatusMutation.mutateAsync,
-    isTogglingStatus: toggleStatusMutation.isPending,
-    toggleStatusError: toggleStatusMutation.error,
-
     // 전체 상태
     isLoading:
       createMutation.isPending ||
       updateMutation.isPending ||
-      deleteMutation.isPending ||
-      toggleStatusMutation.isPending,
+      deleteMutation.isPending,
   };
 }

@@ -4,10 +4,10 @@
  * 여러 페이지에서 사용되는 공통 검증 로직을 모아둔 유틸리티입니다.
  */
 
-import { getSystemSettings } from "@/lib/cache/system-settings-cache";
 import { devLog } from "@/lib/utils/logging/dev-logger";
 import { apiClient } from "@/lib/utils/data/api-client";
 import { handleError } from "@/lib/utils/error";
+import { z } from "zod";
 
 /**
  * 전화번호 정규식 패턴
@@ -32,24 +32,34 @@ interface PasswordRules {
   passwordRequireLowerCase: boolean;
 }
 
-/**
- * 비밀번호 규칙 가져오기
- */
-export const getPasswordRules = async () => {
-  try {
-    const settings = await getSystemSettings();
-    return {
-      passwordMinLength: settings.passwordMinLength,
-      passwordRequireSpecialChar: settings.passwordRequireSpecialChar,
-      passwordRequireNumber: settings.passwordRequireNumber,
-      passwordRequireUpperCase: settings.passwordRequireUpperCase,
-      passwordRequireLowerCase: settings.passwordRequireLowerCase,
-    };
-  } catch (error) {
-    devLog.error("Failed to fetch password rules:", error);
+// 타입 내보내기
+export type { PasswordRules };
 
+/**
+ * 비밀번호 규칙 추출 유틸리티 (시스템 설정에서)
+ * React Hook에서 사용하기 위한 순수 함수
+ */
+export const extractPasswordRules = (settings: any): PasswordRules => {
+  if (!settings) {
     return DEFAULT_PASSWORD_RULES;
   }
+
+  return {
+    passwordMinLength:
+      settings.passwordMinLength || DEFAULT_PASSWORD_RULES.passwordMinLength,
+    passwordRequireSpecialChar:
+      settings.passwordRequireSpecialChar ??
+      DEFAULT_PASSWORD_RULES.passwordRequireSpecialChar,
+    passwordRequireNumber:
+      settings.passwordRequireNumber ??
+      DEFAULT_PASSWORD_RULES.passwordRequireNumber,
+    passwordRequireUpperCase:
+      settings.passwordRequireUpperCase ??
+      DEFAULT_PASSWORD_RULES.passwordRequireUpperCase,
+    passwordRequireLowerCase:
+      settings.passwordRequireLowerCase ??
+      DEFAULT_PASSWORD_RULES.passwordRequireLowerCase,
+  };
 };
 
 /**
@@ -326,3 +336,62 @@ export function getAuthErrorMessage(
   }
   return defaultResponse;
 }
+
+/**
+ * 비밀번호 변경 폼 스키마 생성 (시스템 설정 기반)
+ */
+export const createChangePasswordFormSchema = (rules: PasswordRules) => {
+  // 기본 비밀번호 유효성 검사 스키마
+  let passwordSchema = z.string().min(rules.passwordMinLength, {
+    message: `비밀번호는 최소 ${rules.passwordMinLength}자 이상이어야 합니다.`,
+  });
+
+  // 특수문자 요구사항
+  if (rules.passwordRequireSpecialChar) {
+    passwordSchema = passwordSchema.regex(
+      /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/,
+      {
+        message: "비밀번호는 특수문자를 포함해야 합니다.",
+      }
+    );
+  }
+
+  // 숫자 요구사항
+  if (rules.passwordRequireNumber) {
+    passwordSchema = passwordSchema.regex(/\d/, {
+      message: "비밀번호는 숫자를 포함해야 합니다.",
+    });
+  }
+
+  // 대문자 요구사항
+  if (rules.passwordRequireUpperCase) {
+    passwordSchema = passwordSchema.regex(/[A-Z]/, {
+      message: "비밀번호는 대문자를 포함해야 합니다.",
+    });
+  }
+
+  // 소문자 요구사항
+  if (rules.passwordRequireLowerCase) {
+    passwordSchema = passwordSchema.regex(/[a-z]/, {
+      message: "비밀번호는 소문자를 포함해야 합니다.",
+    });
+  }
+
+  return z
+    .object({
+      currentPassword: z.string().min(1, "현재 비밀번호를 입력해주세요."),
+      newPassword: passwordSchema,
+      confirmPassword: z.string().min(1, "비밀번호 확인을 입력해주세요."),
+    })
+    .refine((data) => data.newPassword === data.confirmPassword, {
+      message: "새 비밀번호와 확인 비밀번호가 일치하지 않습니다.",
+      path: ["confirmPassword"],
+    });
+};
+
+/**
+ * 기본 비밀번호 변경 폼 스키마 (설정을 불러올 수 없을 때 사용)
+ */
+export const createDefaultChangePasswordFormSchema = () => {
+  return createChangePasswordFormSchema(DEFAULT_PASSWORD_RULES);
+};

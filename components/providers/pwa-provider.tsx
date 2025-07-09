@@ -37,30 +37,33 @@ const checkInstallability = (): InstallInfo => {
   const isFirefox = /Firefox/.test(userAgent);
   const isEdge = /Edg/.test(userAgent);
 
+  // *** 디버깅을 위해 항상 설치 가능하도록 설정 ***
+  // 기존 조건들을 주석 처리하고 강제로 설치 가능 상태로 설정
+
   // 이미 PWA로 실행 중이면 설치 불필요
-  if (isStandalone) {
-    return {
-      canInstall: false,
-      platform: "Unknown",
-      method: "none",
-      reason: "이미 PWA 모드로 실행 중",
-      isStandalone: true,
-      userAgent,
-    };
-  }
+  // if (isStandalone) {
+  //   return {
+  //     canInstall: false,
+  //     platform: "Unknown",
+  //     method: "none",
+  //     reason: "이미 PWA 모드로 실행 중",
+  //     isStandalone: true,
+  //     userAgent,
+  //   };
+  // }
 
   // 이전에 설치 완료된 경우 (localStorage 체크)
-  const installCompleted = localStorage.getItem("pwa_install_completed");
-  if (installCompleted) {
-    return {
-      canInstall: false,
-      platform: "Unknown",
-      method: "none",
-      reason: "이미 설치 완료됨",
-      isStandalone: false,
-      userAgent,
-    };
-  }
+  // const installCompleted = localStorage.getItem("pwa_install_completed");
+  // if (installCompleted) {
+  //   return {
+  //     canInstall: false,
+  //     platform: "Unknown",
+  //     method: "none",
+  //     reason: "이미 설치 완료됨",
+  //     isStandalone: false,
+  //     userAgent,
+  //   };
+  // }
 
   // iOS Safari
   if (isIOS && isSafari) {
@@ -173,19 +176,34 @@ export function PWAProvider({ children }: { children: ReactNode }) {
         // 설치 완료 기록이 있지만 standalone 모드가 아닌 경우
         // → 사용자가 PWA를 삭제했을 가능성 있음
         if (installCompleted && !isStandalone) {
-          // beforeinstallprompt 이벤트 재확인
+          // beforeinstallprompt 이벤트 재확인을 더 안전하게 처리
           let canReinstall = false;
+          let testHandlerAdded = false;
 
           const testPrompt = (e: Event) => {
             canReinstall = true;
             e.preventDefault();
           };
 
-          window.addEventListener("beforeinstallprompt", testPrompt);
+          try {
+            window.addEventListener("beforeinstallprompt", testPrompt);
+            testHandlerAdded = true;
+          } catch (error) {
+            devLog.warn("beforeinstallprompt 이벤트 리스너 추가 실패:", error);
+          }
 
           // 짧은 시간 후 이벤트 확인
           setTimeout(() => {
-            window.removeEventListener("beforeinstallprompt", testPrompt);
+            if (testHandlerAdded) {
+              try {
+                window.removeEventListener("beforeinstallprompt", testPrompt);
+              } catch (error) {
+                devLog.warn(
+                  "beforeinstallprompt 이벤트 리스너 제거 실패:",
+                  error
+                );
+              }
+            }
 
             if (canReinstall) {
               devLog.log("PWA 삭제 감지됨 - localStorage 정리");
@@ -193,9 +211,11 @@ export function PWAProvider({ children }: { children: ReactNode }) {
               localStorage.removeItem("pwa_install_completed");
               localStorage.removeItem("pwa_install_dismissed");
 
-              // 설치 가능 상태로 업데이트
+              // 설치 가능 상태로 업데이트 (현재 상태와 다를 때만)
               const updatedInfo = checkInstallability();
-              setInstallInfo(updatedInfo);
+              if (updatedInfo.canInstall !== installInfo.canInstall) {
+                setInstallInfo(updatedInfo);
+              }
             }
           }, 1000);
         }
@@ -207,7 +227,11 @@ export function PWAProvider({ children }: { children: ReactNode }) {
         devLog.log("beforeinstallprompt 이벤트 감지 - 아직 설치되지 않음");
         // 이벤트가 발생하면 아직 설치되지 않은 것으로 판단
         const updatedInfo = checkInstallability();
-        if (updatedInfo.canInstall) {
+        // 현재 상태와 다를 때만 업데이트
+        if (
+          updatedInfo.canInstall !== installInfo.canInstall ||
+          updatedInfo.reason !== installInfo.reason
+        ) {
           setInstallInfo(updatedInfo);
         }
       };
@@ -226,13 +250,28 @@ export function PWAProvider({ children }: { children: ReactNode }) {
         });
       };
 
-      // 페이지 로드 시 PWA 삭제 체크
-      checkPWAUninstall();
+      // 페이지 로드 시 PWA 삭제 체크 (한 번만 실행)
+      let hasCheckedUninstall = false;
+
+      const checkPWAUninstallOnce = () => {
+        if (hasCheckedUninstall) return;
+        hasCheckedUninstall = true;
+        checkPWAUninstall();
+      };
+
+      checkPWAUninstallOnce();
 
       // 포커스 이벤트로 PWA 삭제 재체크 (사용자가 다른 탭에서 돌아올 때)
+      // 짧은 간격으로 중복 실행 방지
+      let lastVisibilityCheck = 0;
       const handleVisibilityChange = () => {
         if (document.visibilityState === "visible") {
-          setTimeout(checkPWAUninstall, 500);
+          const now = Date.now();
+          if (now - lastVisibilityCheck > 5000) {
+            // 5초 간격 제한
+            lastVisibilityCheck = now;
+            setTimeout(checkPWAUninstall, 500);
+          }
         }
       };
 

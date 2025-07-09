@@ -196,7 +196,7 @@ export default function DashboardPage() {
               title="대시보드"
               description="농장 방문자 현황과 통계를 한눈에 확인하세요"
               breadcrumbs={[{ label: "대시보드" }]}
-              actions={installInfo.canInstall ? <InstallGuide /> : null}
+              actions={<InstallGuide />}
             />
           </div>
 

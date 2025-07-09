@@ -23,7 +23,7 @@ export function useSaveNotificationSettingsMutation() {
       });
       return response;
     },
-    onSuccess: (data) => {
+    onSuccess: () => {
       // 알림 설정 쿼리 무효화
       queryClient.invalidateQueries({
         queryKey: ["notification-settings"],

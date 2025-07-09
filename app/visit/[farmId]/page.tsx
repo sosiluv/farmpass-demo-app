@@ -14,20 +14,19 @@
  * @route /visit/[farmId]
  * @param farmId - 농장 고유 식별자 (UUID)
  */
-
 "use client";
-
 import { useParams } from "next/navigation";
 import { FormSkeleton } from "@/components/common/skeletons";
 import { FarmInfoCard } from "@/components/visitor/FarmInfoCard";
 import { SuccessCard } from "@/components/visitor/SuccessCard";
 import { ErrorBoundary } from "@/components/error/error-boundary";
-import { useVisitorSettings } from "@/hooks/useVisitorSettings";
+import { useSystemSettingsContext } from "@/components/providers/system-settings-provider";
 import { useVisitorForm } from "@/hooks/useVisitorForm";
 import { VisitorForm } from "@/components/visitor/VisitorForm";
 import { useCommonToast } from "@/lib/utils/notification/toast-messages";
-import { useEffect } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { VisitorFormData } from "@/lib/utils/validation/visitor-validation";
+import type { VisitorSettings } from "@/lib/types/visitor";
 
 /**
  * 방문자 등록 페이지 메인 컴포넌트
@@ -40,11 +39,45 @@ export default function VisitPage() {
   const farmId = params.farmId as string;
   const { showInfo, showWarning, showSuccess, showError } = useCommonToast();
 
+  // 세션 스토리지를 이용한 중복 제출 방지
+  const [hasSubmittedInSession, setHasSubmittedInSession] = useState(false);
+
+  // 컴포넌트 마운트 시 세션 스토리지 확인
+  useEffect(() => {
+    const sessionKey = `visitor_submitted_${farmId}`;
+    const hasSubmitted = sessionStorage.getItem(sessionKey) === "true";
+    setHasSubmittedInSession(hasSubmitted);
+  }, [farmId]);
+
+  // 전역 시스템 설정 사용
   const {
-    settings,
+    settings: systemSettings,
     isLoading: isSettingsLoading,
     error: settingsError,
-  } = useVisitorSettings();
+  } = useSystemSettingsContext();
+
+  // 시스템 설정에서 방문자 설정 추출
+  const settings: VisitorSettings = useMemo(() => {
+    if (!systemSettings) {
+      return {
+        reVisitAllowInterval: 6,
+        maxVisitorsPerDay: 100,
+        visitorDataRetentionDays: 1095,
+        requireVisitorPhoto: false,
+        requireVisitorContact: true,
+        requireVisitPurpose: true,
+      };
+    }
+
+    return {
+      reVisitAllowInterval: systemSettings.reVisitAllowInterval,
+      maxVisitorsPerDay: systemSettings.maxVisitorsPerDay,
+      visitorDataRetentionDays: systemSettings.visitorDataRetentionDays,
+      requireVisitorPhoto: systemSettings.requireVisitorPhoto,
+      requireVisitorContact: systemSettings.requireVisitorContact,
+      requireVisitPurpose: systemSettings.requireVisitPurpose,
+    };
+  }, [systemSettings]);
 
   const {
     formData,
@@ -82,7 +115,10 @@ export default function VisitPage() {
   // 설정 에러에 따른 토스트 처리
   useEffect(() => {
     if (settingsError) {
-      showError("설정 로드 실패", settingsError);
+      showError(
+        "설정 로드 실패",
+        settingsError.message || "설정을 불러오는 중 오류가 발생했습니다."
+      );
     }
   }, [settingsError, showError]);
 
@@ -91,6 +127,12 @@ export default function VisitPage() {
     try {
       showInfo("방문자 등록 중", "방문자 정보를 등록하는 중입니다...");
       await handleSubmit(data);
+
+      // 제출 성공 시 세션 스토리지에 기록
+      const sessionKey = `visitor_submitted_${farmId}`;
+      sessionStorage.setItem(sessionKey, "true");
+      setHasSubmittedInSession(true);
+
       // 성공 시 토스트는 isSubmitted 상태 변경으로 처리
     } catch (error) {
       // 에러는 이미 error 상태로 처리됨
@@ -130,24 +172,32 @@ export default function VisitPage() {
   /**
    * 창 닫기 함수 (수동 방식)
    *
-   * 브라우저 호환성 문제로 인해 자동 닫기 대신 수동 닫기 방식을 사용합니다.
-   * 다양한 브라우저 환경에 대응하여 적절한 닫기 방법을 시도합니다.
+   * 외부 방문자용이므로 창 닫기에만 집중합니다.
+   * 창을 닫을 수 없는 경우에는 사용자에게 안내 메시지를 표시합니다.
    */
   const handleClose = () => {
     try {
-      if (window.opener) {
+      // 창 닫기 시도
+      if (window.opener && !window.opener.closed) {
         window.close();
       } else {
-        if (window.history.length > 1) {
-          window.history.back();
-        } else {
-          window.location.href = "/";
-        }
+        // 일반 브라우저 탭에서 열린 경우
+        window.close();
       }
+
+      // 창이 닫히지 않는 경우를 위한 안내 (2초 후)
+      setTimeout(() => {
+        if (!window.closed) {
+          showWarning(
+            "창 닫기 안내",
+            "브라우저 설정상 자동으로 창을 닫을 수 없습니다. 브라우저의 X 버튼을 클릭하여 창을 닫아주세요."
+          );
+        }
+      }, 2000);
     } catch (error) {
       showWarning(
-        "브라우저 호환성 문제",
-        "브라우저의 뒤로가기 버튼을 사용하거나 직접 창을 닫아주세요."
+        "창 닫기 안내",
+        "브라우저의 X 버튼을 클릭하여 창을 닫아주세요."
       );
     }
   };
@@ -173,7 +223,7 @@ export default function VisitPage() {
     );
   }
 
-  if (isSubmitted) {
+  if (isSubmitted || hasSubmittedInSession) {
     return <SuccessCard onClose={handleClose} />;
   }
 

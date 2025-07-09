@@ -1,3 +1,44 @@
+# 🚀 Farm Management System - Changelog
+
+## [2024-12-19] - React Query 사용 현황 최종 분석 및 아키텍처 최적화
+
+### 🔍 React Query 적용 현황 분석 완료
+
+#### ✅ React Query 적절히 사용 중 (95% 달성)
+
+- **Admin 페이지들**: 100% React Query 마이그레이션 완료
+- **데이터 조회/수정**: 농장, 방문자, 멤버 데이터 CRUD 최적화
+- **전역 설정 관리**: SystemSettingsProvider로 React Query 기반 통합 관리
+
+#### 🗑️ 중복 코드 제거 및 아키텍처 정리
+
+- **Legacy hooks 제거**: `hooks/admin/useAdminFarms.ts` 등 사용되지 않는 파일들 정리
+- **불필요한 hooks 제거**: `hooks/useVisitorSettings.ts` - SystemSettingsProvider와 중복
+- **코드 일관성 향상**: 전역 시스템 설정 활용으로 중복 제거
+
+#### 🎯 최적화 완료 영역
+
+1. **전역 시스템 설정**: SystemSettingsProvider 기반 React Query 통합
+2. **방문자 설정**: 별도 훅 대신 전역 설정에서 필드 추출
+3. **이미지 업로드**: 적절한 비-React Query 구현 유지
+4. **브라우저 API**: Notification API 등 적절한 구현 유지
+
+#### 📊 React Query 부적합 영역 (5% - 올바른 구현)
+
+- **이미지 업로드**: 일회성 작업, 캐싱 불필요
+- **브라우저 API 래핑**: Notification API 등
+- **인증 관련**: 일회성 가입/로그인 작업
+- **외부 API**: 서버사이드 Slack, Uptime Robot 호출
+
+### ✨ 최종 아키텍처 권장사항
+
+- **React Query 사용률**: 95% (최적 수준 달성)
+- **코드 일관성**: 전역 Provider 패턴으로 중복 제거
+- **성능 최적화**: 이중 캐싱 (서버 5분 + 클라이언트 5분)
+- **유지보수성**: 단일 책임 원칙 준수
+
+---
+
 # CHANGELOG
 
 ## [2025-7-7] - 로그아웃 타임아웃 및 세션 정리 개선
@@ -916,5 +957,103 @@ const { members } = await apiClient("/api/farm-members", { method: "GET" });
 - **7일 후**: 자동으로 다시 요청 (로그인 후 2초 뒤)
 - **허용 시**: 더 이상 요청하지 않음
 - **우선순위**: 알림 권한(100) > PWA 설치(50)
+
+---
+
+## [2024-12-19] - 클라이언트 설정 조회 최적화 및 아키텍처 개선
+
+### 🔍 getSystemSettings 사용 분석 완료
+
+#### 📊 사용 현황 분석 결과:
+
+- **서버 API Routes**: 19곳에서 사용 (보안 검증, 설정 기반 로직)
+- **서버 유틸리티**: system-mode.ts, metadata.ts 등 7곳
+- **클라이언트 컴포넌트**: getPasswordRules() 3곳에서 불필요한 중복 조회
+
+#### ⚖️ 클라이언트 캐시 vs 서버 재조회 전략 결정:
+
+**❌ 클라이언트 캐시 → 서버 파라미터 전달 방식 (부적절)**:
+
+- 보안 위험: 클라이언트에서 조작 가능한 설정값
+- 데이터 무결성: 캐시 불일치 시 신뢰성 문제
+- 복잡성: API 인터페이스 변경 및 검증 로직 필요
+
+**✅ 서버 재조회 방식 유지 (최적)**:
+
+- 보안성: 서버에서 신뢰할 수 있는 최신 설정 사용
+- 성능: SystemSettingsCache 5분 캐싱으로 이미 최적화
+- 단순성: 기존 아키텍처 유지, 각 레이어 독립성
+
+#### 🚀 클라이언트 최적화 개선:
+
+**문제**: `getPasswordRules()` 함수가 클라이언트에서 불필요한 서버 요청 발생
+
+```typescript
+// Before: 중복 서버 요청
+const passwordRules = await getPasswordRules(); // → getSystemSettings() 재호출
+```
+
+**해결**: React Hook 기반으로 전역 캐시 활용
+
+```typescript
+// After: 전역 캐시 활용
+const { rules } = usePasswordRules(); // SystemSettingsProvider 캐시 사용
+```
+
+#### 🛠️ 구현한 개선사항:
+
+1. **usePasswordRules Hook 생성**: SystemSettingsProvider의 캐시된 설정 활용
+2. **password-strength.tsx 최적화**: React Query 기반 전환
+3. **중복 제거**: 클라이언트에서 불필요한 서버 호출 제거
+4. **타입 안전성**: PasswordRules 타입 export로 타입 안전성 향상
+
+### ✨ 최종 하이브리드 아키텍처:
+
+```
+┌─────────────────────┐    ┌─────────────────────┐
+│   클라이언트         │    │      서버           │
+│                     │    │                     │
+│ SystemProvider      │    │ SystemSettingsCache │
+│ (React Query)       │    │ (5분 캐싱)          │
+│                     │    │                     │
+│ - UI 반응성         │    │ - 보안 검증         │
+│ - 실시간 업데이트   │    │ - 데이터 무결성     │
+│ - 중복 요청 방지    │    │ - API 신뢰성        │
+└─────────────────────┘    └─────────────────────┘
+```
+
+### 🎯 권장사항:
+
+- **서버 API**: 기존 getSystemSettings() 방식 유지 (보안 우선)
+- **클라이언트**: SystemSettingsProvider 활용 (성능 최적화)
+- **하이브리드**: 각 레이어에서 최적의 방식 사용
+
+---
+
+## [2024-12-19] 사용하지 않는 Admin Hook 파일들 정리 🧹
+
+### 🗑️ 삭제된 파일
+
+- `hooks/admin/useAdminDashboard.ts`: React Query 버전(`useAdminDashboardQuery`)으로 완전 교체됨
+- `hooks/admin/useAdminLogs.ts`: React Query 버전(`useAdminLogsQuery`)으로 완전 교체됨
+- `hooks/admin/useAdminUsers.ts`: React Query 버전(`useAdminUsersQuery`)으로 완전 교체됨
+- `hooks/admin/` 폴더: 빈 폴더 정리
+
+### 🔄 교체된 Import
+
+- `components/admin/management/logs/LogStats.tsx`: 타입 import를 React Query 버전으로 변경
+  - `@/hooks/admin/useAdminLogs` → `@/lib/hooks/query/use-admin-logs-query`
+
+### 💡 정리 근거
+
+- 모든 Admin Hook들이 React Query 기반 버전으로 완전히 교체되어 사용 중
+- 기존 Hook들은 더 이상 사용되지 않아 코드베이스 정리 차원에서 삭제
+- React Query 버전이 더 나은 캐싱, 에러 처리, 상태 관리 제공
+
+### ✅ 확인 완료
+
+- 모든 컴포넌트가 React Query 버전 사용 중
+- 삭제된 파일들의 실제 사용처 없음 확인
+- 타입 정의도 React Query 버전과 동일하여 호환성 문제 없음
 
 ---

@@ -30,7 +30,8 @@ import { PasswordStrength } from "@/components/ui/password-strength";
 import { useCommonToast } from "@/lib/utils/notification/toast-messages";
 import { devLog } from "@/lib/utils/logging/dev-logger";
 import { ErrorBoundary } from "@/components/error/error-boundary";
-import { getPasswordRules, getAuthErrorMessage } from "@/lib/utils/validation";
+import { getAuthErrorMessage } from "@/lib/utils/validation";
+import { usePasswordRules } from "@/lib/utils/validation/usePasswordRules";
 import {
   createChangePasswordFormSchema,
   createDefaultChangePasswordFormSchema,
@@ -51,20 +52,23 @@ export function SecuritySection({
   const [loginActivity, setLoginActivity] = useState<any[]>([]);
   const { showInfo, showError } = useCommonToast();
 
-  // 시스템 설정에 따른 동적 스키마 생성
+  // 시스템 설정에서 비밀번호 규칙 가져오기 (React Query 기반)
+  const { rules: passwordRules, isLoading: isPasswordRulesLoading } =
+    usePasswordRules();
+
+  // 동적 스키마 생성
   useEffect(() => {
-    const initSchema = async () => {
-      try {
-        const passwordRules = await getPasswordRules();
-        const dynamicSchema = createChangePasswordFormSchema(passwordRules);
-        setSchema(dynamicSchema);
-      } catch (error) {
-        devLog.error("Failed to load password rules:", error);
-        // 에러 시 기본 스키마 사용
-      }
-    };
-    initSchema();
-  }, []);
+    if (isPasswordRulesLoading) return;
+
+    try {
+      const dynamicSchema = createChangePasswordFormSchema(passwordRules);
+      setSchema(dynamicSchema);
+    } catch (error) {
+      devLog.error("Failed to create change password schema:", error);
+      // 에러 시 기본 스키마 사용
+      setSchema(createDefaultChangePasswordFormSchema());
+    }
+  }, [passwordRules, isPasswordRulesLoading]);
 
   const form = useForm<ChangePasswordFormData>({
     resolver: schema
