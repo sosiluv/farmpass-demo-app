@@ -3,6 +3,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useCommonToast } from "@/lib/utils/notification/toast-messages";
 import { devLog } from "@/lib/utils/logging/dev-logger";
+import { formatPhone } from "@/lib/utils/validation/validation";
 
 import {
   visitorDialogFormSchema,
@@ -172,6 +173,13 @@ export function VisitorFormDialog({
                   {...field}
                   value={field.value || ""}
                   disabled={isSubmitting}
+                  onChange={(e) => {
+                    const formattedPhone = formatPhone(e.target.value);
+                    field.onChange(formattedPhone);
+                  }}
+                  maxLength={13} // 010-0000-0000 형식의 최대 길이
+                  type="tel"
+                  placeholder="010-0000-0000 숫자만입력" // 전화번호 형식 안내
                 />
               ) : (
                 <Textarea

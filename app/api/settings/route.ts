@@ -11,6 +11,7 @@ import {
 import { devLog } from "@/lib/utils/logging/dev-logger";
 import { createClient } from "@/lib/supabase/server";
 import { getClientIP, getUserAgent } from "@/lib/server/ip-helpers";
+import { requireAuth } from "@/lib/server/auth-utils";
 
 // 5분마다 재검증
 export const revalidate = 300;
@@ -97,63 +98,13 @@ export async function PATCH(request: NextRequest) {
   const clientIP = getClientIP(request);
   const userAgent = getUserAgent(request);
   try {
-    // 인증 체크
-    const supabase = await createClient();
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser();
-
-    if (authError || !user) {
-      // 설정 수정 권한 없음 로그 (문서에 명시된 WARN 레벨)
-      await logSystemWarning(
-        "settings_unauthorized_access",
-        "인증되지 않은 사용자의 설정 변경 시도",
-        {
-          ip: clientIP,
-          userAgent,
-        },
-        {
-          auth_error: authError?.message,
-          endpoint: "PATCH /api/settings",
-        }
-      );
-
-      return NextResponse.json(
-        { error: "인증이 필요합니다." },
-        { status: 401 }
-      );
+    // 관리자 권한 인증 확인
+    const authResult = await requireAuth(true);
+    if (!authResult.success || !authResult.user) {
+      return authResult.response!;
     }
 
-    // 관리자 권한 체크
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("account_type")
-      .eq("id", user.id)
-      .single();
-
-    if (!profile || profile.account_type !== "admin") {
-      // 설정 수정 권한 부족 로그 (문서에 명시된 WARN 레벨)
-      await logSystemWarning(
-        "settings_insufficient_permission",
-        "관리자가 아닌 사용자의 설정 변경 시도",
-        {
-          userId: user.id,
-          email: user.email,
-          ip: clientIP,
-          userAgent,
-        },
-        {
-          account_type: profile?.account_type || "unknown",
-          endpoint: "PATCH /api/settings",
-        }
-      );
-
-      return NextResponse.json(
-        { error: "관리자 권한이 필요합니다." },
-        { status: 403 }
-      );
-    }
+    const user = authResult.user;
 
     const data = await request.json();
     const settings = await prisma.systemSettings.findFirst();

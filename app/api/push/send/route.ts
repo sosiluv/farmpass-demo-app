@@ -5,6 +5,7 @@ import { devLog } from "@/lib/utils/logging/dev-logger";
 import webpush from "web-push";
 import { getSystemSettings } from "@/lib/cache/system-settings-cache";
 import { getClientIP, getUserAgent } from "@/lib/server/ip-helpers";
+import { requireAuth } from "@/lib/server/auth-utils";
 
 // VAPID 키 설정 초기화
 async function initializeVapidKeys() {
@@ -92,34 +93,13 @@ export async function POST(request: NextRequest) {
     let user = null;
 
     if (!isServerSideCall) {
-      // 클라이언트 호출인 경우 인증 확인
-      const {
-        data: { user: authUser },
-        error: authError,
-      } = await supabase.auth.getUser();
-
-      if (authError || !authUser) {
-        return NextResponse.json(
-          { error: "인증이 필요합니다." },
-          { status: 401 }
-        );
+      // 클라이언트 호출인 경우 관리자 권한 인증 확인
+      const authResult = await requireAuth(true);
+      if (!authResult.success || !authResult.user) {
+        return authResult.response!;
       }
 
-      // 관리자 권한 확인
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("account_type")
-        .eq("id", authUser.id)
-        .single();
-
-      if (!profile || profile.account_type !== "admin") {
-        return NextResponse.json(
-          { error: "관리자 권한이 필요합니다." },
-          { status: 403 }
-        );
-      }
-
-      user = authUser;
+      user = authResult.user;
     } else {
       // 서버 사이드 호출인 경우 시스템 사용자로 처리
       user = {

@@ -36,7 +36,7 @@ export function AddMemberDialog({
   useEffect(() => {
     const searchUsers = async () => {
       // 최소 2글자부터 검색 (이메일 검색의 경우 적절한 최소 길이)
-      if (!searchTerm.trim() || searchTerm.length < 2) {
+      if (!searchTerm.trim() || searchTerm.length < 7) {
         setAvailableUsers([]);
         return;
       }
@@ -77,14 +77,26 @@ export function AddMemberDialog({
     setAvailableUsers([]);
   }, []);
 
+  // 검색어 변경 핸들러 (직접 입력 시)
+  const handleSearchTermChange = useCallback((value: string) => {
+    setSearchTerm(value);
+    setEmail(value); // 직접 입력 시에도 email 상태 업데이트
+  }, []);
+
   const handleAddMember = async () => {
-    if (!email.trim()) return;
+    devLog.log("handleAddMember 호출됨:", { email: email.trim(), role });
+
+    if (!email.trim()) {
+      devLog.warn("이메일이 비어있음");
+      return;
+    }
 
     setIsAddingMember(true);
     try {
       await onAddMember(email.trim(), role);
       handleClose();
     } catch (error) {
+      devLog.error("구성원 추가 실패:", error);
       // 에러는 부모 컴포넌트에서 처리
     } finally {
       setIsAddingMember(false);
@@ -116,7 +128,7 @@ export function AddMemberDialog({
         <div className="space-y-3 sm:space-y-4 py-3 sm:py-4">
           <AddMemberEmailField
             searchTerm={searchTerm}
-            onSearchTermChange={setSearchTerm}
+            onSearchTermChange={handleSearchTermChange}
             availableUsers={availableUsers}
             onUserSelect={handleUserSelect}
           />

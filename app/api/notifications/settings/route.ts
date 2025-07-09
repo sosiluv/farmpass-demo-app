@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { devLog } from "@/lib/utils/logging/dev-logger";
+import { requireAuth } from "@/lib/server/auth-utils";
 
 // 동적 렌더링 강제
 export const dynamic = "force-dynamic";
@@ -10,21 +11,14 @@ export async function GET(request: NextRequest) {
   try {
     devLog.log("[API] /api/notifications/settings GET 요청 시작");
 
+    // 인증 확인
+    const authResult = await requireAuth(false);
+    if (!authResult.success || !authResult.user) {
+      return authResult.response!;
+    }
+
+    const user = authResult.user;
     const supabase = await createClient();
-    const {
-      data: { user },
-      error: userError,
-    } = await supabase.auth.getUser();
-
-    if (userError) {
-      devLog.error("유저 인증 오류:", userError);
-      return NextResponse.json({ error: "User auth error" }, { status: 500 });
-    }
-
-    if (!user) {
-      devLog.log("인증되지 않은 요청");
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
 
     devLog.log("사용자 ID:", user.id);
 
@@ -83,19 +77,14 @@ export async function GET(request: NextRequest) {
 // PUT: 알림 설정 업데이트
 export async function PUT(request: Request) {
   try {
+    // 인증 확인
+    const authResult = await requireAuth(false);
+    if (!authResult.success || !authResult.user) {
+      return authResult.response!;
+    }
+
+    const user = authResult.user;
     const supabase = await createClient();
-    const {
-      data: { user },
-      error: userError,
-    } = await supabase.auth.getUser();
-
-    if (userError) {
-      return NextResponse.json({ error: "User auth error" }, { status: 500 });
-    }
-
-    if (!user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
 
     const body = await request.json();
     const { data: existingSettings } = await supabase

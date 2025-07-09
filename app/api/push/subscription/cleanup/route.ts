@@ -5,6 +5,7 @@ import { getSystemSettings } from "@/lib/cache/system-settings-cache";
 import webpush from "web-push";
 import { devLog } from "@/lib/utils/logging/dev-logger";
 import { getClientIP, getUserAgent } from "@/lib/server/ip-helpers";
+import { requireAuth } from "@/lib/server/auth-utils";
 
 // 만료된 푸시 구독 정리
 export async function POST(request: NextRequest) {
@@ -14,17 +15,13 @@ export async function POST(request: NextRequest) {
   try {
     const supabase = await createClient();
 
-    // 사용자 인증 확인
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser();
-    if (authError || !user) {
-      return NextResponse.json(
-        { error: "인증이 필요합니다." },
-        { status: 401 }
-      );
+    // 인증 확인
+    const authResult = await requireAuth(false);
+    if (!authResult.success || !authResult.user) {
+      return authResult.response!;
     }
+
+    const user = authResult.user;
 
     // 요청 본문에서 검사 타입 확인
     const body = await request.json().catch(() => ({}));

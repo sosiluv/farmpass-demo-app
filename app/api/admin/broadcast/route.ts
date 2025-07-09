@@ -1,42 +1,23 @@
-import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { NextRequest, NextResponse } from "next/server";
 import { devLog } from "@/lib/utils/logging/dev-logger";
 import { getClientIP, getUserAgent } from "@/lib/server/ip-helpers";
 import { createSystemLog } from "@/lib/utils/logging/system-log";
+import { requireAuth } from "@/lib/server/auth-utils";
 
 export async function POST(request: NextRequest) {
   const clientIP = getClientIP(request);
   const userAgent = getUserAgent(request);
 
   try {
+    // 관리자 권한 인증 확인
+    const authResult = await requireAuth(true);
+    if (!authResult.success || !authResult.user) {
+      return authResult.response!;
+    }
+
+    const user = authResult.user;
     const supabase = await createClient();
-
-    // 인증 확인 (브로드캐스트는 클라이언트에서만 호출됨)
-    const {
-      data: { user: authUser },
-      error: authError,
-    } = await supabase.auth.getUser();
-
-    if (authError || !authUser) {
-      return NextResponse.json(
-        { error: "인증이 필요합니다." },
-        { status: 401 }
-      );
-    }
-
-    // 관리자 권한 확인
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("account_type")
-      .eq("id", authUser.id)
-      .single();
-
-    if (!profile || profile.account_type !== "admin") {
-      return NextResponse.json(
-        { error: "관리자 권한이 필요합니다." },
-        { status: 403 }
-      );
-    }
 
     const body = await request.json();
     const {
@@ -95,7 +76,7 @@ export async function POST(request: NextRequest) {
       "BROADCAST_NOTIFICATION_SENT",
       `브로드캐스트 알림 발송 완료: ${result.sentCount}명에게 발송`,
       "info",
-      authUser.id,
+      user.id,
       "system",
       "all",
       {
@@ -107,7 +88,7 @@ export async function POST(request: NextRequest) {
         url,
         require_interaction: requireInteraction,
       },
-      authUser.email,
+      user.email,
       clientIP,
       userAgent
     );

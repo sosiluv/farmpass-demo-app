@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { logDataChange } from "@/lib/utils/logging/system-log";
 import { devLog } from "@/lib/utils/logging/dev-logger";
 import { getClientIP, getUserAgent } from "@/lib/server/ip-helpers";
+import { requireAuth } from "@/lib/server/auth-utils";
 
 // PUT - 농장 멤버 역할 변경
 export async function PUT(
@@ -17,16 +18,14 @@ export async function PUT(
 
   try {
     const supabase = await createClient();
-    const {
-      data: { user: authUser },
-      error: authError,
-    } = await supabase.auth.getUser();
 
-    if (authError || !authUser) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    // 인증 확인
+    const authResult = await requireAuth(false);
+    if (!authResult.success || !authResult.user) {
+      return authResult.response!;
     }
 
-    user = authUser;
+    const user = authResult.user;
     const { role } = await request.json();
 
     // 농장 소유권 또는 관리자 권한 확인
@@ -40,8 +39,8 @@ export async function PUT(
       return NextResponse.json({ error: "Farm not found" }, { status: 404 });
     }
 
-    // 소유자가 아닌 경우 관리자 권한 확인
-    if (farm.owner_id !== user.id) {
+    // 시스템 관리자가 아닌 경우에만 농장별 권한 확인
+    if (!authResult.isAdmin && farm.owner_id !== user.id) {
       const { data: memberRole } = await supabase
         .from("farm_members")
         .select("role")
@@ -51,7 +50,10 @@ export async function PUT(
 
       if (!memberRole || memberRole.role !== "manager") {
         return NextResponse.json(
-          { error: "Only farm owners and managers can change member roles" },
+          {
+            error:
+              "농장 소유자, 농장 관리자 또는 시스템 관리자만 멤버 역할을 변경할 수 있습니다",
+          },
           { status: 403 }
         );
       }
@@ -181,16 +183,14 @@ export async function DELETE(
 
   try {
     const supabase = await createClient();
-    const {
-      data: { user: authUser },
-      error: authError,
-    } = await supabase.auth.getUser();
 
-    if (authError || !authUser) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    // 인증 확인
+    const authResult = await requireAuth(false);
+    if (!authResult.success || !authResult.user) {
+      return authResult.response!;
     }
 
-    user = authUser;
+    const user = authResult.user;
 
     // 농장 소유권 또는 관리자 권한 확인
     const { data: farm, error: farmError } = await supabase
@@ -203,8 +203,8 @@ export async function DELETE(
       return NextResponse.json({ error: "Farm not found" }, { status: 404 });
     }
 
-    // 소유자가 아닌 경우 관리자 권한 확인
-    if (farm.owner_id !== user.id) {
+    // 시스템 관리자가 아닌 경우에만 농장별 권한 확인
+    if (!authResult.isAdmin && farm.owner_id !== user.id) {
       const { data: memberRole } = await supabase
         .from("farm_members")
         .select("role")
@@ -214,7 +214,10 @@ export async function DELETE(
 
       if (!memberRole || memberRole.role !== "manager") {
         return NextResponse.json(
-          { error: "Only farm owners and managers can remove members" },
+          {
+            error:
+              "농장 소유자, 농장 관리자 또는 시스템 관리자만 멤버를 제거할 수 있습니다",
+          },
           { status: 403 }
         );
       }

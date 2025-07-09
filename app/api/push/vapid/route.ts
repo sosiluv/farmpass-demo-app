@@ -6,6 +6,7 @@ import { devLog } from "@/lib/utils/logging/dev-logger";
 import { logApiError } from "@/lib/utils/logging/system-log";
 import { getClientIP, getUserAgent } from "@/lib/server/ip-helpers";
 import { createSystemLog } from "@/lib/utils/logging/system-log";
+import { requireAuth } from "@/lib/server/auth-utils";
 
 // VAPID 키 생성
 export async function POST(request: NextRequest) {
@@ -13,33 +14,14 @@ export async function POST(request: NextRequest) {
   const clientIP = getClientIP(request);
   const userAgent = getUserAgent(request);
   try {
+    // 관리자 권한 인증 확인
+    const authResult = await requireAuth(true);
+    if (!authResult.success || !authResult.user) {
+      return authResult.response!;
+    }
+
+    const user = authResult.user;
     const supabase = await createClient();
-
-    // 사용자 인증 확인 (관리자만 가능)
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser();
-    if (authError || !user) {
-      return NextResponse.json(
-        { error: "인증이 필요합니다." },
-        { status: 401 }
-      );
-    }
-
-    // 관리자 권한 확인
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("account_type")
-      .eq("id", user.id)
-      .single();
-
-    if (!profile || profile.account_type !== "admin") {
-      return NextResponse.json(
-        { error: "관리자 권한이 필요합니다." },
-        { status: 403 }
-      );
-    }
 
     // VAPID 키 생성
     const vapidKeys = webpush.generateVAPIDKeys();

@@ -2,48 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { NextResponse } from "next/server";
 import { logDataChange } from "@/lib/utils/logging/system-log";
 import { devLog } from "@/lib/utils/logging/dev-logger";
-import {
-  getAuthenticatedUser,
-  checkSystemAdmin,
-} from "@/lib/server/auth-utils";
-
-// 구성원 추가 후 사용자 role 업데이트 함수
-async function updateUserRoleAfterMemberAdd(
-  supabase: any,
-  userId: string,
-  newMemberRole: string
-) {
-  try {
-    // 1. 현재 사용자의 role 조회
-    const { data: currentUser, error: userError } = await supabase
-      .from("profiles")
-      .select("role")
-      .eq("id", userId)
-      .single();
-
-    if (userError) {
-      devLog.error("사용자 정보 조회 오류:", userError);
-      return;
-    }
-
-    // 2. 사용자가 소유한 농장 확인
-    const { data: ownedFarms, error: ownedError } = await supabase
-      .from("farms")
-      .select("id")
-      .eq("owner_id", userId);
-
-    if (ownedError) {
-      devLog.error("소유 농장 조회 오류:", ownedError);
-      return;
-    }
-
-    // 3. 농장 구성원 추가 시 profiles.role 업데이트는 더 이상 필요하지 않음
-    // 새로운 권한 시스템에서는 profiles.account_type은 시스템 레벨 권한만 관리
-    // 농장별 권한은 farm_members 테이블에서 관리됨
-  } catch (error) {
-    devLog.error("구성원 추가 후 role 업데이트 오류:", error);
-  }
-}
+import { requireAuth } from "@/lib/server/auth-utils";
 
 // GET - 농장 멤버 목록 조회
 export async function GET(
@@ -52,23 +11,18 @@ export async function GET(
 ) {
   try {
     // 인증된 사용자 확인
-    const authResult = await getAuthenticatedUser();
-    if (!authResult.user) {
-      return NextResponse.json({ error: "권한이 없습니다." }, { status: 401 });
+    // 인증 확인
+    const authResult = await requireAuth(false);
+    if (!authResult.success || !authResult.user) {
+      return authResult.response!;
     }
 
     const user = authResult.user;
+    const isAdmin = authResult.isAdmin || false;
     const supabase = await createClient();
 
-    // 시스템 관리자 체크
-    const adminResult = await checkSystemAdmin(user.id);
-
-    if (adminResult.error) {
-      return NextResponse.json({ error: "권한 확인 실패" }, { status: 500 });
-    }
-
     // 시스템 관리자가 아닌 경우 농장별 권한 체크
-    if (!adminResult.isAdmin) {
+    if (!isAdmin) {
       const { data: access } = await supabase
         .from("farms")
         .select("owner_id")
@@ -170,12 +124,14 @@ export async function POST(
   try {
     const supabase = await createClient();
     // 인증된 사용자 확인
-    const authResult = await getAuthenticatedUser();
-    if (!authResult.user) {
-      return NextResponse.json({ error: "권한이 없습니다." }, { status: 401 });
+    // 인증 확인
+    const authResult = await requireAuth(false);
+    if (!authResult.success || !authResult.user) {
+      return authResult.response!;
     }
 
     user = authResult.user;
+    const isAdmin = authResult.isAdmin || false;
     const { email, role } = await request.json();
 
     // 농장 소유권, 농장 관리자 권한, 또는 시스템 관리자 권한 확인
@@ -192,15 +148,8 @@ export async function POST(
       );
     }
 
-    // 시스템 관리자 권한 확인
-    const adminResult = await checkSystemAdmin(user.id);
-
-    if (adminResult.error) {
-      return NextResponse.json({ error: "권한 확인 실패" }, { status: 500 });
-    }
-
     // 권한 확인: 시스템 관리자, 농장 소유자, 또는 농장 관리자
-    if (!adminResult.isAdmin && farm.owner_id !== user.id) {
+    if (!isAdmin && farm.owner_id !== user.id) {
       const { data: memberRole } = await supabase
         .from("farm_members")
         .select("role")

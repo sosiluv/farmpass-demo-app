@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { logDataChange } from "@/lib/utils/logging/system-log";
 import { devLog } from "@/lib/utils/logging/dev-logger";
 import { getClientIP, getUserAgent } from "@/lib/server/ip-helpers";
+import { requireAuth } from "@/lib/server/auth-utils";
 
 // 동적 렌더링 강제
 export const dynamic = "force-dynamic";
@@ -12,6 +13,16 @@ export async function GET(request: NextRequest) {
   // 요청 컨텍스트 정보 추출
   const clientIP = getClientIP(request);
   const userAgent = getUserAgent(request);
+
+  // 인증 확인
+  const authResult = await requireAuth(false);
+  if (!authResult.success || !authResult.user) {
+    return authResult.response!;
+  }
+
+  const user = authResult.user;
+  const isAdmin = authResult.isAdmin || false;
+  const supabase = await createClient();
 
   try {
     const { searchParams } = new URL(request.url);
@@ -24,27 +35,10 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const supabase = await createClient();
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser();
-
-    if (authError || !user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    // 시스템 관리자 체크
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("account_type")
-      .eq("id", user.id)
-      .single();
-
     const farmIdArray = farmIds.split(",").filter(Boolean);
 
     // 시스템 관리자가 아닌 경우 권한 체크
-    if (profile?.account_type !== "admin") {
+    if (!isAdmin) {
       // 사용자가 접근할 수 있는 농장들만 필터링
       const { data: accessibleFarms, error: accessError } = await supabase
         .from("farms")
@@ -160,14 +154,10 @@ export async function GET(request: NextRequest) {
 
     // 실패 로그 기록 (새로운 supabase 클라이언트 생성)
     try {
-      const errorSupabase = await createClient();
-      const {
-        data: { user: errorUser },
-      } = await errorSupabase.auth.getUser();
       await logDataChange(
         "MEMBER_BULK_READ_FAILED",
         "MEMBER",
-        errorUser?.id,
+        user.id,
         {
           error_message:
             error instanceof Error ? error.message : "Unknown error",

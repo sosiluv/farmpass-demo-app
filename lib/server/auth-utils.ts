@@ -186,7 +186,13 @@ export async function requireAuth(requireAdmin: boolean = false): Promise<{
   }
 
   if (!requireAdmin) {
-    return { success: true, user: authResult.user, isAdmin: false };
+    // 관리자 여부를 확인하되, 관리자가 아니어도 허용
+    const adminResult = await checkSystemAdmin(authResult.user.id);
+    return {
+      success: true,
+      user: authResult.user,
+      isAdmin: adminResult.isAdmin,
+    };
   }
 
   const adminResult = await checkSystemAdmin(authResult.user.id);

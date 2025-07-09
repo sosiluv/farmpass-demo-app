@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { logVisitorDataAccess } from "@/lib/utils/logging/system-log";
 import { devLog } from "@/lib/utils/logging/dev-logger";
 import { getClientIP, getUserAgent } from "@/lib/server/ip-helpers";
+import { requireAuth } from "@/lib/server/auth-utils";
 
 export async function PUT(
   request: NextRequest,
@@ -16,18 +17,13 @@ export async function PUT(
 
     const supabase = await createClient();
 
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser();
-
-    if (authError || !user) {
-      devLog.log("인증 실패:", authError);
-      return NextResponse.json(
-        { message: "인증이 필요합니다. 다시 로그인해주세요." },
-        { status: 401 }
-      );
+    // 인증 확인
+    const authResult = await requireAuth(false);
+    if (!authResult.success || !authResult.user) {
+      return authResult.response!;
     }
+
+    const user = authResult.user;
 
     const { farmId, visitorId } = params;
     const updateData = await request.json();
@@ -157,17 +153,13 @@ export async function DELETE(
   try {
     const supabase = await createClient();
 
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser();
-
-    if (authError || !user) {
-      return NextResponse.json(
-        { message: "인증이 필요합니다. 다시 로그인해주세요." },
-        { status: 401 }
-      );
+    // 인증 확인
+    const authResult = await requireAuth(false);
+    if (!authResult.success || !authResult.user) {
+      return authResult.response!;
     }
+
+    const user = authResult.user;
 
     const { farmId, visitorId } = params;
 

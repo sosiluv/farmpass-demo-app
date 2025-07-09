@@ -6,6 +6,7 @@ import { apiClient } from "@/lib/utils/data/api-client";
 interface DeleteLogRequest {
   action: "delete_single" | "delete_all" | "delete_old";
   logId?: string;
+  beforeCount?: number; // 전체 삭제 시 현재 로그 개수
 }
 
 /**

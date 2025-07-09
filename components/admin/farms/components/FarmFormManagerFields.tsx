@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import type { UseFormReturn } from "react-hook-form";
 import type { FarmFormValues } from "@/lib/utils/validation";
+import { formatPhone } from "@/lib/utils/validation/validation";
 
 interface FarmFormManagerFieldsProps {
   form: UseFormReturn<FarmFormValues>;
@@ -38,7 +39,16 @@ export function FarmFormManagerFields({ form }: FarmFormManagerFieldsProps) {
             <FormItem>
               <FormLabel>관리자 연락처 *</FormLabel>
               <FormControl>
-                <Input type="tel" placeholder="010-0000-0000" {...field} />
+                <Input
+                  type="tel"
+                  placeholder="010-0000-0000 숫자만입력"
+                  {...field}
+                  onChange={(e) => {
+                    const formattedPhone = formatPhone(e.target.value);
+                    field.onChange(formattedPhone);
+                  }}
+                  maxLength={13} // 010-0000-0000 형식의 최대 길이
+                />
               </FormControl>
               <FormMessage />
             </FormItem>

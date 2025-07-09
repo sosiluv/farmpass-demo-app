@@ -2,23 +2,24 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { logDataChange } from "@/lib/utils/logging/system-log";
 import { devLog } from "@/lib/utils/logging/dev-logger";
+import { requireAuth } from "@/lib/server/auth-utils";
+import { getClientIP, getUserAgent } from "@/lib/server/ip-helpers";
 
 // PATCH: 프로필 정보 수정
 export async function PATCH(request: NextRequest) {
   const supabase = await createClient();
-  const clientIP = request.headers.get("x-forwarded-for") || "unknown";
-  const userAgent = request.headers.get("user-agent") || "unknown";
+  const clientIP = getClientIP(request);
+  const userAgent = getUserAgent(request);
 
-  let user;
+  // 인증 확인
+  const authResult = await requireAuth(false);
+  if (!authResult.success || !authResult.user) {
+    return authResult.response!;
+  }
+
+  const user = authResult.user;
+
   try {
-    const {
-      data: { user: authUser },
-      error: authError,
-    } = await supabase.auth.getUser();
-    if (authError || !authUser) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-    user = authUser;
     const data = await request.json();
     const { error } = await supabase
       .from("profiles")
@@ -82,18 +83,18 @@ export async function PATCH(request: NextRequest) {
 // POST: 프로필 이미지 업로드
 export async function POST(request: NextRequest) {
   const supabase = await createClient();
-  const clientIP = request.headers.get("x-forwarded-for") || "unknown";
-  const userAgent = request.headers.get("user-agent") || "unknown";
-  let user;
+  const clientIP = getClientIP(request);
+  const userAgent = getUserAgent(request);
+
+  // 인증 확인
+  const authResult = await requireAuth(false);
+  if (!authResult.success || !authResult.user) {
+    return authResult.response!;
+  }
+
+  const user = authResult.user;
+
   try {
-    const {
-      data: { user: authUser },
-      error: authError,
-    } = await supabase.auth.getUser();
-    if (authError || !authUser) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-    user = authUser;
     const { publicUrl, fileName } = await request.json();
     const { error: updateError } = await supabase
       .from("profiles")
@@ -158,18 +159,18 @@ export async function POST(request: NextRequest) {
 // DELETE: 프로필 이미지 삭제
 export async function DELETE(request: NextRequest) {
   const supabase = await createClient();
-  const clientIP = request.headers.get("x-forwarded-for") || "unknown";
-  const userAgent = request.headers.get("user-agent") || "unknown";
-  let user;
+  const clientIP = getClientIP(request);
+  const userAgent = getUserAgent(request);
+
+  // 인증 확인
+  const authResult = await requireAuth(false);
+  if (!authResult.success || !authResult.user) {
+    return authResult.response!;
+  }
+
+  const user = authResult.user;
+
   try {
-    const {
-      data: { user: authUser },
-      error: authError,
-    } = await supabase.auth.getUser();
-    if (authError || !authUser) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-    user = authUser;
     const { error: updateError } = await supabase
       .from("profiles")
       .update({

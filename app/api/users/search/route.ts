@@ -2,16 +2,23 @@ import { createClient } from "@/lib/supabase/server";
 import { NextResponse } from "next/server";
 import { logUserActivity } from "@/lib/utils/logging/system-log";
 import { devLog } from "@/lib/utils/logging/dev-logger";
-import {
-  getAuthenticatedUser,
-  checkSystemAdmin,
-} from "@/lib/server/auth-utils";
+import { requireAuth } from "@/lib/server/auth-utils";
 
 // 동적 렌더링 강제
 export const dynamic = "force-dynamic";
 
 export async function GET(request: Request) {
+  // 인증 확인
+  const authResult = await requireAuth(false);
+  if (!authResult.success || !authResult.user) {
+    return authResult.response!;
+  }
+
+  const user = authResult.user;
+  const isAdmin = authResult.isAdmin || false;
+
   try {
+    const supabase = await createClient();
     const { searchParams } = new URL(request.url);
     const query = searchParams.get("q");
     const farmId = searchParams.get("farmId");
@@ -20,29 +27,10 @@ export async function GET(request: Request) {
       return NextResponse.json({ users: [] });
     }
 
-    // 인증된 사용자 확인
-    const authResult = await getAuthenticatedUser();
-    if (!authResult.user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    const user = authResult.user;
-    const supabase = await createClient();
-
     // 농장 ID가 제공된 경우, 해당 농장에 대한 접근 권한 확인
     if (farmId) {
-      // 시스템 관리자 권한 확인
-      const adminResult = await checkSystemAdmin(user.id);
-
-      if (adminResult.error) {
-        return NextResponse.json(
-          { error: "Failed to verify permissions" },
-          { status: 500 }
-        );
-      }
-
       // 시스템 관리자가 아닌 경우에만 농장별 권한 확인
-      if (!adminResult.isAdmin) {
+      if (!isAdmin) {
         const { data: farm } = await supabase
           .from("farms")
           .select("owner_id")
@@ -127,11 +115,6 @@ export async function GET(request: Request) {
 
     // 검색 실패 로그 기록
     try {
-      const supabase = await createClient();
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-
       if (user) {
         await logUserActivity(
           "USER_SEARCH_FAILED",

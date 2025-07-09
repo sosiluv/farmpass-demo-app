@@ -4,7 +4,6 @@
  * 여러 페이지에서 사용되는 공통 검증 로직을 모아둔 유틸리티입니다.
  */
 
-import { devLog } from "@/lib/utils/logging/dev-logger";
 import { apiClient } from "@/lib/utils/data/api-client";
 import { handleError } from "@/lib/utils/error";
 import { z } from "zod";
@@ -125,12 +124,28 @@ export const formatPhone = (phone: string): string => {
   // 숫자만 추출
   const numbers = phone.replace(/\D/g, "");
 
-  // 010으로 시작하는 11자리 숫자인 경우에만 변환
-  if (numbers.length === 11 && numbers.startsWith("010")) {
-    return `${numbers.slice(0, 3)}-${numbers.slice(3, 7)}-${numbers.slice(7)}`;
+  // 010, 011, 016, 017, 018, 019로 시작하는 경우만 포맷팅
+  if (numbers.length >= 3 && /^01[0|1|6|7|8|9]/.test(numbers)) {
+    if (numbers.length <= 3) {
+      return numbers;
+    } else if (numbers.length <= 7) {
+      return `${numbers.slice(0, 3)}-${numbers.slice(3)}`;
+    } else if (numbers.length <= 11) {
+      return `${numbers.slice(0, 3)}-${numbers.slice(3, 7)}-${numbers.slice(
+        7,
+        11
+      )}`;
+    } else {
+      // 11자리 초과시 11자리로 자름
+      return `${numbers.slice(0, 3)}-${numbers.slice(3, 7)}-${numbers.slice(
+        7,
+        11
+      )}`;
+    }
   }
 
-  return phone; // 변환할 수 없는 경우 원본 반환
+  // 유효하지 않은 형식이면 원본 반환 (에러 메시지는 validation에서 처리)
+  return phone;
 };
 
 /**

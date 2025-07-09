@@ -7,6 +7,7 @@ import {
   logApiPerformance,
 } from "@/lib/utils/logging/system-log";
 import { getClientIP, getUserAgent } from "@/lib/server/ip-helpers";
+import { requireAuth } from "@/lib/server/auth-utils";
 
 export async function POST(request: NextRequest) {
   // 성능 모니터링 시작
@@ -25,17 +26,14 @@ export async function POST(request: NextRequest) {
 
   try {
     const supabase = await createClient();
-    const {
-      data: { user: authUser },
-      error: authError,
-    } = await supabase.auth.getUser();
 
-    if (authError || !authUser) {
-      devLog.error("❌ Authentication failed:", authError);
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    // 인증 확인
+    const authResult = await requireAuth(false);
+    if (!authResult.success || !authResult.user) {
+      return authResult.response!;
     }
 
-    user = authUser;
+    user = authResult.user;
     devLog.log("👤 Creating farm for user:", user.id);
 
     const {
@@ -196,25 +194,15 @@ export async function GET(request: NextRequest) {
 
   try {
     const supabase = await createClient();
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser();
 
-    if (authError || !user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    // 인증 확인
+    const authResult = await requireAuth(false);
+    if (!authResult.success || !authResult.user) {
+      return authResult.response!;
     }
 
-    // 사용자의 권한 확인
-    const { data: profile, error: profileError } = await supabase
-      .from("profiles")
-      .select("account_type, email")
-      .eq("id", user.id)
-      .single();
-
-    if (profileError) {
-      throw profileError;
-    }
+    const user = authResult.user;
+    const isAdmin = authResult.isAdmin || false;
 
     let query = supabase.from("farms").select(`
       *,
@@ -226,7 +214,6 @@ export async function GET(request: NextRequest) {
     `);
 
     // admin인 경우 모든 농장을 조회, 아닌 경우 자신의 농장만 조회
-    const isAdmin = profile.account_type === "admin";
     if (!isAdmin) {
       query = query.eq("owner_id", user.id);
     }
@@ -245,7 +232,7 @@ export async function GET(request: NextRequest) {
       {
         access_type: isAdmin ? "admin_all_farms" : "owner_farms",
         farm_count: farms?.length || 0,
-        user_email: profile.email,
+        user_email: user.email,
         action_type: "farm_management",
       },
       {

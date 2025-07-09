@@ -28,6 +28,7 @@ import { Mail, User, Lock, Phone } from "lucide-react";
 import { motion } from "framer-motion";
 import { supabase } from "@/lib/supabase/client";
 import { useCommonToast } from "@/lib/utils/notification/toast-messages";
+import { formatPhone } from "@/lib/utils/validation/validation";
 import { devLog } from "@/lib/utils/logging/dev-logger";
 import { ErrorBoundary } from "@/components/error/error-boundary";
 import { usePasswordRules } from "@/lib/utils/validation/usePasswordRules";
@@ -225,9 +226,14 @@ const PhoneField = memo(
           <Input
             {...field}
             type="tel"
-            placeholder="010-0000-0000"
+            placeholder="010-0000-0000 숫자만입력"
             className="h-12 pl-10 input-focus"
             disabled={loading}
+            onChange={(e) => {
+              const formattedPhone = formatPhone(e.target.value);
+              field.onChange(formattedPhone);
+            }}
+            maxLength={13}
           />
         </FormControl>
       </div>

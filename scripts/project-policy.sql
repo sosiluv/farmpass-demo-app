@@ -5,10 +5,12 @@ DROP POLICY IF EXISTS "Service role can view all profiles" ON public.profiles;
 DROP POLICY IF EXISTS "Users can update own profile" ON public.profiles;
 DROP POLICY IF EXISTS "Admins can view all profiles" ON public.profiles;
 DROP POLICY IF EXISTS "Admins can update all profiles" ON public.profiles;
+DROP POLICY IF EXISTS "Farm owners and managers can view profiles for member management" ON public.profiles;
 
 -- farms 테이블 정책 삭제
 DROP POLICY IF EXISTS "Users can view own farms" ON public.farms;
 DROP POLICY IF EXISTS "Users can manage own farms" ON public.farms;
+DROP POLICY IF EXISTS "Public can view active farms for visitor registration" ON public.farms;
 
 -- farm_members 테이블 정책 삭제
 DROP POLICY IF EXISTS "Users can view farm members" ON public.farm_members;
@@ -79,6 +81,19 @@ CREATE POLICY "Users can view own profile" ON public.profiles
 CREATE POLICY "Admins can view all profiles" ON public.profiles
     FOR SELECT USING (public.is_system_admin());
 
+-- 농장 소유자와 관리자가 멤버 추가를 위해 다른 사용자 프로필 조회 가능
+CREATE POLICY "Farm owners and managers can view profiles for member management" ON public.profiles
+    FOR SELECT USING (
+        public.is_system_admin() OR
+        auth.uid() IN (
+            SELECT owner_id FROM public.farms
+        ) OR
+        auth.uid() IN (
+            SELECT user_id FROM public.farm_members 
+            WHERE is_active = true AND role = 'manager'
+        )
+    );
+
 CREATE POLICY "Users can update own profile" ON public.profiles
     FOR UPDATE USING (auth.uid() = id);
 
@@ -90,6 +105,9 @@ COMMENT ON POLICY "Users can view own profile" ON public.profiles IS
 
 COMMENT ON POLICY "Admins can view all profiles" ON public.profiles IS 
 'is_system_admin() 함수로 관리자 확인 후 모든 프로필을 조회할 수 있음';
+
+COMMENT ON POLICY "Farm owners and managers can view profiles for member management" ON public.profiles IS 
+'농장 소유자와 농장 관리자는 멤버 추가를 위해 다른 사용자의 프로필을 조회할 수 있음';
 
 COMMENT ON POLICY "Users can update own profile" ON public.profiles IS 
 '사용자는 자신의 프로필만 수정할 수 있음';

@@ -18,6 +18,7 @@ import {
 } from "@/components/ui/select";
 import { ImageUpload } from "@/components/ui/image-upload";
 import { ErrorBoundary } from "@/components/error/error-boundary";
+import { formatPhone } from "@/lib/utils/validation/validation";
 import type { ProfileSectionProps, ProfileFormData } from "@/lib/types/account";
 import AccountCardHeader from "./AccountCardHeader";
 import { devLog } from "@/lib/utils/logging/dev-logger";
@@ -77,7 +78,11 @@ export function ProfileSection({
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
   ) => {
     const { name, value } = e.target;
-    setProfileData((prev) => ({ ...prev, [name]: value }));
+
+    // 휴대폰 번호 필드에 대해 자동 포맷팅 적용
+    const processedValue = name === "phoneNumber" ? formatPhone(value) : value;
+
+    setProfileData((prev) => ({ ...prev, [name]: processedValue }));
   };
 
   const handleImageDelete = async () => {
@@ -191,6 +196,8 @@ export function ProfileSection({
                   value={profileData.phoneNumber}
                   onChange={handleInputChange}
                   disabled={loading}
+                  maxLength={13}
+                  placeholder="010-0000-0000 숫자만입력"
                 />
               </div>
               <div className="space-y-2">

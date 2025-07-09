@@ -1,6 +1,6 @@
 /**
  * 🔑 React Query Key 표준화 및 최적화
- * 
+ *
  * 일관된 Query Key 패턴으로 캐시 관리 효율성 향상
  * - 계층적 구조로 관련 쿼리 그룹화
  * - 타입 안전성 보장
@@ -17,26 +17,28 @@
 export const visitorsKeys = {
   // 모든 방문자 쿼리
   all: ["visitors"] as const,
-  
+
   // 목록 조회 쿼리들
   lists: () => [...visitorsKeys.all, "list"] as const,
-  list: (filters: Record<string, any>) => [...visitorsKeys.lists(), { filters }] as const,
-  
+  list: (filters: Record<string, any>) =>
+    [...visitorsKeys.lists(), { filters }] as const,
+
   // 무한 스크롤 쿼리들
   infinites: () => [...visitorsKeys.all, "infinite"] as const,
-  infinite: (filters: Record<string, any>) => [...visitorsKeys.infinites(), { filters }] as const,
-  
+  infinite: (filters: Record<string, any>) =>
+    [...visitorsKeys.infinites(), { filters }] as const,
+
   // 특정 방문자 상세
   details: () => [...visitorsKeys.all, "detail"] as const,
   detail: (id: string) => [...visitorsKeys.details(), id] as const,
-  
+
   // 농장별 방문자
   farms: () => [...visitorsKeys.all, "farm"] as const,
-  farm: (farmId: string, filters?: Record<string, any>) => 
-    filters 
-      ? [...visitorsKeys.farms(), farmId, { filters }] as const
-      : [...visitorsKeys.farms(), farmId] as const,
-  
+  farm: (farmId: string, filters?: Record<string, any>) =>
+    filters
+      ? ([...visitorsKeys.farms(), farmId, { filters }] as const)
+      : ([...visitorsKeys.farms(), farmId] as const),
+
   // 통계 쿼리들
   stats: () => [...visitorsKeys.all, "stats"] as const,
   farmStats: (farmId: string) => [...visitorsKeys.stats(), farmId] as const,
@@ -49,24 +51,24 @@ export const visitorsKeys = {
 export const farmsKeys = {
   // 모든 농장 쿼리
   all: ["farms"] as const,
-  
+
   // 목록 조회
   lists: () => [...farmsKeys.all, "list"] as const,
-  list: (filters?: Record<string, any>) => 
-    filters 
-      ? [...farmsKeys.lists(), { filters }] as const
-      : [...farmsKeys.lists()] as const,
-  
+  list: (filters?: Record<string, any>) =>
+    filters
+      ? ([...farmsKeys.lists(), { filters }] as const)
+      : ([...farmsKeys.lists()] as const),
+
   // 특정 농장 상세
   details: () => [...farmsKeys.all, "detail"] as const,
   detail: (id: string) => [...farmsKeys.details(), id] as const,
-  
+
   // 농장 멤버
   members: () => [...farmsKeys.all, "members"] as const,
   farmMembers: (farmId: string) => [...farmsKeys.members(), farmId] as const,
-  memberDetail: (farmId: string, memberId: string) => 
+  memberDetail: (farmId: string, memberId: string) =>
     [...farmsKeys.farmMembers(farmId), memberId] as const,
-  
+
   // 농장 통계
   stats: () => [...farmsKeys.all, "stats"] as const,
   farmStats: (farmId: string) => [...farmsKeys.stats(), farmId] as const,
@@ -78,25 +80,25 @@ export const farmsKeys = {
 export const dashboardKeys = {
   // 모든 대시보드 쿼리
   all: ["dashboard"] as const,
-  
+
   // 전체 통계
   stats: () => [...dashboardKeys.all, "stats"] as const,
   globalStats: () => [...dashboardKeys.stats(), "global"] as const,
   adminStats: () => [...dashboardKeys.stats(), "admin"] as const,
-  
+
   // 차트 데이터
   charts: () => [...dashboardKeys.all, "charts"] as const,
-  chart: (type: string, period?: string) => 
-    period 
-      ? [...dashboardKeys.charts(), type, period] as const
-      : [...dashboardKeys.charts(), type] as const,
-  
+  chart: (type: string, period?: string) =>
+    period
+      ? ([...dashboardKeys.charts(), type, period] as const)
+      : ([...dashboardKeys.charts(), type] as const),
+
   // 최근 활동
   activities: () => [...dashboardKeys.all, "activities"] as const,
-  recentActivities: (limit?: number) => 
-    limit 
-      ? [...dashboardKeys.activities(), { limit }] as const
-      : [...dashboardKeys.activities()] as const,
+  recentActivities: (limit?: number) =>
+    limit
+      ? ([...dashboardKeys.activities(), { limit }] as const)
+      : ([...dashboardKeys.activities()] as const),
 } as const;
 
 /**
@@ -105,10 +107,10 @@ export const dashboardKeys = {
 export const usersKeys = {
   all: ["users"] as const,
   lists: () => [...usersKeys.all, "list"] as const,
-  list: (filters?: Record<string, any>) => 
-    filters 
-      ? [...usersKeys.lists(), { filters }] as const
-      : [...usersKeys.lists()] as const,
+  list: (filters?: Record<string, any>) =>
+    filters
+      ? ([...usersKeys.lists(), { filters }] as const)
+      : ([...usersKeys.lists()] as const),
   details: () => [...usersKeys.all, "detail"] as const,
   detail: (id: string) => [...usersKeys.details(), id] as const,
   profile: (id: string) => [...usersKeys.all, "profile", id] as const,
@@ -122,6 +124,7 @@ export const settingsKeys = {
   general: () => [...settingsKeys.all, "general"] as const,
   notifications: () => [...settingsKeys.all, "notifications"] as const,
   security: () => [...settingsKeys.all, "security"] as const,
+  visitor: () => [...settingsKeys.all, "visitor"] as const,
 } as const;
 
 // ===========================================
@@ -136,35 +139,35 @@ export const invalidationHelpers = {
   invalidateAllVisitors: (queryClient: any) => {
     queryClient.invalidateQueries({ queryKey: visitorsKeys.all });
   },
-  
+
   // 특정 농장의 방문자 쿼리 무효화
   invalidateFarmVisitors: (queryClient: any, farmId: string) => {
     queryClient.invalidateQueries({ queryKey: visitorsKeys.farm(farmId) });
   },
-  
+
   // 방문자 통계 무효화
   invalidateVisitorStats: (queryClient: any) => {
     queryClient.invalidateQueries({ queryKey: visitorsKeys.stats() });
     queryClient.invalidateQueries({ queryKey: dashboardKeys.stats() });
   },
-  
+
   // 농장 관련 모든 쿼리 무효화
   invalidateAllFarms: (queryClient: any) => {
     queryClient.invalidateQueries({ queryKey: farmsKeys.all });
   },
-  
+
   // 특정 농장 쿼리 무효화
   invalidateFarm: (queryClient: any, farmId: string) => {
     queryClient.invalidateQueries({ queryKey: farmsKeys.detail(farmId) });
     queryClient.invalidateQueries({ queryKey: farmsKeys.farmMembers(farmId) });
     queryClient.invalidateQueries({ queryKey: visitorsKeys.farm(farmId) });
   },
-  
+
   // 농장 멤버 쿼리 무효화
   invalidateFarmMembers: (queryClient: any, farmId: string) => {
     queryClient.invalidateQueries({ queryKey: farmsKeys.farmMembers(farmId) });
   },
-  
+
   // 대시보드 쿼리 무효화
   invalidateDashboard: (queryClient: any) => {
     queryClient.invalidateQueries({ queryKey: dashboardKeys.all });
@@ -178,7 +181,10 @@ export const invalidationHelpers = {
 /**
  * Query Key 일치 여부 확인
  */
-export function isKeyMatch(key1: readonly any[], key2: readonly any[]): boolean {
+export function isKeyMatch(
+  key1: readonly any[],
+  key2: readonly any[]
+): boolean {
   if (key1.length !== key2.length) return false;
   return key1.every((item, index) => {
     if (typeof item === "object" && typeof key2[index] === "object") {
@@ -191,7 +197,10 @@ export function isKeyMatch(key1: readonly any[], key2: readonly any[]): boolean 
 /**
  * Query Key에서 특정 레벨 추출
  */
-export function getKeyLevel<T>(key: readonly any[], level: number): T | undefined {
+export function getKeyLevel<T>(
+  key: readonly any[],
+  level: number
+): T | undefined {
   return key[level] as T;
 }
 
@@ -199,11 +208,11 @@ export function getKeyLevel<T>(key: readonly any[], level: number): T | undefine
  * Query Key 디버깅 유틸리티
  */
 export function debugQueryKey(key: readonly any[]): string {
-  return key.map(item => 
-    typeof item === "object" 
-      ? JSON.stringify(item, null, 2)
-      : String(item)
-  ).join(" → ");
+  return key
+    .map((item) =>
+      typeof item === "object" ? JSON.stringify(item, null, 2) : String(item)
+    )
+    .join(" → ");
 }
 
 // ===========================================
@@ -212,31 +221,31 @@ export function debugQueryKey(key: readonly any[]): string {
 
 /**
  * Query Key Factory 사용 예제:
- * 
+ *
  * ```typescript
  * // 기본 사용법
  * const { data } = useQuery({
  *   queryKey: visitorsKeys.list({ farmId: "123", search: "홍길동" }),
  *   queryFn: fetchVisitors
  * });
- * 
+ *
  * // 캐시 무효화
  * const queryClient = useQueryClient();
- * 
+ *
  * // 특정 농장의 모든 방문자 쿼리 무효화
- * queryClient.invalidateQueries({ 
- *   queryKey: visitorsKeys.farm("farmId123") 
+ * queryClient.invalidateQueries({
+ *   queryKey: visitorsKeys.farm("farmId123")
  * });
- * 
+ *
  * // 모든 방문자 통계 무효화
  * invalidationHelpers.invalidateVisitorStats(queryClient);
- * 
+ *
  * // 특정 쿼리만 정확히 무효화
- * queryClient.removeQueries({ 
- *   queryKey: visitorsKeys.list({ farmId: "123" }) 
+ * queryClient.removeQueries({
+ *   queryKey: visitorsKeys.list({ farmId: "123" })
  * });
  * ```
- * 
+ *
  * 장점:
  * 1. **타입 안전성**: 컴파일 타임에 오타 방지
  * 2. **일관성**: 모든 곳에서 동일한 키 구조 사용

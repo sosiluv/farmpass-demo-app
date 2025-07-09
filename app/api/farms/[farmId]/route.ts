@@ -1,23 +1,18 @@
 import { createClient } from "@/lib/supabase/server";
+import { createServiceRoleClient } from "@/lib/supabase/service-role";
 import { NextRequest, NextResponse } from "next/server";
 import { logDataChange } from "@/lib/utils/logging/system-log";
 import { devLog } from "@/lib/utils/logging/dev-logger";
 import { getClientIP, getUserAgent } from "@/lib/server/ip-helpers";
-import {
-  getAuthenticatedUser,
-  checkSystemAdmin,
-} from "@/lib/server/auth-utils";
+import { requireAuth } from "@/lib/server/auth-utils";
 
 export async function GET(
   request: NextRequest,
   { params }: { params: { farmId: string } }
 ) {
-  // 요청 컨텍스트 정보 추출
-  const clientIP = getClientIP(request);
-  const userAgent = getUserAgent(request);
-
   try {
-    const supabase = await createClient();
+    // 공개 농장 정보 조회를 위해 Service Role 사용 (RLS 우회)
+    const supabase = createServiceRoleClient();
 
     // 특정 농장 정보 조회 (공개 API)
     const { data: farm, error } = await supabase
@@ -71,35 +66,16 @@ export async function PUT(
   let farmData: any = {};
 
   try {
+    // 인증 확인
+    const authResult = await requireAuth(false);
+    if (!authResult.success || !authResult.user) {
+      return authResult.response!;
+    }
+
+    const user = authResult.user;
+    const isAdmin = authResult.isAdmin || false;
     const supabase = await createClient();
-    const {
-      data: { user: authUser },
-      error: authError,
-    } = await supabase.auth.getUser();
-
-    if (authError || !authUser) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    user = authUser;
     farmData = await request.json();
-
-    // 사용자 권한 확인 (프로필에서 account_type 조회)
-    const { data: userProfile, error: profileError } = await supabase
-      .from("profiles")
-      .select("account_type")
-      .eq("id", user.id)
-      .single();
-
-    if (profileError) {
-      devLog.error("Error fetching user profile:", profileError);
-      return NextResponse.json(
-        { error: "User profile not found" },
-        { status: 404 }
-      );
-    }
-
-    const isAdmin = userProfile.account_type === "admin";
 
     // Verify ownership (관리자가 아닌 경우에만 소유권 확인)
     if (!isAdmin) {
@@ -207,34 +183,15 @@ export async function DELETE(
   let isAdmin = false;
 
   try {
+    // 인증 확인
+    const authResult = await requireAuth(false);
+    if (!authResult.success || !authResult.user) {
+      return authResult.response!;
+    }
+
+    const user = authResult.user;
+    const isAdmin = authResult.isAdmin || false;
     const supabase = await createClient();
-    const {
-      data: { user: authUser },
-      error: authError,
-    } = await supabase.auth.getUser();
-
-    if (authError || !authUser) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    user = authUser;
-
-    // 사용자 권한 확인 (프로필에서 account_type 조회)
-    const { data: userProfile, error: profileError } = await supabase
-      .from("profiles")
-      .select("account_type")
-      .eq("id", user.id)
-      .single();
-
-    if (profileError) {
-      devLog.error("Error fetching user profile:", profileError);
-      return NextResponse.json(
-        { error: "User profile not found" },
-        { status: 404 }
-      );
-    }
-
-    isAdmin = userProfile.account_type === "admin";
 
     // Verify ownership and get farm info for logging (관리자가 아닌 경우에만 소유권 확인)
     let farmQuery = supabase

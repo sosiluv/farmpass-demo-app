@@ -18,6 +18,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { AddressSearch } from "@/components/common/address-search";
 import { ImageUpload } from "@/components/ui/image-upload";
 import { Logo } from "@/components/common";
+import { formatPhone } from "@/lib/utils/validation/validation";
 import { User, Phone, MapPin, Car, FileText, Shield } from "lucide-react";
 import type { VisitorSettings } from "@/lib/types/visitor";
 import type { VisitorFormData } from "@/lib/utils/validation/visitor-validation";
@@ -97,7 +98,7 @@ const LABELS = {
 
 const PLACEHOLDERS = {
   FULL_NAME: "홍길동",
-  PHONE_NUMBER: "010-0000-0000",
+  PHONE_NUMBER: "010-0000-0000 숫자만입력",
   CAR_PLATE: "12가 3456 (선택사항)",
   VISIT_PURPOSE: "방문 목적을 선택하세요.",
   NOTES: "추가 사항이 있으면 입력해주세요.",
@@ -248,6 +249,20 @@ export const VisitorForm = ({
                     form.setValue("detailedAddress", detailedAddress);
                   }}
                   defaultDetailedAddress={formData.detailedAddress}
+                />
+              ) : name === "phoneNumber" ? (
+                <Input
+                  {...field}
+                  type="tel"
+                  onChange={(e) => {
+                    const formattedPhone = formatPhone(e.target.value);
+                    field.onChange(formattedPhone);
+                  }}
+                  placeholder={
+                    placeholderKey ? PLACEHOLDERS[placeholderKey] : ""
+                  }
+                  maxLength={13}
+                  className="h-10 sm:h-12 bg-gray-50 border border-gray-200 text-sm"
                 />
               ) : (
                 <Input

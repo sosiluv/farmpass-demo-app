@@ -7,6 +7,7 @@ import {
 } from "@/lib/utils/logging/system-log";
 import { devLog } from "@/lib/utils/logging/dev-logger";
 import { getClientIP, getUserAgent } from "@/lib/server/ip-helpers";
+import { requireAuth } from "@/lib/server/auth-utils";
 
 export async function POST(request: NextRequest) {
   // 요청 컨텍스트 정보 추출
@@ -16,49 +17,15 @@ export async function POST(request: NextRequest) {
   try {
     devLog.log("로그 정리 API 시작");
 
+    // 관리자 권한 인증 확인
+    const authResult = await requireAuth(true);
+    if (!authResult.success || !authResult.user) {
+      return authResult.response!;
+    }
+
+    const user = authResult.user;
     const supabase = await createClient();
     devLog.log("Supabase 클라이언트 생성 완료");
-
-    // 세션 확인 (getUser 사용)
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser();
-
-    devLog.log("인증 확인:", { user: user?.id, authError });
-
-    if (authError || !user) {
-      devLog.log("인증 실패:", authError);
-      return NextResponse.json(
-        { error: "인증이 필요합니다." },
-        { status: 401 }
-      );
-    }
-
-    // 관리자 권한 확인
-    const { data: profile, error: profileError } = await supabase
-      .from("profiles")
-      .select("account_type")
-      .eq("id", user.id)
-      .single();
-
-    devLog.log("프로필 확인:", { profile, profileError });
-
-    if (profileError || !profile || profile.account_type !== "admin") {
-      devLog.log("권한 확인 실패:", profileError);
-
-      // 권한 없는 접근 시도 로그
-      await logPermissionError("logs_cleanup", "execute", user.id, "admin", {
-        ip: clientIP,
-        email: user.email,
-        userAgent,
-      });
-
-      return NextResponse.json(
-        { error: "관리자 권한이 필요합니다." },
-        { status: 403 }
-      );
-    }
 
     const body = await request.json();
     const { type = "system_logs" } = body; // "system_logs" 또는 "all"
@@ -154,41 +121,14 @@ export async function GET(request: NextRequest) {
   try {
     devLog.log("정리 상태 조회 API 시작");
 
+    // 관리자 권한 인증 확인
+    const authResult = await requireAuth(true);
+    if (!authResult.success || !authResult.user) {
+      return authResult.response!;
+    }
+
+    const user = authResult.user;
     const supabase = await createClient();
-
-    // 세션 확인 (getUser 사용)
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser();
-
-    if (authError || !user) {
-      return NextResponse.json(
-        { error: "인증이 필요합니다." },
-        { status: 401 }
-      );
-    }
-
-    // 관리자 권한 확인
-    const { data: profile, error: profileError } = await supabase
-      .from("profiles")
-      .select("account_type")
-      .eq("id", user.id)
-      .single();
-
-    if (profileError || !profile || profile.account_type !== "admin") {
-      // 권한 없는 접근 시도 로그
-      await logPermissionError("logs_cleanup", "view", user.id, "admin", {
-        ip: clientIP,
-        email: user.email,
-        userAgent,
-      });
-
-      return NextResponse.json(
-        { error: "관리자 권한이 필요합니다." },
-        { status: 403 }
-      );
-    }
 
     // 시스템 설정 조회
     const settings = await getSystemSettings();

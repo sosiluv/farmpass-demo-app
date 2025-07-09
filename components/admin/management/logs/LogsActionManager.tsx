@@ -53,7 +53,7 @@ export function LogsActionManager({
     showInfo("전체 로그 삭제 시작", "모든 로그를 삭제하는 중입니다...");
 
     deleteLogsMutation.mutate(
-      { action: "delete_all" },
+      { action: "delete_all", beforeCount: logs.length },
       {
         onSuccess: () => {
           setLogs([]);

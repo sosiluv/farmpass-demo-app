@@ -1,5 +1,5 @@
-import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { NextRequest, NextResponse } from "next/server";
 import {
   logPermissionError,
   logApiError,
@@ -7,6 +7,7 @@ import {
 } from "@/lib/utils/logging/system-log";
 import { devLog } from "@/lib/utils/logging/dev-logger";
 import { getClientIP, getUserAgent } from "@/lib/server/ip-helpers";
+import { requireAuth } from "@/lib/server/auth-utils";
 
 export async function POST(request: NextRequest) {
   // 요청 컨텍스트 정보 추출
@@ -14,43 +15,14 @@ export async function POST(request: NextRequest) {
   const userAgent = getUserAgent(request);
 
   try {
-    devLog.log("로그 삭제 API 시작");
+    // 관리자 권한 인증 확인
+    const authResult = await requireAuth(true);
+    if (!authResult.success || !authResult.user) {
+      return authResult.response!;
+    }
 
+    const user = authResult.user;
     const supabase = await createClient();
-
-    // 세션 확인
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser();
-
-    if (authError || !user) {
-      return NextResponse.json(
-        { error: "인증이 필요합니다." },
-        { status: 401 }
-      );
-    }
-
-    // 관리자 권한 확인
-    const { data: profile, error: profileError } = await supabase
-      .from("profiles")
-      .select("account_type, email")
-      .eq("id", user.id)
-      .single();
-
-    if (profileError || !profile || profile.account_type !== "admin") {
-      // 권한 없는 접근 시도 로그
-      await logPermissionError("logs_delete", "execute", user.id, "admin", {
-        ip: clientIP,
-        email: user.email,
-        userAgent,
-      });
-
-      return NextResponse.json(
-        { error: "관리자 권한이 필요합니다." },
-        { status: 403 }
-      );
-    }
 
     const body = await request.json();
     const { action, logId, beforeCount } = body;
@@ -127,12 +99,12 @@ export async function POST(request: NextRequest) {
       undefined,
       {
         action: action,
-        user_email: profile.email,
+        user_email: user.email,
         deleted_count: result.count || 1,
         log_id: logId,
         timestamp: new Date().toISOString(),
       },
-      profile.email,
+      user.email,
       clientIP,
       userAgent
     );

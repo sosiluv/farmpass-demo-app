@@ -4,50 +4,20 @@ import { createAuthLog } from "@/lib/utils/logging/system-log";
 import { devLog } from "@/lib/utils/logging/dev-logger";
 import { getClientIP, getUserAgent } from "@/lib/server/ip-helpers";
 import { createClient } from "@/lib/supabase/server";
-
-// 관리자 권한 확인 함수
-async function verifyAdminPermission(
-  request: NextRequest
-): Promise<{ isAdmin: boolean; adminId?: string }> {
-  try {
-    const supabase = await createClient();
-    const {
-      data: { user },
-      error,
-    } = await supabase.auth.getUser();
-
-    if (error || !user) {
-      return { isAdmin: false };
-    }
-
-    // 관리자 권한 확인 (프로필에서 account_type 확인)
-    const profile = await prisma.profiles.findUnique({
-      where: { id: user.id },
-      select: { account_type: true },
-    });
-
-    const isAdmin = profile?.account_type === "admin";
-    return { isAdmin, adminId: isAdmin ? user.id : undefined };
-  } catch (error) {
-    devLog.error("Admin permission check failed:", error);
-    return { isAdmin: false };
-  }
-}
+import { requireAuth } from "@/lib/server/auth-utils";
 
 export async function POST(request: NextRequest) {
   const clientIP = getClientIP(request);
   const userAgent = getUserAgent(request);
 
   try {
-    // 관리자 권한 확인
-    const { isAdmin, adminId } = await verifyAdminPermission(request);
-
-    if (!isAdmin) {
-      return NextResponse.json(
-        { error: "관리자 권한이 필요합니다." },
-        { status: 403 }
-      );
+    // 관리자 권한 인증 확인
+    const authResult = await requireAuth(true);
+    if (!authResult.success || !authResult.user) {
+      return authResult.response!;
     }
+
+    const user = authResult.user;
 
     const { email, reason } = await request.json();
 
@@ -92,7 +62,7 @@ export async function POST(request: NextRequest) {
         reset_reason: reason || "manual_reset",
         action_type: "security_event",
         reset_at: new Date().toISOString(),
-        admin_id: adminId,
+        admin_id: user.id,
         admin_action: true,
       },
       { ip: clientIP, userAgent }

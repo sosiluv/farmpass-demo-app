@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { logVisitorDataAccess } from "@/lib/utils/logging/system-log";
-import { debugLog } from "@/lib/utils/system/system-mode";
 import { v4 as uuidv4 } from "uuid";
 import { cookies } from "next/headers";
 import { getSystemSettings } from "@/lib/cache/system-settings-cache";
@@ -140,16 +139,8 @@ export async function POST(
     visitorData = requestData as VisitorData;
     const cookieStore = cookies();
 
-    await debugLog("방문자 등록 요청 시작", {
-      farmId,
-      visitorName: visitorData.fullName,
-    });
-
     // 시스템 설정 조회 (캐시 사용)
     const settings = await getSystemSettings();
-    await debugLog("시스템 설정 로드 완료", {
-      reVisitAllowInterval: settings.reVisitAllowInterval,
-    });
 
     // 기존 세션 토큰 확인
     const sessionToken = cookieStore.get("visitor_session")?.value;
@@ -382,9 +373,6 @@ export async function GET(
   request: NextRequest,
   { params }: { params: { farmId: string } }
 ) {
-  const clientIP = getClientIP(request);
-  const userAgent = getUserAgent(request);
-
   try {
     const farmId = params.farmId;
     const { searchParams } = new URL(request.url);
