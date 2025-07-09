@@ -1,13 +1,11 @@
 "use client";
 
-import React from "react";
-import {
-  useAuthenticatedQuery,
-  createFarmMemberQueryKey,
-} from "@/lib/hooks/query-utils";
+import { useAuthenticatedQuery } from "@/lib/hooks/query-utils";
+import { farmsKeys } from "@/lib/hooks/query/query-keys";
 import { useAuth } from "@/components/providers/auth-provider";
 import type { FarmMember } from "@/lib/types";
 import { apiClient } from "@/lib/utils/data/api-client";
+import { handleError } from "@/lib/utils/error";
 
 export interface MemberWithProfile extends FarmMember {
   representative_name: string;
@@ -31,7 +29,7 @@ export function useFarmMembersQuery(farmId: string | null) {
 
   // 농장 멤버 데이터 쿼리
   const membersQuery = useAuthenticatedQuery(
-    createFarmMemberQueryKey(farmId || "none"),
+    farmsKeys.farmMembers(farmId || "none"),
     async (): Promise<FarmMembers> => {
       if (!farmId) {
         return {
@@ -44,6 +42,7 @@ export function useFarmMembersQuery(farmId: string | null) {
       try {
         const response = await apiClient(`/api/farms/${farmId}/members`, {
           method: "GET",
+          onError: (error, context) => handleError(error, context),
         });
 
         const { members: membersArray } = response;
@@ -143,6 +142,7 @@ export function useFarmMembersPreviewQuery(farmIds: string[]) {
           `/api/farm-members?farmIds=${uniqueFarmIds.join(",")}`,
           {
             method: "GET",
+            onError: (error, context) => handleError(error, context),
           }
         );
 
@@ -207,9 +207,3 @@ export function useFarmMembersPreviewQuery(farmIds: string[]) {
     fetchMembers: membersQuery.refetch,
   };
 }
-
-/**
- * 기존 Hook과의 호환성을 위한 alias
- */
-export { useFarmMembersQuery as useFarmMembersRQ };
-export { useFarmMembersPreviewQuery as useFarmMembersPreviewRQ };

@@ -7,6 +7,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiClient } from "@/lib/utils/data";
 import { devLog } from "@/lib/utils/logging/dev-logger";
 import { handleError } from "@/lib/utils/error";
+import { farmsKeys } from "@/lib/hooks/query/query-keys";
 
 export type MemberRole = "owner" | "manager" | "viewer";
 
@@ -61,8 +62,10 @@ export const useUpdateMemberRoleMutation = () => {
     },
     onSuccess: (_, { farmId }) => {
       // 해당 농장의 멤버 목록 캐시 무효화
-      queryClient.invalidateQueries({ queryKey: ["farm-members", farmId] });
-      queryClient.invalidateQueries({ queryKey: ["farms"] });
+      queryClient.invalidateQueries({
+        queryKey: farmsKeys.farmMembers(farmId),
+      });
+      queryClient.invalidateQueries({ queryKey: farmsKeys.all });
       devLog.log("[MUTATION] 멤버 역할 변경 완료, 캐시 무효화");
     },
     onError: (error, { farmId, memberId, newRole }) => {
@@ -105,8 +108,10 @@ export const useDeleteMemberMutation = () => {
     },
     onSuccess: (_, { farmId }) => {
       // 해당 농장의 멤버 목록 캐시 무효화
-      queryClient.invalidateQueries({ queryKey: ["farm-members", farmId] });
-      queryClient.invalidateQueries({ queryKey: ["farms"] });
+      queryClient.invalidateQueries({
+        queryKey: farmsKeys.farmMembers(farmId),
+      });
+      queryClient.invalidateQueries({ queryKey: farmsKeys.all });
       devLog.log("[MUTATION] 멤버 삭제 완료, 캐시 무효화");
     },
     onError: (error, { farmId, memberId }) => {
@@ -177,8 +182,10 @@ export const useBulkUpdateMemberRoleMutation = () => {
     },
     onSuccess: (_, { farmId }) => {
       // 해당 농장의 멤버 목록 캐시 무효화
-      queryClient.invalidateQueries({ queryKey: ["farm-members", farmId] });
-      queryClient.invalidateQueries({ queryKey: ["farms"] });
+      queryClient.invalidateQueries({
+        queryKey: farmsKeys.farmMembers(farmId),
+      });
+      queryClient.invalidateQueries({ queryKey: farmsKeys.all });
       devLog.log("[MUTATION] 멤버 일괄 역할 변경 완료, 캐시 무효화");
     },
     onError: (error, { farmId, memberIds, newRole }) => {
@@ -234,8 +241,10 @@ export const useBulkDeleteMembersMutation = () => {
     },
     onSuccess: (_, { farmId }) => {
       // 해당 농장의 멤버 목록 캐시 무효화
-      queryClient.invalidateQueries({ queryKey: ["farm-members", farmId] });
-      queryClient.invalidateQueries({ queryKey: ["farms"] });
+      queryClient.invalidateQueries({
+        queryKey: farmsKeys.farmMembers(farmId),
+      });
+      queryClient.invalidateQueries({ queryKey: farmsKeys.all });
       devLog.log("[MUTATION] 멤버 일괄 삭제 완료, 캐시 무효화");
     },
     onError: (error, { farmId, memberIds }) => {

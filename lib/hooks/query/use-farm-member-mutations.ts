@@ -2,7 +2,7 @@
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiClient } from "@/lib/utils/data/api-client";
-import { createFarmMemberQueryKey } from "@/lib/hooks/query-utils";
+import { farmsKeys } from "@/lib/hooks/query/query-keys";
 import type { FarmMember } from "@/lib/types";
 
 export interface InviteMemberRequest {
@@ -36,7 +36,7 @@ export function useInviteMemberMutation() {
     onSuccess: (newMember, variables) => {
       // 농장 멤버 목록 쿼리 무효화
       queryClient.invalidateQueries({
-        queryKey: createFarmMemberQueryKey(variables.farm_id),
+        queryKey: farmsKeys.farmMembers(variables.farm_id),
       });
     },
   });
@@ -62,7 +62,7 @@ export function useUpdateMemberRoleMutation() {
     onSuccess: (updatedMember, variables) => {
       // 농장 멤버 목록 쿼리 무효화
       queryClient.invalidateQueries({
-        queryKey: createFarmMemberQueryKey(variables.farm_id),
+        queryKey: farmsKeys.farmMembers(variables.farm_id),
       });
     },
   });
@@ -93,7 +93,7 @@ export function useRemoveMemberMutation() {
     onSuccess: (result, variables) => {
       // 농장 멤버 목록 쿼리 무효화
       queryClient.invalidateQueries({
-        queryKey: createFarmMemberQueryKey(variables.farmId),
+        queryKey: farmsKeys.farmMembers(variables.farmId),
       });
     },
   });

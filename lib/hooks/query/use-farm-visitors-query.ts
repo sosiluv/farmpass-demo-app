@@ -180,8 +180,3 @@ export function useFarmVisitorsQuery(farmId: string | null) {
     fetchVisitors: visitorsQuery.refetch,
   };
 }
-
-/**
- * 기존 Hook과의 호환성을 위한 alias
- */
-export { useFarmVisitorsQuery as useFarmVisitorsRQ };

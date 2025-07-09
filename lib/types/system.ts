@@ -1,5 +1,3 @@
-import type { Database } from "./supabase";
-
 export type LogLevel = "info" | "warn" | "error" | "debug";
 
 export type LogCategory =

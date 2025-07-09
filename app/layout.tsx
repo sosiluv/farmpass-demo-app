@@ -79,6 +79,10 @@ export default async function RootLayout({
     <html lang="ko" suppressHydrationWarning>
       <head>
         <link rel="/manifest" href="/manifest.json" />
+        <link rel="apple-touch-icon" href="/icon-180x180.png" sizes="180x180" />
+        <link rel="apple-touch-icon" href="/icon-167x167.png" sizes="167x167" />
+        <link rel="apple-touch-icon" href="/icon-152x152.png" sizes="152x152" />
+        <link rel="apple-touch-icon" href="/icon-120x120.png" sizes="120x120" />
         {/* Google Analytics */}
         <Script
           src="https://www.googletagmanager.com/gtag/js?id=G-MQ40J6BMTC"

@@ -41,29 +41,29 @@ const checkInstallability = (): InstallInfo => {
   // 기존 조건들을 주석 처리하고 강제로 설치 가능 상태로 설정
 
   // 이미 PWA로 실행 중이면 설치 불필요
-  // if (isStandalone) {
-  //   return {
-  //     canInstall: false,
-  //     platform: "Unknown",
-  //     method: "none",
-  //     reason: "이미 PWA 모드로 실행 중",
-  //     isStandalone: true,
-  //     userAgent,
-  //   };
-  // }
+  if (isStandalone) {
+    return {
+      canInstall: false,
+      platform: "Unknown",
+      method: "none",
+      reason: "이미 PWA 모드로 실행 중",
+      isStandalone: true,
+      userAgent,
+    };
+  }
 
   // 이전에 설치 완료된 경우 (localStorage 체크)
-  // const installCompleted = localStorage.getItem("pwa_install_completed");
-  // if (installCompleted) {
-  //   return {
-  //     canInstall: false,
-  //     platform: "Unknown",
-  //     method: "none",
-  //     reason: "이미 설치 완료됨",
-  //     isStandalone: false,
-  //     userAgent,
-  //   };
-  // }
+  const installCompleted = localStorage.getItem("pwa_install_completed");
+  if (installCompleted) {
+    return {
+      canInstall: false,
+      platform: "Unknown",
+      method: "none",
+      reason: "이미 설치 완료됨",
+      isStandalone: false,
+      userAgent,
+    };
+  }
 
   // iOS Safari
   if (isIOS && isSafari) {

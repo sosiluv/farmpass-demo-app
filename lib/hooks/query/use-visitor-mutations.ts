@@ -1,7 +1,6 @@
 "use client";
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { useAuth } from "@/components/providers/auth-provider";
 import { apiClient } from "@/lib/utils/data/api-client";
 import { visitorsKeys, dashboardKeys } from "@/lib/hooks/query/query-keys";
 import type { VisitorEntry } from "@/lib/types";

@@ -333,21 +333,6 @@ await prisma.profiles.update({
 });
 ```
 
-#### 세션 쿠키 설정
-
-```typescript
-// 기존: 클라이언트에서 세션 설정
-const { error: setSessionError } = await supabase.auth.setSession(session);
-
-// 개선: 서버에서 쿠키 설정
-response.cookies.set("sb-access-token", session!.access_token, {
-  httpOnly: true,
-  secure: process.env.NODE_ENV === "production",
-  sameSite: "lax",
-  maxAge: session!.expires_at ? session!.expires_at * 1000 - Date.now() : 3600,
-});
-```
-
 ### 📁 수정된 파일들
 
 #### API 라우터

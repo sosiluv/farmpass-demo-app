@@ -12,15 +12,12 @@ import { FarmsPageHeader } from "@/components/admin/farms/FarmsPageHeader";
 import { EmptyFarmsState } from "@/components/admin/farms/EmptyFarmsState";
 import { DeleteConfirmDialog } from "@/components/admin/farms/DeleteConfirmDialog";
 import { Input } from "@/components/ui/input";
-import { useFarmMembersQuery } from "@/lib/hooks/query/use-farm-members-query";
 import { StatsSkeleton, TableSkeleton } from "@/components/common/skeletons";
 import { ErrorBoundary } from "@/components/error/error-boundary";
 import { ResponsivePagination } from "@/components/common/responsive-pagination";
 import type { FarmFormValues } from "@/lib/utils/validation";
 
 export default function FarmsPage() {
-  const router = useRouter();
-  const { state } = useAuth();
   const { showInfo, showSuccess, showError } = useCommonToast();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingFarm, setEditingFarm] = useState<Farm | null>(null);
