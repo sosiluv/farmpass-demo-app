@@ -2,6 +2,7 @@
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiClient } from "@/lib/utils/data/api-client";
+import { handleError } from "@/lib/utils/error";
 
 interface DeleteLogRequest {
   action: "delete_single" | "delete_all" | "delete_old";
@@ -11,7 +12,7 @@ interface DeleteLogRequest {
 
 /**
  * 로그 삭제 Mutation
- * 토스트는 컴포넌트 레벨에서 처리
+ * 기본 에러 처리는 Hook 레벨에서, 추가 처리는 컴포넌트 레벨에서 가능
  */
 export function useDeleteLogsMutation() {
   const queryClient = useQueryClient();
@@ -24,6 +25,10 @@ export function useDeleteLogsMutation() {
           "Content-Type": "application/json",
         },
         body: JSON.stringify(data),
+        context: "로그 삭제",
+        onError: (error, context) => {
+          handleError(error, context);
+        },
       });
       return result;
     },

@@ -5,7 +5,6 @@ import {
   UseMutationOptions,
 } from "@tanstack/react-query";
 import { useAuth } from "@/components/providers/auth-provider";
-import { apiClient } from "@/lib/utils/data/api-client";
 
 /**
  * 인증이 필요한 쿼리를 위한 커스텀 훅

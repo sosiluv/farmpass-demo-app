@@ -4,6 +4,7 @@ import React from "react";
 import { useAuthenticatedQuery } from "@/lib/hooks/query-utils";
 import { useAuth } from "@/components/providers/auth-provider";
 import { apiClient } from "@/lib/utils/data/api-client";
+import { handleError } from "@/lib/utils/error";
 import { farmsKeys } from "./query-keys";
 import type { Farm } from "@/lib/types/farm";
 
@@ -30,6 +31,10 @@ export function useFarmsQuery(userId?: string) {
       // 기존 Store와 동일한 API 엔드포인트 사용
       const { farms } = await apiClient("/api/farms", {
         method: "GET",
+        context: "농장 목록 조회",
+        onError: (error, context) => {
+          handleError(error, context);
+        },
       });
 
       return farms || [];

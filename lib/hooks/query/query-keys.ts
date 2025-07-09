@@ -121,10 +121,64 @@ export const usersKeys = {
  */
 export const settingsKeys = {
   all: ["settings"] as const,
+  system: () => [...settingsKeys.all, "system"] as const,
   general: () => [...settingsKeys.all, "general"] as const,
   notifications: () => [...settingsKeys.all, "notifications"] as const,
   security: () => [...settingsKeys.all, "security"] as const,
   visitor: () => [...settingsKeys.all, "visitor"] as const,
+  cache: () => [...settingsKeys.all, "cache"] as const,
+  cleanup: () => [...settingsKeys.all, "cleanup"] as const,
+  images: () => [...settingsKeys.all, "images"] as const,
+} as const;
+
+/**
+ * 알림 관련 Query Key Factory
+ */
+export const notificationKeys = {
+  all: ["notifications"] as const,
+  settings: () => [...notificationKeys.all, "settings"] as const,
+  subscriptions: () => [...notificationKeys.all, "subscriptions"] as const,
+  subscription: (endpoint?: string) =>
+    endpoint
+      ? ([...notificationKeys.subscriptions(), endpoint] as const)
+      : ([...notificationKeys.subscriptions()] as const),
+} as const;
+
+/**
+ * 푸시 알림 관련 Query Key Factory
+ */
+export const pushKeys = {
+  all: ["push"] as const,
+  vapid: () => [...pushKeys.all, "vapid"] as const,
+  subscriptions: () => [...pushKeys.all, "subscriptions"] as const,
+  subscription: (endpoint?: string) =>
+    endpoint
+      ? ([...pushKeys.subscriptions(), endpoint] as const)
+      : ([...pushKeys.subscriptions()] as const),
+  status: () => [...pushKeys.all, "status"] as const,
+} as const;
+
+/**
+ * 로그 관련 Query Key Factory
+ */
+export const logsKeys = {
+  all: ["logs"] as const,
+  admin: () => [...logsKeys.all, "admin"] as const,
+  system: () => [...logsKeys.all, "system"] as const,
+  list: (filters?: Record<string, any>) =>
+    filters
+      ? ([...logsKeys.all, "list", { filters }] as const)
+      : ([...logsKeys.all, "list"] as const),
+} as const;
+
+/**
+ * 계정 관련 Query Key Factory
+ */
+export const accountKeys = {
+  all: ["account"] as const,
+  profile: () => [...accountKeys.all, "profile"] as const,
+  company: () => [...accountKeys.all, "company"] as const,
+  settings: () => [...accountKeys.all, "settings"] as const,
 } as const;
 
 // ===========================================

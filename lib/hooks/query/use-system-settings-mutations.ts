@@ -2,6 +2,8 @@
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiClient } from "@/lib/utils/data/api-client";
+import { handleError } from "@/lib/utils/error";
+import { settingsKeys } from "@/lib/hooks/query/query-keys";
 import type { SystemSettings } from "@/lib/types/settings";
 
 /**
@@ -17,16 +19,20 @@ export function useSaveSystemSettingsMutation() {
       const response = await apiClient("/api/settings", {
         method: "PATCH",
         body: JSON.stringify(settings),
+        context: "시스템 설정 저장",
+        onError: (error, context) => {
+          handleError(error, context);
+        },
       });
       return response;
     },
     onSuccess: (updatedSettings) => {
       // 시스템 설정 쿼리 즉시 업데이트
-      queryClient.setQueryData(["system-settings"], updatedSettings);
+      queryClient.setQueryData(settingsKeys.system(), updatedSettings);
 
       // 시스템 설정 쿼리 무효화 (다른 캐시들도 갱신)
       queryClient.invalidateQueries({
-        queryKey: ["system-settings"],
+        queryKey: settingsKeys.all,
       });
     },
   });
@@ -42,13 +48,17 @@ export function useInvalidateSystemSettingsCacheMutation() {
     mutationFn: async (): Promise<{ success: boolean }> => {
       await apiClient("/api/settings/invalidate-cache", {
         method: "POST",
+        context: "시스템 설정 캐시 무효화",
+        onError: (error, context) => {
+          handleError(error, context);
+        },
       });
       return { success: true };
     },
     onSuccess: () => {
       // React Query 캐시도 무효화
       queryClient.invalidateQueries({
-        queryKey: ["system-settings"],
+        queryKey: settingsKeys.all,
       });
     },
   });
@@ -71,6 +81,10 @@ export function useExecuteCleanupMutation() {
       const response = await apiClient("/api/cleanup", {
         method: "POST",
         body: JSON.stringify(data),
+        context: "데이터 정리 작업",
+        onError: (error, context) => {
+          handleError(error, context);
+        },
       });
       return response;
     },
@@ -101,13 +115,17 @@ export function useUploadSystemImageMutation() {
       const response = await apiClient("/api/settings/upload-image", {
         method: "POST",
         body: formData,
+        context: "시스템 이미지 업로드",
+        onError: (error, context) => {
+          handleError(error, context);
+        },
       });
       return response;
     },
     onSuccess: () => {
       // 시스템 설정 쿼리 무효화
       queryClient.invalidateQueries({
-        queryKey: ["system-settings"],
+        queryKey: settingsKeys.all,
       });
     },
   });

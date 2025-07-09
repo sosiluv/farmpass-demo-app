@@ -40,6 +40,9 @@ export function useSubscriptionManager(enableVapidKey: boolean = false) {
           const response = await apiClient("/api/notifications/settings", {
             method: "GET",
             context: "알림 설정 조회 (구독 관리용)",
+            onError: (error, context) => {
+              handleError(error, context);
+            },
           });
           return response;
         },

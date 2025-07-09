@@ -3,6 +3,7 @@
 import { useAuthenticatedQuery } from "@/lib/hooks/query-utils";
 import { useAuth } from "@/components/providers/auth-provider";
 import { apiClient } from "@/lib/utils/data/api-client";
+import { handleError } from "@/lib/utils/error";
 import { settingsKeys } from "./query-keys";
 
 export interface MonitoringData {
@@ -90,6 +91,9 @@ export function useMonitoringQuery() {
     async (): Promise<MonitoringData> => {
       const result = await apiClient("/api/monitoring/dashboard", {
         context: "시스템 모니터링 데이터 조회",
+        onError: (error, context) => {
+          handleError(error, context);
+        },
       });
       return result as MonitoringData;
     },

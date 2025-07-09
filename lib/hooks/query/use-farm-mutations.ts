@@ -3,6 +3,7 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/components/providers/auth-provider";
 import { apiClient } from "@/lib/utils/data/api-client";
+import { handleError } from "@/lib/utils/error";
 import { farmsKeys } from "@/lib/hooks/query/query-keys";
 import type { Farm } from "@/lib/types/farm";
 
@@ -32,6 +33,10 @@ export function useCreateFarmMutation() {
       const response = await apiClient("/api/farms", {
         method: "POST",
         body: JSON.stringify(data),
+        context: "농장 생성",
+        onError: (error, context) => {
+          handleError(error, context);
+        },
       });
       return response.farm;
     },
@@ -58,6 +63,10 @@ export function useUpdateFarmMutation() {
       const response = await apiClient(`/api/farms/${data.id}`, {
         method: "PUT",
         body: JSON.stringify(data),
+        context: "농장 수정",
+        onError: (error, context) => {
+          handleError(error, context);
+        },
       });
       return response.farm;
     },
@@ -85,6 +94,10 @@ export function useDeleteFarmMutation() {
     ): Promise<{ success: boolean; farm?: Farm }> => {
       const response = await apiClient(`/api/farms/${farmId}`, {
         method: "DELETE",
+        context: "농장 삭제",
+        onError: (error, context) => {
+          handleError(error, context);
+        },
       });
       return response;
     },

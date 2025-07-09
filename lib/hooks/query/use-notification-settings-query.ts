@@ -2,6 +2,7 @@
 
 import { useAuthenticatedQuery } from "@/lib/hooks/query-utils";
 import { apiClient } from "@/lib/utils/data/api-client";
+import { handleError } from "@/lib/utils/error";
 import { settingsKeys } from "./query-keys";
 import type { NotificationSettings } from "@/lib/types/notification";
 
@@ -16,6 +17,9 @@ export function useNotificationSettingsQuery(options?: { enabled?: boolean }) {
       const response = await apiClient("/api/notifications/settings", {
         method: "GET",
         context: "알림 설정 조회",
+        onError: (error, context) => {
+          handleError(error, context);
+        },
       });
 
       return response as NotificationSettings;

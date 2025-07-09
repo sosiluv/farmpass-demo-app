@@ -7,11 +7,12 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiClient } from "@/lib/utils/data";
 import { devLog } from "@/lib/utils/logging/dev-logger";
 import { handleError } from "@/lib/utils/error";
+import { pushKeys } from "@/lib/hooks/query/query-keys";
 
 // VAPID 키 조회 (Query)
 export const useVapidKeyQuery = (options?: { enabled?: boolean }) => {
   return useQuery({
-    queryKey: ["vapid-key"],
+    queryKey: pushKeys.vapid(),
     queryFn: async () => {
       devLog.log("[QUERY] VAPID 키 조회 시작");
 
@@ -34,7 +35,7 @@ export const useVapidKeyQuery = (options?: { enabled?: boolean }) => {
 // 구독 상태 조회 (Query)
 export const useSubscriptionStatusQuery = (enabled: boolean = true) => {
   return useQuery({
-    queryKey: ["subscription-status"],
+    queryKey: pushKeys.status(),
     queryFn: async () => {
       devLog.log("[QUERY] 구독 상태 조회 시작");
 
@@ -83,7 +84,7 @@ export const useCreateSubscriptionMutation = () => {
     },
     onSuccess: () => {
       // 구독 상태 캐시 무효화
-      queryClient.invalidateQueries({ queryKey: ["subscription-status"] });
+      queryClient.invalidateQueries({ queryKey: pushKeys.status() });
       devLog.log("[MUTATION] 구독 상태 캐시 무효화 완료");
     },
     onError: (error) => {
@@ -115,7 +116,7 @@ export const useDeleteSubscriptionMutation = () => {
     },
     onSuccess: () => {
       // 구독 상태 캐시 무효화
-      queryClient.invalidateQueries({ queryKey: ["subscription-status"] });
+      queryClient.invalidateQueries({ queryKey: pushKeys.status() });
       devLog.log("[MUTATION] 구독 상태 캐시 무효화 완료");
     },
     onError: (error) => {
@@ -174,9 +175,9 @@ export const useRegenerateVapidKeyMutation = () => {
     },
     onSuccess: () => {
       // VAPID 키 캐시 무효화
-      queryClient.invalidateQueries({ queryKey: ["vapid-key"] });
+      queryClient.invalidateQueries({ queryKey: pushKeys.vapid() });
       // 구독 상태도 무효화 (새 키로 재구독 필요)
-      queryClient.invalidateQueries({ queryKey: ["subscription-status"] });
+      queryClient.invalidateQueries({ queryKey: pushKeys.status() });
       devLog.log("[MUTATION] VAPID 키 캐시 무효화 완료");
     },
     onError: (error) => {

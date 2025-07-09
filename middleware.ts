@@ -12,7 +12,7 @@ import {
   createRateLimitHeaders,
   maliciousBotRateLimiter,
 } from "@/lib/utils/system/rate-limit";
-import { clearServerCookies } from "@/lib/utils/auth";
+import { clearServerAuthCookies } from "@/lib/utils/auth";
 
 const MIDDLEWARE_CONFIG = {
   // 🌐 공개 접근 가능한 경로들 (인증 불필요)
@@ -224,7 +224,7 @@ export async function middleware(request: NextRequest) {
       const response = NextResponse.redirect(loginUrl);
 
       // 공통 쿠키 정리 함수 사용
-      clearServerCookies(response);
+      clearServerAuthCookies(response);
 
       return response;
     }

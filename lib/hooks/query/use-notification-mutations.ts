@@ -2,6 +2,7 @@
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiClient } from "@/lib/utils/data/api-client";
+import { handleError } from "@/lib/utils/error";
 import type {
   NotificationSettings,
   UpdateNotificationSettingsDTO,
@@ -20,6 +21,10 @@ export function useSaveNotificationSettingsMutation() {
       const response = await apiClient("/api/notifications/settings", {
         method: "PUT",
         body: JSON.stringify(settings),
+        context: "알림 설정 저장",
+        onError: (error, context) => {
+          handleError(error, context);
+        },
       });
       return response;
     },
@@ -43,6 +48,10 @@ export function useSubscribePushMutation() {
       await apiClient("/api/push/subscription", {
         method: "POST",
         body: JSON.stringify({ subscription: subscription.toJSON() }),
+        context: "푸시 구독 등록",
+        onError: (error, context) => {
+          handleError(error, context);
+        },
       });
       return { success: true };
     },
@@ -61,6 +70,10 @@ export function useUnsubscribePushMutation() {
       await apiClient("/api/push/subscription", {
         method: "DELETE",
         body: JSON.stringify(data),
+        context: "푸시 구독 해제",
+        onError: (error, context) => {
+          handleError(error, context);
+        },
       });
       return { success: true };
     },
@@ -82,6 +95,10 @@ export function useSendPushNotificationMutation() {
       const response = await apiClient("/api/push/send", {
         method: "POST",
         body: JSON.stringify(data),
+        context: "푸시 알림 전송",
+        onError: (error, context) => {
+          handleError(error, context);
+        },
       });
       return response;
     },

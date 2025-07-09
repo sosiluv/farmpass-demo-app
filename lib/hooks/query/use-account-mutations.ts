@@ -3,7 +3,12 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/components/providers/auth-provider";
 import { apiClient } from "@/lib/utils/data/api-client";
-import type { ProfileFormData, CompanyFormData, PasswordFormData } from "@/lib/types/account";
+import { handleError } from "@/lib/utils/error";
+import type {
+  ProfileFormData,
+  CompanyFormData,
+  PasswordFormData,
+} from "@/lib/types/account";
 
 export interface ImageUploadRequest {
   publicUrl: string;
@@ -35,6 +40,10 @@ export function useUpdateProfileMutation() {
       await apiClient("/api/profile", {
         method: "PATCH",
         body: JSON.stringify(profileData),
+        context: "프로필 정보 저장",
+        onError: (error, context) => {
+          handleError(error, context);
+        },
       });
 
       return { success: true };
@@ -75,6 +84,10 @@ export function useUpdateCompanyMutation() {
       await apiClient("/api/profile", {
         method: "PATCH",
         body: JSON.stringify(companyData),
+        context: "회사 정보 저장",
+        onError: (error, context) => {
+          handleError(error, context);
+        },
       });
 
       return { success: true };
@@ -91,9 +104,11 @@ export function useUpdateCompanyMutation() {
  */
 export function useChangePasswordMutation() {
   const { changePassword } = useAuth();
-  
+
   return useMutation({
-    mutationFn: async (data: PasswordFormData): Promise<{ success: boolean; error?: string }> => {
+    mutationFn: async (
+      data: PasswordFormData
+    ): Promise<{ success: boolean; error?: string }> => {
       const result = await changePassword({
         newPassword: data.newPassword,
         currentPassword: data.currentPassword,
@@ -116,10 +131,16 @@ export function useUploadProfileImageMutation() {
   const { refreshProfile } = useAuth();
 
   return useMutation({
-    mutationFn: async (data: ImageUploadRequest): Promise<{ success: boolean }> => {
+    mutationFn: async (
+      data: ImageUploadRequest
+    ): Promise<{ success: boolean }> => {
       await apiClient("/api/profile", {
         method: "POST",
         body: JSON.stringify(data),
+        context: "프로필 이미지 업로드",
+        onError: (error, context) => {
+          handleError(error, context);
+        },
       });
 
       return { success: true };
@@ -141,6 +162,10 @@ export function useDeleteProfileImageMutation() {
     mutationFn: async (): Promise<{ success: boolean }> => {
       await apiClient("/api/profile", {
         method: "DELETE",
+        context: "프로필 이미지 삭제",
+        onError: (error, context) => {
+          handleError(error, context);
+        },
       });
 
       return { success: true };
@@ -168,7 +193,7 @@ export function useAccountMutations() {
     changePassword,
     uploadImage,
     deleteImage,
-    
+
     // 편의 메서드들
     updateProfileAsync: updateProfile.mutateAsync,
     updateCompanyAsync: updateCompany.mutateAsync,
@@ -177,7 +202,7 @@ export function useAccountMutations() {
     deleteImageAsync: deleteImage.mutateAsync,
 
     // 로딩 상태
-    isLoading: 
+    isLoading:
       updateProfile.isPending ||
       updateCompany.isPending ||
       changePassword.isPending ||

@@ -2,6 +2,7 @@
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiClient } from "@/lib/utils/data/api-client";
+import { handleError } from "@/lib/utils/error";
 import { farmsKeys } from "@/lib/hooks/query/query-keys";
 import type { FarmMember } from "@/lib/types";
 
@@ -30,6 +31,10 @@ export function useInviteMemberMutation() {
       const response = await apiClient(`/api/farms/${data.farm_id}/members`, {
         method: "POST",
         body: JSON.stringify({ email: data.email, role: data.role }),
+        context: "멤버 초대",
+        onError: (error, context) => {
+          handleError(error, context);
+        },
       });
       return response.member;
     },
@@ -55,6 +60,10 @@ export function useUpdateMemberRoleMutation() {
         {
           method: "PUT",
           body: JSON.stringify({ role: data.role }),
+          context: "멤버 역할 변경",
+          onError: (error, context) => {
+            handleError(error, context);
+          },
         }
       );
       return response.member;
@@ -86,6 +95,10 @@ export function useRemoveMemberMutation() {
         `/api/farms/${farmId}/members/${memberId}`,
         {
           method: "DELETE",
+          context: "멤버 제거",
+          onError: (error, context) => {
+            handleError(error, context);
+          },
         }
       );
       return response;

@@ -15,8 +15,8 @@ export {
 
 // Cookie utilities exports
 export {
-  clearClientCookies,
-  clearServerCookies,
+  clearAuthCookies,
+  clearServerAuthCookies,
   getSupabaseProjectId,
   getSupabaseAuthCookies,
 } from "./cookie-utils";

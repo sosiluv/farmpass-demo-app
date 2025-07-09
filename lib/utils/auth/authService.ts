@@ -1,6 +1,6 @@
 import { createClient } from "@/lib/supabase/client";
 import { devLog } from "@/lib/utils/logging/dev-logger";
-import { clearClientCookies } from "@/lib/utils/auth";
+import { clearAuthCookies } from "@/lib/utils/auth";
 
 // 구독 해제를 위한 브라우저 API 직접 호출 (훅 대신)
 async function cleanupBrowserSubscription(): Promise<{
@@ -39,7 +39,7 @@ let refreshPromise: Promise<boolean> | null = null;
 // 세션 쿠키 정리 함수 개선
 function clearSessionCookies(): void {
   try {
-    clearClientCookies();
+    clearAuthCookies();
     devLog.log("세션 쿠키 정리 완료");
   } catch (error) {
     devLog.warn("세션 쿠키 정리 실패:", error);

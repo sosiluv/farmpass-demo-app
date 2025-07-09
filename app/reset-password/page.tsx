@@ -26,12 +26,12 @@ import { Input } from "@/components/ui/input";
 import { Mail } from "lucide-react";
 import { motion } from "framer-motion";
 import { useCommonToast } from "@/lib/utils/notification/toast-messages";
-import { devLog } from "@/lib/utils/logging/dev-logger";
 import { Logo } from "@/components/common";
 import { Loading } from "@/components/ui/loading";
 import { apiClient } from "@/lib/utils/data";
 import { resetPasswordRequestFormSchema } from "@/lib/utils/validation/auth-validation";
 import type { ResetPasswordRequestFormData } from "@/lib/utils/validation/auth-validation";
+import { handleError } from "@/lib/utils/error";
 
 export default function ResetPasswordPage() {
   const [loading, setLoading] = useState(false);
@@ -57,7 +57,7 @@ export default function ResetPasswordPage() {
         body: JSON.stringify({ email: data.email }),
         context: "비밀번호 재설정 요청",
         onError: (error, context) => {
-          devLog.error("Password reset error:", error);
+          handleError(error, context);
           showError("오류", error.message);
         },
       });
