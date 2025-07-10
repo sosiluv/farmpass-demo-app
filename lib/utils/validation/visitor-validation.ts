@@ -101,7 +101,6 @@ export const visitorDialogFormSchema = z.object({
   visitor_name: z.string().min(1, ERROR_MESSAGES.REQUIRED_NAME),
   visitor_phone: z.string().min(1, ERROR_MESSAGES.REQUIRED_CONTACT),
   visitor_address: z.string().min(1, ERROR_MESSAGES.REQUIRED_ADDRESS),
-  visitor_detailed_address: z.string().optional(),
   visitor_purpose: z.string().nullable(),
   vehicle_number: z
     .string()

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, useMemo } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useCommonToast } from "@/lib/utils/notification/toast-messages";
@@ -39,7 +39,10 @@ import {
 } from "@/components/ui/select";
 import { AddressSearch } from "@/components/common/address-search";
 
-// VisitorDialogFormData 타입 사용
+// ===========================================
+// 타입 및 상수 정의
+// ===========================================
+
 export interface VisitorFormValues extends VisitorDialogFormData {}
 
 interface VisitorFormDialogProps {
@@ -49,9 +52,9 @@ interface VisitorFormDialogProps {
   initialData?: VisitorFormValues & { id: string; farm_id: string };
   farmId: string;
   onSuccess: (values: VisitorFormValues) => Promise<void>;
+  isLoading?: boolean; // 외부 로딩 상태 (예: 편집 데이터 로드)
 }
 
-// 방문 목적 옵션 직접 선언
 const VISIT_PURPOSE_OPTIONS = [
   "납품",
   "점검",
@@ -61,7 +64,21 @@ const VISIT_PURPOSE_OPTIONS = [
   "방역",
   "견학",
   "기타",
-];
+] as const;
+
+const DEFAULT_FORM_VALUES: VisitorFormValues = {
+  visitor_name: "",
+  visitor_phone: "",
+  visitor_address: "",
+  visitor_purpose: null,
+  vehicle_number: null,
+  notes: null,
+  disinfection_check: false,
+};
+
+// ===========================================
+// 메인 컴포넌트
+// ===========================================
 
 export function VisitorFormDialog({
   open,
@@ -70,57 +87,54 @@ export function VisitorFormDialog({
   initialData,
   farmId,
   onSuccess,
+  isLoading = false,
 }: VisitorFormDialogProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const { showInfo, showError } = useCommonToast();
+  const { showError } = useCommonToast();
 
-  const form = useForm<VisitorFormValues>({
-    resolver: zodResolver(visitorDialogFormSchema),
-    defaultValues: {
-      visitor_name: "",
-      visitor_phone: "",
-      visitor_address: "",
-      visitor_detailed_address: "",
-      visitor_purpose: null,
-      vehicle_number: null,
-      notes: null,
-      disinfection_check: false,
-    },
-  });
+  // 전체 로딩 상태 (외부 로딩 + 제출 중)
+  const isFormDisabled = isLoading || isSubmitting;
 
-  // 폼 초기화 - open 상태와 initialData가 변경될 때만 실행
-  useEffect(() => {
-    if (open && mode === "edit" && initialData) {
-      form.reset({
+  // 폼 초기화 데이터 계산 (깜빡임 방지를 위한 최적화)
+  const formInitialValues = useMemo(() => {
+    if (mode === "edit" && initialData) {
+      return {
         visitor_name: initialData.visitor_name || "",
         visitor_phone: initialData.visitor_phone || "",
         visitor_address: initialData.visitor_address || "",
-        visitor_detailed_address: initialData.visitor_detailed_address || "",
         visitor_purpose: initialData.visitor_purpose,
         vehicle_number: initialData.vehicle_number,
         notes: initialData.notes,
         disinfection_check: initialData.disinfection_check || false,
-      });
-    } else if (open && mode === "create") {
-      form.reset({
-        visitor_name: "",
-        visitor_phone: "",
-        visitor_address: "",
-        visitor_detailed_address: "",
-        visitor_purpose: null,
-        vehicle_number: null,
-        notes: null,
-        disinfection_check: false,
-      });
+      };
     }
-  }, [open, mode, initialData]); // form을 의존성에서 제거
+    return DEFAULT_FORM_VALUES;
+  }, [mode, initialData]);
 
-  const onSubmit = async (values: VisitorFormValues) => {
+  const form = useForm<VisitorFormValues>({
+    resolver: zodResolver(visitorDialogFormSchema),
+    values: formInitialValues, // 항상 최신 값으로 동기화 (깜빡임 방지)
+  });
+
+  // 다이얼로그 열릴 때만 폼 초기화 (initialData 변경은 values로 자동 처리)
+  useEffect(() => {
+    if (open && !isLoading) {
+      // 로딩이 완료된 후에만 폼 초기화
+      form.reset(formInitialValues);
+    }
+  }, [open, isLoading]); // formInitialValues와 form 의존성 제거로 무한 루프 방지
+
+  // ===========================================
+  // 이벤트 핸들러
+  // ===========================================
+
+  const handleSubmit = async (values: VisitorFormValues) => {
     if (isSubmitting) return;
 
-    showInfo("폼 제출 시작", "방문자 정보를 저장하는 중입니다...");
     try {
       setIsSubmitting(true);
+
+      // 성공 토스트를 onSuccess에서 처리하므로 여기서는 로딩 상태만 표시
       await onSuccess({
         ...values,
         visitor_purpose: values.visitor_purpose || null,
@@ -128,6 +142,7 @@ export function VisitorFormDialog({
         notes: values.notes || null,
       });
 
+      // 성공 시 다이얼로그 닫기
       onOpenChange(false);
     } catch (error) {
       devLog.error("폼 제출 실패:", error);
@@ -141,22 +156,43 @@ export function VisitorFormDialog({
   };
 
   const handleClose = useCallback(() => {
-    if (!isSubmitting) {
-      form.reset();
+    if (!isFormDisabled) {
       onOpenChange(false);
     }
-  }, [isSubmitting, onOpenChange, form]);
+  }, [isFormDisabled, onOpenChange]);
 
-  // 입력 필드 렌더링 함수
-  const renderField = useCallback(
+  const handlePhoneChange = useCallback(
+    (value: string, onChange: (value: string) => void) => {
+      const formattedPhone = formatPhone(value);
+      onChange(formattedPhone);
+    },
+    []
+  );
+
+  const handleAddressSelect = useCallback(
     (
-      name: keyof Omit<
-        VisitorFormValues,
-        "disinfection_check" | "visitor_detailed_address"
-      >,
+      address: string,
+      detailedAddress: string,
+      onChange: (value: string) => void
+    ) => {
+      const fullAddress =
+        address + (detailedAddress ? ` ${detailedAddress}` : "");
+      onChange(fullAddress);
+    },
+    []
+  );
+
+  // ===========================================
+  // 렌더링 헬퍼
+  // ===========================================
+
+  // 렌더링 최적화를 위한 메모화된 컴포넌트
+  const renderInputField = useCallback(
+    (
+      name: keyof Omit<VisitorFormValues, "disinfection_check">,
       label: string,
-      type: "input" | "textarea" = "input",
-      required = false
+      required = false,
+      type: "input" | "textarea" = "input"
     ) => (
       <FormField
         control={form.control}
@@ -172,20 +208,38 @@ export function VisitorFormDialog({
                 <Input
                   {...field}
                   value={field.value || ""}
-                  disabled={isSubmitting}
+                  disabled={isFormDisabled}
                   onChange={(e) => {
-                    const formattedPhone = formatPhone(e.target.value);
-                    field.onChange(formattedPhone);
+                    if (name === "visitor_phone") {
+                      handlePhoneChange(e.target.value, field.onChange);
+                    } else {
+                      field.onChange(e.target.value);
+                    }
                   }}
-                  maxLength={13} // 010-0000-0000 형식의 최대 길이
-                  type="tel"
-                  placeholder="010-0000-0000 숫자만입력" // 전화번호 형식 안내
+                  maxLength={name === "visitor_phone" ? 13 : undefined}
+                  type={name === "visitor_phone" ? "tel" : "text"}
+                  placeholder={
+                    name === "visitor_phone"
+                      ? "010-0000-0000 숫자만입력"
+                      : name === "visitor_name"
+                      ? "홍길동"
+                      : name === "vehicle_number"
+                      ? "12가3456 (선택사항)"
+                      : undefined
+                  }
                 />
               ) : (
                 <Textarea
                   {...field}
                   value={field.value || ""}
-                  disabled={isSubmitting}
+                  disabled={isFormDisabled}
+                  onChange={(e) => field.onChange(e.target.value)}
+                  rows={3}
+                  placeholder={
+                    name === "notes"
+                      ? "추가 사항이 있으면 입력해주세요"
+                      : undefined
+                  }
                 />
               )}
             </FormControl>
@@ -194,8 +248,108 @@ export function VisitorFormDialog({
         )}
       />
     ),
-    [form.control, isSubmitting]
+    [form.control, isFormDisabled, handlePhoneChange]
   );
+
+  // 메모화된 주소 검색 컴포넌트
+  const renderAddressField = useCallback(
+    () => (
+      <FormField
+        control={form.control}
+        name="visitor_address"
+        render={({ field }) => (
+          <FormItem>
+            <FormLabel>주소 *</FormLabel>
+            <FormControl>
+              <div className="space-y-2">
+                <AddressSearch
+                  onSelect={(address, detailedAddress) =>
+                    handleAddressSelect(
+                      address,
+                      detailedAddress,
+                      field.onChange
+                    )
+                  }
+                  defaultDetailedAddress=""
+                />
+                <Textarea
+                  placeholder="주소 검색 버튼을 클릭하여 주소를 입력하세요"
+                  value={field.value || ""}
+                  readOnly
+                  disabled={isFormDisabled}
+                  rows={2}
+                />
+              </div>
+            </FormControl>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
+    ),
+    [form.control, isFormDisabled, handleAddressSelect]
+  );
+
+  // 메모화된 방문목적 필드
+  const renderPurposeField = useCallback(
+    () => (
+      <FormField
+        control={form.control}
+        name="visitor_purpose"
+        render={({ field }) => (
+          <FormItem>
+            <FormLabel>방문목적 *</FormLabel>
+            <FormControl>
+              <Select
+                value={field.value || ""}
+                onValueChange={field.onChange}
+                disabled={isFormDisabled}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="방문 목적을 선택하세요" />
+                </SelectTrigger>
+                <SelectContent>
+                  {VISIT_PURPOSE_OPTIONS.map((option) => (
+                    <SelectItem key={option} value={option}>
+                      {option}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </FormControl>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
+    ),
+    [form.control, isFormDisabled]
+  );
+
+  // 메모화된 소독여부 필드
+  const renderDisinfectionField = useCallback(
+    () => (
+      <FormField
+        control={form.control}
+        name="disinfection_check"
+        render={({ field }) => (
+          <FormItem className="flex flex-row items-center space-x-2 space-y-0">
+            <FormControl>
+              <Checkbox
+                checked={field.value}
+                onCheckedChange={field.onChange}
+                disabled={isFormDisabled}
+              />
+            </FormControl>
+            <FormLabel className="font-normal">소독여부</FormLabel>
+          </FormItem>
+        )}
+      />
+    ),
+    [form.control, isFormDisabled]
+  );
+
+  // ===========================================
+  // 메인 렌더링
+  // ===========================================
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
@@ -210,149 +364,60 @@ export function VisitorFormDialog({
               : "방문자 정보를 수정합니다."}
           </DialogDescription>
         </DialogHeader>
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            {renderField("visitor_name", "성명", "input", true)}
-            {renderField("visitor_phone", "연락처", "input", true)}
 
-            {/* 주소 필드 */}
-            <FormField
-              control={form.control}
-              name="visitor_address"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>주소 *</FormLabel>
-                  <FormControl>
-                    <div className="space-y-2">
-                      <AddressSearch
-                        onSelect={(address, detailedAddress) => {
-                          field.onChange(address);
-                          form.setValue(
-                            "visitor_detailed_address",
-                            detailedAddress
-                          );
-                        }}
-                        defaultDetailedAddress={
-                          form.getValues("visitor_detailed_address") || ""
-                        }
-                      />
-                      <div className="space-y-2">
-                        <Textarea
-                          placeholder="주소 검색 버튼을 클릭하여 주소를 입력하세요"
-                          {...field}
-                          readOnly
-                        />
-                        <FormField
-                          control={form.control}
-                          name="visitor_detailed_address"
-                          render={({ field: detailField }) => (
-                            <FormItem>
-                              <FormControl>
-                                <Input
-                                  placeholder="상세 주소를 입력하세요 (예: 101동 1234호)"
-                                  {...detailField}
-                                  value={detailField.value || ""}
-                                />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                      </div>
-                    </div>
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+        {/* 외부 로딩 중에는 스피너만 표시하여 깜빡임 완전 방지 */}
+        {isLoading && mode === "edit" ? (
+          <div className="flex flex-col items-center justify-center py-12">
+            <div className="animate-spin h-10 w-10 border-4 border-gray-300 border-t-blue-600 rounded-full mb-4"></div>
+            <span className="text-gray-600 text-sm">
+              데이터를 불러오는 중...
+            </span>
+          </div>
+        ) : (
+          <Form {...form}>
+            <form
+              onSubmit={form.handleSubmit(handleSubmit)}
+              className="space-y-4"
+            >
+              <div className="grid gap-4">
+                {renderInputField("visitor_name", "성명", true)}
+                {renderInputField("visitor_phone", "연락처", true)}
+                {renderAddressField()}
+                {renderPurposeField()}
+                {renderInputField("vehicle_number", "차량번호")}
+                {renderInputField("notes", "비고", false, "textarea")}
+                {renderDisinfectionField()}
+              </div>
 
-            {/* 방문목적 필드 */}
-            <FormField
-              control={form.control}
-              name="visitor_purpose"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>방문목적 *</FormLabel>
-                  <FormControl>
-                    <Select
-                      value={field.value || ""}
-                      onValueChange={field.onChange}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="방문 목적을 선택하세요." />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {(VISIT_PURPOSE_OPTIONS || []).map((option) => (
-                          <SelectItem key={option} value={option}>
-                            {option}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            {renderField("vehicle_number", "차량번호")}
-            {renderField("notes", "비고", "textarea")}
-
-            <FormField
-              control={form.control}
-              name="disinfection_check"
-              render={({ field }) => (
-                <FormItem className="flex flex-row items-center space-x-2 space-y-0">
-                  <FormControl>
-                    <Checkbox
-                      checked={field.value}
-                      onCheckedChange={field.onChange}
-                      disabled={isSubmitting}
-                    />
-                  </FormControl>
-                  <FormLabel className="font-normal">소독여부</FormLabel>
-                </FormItem>
-              )}
-            />
-
-            <DialogFooter>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={handleClose}
-                disabled={isSubmitting}
-              >
-                취소
-              </Button>
-              <Button type="submit" disabled={isSubmitting}>
-                {isSubmitting && (
-                  <svg
-                    className="animate-spin mr-2 h-4 w-4"
-                    viewBox="0 0 16 16"
-                    fill="none"
-                    xmlns="http://www.w3.org/2000/svg"
-                  >
-                    <circle
-                      cx="8"
-                      cy="8"
-                      r="7"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      className="opacity-25"
-                    />
-                    <path
-                      d="M15 8a7 7 0 11-7-7"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      className="opacity-75"
-                    />
-                  </svg>
-                )}
-                {mode === "create" ? "등록" : "수정"}
-              </Button>
-            </DialogFooter>
-          </form>
-        </Form>
+              <DialogFooter className="gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={handleClose}
+                  disabled={isFormDisabled}
+                >
+                  취소
+                </Button>
+                <Button
+                  type="submit"
+                  disabled={isFormDisabled}
+                  className="min-w-[80px]"
+                >
+                  {isSubmitting ? (
+                    <>
+                      <div className="animate-spin mr-2 h-4 w-4 border-2 border-white border-t-transparent rounded-full" />
+                      처리중...
+                    </>
+                  ) : mode === "create" ? (
+                    "등록"
+                  ) : (
+                    "수정"
+                  )}
+                </Button>
+              </DialogFooter>
+            </form>
+          </Form>
+        )}
       </DialogContent>
     </Dialog>
   );

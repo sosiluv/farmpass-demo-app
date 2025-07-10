@@ -12,6 +12,8 @@ export interface CreateVisitorRequest {
   visitor_phone: string;
   visitor_address: string;
   visitor_purpose?: string;
+  vehicle_number?: string;
+  notes?: string;
   disinfection_check: boolean;
   consent_given: boolean;
   visit_datetime?: string;

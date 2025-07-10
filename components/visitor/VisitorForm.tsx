@@ -93,15 +93,15 @@ const LABELS = {
   DISINFECTION: "소독여부",
   NOTES: "비고",
   PROFILE_PHOTO: "프로필 사진",
-  CONSENT: "개인정보 수집 및 이용에 동의합니다.",
+  CONSENT: "개인정보 수집 및 이용에 동의합니다",
 };
 
 const PLACEHOLDERS = {
   FULL_NAME: "홍길동",
   PHONE_NUMBER: "010-0000-0000 숫자만입력",
-  CAR_PLATE: "12가 3456 (선택사항)",
-  VISIT_PURPOSE: "방문 목적을 선택하세요.",
-  NOTES: "추가 사항이 있으면 입력해주세요.",
+  CAR_PLATE: "12가3456 (선택사항)",
+  VISIT_PURPOSE: "방문 목적을 선택하세요",
+  NOTES: "추가 사항이 있으면 입력해주세요",
 };
 
 export const VisitorForm = ({
@@ -281,10 +281,10 @@ export const VisitorForm = ({
                   <div className="font-medium text-gray-700">선택된 주소:</div>
                   <div className="text-gray-600 mt-1">
                     {field.value}
-                    {formData.detailedAddress && (
+                    {form.watch("detailedAddress") && (
                       <span className="text-blue-600">
                         {" "}
-                        {formData.detailedAddress}
+                        {form.watch("detailedAddress")}
                       </span>
                     )}
                   </div>
@@ -333,42 +333,44 @@ export const VisitorForm = ({
       </CardHeader>
 
       <CardContent className="p-3 sm:p-6">
-        {/* 프로필 사진 업로드 */}
-        {settings.requireVisitorPhoto && (
-          <FormField
-            control={form.control}
-            name="profilePhoto"
-            render={({ field }) => (
-              <FormItem className="mb-3 sm:mb-6 flex flex-col items-center">
-                <FormLabel className="sr-only">
-                  {LABELS.PROFILE_PHOTO}
-                </FormLabel>
-                <FormControl>
-                  <ImageUpload
-                    onUpload={handleImageUpload}
-                    onDelete={handleImageDelete}
-                    currentImage={
-                      uploadedImageUrl ||
-                      (field.value ? URL.createObjectURL(field.value) : null)
-                    }
-                    required={settings.requireVisitorPhoto}
-                    showCamera={true}
-                    avatarSize="md"
-                    label={LABELS.PROFILE_PHOTO}
-                    className="shadow border border-gray-100 bg-white rounded-lg sm:rounded-xl p-2 sm:p-4"
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        )}
-
         <Form {...form}>
           <form
             onSubmit={form.handleSubmit(onSubmit)}
             className="space-y-3 sm:space-y-6"
           >
+            {/* 프로필 사진 업로드 */}
+            {settings.requireVisitorPhoto && (
+              <FormField
+                control={form.control}
+                name="profilePhoto"
+                render={({ field }) => (
+                  <FormItem className="mb-3 sm:mb-6 flex flex-col items-center">
+                    <FormLabel className="sr-only">
+                      {LABELS.PROFILE_PHOTO}
+                    </FormLabel>
+                    <FormControl>
+                      <ImageUpload
+                        onUpload={handleImageUpload}
+                        onDelete={handleImageDelete}
+                        currentImage={
+                          uploadedImageUrl ||
+                          (field.value
+                            ? URL.createObjectURL(field.value)
+                            : null)
+                        }
+                        required={settings.requireVisitorPhoto}
+                        showCamera={true}
+                        avatarSize="md"
+                        label={LABELS.PROFILE_PHOTO}
+                        className="shadow border border-gray-100 bg-white rounded-lg sm:rounded-xl p-2 sm:p-4"
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            )}
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-6">
               {/* 기본 필드들 */}
               {renderTextField("fullName", FORM_FIELDS.fullName)}

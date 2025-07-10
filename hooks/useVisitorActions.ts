@@ -50,6 +50,8 @@ export const useVisitorActions = ({
           visitor_phone: visitor.visitor_phone,
           visitor_address: visitor.visitor_address,
           visitor_purpose: visitor.visitor_purpose || undefined,
+          vehicle_number: visitor.vehicle_number || undefined,
+          notes: visitor.notes || undefined,
           disinfection_check: visitor.disinfection_check,
           consent_given: visitor.consent_given,
         });
