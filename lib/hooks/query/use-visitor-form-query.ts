@@ -37,6 +37,7 @@ export const useFarmInfoQuery = (farmId: string) => {
         manager_name: result.farm.manager_name || "",
         manager_phone: result.farm.manager_phone || "",
         farm_type: result.farm.farm_type || undefined,
+        owner_id: result.farm.owner_id,
       };
 
       return farmData;

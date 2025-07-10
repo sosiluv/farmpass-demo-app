@@ -13,7 +13,14 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import type { SubscriptionStatus, Farm } from "@/lib/types/notification";
+import type { SubscriptionStatus } from "@/lib/types/notification";
+import type { Farm } from "@/lib/types";
+
+// 알림 상태 표시용 Farm 타입 (최소한의 정보만 포함)
+interface NotificationFarm extends Pick<Farm, "id" | "farm_name"> {
+  address?: string;
+  isSubscribed?: boolean;
+}
 
 interface StatusProps {
   isLoading?: boolean;
@@ -22,7 +29,7 @@ interface StatusProps {
   onTest?: () => void;
   onCleanup?: () => void;
   onUnsubscribe?: () => void;
-  farms?: Farm[];
+  farms?: NotificationFarm[];
 }
 
 export const CheckingStatus = () => (

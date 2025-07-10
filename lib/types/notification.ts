@@ -1,4 +1,15 @@
-export type NotificationMethod = "push" | "kakao";
+/**
+ * 알림 관련 타입 정의
+ */
+
+import type { NotificationMethod, BaseFilter } from "./common";
+
+// Re-export common types
+export type { NotificationMethod } from "./common";
+
+// ===========================================
+// 알림 기본 타입
+// ===========================================
 
 export interface Notification {
   id: string;
@@ -84,17 +95,8 @@ export interface NotificationPayload {
   test?: boolean;
 }
 
-export interface NotificationFilter {
+export interface NotificationFilter extends BaseFilter {
   userId?: string;
   farmId?: string;
   isRead?: boolean;
-  startDate?: string;
-  endDate?: string;
-}
-
-export interface Farm {
-  id: string;
-  farm_name: string;
-  address?: string;
-  isSubscribed?: boolean;
 }

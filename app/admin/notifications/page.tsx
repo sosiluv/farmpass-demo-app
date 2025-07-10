@@ -5,10 +5,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import { PageHeader } from "@/components/layout";
 import { WebPushSubscription } from "@/components/admin/notifications/WebPushSubscription";
 import { useFarmsContext } from "@/components/providers/farms-provider";
-import { useFarmsQuery } from "@/lib/hooks/query/use-farms-query";
 import { useNotificationSettingsQuery } from "@/lib/hooks/query/use-notification-settings-query";
 import { useAuth } from "@/components/providers/auth-provider";
-import { Farm } from "@/lib/types/notification";
 import { ErrorBoundary } from "@/components/error/error-boundary";
 import {
   NotificationMethodsCard,
@@ -54,12 +52,8 @@ export default function NotificationsPage() {
     }
   }, [farmsError, showError]);
 
-  // 농장 데이터를 WebPushSubscription 컴포넌트 형식으로 변환
-  const farmData: Farm[] = (farms || []).map((farm) => ({
-    id: farm.id,
-    farm_name: farm.farm_name,
-    address: farm.farm_address,
-  }));
+  // 농장 데이터를 WebPushSubscription 컴포넌트에 직접 전달
+  const farmData = farms || [];
 
   return (
     <ErrorBoundary

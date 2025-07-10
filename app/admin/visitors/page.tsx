@@ -65,8 +65,8 @@ export default function VisitorsPage() {
   const loading = visitorsFilteredQuery.loading || farmsQuery.isLoading;
   const error = visitorsFilteredQuery.error || farmsQuery.error;
 
-  // Farm 타입 변환
-  const typedFarms: Farm[] = useMemo(() => {
+  // Farm 타입 변환 - visitor 타입의 Farm은 간소화된 버전
+  const typedFarms = useMemo(() => {
     if (!farms || farms.length === 0) return [];
 
     return farms.map((farm) => ({
@@ -75,6 +75,8 @@ export default function VisitorsPage() {
       farm_type: farm.farm_type || undefined,
       farm_address: farm.farm_address,
       owner_id: farm.owner_id,
+      manager_name: farm.manager_name,
+      manager_phone: farm.manager_phone,
     }));
   }, [farms]);
 

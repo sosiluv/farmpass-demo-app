@@ -2,25 +2,14 @@
  * 농장 관련 타입 정의
  */
 
-export interface Farm {
-  id: string;
-  farm_name: string;
-  description: string | null;
-  farm_address: string;
-  farm_detailed_address: string | null;
-  farm_type: string | null;
-  owner_id: string;
-  manager_phone: string | null;
-  manager_name: string | null;
-  is_active: boolean;
-  created_at: string;
-  updated_at: string;
-  owner?: {
-    id: string;
-    name: string;
-    email: string;
-  };
-}
+import type { Farm, FarmMember } from "./common";
+
+// Re-export common types
+export type { Farm, FarmMember } from "./common";
+
+// ===========================================
+// 농장 폼 데이터 타입
+// ===========================================
 
 export interface FarmFormValues {
   farm_name: string;
@@ -32,21 +21,9 @@ export interface FarmFormValues {
   manager_name?: string;
 }
 
-export interface FarmMember {
-  id: string;
-  farm_id: string;
-  user_id: string;
-  role: 'owner' | 'manager' | 'worker';
-  representative_name: string;
-  is_active: boolean;
-  created_at: string;
-  updated_at: string;
-  users?: {
-    id: string;
-    name: string;
-    email: string;
-  };
-}
+// ===========================================
+// 농장 멤버 확장 타입
+// ===========================================
 
 export interface MemberWithProfile extends FarmMember {
   name: string;
@@ -60,6 +37,10 @@ export interface FarmMembers {
   loading: boolean;
   error?: Error;
 }
+
+// ===========================================
+// 농장 통계 타입
+// ===========================================
 
 export interface FarmStats {
   total_farms: number;

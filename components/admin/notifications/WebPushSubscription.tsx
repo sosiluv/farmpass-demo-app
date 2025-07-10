@@ -4,7 +4,14 @@ import React, { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { devLog } from "@/lib/utils/logging/dev-logger";
 
-import type { SubscriptionStatus, Farm } from "@/lib/types/notification";
+import type { SubscriptionStatus } from "@/lib/types/notification";
+import type { Farm } from "@/lib/types";
+
+// 알림 전용 확장 Farm 타입
+interface NotificationFarm extends Pick<Farm, "id" | "farm_name"> {
+  address?: string;
+  isSubscribed?: boolean;
+}
 import { useNotificationService } from "@/hooks/useNotificationService";
 import { renderNotificationStatus } from "./status/NotificationStatus";
 import NotificationCardHeader from "./NotificationCardHeader";
@@ -22,7 +29,7 @@ export function WebPushSubscription({
   onSubscriptionStatusChange,
 }: WebPushSubscriptionProps) {
   const [status, setStatus] = useState<SubscriptionStatus>("checking");
-  const [farms, setFarms] = useState<Farm[]>([]);
+  const [farms, setFarms] = useState<NotificationFarm[]>([]);
   const {
     isLoading,
     requestNotificationPermission,
@@ -39,7 +46,9 @@ export function WebPushSubscription({
   useEffect(() => {
     setFarms(
       (propFarms || []).map((farm) => ({
-        ...farm,
+        id: farm.id,
+        farm_name: farm.farm_name,
+        address: farm.farm_address,
         isSubscribed: false,
       }))
     );
