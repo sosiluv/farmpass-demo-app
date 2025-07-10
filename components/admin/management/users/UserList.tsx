@@ -14,6 +14,7 @@ import { Profile } from "@/lib/types";
 import { useState } from "react";
 import { UserDetailModal } from "./UserDetailModal";
 import { CommonListWrapper } from "../shared/CommonListWrapper";
+import { ImagePreviewDialog } from "@/components/common/ImagePreviewDialog";
 
 interface UserListProps {
   users: Profile[];
@@ -22,6 +23,17 @@ interface UserListProps {
 
 export function UserList({ users, onUserClick }: UserListProps) {
   const [selectedUser, setSelectedUser] = useState<Profile | null>(null);
+  const [previewOpen, setPreviewOpen] = useState(false);
+  const [previewUrl, setPreviewUrl] = useState<string>("");
+  const [previewAlt, setPreviewAlt] = useState<string>("");
+
+  const handleAvatarClick = (user: Profile) => {
+    if (user.profile_image_url) {
+      setPreviewUrl(user.profile_image_url);
+      setPreviewAlt(user.name || "User");
+      setPreviewOpen(true);
+    }
+  };
 
   const getRoleColor = (accountType: string) => {
     switch (accountType) {
@@ -80,7 +92,13 @@ export function UserList({ users, onUserClick }: UserListProps) {
           <CommonListItem
             key={user.id}
             avatar={
-              <Avatar className="h-6 w-6 sm:h-10 sm:w-10 lg:h-12 lg:w-12 flex-shrink-0 mr-8 sm:mr-10 lg:mr-12 xl:mr-16 2xl:mr-20">
+              <Avatar
+                className="h-6 w-6 sm:h-10 sm:w-10 lg:h-12 lg:w-12 flex-shrink-0 mr-8 sm:mr-10 lg:mr-12 xl:mr-16 2xl:mr-20"
+                onClick={() => handleAvatarClick(user)}
+                style={{
+                  cursor: user.profile_image_url ? "pointer" : undefined,
+                }}
+              >
                 {user.profile_image_url ? (
                   <AvatarImage
                     src={user.profile_image_url}
@@ -158,6 +176,13 @@ export function UserList({ users, onUserClick }: UserListProps) {
         user={selectedUser}
         open={selectedUser !== null}
         onClose={() => setSelectedUser(null)}
+      />
+      <ImagePreviewDialog
+        src={previewUrl}
+        alt={previewAlt}
+        open={previewOpen}
+        onOpenChange={setPreviewOpen}
+        caption={previewAlt}
       />
     </>
   );

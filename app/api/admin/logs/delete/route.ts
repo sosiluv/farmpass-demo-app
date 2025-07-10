@@ -1,10 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { NextRequest, NextResponse } from "next/server";
-import {
-  logPermissionError,
-  logApiError,
-  createSystemLog,
-} from "@/lib/utils/logging/system-log";
+import { logApiError, createSystemLog } from "@/lib/utils/logging/system-log";
 import { devLog } from "@/lib/utils/logging/dev-logger";
 import { getClientIP, getUserAgent } from "@/lib/server/ip-helpers";
 import { requireAuth } from "@/lib/server/auth-utils";

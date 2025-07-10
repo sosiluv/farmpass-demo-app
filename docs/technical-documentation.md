@@ -495,8 +495,7 @@ export enum LogCategory {
   AUTH = "auth",
   VISITOR = "visitor",
   SYSTEM = "system",
-  API = "api",
-  CACHE = "cache",
+  API = (CACHE = "cache"),
 }
 
 interface LogEntry {
@@ -2200,125 +2199,6 @@ SELECT cron.schedule(
   '0 19 * * 6',
   'SELECT generate_weekly_cleanup_report();'
 );
-```
-
-#### 3. 주간 보고서 생성
-
-```sql
--- 주간 데이터 정리 현황 보고서 생성 함수
-CREATE OR REPLACE FUNCTION generate_weekly_cleanup_report()
-RETURNS TABLE(
-  report_date TIMESTAMPTZ,
-  period_start TIMESTAMPTZ,
-  period_end TIMESTAMPTZ,
-  system_logs_cleaned INTEGER,
-  visitor_entries_cleaned INTEGER,
-  current_system_logs_count INTEGER,
-  current_visitor_entries_count INTEGER,
-  next_week_estimated_cleanup INTEGER,
-  cleanup_jobs_status JSONB,
-  recommendations TEXT[]
-)
-LANGUAGE plpgsql
-SECURITY DEFINER
-AS $$
-DECLARE
-  v_period_start TIMESTAMPTZ := NOW() - INTERVAL '7 days';
-  v_period_end TIMESTAMPTZ := NOW();
-  v_system_logs_cleaned INTEGER := 0;
-  v_visitor_entries_cleaned INTEGER := 0;
-  v_current_system_logs INTEGER := 0;
-  v_current_visitor_entries INTEGER := 0;
-  v_recommendations TEXT[] := ARRAY[]::TEXT[];
-BEGIN
-  -- 지난 주 정리된 데이터 개수 조회
-  SELECT
-    COALESCE(SUM((metadata->>'deleted_count')::INTEGER), 0)
-  INTO v_system_logs_cleaned
-  FROM system_logs
-  WHERE action = 'SYSTEM_LOG_DELETE'
-    AND created_at BETWEEN v_period_start AND v_period_end;
-
-  SELECT
-    COALESCE(SUM((metadata->'changes'->>'deleted_count')::INTEGER), 0)
-  INTO v_visitor_entries_cleaned
-  FROM system_logs
-  WHERE action = 'VISITOR_DELETE'
-    AND created_at BETWEEN v_period_start AND v_period_end;
-
-  -- 현재 데이터 개수 조회
-  SELECT COUNT(*) INTO v_current_system_logs FROM system_logs;
-  SELECT COUNT(*) INTO v_current_visitor_entries FROM visitor_entries;
-
-  -- 권장사항 생성
-  IF v_current_system_logs > 100000 THEN
-    v_recommendations := array_append(v_recommendations,
-      '시스템 로그가 10만건을 초과했습니다. 로그 레벨 조정을 고려해보세요.');
-  END IF;
-
-  IF v_current_visitor_entries > 50000 THEN
-    v_recommendations := array_append(v_recommendations,
-      '방문자 데이터가 5만건을 초과했습니다. 보관 기간 단축을 고려해보세요.');
-  END IF;
-
-  -- 보고서 로그 생성
-  INSERT INTO system_logs (
-    level, action, message, metadata, created_at
-  ) VALUES (
-    'info', 'BUSINESS_EVENT',
-    format('주간 데이터 정리 현황 보고서 생성 완료 (시스템 로그: %s건, 방문자 데이터: %s건)',
-           v_system_logs_cleaned, v_visitor_entries_cleaned),
-    jsonb_build_object(
-      'event_type', 'WEEKLY_CLEANUP_REPORT',
-      'period_start', v_period_start,
-      'period_end', v_period_end,
-      'system_logs_cleaned', v_system_logs_cleaned,
-      'visitor_entries_cleaned', v_visitor_entries_cleaned
-    ), NOW()
-  );
-
-  RETURN QUERY SELECT
-    NOW()::TIMESTAMPTZ,
-    v_period_start,
-    v_period_end,
-    v_system_logs_cleaned,
-    v_visitor_entries_cleaned,
-    v_current_system_logs,
-    v_current_visitor_entries,
-    0, -- next_week_estimate
-    jsonb_build_object('status', 'active'),
-    v_recommendations;
-END;
-$$;
-```
-
-#### 4. 자동화 시스템 모니터링
-
-```typescript
-// API 엔드포인트: 자동화 상태 확인
-export async function GET() {
-  const cronJobs = await supabase
-    .from("cron.job")
-    .select("jobname, schedule, active, last_run")
-    .in("jobname", [
-      "auto-visitor-cleanup",
-      "auto-system-logs-cleanup",
-      "weekly-cleanup-report",
-    ]);
-
-  const recentCleanups = await supabase
-    .from("system_logs")
-    .select("action, metadata, created_at")
-    .eq("action", "SCHEDULED_JOB")
-    .order("created_at", { ascending: false })
-    .limit(10);
-
-  return NextResponse.json({
-    cronJobs: cronJobs.data,
-    recentCleanups: recentCleanups.data,
-    status: "active",
-  });
-}
 ```
 
 ## 🔍 모니터링 및 운영 시스템

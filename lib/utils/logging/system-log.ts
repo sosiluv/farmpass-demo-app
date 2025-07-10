@@ -21,7 +21,9 @@ export type LogLevel = "info" | "warn" | "error" | "debug";
 export type ResourceType =
   | "user"
   | "farm"
+  | "member"
   | "visitor"
+  | "notification"
   | "system"
   | "auth"
   | "api";
@@ -363,49 +365,14 @@ export const logApiError = (
   method: string,
   error: Error | string,
   userId?: string,
-  context?: Partial<LogContext>
+  context?: Partial<LogContext>,
+  resourceType: ResourceType = "api"
 ) => {
-  return logger.api(endpoint, method, { error }, { userId, ...context });
-};
-
-export const logDataChange = (
-  action: string,
-  resource: string,
-  userId?: string,
-  metadata?: LogMetadata,
-  context?: Partial<LogContext>
-) => {
-  return logger.business(action, resource, { userId, ...context }, metadata);
-};
-
-export const logPermissionError = async (
-  resource: string,
-  action: string,
-  userId?: string,
-  requiredRole?: string,
-  context?: Partial<LogContext>
-) => {
-  await logger.log(
-    "warn",
-    "PERMISSION_ERROR",
-    `권한 에러: ${resource}에 대한 ${action} 권한 없음`,
-    { userId, ...context },
-    { resource, action, requiredRole }
-  );
-};
-
-export const logUserActivity = async (
-  action: string,
-  message: string,
-  userId?: string,
-  metadata?: Record<string, any>,
-  context?: Partial<LogContext>
-) => {
-  await logger.business(
-    action,
-    "user_activity",
-    { userId, ...context },
-    metadata
+  return logger.api(
+    endpoint,
+    method,
+    { error },
+    { userId, resource: resourceType, ...context }
   );
 };
 
@@ -413,12 +380,13 @@ export const logPageView = async (
   fromPath: string,
   toPath: string,
   userId?: string,
-  context?: Partial<LogContext>
+  context?: Partial<LogContext>,
+  resourceType: ResourceType = "system"
 ) => {
   await logger.business(
     "PAGE_VIEW",
     "navigation",
-    { userId, ...context },
+    { userId, resource: resourceType, ...context },
     { fromPath, toPath }
   );
 };
@@ -428,66 +396,13 @@ export const logSecurityError = async (
   description: string,
   userId?: string,
   ip?: string,
-  userAgent?: string
+  userAgent?: string,
+  resourceType: ResourceType = "system"
 ) => {
   await logger.error(
     `보안 위협: ${threat}`,
-    { userId, ip },
+    { userId, ip, resource: resourceType },
     { threat, description, userAgent }
-  );
-};
-
-export const logPerformanceError = async (
-  endpoint: string,
-  actualDuration: number,
-  threshold: number,
-  userId?: string
-) => {
-  await logger.performance(endpoint, actualDuration, threshold, { userId });
-};
-
-export const createAuthLog = async (
-  action: string,
-  message: string,
-  email?: string,
-  userId?: string,
-  metadata?: Record<string, any>,
-  context?: Partial<LogContext>
-) => {
-  await logger.log(
-    "info",
-    action,
-    message,
-    { userId, email, ...context },
-    { email, ...metadata }
-  );
-};
-
-export const logVisitorDataAccess = async (
-  accessType: string,
-  userId?: string,
-  email?: string,
-  details?: Record<string, any>,
-  context?: Partial<LogContext>
-) => {
-  await logger.business(
-    `VISITOR_DATA_${accessType}`,
-    "visitor_data",
-    { userId, email, ...context },
-    details
-  );
-};
-
-export const logVisitorDataExport = async (
-  exportCount: number,
-  userId?: string,
-  details?: Record<string, any>
-) => {
-  await logger.business(
-    "VISITOR_DATA_EXPORT",
-    "visitor_data",
-    { userId },
-    { exportCount, ...details }
   );
 };
 
@@ -496,13 +411,14 @@ export const logSystemWarning = async (
   message: string,
   logContext?: Partial<LogContext>,
   metadata?: Record<string, any>,
-  userId?: string
+  userId?: string,
+  resourceType: ResourceType = "system"
 ) => {
   await logger.log(
     "warn",
     "SYSTEM_WARNING",
     `${operation}: ${message}`,
-    { userId, ...logContext },
+    { userId, resource: resourceType, ...logContext },
     metadata
   );
 };
@@ -660,11 +576,8 @@ export const logSystemResources = async (): Promise<void> => {
  */
 export const isAuditLog = (log: any): boolean => {
   const auditActions = [
-    // 사용자 인증 관련
-    "USER_LOGIN",
-    "USER_LOGOUT",
+    // 인증 관련
     "LOGIN_FAILED",
-    "LOGIN_ATTEMPT_FAILED",
     "LOGIN_SUCCESS",
     "LOGOUT_SUCCESS",
     "LOGOUT_ERROR",
@@ -673,83 +586,81 @@ export const isAuditLog = (log: any): boolean => {
     "PASSWORD_RESET_REQUEST_FAILED",
     "PASSWORD_RESET_SYSTEM_ERROR",
     "LOGIN_ATTEMPTS_RESET",
+    "LOGIN_ATTEMPTS_RESET_ERROR",
     "ACCOUNT_LOCKED",
     "ACCOUNT_UNLOCKED",
+    "SUSPICIOUS_LOGIN_ATTEMPTS",
 
-    // 사용자 계정 관리
-    "USER_CREATED",
-    "USER_CREATION_FAILED",
-    "USER_UPDATED",
-    "USER_UPDATE_FAILED",
-    "USER_DELETED",
-    "USER_DELETE_FAILED",
-    "PASSWORD_CHANGED",
-    "PASSWORD_CHANGE_FAILED",
-    "PASSWORD_RESET",
-    "PASSWORD_RESET_FAILED",
+    // 사용자 관련
+    "USER_SEARCH",
+    "USER_SEARCH_UNAUTHORIZED",
+    "USER_SEARCH_FAILED",
+    "IP_ADDRESS_QUERY",
+    "IP_ADDRESS_QUERY_FAILED",
+    "PROFILE_UPDATE",
+    "PROFILE_UPDATE_FAILED",
+    "PROFILE_IMAGE_UPLOAD",
+    "PROFILE_IMAGE_UPLOAD_FAILED",
+    "PROFILE_IMAGE_DELETE",
+    "PROFILE_IMAGE_DELETE_FAILED",
 
-    // 농장 관리
-    "FARM_CREATED",
+    // 방문자 관련
+    "VISITOR_DATA_ACCESS",
+    "VISITOR_REGISTRATION_SUCCESS",
+    "VISITOR_REGISTRATION_FAILED",
+    "VISITOR_REGISTRATION_EXCEPTION",
+    "VISITOR_CREATED",
+    "VISITOR_CREATION_FAILED",
+    "VISITOR_UPDATED",
+    "VISITOR_UPDATE_FAILED",
+    "VISITOR_DELETED",
+    "VISITOR_DELETE_FAILED",
+    "VISITOR_FETCH_FAILED",
+    "VISITOR_DAILY_LIMIT_EXCEEDED",
+    "VISITOR_DAILY_LIMIT_WARNING",
+    "VISITOR_SESSION_NOT_FOUND",
+    "VISITOR_RECORD_NOT_FOUND",
+    "VISITOR_SESSION_EXPIRED",
+    "VISITOR_SESSION_VALID",
+    "VISITOR_SESSION_CHECK_ERROR",
+
+    // 농장 관련
     "FARM_CREATE",
     "FARM_CREATE_FAILED",
-    "FARM_UPDATED",
-    "FARM_UPDATE",
-    "FARM_UPDATE_FAILED",
-    "FARM_DELETED",
-    "FARM_DELETE",
-    "FARM_DELETE_FAILED",
     "FARM_READ",
     "FARM_READ_FAILED",
-    "FARM_ACCESS",
-    "FARM_STATUS_CHANGED",
-    "FARM_FETCH_FAILED",
+    "FARM_UPDATE",
+    "FARM_UPDATE_FAILED",
+    "FARM_DELETE",
+    "FARM_DELETE_FAILED",
 
-    // 농장 구성원 관리
-    "MEMBER_ADDED",
-    "MEMBER_REMOVED",
+    // 멤버 관련
+    "MEMBER_READ",
+    "MEMBER_READ_FAILED",
     "MEMBER_CREATE",
     "MEMBER_CREATE_FAILED",
     "MEMBER_UPDATE",
     "MEMBER_UPDATE_FAILED",
     "MEMBER_DELETE",
     "MEMBER_DELETE_FAILED",
-    "MEMBER_READ",
-    "MEMBER_READ_FAILED",
     "MEMBER_BULK_READ",
     "MEMBER_BULK_READ_FAILED",
-    "MEMBER_ROLE_CHANGED",
+    "FARM_MEMBER_ACCESS_DENIED",
 
-    // 방문자 관리
-    "VISITOR_CREATED",
-    "VISITOR_UPDATED",
-    "VISITOR_DELETED",
-    "VISITOR_CHECKED_IN",
-    "VISITOR_CHECKED_OUT",
-    "VISITOR_LIST_VIEW",
-    "VISITOR_DETAIL_VIEW",
-    "VISITOR_EXPORT",
-    "LIST_VIEW",
-    "LIST_VIEW_FAILED",
-    "DETAIL_VIEW",
-    "DETAIL_VIEW_FAILED",
-    "CREATED",
-    "UPDATED",
-    "DELETED",
-    "CREATION_FAILED",
-    "UPDATE_FAILED",
-    "DELETE_FAILED",
-    "SESSION_VALID",
-    "SESSION_NOT_FOUND",
-    "RECORD_NOT_FOUND",
+    // SQL 트리거에서 사용되는 액션들 (누락된 것들)
+    "USER_CREATED",
+    "USER_CREATION_FAILED",
+    "PASSWORD_CHANGED",
+    "PASSWORD_CHANGE_FAILED",
+    "LOGOUT_SUCCESS",
+    "LOGOUT_FAILED",
+    "SCHEDULED_JOB",
+    "BUSINESS_EVENT",
 
     // 시스템 설정
-    "SETTINGS_READ",
-    "SETTINGS_UPDATED",
-    "SETTINGS_CHANGE",
+    "SETTINGS_INITIALIZE",
     "SETTINGS_BULK_UPDATE",
-    "SETTINGS_ACCESS_DENIED",
-    "CONFIGURATION_ERROR",
-    "settings_unauthorized_access",
+    "SETTINGS_UPDATE_ERROR",
 
     // 푸시 알림
     "VAPID_KEY_CREATED",
@@ -757,74 +668,40 @@ export const isAuditLog = (log: any): boolean => {
     "VAPID_KEY_RETRIEVED",
     "VAPID_KEY_RETRIEVE_FAILED",
     "PUSH_SUBSCRIPTION_CREATED",
+    "PUSH_SUBSCRIPTION_GET",
     "PUSH_SUBSCRIPTION_DELETED",
-    "PUSH_SUBSCRIPTION_CLEANUP_STARTED",
-    "PUSH_SUBSCRIPTION_CLEANUP_COMPLETED",
+    "PUSH_SUBSCRIPTION_CLEANUP",
+    "PUSH_SUBSCRIPTION_CLEANUP_NONE",
+    "PUSH_SUBSCRIPTION_CLEANUP_ALL_VALID",
     "PUSH_NOTIFICATION_SENT",
+    "PUSH_NOTIFICATION_SEND_FAILED",
     "PUSH_NOTIFICATION_NO_SUBSCRIBERS",
     "PUSH_NOTIFICATION_FILTERED_OUT",
-    "PUSH_NOTIFICATION_SEND_FAILED",
-    "PUSH_SUBSCRIPTION_CLEANUP",
+    "NOTIFICATION_SETTINGS_CREATION_FAILED",
+    "NOTIFICATION_SETTINGS_READ_FAILED",
+    "NOTIFICATION_SETTINGS_READ_SYSTEM_ERROR",
+    "NOTIFICATION_SETTINGS_UPDATE_FAILED",
+    "NOTIFICATION_SETTINGS_CREATE_FAILED",
+    "NOTIFICATION_SETTINGS_UPDATE_SYSTEM_ERROR",
     "BROADCAST_NOTIFICATION_SENT",
     "BROADCAST_NOTIFICATION_FAILED",
-    "NOTIFICATION_SETTINGS_CREATION_FAILED",
-    "NOTIFICATION_VAPID_KEY_RETRIEVED",
-    "NOTIFICATION_SUBSCRIPTION_SUCCESS",
-
-    // 프로필 관리
-    "PROFILE_READ",
-    "PROFILE_READ_FAILED",
-    "PROFILE_UPDATE",
-    "PROFILE_UPDATE_FAILED",
 
     // 관리 기능
-    "BROADCAST_SENT",
-    "BROADCAST_FAILED",
     "LOG_DELETE",
-    "LOG_EXPORT",
-    "LOG_EXPORT_ERROR",
-    "LOG_CLEANUP_ERROR",
-    "DATA_EXPORT",
-    "DATA_IMPORT",
-    "SYSTEM_BACKUP",
-    "SYSTEM_RESTORE",
-
-    // 관리자 통계
-    "ADMIN_STATS_GENERATION_STARTED",
-    "ADMIN_STATS_GENERATION_COMPLETED",
-    "ADMIN_STATS_GENERATION_FAILED",
-
-    // 스케줄 작업
-    "SCHEDULED_JOB",
-
-    // 애플리케이션 라이프사이클
-    "PAGE_VIEW",
-    "APP_START",
-    "APP_END",
-    "BUSINESS_EVENT",
-    "USER_ACTIVITY",
-    "ADMIN_ACTION",
+    "EXPIRED_COUNT_INVALID_PARAMS",
+    "EXPIRED_COUNT_QUERY_FAILED",
 
     // 보안 관련
-    "UNAUTHORIZED_ACCESS",
-    "SECURITY_THREAT_DETECTED",
-    "SUSPICIOUS_ACTIVITY",
-    "ACCESS_DENIED",
-    "PERMISSION_DENIED",
-    "IP_BLOCKED",
     "RATE_LIMIT_EXCEEDED",
-
-    // 데이터 접근
-    "DATA_ACCESS",
-    "DATA_CHANGE",
-    "BULK_OPERATION",
-    "EXPORT_OPERATION",
-    "IMPORT_OPERATION",
+    "MALICIOUS_REQUEST_BLOCKED",
 
     // 모니터링
-    "monitoring_data_unavailable",
+    "SYSTEM_RESOURCE_WARNING",
+    "monitoring_health_check_failed",
+    "monitoring_uptime_failed",
+    "monitoring_analytics_failed",
+    "monitoring_error_logs_failed",
   ];
-
   const upperAction = log.action?.toUpperCase();
   return (
     auditActions.some((action) => upperAction?.includes(action)) ||
@@ -841,133 +718,83 @@ export const isAuditLog = (log: any): boolean => {
  */
 export const isErrorLog = (log: any): boolean => {
   const errorActions = [
-    // 사용자 관련 오류
-    "USER_CREATION_FAILED",
-    "USER_UPDATE_FAILED",
-    "USER_DELETE_FAILED",
-    "PASSWORD_CHANGE_FAILED",
-    "PASSWORD_RESET_FAILED",
+    // 실제 사용되는 에러 액션들
+    // 인증 관련 오류
+    "LOGIN_FAILED",
     "PASSWORD_RESET_REQUEST_FAILED",
     "PASSWORD_RESET_SYSTEM_ERROR",
-    "LOGIN_FAILED",
-    "LOGIN_ATTEMPT_FAILED",
-    "LOGIN_VALIDATION_ERROR",
-    "LOGOUT_ERROR",
+    "LOGIN_ATTEMPTS_RESET_ERROR",
 
-    // 농장 관련 오류
-    "FARM_CREATE_FAILED",
-    "FARM_UPDATE_FAILED",
-    "FARM_DELETE_FAILED",
-    "FARM_READ_FAILED",
-    "FARM_ACCESS_DENIED",
-    "FARM_FETCH_FAILED",
-
-    // 구성원 관련 오류
-    "MEMBER_CREATE_FAILED",
-    "MEMBER_UPDATE_FAILED",
-    "MEMBER_DELETE_FAILED",
-    "MEMBER_READ_FAILED",
-    "MEMBER_BULK_READ_FAILED",
+    // 사용자 관련 오류
+    "USER_SEARCH_FAILED",
+    "IP_ADDRESS_QUERY_FAILED",
+    "PROFILE_UPDATE_FAILED",
+    "PROFILE_IMAGE_UPLOAD_FAILED",
+    "PROFILE_IMAGE_DELETE_FAILED",
 
     // 방문자 관련 오류
+    "VISITOR_REGISTRATION_FAILED",
+    "VISITOR_REGISTRATION_EXCEPTION",
     "VISITOR_CREATION_FAILED",
     "VISITOR_UPDATE_FAILED",
     "VISITOR_DELETE_FAILED",
-    "LIST_VIEW_FAILED",
-    "DETAIL_VIEW_FAILED",
-    "CREATION_FAILED",
-    "UPDATE_FAILED",
-    "DELETE_FAILED",
-    "SESSION_NOT_FOUND",
-    "RECORD_NOT_FOUND",
+    "VISITOR_FETCH_FAILED",
+    "VISITOR_SESSION_CHECK_ERROR",
 
-    // API 및 데이터베이스 오류
-    "API_ERROR",
-    "DATABASE_ERROR",
-    "CONNECTION_ERROR",
-    "TIMEOUT_ERROR",
-    "DATA_INTEGRITY_ERROR",
-    "QUERY_ERROR",
-    "TRANSACTION_ERROR",
+    // 농장 관련 오류
+    "FARM_CREATE_FAILED",
+    "FARM_READ_FAILED",
+    "FARM_UPDATE_FAILED",
+    "FARM_DELETE_FAILED",
 
-    // 파일 및 업로드 오류
-    "FILE_UPLOAD_ERROR",
-    "IMAGE_DELETE_ERROR",
-    "IMAGE_UPLOAD_ERROR",
-    "FILE_DELETE_ERROR",
-    "UPLOAD_PROCESS_ERROR",
-    "DELETE_PROCESS_ERROR",
-    "STORAGE_ERROR",
+    // 멤버 관련 오류
+    "MEMBER_READ_FAILED",
+    "MEMBER_CREATE_FAILED",
+    "MEMBER_UPDATE_FAILED",
+    "MEMBER_DELETE_FAILED",
+    "MEMBER_BULK_READ_FAILED",
+    "FARM_MEMBER_ACCESS_DENIED",
 
-    // 유효성 검사 오류
-    "VALIDATION_ERROR",
-    "VALIDATION_WARNING",
-    "FORM_VALIDATION_ERROR",
-    "INPUT_VALIDATION_FAILED",
-    "DATA_VALIDATION_FAILED",
+    // SQL 트리거에서 사용되는 에러 액션들 (누락된 것들)
+    "USER_CREATION_FAILED",
+    "PASSWORD_CHANGE_FAILED",
+    "LOGOUT_FAILED",
 
-    // 시스템 성능 오류
-    "PERFORMANCE_ERROR",
-    "PERFORMANCE_WARNING",
-    "SLOW_QUERY",
-    "MEMORY_WARNING",
-    "CPU_WARNING",
-    "DISK_SPACE_WARNING",
-    "SYSTEM_RESOURCE_ERROR",
-
-    // 보안 오류
-    "SECURITY_ERROR",
-    "UNAUTHORIZED_ACCESS",
-    "ACCESS_DENIED",
-    "PERMISSION_DENIED",
-    "SECURITY_THREAT_DETECTED",
-    "SUSPICIOUS_ACTIVITY",
-    "RATE_LIMIT_EXCEEDED",
-    "IP_BLOCKED",
-
-    // 설정 관련 오류
+    // 시스템 설정 오류
     "SETTINGS_UPDATE_ERROR",
-    "CONFIGURATION_ERROR",
-    "SETTINGS_ACCESS_DENIED",
 
-    // 알림 관련 오류
+    // 푸시 알림 오류
     "VAPID_KEY_CREATE_FAILED",
     "VAPID_KEY_RETRIEVE_FAILED",
-    "PUSH_NOTIFICATION_ERROR",
+    "PUSH_NOTIFICATION_INVALID_INPUT",
+    "PUSH_NOTIFICATION_VAPID_INIT_FAILED",
+    "PUSH_NOTIFICATION_SUBSCRIBER_FETCH_FAILED",
+    "PUSH_NOTIFICATION_SETTINGS_FETCH_FAILED",
     "PUSH_NOTIFICATION_SEND_FAILED",
-    "PUSH_NOTIFICATION_NO_SUBSCRIBERS",
-    "PUSH_NOTIFICATION_FILTERED_OUT",
-    "BROADCAST_NOTIFICATION_FAILED",
-    "BROADCAST_FAILED",
     "NOTIFICATION_SETTINGS_CREATION_FAILED",
-    "SUBSCRIPTION_ERROR",
+    "NOTIFICATION_SETTINGS_READ_FAILED",
+    "NOTIFICATION_SETTINGS_READ_SYSTEM_ERROR",
+    "NOTIFICATION_SETTINGS_UPDATE_FAILED",
+    "NOTIFICATION_SETTINGS_CREATE_FAILED",
+    "NOTIFICATION_SETTINGS_UPDATE_SYSTEM_ERROR",
+    "BROADCAST_NOTIFICATION_FAILED",
 
-    // 로그 및 관리 오류
-    "LOG_CLEANUP_ERROR",
-    "LOG_EXPORT_ERROR",
-    "LOG_CREATION_FAILED",
-    "EXPORT_ERROR",
-    "IMPORT_ERROR",
-    "BACKUP_ERROR",
-    "RESTORE_ERROR",
+    // 관리 기능 오류
+    "EXPIRED_COUNT_INVALID_PARAMS",
+    "EXPIRED_COUNT_QUERY_FAILED",
 
-    // 관리자 통계 오류
-    "ADMIN_STATS_GENERATION_FAILED",
+    // 보안 관련 오류
+    "RATE_LIMIT_EXCEEDED",
+    "MALICIOUS_REQUEST_BLOCKED",
+    "SUSPICIOUS_LOGIN_ATTEMPTS",
 
-    // 일반 시스템 오류
-    "SYSTEM_ERROR",
-    "INTERNAL_ERROR",
-    "UNEXPECTED_ERROR",
-    "CRITICAL_ERROR",
-    "FATAL_ERROR",
-    "SERVICE_UNAVAILABLE",
-    "MAINTENANCE_MODE_ERROR",
-
-    // 프로필 관리 오류
-    "PROFILE_READ_FAILED",
-    "PROFILE_UPDATE_FAILED",
+    // 모니터링 오류
+    "SYSTEM_RESOURCE_WARNING",
+    "monitoring_health_check_failed",
+    "monitoring_uptime_failed",
+    "monitoring_analytics_failed",
+    "monitoring_error_logs_failed",
   ];
-
   const upperAction = log.action?.toUpperCase();
   return (
     errorActions.some((action) => upperAction?.includes(action)) ||
@@ -980,159 +807,176 @@ export const isErrorLog = (log: any): boolean => {
  * 로그 카테고리 분류 함수
  * 로그의 액션과 내용을 기반으로 적절한 카테고리를 반환
  *
- * 카테고리 목록:
- * - auth: 인증 관련 (로그인, 로그아웃, 계정 관리)
- * - farm: 농장 관리 관련
- * - member: 농장 구성원 관리 관련
- * - visitor: 방문자 관리 관련
- * - settings: 시스템 설정 관련
- * - file: 파일 업로드/다운로드 관련
- * - performance: 성능 모니터링 관련
- * - notification: 푸시 알림 관련
- * - security: 보안 관련
- * - data: 데이터 관리 (내보내기/가져오기) 관련
- * - log: 로그 관리 관련
- * - application: 애플리케이션 라이프사이클 관련
- * - error: 분류되지 않은 에러
- * - system: 기타 시스템 관련
+ * 카테고리 목록 (LogCategoryFilters.tsx와 일치):
+ * - auth: 🔐 인증 관련 (로그인, 로그아웃, 계정 관리)
+ * - farm: 🏡 농장 관리 관련
+ * - visitor: 👥 방문자 관리 관련
+ * - member: 👨‍💼 농장 구성원 관리 관련
+ * - settings: ⚙️ 시스템 설정 관련
+ * - security: 🛡️ 보안 관련
+ * - file: 📁 파일 업로드/다운로드 관련
+ * - notification: 🔔 푸시 알림 관련
+ * - data: 📊 데이터 관리 (내보내기/가져오기) 관련
+ * - log: 📋 로그 관리 관련
+ * - application: 🖥️ 애플리케이션 라이프사이클 관련
+ * - performance: ⚡ 성능 모니터링 관련
+ * - error: ❌ 분류되지 않은 에러
+ * - system: 🔧 기타 시스템 관련
  *
  * @param log 로그 객체
  * @returns 로그 카테고리
  */
 export const getLogCategory = (log: any): string => {
   const upperAction = log.action?.toUpperCase();
+  if (!upperAction) return "application";
 
-  // 인증 관련
+  // 1. 인증 관련 🔐
   if (
-    upperAction?.includes("USER_") ||
-    upperAction?.includes("LOGIN") ||
-    upperAction?.includes("LOGOUT") ||
-    upperAction?.includes("PASSWORD") ||
-    upperAction?.includes("AUTH") ||
-    upperAction?.includes("SESSION") ||
-    upperAction?.includes("TOKEN") ||
-    upperAction?.includes("ACCOUNT")
+    upperAction.includes("USER_") ||
+    upperAction.includes("LOGIN") ||
+    upperAction.includes("LOGOUT") ||
+    upperAction.includes("PASSWORD") ||
+    upperAction.includes("ACCOUNT") ||
+    upperAction.includes("SESSION") ||
+    upperAction.includes("IP_ADDRESS") ||
+    upperAction.includes("PROFILE_") ||
+    upperAction.includes("AUTH")
   ) {
     return "auth";
   }
 
-  // 농장 관련
-  if (upperAction?.includes("FARM_") || upperAction?.includes("FARM")) {
+  // 2. 농장 관련 🏡
+  if (upperAction.includes("FARM_") || upperAction.includes("FARM")) {
     return "farm";
   }
 
-  // 구성원 관련
-  if (
-    upperAction?.includes("MEMBER_") ||
-    upperAction?.includes("MEMBER") ||
-    upperAction?.includes("ROLE")
-  ) {
-    return "member";
-  }
-
-  // 방문자 관련
-  if (
-    upperAction?.includes("VISITOR_") ||
-    upperAction?.includes("VISITOR") ||
-    upperAction?.includes("LIST_VIEW") ||
-    upperAction?.includes("DETAIL_VIEW")
-  ) {
+  // 3. 방문자 관련 👥
+  if (upperAction.includes("VISITOR_") || upperAction.includes("VISITOR")) {
     return "visitor";
   }
 
-  // 설정 관련
+  // 4. 멤버 관련 👨‍💼
+  if (upperAction.includes("MEMBER_") || upperAction.includes("MEMBER")) {
+    return "member";
+  }
+
+  // 5. 설정 관련 ⚙️
   if (
-    upperAction?.includes("SETTINGS_") ||
-    upperAction?.includes("SETTINGS") ||
-    upperAction?.includes("CONFIGURATION") ||
-    upperAction?.includes("CONFIG")
+    upperAction.includes("SETTINGS_") ||
+    upperAction.includes("NOTIFICATION_SETTINGS_") ||
+    upperAction.includes("CONFIG")
   ) {
     return "settings";
   }
 
-  // 파일 업로드 관련
+  // 6. 보안 관련 🛡️
   if (
-    upperAction?.includes("FILE_UPLOAD") ||
-    upperAction?.includes("IMAGE_") ||
-    upperAction?.includes("UPLOAD") ||
-    upperAction?.includes("STORAGE")
-  ) {
-    return "file";
-  }
-
-  // 성능 관련
-  if (
-    upperAction?.includes("PERFORMANCE_") ||
-    upperAction?.includes("SLOW_") ||
-    upperAction?.includes("MEMORY") ||
-    upperAction?.includes("CPU") ||
-    upperAction?.includes("DISK")
-  ) {
-    return "performance";
-  }
-
-  // 푸시 알림 관련
-  if (
-    upperAction?.includes("PUSH_") ||
-    upperAction?.includes("NOTIFICATION") ||
-    upperAction?.includes("SUBSCRIPTION")
-  ) {
-    return "notification";
-  }
-
-  // 보안 관련
-  if (
-    upperAction?.includes("SECURITY") ||
-    upperAction?.includes("UNAUTHORIZED") ||
-    upperAction?.includes("ACCESS_DENIED") ||
-    upperAction?.includes("PERMISSION") ||
-    upperAction?.includes("SUSPICIOUS") ||
-    upperAction?.includes("BLOCKED") ||
-    upperAction?.includes("THREAT")
+    upperAction.includes("MALICIOUS_REQUEST_BLOCKED") ||
+    upperAction.includes("RATE_LIMIT_EXCEEDED") ||
+    upperAction.includes("SUSPICIOUS") ||
+    upperAction.includes("UNAUTHORIZED") ||
+    upperAction.includes("ACCESS_DENIED") ||
+    upperAction.includes("PERMISSION_ERROR") ||
+    upperAction.includes("SECURITY") ||
+    upperAction.includes("BLOCKED")
   ) {
     return "security";
   }
 
-  // 데이터 관리 관련
+  // 7. 파일 관련 📁
   if (
-    upperAction?.includes("EXPORT") ||
-    upperAction?.includes("IMPORT") ||
-    upperAction?.includes("BACKUP") ||
-    upperAction?.includes("RESTORE") ||
-    upperAction?.includes("BULK") ||
-    upperAction?.includes("DATA_") ||
-    upperAction?.includes("STATS") ||
-    upperAction?.includes("GENERATION")
+    upperAction.includes("PROFILE_IMAGE_") ||
+    upperAction.includes("IMAGE_") ||
+    upperAction.includes("FILE_") ||
+    upperAction.includes("UPLOAD") ||
+    upperAction.includes("DELETE") ||
+    upperAction.includes("STORAGE")
+  ) {
+    return "file";
+  }
+
+  // 8. 알림 관련 🔔
+  if (
+    upperAction.includes("PUSH_") ||
+    upperAction.includes("VAPID_") ||
+    upperAction.includes("BROADCAST_") ||
+    upperAction.includes("NOTIFICATION") ||
+    upperAction.includes("SUBSCRIPTION")
+  ) {
+    return "notification";
+  }
+
+  // 9. 로그 관리 관련 📋
+  if (
+    upperAction.includes("LOG_DELETE") ||
+    upperAction.includes("LOG_") ||
+    upperAction.includes("AUDIT") ||
+    upperAction.includes("SYSTEM_LOGS") ||
+    upperAction.includes("CLEANUP") ||
+    upperAction.includes("RETENTION")
+  ) {
+    return "log";
+  }
+
+  // 10. 데이터 관리 관련 📊
+  if (
+    upperAction.includes("EXPIRED_COUNT_") ||
+    upperAction.includes("SCHEDULED_JOB") ||
+    upperAction.includes("ADMIN_DASHBOARD_") ||
+    upperAction.includes("ADMIN_STATS_") ||
+    upperAction.includes("EXPORT") ||
+    upperAction.includes("IMPORT") ||
+    upperAction.includes("BACKUP") ||
+    upperAction.includes("DATA_") ||
+    upperAction.includes("STATS") ||
+    upperAction.includes("ANALYTICS")
   ) {
     return "data";
   }
 
-  // 로그 관리 관련
-  if (upperAction?.includes("LOG_") || upperAction?.includes("AUDIT")) {
-    return "log";
+  // 11. 성능 관련 ⚡
+  if (
+    upperAction.includes("SYSTEM_RESOURCE_WARNING") ||
+    upperAction.includes("MEMORY_WARNING") ||
+    upperAction.includes("MEMORY_USAGE") ||
+    upperAction.includes("PERFORMANCE") ||
+    upperAction.includes("SLOW") ||
+    upperAction.includes("monitoring_") ||
+    upperAction.includes("API_SLOW") ||
+    upperAction.includes("TIMEOUT") ||
+    upperAction.includes("HEALTH_CHECK") ||
+    upperAction.includes("UPTIME")
+  ) {
+    return "performance";
   }
 
-  // 애플리케이션 관련
+  // 12. 애플리케이션 관련 🖥️
   if (
-    upperAction?.includes("APP_") ||
-    upperAction?.includes("PAGE_VIEW") ||
-    upperAction?.includes("BUSINESS_EVENT") ||
-    upperAction?.includes("USER_ACTIVITY") ||
-    upperAction?.includes("ADMIN_ACTION")
+    upperAction.includes("BUSINESS_EVENT") ||
+    upperAction.includes("PAGE_VIEW") ||
+    upperAction.includes("APP_") ||
+    upperAction.includes("APPLICATION") ||
+    upperAction.includes("NAVIGATION") ||
+    upperAction.includes("SYSTEM_WARNING") ||
+    upperAction.includes("API_ERROR")
   ) {
     return "application";
   }
 
-  // 스케줄 작업 관련
-  if (upperAction?.includes("SCHEDULED_JOB")) {
-    return "system";
-  }
-
-  // 에러 관련 (다른 카테고리에 속하지 않는 경우)
-  if (isErrorLog(log)) {
+  // 13. 에러 관련 ❌ (실패/에러가 포함된 액션들)
+  if (
+    upperAction.includes("_FAILED") ||
+    upperAction.includes("_ERROR") ||
+    upperAction.includes("ERROR") ||
+    upperAction.includes("EXCEPTION") ||
+    upperAction.includes("CRITICAL") ||
+    upperAction.includes("FATAL") ||
+    (log.level === "error" && !upperAction.includes("SUCCESS"))
+  ) {
     return "error";
   }
 
+  // 14. 기타 시스템 🔧 (기본값)
   return "system";
 };
 

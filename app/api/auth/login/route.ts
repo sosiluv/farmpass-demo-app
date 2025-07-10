@@ -3,7 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { prisma } from "@/lib/prisma";
 import { getSystemSettings } from "@/lib/cache/system-settings-cache";
 import {
-  createAuthLog,
+  createSystemLog,
   logSecurityError,
   logApiError,
 } from "@/lib/utils/logging/system-log";
@@ -70,18 +70,24 @@ async function checkLoginAttempts(email: string): Promise<LoginAttempts> {
   ) {
     // 계정 잠금 해제 로그 기록 (이전에 잠겨있었던 경우만)
     if (user.login_attempts >= maxAttempts) {
-      await createAuthLog(
+      await createSystemLog(
         "ACCOUNT_UNLOCKED",
         `계정 잠금 해제: ${email} (${settings.accountLockoutDurationMinutes}분 타임아웃 후 자동 해제)`,
-        email,
+        "info",
         user.id,
+        "auth",
+        undefined,
         {
           previous_attempts: user.login_attempts,
           max_attempts: maxAttempts,
           locked_duration_minutes: settings.accountLockoutDurationMinutes,
           action_type: "security_event",
           unlocked_at: new Date().toISOString(),
-        }
+          unlock_type: "automatic_timeout",
+        },
+        email,
+        "system-auto", // 자동 해제이므로 system-auto로 표시
+        "System Auto Unlock"
       ).catch((logError) =>
         devLog.error("Failed to log account unlock:", logError)
       );
@@ -156,18 +162,23 @@ async function incrementLoginAttempts(
     },
   });
 
-  // 로그인 실패 로그 생성
-  await createAuthLog(
+  // 로그인 실패 로그 생성 (error 레벨로 변경)
+  await createSystemLog(
     "LOGIN_FAILED",
     `로그인 실패: ${email}, 로그인 시도 횟수: ${profile.login_attempts || 0}`,
-    email,
+    "error",
     profile.id,
+    "auth",
+    undefined,
     {
       attempts: profile.login_attempts || 0,
       ip: clientIP,
       user_agent: userAgent,
       timestamp: new Date().toISOString(),
-    }
+    },
+    email,
+    clientIP,
+    userAgent
   );
 
   // 의심스러운 로그인 시도 감지
@@ -183,11 +194,13 @@ async function incrementLoginAttempts(
 
   // 계정 잠금 시 로그 기록
   if ((profile.login_attempts || 0) >= settings.maxLoginAttempts) {
-    await createAuthLog(
+    await createSystemLog(
       "ACCOUNT_LOCKED",
       `계정 잠금: ${email} (로그인 시도 횟수 초과: ${profile.login_attempts}/${settings.maxLoginAttempts})`,
-      email,
+      "warn",
       profile.id,
+      "auth",
+      undefined,
       {
         login_attempts: profile.login_attempts,
         max_attempts: settings.maxLoginAttempts,
@@ -195,7 +208,10 @@ async function incrementLoginAttempts(
         time_left_minutes: Math.ceil(settings.accountLockoutDurationMinutes),
         action_type: "security_event",
         blocked_at: new Date().toISOString(),
-      }
+      },
+      email,
+      clientIP,
+      userAgent
     );
   }
 }
@@ -230,15 +246,12 @@ export async function POST(request: NextRequest) {
     }
 
     // 1. 로그인 시도 횟수 확인과 Supabase 인증을 병렬로 처리
-    const dbMonitor = new PerformanceMonitor("auth_login_attempts_check");
     const supabase = await createClient();
 
     const [authResult, attempts] = await Promise.all([
       supabase.auth.signInWithPassword({ email, password }),
       checkLoginAttempts(email),
     ]);
-
-    const dbDuration = await dbMonitor.finish();
 
     // 계정이 잠겨있는 경우 (인증 성공 여부와 관계없이 체크)
     if (attempts.isBlocked) {
@@ -328,17 +341,22 @@ export async function POST(request: NextRequest) {
         last_failed_login: null,
         last_login_attempt: null,
         last_login_at: new Date(),
+        login_count: {
+          increment: 1, // 로그인 카운트 증가
+        },
       },
     });
 
     // 로그인 성공 로그 기록 (백그라운드에서 처리)
     setTimeout(async () => {
       try {
-        await createAuthLog(
+        await createSystemLog(
           "LOGIN_SUCCESS",
           `로그인 성공: ${email}`,
-          email,
+          "info",
           user!.id,
+          "auth",
+          undefined,
           {
             previous_attempts:
               attempts.maxAttempts - attempts.remainingAttempts,
@@ -346,7 +364,9 @@ export async function POST(request: NextRequest) {
             action_type: "security_event",
             reset_at: new Date().toISOString(),
           },
-          { ip: clientIP, userAgent }
+          email,
+          clientIP,
+          userAgent
         );
       } catch (logError) {
         devLog.warn("Login success log failed:", logError);

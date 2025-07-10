@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { createAuthLog } from "@/lib/utils/logging/system-log";
+import { createSystemLog } from "@/lib/utils/logging/system-log";
 import { devLog } from "@/lib/utils/logging/dev-logger";
 import { getClientIP, getUserAgent } from "@/lib/server/ip-helpers";
 import { createClient } from "@/lib/supabase/server";
@@ -52,11 +52,13 @@ export async function POST(request: NextRequest) {
     `;
 
     // 수동 잠금 해제 로그 기록
-    await createAuthLog(
+    await createSystemLog(
       "LOGIN_ATTEMPTS_RESET",
       `로그인 시도 횟수 수동 초기화: ${email} (이전 시도: ${currentProfile.login_attempts}회)`,
-      email,
+      "info",
       currentProfile.id,
+      "auth",
+      undefined,
       {
         previous_attempts: currentProfile.login_attempts,
         reset_reason: reason || "manual_reset",
@@ -65,8 +67,10 @@ export async function POST(request: NextRequest) {
         admin_id: user.id,
         admin_action: true,
       },
-      { ip: clientIP, userAgent }
-    ).catch((logError) =>
+      email,
+      clientIP,
+      userAgent
+    ).catch((logError: any) =>
       devLog.error("Failed to log attempts reset:", logError)
     );
 
@@ -79,13 +83,15 @@ export async function POST(request: NextRequest) {
 
     const error = err as Error;
 
-    // 에러 로그 기록
-    await createAuthLog(
+    // 에러 로그 기록 (error 레벨로 변경)
+    await createSystemLog(
       "LOGIN_ATTEMPTS_RESET_ERROR",
       `로그인 시도 횟수 초기화 실패: ${
         error instanceof Error ? error.message : "Unknown error"
       }`,
+      "error",
       undefined,
+      "auth",
       undefined,
       {
         error_message: error instanceof Error ? error.message : "Unknown error",
@@ -93,7 +99,9 @@ export async function POST(request: NextRequest) {
         action_type: "system_error",
         timestamp: new Date().toISOString(),
       },
-      { ip: clientIP, userAgent }
+      undefined,
+      clientIP,
+      userAgent
     ).catch((logError) => devLog.error("Failed to log reset error:", logError));
 
     return NextResponse.json(

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { logVisitorDataAccess } from "@/lib/utils/logging/system-log";
+import { createSystemLog } from "@/lib/utils/logging/system-log";
 import { v4 as uuidv4 } from "uuid";
 import { cookies } from "next/headers";
 import { getSystemSettings } from "@/lib/cache/system-settings-cache";
@@ -238,9 +238,12 @@ export async function POST(
     });
     if (todayCount >= settings.maxVisitorsPerDay) {
       // 일일 방문자 수 초과 로그
-      await logVisitorDataAccess(
-        "DAILY_LIMIT_EXCEEDED",
+      await createSystemLog(
+        "VISITOR_DAILY_LIMIT_EXCEEDED",
+        `일일 방문자 수 초과: ${todayCount}/${settings.maxVisitorsPerDay}명 (농장: ${farm.farm_name}, 방문자: ${visitorData.fullName})`,
+        "warn",
         undefined,
+        "visitor",
         undefined,
         {
           farm_id: farmId,
@@ -251,10 +254,9 @@ export async function POST(
           access_scope: "single_farm",
           status: "failed",
         },
-        {
-          ip: clientIP,
-          userAgent: userAgent,
-        }
+        undefined,
+        clientIP,
+        userAgent
       );
       return NextResponse.json(
         {
@@ -288,10 +290,13 @@ export async function POST(
     });
 
     // 방문자 등록 성공 로그 생성
-    await logVisitorDataAccess(
-      "CREATED",
+    await createSystemLog(
+      "VISITOR_CREATED",
+      `방문자 등록: ${visitor.visitor_name} (농장: ${farm.farm_name}, 방문자 ID: ${visitor.id})`,
+      "info",
       undefined,
-      visitor.registered_by || undefined,
+      "visitor",
+      visitor.id,
       {
         farm_id: farmId,
         farm_name: farm.farm_name,
@@ -309,10 +314,9 @@ export async function POST(
           is_new_registration: true,
         },
       },
-      {
-        ip: clientIP,
-        userAgent: userAgent,
-      }
+      undefined,
+      clientIP,
+      userAgent
     );
 
     // 농장 멤버들에게 푸시 알림 발송 (비동기로 처리하여 응답 속도에 영향 주지 않음)
@@ -338,9 +342,14 @@ export async function POST(
     devLog.error("Error creating visitor:", error);
 
     // 방문자 등록 실패 로그 생성
-    await logVisitorDataAccess(
-      "CREATION_FAILED",
+    await createSystemLog(
+      "VISITOR_CREATION_FAILED",
+      `방문자 등록 실패: ${visitorData?.fullName || "알 수 없음"} - ${
+        error instanceof Error ? error.message : String(error)
+      } (농장 ID: ${farmId})`,
+      "error",
       undefined,
+      "visitor",
       undefined,
       {
         farm_id: farmId,
@@ -353,10 +362,9 @@ export async function POST(
           is_new_registration: true,
         },
       },
-      {
-        ip: clientIP,
-        userAgent: userAgent,
-      }
+      undefined,
+      clientIP,
+      userAgent
     );
 
     return NextResponse.json(
@@ -373,6 +381,9 @@ export async function GET(
   request: NextRequest,
   { params }: { params: { farmId: string } }
 ) {
+  const clientIP = getClientIP(request);
+  const userAgent = getUserAgent(request);
+
   try {
     const farmId = params.farmId;
     const { searchParams } = new URL(request.url);
@@ -399,6 +410,27 @@ export async function GET(
     });
   } catch (error) {
     devLog.error("Error fetching visitors:", error);
+
+    // 방문자 조회 실패 로그 기록
+    await createSystemLog(
+      "VISITOR_FETCH_FAILED",
+      `방문자 조회 실패: ${
+        error instanceof Error ? error.message : String(error)
+      } (농장 ID: ${params.farmId})`,
+      "error",
+      undefined,
+      "visitor",
+      undefined,
+      {
+        farm_id: params.farmId,
+        error: error instanceof Error ? error.message : String(error),
+        action: "visitor_list_fetch",
+      },
+      undefined,
+      clientIP,
+      userAgent
+    );
+
     return NextResponse.json(
       { error: "Failed to fetch visitors" },
       { status: 500 }

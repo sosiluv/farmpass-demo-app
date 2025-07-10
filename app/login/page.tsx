@@ -25,7 +25,6 @@ import { getAuthErrorMessage } from "@/lib/utils/validation/validation";
 import { PageLoading } from "@/components/ui/loading";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { safariLoginRetry } from "@/lib/utils/browser/safari-debug";
 
 import {
   loginFormSchema,
@@ -127,12 +126,10 @@ export default function LoginPage() {
     showInfo("로그인 시도 중", "잠시만 기다려주세요.");
 
     try {
-      // Safari에서 재시도 로직을 포함한 로그인 수행
-      const result = await safariLoginRetry(async () => {
-        return await signIn({
-          email: data.email,
-          password: data.password,
-        });
+      // Safari 재시도 로직 제거, signIn 직접 호출
+      const result = await signIn({
+        email: data.email,
+        password: data.password,
       });
 
       if (result.success) {

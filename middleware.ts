@@ -3,7 +3,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { isMaintenanceMode, isAdminUser } from "@/lib/utils/system/system-mode";
 import {
   logSecurityError,
-  logPermissionError,
+  createSystemLog,
 } from "@/lib/utils/logging/system-log";
 import { devLog } from "@/lib/utils/logging/dev-logger";
 import { getClientIP, getUserAgent } from "@/lib/server/ip-helpers";
@@ -255,12 +255,25 @@ export async function middleware(request: NextRequest) {
           devLog.log(`[MIDDLEWARE] Redirecting to maintenance page`);
 
           // 권한 없는 접근 시도 로그 (보안 감사용)
-          await logPermissionError(
-            "maintenance_mode",
-            "access",
+          await createSystemLog(
+            "PERMISSION_ERROR",
+            `유지보수 모드 접근 권한 없음: 사용자 ${
+              user?.id || "anonymous"
+            }가 관리자 권한 없이 접근 시도`,
+            "warn",
             user?.id,
-            "admin"
-          ).catch((error) => {
+            "system",
+            undefined,
+            {
+              resource: "maintenance_mode",
+              action: "access",
+              required_role: "admin",
+              pathname,
+            },
+            undefined,
+            clientIP,
+            userAgent
+          ).catch((error: any) => {
             devLog.error(`[MIDDLEWARE] Permission logging error: ${error}`);
           });
 

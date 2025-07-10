@@ -15,6 +15,8 @@ import { getFarmTypeInfo } from "@/lib/constants/farm-types";
 import { formatPhoneNumber } from "@/lib/utils/validation";
 import { VisitorAvatar, StatusBadge, VisitorActionMenu } from "./index";
 import type { VisitorWithFarm } from "@/lib/types/visitor";
+import { useState } from "react";
+import { ImagePreviewDialog } from "@/components/common/ImagePreviewDialog";
 
 interface VisitorTableRowProps {
   visitor: VisitorWithFarm;
@@ -38,6 +40,7 @@ export function VisitorTableRow({
   onEdit,
   onDelete,
 }: VisitorTableRowProps) {
+  const [previewOpen, setPreviewOpen] = useState(false);
   return (
     <TableRow className="hover:bg-gray-50/80 transition-colors duration-200 group">
       {/* 번호 */}
@@ -60,6 +63,15 @@ export function VisitorTableRow({
             imageUrl={visitor.profile_photo_url}
             disinfectionCheck={visitor.disinfection_check}
             size="md"
+            onClick={() => visitor.profile_photo_url && setPreviewOpen(true)}
+            className={visitor.profile_photo_url ? "cursor-pointer" : ""}
+          />
+          <ImagePreviewDialog
+            src={visitor.profile_photo_url || ""}
+            alt={visitor.visitor_name}
+            open={previewOpen}
+            onOpenChange={setPreviewOpen}
+            caption={visitor.visitor_name}
           />
           <div className="min-w-0 flex-1">
             <div className="flex items-center space-x-1 sm:space-x-2 mb-1">

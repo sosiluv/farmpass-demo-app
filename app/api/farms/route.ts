@@ -1,6 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { NextRequest, NextResponse } from "next/server";
-import { logDataChange } from "@/lib/utils/logging/system-log";
+import { createSystemLog } from "@/lib/utils/logging/system-log";
 import { devLog } from "@/lib/utils/logging/dev-logger";
 import {
   PerformanceMonitor,
@@ -99,10 +99,13 @@ export async function POST(request: NextRequest) {
     );
 
     // 농장 생성 로그
-    await logDataChange(
+    await createSystemLog(
       "FARM_CREATE",
-      "FARM",
+      `농장 생성: ${farm_name} (${farm.id})`,
+      "info",
       user.id,
+      "farm",
+      farm.id,
       {
         farm_id: farm.id,
         farm_name,
@@ -112,11 +115,9 @@ export async function POST(request: NextRequest) {
         manager_phone,
         action_type: "farm_management",
       },
-      {
-        ip: clientIP,
-        email: user.email,
-        userAgent: userAgent,
-      }
+      user.email,
+      clientIP,
+      userAgent
     );
 
     // 새로운 권한 시스템에서는 profiles.account_type은 시스템 레벨 권한만 관리
@@ -133,22 +134,25 @@ export async function POST(request: NextRequest) {
     statusCode = 500;
 
     // 농장 생성 실패 로그 기록
-    await logDataChange(
+    await createSystemLog(
       "FARM_CREATE_FAILED",
-      "FARM",
+      `농장 생성 실패: ${farmData.farm_name || "Unknown"} - ${
+        error instanceof Error ? error.message : "Unknown error"
+      }`,
+      "error",
       user?.id,
+      "farm",
+      undefined,
       {
         error_message: error instanceof Error ? error.message : "Unknown error",
         farm_data: farmData,
         action_type: "farm_management",
         status: "failed",
       },
-      {
-        ip: clientIP,
-        email: user?.email,
-        userAgent: userAgent,
-      }
-    ).catch((logError) =>
+      user?.email,
+      clientIP,
+      userAgent
+    ).catch((logError: any) =>
       devLog.error("Failed to log farm creation error:", logError)
     );
 
@@ -225,21 +229,24 @@ export async function GET(request: NextRequest) {
     }
 
     // 농장 목록 조회 로그 기록
-    await logDataChange(
+    await createSystemLog(
       "FARM_READ",
-      "FARM",
+      `농장 목록 조회: ${farms?.length || 0}개 (${
+        isAdmin ? "관리자 전체 조회" : "소유자 농장 조회"
+      })`,
+      "info",
       user.id,
+      "farm",
+      undefined,
       {
         access_type: isAdmin ? "admin_all_farms" : "owner_farms",
         farm_count: farms?.length || 0,
         user_email: user.email,
         action_type: "farm_management",
       },
-      {
-        ip: clientIP,
-        email: user.email,
-        userAgent: userAgent,
-      }
+      user.email,
+      clientIP,
+      userAgent
     );
 
     return NextResponse.json(
@@ -251,20 +258,24 @@ export async function GET(request: NextRequest) {
     statusCode = 500;
 
     // 농장 목록 조회 실패 로그 기록
-    await logDataChange(
+    await createSystemLog(
       "FARM_READ_FAILED",
-      "FARM",
+      `농장 목록 조회 실패: ${
+        error instanceof Error ? error.message : "Unknown error"
+      }`,
+      "error",
+      undefined,
+      "farm",
       undefined,
       {
         error_message: error instanceof Error ? error.message : "Unknown error",
         action_type: "farm_management",
         status: "failed",
       },
-      {
-        ip: clientIP,
-        userAgent: userAgent,
-      }
-    ).catch((logError) =>
+      undefined,
+      clientIP,
+      userAgent
+    ).catch((logError: any) =>
       devLog.error("Failed to log farm fetch error:", logError)
     );
 

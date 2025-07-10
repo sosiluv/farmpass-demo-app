@@ -59,9 +59,6 @@ const nextConfig = {
    */
   images: {
     domains: [
-      "placeholder.svg", // 플레이스홀더 이미지용
-      "images.unsplash.com", // Unsplash 고품질 이미지
-      "picsum.photos", // Lorem Picsum 테스트 이미지
       supabaseDomain, // Supabase Storage 도메인 (환경변수에서 추출)
     ].filter(Boolean), // 빈 값 제거
     unoptimized: false, // 이미지 최적화 활성화 (WebP 변환, 리사이징 등)

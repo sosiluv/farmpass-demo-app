@@ -1,11 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { devLog } from "@/lib/utils/logging/dev-logger";
-import {
-  logApiError,
-  logVisitorDataAccess,
-} from "@/lib/utils/logging/system-log";
+import { logApiError, createSystemLog } from "@/lib/utils/logging/system-log";
 import { getClientIP, getUserAgent } from "@/lib/server/ip-helpers";
+import { getSystemSettings } from "@/lib/cache/system-settings-cache";
 
 export async function GET(
   request: NextRequest,
@@ -55,6 +53,33 @@ export async function GET(
         }
       );
       return NextResponse.json({ error: "Farm not found" }, { status: 404 });
+    }
+
+    // 시스템 설정 조회
+    const settings = await getSystemSettings();
+
+    // 일일 방문자 수 제한 확인
+    if (count >= settings.maxVisitorsPerDay) {
+      // 일일 한도 초과 경고 로그
+      await createSystemLog(
+        "VISITOR_DAILY_LIMIT_WARNING",
+        `일일 방문자 수 한도에 도달했습니다: ${count}/${settings.maxVisitorsPerDay}명 (농장: ${farm.farm_name})`,
+        "warn",
+        undefined,
+        "visitor",
+        undefined,
+        {
+          farm_id: farmId,
+          farm_name: farm.farm_name,
+          today_count: count,
+          max_visitors_per_day: settings.maxVisitorsPerDay,
+          action: "daily_limit_check",
+          status: "limit_reached",
+        },
+        undefined,
+        clientIP,
+        userAgent
+      );
     }
 
     return NextResponse.json({ count, farm_name: farm.farm_name });

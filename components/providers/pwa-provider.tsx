@@ -9,6 +9,7 @@ import {
   useMemo,
 } from "react";
 import { devLog } from "@/lib/utils/logging/dev-logger";
+import { getDeviceInfo } from "@/lib/utils/browser/device-detection";
 
 interface InstallInfo {
   canInstall: boolean;
@@ -28,17 +29,16 @@ const PWAContext = createContext<PWAContextType | undefined>(undefined);
 
 // 브라우저 환경 체크 함수를 메모이제이션
 const checkInstallability = (): InstallInfo => {
-  const userAgent = navigator.userAgent;
+  const deviceInfo = getDeviceInfo();
+  const userAgent = deviceInfo.userAgent;
   const isStandalone = window.matchMedia("(display-mode: standalone)").matches;
-  const isIOS = /iPad|iPhone|iPod/.test(userAgent);
-  const isAndroid = /Android/.test(userAgent);
-  const isChrome = /Chrome/.test(userAgent);
-  const isSafari = /Safari/.test(userAgent) && !/Chrome/.test(userAgent);
-  const isFirefox = /Firefox/.test(userAgent);
-  const isEdge = /Edg/.test(userAgent);
-
-  // *** 디버깅을 위해 항상 설치 가능하도록 설정 ***
-  // 기존 조건들을 주석 처리하고 강제로 설치 가능 상태로 설정
+  const isIOS = deviceInfo.os === "iOS";
+  const isAndroid = deviceInfo.os === "Android";
+  const isChrome = deviceInfo.browser === "Chrome";
+  const isSafari = deviceInfo.browser === "Safari";
+  const isFirefox = deviceInfo.browser === "Firefox";
+  const isEdge = deviceInfo.browser === "Edge";
+  const isSamsung = deviceInfo.browser === "Samsung";
 
   // 이미 PWA로 실행 중이면 설치 불필요
   if (isStandalone) {
@@ -90,7 +90,7 @@ const checkInstallability = (): InstallInfo => {
   }
 
   // Android Samsung Internet
-  if (isAndroid && /SamsungBrowser/.test(userAgent)) {
+  if (isAndroid && isSamsung) {
     return {
       canInstall: true,
       platform: "Android",

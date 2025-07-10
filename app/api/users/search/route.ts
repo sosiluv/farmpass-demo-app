@@ -1,13 +1,18 @@
 import { createClient } from "@/lib/supabase/server";
-import { NextResponse } from "next/server";
-import { logUserActivity } from "@/lib/utils/logging/system-log";
+import { NextResponse, NextRequest } from "next/server";
+import { createSystemLog } from "@/lib/utils/logging/system-log";
 import { devLog } from "@/lib/utils/logging/dev-logger";
 import { requireAuth } from "@/lib/server/auth-utils";
+import { getClientIP, getUserAgent } from "@/lib/server/ip-helpers";
 
 // 동적 렌더링 강제
 export const dynamic = "force-dynamic";
 
-export async function GET(request: Request) {
+export async function GET(request: NextRequest) {
+  // 클라이언트 정보 추출
+  const clientIP = getClientIP(request);
+  const userAgent = getUserAgent(request);
+
   // 인증 확인
   const authResult = await requireAuth(false);
   if (!authResult.success || !authResult.user) {
@@ -56,6 +61,24 @@ export async function GET(request: Request) {
         const isMember = !!membership;
 
         if (!isOwner && !isMember) {
+          // 권한 거부 로그(warn)
+          await createSystemLog(
+            "USER_SEARCH_UNAUTHORIZED",
+            `농장 멤버/소유자 아님: userId=${user.id}, farmId=${farmId}`,
+            "warn",
+            user.id,
+            "user",
+            undefined,
+            {
+              farm_id: farmId,
+              attempted_user_id: user.id,
+              action: "user_search",
+              reason: "not_owner_or_member",
+            },
+            user.email,
+            clientIP,
+            userAgent
+          );
           return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
         }
       }
@@ -90,16 +113,22 @@ export async function GET(request: Request) {
     }
 
     // 사용자 검색 로그 기록
-    await logUserActivity(
+    await createSystemLog(
       "USER_SEARCH",
       `사용자 검색: "${query}" (${filteredUsers.length}건 결과)`,
+      "info",
       user.id,
+      "user",
+      undefined,
       {
         search_query: query,
         farm_id: farmId,
         result_count: filteredUsers.length,
         search_context: farmId ? "farm_member_search" : "general_search",
-      }
+      },
+      user.email,
+      clientIP,
+      userAgent
     );
 
     return NextResponse.json(
@@ -116,18 +145,24 @@ export async function GET(request: Request) {
     // 검색 실패 로그 기록
     try {
       if (user) {
-        await logUserActivity(
+        await createSystemLog(
           "USER_SEARCH_FAILED",
           `사용자 검색 실패: ${
             error instanceof Error ? error.message : String(error)
           }`,
+          "error",
           user.id,
+          "user",
+          undefined,
           {
             search_query: new URL(request.url).searchParams.get("q"),
             farm_id: new URL(request.url).searchParams.get("farmId"),
             error_message:
               error instanceof Error ? error.message : String(error),
-          }
+          },
+          user.email,
+          clientIP,
+          userAgent
         );
       }
     } catch (logError) {

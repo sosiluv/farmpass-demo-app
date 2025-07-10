@@ -248,7 +248,7 @@ BEGIN
                 metadata
             ) VALUES (
                 'info',
-                'USER_LOGOUT',
+                'LOGOUT_SUCCESS',
                 '사용자가 로그아웃했습니다: ' || COALESCE(v_user_email, 'unknown'),
                 OLD.user_id,
                 COALESCE(v_user_email, 'unknown'),

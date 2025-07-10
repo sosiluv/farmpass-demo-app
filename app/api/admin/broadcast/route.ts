@@ -4,6 +4,7 @@ import { devLog } from "@/lib/utils/logging/dev-logger";
 import { getClientIP, getUserAgent } from "@/lib/server/ip-helpers";
 import { createSystemLog } from "@/lib/utils/logging/system-log";
 import { requireAuth } from "@/lib/server/auth-utils";
+import { logApiError } from "@/lib/utils/logging/system-log";
 
 export async function POST(request: NextRequest) {
   const clientIP = getClientIP(request);
@@ -96,6 +97,18 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(result);
   } catch (error) {
     devLog.error("브로드캐스트 API 오류:", error);
+
+    // API 에러 로깅
+    await logApiError(
+      "/api/admin/broadcast",
+      "POST",
+      error instanceof Error ? error : String(error),
+      undefined,
+      {
+        ip: clientIP,
+        userAgent,
+      }
+    );
 
     // 실패 로그
     await createSystemLog(

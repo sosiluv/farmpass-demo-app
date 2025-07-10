@@ -6,6 +6,8 @@ interface VisitorAvatarProps {
   disinfectionCheck: boolean;
   size?: "sm" | "md" | "lg";
   showStatus?: boolean;
+  onClick?: () => void;
+  className?: string;
 }
 
 const sizeClasses = {
@@ -32,9 +34,11 @@ export function VisitorAvatar({
   disinfectionCheck,
   size = "md",
   showStatus = true,
+  onClick,
+  className,
 }: VisitorAvatarProps) {
   return (
-    <div className="relative">
+    <div className={`relative ${className || ""}`} onClick={onClick}>
       <Avatar
         className={`${sizeClasses[size]} border-2 border-white shadow-sm`}
       >

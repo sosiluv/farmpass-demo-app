@@ -19,6 +19,15 @@ export interface DebugInfo {
     firstContentfulPaint?: number;
     largestContentfulPaint?: number;
   };
+  // 확장: 디바이스 정보(선택)
+  deviceType?: string;
+  browser?: string;
+  os?: string;
+  isMobile?: boolean;
+  isTablet?: boolean;
+  screenSize?: string;
+  windowSize?: string;
+  pixelRatio?: number;
 }
 
 export interface DebugPanelProps {

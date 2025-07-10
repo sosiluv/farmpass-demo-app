@@ -32,6 +32,7 @@ import {
   VisitorTableHeader,
 } from "./components";
 import type { VisitorWithFarm } from "@/lib/types/visitor";
+import { ImagePreviewDialog } from "@/components/common/ImagePreviewDialog";
 
 interface VisitorTableProps {
   visitors: VisitorWithFarm[];
@@ -60,17 +61,31 @@ function MobileVisitorCard({
   onEdit?: (visitor: VisitorWithFarm) => Promise<void>;
   onDelete?: (visitor: VisitorWithFarm) => Promise<void>;
 }) {
+  const [previewOpen, setPreviewOpen] = useState(false);
   return (
     <Card className="border border-gray-200/60 hover:border-gray-300 hover:shadow-lg transition-all duration-300 bg-white/80 backdrop-blur-sm overflow-hidden group">
       <CardContent className="p-3 sm:p-4">
         <div className="flex items-start justify-between mb-2 sm:mb-3">
           <div className="flex items-center space-x-2 sm:space-x-3 min-w-0 flex-1">
-            <VisitorAvatar
-              name={visitor.visitor_name}
-              imageUrl={visitor.profile_photo_url}
-              disinfectionCheck={visitor.disinfection_check}
-              size="md"
-            />
+            <div className="relative">
+              <VisitorAvatar
+                name={visitor.visitor_name}
+                imageUrl={visitor.profile_photo_url}
+                disinfectionCheck={visitor.disinfection_check}
+                size="md"
+                onClick={() =>
+                  visitor.profile_photo_url && setPreviewOpen(true)
+                }
+                className={visitor.profile_photo_url ? "cursor-pointer" : ""}
+              />
+              <ImagePreviewDialog
+                src={visitor.profile_photo_url || ""}
+                alt={visitor.visitor_name}
+                open={previewOpen}
+                onOpenChange={setPreviewOpen}
+                caption={visitor.visitor_name}
+              />
+            </div>
             <div className="min-w-0 flex-1">
               <div className="flex items-center space-x-1 sm:space-x-2 mb-1">
                 <Tooltip delayDuration={300}>

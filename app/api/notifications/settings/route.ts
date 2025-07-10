@@ -1,13 +1,19 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { createSystemLog } from "@/lib/utils/logging/system-log";
 import { devLog } from "@/lib/utils/logging/dev-logger";
 import { requireAuth } from "@/lib/server/auth-utils";
+import { getClientIP, getUserAgent } from "@/lib/server/ip-helpers";
+import { logApiError } from "@/lib/utils/logging/system-log";
 
 // 동적 렌더링 강제
 export const dynamic = "force-dynamic";
 
 // GET: 알림 설정 조회
 export async function GET(request: NextRequest) {
+  const clientIP = getClientIP(request);
+  const userAgent = getUserAgent(request);
+
   try {
     devLog.log("[API] /api/notifications/settings GET 요청 시작");
 
@@ -29,8 +35,6 @@ export async function GET(request: NextRequest) {
       .single();
 
     if (error) {
-      devLog.error("알림 설정 조회 오류:", error);
-
       // 데이터가 없는 경우 (PGRST116 오류)
       if (error.code === "PGRST116") {
         devLog.log("알림 설정이 없음, 기본값 반환");
@@ -56,6 +60,37 @@ export async function GET(request: NextRequest) {
         );
       }
 
+      // API 에러 로깅
+      await logApiError(
+        "/api/notifications/settings",
+        "GET",
+        error.message,
+        user.id,
+        {
+          ip: clientIP,
+          userAgent,
+        }
+      );
+
+      // 알림 설정 조회 실패 로그
+      await createSystemLog(
+        "NOTIFICATION_SETTINGS_READ_FAILED",
+        `알림 설정 조회 실패: ${error.message} (사용자 ID: ${user.id})`,
+        "error",
+        user.id,
+        "notification",
+        undefined,
+        {
+          error_code: error.code,
+          error_message: error.message,
+          user_id: user.id,
+          status: "failed",
+        },
+        user.email,
+        clientIP,
+        userAgent
+      );
+
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
@@ -67,6 +102,39 @@ export async function GET(request: NextRequest) {
     });
   } catch (error) {
     devLog.error("알림 설정 조회 중 예외 발생:", error);
+
+    // API 에러 로깅
+    await logApiError(
+      "/api/notifications/settings",
+      "GET",
+      error instanceof Error ? error : String(error),
+      undefined,
+      {
+        ip: clientIP,
+        userAgent,
+      }
+    );
+
+    // 시스템 예외 로그
+    await createSystemLog(
+      "NOTIFICATION_SETTINGS_READ_SYSTEM_ERROR",
+      `알림 설정 조회 시스템 오류: ${
+        error instanceof Error ? error.message : String(error)
+      }`,
+      "error",
+      undefined,
+      "notification",
+      undefined,
+      {
+        error: error instanceof Error ? error.message : String(error),
+        stack: error instanceof Error ? error.stack : undefined,
+        status: "failed",
+      },
+      undefined,
+      clientIP,
+      userAgent
+    );
+
     return NextResponse.json(
       { error: "알림 설정을 조회하는 중 오류가 발생했습니다." },
       { status: 500 }
@@ -75,7 +143,10 @@ export async function GET(request: NextRequest) {
 }
 
 // PUT: 알림 설정 업데이트
-export async function PUT(request: Request) {
+export async function PUT(request: NextRequest) {
+  const clientIP = getClientIP(request);
+  const userAgent = getUserAgent(request);
+
   try {
     // 인증 확인
     const authResult = await requireAuth(false);
@@ -107,6 +178,39 @@ export async function PUT(request: Request) {
 
       if (error) {
         devLog.error("알림 설정 업데이트 오류:", error);
+
+        // API 에러 로깅
+        await logApiError(
+          "/api/notifications/settings",
+          "PUT",
+          error.message,
+          user.id,
+          {
+            ip: clientIP,
+            userAgent,
+          }
+        );
+
+        // 알림 설정 업데이트 실패 로그
+        await createSystemLog(
+          "NOTIFICATION_SETTINGS_UPDATE_FAILED",
+          `알림 설정 업데이트 실패: ${error.message} (사용자 ID: ${user.id})`,
+          "error",
+          user.id,
+          "notification",
+          undefined,
+          {
+            error_code: error.code,
+            error_message: error.message,
+            user_id: user.id,
+            action_type: "update",
+            status: "failed",
+          },
+          user.email,
+          clientIP,
+          userAgent
+        );
+
         return NextResponse.json({ error: error.message }, { status: 500 });
       }
       result = data;
@@ -129,6 +233,39 @@ export async function PUT(request: Request) {
 
       if (error) {
         devLog.error("알림 설정 생성 오류:", error);
+
+        // API 에러 로깅
+        await logApiError(
+          "/api/notifications/settings",
+          "PUT",
+          error.message,
+          user.id,
+          {
+            ip: clientIP,
+            userAgent,
+          }
+        );
+
+        // 알림 설정 생성 실패 로그
+        await createSystemLog(
+          "NOTIFICATION_SETTINGS_CREATE_FAILED",
+          `알림 설정 생성 실패: ${error.message} (사용자 ID: ${user.id})`,
+          "error",
+          user.id,
+          "notification",
+          undefined,
+          {
+            error_code: error.code,
+            error_message: error.message,
+            user_id: user.id,
+            action_type: "create",
+            status: "failed",
+          },
+          user.email,
+          clientIP,
+          userAgent
+        );
+
         return NextResponse.json({ error: error.message }, { status: 500 });
       }
       result = data;
@@ -137,6 +274,39 @@ export async function PUT(request: Request) {
     return NextResponse.json(result);
   } catch (error) {
     devLog.error("알림 설정 업데이트 중 예외 발생:", error);
+
+    // API 에러 로깅
+    await logApiError(
+      "/api/notifications/settings",
+      "PUT",
+      error instanceof Error ? error : String(error),
+      undefined,
+      {
+        ip: clientIP,
+        userAgent,
+      }
+    );
+
+    // 시스템 예외 로그
+    await createSystemLog(
+      "NOTIFICATION_SETTINGS_UPDATE_SYSTEM_ERROR",
+      `알림 설정 업데이트 시스템 오류: ${
+        error instanceof Error ? error.message : String(error)
+      }`,
+      "error",
+      undefined,
+      "notification",
+      undefined,
+      {
+        error: error instanceof Error ? error.message : String(error),
+        stack: error instanceof Error ? error.stack : undefined,
+        status: "failed",
+      },
+      undefined,
+      clientIP,
+      userAgent
+    );
+
     return NextResponse.json(
       { error: "알림 설정을 업데이트하는 중 오류가 발생했습니다." },
       { status: 500 }

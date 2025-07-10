@@ -3,10 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { cookies } from "next/headers";
 import { getSystemSettings } from "@/lib/cache/system-settings-cache";
 import { devLog } from "@/lib/utils/logging/dev-logger";
-import {
-  logApiError,
-  logVisitorDataAccess,
-} from "@/lib/utils/logging/system-log";
+import { createSystemLog } from "@/lib/utils/logging/system-log";
 import { getClientIP, getUserAgent } from "@/lib/server/ip-helpers";
 
 export async function GET(
@@ -23,16 +20,23 @@ export async function GET(
 
     // 세션이 없으면 첫 방문으로 간주
     if (!sessionToken) {
-      // 세션 없음 로그 기록
-      await logVisitorDataAccess(
-        "SESSION_NOT_FOUND",
+      // 세션 없음 로그 기록 (정상적인 첫 방문)
+      await createSystemLog(
+        "VISITOR_SESSION_NOT_FOUND",
+        `방문자 세션 없음 - 첫 방문 (농장 ID: ${farmId})`,
+        "info",
         undefined,
+        "visitor",
         undefined,
         {
           farm_id: farmId,
           session_token: "none",
+          visit_type: "first_visit",
+          status: "normal",
         },
-        { ip: clientIP, userAgent }
+        undefined,
+        clientIP,
+        userAgent
       );
       return NextResponse.json({ isFirstVisit: true });
     }
@@ -61,16 +65,23 @@ export async function GET(
 
     // 방문 기록이 없으면 첫 방문으로 간주
     if (!lastVisit) {
-      // 세션은 있으나 방문 기록 없음 로그
-      await logVisitorDataAccess(
-        "RECORD_NOT_FOUND",
+      // 세션은 있으나 방문 기록 없음 로그 (정상적인 상황)
+      await createSystemLog(
+        "VISITOR_RECORD_NOT_FOUND",
+        `방문자 기록 없음 - 새 방문자 (농장 ID: ${farmId})`,
+        "info",
         undefined,
+        "visitor",
         undefined,
         {
           farm_id: farmId,
           session_token: sessionToken,
+          visit_type: "new_visitor",
+          status: "normal",
         },
-        { ip: clientIP, userAgent }
+        undefined,
+        clientIP,
+        userAgent
       );
       return NextResponse.json({ isFirstVisit: true });
     }
@@ -84,18 +95,27 @@ export async function GET(
     const isExpired = hoursSinceLastVisit >= settings.reVisitAllowInterval;
 
     if (isExpired) {
-      // 세션 만료 로그 기록
-      await logVisitorDataAccess(
-        "SESSION_EXPIRED",
+      // 세션 만료 로그 기록 (정상적인 만료)
+      await createSystemLog(
+        "VISITOR_SESSION_EXPIRED",
+        `방문자 세션 만료 - ${Math.round(
+          hoursSinceLastVisit
+        )}시간 경과 (농장 ID: ${farmId})`,
+        "info",
         undefined,
+        "visitor",
         undefined,
         {
           farm_id: farmId,
           session_token: sessionToken,
           hours_since_last_visit: Math.round(hoursSinceLastVisit),
           visit_allow_interval: settings.reVisitAllowInterval,
+          visit_type: "expired_session",
+          status: "normal",
         },
-        { ip: clientIP, userAgent }
+        undefined,
+        clientIP,
+        userAgent
       );
 
       // 세션이 만료되었으면 쿠키 삭제
@@ -103,10 +123,15 @@ export async function GET(
       return NextResponse.json({ isFirstVisit: true });
     }
 
-    // 유효한 세션 로그 기록
-    await logVisitorDataAccess(
-      "SESSION_VALID",
+    // 유효한 세션 로그 기록 (재방문)
+    await createSystemLog(
+      "VISITOR_SESSION_VALID",
+      `방문자 세션 유효 - 재방문 (${Math.round(
+        settings.reVisitAllowInterval - hoursSinceLastVisit
+      )}시간 남음, 농장 ID: ${farmId})`,
+      "info",
       undefined,
+      "visitor",
       undefined,
       {
         farm_id: farmId,
@@ -115,8 +140,12 @@ export async function GET(
         remaining_hours: Math.round(
           settings.reVisitAllowInterval - hoursSinceLastVisit
         ),
+        visit_type: "return_visit",
+        status: "normal",
       },
-      { ip: clientIP, userAgent }
+      undefined,
+      clientIP,
+      userAgent
     );
 
     // 유효한 세션인 경우 마지막 방문 정보 반환
@@ -139,15 +168,25 @@ export async function GET(
     devLog.error("Error checking session:", error);
 
     // API 에러 로그 기록
-    await logApiError(
-      "/api/farms/[farmId]/visitors/check-session",
-      "GET",
-      error instanceof Error ? error : String(error),
+    await createSystemLog(
+      "VISITOR_SESSION_CHECK_ERROR",
+      `방문자 세션 체크 오류: ${
+        error instanceof Error ? error.message : String(error)
+      } (농장 ID: ${params.farmId})`,
+      "error",
+      undefined,
+      "visitor",
       undefined,
       {
-        ip: clientIP,
-        userAgent,
-      }
+        endpoint: "/api/farms/[farmId]/visitors/check-session",
+        method: "GET",
+        error: error instanceof Error ? error.message : String(error),
+        farm_id: params.farmId,
+        status: "failed",
+      },
+      undefined,
+      clientIP,
+      userAgent
     );
 
     return NextResponse.json(

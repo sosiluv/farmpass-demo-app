@@ -39,7 +39,7 @@ export async function POST(request: NextRequest) {
 
       // VAPID 키 설정
       webpush.setVapidDetails(
-        "mailto:admin@farm-system.com",
+        "mailto:k331502@nate.com",
         settings.vapidPublicKey,
         settings.vapidPrivateKey
       );

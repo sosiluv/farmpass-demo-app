@@ -1,9 +1,10 @@
 import { createClient } from "@/lib/supabase/server";
 import { NextRequest, NextResponse } from "next/server";
-import { logDataChange } from "@/lib/utils/logging/system-log";
+import { createSystemLog } from "@/lib/utils/logging/system-log";
 import { devLog } from "@/lib/utils/logging/dev-logger";
 import { getClientIP, getUserAgent } from "@/lib/server/ip-helpers";
 import { requireAuth } from "@/lib/server/auth-utils";
+import { logApiError, logSecurityError } from "@/lib/utils/logging/system-log";
 
 // 동적 렌더링 강제
 export const dynamic = "force-dynamic";
@@ -79,6 +80,17 @@ export async function GET(request: NextRequest) {
       );
 
       if (unauthorizedFarms.length > 0) {
+        // 권한 거부 보안 로그
+        await logSecurityError(
+          "FARM_MEMBER_ACCESS_DENIED",
+          `농장 구성원 조회 권한 거부: 사용자 ${
+            user.id
+          }가 농장 ${unauthorizedFarms.join(", ")}에 대한 접근 시도`,
+          user.id,
+          clientIP,
+          userAgent
+        );
+
         return NextResponse.json(
           {
             error: "Access denied to some farms",
@@ -121,20 +133,21 @@ export async function GET(request: NextRequest) {
     }
 
     // 농장 구성원 일괄 조회 로그 기록
-    await logDataChange(
+    await createSystemLog(
       "MEMBER_BULK_READ",
-      "MEMBER",
+      `농장 구성원 일괄 조회 성공: ${members?.length || 0}명`,
+      "info",
       user.id,
+      "member",
+      undefined,
       {
         farm_ids: farmIdArray,
         member_count: members?.length || 0,
         action_type: "bulk_member_fetch",
       },
-      {
-        ip: clientIP,
-        email: user.email,
-        userAgent: userAgent,
-      }
+      user.email,
+      clientIP,
+      userAgent
     );
 
     return NextResponse.json(
@@ -152,22 +165,38 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     devLog.error("Error in bulk farm members fetch:", error);
 
-    // 실패 로그 기록 (새로운 supabase 클라이언트 생성)
+    // API 에러 로깅
+    await logApiError(
+      "/api/farm-members",
+      "GET",
+      error instanceof Error ? error : String(error),
+      user.id,
+      {
+        ip: clientIP,
+        userAgent,
+      }
+    );
+
+    // 실패 로그 기록 (error 레벨로 변경)
     try {
-      await logDataChange(
+      await createSystemLog(
         "MEMBER_BULK_READ_FAILED",
-        "MEMBER",
+        `농장 구성원 일괄 조회 실패: ${
+          error instanceof Error ? error.message : "Unknown error"
+        }`,
+        "error",
         user.id,
+        "member",
+        undefined,
         {
           error_message:
             error instanceof Error ? error.message : "Unknown error",
           action_type: "bulk_member_fetch",
           status: "failed",
         },
-        {
-          ip: clientIP,
-          userAgent: userAgent,
-        }
+        user.email,
+        clientIP,
+        userAgent
       );
     } catch (logError) {
       devLog.error("Failed to log bulk member fetch error:", logError);

@@ -67,20 +67,30 @@ export const formatTime = (date: string | Date): string => {
 export const formatTimeAgo = (date: string | Date): string => {
   const dateObj = typeof date === "string" ? new Date(date) : date;
   const now = new Date();
-  const diffInMinutes = Math.floor(
-    (now.getTime() - dateObj.getTime()) / (1000 * 60)
-  );
+  const diffInSeconds = Math.floor((now.getTime() - dateObj.getTime()) / 1000);
 
-  if (diffInMinutes < 1) {
+  if (diffInSeconds < 60) {
     return "방금 전";
-  } else if (diffInMinutes < 60) {
-    return `${diffInMinutes}분 전`;
-  } else if (diffInMinutes < 1440) {
-    return `${Math.floor(diffInMinutes / 60)}시간 전`;
-  } else if (diffInMinutes < 10080) {
-    return `${Math.floor(diffInMinutes / 1440)}일 전`;
+  } else if (diffInSeconds < 3600) {
+    const minutes = Math.floor(diffInSeconds / 60);
+    return `${minutes}분 전`;
+  } else if (diffInSeconds < 86400) {
+    const hours = Math.floor(diffInSeconds / 3600);
+    const minutes = Math.floor((diffInSeconds % 3600) / 60);
+    return minutes > 0 ? `${hours}시간 ${minutes}분 전` : `${hours}시간 전`;
+  } else if (diffInSeconds < 604800) {
+    // 7일 이내
+    const days = Math.floor(diffInSeconds / 86400);
+    const hours = Math.floor((diffInSeconds % 86400) / 3600);
+    return hours > 0 ? `${days}일 ${hours}시간 전` : `${days}일 전`;
   } else {
-    return formatDate(dateObj);
+    return dateObj.toLocaleString("ko-KR", {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
   }
 };
 

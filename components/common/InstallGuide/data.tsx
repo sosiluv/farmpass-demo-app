@@ -8,6 +8,7 @@ import {
   ArrowRight,
   CheckCircle,
 } from "lucide-react";
+import { getDeviceInfo } from "@/lib/utils/browser/device-detection";
 
 export interface InstallStep {
   step: number;
@@ -144,10 +145,11 @@ export const platformGuides: PlatformGuide[] = [
 ];
 
 export const getCurrentPlatformGuide = (installInfo: any): PlatformGuide => {
+  const deviceInfo = getDeviceInfo();
   if (installInfo.platform === "iOS") {
     return platformGuides[0]; // iOS Safari
   } else if (installInfo.platform === "Android") {
-    if (installInfo.userAgent.includes("SamsungBrowser")) {
+    if (deviceInfo.browser === "Samsung") {
       return platformGuides[2]; // Samsung Internet
     }
     return platformGuides[1]; // Android Chrome

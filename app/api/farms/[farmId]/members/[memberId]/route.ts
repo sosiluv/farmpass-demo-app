@@ -1,6 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { NextRequest, NextResponse } from "next/server";
-import { logDataChange } from "@/lib/utils/logging/system-log";
+import { createSystemLog } from "@/lib/utils/logging/system-log";
 import { devLog } from "@/lib/utils/logging/dev-logger";
 import { getClientIP, getUserAgent } from "@/lib/server/ip-helpers";
 import { requireAuth } from "@/lib/server/auth-utils";
@@ -104,10 +104,15 @@ export async function PUT(
     }
 
     // 농장 멤버 역할 변경 로그 기록
-    await logDataChange(
+    await createSystemLog(
       "MEMBER_UPDATE",
-      "MEMBER",
+      `농장 멤버 역할 변경: ${(memberToUpdate.profiles as any)?.name} (${
+        (memberToUpdate.profiles as any)?.email
+      }) - ${oldRole} → ${role} (농장: ${farm.farm_name})`,
+      "info",
       user.id,
+      "member",
+      params.memberId,
       {
         member_id: params.memberId,
         farm_id: params.farmId,
@@ -119,11 +124,9 @@ export async function PUT(
         target_user_id: memberToUpdate.user_id,
         action_type: "member_management",
       },
-      {
-        ip: clientIP,
-        email: user.email,
-        userAgent: userAgent,
-      }
+      user.email,
+      clientIP,
+      userAgent
     );
 
     return NextResponse.json(
@@ -144,10 +147,15 @@ export async function PUT(
     devLog.error("Error updating member role:", error);
 
     // 농장 멤버 역할 변경 실패 로그 기록
-    await logDataChange(
+    await createSystemLog(
       "MEMBER_UPDATE_FAILED",
-      "MEMBER",
+      `농장 멤버 역할 변경 실패: ${
+        error instanceof Error ? error.message : "Unknown error"
+      } (멤버 ID: ${params.memberId}, 농장 ID: ${params.farmId})`,
+      "error",
       user?.id,
+      "member",
+      params.memberId,
       {
         error_message: error instanceof Error ? error.message : "Unknown error",
         farm_id: params.farmId,
@@ -155,11 +163,10 @@ export async function PUT(
         action_type: "member_management",
         status: "failed",
       },
-      {
-        ip: clientIP,
-        userAgent: userAgent,
-      }
-    ).catch((logError) =>
+      user?.email,
+      clientIP,
+      userAgent
+    ).catch((logError: any) =>
       devLog.error("Failed to log member role update error:", logError)
     );
 
@@ -266,16 +273,29 @@ export async function DELETE(
     }
 
     // 농장 멤버 제거 로그 기록
-    await logDataChange("MEMBER_DELETE", "MEMBER", user.id, {
-      member_id: params.memberId,
-      farm_id: params.farmId,
-      farm_name: farm.farm_name,
-      member_email: (memberToRemove.profiles as any)?.email,
-      member_name: (memberToRemove.profiles as any)?.name,
-      member_role: memberToRemove.role,
-      target_user_id: memberToRemove.user_id,
-      action_type: "member_management",
-    });
+    await createSystemLog(
+      "MEMBER_DELETE",
+      `농장 멤버 제거: ${(memberToRemove.profiles as any)?.name} (${
+        (memberToRemove.profiles as any)?.email
+      }) - ${memberToRemove.role} 역할 (농장: ${farm.farm_name})`,
+      "info",
+      user.id,
+      "member",
+      params.memberId,
+      {
+        member_id: params.memberId,
+        farm_id: params.farmId,
+        farm_name: farm.farm_name,
+        member_email: (memberToRemove.profiles as any)?.email,
+        member_name: (memberToRemove.profiles as any)?.name,
+        member_role: memberToRemove.role,
+        target_user_id: memberToRemove.user_id,
+        action_type: "member_management",
+      },
+      user.email,
+      clientIP,
+      userAgent
+    );
 
     return NextResponse.json(
       {
@@ -292,13 +312,26 @@ export async function DELETE(
     devLog.error("Error removing member:", error);
 
     // 농장 멤버 제거 실패 로그 기록
-    await logDataChange("MEMBER_DELETE_FAILED", "MEMBER", user?.id, {
-      error_message: error instanceof Error ? error.message : "Unknown error",
-      farm_id: params.farmId,
-      member_id: params.memberId,
-      action_type: "member_management",
-      status: "failed",
-    }).catch((logError) =>
+    await createSystemLog(
+      "MEMBER_DELETE_FAILED",
+      `농장 멤버 제거 실패: ${
+        error instanceof Error ? error.message : "Unknown error"
+      } (멤버 ID: ${params.memberId}, 농장 ID: ${params.farmId})`,
+      "error",
+      user?.id,
+      "member",
+      params.memberId,
+      {
+        error_message: error instanceof Error ? error.message : "Unknown error",
+        farm_id: params.farmId,
+        member_id: params.memberId,
+        action_type: "member_management",
+        status: "failed",
+      },
+      user?.email,
+      clientIP,
+      userAgent
+    ).catch((logError: any) =>
       devLog.error("Failed to log member removal error:", logError)
     );
 

@@ -65,12 +65,7 @@ $$;
 COMMENT ON FUNCTION public.is_system_admin() IS 
 'RLS를 우회하여 profiles.account_type으로 관리자 확인. 재귀 방지 및 실시간 권한 변경 지원';
 
--- =================================
--- 관리자 계정 role부여 해야함 무조건필수
--- =================================
-UPDATE auth.users
-SET raw_app_meta_data = COALESCE(raw_app_meta_data, '{}'::jsonb) || '{"role": "admin"}'
-WHERE id = 'a45d5a0f-4f1b-4815-9574-9971e17901fd';
+
 
 -- =================================
 -- profiles 테이블 정책 (함수 기반, 무한 재귀 완전 방지)
@@ -130,7 +125,7 @@ CREATE POLICY "Users can manage own farms" ON public.farms
         public.is_system_admin() OR
         owner_id = auth.uid()
     );
-  
+
 
 COMMENT ON POLICY "Users can view own farms" ON public.farms IS 
 '사용자는 자신이 소유한 농장만 조회 가능, 관리자는 모든 농장 조회 가능';
@@ -260,113 +255,7 @@ CREATE POLICY "system_logs_admin_full_access" ON public.system_logs
 COMMENT ON POLICY "system_logs_admin_full_access" ON public.system_logs IS 
 '관리자는 모든 시스템 로그에 대한 전체 권한(CRUD)을 가짐';
 
--- =================================
--- 포괄적 로그 삽입 정책 (함수 기반, 모든 로그 타입 지원)
--- =================================
-CREATE POLICY "system_logs_insert" ON public.system_logs
-    FOR INSERT 
-    WITH CHECK (
-        -- 관리자는 모든 로그 생성 가능
-        public.is_system_admin() OR
-        
-        -- 서비스 역할은 모든 로그 생성 가능
-        auth.role() = 'service_role' OR
-        
-        -- 인증된 사용자는 자신의 로그 및 시스템 로그 생성 가능
-        (auth.uid() IS NOT NULL AND (
-            user_id = auth.uid() OR
-            user_id IS NULL  -- 시스템 로그
-        )) OR
-        
-        -- 🔥 외부(미인증) 사용자도 특정 로그 생성 허용 - 실제 사용되는 모든 액션 포함
-        (auth.uid() IS NULL AND (
-            -- 사용자 관련 로그
-            action ~ '^(USER_|LOGIN_|LOGOUT_|PASSWORD_|ACCOUNT_|SESSION_|AUTH_)' OR
-            
-            -- 농장 관련 로그
-            action ~ '^(FARM_|MEMBER_)' OR
-            
-            -- 방문자 관련 로그 (모든 방문자 액션 허용)
-            action ~ '^(VISITOR_|LIST_VIEW|DETAIL_VIEW|CREATED|UPDATED|DELETED)' OR
-            action IN ('CREATION_FAILED', 'UPDATE_FAILED', 'DELETE_FAILED') OR
-            
-            -- 시스템 설정 관련 로그
-            action ~ '^(SETTINGS_|CONFIGURATION_)' OR
-            action = 'SETTINGS_INITIALIZE' OR
-            action = 'SETTINGS_BULK_UPDATE' OR
-            
-            -- 푸시 알림 관련 로그
-            action ~ '^(PUSH_|NOTIFICATION_)' OR
-            
-            -- 관리 기능 로그
-            action ~ '^(LOG_|DATA_|EXPORT_|IMPORT_|SYSTEM_|BACKUP_|RESTORE_)' OR
-            
-            -- 애플리케이션 라이프사이클 로그
-            action IN ('PAGE_VIEW', 'APP_START', 'APP_END', 'BUSINESS_EVENT', 'USER_ACTIVITY', 'ADMIN_ACTION') OR
-            
-            -- 보안 관련 로그
-            action ~ '^(UNAUTHORIZED_|SECURITY_|SUSPICIOUS_|ACCESS_|PERMISSION_|IP_|RATE_LIMIT_)' OR
-            
-            -- 에러 관련 로그 (모든 _ERROR, _FAILED 패턴)
-            action ~ '_(ERROR|FAILED|WARNING)$' OR
-            action ~ '^(ERROR_|FAILED_|WARNING_)' OR
-            
-            -- API 및 데이터베이스 로그
-            action ~ '^(API_|DATABASE_|CONNECTION_|TIMEOUT_|QUERY_|TRANSACTION_)' OR
-            
-            -- 파일 및 업로드 로그
-            action ~ '^(FILE_|IMAGE_|UPLOAD_|STORAGE_)' OR
-            
-            -- 유효성 검사 로그
-            action ~ '^(VALIDATION_|FORM_|INPUT_|DATA_VALIDATION_)' OR
-            
-            -- 성능 관련 로그
-            action ~ '^(PERFORMANCE_|SLOW_|MEMORY_|CPU_|DISK_)' OR
-            
-            -- 기타 일반적인 로그 패턴
-            action ~ '^(BULK_|EMAIL_|CACHE_|MAINTENANCE_|CLEANUP_|MIGRATION_)' OR
-            
-            -- 알림 관련 로그
-            action ~ '_(ALERT|NOTIFICATION)' OR
-            
-            -- QR 코드 관련 로그
-            action ~ '^(QR_|SCAN_)' OR
-            
-            -- 디버그 로그
-            action ~ '^(DEBUG_|DEV_|TEST_)' OR
-            
-            -- 기본 시스템 로그는 항상 허용
-            action IS NULL OR
-            action = ''
-        )) OR
-        
-        -- 📝 명시적으로 허용되는 특정 액션들 (실제 코드에서 사용됨)
-        (action IN (
-            'PAGE_VIEW', 'LOG_CREATION_FAILED', 'SYSTEM_ERROR',
-            'LOGIN_ATTEMPTS_RESET', 'PASSWORD_RESET', 'EMAIL_VERIFICATION',
-            'VISITOR_DATA_CREATED', 'VISITOR_DATA_CREATION_FAILED', 'VISITOR_CREATED',
-            'LIST_VIEW', 'LIST_VIEW_FAILED', 'DETAIL_VIEW', 'DETAIL_VIEW_FAILED',
-            'SETTINGS_INITIALIZE', 'SETTINGS_BULK_UPDATE', 'SETTINGS_UPDATED',
-            'PUSH_SUBSCRIPTION_CREATED', 'PUSH_SUBSCRIPTION_DELETED', 'PUSH_NOTIFICATION_SENT',
-            'PUSH_NOTIFICATION_NO_SUBSCRIBERS', 'PUSH_NOTIFICATION_FILTERED_OUT', 'PUSH_SUBSCRIPTION_CLEANUP', 
-            'PUSH_NOTIFICATION_SEND_FAILED',
-            'LOG_CLEANUP', 'LOG_CLEANUP_ERROR', 'LOG_EXPORT', 'LOG_EXPORT_ERROR', 'DATA_EXPORT',
-            'BROADCAST_NOTIFICATION_SENT', 'BROADCAST_NOTIFICATION_FAILED',
-            'UNAUTHORIZED_ACCESS', 'SECURITY_THREAT_DETECTED', 'PERMISSION_DENIED',
-            'FARM_CREATED', 'FARM_UPDATED', 'FARM_DELETED', 'FARM_CREATE_FAILED',
-            'MEMBER_CREATED', 'MEMBER_UPDATED', 'MEMBER_DELETED', 'MEMBER_ROLE_CHANGED',
-            'USER_LOGIN', 'USER_LOGOUT', 'LOGIN_FAILED', 'ACCOUNT_LOCKED',
-            'API_ERROR', 'DATABASE_ERROR', 'VALIDATION_ERROR', 'FILE_UPLOAD_ERROR',
-            'PERFORMANCE_WARNING', 'SLOW_QUERY', 'MEMORY_WARNING',
-            'EXPORT_FAILED', 'CREATED', 'UPDATED', 'DELETED'
-        )) OR
-        
-        -- 🔧 user_id가 undefined/null인 시스템 로그는 항상 허용
-        (user_id IS NULL)
-    );
 
-COMMENT ON POLICY "system_logs_insert" ON public.system_logs IS 
-'포괄적 로그 삽입 정책: 코드베이스에서 실제 사용하는 모든 로그 액션 패턴을 허용. 인증된 사용자, 외부 사용자, 시스템 로그 모두 지원';
 
 -- =================================
 -- 로그 조회 정책 (함수 기반)

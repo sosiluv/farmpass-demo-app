@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { logVisitorDataAccess } from "@/lib/utils/logging/system-log";
+import { createSystemLog } from "@/lib/utils/logging/system-log";
 import { devLog } from "@/lib/utils/logging/dev-logger";
 import { getClientIP, getUserAgent } from "@/lib/server/ip-helpers";
 import { requireAuth } from "@/lib/server/auth-utils";
@@ -76,10 +76,13 @@ export async function PUT(
       devLog.error("Supabase 업데이트 실패:", error);
 
       // 실패 로그 기록
-      await logVisitorDataAccess(
-        "UPDATE_FAILED",
+      await createSystemLog(
+        "VISITOR_UPDATE_FAILED",
+        `방문자 정보 수정 실패: ${error.message} (방문자 ID: ${visitorId}, 농장 ID: ${farmId})`,
+        "error",
         user.id,
-        user.email,
+        "visitor",
+        visitorId,
         {
           farm_id: farmId,
           visitor_id: visitorId,
@@ -92,11 +95,9 @@ export async function PUT(
             error_hint: error.hint,
           },
         },
-        {
-          ip: clientIP,
-          email: user.email,
-          userAgent,
-        }
+        user.email,
+        clientIP,
+        userAgent
       );
 
       if (error.code === "23505") {
@@ -115,10 +116,13 @@ export async function PUT(
     devLog.log("방문자 정보 업데이트 성공:", data);
 
     // 성공 로그 기록
-    await logVisitorDataAccess(
-      "UPDATED",
+    await createSystemLog(
+      "VISITOR_UPDATED",
+      `방문자 정보 수정: ${data.visitor_name} (방문자 ID: ${visitorId}, 농장 ID: ${farmId})`,
+      "info",
       user.id,
-      user.email,
+      "visitor",
+      visitorId,
       {
         farm_id: farmId,
         visitor_id: visitorId,
@@ -126,11 +130,9 @@ export async function PUT(
         status: "success",
         changes: updateData,
       },
-      {
-        ip: clientIP,
-        email: user.email,
-        userAgent,
-      }
+      user.email,
+      clientIP,
+      userAgent
     );
 
     return NextResponse.json(data);
@@ -180,10 +182,13 @@ export async function DELETE(
 
     if (error) {
       // 실패 로그 기록
-      await logVisitorDataAccess(
-        "DELETE_FAILED",
+      await createSystemLog(
+        "VISITOR_DELETE_FAILED",
+        `방문자 삭제 실패: ${error.message} (방문자 ID: ${visitorId}, 농장 ID: ${farmId})`,
+        "error",
         user.id,
-        user.email,
+        "visitor",
+        visitorId,
         {
           farm_id: farmId,
           visitor_id: visitorId,
@@ -194,11 +199,9 @@ export async function DELETE(
             message: "방문자 삭제 실패",
           },
         },
-        {
-          ip: clientIP,
-          email: user.email,
-          userAgent,
-        }
+        user.email,
+        clientIP,
+        userAgent
       );
 
       return NextResponse.json(
@@ -209,21 +212,22 @@ export async function DELETE(
 
     // 성공 로그 기록
     if (visitor) {
-      await logVisitorDataAccess(
-        "DELETED",
+      await createSystemLog(
+        "VISITOR_DELETED",
+        `방문자 삭제: ${visitor.visitor_name} (방문자 ID: ${visitorId}, 농장 ID: ${farmId})`,
+        "info",
         user.id,
-        user.email,
+        "visitor",
+        visitorId,
         {
           farm_id: farmId,
           visitor_id: visitorId,
           visitor_name: visitor.visitor_name,
           status: "success",
         },
-        {
-          ip: clientIP,
-          email: user.email,
-          userAgent,
-        }
+        user.email,
+        clientIP,
+        userAgent
       );
     }
 

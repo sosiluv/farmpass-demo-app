@@ -12,6 +12,7 @@ import {
   useVapidKeyQuery,
   useCreateSubscriptionMutation,
 } from "@/lib/hooks/query/use-push-mutations";
+import { getDeviceInfo } from "@/lib/utils/browser/device-detection";
 
 interface NotificationPermissionState {
   hasAsked: boolean;
@@ -368,9 +369,10 @@ export function useNotificationPermission() {
       iosVersion?: number;
     };
   } {
-    const userAgent = navigator.userAgent;
-    const isIOS = /iPad|iPhone|iPod/.test(userAgent);
-    const isSafari = /Safari/.test(userAgent) && !/Chrome/.test(userAgent);
+    const deviceInfo = getDeviceInfo();
+    const userAgent = deviceInfo.userAgent;
+    const isIOS = deviceInfo.os === "iOS";
+    const isSafari = deviceInfo.browser === "Safari";
 
     // iOS Safari 버전 체크
     let iosVersion: number | undefined;

@@ -3,13 +3,8 @@ import { prisma } from "@/lib/prisma";
 import crypto from "crypto";
 import { DEFAULT_SYSTEM_SETTINGS } from "@/lib/constants/defaults";
 import { invalidateSystemSettingsCache } from "@/lib/cache/system-settings-cache";
-import {
-  createSystemLog,
-  logApiError,
-  logSystemWarning,
-} from "@/lib/utils/logging/system-log";
+import { createSystemLog, logApiError } from "@/lib/utils/logging/system-log";
 import { devLog } from "@/lib/utils/logging/dev-logger";
-import { createClient } from "@/lib/supabase/server";
 import { getClientIP, getUserAgent } from "@/lib/server/ip-helpers";
 import { requireAuth } from "@/lib/server/auth-utils";
 

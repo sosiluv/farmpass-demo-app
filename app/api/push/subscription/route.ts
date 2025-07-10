@@ -287,7 +287,7 @@ export async function GET(request: NextRequest) {
         // web-push 설정
         const webpush = require("web-push");
         webpush.setVapidDetails(
-          "mailto:admin@farm-system.com",
+          "mailto:k331502@nate.com",
           settings.vapid_public_key,
           settings.vapid_private_key
         );

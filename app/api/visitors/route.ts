@@ -1,14 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import {
-  logVisitorDataAccess,
-  logApiError,
-} from "@/lib/utils/logging/system-log";
+import { createSystemLog } from "@/lib/utils/logging/system-log";
 import { devLog } from "@/lib/utils/logging/dev-logger";
 import {
   PerformanceMonitor,
   logApiPerformance,
   logDatabasePerformance,
+  logApiError,
 } from "@/lib/utils/logging/system-log";
 import { getClientIP, getUserAgent } from "@/lib/server/ip-helpers";
 import {
@@ -192,10 +190,15 @@ export async function GET(request: NextRequest) {
     }
 
     // 시스템 로그 기록
-    await logVisitorDataAccess(
-      "LIST_VIEW",
+    await createSystemLog(
+      "VISITOR_DATA_ACCESS",
+      `방문자 데이터 접근: ${visitorData?.length || 0}건 조회 (${
+        includeAllFarms ? "전체 농장" : "소유 농장"
+      })`,
+      "info",
       user.id,
-      user.email,
+      "visitor",
+      undefined,
       {
         visitor_count: visitorData?.length || 0,
         access_scope: includeAllFarms ? "all_farms" : "own_farms",
@@ -204,11 +207,9 @@ export async function GET(request: NextRequest) {
           userAgent: userAgent,
         },
       },
-      {
-        ip: clientIP,
-        email: user.email,
-        userAgent: userAgent,
-      }
+      user.email,
+      clientIP,
+      userAgent
     );
 
     const duration = await monitor.finish();
@@ -310,11 +311,45 @@ export async function POST(request: NextRequest) {
       .single();
 
     if (error) {
+      // 방문자 등록 실패 로그 기록
+      await createSystemLog(
+        "VISITOR_REGISTRATION_FAILED",
+        "방문자 등록에 실패했습니다.",
+        "error",
+        undefined,
+        "visitor",
+        undefined,
+        {
+          error: error.message,
+          visitor_data: body,
+        },
+        undefined,
+        clientIP,
+        userAgent
+      );
+
       return NextResponse.json(
         { error: "방문자 등록에 실패했습니다." },
         { status: 400 }
       );
     }
+
+    // 방문자 등록 성공 로그 기록
+    await createSystemLog(
+      "VISITOR_REGISTRATION_SUCCESS",
+      "새로운 방문자가 등록되었습니다.",
+      "info",
+      undefined,
+      "visitor",
+      data.id,
+      {
+        visitor_id: data.id,
+        visitor_data: body,
+      },
+      undefined,
+      clientIP,
+      userAgent
+    );
 
     // 성공 응답에 Rate limit 헤더 추가
     const response = NextResponse.json(
@@ -333,6 +368,23 @@ export async function POST(request: NextRequest) {
     return response;
   } catch (error) {
     devLog.error("방문자 등록 API 오류:", error);
+
+    // 방문자 등록 예외 로그 기록
+    await createSystemLog(
+      "VISITOR_REGISTRATION_EXCEPTION",
+      "방문자 등록 중 예외가 발생했습니다.",
+      "error",
+      undefined,
+      "visitor",
+      undefined,
+      {
+        error: error instanceof Error ? error.message : String(error),
+      },
+      undefined,
+      clientIP,
+      userAgent
+    );
+
     return NextResponse.json(
       { error: "서버 오류가 발생했습니다." },
       { status: 500 }

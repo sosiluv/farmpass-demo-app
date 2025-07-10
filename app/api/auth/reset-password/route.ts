@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { createAuthLog } from "@/lib/utils/logging/system-log";
+import { createSystemLog } from "@/lib/utils/logging/system-log";
 import { devLog } from "@/lib/utils/logging/dev-logger";
 import { getClientIP, getUserAgent } from "@/lib/server/ip-helpers";
 
@@ -40,12 +40,14 @@ export async function POST(request: NextRequest) {
     });
 
     if (error) {
-      // 실패 로그 기록
-      await createAuthLog(
+      // 실패 로그 기록 (error 레벨로 변경)
+      await createSystemLog(
         "PASSWORD_RESET_REQUEST_FAILED",
         `비밀번호 재설정 요청 실패: ${email} - ${error.message}`,
-        email,
+        "error",
         userData?.id,
+        "auth",
+        undefined,
         {
           error_type: error.code || "unknown_error",
           error_message: error.message,
@@ -53,7 +55,9 @@ export async function POST(request: NextRequest) {
           user_agent: userAgent,
           timestamp: new Date().toISOString(),
         },
-        { ip: clientIP, userAgent }
+        email,
+        clientIP,
+        userAgent
       ).catch((logError) =>
         devLog.error("Failed to log password reset failure:", logError)
       );
@@ -110,18 +114,22 @@ export async function POST(request: NextRequest) {
     await supabase.auth.signOut();
 
     // 성공 로그 기록
-    await createAuthLog(
+    await createSystemLog(
       "PASSWORD_RESET_REQUESTED",
       `비밀번호 재설정 요청: ${email}`,
-      email,
+      "info",
       userData?.id,
+      "auth",
+      undefined,
       {
         request_ip: clientIP,
         user_agent: userAgent,
         timestamp: new Date().toISOString(),
         action_type: "security_event",
       },
-      { ip: clientIP, userAgent }
+      email,
+      clientIP,
+      userAgent
     ).catch((logError) =>
       devLog.error("Failed to log password reset request:", logError)
     );
@@ -131,18 +139,24 @@ export async function POST(request: NextRequest) {
       { status: 200 }
     );
   } catch (error) {
-    // 시스템 에러 로그 기록
-    await createAuthLog(
+    // 시스템 에러 로그 기록 (error 레벨로 변경)
+    await createSystemLog(
       "PASSWORD_RESET_SYSTEM_ERROR",
-      `비밀번호 재설정 시스템 오류`,
+      `비밀번호 재설정 시스템 오류: ${
+        error instanceof Error ? error.message : String(error)
+      }`,
+      "error",
       undefined,
+      "auth",
       undefined,
       {
         error: error instanceof Error ? error.message : String(error),
         stack: error instanceof Error ? error.stack : undefined,
         timestamp: new Date().toISOString(),
       },
-      { ip: clientIP, userAgent }
+      undefined,
+      clientIP,
+      userAgent
     ).catch((logError) =>
       devLog.error("Failed to log password reset system error:", logError)
     );

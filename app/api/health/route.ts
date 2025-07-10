@@ -2,6 +2,11 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { slackNotifier } from "@/lib/slack";
 import { devLog } from "@/lib/utils/logging/dev-logger";
+import {
+  logMemoryUsage,
+  logSystemWarning,
+  logApiError,
+} from "@/lib/utils/logging/system-log";
 
 // package.json에서 버전 정보 가져오기
 const packageJson = require("../../../package.json");
@@ -116,10 +121,40 @@ export async function GET() {
     // 6. 시스템 리소스 경고 알림 (비동기 처리)
     // =================================
     const totalCpuUsage = cpuUsagePercent.user + cpuUsagePercent.system;
+
+    // 메모리 사용량 로깅
+    await logMemoryUsage({
+      heap_used: memoryUsage.heapUsed / 1024 / 1024, // MB로 변환
+      heap_total: memoryUsage.heapTotal / 1024 / 1024, // MB로 변환
+      warning_threshold: Math.round(MEMORY_THRESHOLD / 1024 / 1024), // MB로 변환
+    });
+
     if (
       memoryUsage.heapUsed > MEMORY_THRESHOLD ||
       totalCpuUsage > CPU_THRESHOLD
     ) {
+      // 시스템 리소스 경고 로깅
+      await logSystemWarning(
+        "SYSTEM_RESOURCE_WARNING",
+        `시스템 리소스 사용량이 높습니다. 메모리: ${Math.round(
+          memoryUsage.heapUsed / 1024 / 1024
+        )}MB/${Math.round(
+          memoryUsage.heapTotal / 1024 / 1024
+        )}MB, CPU: ${totalCpuUsage}%`,
+        {
+          ip: "health-check",
+          userAgent: "health-check",
+        },
+        {
+          memory_used_mb: Math.round(memoryUsage.heapUsed / 1024 / 1024),
+          memory_total_mb: Math.round(memoryUsage.heapTotal / 1024 / 1024),
+          memory_threshold_mb: Math.round(MEMORY_THRESHOLD / 1024 / 1024),
+          cpu_usage_percent: totalCpuUsage,
+          cpu_threshold_percent: CPU_THRESHOLD,
+          response_time_ms: totalResponseTime,
+        }
+      );
+
       slackNotifier
         .sendSystemAlert(
           "warning",
@@ -241,6 +276,18 @@ export async function GET() {
     // =================================
     // 데이터베이스 연결 실패 등 문제 발생 시
     devLog.error("Health check failed:", error);
+
+    // API 에러 로깅
+    await logApiError(
+      "/api/health",
+      "GET",
+      error instanceof Error ? error : String(error),
+      undefined,
+      {
+        ip: "health-check",
+        userAgent: "health-check",
+      }
+    );
 
     // =================================
     // 9. 시스템 오류 시 Slack 알림 (비동기 처리)

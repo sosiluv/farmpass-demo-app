@@ -55,25 +55,22 @@ export function useAdminUsersQuery() {
       const totalUsers = users?.length ?? 0;
       const activeUsers = users?.filter((u) => u.is_active).length ?? 0;
 
-      // 농장주 수 계산 (account_type과 farm_members.role을 함께 고려)
+      // 농장주 수 계산 (farm_members.role 기준)
       const farmOwners =
         users?.filter((user) => {
-          if (user.account_type === "farm_owner") return true;
           if (user.farm_members && user.farm_members.length > 0) {
             const farmMemberRole = user.farm_members[0]?.role;
-            return (
-              farmMemberRole === "owner" || farmMemberRole === "farm_owner"
-            );
+            return farmMemberRole === "owner";
           }
           return false;
         }).length ?? 0;
 
-      // 오늘 로그인 수 (시스템 로그에서 로그인 관련 액션 조회)
+      // 오늘 로그인 수 (시스템 로그에서 로그인 성공 액션만 조회)
       const today = new Date().toISOString().split("T")[0];
       const { data: todayLogs } = await supabase
         .from("system_logs")
         .select("*")
-        .like("action", "%LOGIN%")
+        .eq("action", "LOGIN_SUCCESS")
         .gte("created_at", today);
 
       const todayLogins = todayLogs?.length ?? 0;
@@ -110,12 +107,9 @@ export function useAdminUsersQuery() {
       const farmOwnersThisMonth =
         users?.filter((user) => {
           if (new Date(user.created_at) > thisMonthEnd) return false;
-          if (user.account_type === "farm_owner") return true;
           if (user.farm_members && user.farm_members.length > 0) {
             const farmMemberRole = user.farm_members[0]?.role;
-            return (
-              farmMemberRole === "owner" || farmMemberRole === "farm_owner"
-            );
+            return farmMemberRole === "owner";
           }
           return false;
         }).length ?? 0;
@@ -138,12 +132,9 @@ export function useAdminUsersQuery() {
       const farmOwnersLastMonth =
         users?.filter((user) => {
           if (new Date(user.created_at) > lastMonthEnd) return false;
-          if (user.account_type === "farm_owner") return true;
           if (user.farm_members && user.farm_members.length > 0) {
             const farmMemberRole = user.farm_members[0]?.role;
-            return (
-              farmMemberRole === "owner" || farmMemberRole === "farm_owner"
-            );
+            return farmMemberRole === "owner";
           }
           return false;
         }).length ?? 0;
@@ -158,7 +149,7 @@ export function useAdminUsersQuery() {
       const { data: lastMonthLogs } = await supabase
         .from("system_logs")
         .select("*")
-        .like("action", "%LOGIN%")
+        .eq("action", "LOGIN_SUCCESS")
         .gte("created_at", lastMonthStart)
         .lt(
           "created_at",

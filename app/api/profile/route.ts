@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { logDataChange } from "@/lib/utils/logging/system-log";
+import { createSystemLog } from "@/lib/utils/logging/system-log";
 import { devLog } from "@/lib/utils/logging/dev-logger";
 import { requireAuth } from "@/lib/server/auth-utils";
 import { getClientIP, getUserAgent } from "@/lib/server/ip-helpers";
+import { logApiError } from "@/lib/utils/logging/system-log";
 
 // PATCH: 프로필 정보 수정
 export async function PATCH(request: NextRequest) {
@@ -29,9 +30,12 @@ export async function PATCH(request: NextRequest) {
       })
       .eq("id", user.id);
     if (error) throw error;
-    await logDataChange(
+    await createSystemLog(
       "PROFILE_UPDATE",
-      "PROFILE",
+      `프로필 정보 수정: ${Object.keys(data).length}개 필드 수정`,
+      "info",
+      user.id,
+      "user",
       user.id,
       {
         target_user_id: user.id,
@@ -39,11 +43,9 @@ export async function PATCH(request: NextRequest) {
         updated_fields: Object.keys(data),
         status: "success",
       },
-      {
-        ip: clientIP,
-        email: user.email,
-        userAgent,
-      }
+      user.email,
+      clientIP,
+      userAgent
     );
     return NextResponse.json(
       { success: true },
@@ -55,9 +57,27 @@ export async function PATCH(request: NextRequest) {
     );
   } catch (error) {
     devLog.error("[API] PROFILE_UPDATE 실패:", error);
-    await logDataChange(
+
+    // API 에러 로깅
+    await logApiError(
+      "/api/profile",
+      "PATCH",
+      error instanceof Error ? error : String(error),
+      user?.id,
+      {
+        ip: clientIP,
+        userAgent,
+      }
+    );
+
+    await createSystemLog(
       "PROFILE_UPDATE_FAILED",
-      "PROFILE",
+      `프로필 정보 수정 실패: ${
+        error instanceof Error ? error.message : String(error)
+      }`,
+      "error",
+      user?.id,
+      "user",
       user?.id,
       {
         target_user_id: user?.id,
@@ -65,12 +85,10 @@ export async function PATCH(request: NextRequest) {
         error: error instanceof Error ? error.message : String(error),
         status: "failed",
       },
-      {
-        ip: clientIP,
-        email: user?.email,
-        userAgent,
-      }
-    ).catch((logError) =>
+      user?.email,
+      clientIP,
+      userAgent
+    ).catch((logError: any) =>
       devLog.error("[API] PROFILE_UPDATE 로그 실패:", logError)
     );
     return NextResponse.json(
@@ -104,9 +122,12 @@ export async function POST(request: NextRequest) {
       })
       .eq("id", user.id);
     if (updateError) throw updateError;
-    await logDataChange(
+    await createSystemLog(
       "PROFILE_IMAGE_UPLOAD",
-      "PROFILE",
+      `프로필 이미지 업로드: ${fileName}`,
+      "info",
+      user.id,
+      "user",
       user.id,
       {
         target_user_id: user.id,
@@ -115,11 +136,9 @@ export async function POST(request: NextRequest) {
         file_name: fileName,
         status: "success",
       },
-      {
-        ip: clientIP,
-        email: user.email,
-        userAgent,
-      }
+      user.email,
+      clientIP,
+      userAgent
     );
     return NextResponse.json(
       { success: true },
@@ -131,9 +150,27 @@ export async function POST(request: NextRequest) {
     );
   } catch (error) {
     devLog.error("[API] PROFILE_IMAGE_UPLOAD 실패:", error);
-    await logDataChange(
+
+    // API 에러 로깅
+    await logApiError(
+      "/api/profile",
+      "POST",
+      error instanceof Error ? error : String(error),
+      user?.id,
+      {
+        ip: clientIP,
+        userAgent,
+      }
+    );
+
+    await createSystemLog(
       "PROFILE_IMAGE_UPLOAD_FAILED",
-      "PROFILE",
+      `프로필 이미지 업로드 실패: ${
+        error instanceof Error ? error.message : String(error)
+      }`,
+      "error",
+      user?.id,
+      "user",
       user?.id,
       {
         target_user_id: user?.id,
@@ -141,12 +178,10 @@ export async function POST(request: NextRequest) {
         error: error instanceof Error ? error.message : String(error),
         status: "failed",
       },
-      {
-        ip: clientIP,
-        email: user?.email,
-        userAgent,
-      }
-    ).catch((logError) =>
+      user?.email,
+      clientIP,
+      userAgent
+    ).catch((logError: any) =>
       devLog.error("[API] PROFILE_IMAGE_UPLOAD 로그 실패:", logError)
     );
     return NextResponse.json(
@@ -179,9 +214,12 @@ export async function DELETE(request: NextRequest) {
       })
       .eq("id", user.id);
     if (updateError) throw updateError;
-    await logDataChange(
+    await createSystemLog(
       "PROFILE_IMAGE_DELETE",
-      "PROFILE",
+      "프로필 이미지 삭제",
+      "info",
+      user.id,
+      "user",
       user.id,
       {
         target_user_id: user.id,
@@ -189,11 +227,9 @@ export async function DELETE(request: NextRequest) {
         updated_fields: ["profile_image_url"],
         status: "success",
       },
-      {
-        ip: clientIP,
-        email: user.email,
-        userAgent,
-      }
+      user.email,
+      clientIP,
+      userAgent
     );
     return NextResponse.json(
       { success: true },
@@ -205,9 +241,27 @@ export async function DELETE(request: NextRequest) {
     );
   } catch (error) {
     devLog.error("[API] PROFILE_IMAGE_DELETE 실패:", error);
-    await logDataChange(
+
+    // API 에러 로깅
+    await logApiError(
+      "/api/profile",
+      "DELETE",
+      error instanceof Error ? error : String(error),
+      user?.id,
+      {
+        ip: clientIP,
+        userAgent,
+      }
+    );
+
+    await createSystemLog(
       "PROFILE_IMAGE_DELETE_FAILED",
-      "PROFILE",
+      `프로필 이미지 삭제 실패: ${
+        error instanceof Error ? error.message : String(error)
+      }`,
+      "error",
+      user?.id,
+      "user",
       user?.id,
       {
         target_user_id: user?.id,
@@ -215,12 +269,10 @@ export async function DELETE(request: NextRequest) {
         error: error instanceof Error ? error.message : String(error),
         status: "failed",
       },
-      {
-        ip: clientIP,
-        email: user?.email,
-        userAgent,
-      }
-    ).catch((logError) =>
+      user?.email,
+      clientIP,
+      userAgent
+    ).catch((logError: any) =>
       devLog.error("[API] PROFILE_IMAGE_DELETE 로그 실패:", logError)
     );
     return NextResponse.json(

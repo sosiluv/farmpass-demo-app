@@ -1,42 +1,44 @@
 import { createClient } from "@/lib/supabase/server";
-import { createServiceRoleClient } from "@/lib/supabase/service-role";
 import { NextRequest, NextResponse } from "next/server";
-import { logDataChange } from "@/lib/utils/logging/system-log";
+import { createSystemLog } from "@/lib/utils/logging/system-log";
 import { devLog } from "@/lib/utils/logging/dev-logger";
 import { getClientIP, getUserAgent } from "@/lib/server/ip-helpers";
 import { requireAuth } from "@/lib/server/auth-utils";
+import { prisma } from "@/lib/prisma";
 
 export async function GET(
   request: NextRequest,
   { params }: { params: { farmId: string } }
 ) {
   try {
-    // 공개 농장 정보 조회를 위해 Service Role 사용 (RLS 우회)
-    const supabase = createServiceRoleClient();
+    devLog.log("🔍 농장 정보 조회 시작:", { farmId: params.farmId });
 
-    // 특정 농장 정보 조회 (공개 API)
-    const { data: farm, error } = await supabase
-      .from("farms")
-      .select(
-        `
-        id,
-        farm_name,
-        farm_address,
-        farm_detailed_address,
-        manager_name,
-        manager_phone,
-        farm_type,
-        is_active,
-        created_at
-      `
-      )
-      .eq("id", params.farmId)
-      .eq("is_active", true) // 활성화된 농장만 조회
-      .single();
+    // Prisma를 사용하여 RLS 우회
+    const farm = await prisma.farms.findUnique({
+      where: { id: params.farmId },
+      select: {
+        id: true,
+        farm_name: true,
+        farm_address: true,
+        farm_detailed_address: true,
+        manager_name: true,
+        manager_phone: true,
+        farm_type: true,
+        is_active: true,
+        created_at: true,
+      },
+    });
 
-    if (error || !farm) {
+    devLog.log("🔍 농장 조회 결과:", {
+      hasData: !!farm,
+      farmId: params.farmId,
+      isActive: farm?.is_active,
+    });
+
+    if (!farm) {
+      devLog.log("농장을 찾을 수 없음:", { farmId: params.farmId });
       return NextResponse.json(
-        { error: "Farm not found or inactive" },
+        { error: "Farm not found" },
         { status: 404, headers: { "Cache-Control": "no-store" } }
       );
     }
@@ -118,10 +120,15 @@ export async function PUT(
     }
 
     // 농장 수정 로그
-    await logDataChange(
+    await createSystemLog(
       "FARM_UPDATE",
-      "FARM",
+      `농장 정보 수정: ${farm.farm_name} (${
+        Object.keys(farmData).length
+      }개 필드 수정)`,
+      "info",
       user.id,
+      "farm",
+      params.farmId,
       {
         farm_id: params.farmId,
         updated_fields: Object.keys(farmData),
@@ -129,11 +136,9 @@ export async function PUT(
         action_type: "farm_management",
         admin_action: isAdmin, // 관리자 액션 여부 기록
       },
-      {
-        ip: clientIP,
-        email: user.email,
-        userAgent: userAgent,
-      }
+      user.email,
+      clientIP,
+      userAgent
     );
 
     return NextResponse.json(
@@ -144,10 +149,15 @@ export async function PUT(
     devLog.error("Error updating farm:", error);
 
     // 농장 수정 실패 로그 기록
-    await logDataChange(
+    await createSystemLog(
       "FARM_UPDATE_FAILED",
-      "FARM",
+      `농장 정보 수정 실패: ${
+        error instanceof Error ? error.message : "Unknown error"
+      } (농장 ID: ${params.farmId})`,
+      "error",
       user?.id,
+      "farm",
+      params.farmId,
       {
         error_message: error instanceof Error ? error.message : "Unknown error",
         farm_id: params.farmId,
@@ -155,11 +165,10 @@ export async function PUT(
         action_type: "farm_management",
         status: "failed",
       },
-      {
-        ip: clientIP,
-        userAgent: userAgent,
-      }
-    ).catch((logError) =>
+      user?.email,
+      clientIP,
+      userAgent
+    ).catch((logError: any) =>
       devLog.error("Failed to log farm update error:", logError)
     );
 
@@ -240,21 +249,24 @@ export async function DELETE(
     existingFarm = farm;
 
     // 농장 삭제 로그 (삭제 전에 기록)
-    await logDataChange(
+    await createSystemLog(
       "FARM_DELETE",
-      "FARM",
+      `농장 삭제: ${existingFarm.farm_name || "Unknown"} (농장 ID: ${
+        params.farmId
+      })`,
+      "warn",
       user.id,
+      "farm",
+      params.farmId,
       {
         farm_id: params.farmId,
         farm_name: existingFarm.farm_name || "Unknown",
         action_type: "farm_management",
         admin_action: isAdmin, // 관리자 액션 여부 기록
       },
-      {
-        ip: clientIP,
-        email: user.email,
-        userAgent: userAgent,
-      }
+      user.email,
+      clientIP,
+      userAgent
     );
 
     // 농장 삭제 (CASCADE로 farm_members도 자동 삭제됨)
@@ -272,10 +284,17 @@ export async function DELETE(
     devLog.error("Error deleting farm:", error);
 
     // 농장 삭제 실패 로그 기록
-    await logDataChange(
+    await createSystemLog(
       "FARM_DELETE_FAILED",
-      "FARM",
+      `농장 삭제 실패: ${
+        error instanceof Error ? error.message : "Unknown error"
+      } (농장: ${existingFarm?.farm_name || "Unknown"}, 농장 ID: ${
+        params.farmId
+      })`,
+      "error",
       user?.id,
+      "farm",
+      params.farmId,
       {
         error_message: error instanceof Error ? error.message : "Unknown error",
         farm_id: params.farmId,
@@ -284,11 +303,10 @@ export async function DELETE(
         status: "failed",
         admin_action: user ? isAdmin : false, // 관리자 액션 여부 기록
       },
-      {
-        ip: clientIP,
-        userAgent: userAgent,
-      }
-    ).catch((logError) =>
+      user?.email,
+      clientIP,
+      userAgent
+    ).catch((logError: any) =>
       devLog.error("Failed to log farm deletion error:", logError)
     );
 

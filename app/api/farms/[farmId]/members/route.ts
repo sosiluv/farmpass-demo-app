@@ -1,14 +1,18 @@
 import { createClient } from "@/lib/supabase/server";
-import { NextResponse } from "next/server";
-import { logDataChange } from "@/lib/utils/logging/system-log";
+import { NextRequest, NextResponse } from "next/server";
+import { createSystemLog } from "@/lib/utils/logging/system-log";
 import { devLog } from "@/lib/utils/logging/dev-logger";
 import { requireAuth } from "@/lib/server/auth-utils";
+import { getClientIP, getUserAgent } from "@/lib/server/ip-helpers";
 
 // GET - 농장 멤버 목록 조회
 export async function GET(
-  request: Request,
+  request: NextRequest,
   { params }: { params: { farmId: string } }
 ) {
+  const clientIP = getClientIP(request);
+  const userAgent = getUserAgent(request);
+
   try {
     // 인증된 사용자 확인
     // 인증 확인
@@ -68,11 +72,22 @@ export async function GET(
     if (membersError) throw membersError;
 
     // 농장 멤버 조회 로그 기록
-    await logDataChange("MEMBER_READ", "MEMBER", user.id, {
-      farm_id: params.farmId,
-      member_count: members?.length || 0,
-      action_type: "member_management",
-    });
+    await createSystemLog(
+      "MEMBER_READ",
+      `농장 멤버 조회: ${members?.length || 0}명 (농장 ID: ${params.farmId})`,
+      "info",
+      user.id,
+      "member",
+      undefined,
+      {
+        farm_id: params.farmId,
+        member_count: members?.length || 0,
+        action_type: "member_management",
+      },
+      user.email,
+      clientIP,
+      userAgent
+    );
 
     return NextResponse.json(
       { members },
@@ -86,12 +101,25 @@ export async function GET(
     devLog.error("Error fetching farm members:", error);
 
     // 농장 멤버 조회 실패 로그 기록
-    await logDataChange("MEMBER_READ_FAILED", "MEMBER", undefined, {
-      error_message: error instanceof Error ? error.message : "Unknown error",
-      farm_id: params.farmId,
-      action_type: "member_management",
-      status: "failed",
-    }).catch((logError) =>
+    await createSystemLog(
+      "MEMBER_READ_FAILED",
+      `농장 멤버 조회 실패: ${
+        error instanceof Error ? error.message : "Unknown error"
+      } (농장 ID: ${params.farmId})`,
+      "error",
+      undefined,
+      "member",
+      undefined,
+      {
+        error_message: error instanceof Error ? error.message : "Unknown error",
+        farm_id: params.farmId,
+        action_type: "member_management",
+        status: "failed",
+      },
+      undefined,
+      clientIP,
+      userAgent
+    ).catch((logError: any) =>
       devLog.error("Failed to log member fetch error:", logError)
     );
 
@@ -116,9 +144,11 @@ async function isFarmMember(supabase: any, farmId: string, userId: string) {
 
 // POST - 농장 멤버 추가
 export async function POST(
-  request: Request,
+  request: NextRequest,
   { params }: { params: { farmId: string } }
 ) {
+  const clientIP = getClientIP(request);
+  const userAgent = getUserAgent(request);
   let user: any = null;
 
   try {
@@ -214,16 +244,27 @@ export async function POST(
     }
 
     // 농장 멤버 추가 로그 기록
-    await logDataChange("MEMBER_CREATE", "MEMBER", user.id, {
-      member_id: newMember.id,
-      farm_id: params.farmId,
-      farm_name: farm.farm_name,
-      member_email: profileData.email,
-      member_name: profileData.name,
-      member_role: role,
-      target_user_id: profileData.id,
-      action_type: "member_management",
-    });
+    await createSystemLog(
+      "MEMBER_CREATE",
+      `농장 멤버 추가: ${profileData.name} (${profileData.email}) - ${role} 역할 (농장: ${farm.farm_name})`,
+      "info",
+      user.id,
+      "member",
+      newMember.id,
+      {
+        member_id: newMember.id,
+        farm_id: params.farmId,
+        farm_name: farm.farm_name,
+        member_email: profileData.email,
+        member_name: profileData.name,
+        member_role: role,
+        target_user_id: profileData.id,
+        action_type: "member_management",
+      },
+      user.email,
+      clientIP,
+      userAgent
+    );
 
     // 응답용 멤버 데이터 구성
     const memberWithProfile = {
@@ -257,12 +298,25 @@ export async function POST(
     devLog.error("Error adding farm member:", error);
 
     // 농장 멤버 추가 실패 로그 기록
-    await logDataChange("MEMBER_CREATE_FAILED", "MEMBER", user?.id, {
-      error_message: error instanceof Error ? error.message : "Unknown error",
-      farm_id: params.farmId,
-      action_type: "member_management",
-      status: "failed",
-    }).catch((logError) =>
+    await createSystemLog(
+      "MEMBER_CREATE_FAILED",
+      `농장 멤버 추가 실패: ${
+        error instanceof Error ? error.message : "Unknown error"
+      } (농장 ID: ${params.farmId})`,
+      "error",
+      user?.id,
+      "member",
+      undefined,
+      {
+        error_message: error instanceof Error ? error.message : "Unknown error",
+        farm_id: params.farmId,
+        action_type: "member_management",
+        status: "failed",
+      },
+      user?.email,
+      clientIP,
+      userAgent
+    ).catch((logError: any) =>
       devLog.error("Failed to log member addition error:", logError)
     );
 

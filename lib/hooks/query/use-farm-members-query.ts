@@ -22,7 +22,6 @@ export interface FarmMembers {
 
 /**
  * React Query 기반 Farm Members Hook
- * 기존 use-farm-members-preview-safe.ts를 React Query로 마이그레이션
  */
 export function useFarmMembersQuery(farmId: string | null) {
   const { state } = useAuth();
@@ -64,14 +63,16 @@ export function useFarmMembersQuery(farmId: string | null) {
             };
           })
           .sort((a: any, b: any) => {
-            // 농장 소유자를 최상단으로 정렬
-            if (a.role === "owner" && b.role !== "owner") return -1;
-            if (b.role === "owner" && a.role !== "owner") return 1;
-
-            // 나머지는 이름 순으로 정렬
-            const nameA = a.representative_name || "";
-            const nameB = b.representative_name || "";
-            return nameA.localeCompare(nameB);
+            // role 순서: owner > manager > viewer
+            if (a.role !== b.role) {
+              if (a.role === "owner") return -1;
+              if (b.role === "owner") return 1;
+              if (a.role === "manager") return -1;
+              if (b.role === "manager") return 1;
+            }
+            return (a.representative_name || "").localeCompare(
+              b.representative_name || ""
+            );
           });
 
         return {

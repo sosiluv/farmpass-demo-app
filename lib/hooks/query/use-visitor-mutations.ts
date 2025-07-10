@@ -98,45 +98,11 @@ export function useDeleteVisitorMutation() {
 }
 
 /**
- * 방문자 일괄 삭제 Mutation Hook
- */
-export function useBulkDeleteVisitorsMutation() {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: async (
-      visitorIds: string[]
-    ): Promise<{ success: boolean; deletedCount: number }> => {
-      const response = await apiClient("/api/visitors/bulk-delete", {
-        method: "DELETE",
-        body: JSON.stringify({ visitorIds }),
-        context: "방문자 일괄 삭제",
-        onError: (error, context) => {
-          handleError(error, context);
-        },
-      });
-      return response;
-    },
-    onSuccess: (result, visitorIds) => {
-      // 모든 방문자 관련 쿼리 무효화
-      queryClient.invalidateQueries({
-        queryKey: visitorsKeys.all,
-        exact: false,
-      });
-      queryClient.invalidateQueries({
-        queryKey: dashboardKeys.stats(),
-      });
-    },
-  });
-}
-
-/**
  * 방문자 Mutation Hook들을 통합한 객체
  */
 export function useVisitorMutations() {
   const updateMutation = useUpdateVisitorMutation();
   const deleteMutation = useDeleteVisitorMutation();
-  const bulkDeleteMutation = useBulkDeleteVisitorsMutation();
 
   return {
     // 수정
@@ -151,16 +117,7 @@ export function useVisitorMutations() {
     isDeleting: deleteMutation.isPending,
     deleteError: deleteMutation.error,
 
-    // 일괄 삭제
-    bulkDeleteVisitors: bulkDeleteMutation.mutate,
-    bulkDeleteVisitorsAsync: bulkDeleteMutation.mutateAsync,
-    isBulkDeleting: bulkDeleteMutation.isPending,
-    bulkDeleteError: bulkDeleteMutation.error,
-
     // 전체 상태
-    isLoading:
-      updateMutation.isPending ||
-      deleteMutation.isPending ||
-      bulkDeleteMutation.isPending,
+    isLoading: updateMutation.isPending || deleteMutation.isPending,
   };
 }

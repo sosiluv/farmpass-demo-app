@@ -16,11 +16,7 @@ async function initializeVapidKeys() {
       settings?.vapidPrivateKey || process.env.VAPID_PRIVATE_KEY;
 
     if (publicKey && privateKey) {
-      webpush.setVapidDetails(
-        "mailto:admin@farm-system.com",
-        publicKey,
-        privateKey
-      );
+      webpush.setVapidDetails("mailto:k331502@nate.com", publicKey, privateKey);
       return true;
     }
     return false;
