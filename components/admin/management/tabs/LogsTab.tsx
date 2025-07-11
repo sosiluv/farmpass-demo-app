@@ -74,7 +74,7 @@ export function LogsTab() {
       description="로그 정보를 불러오는 중 문제가 발생했습니다. 페이지를 새로고침하거나 잠시 후 다시 시도해주세요."
     >
       <LogsDataManager>
-        {({ logs, isLoading, error, lastUpdate, setLogs }) => (
+        {({ logs, isLoading, error, lastUpdate, refetch }) => (
           <LogsFilterManager logs={logs}>
             {({
               filters,
@@ -85,7 +85,7 @@ export function LogsTab() {
               setCategoryFilter,
               filteredLogs,
             }) => (
-              <LogsActionManager logs={logs} setLogs={setLogs}>
+              <LogsActionManager logs={logs} refetch={refetch}>
                 {({
                   handleDeleteLog,
                   handleDeleteAllLogs,

@@ -4,7 +4,7 @@ import type { SystemLog } from "@/lib/types/system";
 
 interface LogsActionManagerProps {
   logs: SystemLog[];
-  setLogs: React.Dispatch<React.SetStateAction<SystemLog[]>>;
+  refetch: () => void;
   children: (actions: {
     handleDeleteLog: (id: string) => Promise<void>;
     handleDeleteAllLogs: () => Promise<void>;
@@ -14,7 +14,7 @@ interface LogsActionManagerProps {
 
 export function LogsActionManager({
   logs,
-  setLogs,
+  refetch,
   children,
 }: LogsActionManagerProps) {
   const { showInfo, showWarning, showSuccess, showError } = useCommonToast();
@@ -28,9 +28,8 @@ export function LogsActionManager({
       { action: "delete_single", logId: id },
       {
         onSuccess: () => {
-          setLogs((prevLogs: SystemLog[]) =>
-            prevLogs.filter((log: SystemLog) => log.id !== id)
-          );
+          // React Query가 자동으로 캐시를 무효화하므로 refetch 호출
+          refetch();
           showSuccess("로그 삭제 완료", "로그가 삭제되었습니다.");
         },
         onError: (error) => {
@@ -56,7 +55,8 @@ export function LogsActionManager({
       { action: "delete_all", beforeCount: logs.length },
       {
         onSuccess: () => {
-          setLogs([]);
+          // React Query가 자동으로 캐시를 무효화하므로 refetch 호출
+          refetch();
           showSuccess("전체 로그 삭제 완료", "모든 로그가 삭제되었습니다.");
         },
         onError: (error) => {
