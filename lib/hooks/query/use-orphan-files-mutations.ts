@@ -25,7 +25,7 @@ export function useCleanupOrphanFilesMutation() {
     mutationFn: async (): Promise<CleanupResult> => {
       devLog.log("[MUTATION] Orphan 파일 정리 시작");
 
-      const result = await apiClient("/api/admin/cleanup-orphan-images", {
+      const result = await apiClient("/api/admin/orphan-files/cleanup", {
         method: "POST",
         context: "Orphan 파일 정리",
         onError: (error, context) => {

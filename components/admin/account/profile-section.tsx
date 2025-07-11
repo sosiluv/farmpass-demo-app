@@ -152,7 +152,7 @@ export function ProfileSection({
                 }}
                 onDelete={handleImageDelete}
                 currentImage={profileImagePreview}
-                avatarSize="lg"
+                avatarSize="xl"
                 label="프로필 사진"
                 showCamera={false}
               />

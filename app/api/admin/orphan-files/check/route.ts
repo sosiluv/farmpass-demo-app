@@ -17,7 +17,20 @@ async function getAllStorageFiles(
       .list(prefix, { limit: 1000 });
 
     if (error) {
-      devLog.error(`[GET_ALL_FILES] Error listing ${bucket}/${prefix}:`, error);
+      // HTML 응답 오류인지 확인
+      if (error.message && error.message.includes("Unexpected token '<'")) {
+        devLog.error(`[GET_ALL_FILES] HTML 응답 오류 - ${bucket}/${prefix}:`, {
+          error: error.message,
+          bucket,
+          prefix,
+          suggestion: "Storage 버킷 권한 또는 환경 변수를 확인하세요",
+        });
+      } else {
+        devLog.error(
+          `[GET_ALL_FILES] Storage API 오류 - ${bucket}/${prefix}:`,
+          error
+        );
+      }
       return [];
     }
 
@@ -35,7 +48,13 @@ async function getAllStorageFiles(
       }
     }
   } catch (error) {
-    devLog.error(`[GET_ALL_FILES] Error in getAllStorageFiles:`, error);
+    // 예상치 못한 오류 처리
+    devLog.error(`[GET_ALL_FILES] 예상치 못한 오류 - ${bucket}/${prefix}:`, {
+      error: error instanceof Error ? error.message : String(error),
+      bucket,
+      prefix,
+      stack: error instanceof Error ? error.stack : undefined,
+    });
   }
 
   return allFiles;

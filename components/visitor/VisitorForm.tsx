@@ -317,7 +317,7 @@ export const VisitorForm = ({
   }
 
   return (
-    <Card className="shadow-lg rounded-lg sm:rounded-2xl border border-gray-100 bg-white/95">
+    <Card className="shadow-lg rounded-lg sm:rounded-2xl border border-gray-100 bg-white/95 max-w-lg mx-auto">
       <CardHeader className="text-center pb-2 sm:pb-3 border-b border-gray-100 px-3 sm:px-6 pt-3 sm:pt-6">
         <CardTitle className="text-base sm:text-2xl font-bold tracking-tight text-gray-900">
           방문자 등록
@@ -341,7 +341,7 @@ export const VisitorForm = ({
         </CardDescription>
       </CardHeader>
 
-      <CardContent className="p-3 sm:p-6">
+      <CardContent className="p-3 sm:p-6 w-full">
         <Form {...form}>
           <form
             onSubmit={form.handleSubmit(onSubmit)}
@@ -353,7 +353,7 @@ export const VisitorForm = ({
                 control={form.control}
                 name="profilePhoto"
                 render={({ field }) => (
-                  <FormItem className="mb-3 sm:mb-6 flex flex-col items-center">
+                  <FormItem className="mb-3 sm:mb-6 w-full flex flex-col items-center">
                     <FormLabel className="sr-only">
                       {LABELS.PROFILE_PHOTO}
                     </FormLabel>
@@ -370,7 +370,7 @@ export const VisitorForm = ({
                         }
                         required={settings.requireVisitorPhoto}
                         showCamera={true}
-                        avatarSize="md"
+                        avatarSize="xl"
                         label={LABELS.PROFILE_PHOTO}
                         className="shadow border border-gray-100 bg-white rounded-lg sm:rounded-xl p-2 sm:p-4"
                       />

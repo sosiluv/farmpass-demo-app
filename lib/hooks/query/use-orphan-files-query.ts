@@ -20,7 +20,7 @@ export function useOrphanFilesStatusQuery() {
     async (): Promise<OrphanFilesStatus> => {
       devLog.log("[QUERY] Orphan 파일 상태 조회 시작");
 
-      const data = await apiClient("/api/admin/check-orphan-images", {
+      const data = await apiClient("/api/admin/orphan-files/check", {
         method: "GET",
         context: "Orphan 파일 상태 조회",
         onError: (error, context) => {

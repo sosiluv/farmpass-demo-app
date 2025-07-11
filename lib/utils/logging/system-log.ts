@@ -690,6 +690,8 @@ export const isAuditLog = (log: any): boolean => {
     "LOG_DELETE",
     "EXPIRED_COUNT_INVALID_PARAMS",
     "EXPIRED_COUNT_QUERY_FAILED",
+    "ORPHAN_FILE_CLEANUP",
+    "ORPHAN_FILE_CLEANUP_ERROR",
 
     // 보안 관련
     "RATE_LIMIT_EXCEEDED",
@@ -782,6 +784,7 @@ export const isErrorLog = (log: any): boolean => {
     // 관리 기능 오류
     "EXPIRED_COUNT_INVALID_PARAMS",
     "EXPIRED_COUNT_QUERY_FAILED",
+    "ORPHAN_FILE_CLEANUP_ERROR",
 
     // 보안 관련 오류
     "RATE_LIMIT_EXCEEDED",
