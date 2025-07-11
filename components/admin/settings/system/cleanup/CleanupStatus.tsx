@@ -1,4 +1,5 @@
 import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
 import type { CleanupStatus as CleanupStatusType } from "@/lib/types/settings";
 
 interface CleanupStatusProps {
@@ -9,7 +10,18 @@ export function CleanupStatus({ cleanupStatus }: CleanupStatusProps) {
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
       <div className="space-y-2">
-        <Label className="text-sm font-medium">만료된 시스템 로그</Label>
+        <div className="flex items-center justify-between">
+          <Label className="text-sm font-medium">만료된 시스템 로그</Label>
+          <Badge
+            variant={
+              cleanupStatus.expiredData.systemLogs.count > 0
+                ? "destructive"
+                : "default"
+            }
+          >
+            {cleanupStatus.expiredData.systemLogs.count}개
+          </Badge>
+        </div>
         <div className="p-3 bg-muted rounded-lg">
           <p
             className={`text-2xl font-bold ${
@@ -35,7 +47,18 @@ export function CleanupStatus({ cleanupStatus }: CleanupStatusProps) {
         </div>
       </div>
       <div className="space-y-2">
-        <Label className="text-sm font-medium">만료된 방문자 데이터</Label>
+        <div className="flex items-center justify-between">
+          <Label className="text-sm font-medium">만료된 방문자 데이터</Label>
+          <Badge
+            variant={
+              cleanupStatus.expiredData.visitorEntries.count > 0
+                ? "destructive"
+                : "default"
+            }
+          >
+            {cleanupStatus.expiredData.visitorEntries.count}개
+          </Badge>
+        </div>
         <div className="p-3 bg-muted rounded-lg">
           <p
             className={`text-2xl font-bold ${

@@ -1,13 +1,8 @@
 import { supabase } from "@/lib/supabase/client";
-import { v4 as uuidv4 } from "uuid";
 import { devLog } from "@/lib/utils/logging/dev-logger";
 import {
   MAX_UPLOAD_SIZE_MB,
   DEFAULT_IMAGE_CACHE_CONTROL,
-  DEFAULT_IMAGE_QUALITY,
-  DEFAULT_IMAGE_WIDTH,
-  DEFAULT_IMAGE_HEIGHT,
-  DEFAULT_IMAGE_FORMAT,
 } from "@/lib/constants/upload";
 
 export interface UploadImageOptions {
@@ -20,11 +15,10 @@ export interface UploadImageOptions {
 export interface UniversalUploadOptions {
   file: File;
   bucket: "profiles" | "visitor-photos";
-  path?: string | ((file: File) => string);
-  userId?: string;
-  farmId?: string;
-  maxSizeMB?: number;
   allowedTypes: string[];
+  path?: string | ((file: File) => string);
+  prevFileName?: string;
+  maxSizeMB?: number;
   cacheControl?: string;
 }
 
@@ -42,11 +36,10 @@ export class ImageUploadError extends Error {
 export async function uploadImageUniversal({
   file,
   bucket,
-  path,
-  userId,
-  farmId,
-  maxSizeMB = MAX_UPLOAD_SIZE_MB,
   allowedTypes,
+  path,
+  prevFileName,
+  maxSizeMB = MAX_UPLOAD_SIZE_MB,
   cacheControl = DEFAULT_IMAGE_CACHE_CONTROL,
 }: UniversalUploadOptions): Promise<{ publicUrl: string; fileName: string }> {
   try {
@@ -65,26 +58,22 @@ export async function uploadImageUniversal({
       );
     }
 
+    // profiles/visitor-photos 모두 prevFileName이 있으면 기존 파일 삭제 (단일 파일 삭제로 통일)
+    if (prevFileName) {
+      await deleteImageUniversal({
+        bucket,
+        fileName: prevFileName,
+      });
+    }
+
     // 파일명 생성
     let fileName: string;
-
     if (typeof path === "function") {
       fileName = path(file);
     } else if (path) {
       fileName = path;
     } else {
-      // 기본 파일명 생성 로직
-      fileName = generateFileName({
-        file,
-        bucket,
-        userId,
-        farmId,
-      });
-    }
-
-    // 기존 파일 삭제 (프로필 이미지인 경우) - 캐시 버스팅을 위해 이전 파일들 정리
-    if (bucket === "profiles" && userId) {
-      await deleteExistingProfileImage(userId);
+      throw new ImageUploadError("path 파라미터는 반드시 지정해야 합니다.");
     }
 
     // Supabase Storage에 업로드 (캐시 버스팅을 위해 upsert 제거)
@@ -116,109 +105,6 @@ export async function uploadImageUniversal({
     }
     throw new ImageUploadError(
       "이미지 업로드 중 알 수 없는 오류가 발생했습니다."
-    );
-  }
-}
-
-/**
- * 기본 파일명 생성 함수
- */
-function generateFileName({
-  file,
-  bucket,
-  userId,
-  farmId,
-}: {
-  file: File;
-  bucket: string;
-  userId?: string;
-  farmId?: string;
-}): string {
-  const fileExt = file.name.split(".").pop()?.toLowerCase() || "jpg";
-  const timestamp = Date.now();
-
-  if (bucket === "profiles" && userId) {
-    // 프로필 이미지: userId/profile_timestamp.ext (캐시 버스팅)
-    return `${userId}/profile_${timestamp}.${fileExt}`;
-  } else if (bucket === "visitor-photos") {
-    // 방문자 이미지: farmId_timestamp_random.ext
-    const randomStr = Math.random().toString(36).substring(2, 8);
-    const dateStr = new Date(timestamp)
-      .toISOString()
-      .replace(/[-:]/g, "")
-      .replace("T", "_")
-      .split(".")[0];
-
-    return `${farmId}_${dateStr}_${randomStr}.${fileExt}`;
-  }
-
-  // 기본값
-  return `${timestamp}_${uuidv4()}.${fileExt}`;
-}
-
-/**
- * 기존 프로필 이미지 삭제 (캐시 버스팅 적용)
- */
-export async function deleteExistingProfileImage(
-  userId: string
-): Promise<void> {
-  try {
-    devLog.log(`[DELETE_PROFILE_IMAGE] Starting deletion for user: ${userId}`);
-
-    // 해당 사용자의 모든 프로필 이미지 파일을 찾아서 삭제
-    const { data: files, error: listError } = await supabase.storage
-      .from("profiles")
-      .list(userId, {
-        limit: 100,
-        search: "profile_",
-      });
-
-    if (listError) {
-      devLog.error("Failed to list existing profile images:", listError);
-
-      // 목록 조회 실패 시에도 에러를 던져서 사용자에게 알림
-      throw new ImageUploadError(
-        `프로필 이미지 목록 조회에 실패했습니다: ${listError.message}`
-      );
-    }
-
-    if (files && files.length > 0) {
-      const filePaths = files.map((file) => `${userId}/${file.name}`);
-      devLog.log(
-        `[DELETE_PROFILE_IMAGE] Found ${filePaths.length} files to delete:`,
-        filePaths
-      );
-
-      const { error: removeError } = await supabase.storage
-        .from("profiles")
-        .remove(filePaths);
-
-      if (removeError) {
-        devLog.error("Failed to remove profile images:", removeError);
-
-        // 삭제 실패 시 에러를 던져서 사용자에게 알림
-        throw new ImageUploadError(
-          `프로필 이미지 삭제에 실패했습니다: ${removeError.message}`
-        );
-      }
-
-      devLog.log(
-        `[DELETE_PROFILE_IMAGE] Successfully deleted ${filePaths.length} existing profile images for user ${userId}`
-      );
-    } else {
-      devLog.log(
-        `[DELETE_PROFILE_IMAGE] No existing profile images found for user ${userId}`
-      );
-    }
-  } catch (error) {
-    if (error instanceof ImageUploadError) {
-      throw error;
-    }
-
-    throw new ImageUploadError(
-      `프로필 이미지 삭제 중 알 수 없는 오류가 발생했습니다: ${
-        error instanceof Error ? error.message : String(error)
-      }`
     );
   }
 }
@@ -273,4 +159,21 @@ export async function deleteImageUniversal({
       "이미지 삭제 중 알 수 없는 오류가 발생했습니다."
     );
   }
+}
+
+/**
+ * Supabase publicUrl에서 Storage 내 파일 경로만 추출 (공통 유틸)
+ * 예: https://.../object/public/visitor-photos/abcd/20240607_153012_abc123.jpg
+ *   → extractStorageFileName(url, 'visitor-photos')
+ *   → abcd/20240607_153012_abc123.jpg
+ */
+export function extractStorageFileName(
+  url: string,
+  bucket: string
+): string | undefined {
+  if (!url) return undefined;
+  // 정규식: /{bucket}/(이후 전체)
+  const match = url.match(new RegExp(`${bucket}/(.+)$`));
+  if (match && match[1]) return match[1];
+  return undefined;
 }

@@ -4,11 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Logo } from "@/components/common";
 
-interface SuccessCardProps {
-  onClose: () => void;
-}
-
-export const SuccessCard = ({ onClose }: SuccessCardProps) => {
+export const SuccessCard = () => {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 py-4 px-3 sm:px-4">
       <Card className="w-full max-w-sm sm:max-w-md shadow-lg rounded-lg sm:rounded-2xl">
@@ -30,9 +26,9 @@ export const SuccessCard = ({ onClose }: SuccessCardProps) => {
             {/* 회사 브랜딩 */}
             <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 p-3 sm:p-4 rounded-lg">
               <div className="text-center space-y-1.5 sm:space-y-2">
-                <Logo showText className="justify-center" size="md" />
+                <Logo showText className="justify-center" size="xl" />
                 <p className="text-xs text-blue-600">
-                  Powered by <span className="font-bold">SWK KOREA</span>
+                  Powered by <span className="font-bold">SAMWON KOREA</span>
                 </p>
               </div>
             </div>
@@ -45,19 +41,12 @@ export const SuccessCard = ({ onClose }: SuccessCardProps) => {
           {/* 완료 안내 */}
           <div className="space-y-2 sm:space-y-3 pt-2 sm:pt-4">
             <p className="text-xs sm:text-sm text-gray-600">
-              이제 안전하게 창을 닫으시거나 회사 정보를 확인해보세요.
+              등록이 완료되었습니다. 브라우저의 X 버튼을 눌러 창을 닫아주세요.
             </p>
-            <Button
-              onClick={onClose}
-              className="w-full h-10 sm:h-11 text-sm sm:text-base"
-            >
-              창 닫기
-            </Button>
             <Button
               onClick={() => {
                 window.open("http://www.swkukorea.com/", "_blank");
               }}
-              variant="outline"
               className="w-full h-10 sm:h-11 text-sm sm:text-base"
             >
               회사 소개 보기
@@ -65,14 +54,19 @@ export const SuccessCard = ({ onClose }: SuccessCardProps) => {
           </div>
 
           <div className="text-xs text-muted-foreground mt-3 sm:mt-4 space-y-1 text-center">
-            <p>💡 추가 방문자가 있으시면 QR 코드를 다시 스캔해주세요.</p>
             <p>
               🌐 농장 출입 관리 시스템은{" "}
-              <span className="font-semibold text-blue-600">SWK KOREA</span>
+              <span className="font-semibold text-blue-600">SAMWON KOREA</span>
               에서 제공합니다.
             </p>
-            <p className="text-gray-400">
-              📱 모바일에서는 브라우저의 뒤로가기 버튼을 사용하세요.
+            <p className="text-gray-500">
+              📋 방문 기록은 농장 관리자에게 전송되었습니다.
+            </p>
+            <p className="text-gray-500">
+              🔒 개인정보는 3년 후 자동으로 삭제됩니다.
+            </p>
+            <p className="text-gray-500">
+              📞 문의사항이 있으시면 농장 관리자에게 연락해주세요.
             </p>
           </div>
         </CardContent>

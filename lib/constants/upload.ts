@@ -21,21 +21,8 @@ export const DEFAULT_IMAGE_HEIGHT = 1000;
 export const DEFAULT_IMAGE_FORMAT = "jpeg" as const;
 
 // 허용되는 파일 형식
-export const ALLOWED_IMAGE_TYPES = [
-  "image/jpeg",
-  "image/png",
-  "image/svg+xml",
-  "image/x-icon",
-  "image/heic",
-  "image/webp",
-] as const;
-export const ALLOWED_IMAGE_EXTENSIONS = [
-  ".jpg",
-  ".jpeg",
-  ".png",
-  ".svg",
-  ".ico",
-] as const;
+export const ALLOWED_IMAGE_TYPES = ["image/jpeg", "image/png"] as const;
+export const ALLOWED_IMAGE_EXTENSIONS = [".jpg", ".jpeg", ".png"] as const;
 
 // 알림 아이콘용 허용 파일 형식 (PNG, SVG만 권장)
 export const ALLOWED_NOTIFICATION_ICON_TYPES = [

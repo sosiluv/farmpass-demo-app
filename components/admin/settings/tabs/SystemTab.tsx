@@ -3,10 +3,13 @@
 import { motion } from "framer-motion";
 import { ErrorBoundary } from "@/components/error/error-boundary";
 import type { SystemSettings } from "@/lib/types/settings";
+import { useCleanupManager } from "@/lib/hooks/query/use-cleanup-manager";
+import { useOrphanFilesManager } from "@/lib/hooks/query/use-orphan-files-manager";
 
 // 분리된 컴포넌트들
 import { LoggingSection } from "../system/LoggingSection";
 import { CleanupSection } from "../system/CleanupSection";
+import { OrphanFilesSection } from "../system/OrphanFilesSection";
 import { SystemModeSection } from "../system/SystemModeSection";
 import { DocumentationSection } from "../system/DocumentationSection";
 import BroadcastSection from "../system/BroadcastSection";
@@ -25,6 +28,46 @@ export default function SystemTab({
   onUpdate,
   isLoading,
 }: SystemTabProps) {
+  // 정리 관리자 훅 사용
+  const {
+    cleanupStatus,
+    statusLoading,
+    cleanupLoading,
+    lastCleanupSuccess,
+    error,
+    fetchCleanupStatus,
+    executeCleanup,
+  } = useCleanupManager();
+
+  // Orphan 파일 관리자 훅 사용
+  const {
+    orphanFilesStatus,
+    orphanFilesLoading,
+    statusLoading: orphanStatusLoading,
+    lastCleanupSuccess: orphanLastCleanupSuccess,
+    error: orphanError,
+    fetchOrphanFilesStatus,
+    executeCleanup: executeOrphanCleanup,
+  } = useOrphanFilesManager();
+
+  // 정리 요청 핸들러
+  const handleCleanupRequest = async (type: "system_logs" | "all") => {
+    try {
+      await executeCleanup(type);
+    } catch (error) {
+      console.error("정리 요청 실패:", error);
+    }
+  };
+
+  // Orphan 파일 정리 요청 핸들러
+  const handleOrphanCleanupRequest = async () => {
+    try {
+      await executeOrphanCleanup();
+    } catch (error) {
+      console.error("Orphan 파일 정리 요청 실패:", error);
+    }
+  };
+
   return (
     <ErrorBoundary
       title="시스템 설정 탭 오류"
@@ -45,12 +88,22 @@ export default function SystemTab({
 
         {/* 로그 정리 관리 */}
         <CleanupSection
-          cleanupStatus={null}
-          statusLoading={false}
-          cleanupLoading={false}
-          lastCleanupSuccess={null}
-          onCleanupRequest={() => {}}
-          onRefreshStatus={() => {}}
+          cleanupStatus={cleanupStatus || null}
+          statusLoading={statusLoading}
+          cleanupLoading={cleanupLoading}
+          lastCleanupSuccess={lastCleanupSuccess}
+          onCleanupRequest={handleCleanupRequest}
+          onRefreshStatus={fetchCleanupStatus}
+        />
+
+        {/* Orphan 파일 정리 */}
+        <OrphanFilesSection
+          orphanFilesStatus={orphanFilesStatus || null}
+          statusLoading={orphanStatusLoading}
+          orphanFilesLoading={orphanFilesLoading}
+          lastCleanupSuccess={orphanLastCleanupSuccess}
+          onCleanupRequest={handleOrphanCleanupRequest}
+          onRefreshStatus={fetchOrphanFilesStatus}
         />
 
         {/* 시스템 모드 */}
@@ -59,7 +112,7 @@ export default function SystemTab({
           onUpdate={onUpdate}
           isLoading={isLoading}
         />
-        
+
         {/* 푸시 알림 브로드캐스트 */}
         <BroadcastSection isLoading={isLoading} />
 

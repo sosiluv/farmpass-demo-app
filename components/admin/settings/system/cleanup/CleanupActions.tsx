@@ -1,4 +1,5 @@
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -24,6 +25,10 @@ export function CleanupActions({
   cleanupLoading,
   onCleanupRequest,
 }: CleanupActionsProps) {
+  const totalExpiredCount =
+    cleanupStatus.expiredData.systemLogs.count +
+    cleanupStatus.expiredData.visitorEntries.count;
+
   return (
     <div className="flex flex-col sm:flex-row gap-3">
       <AlertDialog>
@@ -37,6 +42,11 @@ export function CleanupActions({
           >
             <Trash2 className="h-4 w-4 mr-2" />
             시스템 로그 정리
+            {cleanupStatus.expiredData.systemLogs.count > 0 && (
+              <Badge variant="secondary" className="ml-2">
+                {cleanupStatus.expiredData.systemLogs.count}개
+              </Badge>
+            )}
           </Button>
         </AlertDialogTrigger>
         <AlertDialogContent>
@@ -96,6 +106,11 @@ export function CleanupActions({
           >
             <Trash2 className="h-4 w-4 mr-2" />
             모든 만료 데이터 정리
+            {totalExpiredCount > 0 && (
+              <Badge variant="secondary" className="ml-2">
+                {totalExpiredCount}개
+              </Badge>
+            )}
           </Button>
         </AlertDialogTrigger>
         <AlertDialogContent>

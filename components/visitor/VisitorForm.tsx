@@ -19,7 +19,15 @@ import { AddressSearch } from "@/components/common/address-search";
 import { ImageUpload } from "@/components/ui/image-upload";
 import { Logo } from "@/components/common";
 import { formatPhone } from "@/lib/utils/validation/validation";
-import { User, Phone, MapPin, Car, FileText, Shield } from "lucide-react";
+import {
+  User,
+  Phone,
+  MapPin,
+  Car,
+  FileText,
+  Shield,
+  AlertTriangle,
+} from "lucide-react";
 import type { VisitorSettings } from "@/lib/types/visitor";
 import type { VisitorFormData } from "@/lib/utils/validation/visitor-validation";
 import { createVisitorFormSchema } from "@/lib/utils/validation/visitor-validation";
@@ -46,6 +54,7 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
+import { Alert, AlertDescription } from "../ui/alert";
 
 interface VisitorFormProps {
   settings: VisitorSettings;
@@ -53,12 +62,12 @@ interface VisitorFormProps {
   isSubmitting: boolean;
   isLoading: boolean;
   uploadedImageUrl: string | null;
+  error?: string | null;
   onSubmit: (data: VisitorFormData) => Promise<void>;
   onImageUpload: (
     file: File
   ) => Promise<{ publicUrl: string; fileName: string } | void>;
   onImageDelete: (fileName: string) => Promise<void>;
-  isImageUploading: boolean;
 }
 
 // 폼 필드 설정
@@ -98,7 +107,7 @@ const LABELS = {
 
 const PLACEHOLDERS = {
   FULL_NAME: "홍길동",
-  PHONE_NUMBER: "010-0000-0000 숫자만입력",
+  PHONE_NUMBER: "숫자만 입력 가능합니다",
   CAR_PLATE: "12가3456 (선택사항)",
   VISIT_PURPOSE: "방문 목적을 선택하세요",
   NOTES: "추가 사항이 있으면 입력해주세요",
@@ -110,10 +119,10 @@ export const VisitorForm = ({
   isSubmitting,
   isLoading,
   uploadedImageUrl,
+  error,
   onSubmit,
   onImageUpload,
   onImageDelete,
-  isImageUploading,
 }: VisitorFormProps) => {
   const [logoError, setLogoError] = React.useState(false);
   const { showInfo, showWarning } = useCommonToast();
@@ -145,16 +154,16 @@ export const VisitorForm = ({
   };
 
   // 이미지 삭제 핸들러
-  const handleImageDelete = async () => {
-    showInfo("이미지 삭제 시작", "이미지를 삭제하는 중입니다...");
+  // const handleImageDelete = async () => {
+  //   showInfo("이미지 삭제 시작", "이미지를 삭제하는 중입니다...");
 
-    if (uploadedImageUrl) {
-      const fileName = uploadedImageUrl.split("/").pop();
-      if (fileName) {
-        onImageDelete(fileName).catch(devLog.error);
-      }
-    }
-  };
+  //   if (uploadedImageUrl) {
+  //     const fileName = uploadedImageUrl.split("/").pop();
+  //     if (fileName) {
+  //       onImageDelete(fileName).catch(devLog.error);
+  //     }
+  //   }
+  // };
 
   // 필드명을 라벨 키로 매핑
   const getLabelKey = (
@@ -351,9 +360,10 @@ export const VisitorForm = ({
                     <FormControl>
                       <ImageUpload
                         onUpload={handleImageUpload}
-                        onDelete={handleImageDelete}
+                        // onDelete={handleImageDelete}
                         currentImage={
                           uploadedImageUrl ||
+                          formData.profilePhotoUrl ||
                           (field.value
                             ? URL.createObjectURL(field.value)
                             : null)
@@ -473,6 +483,12 @@ export const VisitorForm = ({
                 </FormItem>
               )}
             />
+            {error && (
+              <Alert variant="destructive">
+                <AlertTriangle className="h-4 w-4" />
+                <AlertDescription>{error}</AlertDescription>
+              </Alert>
+            )}
 
             <Button
               type="submit"

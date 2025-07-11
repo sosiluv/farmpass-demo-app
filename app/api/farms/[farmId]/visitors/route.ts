@@ -3,7 +3,10 @@ import { prisma } from "@/lib/prisma";
 import { createSystemLog } from "@/lib/utils/logging/system-log";
 import { v4 as uuidv4 } from "uuid";
 import { cookies } from "next/headers";
-import { getSystemSettings } from "@/lib/cache/system-settings-cache";
+import {
+  getSystemSettings,
+  invalidateSystemSettingsCache,
+} from "@/lib/cache/system-settings-cache";
 import {
   processVisitTemplate,
   createVisitTemplateData,
@@ -39,7 +42,8 @@ async function sendVisitorNotificationToFarmMembers(
   visitDateTime: Date = new Date()
 ) {
   try {
-    // 시스템 설정에서 방문 알림 템플릿 가져오기
+    // 시스템 설정에서 방문 알림 템플릿 가져오기 (캐시 무효화 후 조회)
+    invalidateSystemSettingsCache();
     const settings = await getSystemSettings();
 
     // 템플릿 데이터 생성
@@ -139,7 +143,8 @@ export async function POST(
     visitorData = requestData as VisitorData;
     const cookieStore = cookies();
 
-    // 시스템 설정 조회 (캐시 사용)
+    // 시스템 설정 조회 (캐시 무효화 후 조회)
+    invalidateSystemSettingsCache();
     const settings = await getSystemSettings();
 
     // 기존 세션 토큰 확인
@@ -181,16 +186,20 @@ export async function POST(
     }
 
     // 재방문 허용 간격(시간)을 밀리초로 변환
-    const sessionDuration = settings.reVisitAllowInterval * 60 * 60 * 1000;
+    // const sessionDuration = settings.reVisitAllowInterval * 60 * 60 * 1000;
 
     // 새로운 세션 토큰 생성
     const newSessionToken = uuidv4();
-    // 세션 토큰을 쿠키에 저장 (재방문 허용 간격만큼 유효)
-    cookies().set("visitor_session", newSessionToken, {
-      expires: new Date(Date.now() + sessionDuration),
+
+    // 세션 토큰을 쿠키에 저장
+    // 폼 자동완성을 위해 30일 고정으로 설정
+    const cookieExpiresMs = 30 * 24 * 60 * 60 * 1000; // 30일
+
+    cookieStore.set("visitor_session", newSessionToken, {
+      expires: new Date(Date.now() + cookieExpiresMs),
       path: "/",
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
+      httpOnly: false,
+      secure: false,
       sameSite: "lax",
     });
 
@@ -333,11 +342,19 @@ export async function POST(
       visitor.visit_datetime
     );
 
-    return NextResponse.json(visitor, {
-      headers: {
-        "Cache-Control": "no-store",
+    // 응답 생성 및 쿠키 설정
+    return NextResponse.json(
+      {
+        message: "방문자 등록이 완료되었습니다.",
+        visitor,
       },
-    });
+      {
+        status: 201,
+        headers: {
+          "Cache-Control": "no-store",
+        },
+      }
+    );
   } catch (error) {
     devLog.error("Error creating visitor:", error);
 

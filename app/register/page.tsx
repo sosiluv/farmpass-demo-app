@@ -226,7 +226,7 @@ const PhoneField = memo(
           <Input
             {...field}
             type="tel"
-            placeholder="010-0000-0000 숫자만입력"
+            placeholder="숫자만 입력 가능합니다"
             className="h-12 pl-10 input-focus"
             disabled={loading}
             onChange={(e) => {

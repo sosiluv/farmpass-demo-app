@@ -1,44 +1,44 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { Trash2, RotateCcw } from "lucide-react";
+import { FileX, RotateCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import type { CleanupStatus } from "@/lib/types/settings";
+import type { OrphanFilesStatus } from "@/lib/types/settings";
 import SettingsCardHeader from "../SettingsCardHeader";
 import {
-  CleanupStatus as CleanupStatusComponent,
-  CleanupSuccessMessage,
-  CleanupActions,
-} from "./cleanup";
+  OrphanFilesStatus as OrphanFilesStatusComponent,
+  OrphanFilesSuccessMessage,
+  OrphanFilesActions,
+} from "./orphan-files";
 
-interface CleanupSectionProps {
-  cleanupStatus: CleanupStatus | null;
+interface OrphanFilesSectionProps {
+  orphanFilesStatus: OrphanFilesStatus | null;
   statusLoading: boolean;
-  cleanupLoading: boolean;
+  orphanFilesLoading: boolean;
   lastCleanupSuccess: string | null;
-  onCleanupRequest: (type: "system_logs" | "all") => void;
+  onCleanupRequest: () => void;
   onRefreshStatus: () => void;
 }
 
-export function CleanupSection({
-  cleanupStatus,
+export function OrphanFilesSection({
+  orphanFilesStatus,
   statusLoading,
-  cleanupLoading,
+  orphanFilesLoading,
   lastCleanupSuccess,
   onCleanupRequest,
   onRefreshStatus,
-}: CleanupSectionProps) {
+}: OrphanFilesSectionProps) {
   return (
     <Card>
       <SettingsCardHeader
-        icon={Trash2}
-        title="로그 정리 관리"
-        description="만료된 시스템 로그와 방문자 데이터를 수동으로 정리할 수 있습니다"
+        icon={FileX}
+        title="Orphan 파일 정리"
+        description="사용되지 않는 이미지 파일을 정리하여 저장공간을 확보합니다"
         actions={
           <Button
             variant="outline"
             size="sm"
             onClick={onRefreshStatus}
-            disabled={cleanupLoading || statusLoading}
+            disabled={orphanFilesLoading || statusLoading}
           >
             <RotateCcw
               className={`h-4 w-4 mr-2 ${statusLoading ? "animate-spin" : ""}`}
@@ -51,20 +51,20 @@ export function CleanupSection({
         {statusLoading ? (
           <div className="text-center py-4">
             <p className="text-sm text-muted-foreground">
-              정리 상태를 확인하는 중...
+              Orphan 파일 상태를 확인하는 중...
             </p>
           </div>
-        ) : cleanupStatus ? (
+        ) : orphanFilesStatus ? (
           <>
-            <CleanupStatusComponent cleanupStatus={cleanupStatus} />
+            <OrphanFilesStatusComponent orphanFilesStatus={orphanFilesStatus} />
             <Separator />
-            <CleanupSuccessMessage
+            <OrphanFilesSuccessMessage
               lastCleanupSuccess={lastCleanupSuccess}
-              cleanupStatus={cleanupStatus}
+              orphanFilesStatus={orphanFilesStatus}
             />
-            <CleanupActions
-              cleanupStatus={cleanupStatus}
-              cleanupLoading={cleanupLoading}
+            <OrphanFilesActions
+              orphanFilesStatus={orphanFilesStatus}
+              orphanFilesLoading={orphanFilesLoading}
               onCleanupRequest={onCleanupRequest}
             />
           </>

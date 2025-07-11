@@ -41,7 +41,7 @@ export function FarmFormManagerFields({ form }: FarmFormManagerFieldsProps) {
               <FormControl>
                 <Input
                   type="tel"
-                  placeholder="010-0000-0000 숫자만입력"
+                  placeholder="숫자만 입력 가능합니다"
                   {...field}
                   onChange={(e) => {
                     const formattedPhone = formatPhone(e.target.value);

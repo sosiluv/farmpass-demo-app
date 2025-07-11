@@ -1264,21 +1264,6 @@ await prisma.profiles.update({
 });
 ```
 
-#### 세션 설정 최적화
-
-```typescript
-// 기존: 클라이언트에서 세션 설정
-const { error: setSessionError } = await supabase.auth.setSession(session);
-
-// 개선: 서버에서 쿠키 직접 설정
-response.cookies.set("sb-access-token", session!.access_token, {
-  httpOnly: true,
-  secure: process.env.NODE_ENV === "production",
-  sameSite: "lax",
-  maxAge: session!.expires_at ? session!.expires_at * 1000 - Date.now() : 3600,
-});
-```
-
 #### 프로필 로드 최적화
 
 ```typescript

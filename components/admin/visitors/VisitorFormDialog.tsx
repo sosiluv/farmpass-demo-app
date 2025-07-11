@@ -220,7 +220,7 @@ export function VisitorFormDialog({
                   type={name === "visitor_phone" ? "tel" : "text"}
                   placeholder={
                     name === "visitor_phone"
-                      ? "010-0000-0000 숫자만입력"
+                      ? "숫자만 입력 가능합니다"
                       : name === "visitor_name"
                       ? "홍길동"
                       : name === "vehicle_number"

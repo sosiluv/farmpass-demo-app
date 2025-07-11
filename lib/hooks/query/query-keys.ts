@@ -132,6 +132,15 @@ export const settingsKeys = {
 } as const;
 
 /**
+ * 정리 관리 관련 Query Key Factory
+ */
+export const cleanupKeys = {
+  all: ["cleanup"] as const,
+  status: () => [...cleanupKeys.all, "status"] as const,
+  orphanFiles: () => [...cleanupKeys.all, "orphan-files"] as const,
+} as const;
+
+/**
  * 알림 관련 Query Key Factory
  */
 export const notificationKeys = {

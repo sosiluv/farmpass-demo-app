@@ -4,7 +4,7 @@ import { devLog } from "@/lib/utils/logging/dev-logger";
 import { useAuth } from "@/components/providers/auth-provider";
 import {
   uploadImageUniversal,
-  deleteExistingProfileImage,
+  deleteImageUniversal,
 } from "@/lib/utils/media/image-upload";
 import type { Profile } from "@/lib/types";
 import type { PasswordFormData } from "@/lib/types/account";
@@ -13,6 +13,7 @@ import {
   MAX_UPLOAD_SIZE_MB,
 } from "@/lib/constants/upload";
 import { useAccountMutations } from "@/lib/hooks/query/use-account-mutations";
+import { extractStorageFileName } from "@/lib/utils/media/image-upload";
 
 interface UseAccountActionsProps {
   profile: Profile;
@@ -24,7 +25,7 @@ interface SaveResult {
   error?: string;
 }
 
-export function useAccountActions({ userId }: UseAccountActionsProps) {
+export function useAccountActions({ profile, userId }: UseAccountActionsProps) {
   const router = useRouter();
   const { signOut } = useAuth();
   const accountMutations = useAccountMutations();
@@ -42,12 +43,25 @@ export function useAccountActions({ userId }: UseAccountActionsProps) {
     if (!file) return;
 
     try {
+      // 기존 프로필 이미지 파일명 추출 (prevFileName)
+      let prevFileName: string | undefined = undefined;
+      if (profile?.profile_image_url) {
+        prevFileName = extractStorageFileName(
+          profile.profile_image_url,
+          "profiles"
+        );
+      }
+
       const result = await uploadImageUniversal({
         file,
         bucket: "profiles",
-        userId,
+        path: (file) => {
+          const ext = file.name.split(".").pop()?.toLowerCase() || "jpg";
+          return `${userId}/profile_${Date.now()}.${ext}`;
+        },
         maxSizeMB: MAX_UPLOAD_SIZE_MB,
         allowedTypes: [...ALLOWED_IMAGE_TYPES],
+        prevFileName, // 반드시 넘겨야 기존 파일 삭제됨
       });
 
       const cacheBustedUrl = `${result.publicUrl}?t=${Date.now()}`;
@@ -77,8 +91,19 @@ export function useAccountActions({ userId }: UseAccountActionsProps) {
         `[HANDLE_IMAGE_DELETE] Starting image deletion for user: ${userId}`
       );
 
-      // 1. Storage에서 기존 이미지 파일들 삭제
-      await deleteExistingProfileImage(userId);
+      // Storage에서 기존 이미지 파일 삭제 (deleteImageUniversal로 일관성 있게)
+      if (profile?.profile_image_url) {
+        const prevFileName = extractStorageFileName(
+          profile.profile_image_url,
+          "profiles"
+        );
+        if (prevFileName) {
+          await deleteImageUniversal({
+            bucket: "profiles",
+            fileName: prevFileName,
+          });
+        }
+      }
       devLog.log(`[HANDLE_IMAGE_DELETE] Storage cleanup completed`);
 
       // 2. React Query mutation 사용

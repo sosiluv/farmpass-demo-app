@@ -15,22 +15,22 @@ interface SettingsImageManagerProps {
 function getLogoFileName(file: File) {
   const ext = file.name.split(".").pop()?.toLowerCase() || "png";
   const timestamp = Date.now();
-  return `systems/logo_${timestamp}.${ext}`;
+  return `systems-logo/logo_${timestamp}.${ext}`;
 }
 function getFaviconFileName(file: File) {
   const ext = file.name.split(".").pop()?.toLowerCase() || "ico";
   const timestamp = Date.now();
-  return `systems/favicon_${timestamp}.${ext}`;
+  return `systems-favicon/favicon_${timestamp}.${ext}`;
 }
 function getNotificationIconFileName(file: File) {
   const ext = file.name.split(".").pop()?.toLowerCase() || "png";
   const timestamp = Date.now();
-  return `systems/notification_icon_${timestamp}.${ext}`;
+  return `systems-notification-icon/notification_icon_${timestamp}.${ext}`;
 }
 function getNotificationBadgeFileName(file: File) {
   const ext = file.name.split(".").pop()?.toLowerCase() || "png";
   const timestamp = Date.now();
-  return `systems/notification_badge_${timestamp}.${ext}`;
+  return `systems-notification-badge/notification_badge_${timestamp}.${ext}`;
 }
 
 export function useSettingsImageManager({

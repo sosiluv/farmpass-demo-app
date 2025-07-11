@@ -197,7 +197,7 @@ export function ProfileSection({
                   onChange={handleInputChange}
                   disabled={loading}
                   maxLength={13}
-                  placeholder="010-0000-0000 숫자만입력"
+                  placeholder="숫자만 입력 가능합니다"
                 />
               </div>
               <div className="space-y-2">

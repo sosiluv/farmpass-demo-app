@@ -224,7 +224,7 @@ export default function HomePage() {
       <footer className="border-t bg-card py-12">
         <div className="container mx-auto px-4">
           <div className="flex flex-col items-center justify-between gap-4 md:flex-row">
-            <Logo size="xl" showText />
+            <Logo size="xl" />
             <div className="flex gap-2">
               <Badge variant="outline">모바일 최적화</Badge>
               <Badge variant="outline">QR 코드 지원</Badge>

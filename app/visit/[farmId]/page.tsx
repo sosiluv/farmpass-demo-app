@@ -37,7 +37,7 @@ import type { VisitorSettings } from "@/lib/types/visitor";
 export default function VisitPage() {
   const params = useParams();
   const farmId = params.farmId as string;
-  const { showInfo, showWarning, showSuccess, showError } = useCommonToast();
+  const { showInfo, showSuccess, showError } = useCommonToast();
 
   // 세션 스토리지를 이용한 중복 제출 방지
   const [hasSubmittedInSession, setHasSubmittedInSession] = useState(false);
@@ -92,7 +92,6 @@ export default function VisitPage() {
     handleSubmit,
     uploadImage,
     deleteImage,
-    isImageUploading,
   } = useVisitorForm(farmId, settings);
 
   // 에러 상태에 따른 토스트 처리
@@ -132,7 +131,7 @@ export default function VisitPage() {
       const sessionKey = `visitor_submitted_${farmId}`;
       sessionStorage.setItem(sessionKey, "true");
       setHasSubmittedInSession(true);
-
+      showSuccess("방문자 등록 완료", "방문자 정보를 등록하였습니다.");
       // 성공 시 토스트는 isSubmitted 상태 변경으로 처리
     } catch (error) {
       // 에러는 이미 error 상태로 처리됨
@@ -158,7 +157,7 @@ export default function VisitPage() {
   const handleImageDeleteWrapped = async (fileName: string) => {
     try {
       showInfo("이미지 삭제 중", "프로필 이미지를 삭제하는 중입니다...");
-      await deleteImage(fileName);
+      await deleteImage();
       showSuccess(
         "이미지 삭제 완료",
         "프로필 이미지가 성공적으로 삭제되었습니다."
@@ -166,39 +165,6 @@ export default function VisitPage() {
     } catch (error) {
       showError("이미지 삭제 실패", "프로필 이미지 삭제에 실패했습니다.");
       throw error;
-    }
-  };
-
-  /**
-   * 창 닫기 함수 (수동 방식)
-   *
-   * 외부 방문자용이므로 창 닫기에만 집중합니다.
-   * 창을 닫을 수 없는 경우에는 사용자에게 안내 메시지를 표시합니다.
-   */
-  const handleClose = () => {
-    try {
-      // 창 닫기 시도
-      if (window.opener && !window.opener.closed) {
-        window.close();
-      } else {
-        // 일반 브라우저 탭에서 열린 경우
-        window.close();
-      }
-
-      // 창이 닫히지 않는 경우를 위한 안내 (2초 후)
-      setTimeout(() => {
-        if (!window.closed) {
-          showWarning(
-            "창 닫기 안내",
-            "브라우저 설정상 자동으로 창을 닫을 수 없습니다. 브라우저의 X 버튼을 클릭하여 창을 닫아주세요."
-          );
-        }
-      }, 2000);
-    } catch (error) {
-      showWarning(
-        "창 닫기 안내",
-        "브라우저의 X 버튼을 클릭하여 창을 닫아주세요."
-      );
     }
   };
 
@@ -223,8 +189,8 @@ export default function VisitPage() {
     );
   }
 
-  if (isSubmitted || hasSubmittedInSession) {
-    return <SuccessCard onClose={handleClose} />;
+  if (isSubmitted) {
+    return <SuccessCard />;
   }
 
   return (
@@ -244,7 +210,7 @@ export default function VisitPage() {
             onSubmit={handleSubmitWrapped}
             onImageUpload={handleImageUploadWrapped}
             onImageDelete={handleImageDeleteWrapped}
-            isImageUploading={isImageUploading}
+            error={error}
           />
         </div>
       </div>

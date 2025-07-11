@@ -74,3 +74,26 @@ export interface CleanupStatus {
     };
   };
 }
+
+export interface OrphanFilesStatus {
+  visitorOrphans: string[];
+  profileOrphans: string[];
+  visitorOrphanCount: number;
+  profileOrphanCount: number;
+  debug?: {
+    visitor: {
+      usedUrls: string[];
+      usedUrlCount: number;
+      storageFiles: string[];
+      storageFileCount: number;
+      dbError?: any;
+    };
+    profile: {
+      usedUrls: string[];
+      usedUrlCount: number;
+      storageFiles: string[];
+      storageFileCount: number;
+      dbError?: any;
+    };
+  };
+}
