@@ -218,31 +218,6 @@ export const validateVehicleNumber = (vehicleNumber: string) => {
   };
 };
 
-/**
- * 회원가입 에러 메시지 생성
- * @param error 발생한 에러
- * @returns 사용자 친화적인 에러 메시지
- */
-export const getRegistrationErrorMessage = (error: any): string => {
-  if (error.message === "Failed to fetch") {
-    return "회원가입 요청이 실패했습니다. 네트워크 상태를 확인해주세요.";
-  }
-
-  if (error.message.includes("Database error")) {
-    return "프로필 생성 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.";
-  }
-
-  if (error.message.includes("security purposes") || error.status === 429) {
-    return "보안을 위해 잠시 후에 다시 시도해주세요. (약 40초 후)";
-  }
-
-  if (error.message.includes("already registered")) {
-    return "이미 등록된 이메일입니다.";
-  }
-
-  return "회원가입 중 오류가 발생했습니다. 다시 시도해주세요.";
-};
-
 // =================================
 // 인증 에러 처리 (auth-error.ts 통합)
 // =================================
@@ -261,15 +236,10 @@ export function getAuthErrorMessage(
   const errorMessage =
     error instanceof Error ? error.message : "알 수 없는 오류가 발생했습니다.";
 
-  // 기본 응답 객체
-  const defaultResponse: AuthErrorResponse = {
-    message: "처리 중 오류가 발생했습니다. 다시 시도해주세요.",
-    shouldRedirect: false,
-  };
-
-  if (!errorMessage) return defaultResponse;
-
-  if (errorMessage.toLowerCase().includes("account is locked")) {
+  if (
+    errorMessage.toLowerCase().includes("account is locked") ||
+    errorMessage.toLowerCase().includes("account_locked")
+  ) {
     return {
       message:
         "계정이 잠겼습니다. 관리자에게 문의하거나 잠시 후 다시 시도해주세요.",
@@ -306,9 +276,12 @@ export function getAuthErrorMessage(
       shouldRedirect: false,
     };
   }
-  if (errorMessage.toLowerCase().includes("invalid login credentials")) {
+  if (
+    errorMessage.toLowerCase().includes("invalid login credentials") ||
+    errorMessage.toLowerCase().includes("login_failed")
+  ) {
     return {
-      message: "인증에 실패했습니다. 다시 시도해주세요.",
+      message: "이메일 또는 비밀번호가 올바르지 않습니다.",
       shouldRedirect: false,
     };
   }
@@ -349,7 +322,698 @@ export function getAuthErrorMessage(
       shouldRedirect: false,
     };
   }
-  return defaultResponse;
+
+  // 라우터 커스텀 에러들 처리
+  if (
+    errorMessage.toLowerCase().includes("user not found") ||
+    errorMessage.toLowerCase().includes("user_not_found")
+  ) {
+    return {
+      message: "등록되지 않은 이메일 주소입니다.",
+      shouldRedirect: false,
+    };
+  }
+  if (errorMessage.toLowerCase().includes("email rate limit exceeded")) {
+    return {
+      message: "이메일 전송 한도를 초과했습니다. 잠시 후 다시 시도해주세요.",
+      shouldRedirect: false,
+    };
+  }
+  if (errorMessage.toLowerCase().includes("invalid email")) {
+    return {
+      message: "올바른 이메일 주소를 입력해주세요.",
+      shouldRedirect: false,
+    };
+  }
+  if (errorMessage.toLowerCase().includes("error sending recovery email")) {
+    return {
+      message: "이메일 전송 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.",
+      shouldRedirect: false,
+    };
+  }
+
+  // 새로운 영어 에러 코드들 처리
+
+  if (errorMessage.toLowerCase().includes("push_send_failed")) {
+    return {
+      message: "푸시 알림 발송에 실패했습니다.",
+      shouldRedirect: false,
+    };
+  }
+  if (errorMessage.toLowerCase().includes("invalid_credentials")) {
+    return {
+      message: "이메일 또는 비밀번호가 올바르지 않습니다.",
+      shouldRedirect: false,
+    };
+  }
+  if (errorMessage.toLowerCase().includes("image_upload_failed")) {
+    return {
+      message: "이미지 업로드에 실패했습니다.",
+      shouldRedirect: false,
+    };
+  }
+  if (errorMessage.toLowerCase().includes("image_delete_failed")) {
+    return {
+      message: "이미지 삭제에 실패했습니다.",
+      shouldRedirect: false,
+    };
+  }
+  if (errorMessage.toLowerCase().includes("key_copy_failed")) {
+    return {
+      message: "키 복사에 실패했습니다. 다시 시도해주세요.",
+      shouldRedirect: false,
+    };
+  }
+  if (errorMessage.toLowerCase().includes("export_failed")) {
+    return {
+      message: "내보내기에 실패했습니다.",
+      shouldRedirect: false,
+    };
+  }
+  if (
+    errorMessage.toLowerCase().includes("csv 다운로드 중 오류가 발생했습니다")
+  ) {
+    return {
+      message:
+        "파일 다운로드 중 오류가 발생했습니다. 브라우저 설정을 확인해주세요.",
+      shouldRedirect: false,
+    };
+  }
+  if (errorMessage.toLowerCase().includes("invalid_email_format")) {
+    return {
+      message: "올바른 이메일 형식을 입력해주세요.",
+      shouldRedirect: false,
+    };
+  }
+  if (errorMessage.toLowerCase().includes("invalid_notification_type")) {
+    return {
+      message: "유효하지 않은 알림 유형입니다.",
+      shouldRedirect: false,
+    };
+  }
+  if (errorMessage.toLowerCase().includes("broadcast_sending_failed")) {
+    return {
+      message: "브로드캐스트 알림 발송에 실패했습니다.",
+      shouldRedirect: false,
+    };
+  }
+  if (errorMessage.toLowerCase().includes("log_cleanup_failed")) {
+    return {
+      message: "로그 정리 중 오류가 발생했습니다.",
+      shouldRedirect: false,
+    };
+  }
+  if (errorMessage.toLowerCase().includes("cleanup_status_query_failed")) {
+    return {
+      message: "정리 상태 조회 중 오류가 발생했습니다.",
+      shouldRedirect: false,
+    };
+  }
+  if (errorMessage.toLowerCase().includes("orphan_files_check_failed")) {
+    return {
+      message: "Orphan 파일 조회 중 오류가 발생했습니다.",
+      shouldRedirect: false,
+    };
+  }
+  if (errorMessage.toLowerCase().includes("orphan_files_cleanup_failed")) {
+    return {
+      message: "Orphan 파일 정리 중 오류가 발생했습니다.",
+      shouldRedirect: false,
+    };
+  }
+  if (errorMessage.toLowerCase().includes("invalid_retention_period")) {
+    return {
+      message: "유효하지 않은 보존 기간입니다.",
+      shouldRedirect: false,
+    };
+  }
+  if (errorMessage.toLowerCase().includes("expired_count_query_failed")) {
+    return {
+      message: "만료된 방문자 데이터 개수 확인에 실패했습니다.",
+      shouldRedirect: false,
+    };
+  }
+
+  // 로그 관련 에러 코드들 처리
+  if (errorMessage.toLowerCase().includes("log_delete_failed")) {
+    return {
+      message: "로그 삭제 중 오류가 발생했습니다.",
+      shouldRedirect: false,
+    };
+  }
+  if (errorMessage.toLowerCase().includes("unsupported delete operation")) {
+    return {
+      message: "지원하지 않는 삭제 작업입니다.",
+      shouldRedirect: false,
+    };
+  }
+
+  // Health/Monitoring 관련 에러 코드들 처리
+  if (errorMessage.toLowerCase().includes("health_check_failed")) {
+    return {
+      message: "시스템 헬스체크에 실패했습니다.",
+      shouldRedirect: false,
+    };
+  }
+  if (errorMessage.toLowerCase().includes("monitoring_data_fetch_failed")) {
+    return {
+      message: "모니터링 데이터 조회에 실패했습니다.",
+      shouldRedirect: false,
+    };
+  }
+
+  // Notification Settings 관련 에러 코드들 처리
+  if (
+    errorMessage.toLowerCase().includes("notification_settings_read_failed")
+  ) {
+    return {
+      message: "알림 설정 조회에 실패했습니다.",
+      shouldRedirect: false,
+    };
+  }
+  if (
+    errorMessage
+      .toLowerCase()
+      .includes("notification_settings_read_system_error")
+  ) {
+    return {
+      message: "알림 설정 조회 중 시스템 오류가 발생했습니다.",
+      shouldRedirect: false,
+    };
+  }
+  if (
+    errorMessage.toLowerCase().includes("notification_settings_update_failed")
+  ) {
+    return {
+      message: "알림 설정 업데이트에 실패했습니다.",
+      shouldRedirect: false,
+    };
+  }
+  if (
+    errorMessage.toLowerCase().includes("notification_settings_create_failed")
+  ) {
+    return {
+      message: "알림 설정 생성에 실패했습니다.",
+      shouldRedirect: false,
+    };
+  }
+  if (
+    errorMessage
+      .toLowerCase()
+      .includes("notification_settings_update_system_error")
+  ) {
+    return {
+      message: "알림 설정 업데이트 중 시스템 오류가 발생했습니다.",
+      shouldRedirect: false,
+    };
+  }
+
+  // Profile 관련 에러 코드들 처리
+  if (errorMessage.toLowerCase().includes("profile_update_failed")) {
+    return {
+      message: "프로필 정보 저장에 실패했습니다.",
+      shouldRedirect: false,
+    };
+  }
+  if (errorMessage.toLowerCase().includes("profile_image_upload_failed")) {
+    return {
+      message: "프로필 이미지 업로드에 실패했습니다.",
+      shouldRedirect: false,
+    };
+  }
+
+  // Push 관련 에러 코드들 처리
+  if (errorMessage.toLowerCase().includes("invalid_subscription_data")) {
+    return {
+      message: "구독 정보가 올바르지 않습니다.",
+      shouldRedirect: false,
+    };
+  }
+  if (errorMessage.toLowerCase().includes("subscription_validation_failed")) {
+    return {
+      message: "구독 데이터가 유효하지 않습니다.",
+      shouldRedirect: false,
+    };
+  }
+  if (errorMessage.toLowerCase().includes("subscription_delete_failed")) {
+    return {
+      message: "기존 구독 삭제에 실패했습니다.",
+      shouldRedirect: false,
+    };
+  }
+  if (errorMessage.toLowerCase().includes("subscription_save_failed")) {
+    return {
+      message: "구독 저장에 실패했습니다.",
+      shouldRedirect: false,
+    };
+  }
+  if (errorMessage.toLowerCase().includes("subscription_fetch_failed")) {
+    return {
+      message: "구독 정보 조회에 실패했습니다.",
+      shouldRedirect: false,
+    };
+  }
+  if (errorMessage.toLowerCase().includes("subscription_get_system_error")) {
+    return {
+      message: "구독 조회 중 시스템 오류가 발생했습니다.",
+      shouldRedirect: false,
+    };
+  }
+  if (errorMessage.toLowerCase().includes("missing_endpoint")) {
+    return {
+      message: "엔드포인트가 필요합니다.",
+      shouldRedirect: false,
+    };
+  }
+  if (errorMessage.toLowerCase().includes("subscription_unsubscribe_failed")) {
+    return {
+      message: "구독 해제에 실패했습니다.",
+      shouldRedirect: false,
+    };
+  }
+  if (
+    errorMessage.toLowerCase().includes("subscription_cleanup_fetch_failed")
+  ) {
+    return {
+      message: "구독 정리 중 조회에 실패했습니다.",
+      shouldRedirect: false,
+    };
+  }
+  if (errorMessage.toLowerCase().includes("vapid_key_generation_failed")) {
+    return {
+      message: "VAPID 키 생성에 실패했습니다.",
+      shouldRedirect: false,
+    };
+  }
+  if (errorMessage.toLowerCase().includes("vapid_key_fetch_failed")) {
+    return {
+      message: "VAPID 키 조회에 실패했습니다.",
+      shouldRedirect: false,
+    };
+  }
+  if (errorMessage.toLowerCase().includes("missing_required_fields")) {
+    return {
+      message: "필수 입력 항목이 누락되었습니다.",
+      shouldRedirect: false,
+    };
+  }
+  if (errorMessage.toLowerCase().includes("subscriber_fetch_failed")) {
+    return {
+      message: "구독자 조회에 실패했습니다.",
+      shouldRedirect: false,
+    };
+  }
+
+  // Settings 관련 에러 코드들 처리
+  if (errorMessage.toLowerCase().includes("system_settings_fetch_failed")) {
+    return {
+      message: "시스템 설정 조회에 실패했습니다.",
+      shouldRedirect: false,
+    };
+  }
+  if (errorMessage.toLowerCase().includes("system_settings_not_found")) {
+    return {
+      message: "시스템 설정을 찾을 수 없습니다.",
+      shouldRedirect: false,
+    };
+  }
+  if (errorMessage.toLowerCase().includes("system_settings_update_failed")) {
+    return {
+      message: "시스템 설정 업데이트에 실패했습니다.",
+      shouldRedirect: false,
+    };
+  }
+  if (errorMessage.toLowerCase().includes("cache_clear_all_failed")) {
+    return {
+      message: "모든 캐시 초기화에 실패했습니다.",
+      shouldRedirect: false,
+    };
+  }
+  if (errorMessage.toLowerCase().includes("cache_invalidate_failed")) {
+    return {
+      message: "캐시 무효화에 실패했습니다.",
+      shouldRedirect: false,
+    };
+  }
+  if (errorMessage.toLowerCase().includes("cache_info_fetch_failed")) {
+    return {
+      message: "캐시 정보 조회에 실패했습니다.",
+      shouldRedirect: false,
+    };
+  }
+
+  // User Info 관련 에러 코드들 처리
+  if (errorMessage.toLowerCase().includes("user_info_fetch_failed")) {
+    return {
+      message: "사용자 정보 조회에 실패했습니다.",
+      shouldRedirect: false,
+    };
+  }
+
+  // User Search 관련 에러 코드들 처리
+  if (errorMessage.toLowerCase().includes("farm_not_found")) {
+    return {
+      message: "농장을 찾을 수 없습니다.",
+      shouldRedirect: false,
+    };
+  }
+  if (errorMessage.toLowerCase().includes("user_search_unauthorized")) {
+    return {
+      message: "사용자 검색 권한이 없습니다.",
+      shouldRedirect: false,
+    };
+  }
+  if (errorMessage.toLowerCase().includes("user_search_failed")) {
+    return {
+      message: "사용자 검색에 실패했습니다.",
+      shouldRedirect: false,
+    };
+  }
+
+  // Visitor 관련 에러 코드들 처리
+  if (errorMessage.toLowerCase().includes("visitor_data_fetch_failed")) {
+    return {
+      message: "방문자 데이터 조회에 실패했습니다.",
+      shouldRedirect: false,
+    };
+  }
+  if (
+    errorMessage.toLowerCase().includes("visitor_registration_failed") ||
+    errorMessage.toLowerCase().includes("visitor_create_error")
+  ) {
+    return {
+      message: "방문자 등록에 실패했습니다.",
+      shouldRedirect: false,
+    };
+  }
+  if (
+    errorMessage.toLowerCase().includes("visitor_registration_system_error")
+  ) {
+    return {
+      message: "방문자 등록 중 시스템 오류가 발생했습니다.",
+      shouldRedirect: false,
+    };
+  }
+  if (errorMessage.toLowerCase().includes("visitor_fetch_error")) {
+    return {
+      message: "방문자 목록 조회에 실패했습니다.",
+      shouldRedirect: false,
+    };
+  }
+  if (errorMessage.toLowerCase().includes("daily_limit_exceeded")) {
+    return {
+      message: "오늘 방문자 등록 한도를 초과했습니다.",
+      shouldRedirect: false,
+    };
+  }
+
+  // Auth 관련 에러 코드들 처리
+  if (errorMessage.toLowerCase().includes("missing_credentials")) {
+    return {
+      message: "이메일과 비밀번호가 필요합니다.",
+      shouldRedirect: false,
+    };
+  }
+  if (errorMessage.toLowerCase().includes("too many login attempts")) {
+    // API 응답에서 timeLeft 정보 추출 시도
+    const timeLeftMatch = errorMessage.match(/(\d+) minutes?/i);
+    const timeLeft = timeLeftMatch ? parseInt(timeLeftMatch[1]) : null;
+
+    if (timeLeft) {
+      return {
+        message: `너무 많은 로그인 시도가 있었습니다. ${timeLeft}분 후에 다시 시도해주세요.`,
+        shouldRedirect: false,
+      };
+    } else {
+      return {
+        message:
+          "너무 많은 로그인 시도가 있었습니다. 잠시 후 다시 시도해주세요.",
+        shouldRedirect: false,
+      };
+    }
+  }
+  if (errorMessage.toLowerCase().includes("login_system_error")) {
+    return {
+      message: "로그인 중 오류가 발생했습니다.",
+      shouldRedirect: false,
+    };
+  }
+  if (errorMessage.toLowerCase().includes("missing_email")) {
+    return {
+      message: "이메일 주소를 입력해주세요.",
+      shouldRedirect: false,
+    };
+  }
+  if (errorMessage.toLowerCase().includes("email_check_error")) {
+    return {
+      message: "이메일 확인 중 오류가 발생했습니다.",
+      shouldRedirect: false,
+    };
+  }
+  if (errorMessage.toLowerCase().includes("user_profile_error")) {
+    return {
+      message: "사용자 정보 확인 중 오류가 발생했습니다.",
+      shouldRedirect: false,
+    };
+  }
+  if (errorMessage.toLowerCase().includes("password_reset_system_error")) {
+    return {
+      message: "비밀번호 재설정 처리 중 오류가 발생했습니다.",
+      shouldRedirect: false,
+    };
+  }
+  if (errorMessage.toLowerCase().includes("reset_attempts_error")) {
+    return {
+      message: "로그인 시도 횟수 초기화 중 오류가 발생했습니다.",
+      shouldRedirect: false,
+    };
+  }
+  if (errorMessage.toLowerCase().includes("missing_turnstile_token")) {
+    return {
+      message: "캡차 토큰이 필요합니다.",
+      shouldRedirect: false,
+    };
+  }
+  if (errorMessage.toLowerCase().includes("turnstile_verification_failed")) {
+    return {
+      message: "캡차 인증에 실패했습니다.",
+      shouldRedirect: false,
+    };
+  }
+  if (errorMessage.toLowerCase().includes("turnstile_system_error")) {
+    return {
+      message: "캡차 인증 중 오류가 발생했습니다.",
+      shouldRedirect: false,
+    };
+  }
+
+  // 회원가입 관련 에러 코드들 처리
+  if (errorMessage.toLowerCase().includes("failed to fetch")) {
+    return {
+      message: "회원가입 요청이 실패했습니다. 네트워크 상태를 확인해주세요.",
+      shouldRedirect: false,
+    };
+  }
+  if (errorMessage.toLowerCase().includes("database error")) {
+    return {
+      message: "프로필 생성 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.",
+      shouldRedirect: false,
+    };
+  }
+  if (
+    errorMessage.toLowerCase().includes("security purposes") ||
+    errorMessage.toLowerCase().includes("429")
+  ) {
+    return {
+      message: "보안을 위해 잠시 후에 다시 시도해주세요. (약 40초 후)",
+      shouldRedirect: false,
+    };
+  }
+  if (errorMessage.toLowerCase().includes("already registered")) {
+    return {
+      message: "이미 등록된 이메일입니다.",
+      shouldRedirect: false,
+    };
+  }
+  if (errorMessage.toLowerCase().includes("registration failed")) {
+    return {
+      message: "회원가입 중 오류가 발생했습니다. 다시 시도해주세요.",
+      shouldRedirect: false,
+    };
+  }
+
+  // Farm/Farm-members 관련 에러 코드들 처리
+  if (errorMessage.toLowerCase().includes("missing_farm_ids")) {
+    return {
+      message: "농장 ID 목록이 필요합니다.",
+      shouldRedirect: false,
+    };
+  }
+  if (errorMessage.toLowerCase().includes("farm_access_check_error")) {
+    return {
+      message: "농장 접근 권한 확인 중 오류가 발생했습니다.",
+      shouldRedirect: false,
+    };
+  }
+  if (errorMessage.toLowerCase().includes("farm_member_access_check_error")) {
+    return {
+      message: "농장 구성원 접근 권한 확인 중 오류가 발생했습니다.",
+      shouldRedirect: false,
+    };
+  }
+  if (errorMessage.toLowerCase().includes("unauthorized_farms")) {
+    // 동적 unauthorizedFarms 정보 활용
+    if (
+      error &&
+      typeof error === "object" &&
+      "unauthorizedFarms" in error &&
+      Array.isArray((error as any).unauthorizedFarms)
+    ) {
+      return {
+        message: `일부 농장에 대한 접근 권한이 없습니다: ${(
+          error as any
+        ).unauthorizedFarms.join(", ")}`,
+        shouldRedirect: false,
+      };
+    }
+    return {
+      message: "일부 농장에 대한 접근 권한이 없습니다.",
+      shouldRedirect: false,
+    };
+  }
+  if (errorMessage.toLowerCase().includes("farm_members_fetch_error")) {
+    return {
+      message: "농장 구성원 목록 조회 중 오류가 발생했습니다.",
+      shouldRedirect: false,
+    };
+  }
+  if (errorMessage.toLowerCase().includes("farm_members_bulk_fetch_error")) {
+    return {
+      message: "농장 구성원 일괄 조회 중 오류가 발생했습니다.",
+      shouldRedirect: false,
+    };
+  }
+  if (errorMessage.toLowerCase().includes("farm_create_error")) {
+    return {
+      message: "농장 생성 중 오류가 발생했습니다.",
+      shouldRedirect: false,
+    };
+  }
+  if (errorMessage.toLowerCase().includes("farm_list_fetch_error")) {
+    return {
+      message: "농장 목록 조회 중 오류가 발생했습니다.",
+      shouldRedirect: false,
+    };
+  }
+  if (errorMessage.toLowerCase().includes("farm_fetch_error")) {
+    return {
+      message: "농장 정보 조회 중 오류가 발생했습니다.",
+      shouldRedirect: false,
+    };
+  }
+  if (errorMessage.toLowerCase().includes("farm_update_error")) {
+    return {
+      message: "농장 정보 수정 중 오류가 발생했습니다.",
+      shouldRedirect: false,
+    };
+  }
+  if (errorMessage.toLowerCase().includes("farm_delete_error")) {
+    return {
+      message: "농장 삭제 중 오류가 발생했습니다.",
+      shouldRedirect: false,
+    };
+  }
+  if (errorMessage.toLowerCase().includes("member_fetch_error")) {
+    return {
+      message: "농장 멤버 조회 중 오류가 발생했습니다.",
+      shouldRedirect: false,
+    };
+  }
+  if (errorMessage.toLowerCase().includes("member_create_error")) {
+    return {
+      message: "농장 멤버 추가 중 오류가 발생했습니다.",
+      shouldRedirect: false,
+    };
+  }
+  if (errorMessage.toLowerCase().includes("member_update_error")) {
+    return {
+      message: "농장 멤버 역할 변경 중 오류가 발생했습니다.",
+      shouldRedirect: false,
+    };
+  }
+  if (errorMessage.toLowerCase().includes("member_delete_error")) {
+    return {
+      message: "농장 멤버 제거 중 오류가 발생했습니다.",
+      shouldRedirect: false,
+    };
+  }
+  if (errorMessage.toLowerCase().includes("member_check_error")) {
+    return {
+      message: "농장 멤버 확인 중 오류가 발생했습니다.",
+      shouldRedirect: false,
+    };
+  }
+  if (errorMessage.toLowerCase().includes("member_already_exists")) {
+    return {
+      message: "이미 농장의 구성원입니다.",
+      shouldRedirect: false,
+    };
+  }
+  if (errorMessage.toLowerCase().includes("member_not_found")) {
+    return {
+      message: "농장 멤버를 찾을 수 없습니다.",
+      shouldRedirect: false,
+    };
+  }
+  if (errorMessage.toLowerCase().includes("cannot_change_owner_role")) {
+    return {
+      message: "농장 소유자의 역할은 변경할 수 없습니다.",
+      shouldRedirect: false,
+    };
+  }
+  if (errorMessage.toLowerCase().includes("cannot_remove_owner")) {
+    return {
+      message: "농장 소유자는 제거할 수 없습니다.",
+      shouldRedirect: false,
+    };
+  }
+  if (errorMessage.toLowerCase().includes("profile_fetch_error")) {
+    return {
+      message: "사용자 프로필 조회 중 오류가 발생했습니다.",
+      shouldRedirect: false,
+    };
+  }
+
+  if (errorMessage.toLowerCase().includes("permission_check_error")) {
+    return {
+      message: "권한 확인 중 오류가 발생했습니다.",
+      shouldRedirect: false,
+    };
+  }
+  if (errorMessage.toLowerCase().includes("insufficient_permissions")) {
+    return {
+      message: "이 작업을 수행할 권한이 없습니다.",
+      shouldRedirect: false,
+    };
+  }
+  if (errorMessage.toLowerCase().includes("access_denied")) {
+    return {
+      message: "접근이 거부되었습니다.",
+      shouldRedirect: false,
+    };
+  }
+  if (errorMessage.toLowerCase().includes("unauthorized")) {
+    return {
+      message: "인증되지 않은 접근입니다.",
+      shouldRedirect: false,
+    };
+  }
+
+  // 처리할 수 없는 에러는 라우터에서 받은 메시지를 그대로 사용
+  return {
+    message: errorMessage,
+    shouldRedirect: false,
+  };
 }
 
 /**

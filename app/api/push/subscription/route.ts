@@ -73,7 +73,7 @@ export async function POST(request: NextRequest) {
 
     if (!subscription || !subscription.endpoint) {
       return NextResponse.json(
-        { error: "구독 정보가 올바르지 않습니다." },
+        { error: "INVALID_SUBSCRIPTION_DATA" },
         { status: 400 }
       );
     }
@@ -84,7 +84,7 @@ export async function POST(request: NextRequest) {
       devLog.error("구독 데이터 검증 실패:", validation.errors);
       return NextResponse.json(
         {
-          error: "구독 데이터가 유효하지 않습니다.",
+          error: "SUBSCRIPTION_VALIDATION_FAILED",
           details: validation.errors,
         },
         { status: 400 }
@@ -114,7 +114,7 @@ export async function POST(request: NextRequest) {
       if (deleteError) {
         devLog.error("기존 구독 삭제 오류:", deleteError);
         return NextResponse.json(
-          { error: "기존 구독 삭제에 실패했습니다." },
+          { error: "SUBSCRIPTION_DELETE_FAILED" },
           { status: 500 }
         );
       }
@@ -137,7 +137,7 @@ export async function POST(request: NextRequest) {
     if (insertError) {
       devLog.error("푸시 구독 저장 오류:", insertError);
       return NextResponse.json(
-        { error: "구독 저장에 실패했습니다." },
+        { error: "SUBSCRIPTION_SAVE_FAILED" },
         { status: 500 }
       );
     }
@@ -267,7 +267,7 @@ export async function GET(request: NextRequest) {
     if (error) {
       devLog.error("푸시 구독 조회 오류:", error);
       return NextResponse.json(
-        { error: "구독 정보 조회에 실패했습니다." },
+        { error: "SUBSCRIPTION_FETCH_FAILED" },
         { status: 500 }
       );
     }
@@ -380,7 +380,7 @@ export async function GET(request: NextRequest) {
       }
     );
     return NextResponse.json(
-      { error: "서버 오류가 발생했습니다." },
+      { error: "SUBSCRIPTION_GET_SYSTEM_ERROR" },
       { status: 500 }
     );
   }
@@ -406,10 +406,7 @@ export async function DELETE(request: NextRequest) {
     const { endpoint } = body;
 
     if (!endpoint) {
-      return NextResponse.json(
-        { error: "엔드포인트가 필요합니다." },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "MISSING_ENDPOINT" }, { status: 400 });
     }
 
     // 구독 삭제
@@ -425,7 +422,7 @@ export async function DELETE(request: NextRequest) {
     if (deleteError) {
       devLog.error("전체 푸시 구독 삭제 오류:", deleteError);
       return NextResponse.json(
-        { error: "구독 해제에 실패했습니다." },
+        { error: "SUBSCRIPTION_UNSUBSCRIBE_FAILED" },
         { status: 500 }
       );
     }

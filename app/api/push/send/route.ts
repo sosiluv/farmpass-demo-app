@@ -139,7 +139,7 @@ export async function POST(request: NextRequest) {
         userAgent
       );
       return NextResponse.json(
-        { error: "제목, 메시지, 알림 유형은 필수입니다." },
+        { error: "MISSING_REQUIRED_FIELDS" },
         { status: 400 }
       );
     }
@@ -263,7 +263,7 @@ export async function POST(request: NextRequest) {
       );
       devLog.error("구독자 조회 오류:", subscriptionError);
       return NextResponse.json(
-        { error: "구독자 조회에 실패했습니다." },
+        { error: "SUBSCRIBER_FETCH_FAILED" },
         { status: 500 }
       );
     }
@@ -331,7 +331,7 @@ export async function POST(request: NextRequest) {
       );
       devLog.error("알림 설정 조회 오류:", settingsError);
       return NextResponse.json(
-        { error: "알림 설정 조회에 실패했습니다." },
+        { error: "NOTIFICATION_SETTINGS_FETCH_FAILED" },
         { status: 500 }
       );
     }
@@ -464,7 +464,7 @@ export async function POST(request: NextRequest) {
         return {
           success: false,
           subscriptionId: subscription.id,
-          error: error.message || "알 수 없는 오류",
+          error: "PUSH_SEND_FAILED",
           statusCode: error.statusCode,
           userId: subscription.user_id,
         };

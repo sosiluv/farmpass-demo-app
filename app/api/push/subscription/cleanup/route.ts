@@ -54,7 +54,7 @@ export async function POST(request: NextRequest) {
     if (subscriptionError) {
       devLog.error("구독 조회 오류:", subscriptionError);
       return NextResponse.json(
-        { error: "구독 정보 조회에 실패했습니다." },
+        { error: "SUBSCRIPTION_CLEANUP_FETCH_FAILED" },
         { status: 500 }
       );
     }

@@ -12,9 +12,9 @@ import { formatDateTime } from "@/lib/utils/datetime/date";
 import { Profile } from "@/lib/types";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { useAuth } from "@/components/providers/auth-provider";
 import { useCommonToast } from "@/lib/utils/notification/toast-messages";
 import { useResetLoginAttemptsMutation } from "@/lib/hooks/query/use-auth-mutations";
+import { getAuthErrorMessage } from "@/lib/utils/validation/validation";
 
 interface UserDetailModalProps {
   user: Profile | null;
@@ -92,10 +92,8 @@ export function UserDetailModal({ user, open, onClose }: UserDetailModalProps) {
       );
       onClose();
     } catch (error) {
-      showError(
-        "계정 잠금 해제 실패",
-        "계정 잠금 해제 중 오류가 발생했습니다."
-      );
+      const authError = getAuthErrorMessage(error);
+      showError("계정 잠금 해제 실패", authError.message);
     } finally {
       setLoading(false);
     }

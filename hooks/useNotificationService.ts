@@ -1,6 +1,7 @@
 import { useState, useCallback } from "react";
 import { devLog } from "@/lib/utils/logging/dev-logger";
 import { safeNotificationAccess } from "@/lib/utils/browser/safari-compat";
+import { getAuthErrorMessage } from "@/lib/utils/validation/validation";
 
 // React Query Hooks
 import {
@@ -71,10 +72,11 @@ export function useNotificationService(enableVapidKey: boolean = false) {
       });
       return result;
     } catch (error) {
+      const authError = getAuthErrorMessage(error);
       setLastMessage({
         type: "error",
         title: "구독 실패",
-        message: "푸시 알림 구독에 실패했습니다",
+        message: authError.message,
       });
       throw error;
     } finally {
@@ -105,10 +107,11 @@ export function useNotificationService(enableVapidKey: boolean = false) {
       });
       return result;
     } catch (error) {
+      const authError = getAuthErrorMessage(error);
       setLastMessage({
         type: "error",
         title: "구독 해제 실패",
-        message: "구독 해제에 실패했습니다",
+        message: authError.message,
       });
       throw error;
     } finally {
@@ -203,13 +206,11 @@ export function useNotificationService(enableVapidKey: boolean = false) {
       }
     } catch (error) {
       devLog.error("알림 권한 요청 실패:", error);
+      const authError = getAuthErrorMessage(error);
       setLastMessage({
         type: "error",
         title: "알림 설정 실패",
-        message:
-          error instanceof Error
-            ? error.message
-            : "알 수 없는 오류가 발생했습니다",
+        message: authError.message,
       });
       return false;
     } finally {

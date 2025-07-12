@@ -239,7 +239,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         {
           success: false,
-          error: "이메일과 비밀번호가 필요합니다.",
+          error: "MISSING_CREDENTIALS",
         },
         { status: 400 }
       );
@@ -267,10 +267,10 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         {
           success: false,
-          error: "계정이 잠겼습니다.",
-          message: `너무 많은 로그인 시도가 있었습니다. ${Math.ceil(
+          error: "ACCOUNT_LOCKED",
+          message: `Too many login attempts. Please try again in ${Math.ceil(
             attempts.timeLeft / (60 * 1000)
-          )}분 후에 다시 시도해주세요.`,
+          )} minutes.`,
           timeLeft: attempts.timeLeft,
           remainingAttempts: 0,
         },
@@ -319,8 +319,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         {
           success: false,
-          error: "로그인에 실패했습니다.",
-          message: "이메일 또는 비밀번호가 올바르지 않습니다.",
+          error: "LOGIN_FAILED",
+          message: "INVALID_CREDENTIALS",
           remainingAttempts: attempts.remainingAttempts - 1,
           accountLocked: attempts.remainingAttempts - 1 <= 0,
         },
@@ -446,7 +446,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(
       {
         success: false,
-        error: "로그인 중 오류가 발생했습니다.",
+        error: "LOGIN_SYSTEM_ERROR",
       },
       { status: 500 }
     );

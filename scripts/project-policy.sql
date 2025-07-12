@@ -68,7 +68,7 @@ COMMENT ON FUNCTION public.is_system_admin() IS
 
 
 -- =================================
--- profiles 테이블 정책 (함수 기반, 무한 재귀 완전 방지)
+-- profiles 테이블 정책 (Prisma 호환, 멤버 관리 최적화)
 -- =================================
 CREATE POLICY "Users can view own profile" ON public.profiles
     FOR SELECT USING (auth.uid() = id);
@@ -76,7 +76,7 @@ CREATE POLICY "Users can view own profile" ON public.profiles
 CREATE POLICY "Admins can view all profiles" ON public.profiles
     FOR SELECT USING (public.is_system_admin());
 
--- 농장 소유자와 관리자가 멤버 추가를 위해 다른 사용자 프로필 조회 가능
+-- 농장 소유자와 관리자가 멤버 추가를 위해 다른 사용자 프로필 조회 가능 (Prisma에서 세밀한 권한 체크)
 CREATE POLICY "Farm owners and managers can view profiles for member management" ON public.profiles
     FOR SELECT USING (
         public.is_system_admin() OR
@@ -112,12 +112,16 @@ COMMENT ON POLICY "Admins can update all profiles" ON public.profiles IS
 
 
 -- =================================
--- farms 테이블 정책 (함수 기반, 순환 참조 완전 제거)
+-- farms 테이블 정책 (Prisma 호환, 구성원 접근 권한 강화)
 -- =================================
 CREATE POLICY "Users can view own farms" ON public.farms
     FOR SELECT USING (
         public.is_system_admin() OR
-        owner_id = auth.uid()
+        owner_id = auth.uid() OR
+        id IN (
+            SELECT farm_id FROM public.farm_members 
+            WHERE user_id = auth.uid() AND is_active = true
+        )
     );
 
 CREATE POLICY "Users can manage own farms" ON public.farms
@@ -128,7 +132,7 @@ CREATE POLICY "Users can manage own farms" ON public.farms
 
 
 COMMENT ON POLICY "Users can view own farms" ON public.farms IS 
-'사용자는 자신이 소유한 농장만 조회 가능, 관리자는 모든 농장 조회 가능';
+'사용자는 자신이 소유한 농장과 구성원으로 속한 농장을 조회 가능, 관리자는 모든 농장 조회 가능';
 
 COMMENT ON POLICY "Users can manage own farms" ON public.farms IS 
 '사용자는 자신이 소유한 농장만 관리 가능, 관리자는 모든 농장 관리 가능';
@@ -136,7 +140,7 @@ COMMENT ON POLICY "Users can manage own farms" ON public.farms IS
 
 
 -- =================================
--- farm_members 테이블 정책 (함수 기반, 순환 참조 완전 제거)
+-- farm_members 테이블 정책 (Prisma 호환, 세밀한 권한 제어)
 -- =================================
 CREATE POLICY "Users can view farm members" ON public.farm_members
     FOR SELECT USING (
@@ -144,26 +148,35 @@ CREATE POLICY "Users can view farm members" ON public.farm_members
         user_id = auth.uid() OR
         farm_id IN (
             SELECT id FROM public.farms WHERE owner_id = auth.uid()
+        ) OR
+        farm_id IN (
+            SELECT farm_id FROM public.farm_members 
+            WHERE user_id = auth.uid() AND is_active = true
         )
     );
 
-CREATE POLICY "Farm owners can manage members" ON public.farm_members
+-- 농장 소유자와 관리자만 멤버 관리 가능 (Prisma에서 세밀한 권한 체크)
+CREATE POLICY "Farm owners and managers can manage members" ON public.farm_members
     FOR ALL USING (
         public.is_system_admin() OR
         farm_id IN (
             SELECT id FROM public.farms WHERE owner_id = auth.uid()
+        ) OR
+        farm_id IN (
+            SELECT farm_id FROM public.farm_members 
+            WHERE user_id = auth.uid() AND is_active = true AND role = 'manager'
         )
     );
 
 COMMENT ON POLICY "Users can view farm members" ON public.farm_members IS 
-'사용자는 자신의 멤버십 정보와 자신이 소유한 농장의 멤버를 조회 가능, 관리자는 모든 멤버 조회 가능';
+'사용자는 자신의 멤버십 정보, 자신이 소유한 농장의 멤버, 자신이 속한 농장의 멤버를 조회 가능, 관리자는 모든 멤버 조회 가능';
 
-COMMENT ON POLICY "Farm owners can manage members" ON public.farm_members IS 
-'농장 소유자는 자신의 농장 멤버를 관리 가능, 관리자는 모든 농장 멤버 관리 가능';
+COMMENT ON POLICY "Farm owners and managers can manage members" ON public.farm_members IS 
+'농장 소유자와 농장 관리자(manager)는 자신의 농장 멤버를 관리 가능, 시스템 관리자는 모든 농장 멤버 관리 가능';
 
 
 -- =================================
--- visitor_entries 테이블 정책 (함수 기반, 순환 참조 완전 제거)
+-- visitor_entries 테이블 정책 (Prisma 호환, 방문자 관리 최적화)
 -- =================================
 CREATE POLICY "Users can view farm visitors" ON public.visitor_entries
     FOR SELECT USING (
@@ -294,3 +307,4 @@ CREATE POLICY "allow_all" ON public.user_notification_settings
 
 COMMENT ON POLICY "allow_all" ON public.user_notification_settings IS 
 '모든 사용자는 모든 알림 설정에 접근 가능합니다.';
+

@@ -1,9 +1,9 @@
-import { createClient } from "@/lib/supabase/server";
 import { NextRequest, NextResponse } from "next/server";
 import { createSystemLog } from "@/lib/utils/logging/system-log";
 import { devLog } from "@/lib/utils/logging/dev-logger";
 import { getClientIP, getUserAgent } from "@/lib/server/ip-helpers";
 import { requireAuth } from "@/lib/server/auth-utils";
+import { prisma } from "@/lib/prisma";
 
 // PUT - 농장 멤버 역할 변경
 export async function PUT(
@@ -17,8 +17,6 @@ export async function PUT(
   let user: any = null;
 
   try {
-    const supabase = await createClient();
-
     // 인증 확인
     const authResult = await requireAuth(false);
     if (!authResult.success || !authResult.user) {
@@ -29,30 +27,44 @@ export async function PUT(
     const { role } = await request.json();
 
     // 농장 소유권 또는 관리자 권한 확인
-    const { data: farm, error: farmError } = await supabase
-      .from("farms")
-      .select("owner_id, farm_name")
-      .eq("id", params.farmId)
-      .single();
+    let farm;
+    try {
+      farm = await prisma.farms.findUnique({
+        where: { id: params.farmId },
+        select: { owner_id: true, farm_name: true },
+      });
+    } catch (farmError) {
+      devLog.error("Error fetching farm:", farmError);
+      return NextResponse.json({ error: "FARM_FETCH_ERROR" }, { status: 500 });
+    }
 
-    if (farmError || !farm) {
-      return NextResponse.json({ error: "Farm not found" }, { status: 404 });
+    if (!farm) {
+      return NextResponse.json({ error: "FARM_NOT_FOUND" }, { status: 404 });
     }
 
     // 시스템 관리자가 아닌 경우에만 농장별 권한 확인
     if (!authResult.isAdmin && farm.owner_id !== user.id) {
-      const { data: memberRole } = await supabase
-        .from("farm_members")
-        .select("role")
-        .eq("farm_id", params.farmId)
-        .eq("user_id", user.id)
-        .single();
+      let memberRole;
+      try {
+        memberRole = await prisma.farm_members.findFirst({
+          where: {
+            farm_id: params.farmId,
+            user_id: user.id,
+          },
+          select: { role: true },
+        });
+      } catch (memberError) {
+        devLog.error("Error checking member role:", memberError);
+        return NextResponse.json(
+          { error: "PERMISSION_CHECK_ERROR" },
+          { status: 500 }
+        );
+      }
 
       if (!memberRole || memberRole.role !== "manager") {
         return NextResponse.json(
           {
-            error:
-              "농장 소유자, 농장 관리자 또는 시스템 관리자만 멤버 역할을 변경할 수 있습니다",
+            error: "INSUFFICIENT_PERMISSIONS",
           },
           { status: 403 }
         );
@@ -60,33 +72,36 @@ export async function PUT(
     }
 
     // 변경할 멤버 정보 조회
-    const { data: memberToUpdate, error: memberError } = await supabase
-      .from("farm_members")
-      .select(
-        `
-        id,
-        farm_id,
-        user_id,
-        role,
-        profiles!farm_members_user_id_fkey (
-          id,
-          name,
-          email
-        )
-      `
-      )
-      .eq("id", params.memberId)
-      .eq("farm_id", params.farmId)
-      .single();
+    let memberToUpdate;
+    try {
+      memberToUpdate = await prisma.farm_members.findUnique({
+        where: { id: params.memberId },
+        include: {
+          profiles: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+            },
+          },
+        },
+      });
+    } catch (memberError) {
+      devLog.error("Error fetching member:", memberError);
+      return NextResponse.json(
+        { error: "MEMBER_FETCH_ERROR" },
+        { status: 500 }
+      );
+    }
 
-    if (memberError || !memberToUpdate) {
-      return NextResponse.json({ error: "Member not found" }, { status: 404 });
+    if (!memberToUpdate || memberToUpdate.farm_id !== params.farmId) {
+      return NextResponse.json({ error: "MEMBER_NOT_FOUND" }, { status: 404 });
     }
 
     // 농장 소유자의 역할은 변경할 수 없음
     if (memberToUpdate.user_id === farm.owner_id) {
       return NextResponse.json(
-        { error: "Cannot change farm owner's role" },
+        { error: "CANNOT_CHANGE_OWNER_ROLE" },
         { status: 400 }
       );
     }
@@ -94,12 +109,13 @@ export async function PUT(
     const oldRole = memberToUpdate.role;
 
     // 멤버 역할 업데이트
-    const { error: updateError } = await supabase
-      .from("farm_members")
-      .update({ role })
-      .eq("id", params.memberId);
-
-    if (updateError) {
+    try {
+      await prisma.farm_members.update({
+        where: { id: params.memberId },
+        data: { role },
+      });
+    } catch (updateError) {
+      devLog.error("Error updating member role:", updateError);
       throw updateError;
     }
 
@@ -170,10 +186,7 @@ export async function PUT(
       devLog.error("Failed to log member role update error:", logError)
     );
 
-    return NextResponse.json(
-      { error: "Failed to update member role" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "MEMBER_UPDATE_ERROR" }, { status: 500 });
   }
 }
 
@@ -189,8 +202,6 @@ export async function DELETE(
   let user: any = null;
 
   try {
-    const supabase = await createClient();
-
     // 인증 확인
     const authResult = await requireAuth(false);
     if (!authResult.success || !authResult.user) {
@@ -200,30 +211,44 @@ export async function DELETE(
     const user = authResult.user;
 
     // 농장 소유권 또는 관리자 권한 확인
-    const { data: farm, error: farmError } = await supabase
-      .from("farms")
-      .select("owner_id, farm_name")
-      .eq("id", params.farmId)
-      .single();
+    let farm;
+    try {
+      farm = await prisma.farms.findUnique({
+        where: { id: params.farmId },
+        select: { owner_id: true, farm_name: true },
+      });
+    } catch (farmError) {
+      devLog.error("Error fetching farm:", farmError);
+      return NextResponse.json({ error: "FARM_FETCH_ERROR" }, { status: 500 });
+    }
 
-    if (farmError || !farm) {
-      return NextResponse.json({ error: "Farm not found" }, { status: 404 });
+    if (!farm) {
+      return NextResponse.json({ error: "FARM_NOT_FOUND" }, { status: 404 });
     }
 
     // 시스템 관리자가 아닌 경우에만 농장별 권한 확인
     if (!authResult.isAdmin && farm.owner_id !== user.id) {
-      const { data: memberRole } = await supabase
-        .from("farm_members")
-        .select("role")
-        .eq("farm_id", params.farmId)
-        .eq("user_id", user.id)
-        .single();
+      let memberRole;
+      try {
+        memberRole = await prisma.farm_members.findFirst({
+          where: {
+            farm_id: params.farmId,
+            user_id: user.id,
+          },
+          select: { role: true },
+        });
+      } catch (memberError) {
+        devLog.error("Error checking member role:", memberError);
+        return NextResponse.json(
+          { error: "PERMISSION_CHECK_ERROR" },
+          { status: 500 }
+        );
+      }
 
       if (!memberRole || memberRole.role !== "manager") {
         return NextResponse.json(
           {
-            error:
-              "농장 소유자, 농장 관리자 또는 시스템 관리자만 멤버를 제거할 수 있습니다",
+            error: "INSUFFICIENT_PERMISSIONS",
           },
           { status: 403 }
         );
@@ -231,44 +256,47 @@ export async function DELETE(
     }
 
     // 삭제할 멤버 정보 조회
-    const { data: memberToRemove, error: memberError } = await supabase
-      .from("farm_members")
-      .select(
-        `
-        id,
-        farm_id,
-        user_id,
-        role,
-        profiles!farm_members_user_id_fkey (
-          id,
-          name,
-          email
-        )
-      `
-      )
-      .eq("id", params.memberId)
-      .eq("farm_id", params.farmId)
-      .single();
+    let memberToRemove;
+    try {
+      memberToRemove = await prisma.farm_members.findUnique({
+        where: { id: params.memberId },
+        include: {
+          profiles: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+            },
+          },
+        },
+      });
+    } catch (memberError) {
+      devLog.error("Error fetching member:", memberError);
+      return NextResponse.json(
+        { error: "MEMBER_FETCH_ERROR" },
+        { status: 500 }
+      );
+    }
 
-    if (memberError || !memberToRemove) {
-      return NextResponse.json({ error: "Member not found" }, { status: 404 });
+    if (!memberToRemove || memberToRemove.farm_id !== params.farmId) {
+      return NextResponse.json({ error: "MEMBER_NOT_FOUND" }, { status: 404 });
     }
 
     // 농장 소유자는 제거할 수 없음
     if (memberToRemove.user_id === farm.owner_id) {
       return NextResponse.json(
-        { error: "Cannot remove farm owner" },
+        { error: "CANNOT_REMOVE_OWNER" },
         { status: 400 }
       );
     }
 
     // 멤버 삭제
-    const { error: deleteError } = await supabase
-      .from("farm_members")
-      .delete()
-      .eq("id", params.memberId);
-
-    if (deleteError) {
+    try {
+      await prisma.farm_members.delete({
+        where: { id: params.memberId },
+      });
+    } catch (deleteError) {
+      devLog.error("Error deleting member:", deleteError);
       throw deleteError;
     }
 
@@ -335,9 +363,6 @@ export async function DELETE(
       devLog.error("Failed to log member removal error:", logError)
     );
 
-    return NextResponse.json(
-      { error: "Failed to remove member" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "MEMBER_DELETE_ERROR" }, { status: 500 });
   }
 }

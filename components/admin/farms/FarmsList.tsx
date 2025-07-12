@@ -16,7 +16,7 @@ export function FarmsList({
   onDelete,
 }: FarmsListProps) {
   // 모든 농장의 멤버를 한 번에 조회 (API 호출 최적화)
-  const farmIds = farms.map(farm => farm.id);
+  const farmIds = farms.map((farm) => farm.id);
   const { farmMembers } = useFarmMembersPreviewQuery(farmIds);
 
   return (

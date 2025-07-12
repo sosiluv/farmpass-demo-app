@@ -41,15 +41,23 @@ export async function apiClient(input: RequestInfo, init?: ApiClientOptions) {
         }
       }
 
-      // 로그인 API가 아닌 경우에만 세션 만료 처리
-      if (!isLoginApi) {
-        const sessionResult = await handleSessionExpired();
-        const error = new Error(
-          sessionResult.message || ERROR_MESSAGES.UNAUTHORIZED
-        );
+      // 로그인 API의 경우 서버 응답 메시지를 그대로 사용
+      if (isLoginApi) {
+        const errorData = await response.json().catch(() => ({}));
+        const errorMessage =
+          errorData.message || errorData.error || ERROR_MESSAGES.UNAUTHORIZED;
+        const error = new Error(errorMessage);
         if (onError) onError(error, context);
         throw error;
       }
+
+      // 로그인 API가 아닌 경우에만 세션 만료 처리
+      const sessionResult = await handleSessionExpired();
+      const error = new Error(
+        sessionResult.message || ERROR_MESSAGES.UNAUTHORIZED
+      );
+      if (onError) onError(error, context);
+      throw error;
     }
 
     // 403: 권한 부족

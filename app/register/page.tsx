@@ -34,7 +34,7 @@ import { ErrorBoundary } from "@/components/error/error-boundary";
 import { usePasswordRules } from "@/lib/utils/validation/usePasswordRules";
 import {
   checkEmailDuplicate,
-  getRegistrationErrorMessage,
+  getAuthErrorMessage,
 } from "@/lib/utils/validation";
 import {
   createRegistrationFormSchema,
@@ -413,10 +413,10 @@ export default function RegisterPage() {
         router.push("/login");
       } catch (error: any) {
         devLog.error("Registration failed:", error);
-        const errorMessage = getRegistrationErrorMessage(error);
-        setEmailError(errorMessage);
+        const authError = getAuthErrorMessage(error);
+        setEmailError(authError.message);
 
-        showError("회원가입 실패", errorMessage);
+        showError("회원가입 실패", authError.message);
       } finally {
         setLoading(false);
       }

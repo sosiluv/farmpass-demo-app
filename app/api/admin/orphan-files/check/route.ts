@@ -109,10 +109,12 @@ export async function GET(request: NextRequest) {
       profiles?.map((p: any) => p.profile_image_url).filter(Boolean) || []
     );
 
-    // 재귀적으로 모든 프로필 파일 가져오기
+    // 재귀적으로 모든 프로필 파일 가져오기 (systems 폴더 제외)
     const profileFiles = await getAllStorageFiles(supabase, "profiles");
     const orphanProfileFiles = profileFiles.filter(
       (filePath) =>
+        // systems 폴더는 제외
+        !filePath.startsWith("systems/") &&
         !Array.from(usedProfileSet).some((url) =>
           (url as string).includes(filePath)
         )
@@ -146,7 +148,8 @@ export async function GET(request: NextRequest) {
     devLog.error("[CHECK_ORPHAN] General error:", error);
     return NextResponse.json(
       {
-        error: "Orphan 파일 조회 중 오류가 발생했습니다.",
+        error: "ORPHAN_FILES_CHECK_FAILED",
+        message: "Failed to check orphan files",
         details: error instanceof Error ? error.message : "Unknown error",
       },
       { status: 500 }

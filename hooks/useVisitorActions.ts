@@ -1,6 +1,7 @@
 import { useCallback } from "react";
 import { useCommonToast } from "@/lib/utils/notification/toast-messages";
 import { exportVisitorsCSV } from "@/lib/utils/data/csv-unified";
+import { getAuthErrorMessage } from "@/lib/utils/validation/validation";
 import { useAuth } from "@/components/providers/auth-provider";
 import type { VisitorsExportOptions } from "@/components/admin/management/exports/types";
 import type { Farm } from "@/lib/types";
@@ -61,10 +62,8 @@ export const useVisitorActions = ({
           "방문자 정보가 성공적으로 수정되었습니다."
         );
       } catch (error) {
-        showError(
-          "방문자 정보 수정 실패",
-          "방문자 정보를 수정하는 중 오류가 발생했습니다."
-        );
+        const authError = getAuthErrorMessage(error);
+        showError("방문자 정보 수정 실패", authError.message);
       }
     },
     [updateVisitorMutation, showInfo, showWarning, showSuccess, showError]
@@ -86,10 +85,8 @@ export const useVisitorActions = ({
         });
         showSuccess("방문자 삭제 완료", "방문자가 성공적으로 삭제되었습니다.");
       } catch (error) {
-        showError(
-          "방문자 삭제 실패",
-          "방문자를 삭제하는 중 오류가 발생했습니다."
-        );
+        const authError = getAuthErrorMessage(error);
+        showError("방문자 삭제 실패", authError.message);
       }
     },
     [deleteVisitorMutation, showInfo, showWarning, showSuccess, showError]
@@ -150,7 +147,8 @@ export const useVisitorActions = ({
 
         showSuccess("내보내기 완료", "내보내기가 성공적으로 완료되었습니다.");
       } catch (error) {
-        showError("내보내기 실패", "내보내기 중 오류가 발생했습니다.");
+        const authError = getAuthErrorMessage(error);
+        showError("내보내기 실패", authError.message);
       }
     },
     [allVisitors, farms, isAdmin, showInfo, showSuccess, showError]

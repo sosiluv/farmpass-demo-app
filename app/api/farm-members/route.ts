@@ -1,10 +1,10 @@
-import { createClient } from "@/lib/supabase/server";
 import { NextRequest, NextResponse } from "next/server";
 import { createSystemLog } from "@/lib/utils/logging/system-log";
 import { devLog } from "@/lib/utils/logging/dev-logger";
 import { getClientIP, getUserAgent } from "@/lib/server/ip-helpers";
 import { requireAuth } from "@/lib/server/auth-utils";
 import { logApiError, logSecurityError } from "@/lib/utils/logging/system-log";
+import { prisma } from "@/lib/prisma";
 
 // 동적 렌더링 강제
 export const dynamic = "force-dynamic";
@@ -23,55 +23,62 @@ export async function GET(request: NextRequest) {
 
   const user = authResult.user;
   const isAdmin = authResult.isAdmin || false;
-  const supabase = await createClient();
 
   try {
     const { searchParams } = new URL(request.url);
     const farmIds = searchParams.get("farmIds");
 
     if (!farmIds) {
-      return NextResponse.json(
-        { error: "farmIds parameter is required" },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "MISSING_FARM_IDS" }, { status: 400 });
     }
 
     const farmIdArray = farmIds.split(",").filter(Boolean);
 
     // 시스템 관리자가 아닌 경우 권한 체크
     if (!isAdmin) {
-      // 사용자가 접근할 수 있는 농장들만 필터링
-      const { data: accessibleFarms, error: accessError } = await supabase
-        .from("farms")
-        .select("id")
-        .or(`owner_id.eq.${user.id},id.in.(${farmIdArray.join(",")})`);
+      let accessibleFarms;
+      let memberFarms;
 
-      if (accessError) {
+      try {
+        // 사용자가 접근할 수 있는 농장들만 필터링
+        accessibleFarms = await prisma.farms.findMany({
+          where: {
+            OR: [{ owner_id: user.id }, { id: { in: farmIdArray } }],
+          },
+          select: {
+            id: true,
+          },
+        });
+      } catch (accessError) {
         devLog.error("Error checking farm access:", accessError);
         return NextResponse.json(
-          { error: "Failed to check farm access" },
+          { error: "FARM_ACCESS_CHECK_ERROR" },
           { status: 500 }
         );
       }
 
-      // 농장 구성원으로서 접근 가능한 농장들도 확인
-      const { data: memberFarms, error: memberError } = await supabase
-        .from("farm_members")
-        .select("farm_id")
-        .eq("user_id", user.id)
-        .in("farm_id", farmIdArray);
-
-      if (memberError) {
+      try {
+        // 농장 구성원으로서 접근 가능한 농장들도 확인
+        memberFarms = await prisma.farm_members.findMany({
+          where: {
+            user_id: user.id,
+            farm_id: { in: farmIdArray },
+          },
+          select: {
+            farm_id: true,
+          },
+        });
+      } catch (memberError) {
         devLog.error("Error checking farm membership:", memberError);
         return NextResponse.json(
-          { error: "Failed to check farm membership" },
+          { error: "FARM_MEMBER_ACCESS_CHECK_ERROR" },
           { status: 500 }
         );
       }
 
       const accessibleFarmIds = new Set([
-        ...(accessibleFarms?.map((f) => f.id) || []),
-        ...(memberFarms?.map((f) => f.farm_id) || []),
+        ...accessibleFarms.map((f: any) => f.id),
+        ...memberFarms.map((f: any) => f.farm_id),
       ]);
 
       // 접근 권한이 없는 농장이 있으면 에러
@@ -93,8 +100,8 @@ export async function GET(request: NextRequest) {
 
         return NextResponse.json(
           {
-            error: "Access denied to some farms",
-            unauthorized_farms: unauthorizedFarms,
+            error: "UNAUTHORIZED_FARMS",
+            unauthorizedFarms: unauthorizedFarms,
           },
           { status: 403 }
         );
@@ -102,34 +109,33 @@ export async function GET(request: NextRequest) {
     }
 
     // 구성원 목록 일괄 조회
-    const { data: members, error: membersError } = await supabase
-      .from("farm_members")
-      .select(
-        `
-        id,
-        farm_id,
-        user_id,
-        role,
-        is_active,
-        created_at,
-        updated_at,
-        position,
-        responsibilities,
-        profiles (
-          id,
-          name,
-          email,
-          profile_image_url
-        )
-      `
-      )
-      .in("farm_id", farmIdArray)
-      .eq("is_active", true)
-      .order("created_at", { ascending: false });
-
-    if (membersError) {
+    let members;
+    try {
+      members = await prisma.farm_members.findMany({
+        where: {
+          farm_id: { in: farmIdArray },
+          is_active: true,
+        },
+        include: {
+          profiles: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+              profile_image_url: true,
+            },
+          },
+        },
+        orderBy: {
+          created_at: "desc",
+        },
+      });
+    } catch (membersError) {
       devLog.error("Error fetching farm members:", membersError);
-      throw membersError;
+      return NextResponse.json(
+        { error: "FARM_MEMBERS_FETCH_ERROR" },
+        { status: 500 }
+      );
     }
 
     // 농장 구성원 일괄 조회 로그 기록
@@ -203,7 +209,7 @@ export async function GET(request: NextRequest) {
     }
 
     return NextResponse.json(
-      { error: "Failed to fetch farm members" },
+      { error: "FARM_MEMBERS_BULK_FETCH_ERROR" },
       { status: 500 }
     );
   }

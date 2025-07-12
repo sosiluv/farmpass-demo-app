@@ -12,7 +12,7 @@ export async function POST(request: NextRequest) {
 
     if (!token) {
       return NextResponse.json(
-        { error: "캡차 토큰이 필요합니다." },
+        { error: "MISSING_TURNSTILE_TOKEN" },
         {
           status: 400,
           headers: {
@@ -65,7 +65,7 @@ export async function POST(request: NextRequest) {
 
       return NextResponse.json(
         {
-          error: "캡차 인증에 실패했습니다.",
+          error: "TURNSTILE_VERIFICATION_FAILED",
           details: verificationResult["error-codes"],
         },
         {
@@ -83,7 +83,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(
       {
         success: true,
-        message: "캡차 인증이 완료되었습니다.",
+        message: "Turnstile verification completed.",
       },
       {
         headers: {
@@ -108,7 +108,7 @@ export async function POST(request: NextRequest) {
     );
 
     return NextResponse.json(
-      { error: "캡차 인증 중 오류가 발생했습니다." },
+      { error: "TURNSTILE_SYSTEM_ERROR" },
       {
         status: 500,
         headers: {

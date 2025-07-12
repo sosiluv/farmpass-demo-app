@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useAuth } from "@/components/providers/auth-provider";
 import { devLog } from "@/lib/utils/logging/dev-logger";
 import { handleError } from "@/lib/utils/error";
+import { getAuthErrorMessage } from "@/lib/utils/validation/validation";
 import {
   safeLocalStorageAccess,
   safeNotificationAccess,
@@ -180,10 +181,11 @@ export function useNotificationPermission() {
       }));
     } catch (error) {
       handleError(error, "알림 권한 요청");
+      const authError = getAuthErrorMessage(error);
       setLastMessage({
         type: "error",
         title: "오류 발생",
-        message: "알림 설정 중 오류가 발생했습니다.",
+        message: authError.message,
       });
     }
   };

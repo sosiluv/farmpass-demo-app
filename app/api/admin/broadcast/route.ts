@@ -32,7 +32,10 @@ export async function POST(request: NextRequest) {
     // 입력 검증
     if (!title || !message || !notificationType) {
       return NextResponse.json(
-        { error: "제목, 메시지, 알림 유형은 필수입니다." },
+        {
+          error: "MISSING_REQUIRED_FIELDS",
+          message: "Title, message, and notification type are required",
+        },
         { status: 400 }
       );
     }
@@ -44,7 +47,10 @@ export async function POST(request: NextRequest) {
       )
     ) {
       return NextResponse.json(
-        { error: "유효하지 않은 알림 유형입니다." },
+        {
+          error: "INVALID_NOTIFICATION_TYPE",
+          message: "Invalid notification type",
+        },
         { status: 400 }
       );
     }
@@ -69,7 +75,7 @@ export async function POST(request: NextRequest) {
     const result = await response.json();
 
     if (!response.ok) {
-      throw new Error(result.error || "푸시 알림 발송에 실패했습니다.");
+      throw new Error(result.error || "Push notification sending failed");
     }
 
     // 성공 로그
@@ -130,7 +136,10 @@ export async function POST(request: NextRequest) {
     );
 
     return NextResponse.json(
-      { error: "브로드캐스트 알림 발송에 실패했습니다." },
+      {
+        error: "BROADCAST_SENDING_FAILED",
+        message: "Failed to send broadcast notification",
+      },
       { status: 500 }
     );
   }

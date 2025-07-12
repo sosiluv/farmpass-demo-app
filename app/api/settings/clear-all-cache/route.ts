@@ -61,7 +61,7 @@ export async function POST(request: NextRequest) {
     );
 
     return NextResponse.json(
-      { success: false, error: "Failed to clear all caches" },
+      { success: false, error: "CACHE_CLEAR_ALL_FAILED" },
       { status: 500 }
     );
   }

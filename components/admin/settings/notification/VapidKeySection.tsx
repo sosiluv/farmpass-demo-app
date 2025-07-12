@@ -7,6 +7,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Key, AlertTriangle, Copy, Check } from "lucide-react";
 import type { SystemSettings } from "@/lib/types/settings";
 import { useCommonToast } from "@/lib/utils/notification/toast-messages";
+import { getAuthErrorMessage } from "@/lib/utils/validation/validation";
 import SettingsCardHeader from "../SettingsCardHeader";
 
 interface VapidKeySectionProps {
@@ -40,7 +41,8 @@ const VapidKeySection = React.memo(function VapidKeySection({
         "VAPID 키가 성공적으로 생성되었습니다."
       );
     } catch (error) {
-      showError("VAPID 키 생성 실패", "VAPID 키 생성 중 오류가 발생했습니다.");
+      const authError = getAuthErrorMessage(error);
+      showError("VAPID 키 생성 실패", authError.message);
     }
   };
 
@@ -67,7 +69,11 @@ const VapidKeySection = React.memo(function VapidKeySection({
       // 2초 후 복사 상태 초기화
       setTimeout(() => setCopiedKey(null), 2000);
     } catch (error) {
-      showError("키 복사 실패", "키 복사에 실패했습니다. 다시 시도해주세요.");
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : "키 복사에 실패했습니다. 다시 시도해주세요.";
+      showError("키 복사 실패", errorMessage);
     }
   };
 

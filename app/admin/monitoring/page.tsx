@@ -17,6 +17,7 @@ import {
 import { AdminError } from "@/components/error/admin-error";
 import { useDataFetchTimeout } from "@/hooks/useTimeout";
 import { useMonitoringQuery } from "@/lib/hooks/query/use-monitoring-query";
+import { getAuthErrorMessage } from "@/lib/utils/validation/validation";
 
 interface MonitoringData {
   timestamp: string;
@@ -160,6 +161,7 @@ export default function MonitoringDashboard() {
   }
 
   if (error) {
+    const authError = getAuthErrorMessage(error);
     return (
       <div className="flex-1 space-y-6 p-4 md:p-6 pt-2 md:pt-4">
         <PageHeader
@@ -170,9 +172,7 @@ export default function MonitoringDashboard() {
         <Alert variant="destructive">
           <AlertCircle className="h-4 w-4" />
           <AlertTitle>Error</AlertTitle>
-          <AlertDescription>
-            {error?.message || "알 수 없는 오류가 발생했습니다."}
-          </AlertDescription>
+          <AlertDescription>{authError.message}</AlertDescription>
         </Alert>
       </div>
     );

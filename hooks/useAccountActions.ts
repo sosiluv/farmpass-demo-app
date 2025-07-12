@@ -6,6 +6,7 @@ import type { Profile } from "@/lib/types";
 import type { PasswordFormData } from "@/lib/types/account";
 import { useAccountMutations } from "@/lib/hooks/query/use-account-mutations";
 import { useUnifiedImageUpload } from "@/hooks/useUnifiedImageUpload";
+import { getAuthErrorMessage } from "@/lib/utils/validation/validation";
 
 interface UseAccountActionsProps {
   profile: Profile;
@@ -90,7 +91,8 @@ export function useAccountActions({ profile, userId }: UseAccountActionsProps) {
       return { success: true };
     } catch (error: any) {
       devLog.error("프로필 정보 저장 실패:", error);
-      return { success: false, error: error.message };
+      const authError = getAuthErrorMessage(error);
+      return { success: false, error: authError.message };
     }
   };
 
@@ -112,7 +114,8 @@ export function useAccountActions({ profile, userId }: UseAccountActionsProps) {
       return { success: true };
     } catch (error: any) {
       devLog.error("회사 정보 저장 실패:", error);
-      return { success: false, error: error.message };
+      const authError = getAuthErrorMessage(error);
+      return { success: false, error: authError.message };
     }
   };
 
@@ -134,7 +137,8 @@ export function useAccountActions({ profile, userId }: UseAccountActionsProps) {
       return { success: true };
     } catch (error: any) {
       devLog.error("비밀번호 변경 실패:", error);
-      return { success: false, error: error.message };
+      const authError = getAuthErrorMessage(error);
+      return { success: false, error: authError.message };
     }
   };
 

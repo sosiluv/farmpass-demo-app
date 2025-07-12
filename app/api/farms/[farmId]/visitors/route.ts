@@ -387,7 +387,7 @@ export async function POST(
     return NextResponse.json(
       {
         message: "방문자 등록에 실패했습니다. 잠시 후 다시 시도해주세요.",
-        error: error instanceof Error ? error.message : "Unknown error",
+        error: "VISITOR_CREATE_ERROR",
       },
       { status: 500 }
     );
@@ -448,9 +448,6 @@ export async function GET(
       userAgent
     );
 
-    return NextResponse.json(
-      { error: "Failed to fetch visitors" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "VISITOR_FETCH_ERROR" }, { status: 500 });
   }
 }

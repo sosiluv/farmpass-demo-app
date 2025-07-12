@@ -13,6 +13,7 @@ import {
 } from "@/components/admin/visitors";
 import type { Farm } from "@/lib/types/farm";
 import { useCommonToast } from "@/lib/utils/notification/toast-messages";
+import { getAuthErrorMessage } from "@/lib/utils/validation/validation";
 import { AccessDenied } from "@/components/error/access-denied";
 
 // Zustand Store 사용
@@ -69,14 +70,8 @@ export default function FarmVisitorsPage() {
   // 에러 처리
   useEffect(() => {
     if (error) {
-      showError(
-        "오류",
-        error instanceof Error
-          ? error.message
-          : typeof error === "string"
-          ? error
-          : "데이터를 불러오지 못했습니다."
-      );
+      const authError = getAuthErrorMessage(error);
+      showError("오류", authError.message);
     }
   }, [error, showError]);
 
@@ -112,10 +107,8 @@ export default function FarmVisitorsPage() {
         setCurrentFarm(farm);
         setIsInitialized(true);
       } else {
-        showError(
-          "농장을 찾을 수 없습니다",
-          "농장이 존재하지 않거나 접근 권한이 없습니다."
-        );
+        const authError = getAuthErrorMessage("FARM_NOT_FOUND");
+        showError("농장을 찾을 수 없습니다", authError.message);
         router.push("/admin/farms");
       }
     }

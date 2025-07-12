@@ -8,6 +8,7 @@ import { User2, Building2, Shield } from "lucide-react";
 import { ErrorBoundary } from "@/components/error/error-boundary";
 import { useAccountActions } from "@/hooks/useAccountActions";
 import { useCommonToast } from "@/lib/utils/notification/toast-messages";
+import { getAuthErrorMessage } from "@/lib/utils/validation/validation";
 import type { Profile } from "@/lib/types";
 
 interface AccountTabsProps {
@@ -38,13 +39,14 @@ export function AccountTabs({ profile, userId }: AccountTabsProps) {
           "프로필 정보가 성공적으로 저장되었습니다."
         );
       } else {
-        showError(
-          "프로필 저장 실패",
+        const authError = getAuthErrorMessage(
           result.error || "프로필 정보 저장에 실패했습니다."
         );
+        showError("프로필 저장 실패", authError.message);
       }
     } catch (error) {
-      showError("프로필 저장 실패", "프로필 정보 저장 중 오류가 발생했습니다.");
+      const authError = getAuthErrorMessage(error);
+      showError("프로필 저장 실패", authError.message);
     }
   };
 
@@ -59,16 +61,14 @@ export function AccountTabs({ profile, userId }: AccountTabsProps) {
           "회사 정보가 성공적으로 저장되었습니다."
         );
       } else {
-        showError(
-          "회사 정보 저장 실패",
+        const authError = getAuthErrorMessage(
           result.error || "회사 정보 저장에 실패했습니다."
         );
+        showError("회사 정보 저장 실패", authError.message);
       }
     } catch (error) {
-      showError(
-        "회사 정보 저장 실패",
-        "회사 정보 저장 중 오류가 발생했습니다."
-      );
+      const authError = getAuthErrorMessage(error);
+      showError("회사 정보 저장 실패", authError.message);
     }
   };
 
@@ -83,13 +83,14 @@ export function AccountTabs({ profile, userId }: AccountTabsProps) {
           "비밀번호가 성공적으로 변경되었습니다."
         );
       } else {
-        showError(
-          "비밀번호 변경 실패",
+        const authError = getAuthErrorMessage(
           result.error || "비밀번호 변경에 실패했습니다."
         );
+        showError("비밀번호 변경 실패", authError.message);
       }
     } catch (error) {
-      showError("비밀번호 변경 실패", "비밀번호 변경 중 오류가 발생했습니다.");
+      const authError = getAuthErrorMessage(error);
+      showError("비밀번호 변경 실패", authError.message);
     }
   };
 

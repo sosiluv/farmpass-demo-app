@@ -254,7 +254,7 @@ export async function GET(request: NextRequest) {
     });
 
     return NextResponse.json(
-      { error: "방문자 데이터 조회에 실패했습니다" },
+      { error: "VISITOR_DATA_FETCH_FAILED" },
       { status: 500 }
     );
   }
@@ -329,7 +329,7 @@ export async function POST(request: NextRequest) {
       );
 
       return NextResponse.json(
-        { error: "방문자 등록에 실패했습니다." },
+        { error: "VISITOR_REGISTRATION_FAILED" },
         { status: 400 }
       );
     }
@@ -386,7 +386,7 @@ export async function POST(request: NextRequest) {
     );
 
     return NextResponse.json(
-      { error: "서버 오류가 발생했습니다." },
+      { error: "VISITOR_REGISTRATION_SYSTEM_ERROR" },
       { status: 500 }
     );
   }

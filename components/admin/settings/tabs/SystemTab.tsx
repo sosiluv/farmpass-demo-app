@@ -5,6 +5,8 @@ import { ErrorBoundary } from "@/components/error/error-boundary";
 import type { SystemSettings } from "@/lib/types/settings";
 import { useCleanupManager } from "@/lib/hooks/query/use-cleanup-manager";
 import { useOrphanFilesManager } from "@/lib/hooks/query/use-orphan-files-manager";
+import { getAuthErrorMessage } from "@/lib/utils/validation/validation";
+import { useCommonToast } from "@/lib/utils/notification/toast-messages";
 
 // 분리된 컴포넌트들
 import { LoggingSection } from "../system/LoggingSection";
@@ -28,6 +30,8 @@ export default function SystemTab({
   onUpdate,
   isLoading,
 }: SystemTabProps) {
+  const { showError } = useCommonToast();
+
   // 정리 관리자 훅 사용
   const {
     cleanupStatus,
@@ -54,8 +58,9 @@ export default function SystemTab({
   const handleCleanupRequest = async (type: "system_logs" | "all") => {
     try {
       await executeCleanup(type);
-    } catch (error) {
-      console.error("정리 요청 실패:", error);
+    } catch (error: any) {
+      const authError = getAuthErrorMessage(error);
+      showError("정리 요청 실패", authError.message);
     }
   };
 
@@ -63,8 +68,9 @@ export default function SystemTab({
   const handleOrphanCleanupRequest = async () => {
     try {
       await executeOrphanCleanup();
-    } catch (error) {
-      console.error("Orphan 파일 정리 요청 실패:", error);
+    } catch (error: any) {
+      const authError = getAuthErrorMessage(error);
+      showError("Orphan 파일 정리 요청 실패", authError.message);
     }
   };
 

@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { useNotificationSettingsQuery } from "@/lib/hooks/query/use-notification-settings-query";
 import { useCommonToast } from "@/lib/utils/notification/toast-messages";
 import { useNotificationMutations } from "@/lib/hooks/query/use-notification-mutations";
+import { getAuthErrorMessage } from "@/lib/utils/validation/validation";
 import { Save, Loader2 } from "lucide-react";
 
 export function NotificationSettingsActions() {
@@ -25,7 +26,8 @@ export function NotificationSettingsActions() {
       );
     } catch (error) {
       console.error("알림 설정 저장 오류:", error);
-      showError("저장 실패", "알림 설정 저장 중 오류가 발생했습니다.");
+      const authError = getAuthErrorMessage(error);
+      showError("알림 설정 저장 실패", authError.message);
     }
   };
 

@@ -252,7 +252,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json(
       {
-        error: "Failed to fetch monitoring data",
+        error: "MONITORING_DATA_FETCH_FAILED",
         timestamp: new Date().toISOString(),
         details: error instanceof Error ? error.message : "Unknown error",
       },

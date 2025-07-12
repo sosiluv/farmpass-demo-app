@@ -42,7 +42,7 @@ export async function POST(request: NextRequest) {
 
       if (visitorError) {
         devLog.error("방문자 데이터 정리 오류:", visitorError);
-        throw new Error(`방문자 데이터 정리 실패: ${visitorError.message}`);
+        throw new Error(`Visitor data cleanup failed: ${visitorError.message}`);
       }
 
       // 시스템 로그 정리
@@ -53,7 +53,7 @@ export async function POST(request: NextRequest) {
 
       if (logError) {
         devLog.error("시스템 로그 정리 오류:", logError);
-        throw new Error(`시스템 로그 정리 실패: ${logError.message}`);
+        throw new Error(`System log cleanup failed: ${logError.message}`);
       }
 
       // 결과 통합
@@ -73,7 +73,7 @@ export async function POST(request: NextRequest) {
       devLog.log("로그 정리 결과:", { data, error });
 
       if (error) {
-        throw new Error(`시스템 로그 정리 실패: ${error.message}`);
+        throw new Error(`System log cleanup failed: ${error.message}`);
       }
 
       result = data;
@@ -102,8 +102,9 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json(
       {
-        error: "로그 정리 중 오류가 발생했습니다.",
-        details: error instanceof Error ? error.message : "알 수 없는 오류",
+        error: "LOG_CLEANUP_FAILED",
+        message: "Failed to cleanup logs",
+        details: error instanceof Error ? error.message : "Unknown error",
       },
       { status: 500 }
     );
@@ -201,8 +202,9 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json(
       {
-        error: "정리 상태 조회 중 오류가 발생했습니다.",
-        details: error instanceof Error ? error.message : "알 수 없는 오류",
+        error: "CLEANUP_STATUS_QUERY_FAILED",
+        message: "Failed to query cleanup status",
+        details: error instanceof Error ? error.message : "Unknown error",
       },
       { status: 500 }
     );

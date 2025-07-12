@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useCommonToast } from "@/lib/utils/notification/toast-messages";
 import { useSystemSettingsMutations } from "@/lib/hooks/query/use-system-settings-mutations";
+import { getAuthErrorMessage } from "@/lib/utils/validation/validation";
 import type { SystemSettings } from "@/lib/types/settings";
 
 interface SettingsSaverProps {
@@ -27,7 +28,9 @@ export function useSettingsSaver({
 
     try {
       // 1. 설정 저장 (React Query mutation 사용)
-      const updatedSettings = await systemMutations.saveSettingsAsync(localSettings);
+      const updatedSettings = await systemMutations.saveSettingsAsync(
+        localSettings
+      );
 
       // 2. 캐시 무효화 (React Query mutation 사용)
       try {
@@ -51,7 +54,8 @@ export function useSettingsSaver({
 
       showSuccess("설정 저장 완료", "설정이 저장되었습니다.");
     } catch (error) {
-      showError("설정 저장 실패", "설정 저장에 실패했습니다.");
+      const authError = getAuthErrorMessage(error);
+      showError("설정 저장 실패", authError.message);
     }
   };
 

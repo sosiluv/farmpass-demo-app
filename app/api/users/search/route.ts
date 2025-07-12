@@ -44,7 +44,7 @@ export async function GET(request: NextRequest) {
 
         if (!farm) {
           return NextResponse.json(
-            { error: "Farm not found" },
+            { error: "FARM_NOT_FOUND" },
             { status: 404 }
           );
         }
@@ -79,7 +79,10 @@ export async function GET(request: NextRequest) {
             clientIP,
             userAgent
           );
-          return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
+          return NextResponse.json(
+            { error: "USER_SEARCH_UNAUTHORIZED" },
+            { status: 403 }
+          );
         }
       }
     }
@@ -169,9 +172,6 @@ export async function GET(request: NextRequest) {
       devLog.error("Failed to log search error:", logError);
     }
 
-    return NextResponse.json(
-      { error: "Failed to search users" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "USER_SEARCH_FAILED" }, { status: 500 });
   }
 }

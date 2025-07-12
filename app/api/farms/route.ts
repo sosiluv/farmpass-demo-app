@@ -8,6 +8,7 @@ import {
 } from "@/lib/utils/logging/system-log";
 import { getClientIP, getUserAgent } from "@/lib/server/ip-helpers";
 import { requireAuth } from "@/lib/server/auth-utils";
+import { prisma } from "@/lib/prisma";
 
 export async function POST(request: NextRequest) {
   // 성능 모니터링 시작
@@ -72,7 +73,6 @@ export async function POST(request: NextRequest) {
       .single();
 
     if (farmError) {
-      devLog.error("❌ Failed to create farm:", farmError);
       throw farmError;
     }
 
@@ -87,7 +87,6 @@ export async function POST(request: NextRequest) {
     });
 
     if (memberError) {
-      devLog.error("❌ Failed to add farm owner to farm_members:", memberError);
       // farm_members 추가 실패 시 farms 테이블에서도 삭제
       await supabase.from("farms").delete().eq("id", farm.id);
       statusCode = 500;
@@ -130,7 +129,6 @@ export async function POST(request: NextRequest) {
       { status: 201, headers: { "Cache-Control": "no-store" } }
     );
   } catch (error) {
-    devLog.error("❌ Error creating farm:", error);
     statusCode = 500;
 
     // 농장 생성 실패 로그 기록
@@ -157,7 +155,7 @@ export async function POST(request: NextRequest) {
     );
 
     return NextResponse.json(
-      { error: "Failed to create farm" },
+      { error: "FARM_CREATE_ERROR" },
       { status: 500, headers: { "Cache-Control": "no-store" } }
     );
   } finally {
@@ -197,8 +195,6 @@ export async function GET(request: NextRequest) {
   let statusCode = 200;
 
   try {
-    const supabase = await createClient();
-
     // 인증 확인
     const authResult = await requireAuth(false);
     if (!authResult.success || !authResult.user) {
@@ -208,38 +204,78 @@ export async function GET(request: NextRequest) {
     const user = authResult.user;
     const isAdmin = authResult.isAdmin || false;
 
-    let query = supabase.from("farms").select(`
-      *,
-      owner:profiles!farms_owner_id_fkey(
-        id,
-        name,
-        email
-      )
-    `);
+    let farms;
 
-    // admin인 경우 모든 농장을 조회, 아닌 경우 자신의 농장만 조회
-    if (!isAdmin) {
-      query = query.eq("owner_id", user.id);
-    }
-
-    const { data: farms, error } = await query;
-
-    if (error) {
-      throw error;
+    // admin인 경우 모든 농장을 조회, 아닌 경우 접근 가능한 농장 조회
+    if (isAdmin) {
+      // 관리자는 모든 농장 조회
+      try {
+        farms = await prisma.farms.findMany({
+          include: {
+            profiles: {
+              select: {
+                id: true,
+                name: true,
+                email: true,
+              },
+            },
+          },
+          orderBy: {
+            created_at: "desc",
+          },
+        });
+      } catch (adminFarmsError) {
+        throw adminFarmsError;
+      }
+    } else {
+      // 일반 사용자는 접근 가능한 농장만 조회 - 한 번의 쿼리로 최적화
+      try {
+        farms = await prisma.farms.findMany({
+          where: {
+            OR: [
+              // 소유한 농장
+              { owner_id: user.id },
+              // 구성원으로 속한 농장
+              {
+                farm_members: {
+                  some: {
+                    user_id: user.id,
+                    is_active: true,
+                  },
+                },
+              },
+            ],
+          },
+          include: {
+            profiles: {
+              select: {
+                id: true,
+                name: true,
+                email: true,
+              },
+            },
+          },
+          orderBy: {
+            created_at: "desc",
+          },
+        });
+      } catch (userFarmsError) {
+        throw userFarmsError;
+      }
     }
 
     // 농장 목록 조회 로그 기록
     await createSystemLog(
       "FARM_READ",
       `농장 목록 조회: ${farms?.length || 0}개 (${
-        isAdmin ? "관리자 전체 조회" : "소유자 농장 조회"
+        isAdmin ? "관리자 전체 조회" : "접근 가능한 농장 조회"
       })`,
       "info",
       user.id,
       "farm",
       undefined,
       {
-        access_type: isAdmin ? "admin_all_farms" : "owner_farms",
+        access_type: isAdmin ? "admin_all_farms" : "accessible_farms",
         farm_count: farms?.length || 0,
         user_email: user.email,
         action_type: "farm_management",
@@ -254,7 +290,6 @@ export async function GET(request: NextRequest) {
       { headers: { "Cache-Control": "no-store" } }
     );
   } catch (error) {
-    devLog.error("Error fetching farms:", error);
     statusCode = 500;
 
     // 농장 목록 조회 실패 로그 기록
@@ -280,7 +315,7 @@ export async function GET(request: NextRequest) {
     );
 
     return NextResponse.json(
-      { error: "Failed to fetch farms" },
+      { error: "FARM_LIST_FETCH_ERROR" },
       { status: 500, headers: { "Cache-Control": "no-store" } }
     );
   } finally {

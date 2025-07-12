@@ -12,6 +12,7 @@ import { ErrorBoundary } from "@/components/error/error-boundary";
 import { StatsSkeleton, TableSkeleton } from "@/components/common/skeletons";
 import { AdminError } from "@/components/error/admin-error";
 import { useDataFetchTimeout } from "@/hooks/useTimeout";
+import { getAuthErrorMessage } from "@/lib/utils/validation/validation";
 
 // React Query Hooks
 import { useFarmsQuery } from "@/lib/hooks/query/use-farms-query";
@@ -89,7 +90,10 @@ export default function MembersPage({ params }: PageProps) {
     async (email: string, role: "manager" | "viewer") => {
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
       if (!emailRegex.test(email)) {
-        showError("입력 오류", "올바른 이메일 형식을 입력해주세요.");
+        const authError = getAuthErrorMessage({
+          message: "INVALID_EMAIL_FORMAT",
+        });
+        showError("입력 오류", authError.message);
         return;
       }
 
@@ -107,28 +111,8 @@ export default function MembersPage({ params }: PageProps) {
           }로 추가되었습니다.`
         );
       } catch (error: any) {
-        let errorMessage = "구성원 추가에 실패했습니다.";
-        if (error.message) {
-          if (error.message.includes("User not found")) {
-            errorMessage = "해당 이메일로 등록된 사용자를 찾을 수 없습니다.";
-          } else if (
-            error.message.includes("already exists") ||
-            error.message.includes("already a member")
-          ) {
-            errorMessage = "이미 농장의 구성원입니다.";
-          } else if (error.message.includes("Invalid email")) {
-            errorMessage = "유효하지 않은 이메일 주소입니다.";
-          } else if (
-            error.message.includes("Unauthorized") ||
-            error.message.includes("permission")
-          ) {
-            errorMessage = "구성원을 추가할 권한이 없습니다.";
-          } else {
-            errorMessage = error.message;
-          }
-        }
-
-        showError("구성원 추가 실패", errorMessage);
+        const authError = getAuthErrorMessage(error);
+        showError("구성원 추가 실패", authError.message);
         throw error;
       }
     },
@@ -152,10 +136,8 @@ export default function MembersPage({ params }: PageProps) {
           }로 변경되었습니다.`
         );
       } catch (error: any) {
-        showError(
-          "권한 변경 실패",
-          error.message || "권한 변경에 실패했습니다."
-        );
+        const authError = getAuthErrorMessage(error);
+        showError("권한 변경 실패", authError.message);
       }
     },
     [farmId, updateMemberRoleMutation, showInfo, showSuccess, showError]
@@ -175,10 +157,8 @@ export default function MembersPage({ params }: PageProps) {
       setMemberToDelete(null);
       showSuccess("구성원 삭제 완료", "구성원이 삭제되었습니다.");
     } catch (error: any) {
-      showError(
-        "구성원 삭제 실패",
-        error.message || "구성원 삭제에 실패했습니다."
-      );
+      const authError = getAuthErrorMessage(error);
+      showError("구성원 삭제 실패", authError.message);
     }
   }, [
     farmId,

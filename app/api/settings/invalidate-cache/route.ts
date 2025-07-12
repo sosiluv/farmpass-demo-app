@@ -55,7 +55,7 @@ export async function POST(request: NextRequest) {
     );
 
     return NextResponse.json(
-      { success: false, error: "Failed to invalidate cache" },
+      { success: false, error: "CACHE_INVALIDATE_FAILED" },
       { status: 500 }
     );
   }
@@ -88,7 +88,7 @@ export async function GET(request: NextRequest) {
     );
 
     return NextResponse.json(
-      { success: false, error: "Failed to get cache info" },
+      { success: false, error: "CACHE_INFO_FETCH_FAILED" },
       { status: 500 }
     );
   }

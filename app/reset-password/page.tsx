@@ -31,7 +31,7 @@ import { Loading } from "@/components/ui/loading";
 import { apiClient } from "@/lib/utils/data";
 import { resetPasswordRequestFormSchema } from "@/lib/utils/validation/auth-validation";
 import type { ResetPasswordRequestFormData } from "@/lib/utils/validation/auth-validation";
-import { handleError } from "@/lib/utils/error";
+import { getAuthErrorMessage } from "@/lib/utils/validation";
 
 export default function ResetPasswordPage() {
   const [loading, setLoading] = useState(false);
@@ -57,8 +57,8 @@ export default function ResetPasswordPage() {
         body: JSON.stringify({ email: data.email }),
         context: "비밀번호 재설정 요청",
         onError: (error, context) => {
-          handleError(error, context);
-          showError("오류", error.message);
+          const authError = getAuthErrorMessage(error);
+          showError("오류", authError.message);
         },
       });
 

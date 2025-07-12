@@ -45,6 +45,10 @@ export function useExportDialog({
       setIsOpen(false);
     } catch (error) {
       devLog.error("내보내기 오류:", error);
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : "알 수 없는 오류가 발생했습니다.";
       showError("내보내기 실패", errorMessage);
     } finally {
       setIsExporting(false);

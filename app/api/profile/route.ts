@@ -92,7 +92,7 @@ export async function PATCH(request: NextRequest) {
       devLog.error("[API] PROFILE_UPDATE 로그 실패:", logError)
     );
     return NextResponse.json(
-      { error: "프로필 정보 저장 실패" },
+      { error: "PROFILE_UPDATE_FAILED" },
       { status: 500, headers: { "Cache-Control": "no-store" } }
     );
   }
@@ -185,7 +185,7 @@ export async function POST(request: NextRequest) {
       devLog.error("[API] PROFILE_IMAGE_UPLOAD 로그 실패:", logError)
     );
     return NextResponse.json(
-      { error: "프로필 이미지 업로드 실패" },
+      { error: "PROFILE_IMAGE_UPLOAD_FAILED" },
       { status: 500, headers: { "Cache-Control": "no-store" } }
     );
   }

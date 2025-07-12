@@ -150,8 +150,9 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(
       {
         success: false,
-        message: "Orphan file 정리 중 오류가 발생했습니다.",
-        error: error instanceof Error ? error.message : "Unknown error",
+        error: "ORPHAN_FILES_CLEANUP_FAILED",
+        message: "Failed to cleanup orphan files",
+        details: error instanceof Error ? error.message : "Unknown error",
       },
       { status: 500 }
     );
@@ -242,13 +243,21 @@ async function cleanupProfileImages(supabase: any) {
       profiles?.map((p: any) => p.profile_image_url).filter(Boolean) || []
     );
 
-    // 2. 재귀적으로 모든 프로필 이미지 파일 목록 가져오기
+    // 2. 재귀적으로 모든 프로필 이미지 파일 목록 가져오기 (systems 폴더 제외)
     const profileFiles = await getAllStorageFiles(supabase, "profiles");
 
     total = profileFiles.length;
 
-    // 3. 각 파일에 대해 DB 사용 여부 확인
+    // 3. 각 파일에 대해 DB 사용 여부 확인 (systems 폴더 제외)
     for (const filePath of profileFiles) {
+      // systems 폴더는 제외
+      if (filePath.startsWith("systems/")) {
+        devLog.log(
+          `[CLEANUP_PROFILE_IMAGES] Skipping systems folder file: ${filePath}`
+        );
+        continue;
+      }
+
       // DB에서 해당 파일이 사용되고 있는지 확인
       const isUsed = Array.from(usedUrlSet).some((url) =>
         (url as string).includes(filePath)

@@ -36,7 +36,10 @@ export async function GET(request: NextRequest) {
       );
 
       return NextResponse.json(
-        { error: "유효하지 않은 보존 기간입니다." },
+        {
+          error: "INVALID_RETENTION_PERIOD",
+          message: "Invalid retention period",
+        },
         { status: 400 }
       );
     }
@@ -87,7 +90,10 @@ export async function GET(request: NextRequest) {
     }
 
     return NextResponse.json(
-      { error: "만료된 방문자 데이터 개수 확인에 실패했습니다." },
+      {
+        error: "EXPIRED_COUNT_QUERY_FAILED",
+        message: "Failed to query expired visitor count",
+      },
       { status: 500 }
     );
   }

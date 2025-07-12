@@ -6,6 +6,7 @@ import { useFarmsContext } from "@/components/providers/farms-provider";
 import { useFarmMutations } from "@/lib/hooks/query/use-farm-mutations";
 import { useAuth } from "@/components/providers/auth-provider";
 import { useCommonToast } from "@/lib/utils/notification/toast-messages";
+import { getAuthErrorMessage } from "@/lib/utils/validation/validation";
 import { Farm } from "@/lib/types/farm";
 import { FarmsList } from "@/components/admin/farms/FarmsList";
 import { FarmsPageHeader } from "@/components/admin/farms/FarmsPageHeader";
@@ -74,14 +75,10 @@ export default function FarmsPage() {
       setDialogOpen(false);
       setEditingFarm(null);
     } catch (error: any) {
-      const errorMessage =
-        error.message ||
-        (editingFarm
-          ? "농장 수정 중 오류가 발생했습니다."
-          : "농장 등록 중 오류가 발생했습니다.");
+      const authError = getAuthErrorMessage(error);
       showError(
         editingFarm ? "농장 수정 실패" : "농장 등록 실패",
-        errorMessage
+        authError.message
       );
       console.error("농장 저장 중 오류:", error);
     }
@@ -100,15 +97,13 @@ export default function FarmsPage() {
       console.error("농장 삭제 중 오류:", error);
 
       // 404 에러인 경우 (이미 삭제된 경우)
-      if (error.message && error.message.includes("Farm not found")) {
+      if (error.message && error.message.includes("FARM_NOT_FOUND")) {
         showSuccess("농장 삭제 완료", "농장이 이미 삭제되었습니다.");
         setDeleteDialogOpen(false);
         setFarmToDelete(null);
       } else {
-        showError(
-          "농장 삭제 실패",
-          error.message || "농장 삭제 중 오류가 발생했습니다."
-        );
+        const authError = getAuthErrorMessage(error);
+        showError("농장 삭제 실패", authError.message);
       }
     }
   };

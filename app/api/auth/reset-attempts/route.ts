@@ -22,10 +22,7 @@ export async function POST(request: NextRequest) {
     const { email, reason } = await request.json();
 
     if (!email) {
-      return NextResponse.json(
-        { error: "이메일 주소가 필요합니다." },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "MISSING_EMAIL" }, { status: 400 });
     }
 
     // 현재 상태 확인 (로그를 위해)
@@ -38,7 +35,7 @@ export async function POST(request: NextRequest) {
     if (!currentProfile || currentProfile.login_attempts === 0) {
       return NextResponse.json({
         success: true,
-        message: "이미 잠금이 해제된 계정입니다.",
+        message: "Account is already unlocked.",
       });
     }
 
@@ -76,7 +73,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      message: "계정 잠금이 해제되었습니다!",
+      message: "Account lock has been removed!",
     });
   } catch (err) {
     devLog.error("Reset login attempts error:", err);
@@ -105,7 +102,7 @@ export async function POST(request: NextRequest) {
     ).catch((logError) => devLog.error("Failed to log reset error:", logError));
 
     return NextResponse.json(
-      { error: "로그인 시도 횟수 초기화 중 오류가 발생했습니다." },
+      { error: "RESET_ATTEMPTS_ERROR" },
       { status: 500 }
     );
   }

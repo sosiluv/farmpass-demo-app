@@ -6,6 +6,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Send } from "lucide-react";
 import { useCommonToast } from "@/lib/utils/notification/toast-messages";
 import { useBroadcastMutation } from "@/lib/hooks/query/use-broadcast-mutations";
+import { getAuthErrorMessage } from "@/lib/utils/validation/validation";
 import SettingsCardHeader from "../SettingsCardHeader";
 import { BroadcastForm, BroadcastAlert, BroadcastResult } from "./broadcast";
 
@@ -104,13 +105,9 @@ export default function BroadcastSection({ isLoading }: BroadcastSectionProps) {
         url: "/admin/dashboard",
         notificationType: "notice",
       });
-    } catch (error) {
-      showError(
-        "브로드캐스트 오류",
-        error instanceof Error
-          ? error.message
-          : "알 수 없는 오류가 발생했습니다."
-      );
+    } catch (error: any) {
+      const authError = getAuthErrorMessage(error);
+      showError("브로드캐스트 오류", authError.message);
 
       setLastSendResult({
         success: false,

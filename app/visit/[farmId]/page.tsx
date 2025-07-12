@@ -24,6 +24,7 @@ import { useSystemSettingsContext } from "@/components/providers/system-settings
 import { useVisitorForm } from "@/hooks/useVisitorForm";
 import { VisitorForm } from "@/components/visitor/VisitorForm";
 import { useCommonToast } from "@/lib/utils/notification/toast-messages";
+import { getAuthErrorMessage } from "@/lib/utils/validation/validation";
 import { useEffect, useMemo, useState } from "react";
 import { VisitorFormData } from "@/lib/utils/validation/visitor-validation";
 import type { VisitorSettings } from "@/lib/types/visitor";
@@ -97,27 +98,24 @@ export default function VisitPage() {
   // 에러 상태에 따른 토스트 처리
   useEffect(() => {
     if (error) {
-      showError("방문자 등록 오류", error);
+      const authError = getAuthErrorMessage(error);
+      showError("방문자 등록 오류", authError.message);
     }
   }, [error, showError]);
 
   // 농장 에러에 따른 토스트 처리
   useEffect(() => {
     if (farmError) {
-      showError(
-        "농장 정보 조회 실패",
-        farmError.message || "알 수 없는 오류가 발생했습니다"
-      );
+      const authError = getAuthErrorMessage(farmError);
+      showError("농장 정보 조회 실패", authError.message);
     }
   }, [farmError, showError]);
 
   // 설정 에러에 따른 토스트 처리
   useEffect(() => {
     if (settingsError) {
-      showError(
-        "설정 로드 실패",
-        settingsError.message || "설정을 불러오는 중 오류가 발생했습니다."
-      );
+      const authError = getAuthErrorMessage(settingsError);
+      showError("설정 로드 실패", authError.message);
     }
   }, [settingsError, showError]);
 
@@ -150,7 +148,8 @@ export default function VisitPage() {
       );
       return result;
     } catch (error) {
-      showError("이미지 업로드 실패", "프로필 이미지 업로드에 실패했습니다.");
+      const authError = getAuthErrorMessage(error);
+      showError("이미지 업로드 실패", authError.message);
       throw error;
     }
   };
@@ -165,7 +164,8 @@ export default function VisitPage() {
         "프로필 이미지가 성공적으로 삭제되었습니다."
       );
     } catch (error) {
-      showError("이미지 삭제 실패", "프로필 이미지 삭제에 실패했습니다.");
+      const authError = getAuthErrorMessage(error);
+      showError("이미지 삭제 실패", authError.message);
       throw error;
     }
   };

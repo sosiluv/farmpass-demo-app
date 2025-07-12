@@ -317,7 +317,8 @@ export async function GET() {
         // 오류 상태 정보
         status: "unhealthy", // 서버 상태: 비정상
         timestamp: new Date().toISOString(), // 오류 발생 시간
-        error: errorMessage, // 오류 유형
+        error: "HEALTH_CHECK_FAILED", // 영어 에러 코드
+        errorDetails: errorMessage, // 상세 오류 정보
         responseTime: `${responseTime}ms`, // 응답 시간
 
         // 서비스 상태 (오류)

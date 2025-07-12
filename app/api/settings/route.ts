@@ -77,7 +77,7 @@ export async function GET(request: NextRequest) {
     );
 
     return NextResponse.json(
-      { error: "Failed to fetch system settings" },
+      { error: "SYSTEM_SETTINGS_FETCH_FAILED" },
       {
         status: 500,
         headers: {
@@ -118,7 +118,7 @@ export async function PATCH(request: NextRequest) {
       );
 
       return NextResponse.json(
-        { error: "설정을 찾을 수 없습니다." },
+        { error: "SYSTEM_SETTINGS_NOT_FOUND" },
         {
           status: 404,
           headers: {
@@ -224,7 +224,7 @@ export async function PATCH(request: NextRequest) {
     );
 
     return NextResponse.json(
-      { error: "Failed to update system settings" },
+      { error: "SYSTEM_SETTINGS_UPDATE_FAILED" },
       {
         status: 500,
         headers: {

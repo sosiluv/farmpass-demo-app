@@ -11,10 +11,7 @@ export async function POST(request: NextRequest) {
     const { email } = await request.json();
 
     if (!email) {
-      return NextResponse.json(
-        { error: "이메일 주소를 입력해주세요." },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "MISSING_EMAIL" }, { status: 400 });
     }
 
     // 서버용 Supabase 클라이언트 생성
@@ -29,7 +26,7 @@ export async function POST(request: NextRequest) {
 
     if (profileError) {
       return NextResponse.json(
-        { error: "사용자 정보 확인 중 오류가 발생했습니다." },
+        { error: "USER_PROFILE_ERROR" },
         { status: 500 }
       );
     }
@@ -65,29 +62,27 @@ export async function POST(request: NextRequest) {
       // 에러 메시지 매핑
       const errorMessages = {
         "User not found": {
-          message: "등록되지 않은 이메일 주소입니다.",
+          message: "User not found",
           status: 404,
         },
         "Email rate limit exceeded": {
-          message:
-            "이메일 전송 한도를 초과했습니다. 잠시 후 다시 시도해주세요.",
+          message: "Email rate limit exceeded. Please try again later.",
           status: 429,
         },
         "Too many requests": {
-          message: "너무 많은 요청이 있었습니다. 잠시 후 다시 시도해주세요.",
+          message: "Too many requests. Please try again later.",
           status: 429,
         },
         "Invalid email": {
-          message: "올바른 이메일 주소를 입력해주세요.",
+          message: "Invalid email address",
           status: 400,
         },
         "Email not confirmed": {
-          message: "이메일 인증이 완료되지 않았습니다.",
+          message: "Email not confirmed",
           status: 400,
         },
         "Error sending recovery email": {
-          message:
-            "이메일 전송 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.",
+          message: "Error sending recovery email. Please try again later.",
           status: 500,
         },
       };
@@ -100,7 +95,7 @@ export async function POST(request: NextRequest) {
       const errorResponse = errorKey
         ? errorMessages[errorKey as keyof typeof errorMessages]
         : {
-            message: "비밀번호 재설정 이메일 전송에 실패했습니다.",
+            message: "Password reset email sending failed",
             status: 500,
           };
 
@@ -135,7 +130,7 @@ export async function POST(request: NextRequest) {
     );
 
     return NextResponse.json(
-      { message: "비밀번호 재설정 이메일이 전송되었습니다." },
+      { message: "Password reset email has been sent." },
       { status: 200 }
     );
   } catch (error) {
@@ -162,7 +157,7 @@ export async function POST(request: NextRequest) {
     );
 
     return NextResponse.json(
-      { error: "비밀번호 재설정 처리 중 오류가 발생했습니다." },
+      { error: "PASSWORD_RESET_SYSTEM_ERROR" },
       { status: 500 }
     );
   }

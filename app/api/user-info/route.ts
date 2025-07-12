@@ -93,7 +93,7 @@ export async function GET(request: NextRequest) {
     statusCode = 500;
 
     return NextResponse.json(
-      { error: "Failed to get user info" },
+      { error: "USER_INFO_FETCH_FAILED" },
       { status: statusCode, headers: { "Cache-Control": "no-store" } }
     );
   } finally {

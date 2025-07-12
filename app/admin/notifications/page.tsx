@@ -15,6 +15,7 @@ import {
   SubscriptionGuideCard,
 } from "@/components/admin/notifications";
 import { useCommonToast } from "@/lib/utils/notification/toast-messages";
+import { getAuthErrorMessage } from "@/lib/utils/validation/validation";
 
 export default function NotificationsPage() {
   const { state } = useAuth();
@@ -41,14 +42,16 @@ export default function NotificationsPage() {
   // 알림 설정 에러 처리
   useEffect(() => {
     if (settingsError) {
-      showError("알림 설정 로드 실패", "알림 설정을 불러오는데 실패했습니다.");
+      const authError = getAuthErrorMessage(settingsError);
+      showError("알림 설정 로드 실패", authError.message);
     }
   }, [settingsError, showError]);
 
-  // 농장 에러 처리
+  // 농장 에러에 따른 토스트 처리
   useEffect(() => {
     if (farmsError) {
-      showError("농장 정보 로드 실패", "농장 정보를 불러오는데 실패했습니다.");
+      const authError = getAuthErrorMessage(farmsError);
+      showError("농장 정보 로드 실패", authError.message);
     }
   }, [farmsError, showError]);
 

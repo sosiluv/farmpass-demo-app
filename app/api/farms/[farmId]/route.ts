@@ -38,7 +38,7 @@ export async function GET(
     if (!farm) {
       devLog.log("농장을 찾을 수 없음:", { farmId: params.farmId });
       return NextResponse.json(
-        { error: "Farm not found" },
+        { error: "FARM_NOT_FOUND" },
         { status: 404, headers: { "Cache-Control": "no-store" } }
       );
     }
@@ -50,7 +50,7 @@ export async function GET(
   } catch (error) {
     devLog.error("Error fetching farm:", error);
     return NextResponse.json(
-      { error: "Failed to fetch farm" },
+      { error: "FARM_FETCH_ERROR" },
       { status: 500, headers: { "Cache-Control": "no-store" } }
     );
   }
@@ -88,11 +88,11 @@ export async function PUT(
         .single();
 
       if (farmCheckError || !existingFarm) {
-        return NextResponse.json({ error: "Farm not found" }, { status: 404 });
+        return NextResponse.json({ error: "FARM_NOT_FOUND" }, { status: 404 });
       }
 
       if (existingFarm.owner_id !== user.id) {
-        return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
+        return NextResponse.json({ error: "UNAUTHORIZED" }, { status: 403 });
       }
     } else {
       // 관리자인 경우에도 농장 존재 여부는 확인
@@ -103,7 +103,7 @@ export async function PUT(
         .single();
 
       if (farmCheckError || !existingFarm) {
-        return NextResponse.json({ error: "Farm not found" }, { status: 404 });
+        return NextResponse.json({ error: "FARM_NOT_FOUND" }, { status: 404 });
       }
     }
 
@@ -173,7 +173,7 @@ export async function PUT(
     );
 
     return NextResponse.json(
-      { error: "Failed to update farm" },
+      { error: "FARM_UPDATE_ERROR" },
       { status: 500, headers: { "Cache-Control": "no-store" } }
     );
   }
@@ -225,7 +225,7 @@ export async function DELETE(
         `Farm not found for deletion: ${params.farmId}`,
         farmCheckError
       );
-      return NextResponse.json({ error: "Farm not found" }, { status: 404 });
+      return NextResponse.json({ error: "FARM_NOT_FOUND" }, { status: 404 });
     }
 
     // 소유권 확인 (관리자가 아닌 경우에만)
@@ -238,7 +238,7 @@ export async function DELETE(
         devLog.error(
           `Unauthorized farm deletion - Farm: ${params.farmId}, Owner: ${farm.owner_id}, User: ${user.id}`
         );
-        return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
+        return NextResponse.json({ error: "UNAUTHORIZED" }, { status: 403 });
       }
     } else {
       devLog.log(
@@ -311,7 +311,7 @@ export async function DELETE(
     );
 
     return NextResponse.json(
-      { error: "Failed to delete farm" },
+      { error: "FARM_DELETE_ERROR" },
       { status: 500, headers: { "Cache-Control": "no-store" } }
     );
   }

@@ -80,7 +80,7 @@ export async function POST(request: NextRequest) {
     );
 
     return NextResponse.json(
-      { error: "VAPID 키 생성에 실패했습니다." },
+      { error: "VAPID_KEY_GENERATION_FAILED" },
       { status: 500 }
     );
   }
@@ -177,7 +177,7 @@ export async function GET(request: NextRequest) {
     );
 
     return NextResponse.json(
-      { error: "VAPID 키 조회에 실패했습니다." },
+      { error: "VAPID_KEY_FETCH_FAILED" },
       { status: 500 }
     );
   }

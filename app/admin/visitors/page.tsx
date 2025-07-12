@@ -17,6 +17,7 @@ import { generateVisitorPageStats } from "@/lib/utils/data/common-stats";
 import { ErrorBoundary } from "@/components/error/error-boundary";
 import { ResponsivePagination } from "@/components/common/responsive-pagination";
 import { useCommonToast } from "@/lib/utils/notification/toast-messages";
+import { getAuthErrorMessage } from "@/lib/utils/validation/validation";
 
 // React Query Hooks
 import { useFarmsContext } from "@/components/providers/farms-provider";
@@ -83,14 +84,8 @@ export default function VisitorsPage() {
   // 에러 처리
   useEffect(() => {
     if (error) {
-      showError(
-        "오류",
-        error instanceof Error
-          ? error.message
-          : typeof error === "string"
-          ? error
-          : "데이터를 불러오지 못했습니다."
-      );
+      const authError = getAuthErrorMessage(error);
+      showError("오류", authError.message);
     }
   }, [error, showError]);
 
@@ -240,7 +235,7 @@ export default function VisitorsPage() {
           totalCount={allVisitors.length}
           onClearFilters={resetFilters}
           showFarmFilter={true}
-          showAllOption={isAdmin}
+          showAllOption={true}
           isAdmin={isAdmin}
         />
 
@@ -255,7 +250,7 @@ export default function VisitorsPage() {
               visitors={paginatedData}
               showFarmColumn={isAdmin || typedFarms.length > 1} // 관리자이거나 농장이 여러 개인 경우 농장 컬럼 표시
               loading={loading}
-              isAdmin={isAdmin}
+              isAdmin={true}
               onEdit={handleEdit}
               onDelete={handleDelete}
             />

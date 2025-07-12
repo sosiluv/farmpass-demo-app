@@ -4,6 +4,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useCommonToast } from "@/lib/utils/notification/toast-messages";
 import { devLog } from "@/lib/utils/logging/dev-logger";
 import { formatPhone } from "@/lib/utils/validation/validation";
+import { getAuthErrorMessage } from "@/lib/utils/validation/validation";
 
 import {
   visitorDialogFormSchema,
@@ -146,10 +147,8 @@ export function VisitorFormDialog({
       onOpenChange(false);
     } catch (error) {
       devLog.error("폼 제출 실패:", error);
-      showError(
-        "폼 제출 실패",
-        error instanceof Error ? error.message : "오류가 발생했습니다."
-      );
+      const authError = getAuthErrorMessage(error);
+      showError("폼 제출 실패", authError.message);
     } finally {
       setIsSubmitting(false);
     }

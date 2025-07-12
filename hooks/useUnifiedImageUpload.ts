@@ -20,6 +20,7 @@ import {
   UseImageUploadReturn,
 } from "@/lib/types/upload";
 import { useSystemSettingsContext } from "@/components/providers/system-settings-provider";
+import { getAuthErrorMessage } from "@/lib/utils/validation/validation";
 
 export interface UseUnifiedImageUploadOptions {
   uploadType: UploadType;
@@ -86,7 +87,8 @@ export function useUnifiedImageUpload(
   const handleError = useCallback(
     (error: UploadError) => {
       updateState({ error, loading: false });
-      showError("이미지 업로드 실패", error.message);
+      const authError = getAuthErrorMessage(error);
+      showError("이미지 업로드 실패", authError.message);
       onError?.(error);
       devLog.error("이미지 업로드 에러:", error);
     },
