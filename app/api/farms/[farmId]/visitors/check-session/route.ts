@@ -192,7 +192,11 @@ export async function GET(
       userAgent
     );
     return NextResponse.json(
-      { error: "Failed to check session" },
+      {
+        success: false,
+        error: "SESSION_CHECK_FAILED",
+        message: "세션 확인에 실패했습니다.",
+      },
       { status: 500 }
     );
   }

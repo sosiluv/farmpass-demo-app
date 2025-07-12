@@ -44,7 +44,11 @@ export async function GET(request: NextRequest) {
 
         if (!farm) {
           return NextResponse.json(
-            { error: "FARM_NOT_FOUND" },
+            {
+              success: false,
+              error: "FARM_NOT_FOUND",
+              message: "농장을 찾을 수 없습니다.",
+            },
             { status: 404 }
           );
         }
@@ -80,7 +84,11 @@ export async function GET(request: NextRequest) {
             userAgent
           );
           return NextResponse.json(
-            { error: "USER_SEARCH_UNAUTHORIZED" },
+            {
+              success: false,
+              error: "USER_SEARCH_UNAUTHORIZED",
+              message: "사용자 검색 권한이 없습니다.",
+            },
             { status: 403 }
           );
         }
@@ -172,6 +180,13 @@ export async function GET(request: NextRequest) {
       devLog.error("Failed to log search error:", logError);
     }
 
-    return NextResponse.json({ error: "USER_SEARCH_FAILED" }, { status: 500 });
+    return NextResponse.json(
+      {
+        success: false,
+        error: "USER_SEARCH_FAILED",
+        message: "사용자 검색 중 오류가 발생했습니다.",
+      },
+      { status: 500 }
+    );
   }
 }

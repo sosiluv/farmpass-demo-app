@@ -61,7 +61,11 @@ export async function POST(request: NextRequest) {
     );
 
     return NextResponse.json(
-      { success: false, error: "CACHE_CLEAR_ALL_FAILED" },
+      {
+        success: false,
+        error: "CACHE_CLEAR_ALL_FAILED",
+        message: "모든 캐시 초기화에 실패했습니다.",
+      },
       { status: 500 }
     );
   }

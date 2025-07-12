@@ -77,7 +77,11 @@ export async function GET(request: NextRequest) {
     );
 
     return NextResponse.json(
-      { error: "SYSTEM_SETTINGS_FETCH_FAILED" },
+      {
+        success: false,
+        error: "SYSTEM_SETTINGS_FETCH_FAILED",
+        message: "시스템 설정 조회에 실패했습니다.",
+      },
       {
         status: 500,
         headers: {
@@ -118,7 +122,11 @@ export async function PATCH(request: NextRequest) {
       );
 
       return NextResponse.json(
-        { error: "SYSTEM_SETTINGS_NOT_FOUND" },
+        {
+          error: "SYSTEM_SETTINGS_NOT_FOUND",
+          success: false,
+          message: "시스템 설정을 찾을 수 없습니다.",
+        },
         {
           status: 404,
           headers: {
@@ -224,7 +232,11 @@ export async function PATCH(request: NextRequest) {
     );
 
     return NextResponse.json(
-      { error: "SYSTEM_SETTINGS_UPDATE_FAILED" },
+      {
+        success: false,
+        error: "SYSTEM_SETTINGS_UPDATE_FAILED",
+        message: "시스템 설정 업데이트에 실패했습니다.",
+      },
       {
         status: 500,
         headers: {

@@ -35,11 +35,25 @@ export async function PUT(
       });
     } catch (farmError) {
       devLog.error("Error fetching farm:", farmError);
-      return NextResponse.json({ error: "FARM_FETCH_ERROR" }, { status: 500 });
+      return NextResponse.json(
+        {
+          success: false,
+          error: "FARM_FETCH_ERROR",
+          message: "농장 정보 조회 중 오류가 발생했습니다.",
+        },
+        { status: 500 }
+      );
     }
 
     if (!farm) {
-      return NextResponse.json({ error: "FARM_NOT_FOUND" }, { status: 404 });
+      return NextResponse.json(
+        {
+          success: false,
+          error: "FARM_NOT_FOUND",
+          message: "농장을 찾을 수 없습니다.",
+        },
+        { status: 404 }
+      );
     }
 
     // 시스템 관리자가 아닌 경우에만 농장별 권한 확인
@@ -56,7 +70,11 @@ export async function PUT(
       } catch (memberError) {
         devLog.error("Error checking member role:", memberError);
         return NextResponse.json(
-          { error: "PERMISSION_CHECK_ERROR" },
+          {
+            success: false,
+            error: "PERMISSION_CHECK_ERROR",
+            message: "권한 확인 중 오류가 발생했습니다.",
+          },
           { status: 500 }
         );
       }
@@ -64,7 +82,9 @@ export async function PUT(
       if (!memberRole || memberRole.role !== "manager") {
         return NextResponse.json(
           {
+            success: false,
             error: "INSUFFICIENT_PERMISSIONS",
+            message: "멤버 역할 변경 권한이 없습니다.",
           },
           { status: 403 }
         );
@@ -89,19 +109,34 @@ export async function PUT(
     } catch (memberError) {
       devLog.error("Error fetching member:", memberError);
       return NextResponse.json(
-        { error: "MEMBER_FETCH_ERROR" },
+        {
+          success: false,
+          error: "MEMBER_FETCH_ERROR",
+          message: "멤버 정보 조회 중 오류가 발생했습니다.",
+        },
         { status: 500 }
       );
     }
 
     if (!memberToUpdate || memberToUpdate.farm_id !== params.farmId) {
-      return NextResponse.json({ error: "MEMBER_NOT_FOUND" }, { status: 404 });
+      return NextResponse.json(
+        {
+          success: false,
+          error: "MEMBER_NOT_FOUND",
+          message: "멤버를 찾을 수 없습니다.",
+        },
+        { status: 404 }
+      );
     }
 
     // 농장 소유자의 역할은 변경할 수 없음
     if (memberToUpdate.user_id === farm.owner_id) {
       return NextResponse.json(
-        { error: "CANNOT_CHANGE_OWNER_ROLE" },
+        {
+          success: false,
+          error: "CANNOT_CHANGE_OWNER_ROLE",
+          message: "농장 소유자의 역할은 변경할 수 없습니다.",
+        },
         { status: 400 }
       );
     }
@@ -186,7 +221,14 @@ export async function PUT(
       devLog.error("Failed to log member role update error:", logError)
     );
 
-    return NextResponse.json({ error: "MEMBER_UPDATE_ERROR" }, { status: 500 });
+    return NextResponse.json(
+      {
+        success: false,
+        error: "MEMBER_UPDATE_ERROR",
+        message: "멤버 정보 수정 중 오류가 발생했습니다.",
+      },
+      { status: 500 }
+    );
   }
 }
 
@@ -219,11 +261,25 @@ export async function DELETE(
       });
     } catch (farmError) {
       devLog.error("Error fetching farm:", farmError);
-      return NextResponse.json({ error: "FARM_FETCH_ERROR" }, { status: 500 });
+      return NextResponse.json(
+        {
+          success: false,
+          error: "FARM_FETCH_ERROR",
+          message: "농장 정보 조회 중 오류가 발생했습니다.",
+        },
+        { status: 500 }
+      );
     }
 
     if (!farm) {
-      return NextResponse.json({ error: "FARM_NOT_FOUND" }, { status: 404 });
+      return NextResponse.json(
+        {
+          success: false,
+          error: "FARM_NOT_FOUND",
+          message: "농장을 찾을 수 없습니다.",
+        },
+        { status: 404 }
+      );
     }
 
     // 시스템 관리자가 아닌 경우에만 농장별 권한 확인
@@ -240,7 +296,11 @@ export async function DELETE(
       } catch (memberError) {
         devLog.error("Error checking member role:", memberError);
         return NextResponse.json(
-          { error: "PERMISSION_CHECK_ERROR" },
+          {
+            success: false,
+            error: "PERMISSION_CHECK_ERROR",
+            message: "권한 확인 중 오류가 발생했습니다.",
+          },
           { status: 500 }
         );
       }
@@ -248,7 +308,9 @@ export async function DELETE(
       if (!memberRole || memberRole.role !== "manager") {
         return NextResponse.json(
           {
+            success: false,
             error: "INSUFFICIENT_PERMISSIONS",
+            message: "멤버 역할 변경 권한이 없습니다.",
           },
           { status: 403 }
         );
@@ -273,19 +335,34 @@ export async function DELETE(
     } catch (memberError) {
       devLog.error("Error fetching member:", memberError);
       return NextResponse.json(
-        { error: "MEMBER_FETCH_ERROR" },
+        {
+          success: false,
+          error: "MEMBER_FETCH_ERROR",
+          message: "멤버 정보 조회 중 오류가 발생했습니다.",
+        },
         { status: 500 }
       );
     }
 
     if (!memberToRemove || memberToRemove.farm_id !== params.farmId) {
-      return NextResponse.json({ error: "MEMBER_NOT_FOUND" }, { status: 404 });
+      return NextResponse.json(
+        {
+          success: false,
+          error: "MEMBER_NOT_FOUND",
+          message: "멤버를 찾을 수 없습니다.",
+        },
+        { status: 404 }
+      );
     }
 
     // 농장 소유자는 제거할 수 없음
     if (memberToRemove.user_id === farm.owner_id) {
       return NextResponse.json(
-        { error: "CANNOT_REMOVE_OWNER" },
+        {
+          success: false,
+          error: "CANNOT_REMOVE_OWNER",
+          message: "농장 소유자는 제거할 수 없습니다.",
+        },
         { status: 400 }
       );
     }
@@ -363,6 +440,13 @@ export async function DELETE(
       devLog.error("Failed to log member removal error:", logError)
     );
 
-    return NextResponse.json({ error: "MEMBER_DELETE_ERROR" }, { status: 500 });
+    return NextResponse.json(
+      {
+        success: false,
+        error: "MEMBER_DELETE_ERROR",
+        message: "멤버 삭제 중 오류가 발생했습니다.",
+      },
+      { status: 500 }
+    );
   }
 }

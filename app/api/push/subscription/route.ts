@@ -73,7 +73,11 @@ export async function POST(request: NextRequest) {
 
     if (!subscription || !subscription.endpoint) {
       return NextResponse.json(
-        { error: "INVALID_SUBSCRIPTION_DATA" },
+        {
+          success: false,
+          error: "INCOMPLETE_SUBSCRIPTION",
+          message: "구독 정보가 불완전합니다.",
+        },
         { status: 400 }
       );
     }
@@ -84,8 +88,9 @@ export async function POST(request: NextRequest) {
       devLog.error("구독 데이터 검증 실패:", validation.errors);
       return NextResponse.json(
         {
+          success: false,
           error: "SUBSCRIPTION_VALIDATION_FAILED",
-          details: validation.errors,
+          message: "구독 데이터가 유효하지 않습니다.",
         },
         { status: 400 }
       );
@@ -114,7 +119,11 @@ export async function POST(request: NextRequest) {
       if (deleteError) {
         devLog.error("기존 구독 삭제 오류:", deleteError);
         return NextResponse.json(
-          { error: "SUBSCRIPTION_DELETE_FAILED" },
+          {
+            success: false,
+            error: "SUBSCRIPTION_DELETE_FAILED",
+            message: "기존 구독 삭제에 실패했습니다.",
+          },
           { status: 500 }
         );
       }
@@ -137,7 +146,11 @@ export async function POST(request: NextRequest) {
     if (insertError) {
       devLog.error("푸시 구독 저장 오류:", insertError);
       return NextResponse.json(
-        { error: "SUBSCRIPTION_SAVE_FAILED" },
+        {
+          success: false,
+          error: "SUBSCRIPTION_SAVE_FAILED",
+          message: "구독 저장에 실패했습니다.",
+        },
         { status: 500 }
       );
     }
@@ -210,6 +223,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json(
       {
+        success: true,
         message: "푸시 알림 구독이 완료되었습니다.",
         subscription: newSubscription,
       },
@@ -229,7 +243,11 @@ export async function POST(request: NextRequest) {
       }
     );
     return NextResponse.json(
-      { error: "서버 오류가 발생했습니다." },
+      {
+        success: false,
+        error: "SUBSCRIPTION_SERVER_ERROR",
+        message: "서버 오류가 발생했습니다.",
+      },
       { status: 500 }
     );
   }
@@ -267,7 +285,11 @@ export async function GET(request: NextRequest) {
     if (error) {
       devLog.error("푸시 구독 조회 오류:", error);
       return NextResponse.json(
-        { error: "SUBSCRIPTION_FETCH_FAILED" },
+        {
+          success: false,
+          error: "SUBSCRIPTION_FETCH_FAILED",
+          message: "구독 정보 조회에 실패했습니다.",
+        },
         { status: 500 }
       );
     }
@@ -319,7 +341,8 @@ export async function GET(request: NextRequest) {
             ) {
               validSubscriptions.push(subscription);
             } else {
-              throw new Error("구독 정보 불완전");
+              devLog.warn("구독 정보 불완전:", subscription);
+              continue; // 이 구독은 건너뛰고 다음 구독으로
             }
           } catch (error: any) {
             devLog.log(
@@ -380,7 +403,11 @@ export async function GET(request: NextRequest) {
       }
     );
     return NextResponse.json(
-      { error: "SUBSCRIPTION_GET_SYSTEM_ERROR" },
+      {
+        success: false,
+        error: "SUBSCRIPTION_GET_SYSTEM_ERROR",
+        message: "구독 조회 중 시스템 오류가 발생했습니다.",
+      },
       { status: 500 }
     );
   }
@@ -406,7 +433,14 @@ export async function DELETE(request: NextRequest) {
     const { endpoint } = body;
 
     if (!endpoint) {
-      return NextResponse.json({ error: "MISSING_ENDPOINT" }, { status: 400 });
+      return NextResponse.json(
+        {
+          success: false,
+          error: "MISSING_ENDPOINT",
+          message: "구독 엔드포인트가 필요합니다.",
+        },
+        { status: 400 }
+      );
     }
 
     // 구독 삭제
@@ -422,7 +456,11 @@ export async function DELETE(request: NextRequest) {
     if (deleteError) {
       devLog.error("전체 푸시 구독 삭제 오류:", deleteError);
       return NextResponse.json(
-        { error: "SUBSCRIPTION_UNSUBSCRIBE_FAILED" },
+        {
+          success: false,
+          error: "SUBSCRIPTION_UNSUBSCRIBE_FAILED",
+          message: "구독 해제에 실패했습니다.",
+        },
         { status: 500 }
       );
     }
@@ -461,7 +499,11 @@ export async function DELETE(request: NextRequest) {
       }
     );
     return NextResponse.json(
-      { error: "서버 오류가 발생했습니다." },
+      {
+        success: false,
+        error: "SUBSCRIPTION_SERVER_ERROR",
+        message: "서버 오류가 발생했습니다.",
+      },
       { status: 500 }
     );
   }

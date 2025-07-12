@@ -107,8 +107,10 @@ export default function FarmVisitorsPage() {
         setCurrentFarm(farm);
         setIsInitialized(true);
       } else {
-        const authError = getAuthErrorMessage("FARM_NOT_FOUND");
-        showError("농장을 찾을 수 없습니다", authError.message);
+        showError(
+          "농장을 찾을 수 없습니다",
+          "요청하신 농장이 존재하지 않거나 접근할 수 없습니다."
+        );
         router.push("/admin/farms");
       }
     }

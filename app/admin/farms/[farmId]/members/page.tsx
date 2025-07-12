@@ -90,10 +90,7 @@ export default function MembersPage({ params }: PageProps) {
     async (email: string, role: "manager" | "viewer") => {
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
       if (!emailRegex.test(email)) {
-        const authError = getAuthErrorMessage({
-          message: "INVALID_EMAIL_FORMAT",
-        });
-        showError("입력 오류", authError.message);
+        showError("입력 오류", "올바른 이메일 형식을 입력해주세요.");
         return;
       }
 

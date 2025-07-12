@@ -314,24 +314,22 @@ export async function GET() {
 
     return NextResponse.json(
       {
-        // 오류 상태 정보
-        status: "unhealthy", // 서버 상태: 비정상
-        timestamp: new Date().toISOString(), // 오류 발생 시간
-        error: "HEALTH_CHECK_FAILED", // 영어 에러 코드
-        errorDetails: errorMessage, // 상세 오류 정보
-        responseTime: `${responseTime}ms`, // 응답 시간
-
-        // 서비스 상태 (오류)
+        success: false,
+        error: "HEALTH_CHECK_FAILED",
+        message: "서버 상태 점검에 실패했습니다.",
+        errorDetails: errorMessage,
+        responseTime: `${responseTime}ms`,
         services: {
-          database: "disconnected", // 데이터베이스 연결 실패
-          api: "error", // API 서비스 오류
-          memory: "unknown", // 메모리 사용량 정보 미확인
+          database: "disconnected",
+          api: "error",
+          memory: "unknown",
         },
+        status: "unhealthy",
+        timestamp: new Date().toISOString(),
       },
       {
-        status: 503, // Service Unavailable 상태 코드
+        status: 503,
         headers: {
-          // 캐시 방지 헤더
           "Cache-Control": "no-cache, no-store, must-revalidate",
           Pragma: "no-cache",
           Expires: "0",

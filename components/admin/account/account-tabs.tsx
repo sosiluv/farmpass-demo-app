@@ -39,10 +39,10 @@ export function AccountTabs({ profile, userId }: AccountTabsProps) {
           "프로필 정보가 성공적으로 저장되었습니다."
         );
       } else {
-        const authError = getAuthErrorMessage(
+        showError(
+          "프로필 저장 실패",
           result.error || "프로필 정보 저장에 실패했습니다."
         );
-        showError("프로필 저장 실패", authError.message);
       }
     } catch (error) {
       const authError = getAuthErrorMessage(error);
@@ -61,10 +61,10 @@ export function AccountTabs({ profile, userId }: AccountTabsProps) {
           "회사 정보가 성공적으로 저장되었습니다."
         );
       } else {
-        const authError = getAuthErrorMessage(
+        showError(
+          "회사 정보 저장 실패",
           result.error || "회사 정보 저장에 실패했습니다."
         );
-        showError("회사 정보 저장 실패", authError.message);
       }
     } catch (error) {
       const authError = getAuthErrorMessage(error);
@@ -83,10 +83,10 @@ export function AccountTabs({ profile, userId }: AccountTabsProps) {
           "비밀번호가 성공적으로 변경되었습니다."
         );
       } else {
-        const authError = getAuthErrorMessage(
+        showError(
+          "비밀번호 변경 실패",
           result.error || "비밀번호 변경에 실패했습니다."
         );
-        showError("비밀번호 변경 실패", authError.message);
       }
     } catch (error) {
       const authError = getAuthErrorMessage(error);

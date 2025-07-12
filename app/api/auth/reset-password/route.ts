@@ -11,7 +11,14 @@ export async function POST(request: NextRequest) {
     const { email } = await request.json();
 
     if (!email) {
-      return NextResponse.json({ error: "MISSING_EMAIL" }, { status: 400 });
+      return NextResponse.json(
+        {
+          success: false,
+          error: "MISSING_EMAIL",
+          message: "이메일 주소가 필요합니다.",
+        },
+        { status: 400 }
+      );
     }
 
     // 서버용 Supabase 클라이언트 생성
@@ -26,7 +33,11 @@ export async function POST(request: NextRequest) {
 
     if (profileError) {
       return NextResponse.json(
-        { error: "USER_PROFILE_ERROR" },
+        {
+          success: false,
+          error: "USER_PROFILE_ERROR",
+          message: "사용자 정보 확인 중 오류가 발생했습니다.",
+        },
         { status: 500 }
       );
     }
@@ -100,7 +111,11 @@ export async function POST(request: NextRequest) {
           };
 
       return NextResponse.json(
-        { error: errorResponse.message },
+        {
+          success: false,
+          error: "PASSWORD_RESET_ERROR",
+          message: errorResponse.message,
+        },
         { status: errorResponse.status }
       );
     }
@@ -157,7 +172,11 @@ export async function POST(request: NextRequest) {
     );
 
     return NextResponse.json(
-      { error: "PASSWORD_RESET_SYSTEM_ERROR" },
+      {
+        success: false,
+        error: "PASSWORD_RESET_SYSTEM_ERROR",
+        message: "비밀번호 재설정 처리 중 오류가 발생했습니다.",
+      },
       { status: 500 }
     );
   }

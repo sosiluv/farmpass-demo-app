@@ -32,7 +32,11 @@ export async function POST(request: NextRequest) {
       const settings = await getSystemSettings();
       if (!settings?.vapidPublicKey || !settings?.vapidPrivateKey) {
         return NextResponse.json(
-          { error: "실시간 검사를 위해 VAPID 키가 필요합니다." },
+          {
+            success: false,
+            error: "VAPID_KEY_REQUIRED_FOR_REALTIME",
+            message: "실시간 검사를 위해 VAPID 키가 필요합니다.",
+          },
           { status: 500 }
         );
       }
@@ -54,7 +58,11 @@ export async function POST(request: NextRequest) {
     if (subscriptionError) {
       devLog.error("구독 조회 오류:", subscriptionError);
       return NextResponse.json(
-        { error: "SUBSCRIPTION_CLEANUP_FETCH_FAILED" },
+        {
+          success: false,
+          error: "SUBSCRIPTION_CLEANUP_FETCH_FAILED",
+          message: "구독 정리 중 조회에 실패했습니다.",
+        },
         { status: 500 }
       );
     }
@@ -271,7 +279,11 @@ export async function POST(request: NextRequest) {
     );
 
     return NextResponse.json(
-      { error: "구독 정리 중 서버 오류가 발생했습니다." },
+      {
+        success: false,
+        error: "SUBSCRIPTION_CLEANUP_ERROR",
+        message: "구독 정리 중 서버 오류가 발생했습니다.",
+      },
       { status: 500 }
     );
   }

@@ -36,24 +36,54 @@ export async function POST(request: NextRequest) {
 
       // 방문자 데이터 정리
       devLog.log("방문자 데이터 정리 시작");
-      const { data: visitorData, error: visitorError } = await supabase.rpc(
-        "auto_cleanup_expired_visitor_entries"
-      );
+      let visitorData;
+      try {
+        const { data, error: visitorError } = await supabase.rpc(
+          "auto_cleanup_expired_visitor_entries"
+        );
 
-      if (visitorError) {
-        devLog.error("방문자 데이터 정리 오류:", visitorError);
-        throw new Error(`Visitor data cleanup failed: ${visitorError.message}`);
+        if (visitorError) {
+          devLog.error("방문자 데이터 정리 오류:", visitorError);
+          throw new Error(
+            `Visitor data cleanup failed: ${visitorError.message}`
+          );
+        }
+        visitorData = data;
+      } catch (visitorError: any) {
+        devLog.error("Visitor data cleanup failed:", visitorError);
+        return NextResponse.json(
+          {
+            success: false,
+            error: "VISITOR_CLEANUP_FAILED",
+            message: `방문자 데이터 정리 실패: ${visitorError.message}`,
+          },
+          { status: 500 }
+        );
       }
 
       // 시스템 로그 정리
       devLog.log("시스템 로그 정리 시작");
-      const { data: logData, error: logError } = await supabase.rpc(
-        "auto_cleanup_expired_system_logs"
-      );
+      let logData;
+      try {
+        const { data, error: logError } = await supabase.rpc(
+          "auto_cleanup_expired_system_logs"
+        );
 
-      if (logError) {
-        devLog.error("시스템 로그 정리 오류:", logError);
-        throw new Error(`System log cleanup failed: ${logError.message}`);
+        if (logError) {
+          devLog.error("시스템 로그 정리 오류:", logError);
+          throw new Error(`System log cleanup failed: ${logError.message}`);
+        }
+        logData = data;
+      } catch (logError: any) {
+        devLog.error("System log cleanup failed:", logError);
+        return NextResponse.json(
+          {
+            success: false,
+            error: "SYSTEM_LOG_CLEANUP_FAILED",
+            message: `시스템 로그 정리 실패: ${logError.message}`,
+          },
+          { status: 500 }
+        );
       }
 
       // 결과 통합
@@ -66,14 +96,28 @@ export async function POST(request: NextRequest) {
     } else {
       devLog.log("시스템 로그 정리 시작");
       // 시스템 로그만 정리
-      const { data, error } = await supabase.rpc(
-        "auto_cleanup_expired_system_logs"
-      );
+      let data;
+      try {
+        const { data: cleanupData, error } = await supabase.rpc(
+          "auto_cleanup_expired_system_logs"
+        );
 
-      devLog.log("로그 정리 결과:", { data, error });
+        devLog.log("로그 정리 결과:", { data: cleanupData, error });
 
-      if (error) {
-        throw new Error(`System log cleanup failed: ${error.message}`);
+        if (error) {
+          throw new Error(`System log cleanup failed: ${error.message}`);
+        }
+        data = cleanupData;
+      } catch (error: any) {
+        devLog.error("System log cleanup failed:", error);
+        return NextResponse.json(
+          {
+            success: false,
+            error: "SYSTEM_LOG_CLEANUP_FAILED",
+            message: `시스템 로그 정리 실패: ${error.message}`,
+          },
+          { status: 500 }
+        );
       }
 
       result = data;

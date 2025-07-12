@@ -22,7 +22,14 @@ export async function POST(request: NextRequest) {
     const { email, reason } = await request.json();
 
     if (!email) {
-      return NextResponse.json({ error: "MISSING_EMAIL" }, { status: 400 });
+      return NextResponse.json(
+        {
+          success: false,
+          error: "MISSING_EMAIL",
+          message: "이메일 주소가 필요합니다.",
+        },
+        { status: 400 }
+      );
     }
 
     // 현재 상태 확인 (로그를 위해)
@@ -102,7 +109,11 @@ export async function POST(request: NextRequest) {
     ).catch((logError) => devLog.error("Failed to log reset error:", logError));
 
     return NextResponse.json(
-      { error: "RESET_ATTEMPTS_ERROR" },
+      {
+        success: false,
+        error: "RESET_ATTEMPTS_ERROR",
+        message: "로그인 시도 횟수 초기화 중 오류가 발생했습니다.",
+      },
       { status: 500 }
     );
   }

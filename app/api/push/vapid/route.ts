@@ -80,7 +80,11 @@ export async function POST(request: NextRequest) {
     );
 
     return NextResponse.json(
-      { error: "VAPID_KEY_GENERATION_FAILED" },
+      {
+        success: false,
+        error: "VAPID_KEY_GENERATION_FAILED",
+        message: "VAPID 키 생성에 실패했습니다.",
+      },
       { status: 500 }
     );
   }
@@ -125,8 +129,12 @@ export async function GET(request: NextRequest) {
         userAgent
       );
       return NextResponse.json(
-        { error: "VAPID 키가 설정되지 않았습니다." },
-        { status: 404 }
+        {
+          success: false,
+          error: "VAPID_KEY_NOT_CONFIGURED",
+          message: "VAPID 키가 설정되지 않았습니다.",
+        },
+        { status: 500 }
       );
     }
 
@@ -177,7 +185,11 @@ export async function GET(request: NextRequest) {
     );
 
     return NextResponse.json(
-      { error: "VAPID_KEY_FETCH_FAILED" },
+      {
+        success: false,
+        error: "VAPID_KEY_FETCH_FAILED",
+        message: "VAPID 키 조회에 실패했습니다.",
+      },
       { status: 500 }
     );
   }

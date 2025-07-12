@@ -38,7 +38,11 @@ export async function GET(
     if (!farm) {
       devLog.log("농장을 찾을 수 없음:", { farmId: params.farmId });
       return NextResponse.json(
-        { error: "FARM_NOT_FOUND" },
+        {
+          success: false,
+          error: "FARM_NOT_FOUND",
+          message: "농장을 찾을 수 없습니다.",
+        },
         { status: 404, headers: { "Cache-Control": "no-store" } }
       );
     }
@@ -50,7 +54,11 @@ export async function GET(
   } catch (error) {
     devLog.error("Error fetching farm:", error);
     return NextResponse.json(
-      { error: "FARM_FETCH_ERROR" },
+      {
+        success: false,
+        error: "FARM_FETCH_ERROR",
+        message: "농장 정보 조회 중 오류가 발생했습니다.",
+      },
       { status: 500, headers: { "Cache-Control": "no-store" } }
     );
   }
@@ -88,11 +96,25 @@ export async function PUT(
         .single();
 
       if (farmCheckError || !existingFarm) {
-        return NextResponse.json({ error: "FARM_NOT_FOUND" }, { status: 404 });
+        return NextResponse.json(
+          {
+            success: false,
+            error: "FARM_NOT_FOUND",
+            message: "농장을 찾을 수 없습니다.",
+          },
+          { status: 404 }
+        );
       }
 
       if (existingFarm.owner_id !== user.id) {
-        return NextResponse.json({ error: "UNAUTHORIZED" }, { status: 403 });
+        return NextResponse.json(
+          {
+            success: false,
+            error: "UNAUTHORIZED",
+            message: "이 농장에 대한 권한이 없습니다.",
+          },
+          { status: 403 }
+        );
       }
     } else {
       // 관리자인 경우에도 농장 존재 여부는 확인
@@ -103,7 +125,14 @@ export async function PUT(
         .single();
 
       if (farmCheckError || !existingFarm) {
-        return NextResponse.json({ error: "FARM_NOT_FOUND" }, { status: 404 });
+        return NextResponse.json(
+          {
+            success: false,
+            error: "FARM_NOT_FOUND",
+            message: "농장을 찾을 수 없습니다.",
+          },
+          { status: 404 }
+        );
       }
     }
 
@@ -173,7 +202,11 @@ export async function PUT(
     );
 
     return NextResponse.json(
-      { error: "FARM_UPDATE_ERROR" },
+      {
+        success: false,
+        error: "FARM_UPDATE_ERROR",
+        message: "농장 정보 수정 중 오류가 발생했습니다.",
+      },
       { status: 500, headers: { "Cache-Control": "no-store" } }
     );
   }
@@ -225,7 +258,14 @@ export async function DELETE(
         `Farm not found for deletion: ${params.farmId}`,
         farmCheckError
       );
-      return NextResponse.json({ error: "FARM_NOT_FOUND" }, { status: 404 });
+      return NextResponse.json(
+        {
+          success: false,
+          error: "FARM_NOT_FOUND",
+          message: "농장을 찾을 수 없습니다.",
+        },
+        { status: 404 }
+      );
     }
 
     // 소유권 확인 (관리자가 아닌 경우에만)
@@ -238,7 +278,14 @@ export async function DELETE(
         devLog.error(
           `Unauthorized farm deletion - Farm: ${params.farmId}, Owner: ${farm.owner_id}, User: ${user.id}`
         );
-        return NextResponse.json({ error: "UNAUTHORIZED" }, { status: 403 });
+        return NextResponse.json(
+          {
+            success: false,
+            error: "UNAUTHORIZED",
+            message: "이 농장을 삭제할 권한이 없습니다.",
+          },
+          { status: 403 }
+        );
       }
     } else {
       devLog.log(
@@ -311,7 +358,11 @@ export async function DELETE(
     );
 
     return NextResponse.json(
-      { error: "FARM_DELETE_ERROR" },
+      {
+        success: false,
+        error: "FARM_DELETE_ERROR",
+        message: "농장 삭제 중 오류가 발생했습니다.",
+      },
       { status: 500, headers: { "Cache-Control": "no-store" } }
     );
   }

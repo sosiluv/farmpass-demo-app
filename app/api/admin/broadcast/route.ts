@@ -75,7 +75,14 @@ export async function POST(request: NextRequest) {
     const result = await response.json();
 
     if (!response.ok) {
-      throw new Error(result.error || "Push notification sending failed");
+      return NextResponse.json(
+        {
+          success: false,
+          error: "PUSH_NOTIFICATION_SENDING_FAILED",
+          message: result.error || "푸시 알림 발송에 실패했습니다.",
+        },
+        { status: 500 }
+      );
     }
 
     // 성공 로그
@@ -137,8 +144,9 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json(
       {
+        success: false,
         error: "BROADCAST_SENDING_FAILED",
-        message: "Failed to send broadcast notification",
+        message: "브로드캐스트 알림 발송에 실패했습니다.",
       },
       { status: 500 }
     );

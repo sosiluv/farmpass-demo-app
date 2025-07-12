@@ -93,8 +93,12 @@ export async function GET(request: NextRequest) {
     statusCode = 500;
 
     return NextResponse.json(
-      { error: "USER_INFO_FETCH_FAILED" },
-      { status: statusCode, headers: { "Cache-Control": "no-store" } }
+      {
+        success: false,
+        error: "USER_INFO_FETCH_FAILED",
+        message: "사용자 정보 조회에 실패했습니다.",
+      },
+      { status: 500 }
     );
   } finally {
     // 성능 모니터링 종료 및 로깅

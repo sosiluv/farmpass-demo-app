@@ -139,7 +139,11 @@ export async function POST(request: NextRequest) {
         userAgent
       );
       return NextResponse.json(
-        { error: "MISSING_REQUIRED_FIELDS" },
+        {
+          success: false,
+          error: "MISSING_REQUIRED_FIELDS",
+          message: "필수 입력 항목이 누락되었습니다.",
+        },
         { status: 400 }
       );
     }
@@ -168,7 +172,11 @@ export async function POST(request: NextRequest) {
         userAgent
       );
       return NextResponse.json(
-        { error: "유효하지 않은 알림 유형입니다." },
+        {
+          success: false,
+          error: "유효하지 않은 알림 유형입니다.",
+          message: "유효하지 않은 알림 유형입니다.",
+        },
         { status: 400 }
       );
     }
@@ -207,7 +215,11 @@ export async function POST(request: NextRequest) {
         userAgent
       );
       return NextResponse.json(
-        { error: "VAPID 키가 설정되지 않았습니다." },
+        {
+          success: false,
+          error: "VAPID 키가 설정되지 않았습니다.",
+          message: "VAPID 키가 설정되지 않았습니다.",
+        },
         { status: 500 }
       );
     }
@@ -263,7 +275,11 @@ export async function POST(request: NextRequest) {
       );
       devLog.error("구독자 조회 오류:", subscriptionError);
       return NextResponse.json(
-        { error: "SUBSCRIBER_FETCH_FAILED" },
+        {
+          success: false,
+          error: "SUBSCRIBER_FETCH_FAILED",
+          message: "구독자 조회에 실패했습니다.",
+        },
         { status: 500 }
       );
     }
@@ -331,7 +347,11 @@ export async function POST(request: NextRequest) {
       );
       devLog.error("알림 설정 조회 오류:", settingsError);
       return NextResponse.json(
-        { error: "NOTIFICATION_SETTINGS_FETCH_FAILED" },
+        {
+          success: false,
+          error: "NOTIFICATION_SETTINGS_FETCH_FAILED",
+          message: "알림 설정을 불러올 수 없습니다.",
+        },
         { status: 500 }
       );
     }
@@ -598,7 +618,11 @@ export async function POST(request: NextRequest) {
     );
 
     return NextResponse.json(
-      { error: "서버 오류가 발생했습니다." },
+      {
+        success: false,
+        error: "서버 오류가 발생했습니다.",
+        message: "서버 오류가 발생했습니다.",
+      },
       { status: 500 }
     );
   }

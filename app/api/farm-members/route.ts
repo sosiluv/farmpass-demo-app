@@ -28,8 +28,15 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const farmIds = searchParams.get("farmIds");
 
-    if (!farmIds) {
-      return NextResponse.json({ error: "MISSING_FARM_IDS" }, { status: 400 });
+    if (!farmIds || farmIds.length === 0) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: "MISSING_FARM_IDS",
+          message: "농장 ID가 필요합니다.",
+        },
+        { status: 400 }
+      );
     }
 
     const farmIdArray = farmIds.split(",").filter(Boolean);
@@ -52,7 +59,11 @@ export async function GET(request: NextRequest) {
       } catch (accessError) {
         devLog.error("Error checking farm access:", accessError);
         return NextResponse.json(
-          { error: "FARM_ACCESS_CHECK_ERROR" },
+          {
+            success: false,
+            error: "FARM_ACCESS_CHECK_ERROR",
+            message: "농장 접근 권한 확인 중 오류가 발생했습니다.",
+          },
           { status: 500 }
         );
       }
@@ -71,7 +82,11 @@ export async function GET(request: NextRequest) {
       } catch (memberError) {
         devLog.error("Error checking farm membership:", memberError);
         return NextResponse.json(
-          { error: "FARM_MEMBER_ACCESS_CHECK_ERROR" },
+          {
+            success: false,
+            error: "FARM_MEMBER_ACCESS_CHECK_ERROR",
+            message: "농장 구성원 접근 권한 확인 중 오류가 발생했습니다.",
+          },
           { status: 500 }
         );
       }
@@ -100,8 +115,9 @@ export async function GET(request: NextRequest) {
 
         return NextResponse.json(
           {
+            success: false,
             error: "UNAUTHORIZED_FARMS",
-            unauthorizedFarms: unauthorizedFarms,
+            message: "일부 농장에 대한 접근 권한이 없습니다.",
           },
           { status: 403 }
         );
@@ -133,7 +149,11 @@ export async function GET(request: NextRequest) {
     } catch (membersError) {
       devLog.error("Error fetching farm members:", membersError);
       return NextResponse.json(
-        { error: "FARM_MEMBERS_FETCH_ERROR" },
+        {
+          success: false,
+          error: "FARM_MEMBERS_FETCH_ERROR",
+          message: "농장 멤버 목록 조회 중 오류가 발생했습니다.",
+        },
         { status: 500 }
       );
     }
@@ -209,7 +229,11 @@ export async function GET(request: NextRequest) {
     }
 
     return NextResponse.json(
-      { error: "FARM_MEMBERS_BULK_FETCH_ERROR" },
+      {
+        success: false,
+        error: "MEMBER_BULK_READ_FAILED",
+        message: "농장 멤버 일괄 조회에 실패했습니다.",
+      },
       { status: 500 }
     );
   }

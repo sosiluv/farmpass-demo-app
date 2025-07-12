@@ -138,7 +138,14 @@ export async function POST(
   try {
     const requestData = await request.json();
     if (!requestData || typeof requestData !== "object") {
-      throw new Error("Invalid request data");
+      return NextResponse.json(
+        {
+          success: false,
+          error: "INVALID_REQUEST_DATA",
+          message: "방문자 정보가 올바르지 않습니다.",
+        },
+        { status: 400 }
+      );
     }
     visitorData = requestData as VisitorData;
     const cookieStore = cookies();
@@ -345,6 +352,7 @@ export async function POST(
     // 응답 생성 및 쿠키 설정
     return NextResponse.json(
       {
+        success: true,
         message: "방문자 등록이 완료되었습니다.",
         visitor,
       },
@@ -386,8 +394,9 @@ export async function POST(
 
     return NextResponse.json(
       {
-        message: "방문자 등록에 실패했습니다. 잠시 후 다시 시도해주세요.",
+        success: false,
         error: "VISITOR_CREATE_ERROR",
+        message: "방문자 등록에 실패했습니다. 잠시 후 다시 시도해주세요.",
       },
       { status: 500 }
     );
@@ -448,6 +457,13 @@ export async function GET(
       userAgent
     );
 
-    return NextResponse.json({ error: "VISITOR_FETCH_ERROR" }, { status: 500 });
+    return NextResponse.json(
+      {
+        success: false,
+        error: "VISITOR_FETCH_ERROR",
+        message: "방문자 정보 조회 중 오류가 발생했습니다.",
+      },
+      { status: 500 }
+    );
   }
 }

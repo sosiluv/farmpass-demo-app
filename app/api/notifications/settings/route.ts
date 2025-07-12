@@ -91,7 +91,14 @@ export async function GET(request: NextRequest) {
         userAgent
       );
 
-      return NextResponse.json({ error: error.message }, { status: 500 });
+      return NextResponse.json(
+        {
+          success: false,
+          error: "NOTIFICATION_SETTINGS_ERROR",
+          message: "알림 설정 처리 중 오류가 발생했습니다.",
+        },
+        { status: 500 }
+      );
     }
 
     devLog.log("알림 설정 조회 성공:", settings);
@@ -136,7 +143,11 @@ export async function GET(request: NextRequest) {
     );
 
     return NextResponse.json(
-      { error: "NOTIFICATION_SETTINGS_READ_SYSTEM_ERROR" },
+      {
+        success: false,
+        error: "NOTIFICATION_SETTINGS_READ_SYSTEM_ERROR",
+        message: "알림 설정 조회 중 시스템 오류가 발생했습니다.",
+      },
       { status: 500 }
     );
   }
@@ -212,7 +223,11 @@ export async function PUT(request: NextRequest) {
         );
 
         return NextResponse.json(
-          { error: "NOTIFICATION_SETTINGS_UPDATE_FAILED" },
+          {
+            success: false,
+            error: "NOTIFICATION_SETTINGS_UPDATE_FAILED",
+            message: "알림 설정 업데이트에 실패했습니다.",
+          },
           { status: 500 }
         );
       }
@@ -270,7 +285,10 @@ export async function PUT(request: NextRequest) {
         );
 
         return NextResponse.json(
-          { error: "NOTIFICATION_SETTINGS_CREATE_FAILED" },
+          {
+            error: "NOTIFICATION_SETTINGS_CREATE_FAILED",
+            message: "알림 설정 생성에 실패했습니다.",
+          },
           { status: 500 }
         );
       }
@@ -314,7 +332,11 @@ export async function PUT(request: NextRequest) {
     );
 
     return NextResponse.json(
-      { error: "NOTIFICATION_SETTINGS_UPDATE_SYSTEM_ERROR" },
+      {
+        success: false,
+        error: "NOTIFICATION_SETTINGS_UPDATE_SYSTEM_ERROR",
+        message: "알림 설정 업데이트 중 시스템 오류가 발생했습니다.",
+      },
       { status: 500 }
     );
   }

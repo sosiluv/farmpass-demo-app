@@ -353,8 +353,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (!result.success) {
         // 로그인 실패 시 에러 처리
         if (result.status === 429) {
-          // 계정 잠금
-          throw new Error(result.message || "계정이 잠겼습니다.");
+          // 계정 잠금 - timeLeft 정보 포함
+          const error = new Error(result.message || "계정이 잠겼습니다.");
+          (error as any).timeLeft = result.timeLeft;
+          throw error;
         } else if (result.status === 401) {
           // 인증 실패
           throw new Error(

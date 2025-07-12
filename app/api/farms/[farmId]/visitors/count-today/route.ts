@@ -52,7 +52,14 @@ export async function GET(
           userAgent,
         }
       );
-      return NextResponse.json({ error: "Farm not found" }, { status: 404 });
+      return NextResponse.json(
+        {
+          success: false,
+          error: "FARM_NOT_FOUND",
+          message: "농장을 찾을 수 없습니다.",
+        },
+        { status: 404 }
+      );
     }
 
     // 시스템 설정 조회
@@ -99,7 +106,11 @@ export async function GET(
     );
 
     return NextResponse.json(
-      { error: "Failed to count today's visitors" },
+      {
+        success: false,
+        error: "VISITOR_COUNT_ERROR",
+        message: "오늘의 방문자 수를 확인할 수 없습니다.",
+      },
       { status: 500 }
     );
   }

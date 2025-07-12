@@ -91,8 +91,9 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json(
       {
+        success: false,
         error: "EXPIRED_COUNT_QUERY_FAILED",
-        message: "Failed to query expired visitor count",
+        message: "만료된 방문자 데이터 개수 조회에 실패했습니다.",
       },
       { status: 500 }
     );

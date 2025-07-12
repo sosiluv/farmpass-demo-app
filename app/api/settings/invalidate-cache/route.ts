@@ -55,7 +55,11 @@ export async function POST(request: NextRequest) {
     );
 
     return NextResponse.json(
-      { success: false, error: "CACHE_INVALIDATE_FAILED" },
+      {
+        success: false,
+        error: "CACHE_INVALIDATE_FAILED",
+        message: "캐시 무효화에 실패했습니다.",
+      },
       { status: 500 }
     );
   }
@@ -88,7 +92,11 @@ export async function GET(request: NextRequest) {
     );
 
     return NextResponse.json(
-      { success: false, error: "CACHE_INFO_FETCH_FAILED" },
+      {
+        success: false,
+        error: "CACHE_INFO_FETCH_FAILED",
+        message: "캐시 정보 조회에 실패했습니다.",
+      },
       { status: 500 }
     );
   }

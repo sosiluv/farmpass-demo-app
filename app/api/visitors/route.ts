@@ -184,7 +184,11 @@ export async function GET(request: NextRequest) {
       );
 
       return NextResponse.json(
-        { error: `쿼리 오류: ${visitorError.message}` },
+        {
+          success: false,
+          error: "VISITOR_QUERY_ERROR",
+          message: `쿼리 오류: ${visitorError.message}`,
+        },
         { status: 500 }
       );
     }
@@ -254,7 +258,11 @@ export async function GET(request: NextRequest) {
     });
 
     return NextResponse.json(
-      { error: "VISITOR_DATA_FETCH_FAILED" },
+      {
+        success: false,
+        error: "VISITOR_DATA_FETCH_FAILED",
+        message: "방문자 데이터 조회에 실패했습니다.",
+      },
       { status: 500 }
     );
   }
@@ -329,7 +337,11 @@ export async function POST(request: NextRequest) {
       );
 
       return NextResponse.json(
-        { error: "VISITOR_REGISTRATION_FAILED" },
+        {
+          success: false,
+          error: "VISITOR_REGISTRATION_FAILED",
+          message: "방문자 등록에 실패했습니다.",
+        },
         { status: 400 }
       );
     }
@@ -386,7 +398,11 @@ export async function POST(request: NextRequest) {
     );
 
     return NextResponse.json(
-      { error: "VISITOR_REGISTRATION_SYSTEM_ERROR" },
+      {
+        success: false,
+        error: "VISITOR_REGISTRATION_SYSTEM_ERROR",
+        message: "방문자 등록 중 시스템 오류가 발생했습니다.",
+      },
       { status: 500 }
     );
   }

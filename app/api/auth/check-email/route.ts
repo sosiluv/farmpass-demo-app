@@ -10,7 +10,14 @@ export async function GET(request: NextRequest) {
   const email = request.nextUrl.searchParams.get("email");
 
   if (!email) {
-    return NextResponse.json({ error: "MISSING_EMAIL" }, { status: 400 });
+    return NextResponse.json(
+      {
+        success: false,
+        error: "MISSING_EMAIL",
+        message: "이메일 주소가 필요합니다.",
+      },
+      { status: 400 }
+    );
   }
 
   try {
@@ -20,6 +27,7 @@ export async function GET(request: NextRequest) {
     });
 
     return NextResponse.json({
+      success: true,
       isDuplicate: !!existingUser,
       message: existingUser ? "Email is already in use." : "",
     });
@@ -38,6 +46,13 @@ export async function GET(request: NextRequest) {
       }
     );
 
-    return NextResponse.json({ error: "EMAIL_CHECK_ERROR" }, { status: 500 });
+    return NextResponse.json(
+      {
+        success: false,
+        error: "EMAIL_CHECK_ERROR",
+        message: "이메일 확인 중 오류가 발생했습니다.",
+      },
+      { status: 500 }
+    );
   }
 }

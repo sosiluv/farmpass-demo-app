@@ -82,7 +82,14 @@ export async function POST(request: NextRequest) {
         break;
 
       default:
-        throw new Error("Unsupported delete operation");
+        return NextResponse.json(
+          {
+            success: false,
+            error: "UNSUPPORTED_DELETE_OPERATION",
+            message: "지원하지 않는 삭제 작업입니다.",
+          },
+          { status: 400 }
+        );
     }
 
     // 삭제 작업 로그 기록
@@ -128,9 +135,9 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json(
       {
+        success: false,
         error: "LOG_DELETE_FAILED",
-        message: "Failed to delete logs",
-        details: error instanceof Error ? error.message : "Unknown error",
+        message: "로그 삭제에 실패했습니다.",
       },
       { status: 500 }
     );

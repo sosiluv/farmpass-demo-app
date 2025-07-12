@@ -155,7 +155,11 @@ export async function POST(request: NextRequest) {
     );
 
     return NextResponse.json(
-      { error: "FARM_CREATE_ERROR" },
+      {
+        success: false,
+        error: "FARM_CREATE_ERROR",
+        message: "농장 생성 중 오류가 발생했습니다.",
+      },
       { status: 500, headers: { "Cache-Control": "no-store" } }
     );
   } finally {
@@ -315,7 +319,11 @@ export async function GET(request: NextRequest) {
     );
 
     return NextResponse.json(
-      { error: "FARM_LIST_FETCH_ERROR" },
+      {
+        success: false,
+        error: "FARM_LIST_FETCH_ERROR",
+        message: "농장 목록 조회 중 오류가 발생했습니다.",
+      },
       { status: 500, headers: { "Cache-Control": "no-store" } }
     );
   } finally {

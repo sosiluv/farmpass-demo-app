@@ -16,8 +16,16 @@ async function fetchHealthCheck(baseUrl: string) {
 
 // UptimeRobot 상태 데이터 패치
 async function fetchUptimeStatus() {
-  if (!process.env.UPTIMEROBOT_API_KEY)
-    throw new Error("UptimeRobot API key not configured");
+  if (!process.env.UPTIMEROBOT_API_KEY) {
+    return NextResponse.json(
+      {
+        success: false,
+        error: "UPTIMEROBOT_API_KEY_NOT_CONFIGURED",
+        message: "UptimeRobot API 키가 설정되지 않았습니다.",
+      },
+      { status: 500 }
+    );
+  }
   const res = await fetch("https://api.uptimerobot.com/v2/getMonitors", {
     method: "POST",
     headers: {
@@ -121,7 +129,12 @@ async function fetchErrorLogs() {
       .order("created_at", { ascending: false })
       .limit(50);
     if (error) {
-      return { error: "Failed to fetch system logs", details: error.message };
+      return {
+        success: false,
+        error: "SYSTEM_LOGS_FETCH_FAILED",
+        message: "시스템 로그 조회에 실패했습니다.",
+        details: error.message,
+      };
     }
     const formattedLogs =
       logs?.map((log: any) => {
@@ -147,7 +160,9 @@ async function fetchErrorLogs() {
     return formattedLogs;
   } catch (error) {
     return {
-      error: "Internal server error",
+      success: false,
+      error: "INTERNAL_SERVER_ERROR",
+      message: "데이터베이스 에러 발생",
       details: error instanceof Error ? error.message : "Unknown error",
     };
   }
@@ -177,7 +192,11 @@ export async function GET(request: NextRequest) {
         "monitoring_health_check_failed",
         "헬스 체크 데이터 조회 실패",
         { ip: clientIP, userAgent },
-        { error: healthCheck.reason }
+        {
+          success: false,
+          error: "HEALTH_CHECK_FAILED",
+          message: healthCheck.reason,
+        }
       );
     }
 
@@ -186,7 +205,11 @@ export async function GET(request: NextRequest) {
         "monitoring_uptime_failed",
         "업타임 상태 조회 실패",
         { ip: clientIP, userAgent },
-        { error: uptimeStatus.reason }
+        {
+          success: false,
+          error: "UPTIME_CHECK_FAILED",
+          message: uptimeStatus.reason,
+        }
       );
     }
 
@@ -195,7 +218,11 @@ export async function GET(request: NextRequest) {
         "monitoring_analytics_failed",
         "GA4 데이터 조회 실패",
         { ip: clientIP, userAgent },
-        { error: analyticsData.reason }
+        {
+          success: false,
+          error: "ANALYTICS_CHECK_FAILED",
+          message: analyticsData.reason,
+        }
       );
     }
 
@@ -204,7 +231,11 @@ export async function GET(request: NextRequest) {
         "monitoring_error_logs_failed",
         "에러 로그 조회 실패",
         { ip: clientIP, userAgent },
-        { error: errorLogs.reason }
+        {
+          success: false,
+          error: "ERROR_LOGS_CHECK_FAILED",
+          message: errorLogs.reason,
+        }
       );
     }
 
@@ -214,19 +245,35 @@ export async function GET(request: NextRequest) {
         health:
           healthCheck.status === "fulfilled"
             ? healthCheck.value
-            : { error: healthCheck.reason },
+            : {
+                success: false,
+                error: "HEALTH_CHECK_FAILED",
+                message: healthCheck.reason,
+              },
         uptime:
           uptimeStatus.status === "fulfilled"
             ? uptimeStatus.value
-            : { error: uptimeStatus.reason },
+            : {
+                success: false,
+                error: "UPTIME_CHECK_FAILED",
+                message: uptimeStatus.reason,
+              },
         analytics:
           analyticsData.status === "fulfilled"
             ? analyticsData.value
-            : { error: analyticsData.reason },
+            : {
+                success: false,
+                error: "ANALYTICS_CHECK_FAILED",
+                message: analyticsData.reason,
+              },
         errors:
           errorLogs.status === "fulfilled"
             ? errorLogs.value
-            : { error: errorLogs.reason },
+            : {
+                success: false,
+                error: "ERROR_LOGS_CHECK_FAILED",
+                message: errorLogs.reason,
+              },
       },
       meta: {
         uptimeConfigured: !!process.env.UPTIMEROBOT_API_KEY,
@@ -252,9 +299,9 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json(
       {
-        error: "MONITORING_DATA_FETCH_FAILED",
-        timestamp: new Date().toISOString(),
-        details: error instanceof Error ? error.message : "Unknown error",
+        success: false,
+        error: "MONITORING_DASHBOARD_ERROR",
+        message: "모니터링 대시보드 데이터 조회에 실패했습니다.",
       },
       { status: 500 }
     );

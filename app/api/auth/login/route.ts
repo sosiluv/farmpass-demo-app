@@ -447,6 +447,7 @@ export async function POST(request: NextRequest) {
       {
         success: false,
         error: "LOGIN_SYSTEM_ERROR",
+        message: "로그인 처리 중 시스템 오류가 발생했습니다.",
       },
       { status: 500 }
     );
