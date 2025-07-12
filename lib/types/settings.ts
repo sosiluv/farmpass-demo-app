@@ -2,8 +2,8 @@ import type { Database } from "./supabase";
 
 export interface SystemSettings {
   id: string;
-  createdAt: Date;
-  updatedAt: Date;
+  created_at: Date;
+  updated_at: Date;
 
   // 일반 설정
   siteName: string;

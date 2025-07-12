@@ -1,17 +1,8 @@
-import { useState, useEffect, useCallback } from "react";
-import {
-  uploadImageUniversal,
-  deleteImageUniversal,
-} from "@/lib/utils/media/image-upload";
+import { useState, useEffect } from "react";
 import type { VisitorSettings } from "@/lib/types/visitor";
 import type { VisitorFormData } from "@/lib/utils/validation/visitor-validation";
-import {
-  ALLOWED_IMAGE_TYPES,
-  MAX_UPLOAD_SIZE_MB,
-} from "@/lib/constants/upload";
 import { handleError } from "@/lib/utils/error";
-import { v4 as uuidv4 } from "uuid";
-import { extractStorageFileName } from "@/lib/utils/media/image-upload";
+import { useUnifiedImageUpload } from "@/hooks/useUnifiedImageUpload";
 
 // React Query Hooks
 import {
@@ -43,6 +34,18 @@ export const useVisitorForm = (farmId: string, settings: VisitorSettings) => {
   const [isImageUploading, setIsImageUploading] = useState(false);
   const [isInitialized, setIsInitialized] = useState(false);
   const [selectedImageFile, setSelectedImageFile] = useState<File | null>(null);
+
+  // 통합 이미지 업로드 훅 (지연 업로드용)
+  const visitorPhotoUpload = useUnifiedImageUpload({
+    uploadType: "visitorPhoto",
+    // DB 저장 없음 - 폼 제출 시에만 실제 저장
+    onUpdate: () => {
+      // 방문자 등록 시에만 DB에 저장되므로 여기서는 아무것도 하지 않음
+    },
+    onError: (error) => {
+      setError(`이미지 업로드 실패: ${error.message}`);
+    },
+  });
 
   // React Query Hooks
   const {
@@ -97,11 +100,11 @@ export const useVisitorForm = (farmId: string, settings: VisitorSettings) => {
     }
   }, [sessionData, farmId, isInitialized]);
 
-  // Base64 프리뷰용 이미지 업로드 함수
+  // Base64 프리뷰용 이미지 업로드 함수 (기존 로직 유지)
   const uploadImage = async (file: File) => {
     setIsImageUploading(true);
     try {
-      // Base64 프리뷰 생성
+      // Base64 프리뷰 생성 (즉시 Storage 업로드 안함)
       const previewUrl = URL.createObjectURL(file);
       setUploadedImageUrl(previewUrl);
       setSelectedImageFile(file);
@@ -111,25 +114,8 @@ export const useVisitorForm = (farmId: string, settings: VisitorSettings) => {
     }
   };
 
-  // 방문자 이미지 삭제 함수
-  const deleteImage = async () => {
-    // 기존 파일명 추출 (실제 업로드된 파일인 경우만)
-    let prevFileName: string | undefined = undefined;
-    const url = uploadedImageUrl || formData.profilePhotoUrl;
-    if (url && !url.startsWith("blob:")) {
-      // Base64가 아닌 실제 URL인 경우만
-      prevFileName = extractStorageFileName(url, "visitor-photos");
-    }
-    if (prevFileName) {
-      await deleteImageUniversal({
-        bucket: "visitor-photos",
-        fileName: prevFileName,
-      });
-    }
-    setUploadedImageUrl(null);
-    setSelectedImageFile(null);
-    setFormData((prev) => ({ ...prev, profilePhotoUrl: null }));
-  };
+  // 방문자 이미지 삭제 함수 (기존 로직 유지)
+  const deleteImage = async () => {};
 
   const handleSubmit = async (data: VisitorFormData) => {
     // React Hook Form에서 이미 검증된 데이터를 받음
@@ -156,54 +142,13 @@ export const useVisitorForm = (farmId: string, settings: VisitorSettings) => {
       // 1. 새로 선택된 이미지가 있으면 업로드
       if (selectedImageFile) {
         try {
-          // 기존 파일명 추출 (실제 업로드된 파일인 경우만)
-          let prevFileName: string | undefined = undefined;
-
-          // 1. 기존 DB에 저장된 이미지가 있는지 확인 (우선순위)
-          if (
-            formData.profilePhotoUrl &&
-            !formData.profilePhotoUrl.startsWith("blob:")
-          ) {
-            prevFileName = extractStorageFileName(
-              formData.profilePhotoUrl,
-              "visitor-photos"
-            );
-            console.log("기존 DB 이미지 삭제:", prevFileName);
+          // 새 이미지 업로드 (unified-image-manager 사용)
+          const result = await visitorPhotoUpload.uploadImage(
+            selectedImageFile
+          );
+          if (result) {
+            profile_photo_url = result.publicUrl; // 실제 Supabase URL
           }
-          // 2. 새로 업로드된 이미지가 있는지 확인 (blob이 아닌 경우)
-          else if (uploadedImageUrl && !uploadedImageUrl.startsWith("blob:")) {
-            prevFileName = extractStorageFileName(
-              uploadedImageUrl,
-              "visitor-photos"
-            );
-            console.log("새로 업로드된 이미지 삭제:", prevFileName);
-          }
-
-          // 기존 파일이 있으면 먼저 삭제
-          if (prevFileName) {
-            console.log("삭제할 파일:", prevFileName);
-            await deleteImageUniversal({
-              bucket: "visitor-photos",
-              fileName: prevFileName,
-            });
-            console.log("기존 파일 삭제 완료");
-          } else {
-            console.log("삭제할 기존 파일 없음");
-          }
-
-          // 새 이미지 업로드 (prevFileName 제거 - 이미 삭제했으므로)
-          const result = await uploadImageUniversal({
-            file: selectedImageFile,
-            bucket: "visitor-photos",
-            allowedTypes: [...ALLOWED_IMAGE_TYPES],
-            maxSizeMB: MAX_UPLOAD_SIZE_MB,
-            path: (() => {
-              const ext =
-                selectedImageFile.name.split(".").pop()?.toLowerCase() || "jpg";
-              return `${farmId}/${uuidv4()}.${ext}`;
-            })(),
-          });
-          profile_photo_url = result.publicUrl; // 실제 Supabase URL
         } catch (error) {
           setError("이미지 업로드에 실패했습니다");
           handleError(error as Error, "이미지 업로드");

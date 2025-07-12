@@ -12,17 +12,12 @@ import {
 interface GeneralTabProps {
   settings: SystemSettings;
   onSettingChange: (key: keyof SystemSettings, value: any) => void;
-  onImageUpload: (
-    file: File | null,
-    type: "favicon" | "logo"
-  ) => Promise<{ url: string; path: string } | undefined>;
   loading?: boolean;
 }
 
 export default function GeneralTab({
   settings,
   onSettingChange,
-  onImageUpload,
   loading,
 }: GeneralTabProps) {
   return (
@@ -39,7 +34,6 @@ export default function GeneralTab({
         <BrandingSection
           settings={settings}
           onSettingChange={onSettingChange}
-          onImageUpload={onImageUpload}
           loading={loading}
         />
 

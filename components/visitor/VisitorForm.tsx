@@ -39,13 +39,7 @@ import {
   SelectItem,
   SelectValue,
 } from "@/components/ui/select";
-import { devLog } from "@/lib/utils/logging/dev-logger";
 import { FormSkeleton } from "@/components/common/skeletons";
-import {
-  ALLOWED_IMAGE_TYPES,
-  ALLOWED_IMAGE_EXTENSIONS,
-} from "@/lib/constants/upload";
-import { useCommonToast } from "@/lib/utils/notification/toast-messages";
 import {
   Form,
   FormControl,
@@ -125,7 +119,6 @@ export const VisitorForm = ({
   onImageDelete,
 }: VisitorFormProps) => {
   const [logoError, setLogoError] = React.useState(false);
-  const { showInfo, showWarning } = useCommonToast();
 
   // 동적 스키마 생성
   const visitorSchema = createVisitorFormSchema(settings, uploadedImageUrl);
@@ -138,24 +131,29 @@ export const VisitorForm = ({
 
   // 이미지 업로드 핸들러
   const handleImageUpload = async (file: File) => {
-    showInfo("이미지 업로드 시작", "이미지를 업로드하는 중입니다...");
+    // 토스트는 상위 컴포넌트에서 처리하므로 여기서는 제거
+    await onImageUpload(file);
+  };
 
-    if (!(ALLOWED_IMAGE_TYPES as readonly string[]).includes(file.type)) {
-      showWarning(
-        "파일 형식 오류",
-        `허용되지 않은 파일 형식입니다. ${ALLOWED_IMAGE_EXTENSIONS.join(
-          ", "
-        )} 만 업로드 가능합니다.`
-      );
+  // 폼 제출 핸들러 래핑
+  const handleFormSubmit = async (data: VisitorFormData) => {
+    // 이미지 필수 검증 - 간단하게
+    if (
+      settings.requireVisitorPhoto &&
+      !uploadedImageUrl &&
+      !formData.profilePhotoUrl
+    ) {
+      // 간단한 에러 메시지 표시
+      form.setError("root", { message: "방문자 사진을 등록해주세요" });
       return;
     }
 
-    await onImageUpload(file);
+    // 폼 제출
+    await onSubmit(data);
   };
 
   // 이미지 삭제 핸들러
   // const handleImageDelete = async () => {
-  //   showInfo("이미지 삭제 시작", "이미지를 삭제하는 중입니다...");
 
   //   if (uploadedImageUrl) {
   //     const fileName = uploadedImageUrl.split("/").pop();
@@ -342,45 +340,30 @@ export const VisitorForm = ({
       </CardHeader>
 
       <CardContent className="p-3 sm:p-6 w-full">
+        {/* 프로필 사진 업로드 - 폼 외부로 분리 */}
+        {settings.requireVisitorPhoto && (
+          <div className="mb-3 sm:mb-6 w-full flex flex-col items-center">
+            <Label className="sr-only">{LABELS.PROFILE_PHOTO}</Label>
+            <ImageUpload
+              onUpload={handleImageUpload}
+              // onDelete={handleImageDelete}
+              currentImage={
+                uploadedImageUrl || formData.profilePhotoUrl || null
+              }
+              required={settings.requireVisitorPhoto}
+              showCamera={true}
+              avatarSize="xl"
+              label={LABELS.PROFILE_PHOTO}
+              className="shadow border border-gray-100 bg-white rounded-lg sm:rounded-xl p-2 sm:p-4"
+            />
+          </div>
+        )}
+
         <Form {...form}>
           <form
-            onSubmit={form.handleSubmit(onSubmit)}
+            onSubmit={form.handleSubmit(handleFormSubmit)}
             className="space-y-3 sm:space-y-6"
           >
-            {/* 프로필 사진 업로드 */}
-            {settings.requireVisitorPhoto && (
-              <FormField
-                control={form.control}
-                name="profilePhoto"
-                render={({ field }) => (
-                  <FormItem className="mb-3 sm:mb-6 w-full flex flex-col items-center">
-                    <FormLabel className="sr-only">
-                      {LABELS.PROFILE_PHOTO}
-                    </FormLabel>
-                    <FormControl>
-                      <ImageUpload
-                        onUpload={handleImageUpload}
-                        // onDelete={handleImageDelete}
-                        currentImage={
-                          uploadedImageUrl ||
-                          formData.profilePhotoUrl ||
-                          (field.value
-                            ? URL.createObjectURL(field.value)
-                            : null)
-                        }
-                        required={settings.requireVisitorPhoto}
-                        showCamera={true}
-                        avatarSize="xl"
-                        label={LABELS.PROFILE_PHOTO}
-                        className="shadow border border-gray-100 bg-white rounded-lg sm:rounded-xl p-2 sm:p-4"
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            )}
-
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-6">
               {/* 기본 필드들 */}
               {renderTextField("fullName", FORM_FIELDS.fullName)}
@@ -487,6 +470,16 @@ export const VisitorForm = ({
               <Alert variant="destructive">
                 <AlertTriangle className="h-4 w-4" />
                 <AlertDescription>{error}</AlertDescription>
+              </Alert>
+            )}
+
+            {/* 폼 에러 표시 */}
+            {form.formState.errors.root && (
+              <Alert variant="destructive">
+                <AlertTriangle className="h-4 w-4" />
+                <AlertDescription>
+                  {form.formState.errors.root.message}
+                </AlertDescription>
               </Alert>
             )}
 

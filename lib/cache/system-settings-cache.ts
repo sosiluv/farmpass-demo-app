@@ -71,8 +71,8 @@ export class SystemSettingsCache {
       return {
         ...DEFAULT_SYSTEM_SETTINGS,
         id: "temp-default",
-        createdAt: new Date(),
-        updatedAt: new Date(),
+        created_at: new Date(),
+        updated_at: new Date(),
       };
     }
   }
@@ -89,8 +89,8 @@ export class SystemSettingsCache {
       return {
         ...DEFAULT_SYSTEM_SETTINGS,
         id: "build-default",
-        createdAt: new Date(),
-        updatedAt: new Date(),
+        created_at: new Date(),
+        updated_at: new Date(),
       };
     }
 

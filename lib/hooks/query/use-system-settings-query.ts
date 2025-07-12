@@ -47,8 +47,8 @@ export function useSystemSettingsQuery() {
       // API 응답 구조에 맞게 변환
       return {
         id: settings.id,
-        createdAt: new Date(settings.createdAt),
-        updatedAt: new Date(settings.updatedAt),
+        created_at: new Date(settings.created_at),
+        updated_at: new Date(settings.updated_at),
 
         // 일반 설정
         siteName: settings.siteName,

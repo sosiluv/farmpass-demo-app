@@ -4,10 +4,10 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
   directUrl = env("DIRECT_URL")
-  schemas  = ["auth", "public"]
+  schemas   = ["auth", "public"]
 }
 
 /// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
@@ -330,9 +330,6 @@ model users {
 }
 
 model SystemSettings {
-  id                            String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  createdAt                     DateTime  @default(now())
-  updatedAt                     DateTime  @updatedAt
   siteName                      String    @default("농장 출입 관리 시스템(FarmPass)")
   siteDescription               String    @default("방역은 출입자 관리부터 시작됩니다. QR기록으로 축산 질병 예방의 첫걸음을 함께하세요.")
   language                      String    @default("ko")
@@ -369,6 +366,9 @@ model SystemSettings {
   pushVibrateEnabled            Boolean   @default(false)
   vapidPrivateKey               String?
   vapidPublicKey                String?
+  created_at                    DateTime? @default(now()) @db.Timestamptz(6)
+  updated_at                    DateTime? @default(now()) @db.Timestamptz(6)
+  id                            String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
 
   @@map("system_settings")
   @@schema("public")

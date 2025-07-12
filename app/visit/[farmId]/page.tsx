@@ -142,11 +142,13 @@ export default function VisitPage() {
   const handleImageUploadWrapped = async (file: File) => {
     try {
       showInfo("이미지 업로드 중", "프로필 이미지를 업로드하는 중입니다...");
-      await uploadImage(file);
+      const result = await uploadImage(file);
+      // Base64 프리뷰만 생성되므로 성공 메시지 표시
       showSuccess(
-        "이미지 업로드 완료",
-        "프로필 이미지가 성공적으로 업로드되었습니다."
+        "이미지 선택 완료",
+        "프로필 이미지가 선택되었습니다. 폼 제출 시 업로드됩니다."
       );
+      return result;
     } catch (error) {
       showError("이미지 업로드 실패", "프로필 이미지 업로드에 실패했습니다.");
       throw error;

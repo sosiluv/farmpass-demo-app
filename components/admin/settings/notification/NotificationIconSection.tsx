@@ -7,13 +7,7 @@ import type { SystemSettings } from "@/lib/types/settings";
 import SettingsCardHeader from "../SettingsCardHeader";
 
 import { ImageUpload } from "@/components/ui/image-upload";
-import { useCommonToast } from "@/lib/utils/notification/toast-messages";
-import {
-  ALLOWED_NOTIFICATION_ICON_TYPES,
-  ALLOWED_NOTIFICATION_ICON_EXTENSIONS,
-  ALLOWED_NOTIFICATION_BADGE_TYPES,
-  ALLOWED_NOTIFICATION_BADGE_EXTENSIONS,
-} from "@/lib/constants/upload";
+import { useUnifiedImageUpload } from "@/hooks/useUnifiedImageUpload";
 
 interface NotificationIconSectionProps {
   settings: SystemSettings;
@@ -21,43 +15,51 @@ interface NotificationIconSectionProps {
     key: K,
     value: SystemSettings[K]
   ) => void;
-  imageUrls: {
-    icon: string;
-    badge: string;
-  };
-  uploadStates: {
-    icon: boolean;
-    badge: boolean;
-  };
-  onFileSelect: (type: "icon" | "badge") => void;
-  onUpdateTimestamp: (type: "icon" | "badge") => void;
-  handleImageDelete: (
-    type: "notificationIcon" | "notificationBadge"
-  ) => Promise<void>;
-  onImageUpload: (
-    file: File | null,
-    type: "notificationIcon" | "notificationBadge"
-  ) => Promise<{ url: string; path: string } | undefined>;
-  onImageDelete: (
-    type: "notificationIcon" | "notificationBadge"
-  ) => Promise<void>;
   loading?: boolean;
 }
 
 const NotificationIconSection = React.memo(function NotificationIconSection({
   settings,
   onUpdate,
-  imageUrls,
-  uploadStates,
-  onFileSelect,
-  onUpdateTimestamp,
-  handleImageDelete,
-  onImageUpload,
-  onImageDelete: onImageDeleteFromProps,
   loading,
 }: NotificationIconSectionProps) {
-  const { showInfo, showWarning } = useCommonToast();
-  // 프리뷰 상태 관리
+  // 알림 아이콘 업로드 훅
+  const notificationIconUpload = useUnifiedImageUpload({
+    uploadType: "notificationIcon",
+    dbTable: "system_settings",
+    dbId: settings.id,
+    dbField: "notificationIcon",
+    refetchSettings: true, // settings context 즉시 갱신
+    onUpdate: (data) => {
+      onUpdate("notificationIcon", data.notificationIcon);
+      // 프리뷰 업데이트
+      if (data.notificationIcon) {
+        setIconPreview(`${data.notificationIcon}?t=${Date.now()}`);
+      } else {
+        setIconPreview(null);
+      }
+    },
+  });
+
+  // 배지 아이콘 업로드 훅
+  const notificationBadgeUpload = useUnifiedImageUpload({
+    uploadType: "notificationBadge",
+    dbTable: "system_settings",
+    dbId: settings.id,
+    dbField: "notificationBadge",
+    refetchSettings: true, // settings context 즉시 갱신
+    onUpdate: (data) => {
+      onUpdate("notificationBadge", data.notificationBadge);
+      // 프리뷰 업데이트
+      if (data.notificationBadge) {
+        setBadgePreview(`${data.notificationBadge}?t=${Date.now()}`);
+      } else {
+        setBadgePreview(null);
+      }
+    },
+  });
+
+  // 이미지 프리뷰 상태 관리
   const [iconPreview, setIconPreview] = useState<string | null>(
     settings.notificationIcon
       ? `${settings.notificationIcon}?t=${Date.now()}`
@@ -69,6 +71,7 @@ const NotificationIconSection = React.memo(function NotificationIconSection({
       : null
   );
 
+  // settings가 변경될 때마다 프리뷰 업데이트
   useEffect(() => {
     if (settings.notificationIcon) {
       setIconPreview(`${settings.notificationIcon}?t=${Date.now()}`);
@@ -102,56 +105,19 @@ const NotificationIconSection = React.memo(function NotificationIconSection({
                 <ImageUpload
                   onUpload={async (file) => {
                     if (!file) return;
-                    showInfo(
-                      "알림 아이콘 업로드 시작",
-                      "알림 아이콘을 업로드하는 중입니다..."
-                    );
-                    // 허용 타입 검사 (알림 아이콘)
-                    if (
-                      !(
-                        ALLOWED_NOTIFICATION_ICON_TYPES as readonly string[]
-                      ).includes(file.type)
-                    ) {
-                      showWarning(
-                        "파일 형식 오류",
-                        `허용되지 않은 파일 형식입니다. ${ALLOWED_NOTIFICATION_ICON_EXTENSIONS.join(
-                          ", "
-                        )} 만 업로드 가능합니다.`
-                      );
-                      return;
-                    }
-                    setIconPreview(URL.createObjectURL(file));
-                    const result = await onImageUpload(
-                      file,
-                      "notificationIcon"
-                    );
-                    if (result?.url) {
-                      setIconPreview(`${result.url}?t=${Date.now()}`);
-                    }
+                    await notificationIconUpload.uploadImage(file);
                   }}
                   onDelete={async () => {
-                    showInfo(
-                      "알림 아이콘 삭제 시작",
-                      "알림 아이콘을 삭제하는 중입니다..."
-                    );
-                    await onImageDeleteFromProps("notificationIcon");
-                    setIconPreview(null);
+                    await notificationIconUpload.deleteImage();
                   }}
                   currentImage={iconPreview}
                   avatarSize="md"
                   label="알림 아이콘"
                   showCamera={false}
-                  uploadType="image"
+                  uploadType="notificationIcon"
                 />
               </div>
-              <div className="text-sm text-blue-600/80 space-y-1">
-                <p className="font-medium">권장 크기: 192x192px</p>
-                <p>
-                  {ALLOWED_NOTIFICATION_ICON_EXTENSIONS.join(
-                    ", "
-                  ).toUpperCase()}{" "}
-                  형식
-                </p>
+              <div className="text-sm text-blue-600/80 space-y-1 text-center">
                 <p>푸시 알림에 표시됩니다</p>
               </div>
             </div>
@@ -167,56 +133,19 @@ const NotificationIconSection = React.memo(function NotificationIconSection({
                 <ImageUpload
                   onUpload={async (file) => {
                     if (!file) return;
-                    showInfo(
-                      "배지 아이콘 업로드 시작",
-                      "배지 아이콘을 업로드하는 중입니다..."
-                    );
-                    // 허용 타입 검사 (배지 아이콘)
-                    if (
-                      !(
-                        ALLOWED_NOTIFICATION_BADGE_TYPES as readonly string[]
-                      ).includes(file.type)
-                    ) {
-                      showWarning(
-                        "파일 형식 오류",
-                        `허용되지 않은 파일 형식입니다. ${ALLOWED_NOTIFICATION_BADGE_EXTENSIONS.join(
-                          ", "
-                        )} 만 업로드 가능합니다.`
-                      );
-                      return;
-                    }
-                    setBadgePreview(URL.createObjectURL(file));
-                    const result = await onImageUpload(
-                      file,
-                      "notificationBadge"
-                    );
-                    if (result?.url) {
-                      setBadgePreview(`${result.url}?t=${Date.now()}`);
-                    }
+                    await notificationBadgeUpload.uploadImage(file);
                   }}
                   onDelete={async () => {
-                    showInfo(
-                      "배지 아이콘 삭제 시작",
-                      "배지 아이콘을 삭제하는 중입니다..."
-                    );
-                    await onImageDeleteFromProps("notificationBadge");
-                    setBadgePreview(null);
+                    await notificationBadgeUpload.deleteImage();
                   }}
                   currentImage={badgePreview}
                   avatarSize="md"
                   label="배지 아이콘"
                   showCamera={false}
-                  uploadType="image"
+                  uploadType="notificationBadge"
                 />
               </div>
-              <div className="text-sm text-orange-600/80 space-y-1">
-                <p className="font-medium">권장 크기: 72x72px</p>
-                <p>
-                  {ALLOWED_NOTIFICATION_BADGE_EXTENSIONS.join(
-                    ", "
-                  ).toUpperCase()}{" "}
-                  형식
-                </p>
+              <div className="text-sm text-orange-600/80 space-y-1 text-center">
                 <p>푸시 알림 배지에 표시됩니다</p>
               </div>
             </div>

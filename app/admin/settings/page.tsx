@@ -17,21 +17,15 @@ import { useSystemSettingsContext } from "@/components/providers/system-settings
 import { useDynamicFavicon } from "@/hooks/use-dynamic-favicon";
 import { useSystemMode } from "@/components/providers/debug-provider";
 import { useAuth } from "@/components/providers/auth-provider";
-import { DEFAULT_SYSTEM_SETTINGS } from "@/lib/constants/defaults";
 import type { SystemSettings } from "@/lib/types/settings";
 import {
-  useSettingsImageManager,
   useSettingsValidator,
   useSettingsSaver,
   SettingsHeader,
 } from "@/components/admin/settings";
 
 export default function SettingsPage() {
-  const {
-    settings,
-    isLoading: loading,
-    refetch,
-  } = useSystemSettingsContext();
+  const { settings, isLoading: loading, refetch } = useSystemSettingsContext();
 
   // 설정 페이지에서만 동적 파비콘 업데이트 (기본 파비콘 포함)
   useDynamicFavicon(settings?.favicon || "/favicon.ico");
@@ -53,23 +47,6 @@ export default function SettingsPage() {
       setLocalSettings(settings);
     }
   }, [settings]);
-
-  // 모든 hook을 먼저 호출 (조건부 호출 방지)
-  const { handleImageUpload, handleImageDelete } = useSettingsImageManager({
-    settings:
-      localSettings ||
-      ({
-        ...DEFAULT_SYSTEM_SETTINGS,
-        id: "",
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      } as SystemSettings),
-    onSettingsUpdate: (updatedSettings) => {
-      setLocalSettings((prev) =>
-        prev ? { ...prev, ...updatedSettings } : prev
-      );
-    },
-  });
 
   const { validateSetting, inputValidations } = useSettingsValidator({ user });
 
@@ -203,7 +180,6 @@ export default function SettingsPage() {
             <GeneralTab
               settings={localSettings}
               onSettingChange={handleSettingChange}
-              onImageUpload={handleImageUpload}
               loading={saving}
             />
           </TabsContent>
@@ -229,12 +205,6 @@ export default function SettingsPage() {
               settings={localSettings}
               onUpdate={handleSettingChange}
               isLoading={loading}
-              handleImageUpload={async (file, type) => {
-                await handleImageUpload(file, type as any);
-              }}
-              handleImageDelete={async (type) => {
-                await handleImageDelete(type as any);
-              }}
             />
           </TabsContent>
 

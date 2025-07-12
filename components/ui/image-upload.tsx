@@ -8,7 +8,7 @@ import {
   IMAGE_UPLOAD_CONFIG,
   IMAGE_ERROR_MESSAGES,
 } from "@/lib/constants/upload";
-import { devLog } from "@/lib/utils/logging/dev-logger";
+import { UPLOAD_TYPE_CONFIGS, UploadType } from "@/lib/types/upload";
 import { cn } from "@/lib/utils";
 
 export interface ImageUploadProps {
@@ -20,7 +20,7 @@ export interface ImageUploadProps {
   showCamera?: boolean;
   avatarSize?: "sm" | "md" | "lg" | "xl";
   label?: string;
-  uploadType?: "image";
+  uploadType?: UploadType | "image";
 }
 
 export function ImageUpload({
@@ -62,45 +62,57 @@ export function ImageUpload({
     xl: "w-56 h-56",
   };
 
-  // 공통 이미지 업로드 설정만 사용
-  const getUploadConfig = () => ({
-    config: IMAGE_UPLOAD_CONFIG,
-    errorMessage: `지원하지 않는 파일 형식입니다. ${IMAGE_UPLOAD_CONFIG.allowedExtensions.join(
-      ", "
-    )} 만 업로드 가능합니다.`,
-    guideline: `권장 크기: ${IMAGE_UPLOAD_CONFIG.maxWidth}x${IMAGE_UPLOAD_CONFIG.maxHeight} 픽셀`,
-  });
+  // 설정 기반 업로드 설정 사용
+  const getUploadConfig = () => {
+    // uploadType이 설정 기반 타입인 경우 해당 설정 사용
+    if (
+      uploadType &&
+      uploadType !== "image" &&
+      UPLOAD_TYPE_CONFIGS[uploadType as UploadType]
+    ) {
+      const config = UPLOAD_TYPE_CONFIGS[uploadType as UploadType];
+      return {
+        config: {
+          maxSize: config.maxSize,
+          maxWidth: config.maxWidth,
+          maxHeight: config.maxHeight,
+          quality: config.quality,
+          targetFormat: config.targetFormat,
+          allowedTypes: config.allowedTypes,
+          allowedExtensions: config.allowedExtensions,
+        },
+        errorMessage: `지원하지 않는 파일 형식입니다. ${config.allowedExtensions.join(
+          ", "
+        )} 만 업로드 가능합니다.`,
+        guideline: `권장 크기: ${config.maxWidth}x${config.maxHeight} 픽셀`,
+      };
+    }
 
-  // 파일 처리 함수
+    // 기본 설정 사용
+    return {
+      config: IMAGE_UPLOAD_CONFIG,
+      errorMessage: `지원하지 않는 파일 형식입니다. ${IMAGE_UPLOAD_CONFIG.allowedExtensions.join(
+        ", "
+      )} 만 업로드 가능합니다.`,
+      guideline: `권장 크기: ${IMAGE_UPLOAD_CONFIG.maxWidth}x${IMAGE_UPLOAD_CONFIG.maxHeight} 픽셀`,
+    };
+  };
+
+  // 파일 처리 함수 - 검증 제거하고 바로 onUpload 호출
   const handleFile = useCallback(
     async (file: File) => {
       try {
         setLoading(true);
         setError(null);
 
-        const { config, errorMessage } = getUploadConfig();
-
-        // 파일 크기 검증
-        if (file.size > config.maxSize) {
-          setError(IMAGE_ERROR_MESSAGES.SIZE_EXCEEDED);
-          return;
-        }
-
-        // 파일 형식 검증
-        if (!config.allowedTypes.includes(file.type as any)) {
-          setError(errorMessage);
-          return;
-        }
-
         onUpload(file);
       } catch (err) {
-        devLog.error("Image processing error:", err);
         setError(IMAGE_ERROR_MESSAGES.PROCESSING_ERROR);
       } finally {
         setLoading(false);
       }
     },
-    [onUpload, uploadType]
+    [onUpload]
   );
 
   // 삭제 핸들러
@@ -110,13 +122,9 @@ export function ImageUpload({
     try {
       setLoading(true);
       setError(null);
-      devLog.log("[IMAGE_UPLOAD] Starting image deletion...");
 
       await onDelete();
-
-      devLog.log("[IMAGE_UPLOAD] Image deletion completed successfully");
     } catch (err) {
-      devLog.error("[IMAGE_UPLOAD] Failed to delete image:", err);
       const errorMessage =
         err instanceof Error ? err.message : "이미지 삭제에 실패했습니다.";
       setError(errorMessage);
@@ -237,9 +245,24 @@ export function ImageUpload({
         )}
 
         {/* 안내 텍스트 */}
-        <div className="text-xs text-muted-foreground text-center mt-4">
-          <p>최대 {getUploadConfig().config.maxSize / (1024 * 1024)}MB</p>
-          <p>{getUploadConfig().guideline}</p>
+        <div className="text-xs text-muted-foreground text-center mt-4 space-y-1">
+          <div className="flex items-center justify-center gap-2">
+            <div className="w-1 h-1 bg-blue-400 rounded-full"></div>
+            <p>최대 {getUploadConfig().config.maxSize / (1024 * 1024)}MB</p>
+          </div>
+          <div className="flex items-center justify-center gap-2">
+            <div className="w-1 h-1 bg-green-400 rounded-full"></div>
+            <p>{getUploadConfig().guideline}</p>
+          </div>
+          <div className="flex items-center justify-center gap-2">
+            <div className="w-1 h-1 bg-purple-400 rounded-full"></div>
+            <p className="font-medium">
+              {getUploadConfig()
+                .config.allowedExtensions.map((ext) => ext.toUpperCase())
+                .join(", ")}{" "}
+              형식 지원
+            </p>
+          </div>
         </div>
       </div>
     </div>

@@ -10,11 +10,6 @@ import type {
   PasswordFormData,
 } from "@/lib/types/account";
 
-export interface ImageUploadRequest {
-  publicUrl: string;
-  fileName: string;
-}
-
 /**
  * 프로필 정보 저장 Mutation Hook
  */
@@ -125,88 +120,27 @@ export function useChangePasswordMutation() {
 }
 
 /**
- * 프로필 이미지 업로드 Mutation Hook
- */
-export function useUploadProfileImageMutation() {
-  const { refreshProfile } = useAuth();
-
-  return useMutation({
-    mutationFn: async (
-      data: ImageUploadRequest
-    ): Promise<{ success: boolean }> => {
-      await apiClient("/api/profile", {
-        method: "POST",
-        body: JSON.stringify(data),
-        context: "프로필 이미지 업로드",
-        onError: (error, context) => {
-          handleError(error, context);
-        },
-      });
-
-      return { success: true };
-    },
-    onSuccess: async () => {
-      // 프로필 데이터 새로고침
-      await refreshProfile();
-    },
-  });
-}
-
-/**
- * 프로필 이미지 삭제 Mutation Hook
- */
-export function useDeleteProfileImageMutation() {
-  const { refreshProfile } = useAuth();
-
-  return useMutation({
-    mutationFn: async (): Promise<{ success: boolean }> => {
-      await apiClient("/api/profile", {
-        method: "DELETE",
-        context: "프로필 이미지 삭제",
-        onError: (error, context) => {
-          handleError(error, context);
-        },
-      });
-
-      return { success: true };
-    },
-    onSuccess: async () => {
-      // 프로필 데이터 새로고침
-      await refreshProfile();
-    },
-  });
-}
-
-/**
  * 계정 관리 Mutation Hook들을 통합한 객체
  */
 export function useAccountMutations() {
   const updateProfile = useUpdateProfileMutation();
   const updateCompany = useUpdateCompanyMutation();
   const changePassword = useChangePasswordMutation();
-  const uploadImage = useUploadProfileImageMutation();
-  const deleteImage = useDeleteProfileImageMutation();
 
   return {
     updateProfile,
     updateCompany,
     changePassword,
-    uploadImage,
-    deleteImage,
 
     // 편의 메서드들
     updateProfileAsync: updateProfile.mutateAsync,
     updateCompanyAsync: updateCompany.mutateAsync,
     changePasswordAsync: changePassword.mutateAsync,
-    uploadImageAsync: uploadImage.mutateAsync,
-    deleteImageAsync: deleteImage.mutateAsync,
 
     // 로딩 상태
     isLoading:
       updateProfile.isPending ||
       updateCompany.isPending ||
-      changePassword.isPending ||
-      uploadImage.isPending ||
-      deleteImage.isPending,
+      changePassword.isPending,
   };
 }

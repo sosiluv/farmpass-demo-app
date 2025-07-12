@@ -20,19 +20,19 @@ export function useLogo(settings?: SystemSettings | null): LogoInfo {
   const currentSettings = settings || {
     ...DEFAULT_SYSTEM_SETTINGS,
     id: "",
-    createdAt: new Date(),
-    updatedAt: new Date(),
+    created_at: new Date(),
+    updated_at: new Date(),
   };
 
   const imageUrl = useMemo(() => {
     if (!currentSettings?.logo) return null;
-    // 캐시 버스터를 설정의 updatedAt을 기반으로 생성하여 설정 변경 시에만 새로고침
-    const cacheBuster = currentSettings.updatedAt
-      ? new Date(currentSettings.updatedAt).getTime()
+    // 캐시 버스터를 설정의 updated_at을 기반으로 생성하여 설정 변경 시에만 새로고침
+    const cacheBuster = currentSettings.updated_at
+      ? new Date(currentSettings.updated_at).getTime()
       : Date.now();
-    // DB에 저장된 publicUrl을 그대로 사용
-    return `${currentSettings.logo}?t=${cacheBuster}`;
-  }, [currentSettings?.logo, currentSettings?.updatedAt]);
+    // DB에 저장된 publicUrl을 그대로 사용하되, 더 강력한 캐시 버스터 적용
+    return `${currentSettings.logo}?t=${cacheBuster}&v=${Date.now()}`;
+  }, [currentSettings?.logo, currentSettings?.updated_at]);
 
   return {
     logoUrl: imageUrl,

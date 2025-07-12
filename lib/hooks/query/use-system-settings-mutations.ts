@@ -92,71 +92,27 @@ export function useExecuteCleanupMutation() {
 }
 
 /**
- * 이미지 업로드 관련 Mutation Hook
- */
-export function useUploadSystemImageMutation() {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: async (data: {
-      file: File;
-      type: "logo" | "favicon" | "notificationIcon" | "notificationBadge";
-    }): Promise<{
-      success: boolean;
-      url?: string;
-      fileName?: string;
-    }> => {
-      // 실제 이미지 업로드 로직은 useUniversalImageManager에서 처리
-      // 여기서는 시스템 설정 업데이트만 담당
-      const formData = new FormData();
-      formData.append("file", data.file);
-      formData.append("type", data.type);
-
-      const response = await apiClient("/api/settings/upload-image", {
-        method: "POST",
-        body: formData,
-        context: "시스템 이미지 업로드",
-        onError: (error, context) => {
-          handleError(error, context);
-        },
-      });
-      return response;
-    },
-    onSuccess: () => {
-      // 시스템 설정 쿼리 무효화
-      queryClient.invalidateQueries({
-        queryKey: settingsKeys.all,
-      });
-    },
-  });
-}
-
-/**
  * 시스템 설정 관련 Mutation Hook들을 통합한 객체
  */
 export function useSystemSettingsMutations() {
   const saveSettings = useSaveSystemSettingsMutation();
   const invalidateCache = useInvalidateSystemSettingsCacheMutation();
   const executeCleanup = useExecuteCleanupMutation();
-  const uploadImage = useUploadSystemImageMutation();
 
   return {
     saveSettings,
     invalidateCache,
     executeCleanup,
-    uploadImage,
 
     // 편의 메서드들
     saveSettingsAsync: saveSettings.mutateAsync,
     invalidateCacheAsync: invalidateCache.mutateAsync,
     executeCleanupAsync: executeCleanup.mutateAsync,
-    uploadImageAsync: uploadImage.mutateAsync,
 
     // 로딩 상태
     isLoading:
       saveSettings.isPending ||
       invalidateCache.isPending ||
-      executeCleanup.isPending ||
-      uploadImage.isPending,
+      executeCleanup.isPending,
   };
 }

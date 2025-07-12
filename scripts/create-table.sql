@@ -253,8 +253,8 @@ COMMENT ON COLUMN public.system_logs.metadata IS '추가 메타데이터 (JSON �
 -- 시스템 설정 테이블 생성
 CREATE TABLE "public"."system_settings" (
   "id" TEXT NOT NULL,
-  "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  "updatedAt" TIMESTAMP(3) NOT NULL,
+  "created_at" TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  "updated_at" TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   
   -- 일반 설정
   "siteName" TEXT NOT NULL DEFAULT '농장 출입 관리 시스템(FarmPass)',

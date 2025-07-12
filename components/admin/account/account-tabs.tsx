@@ -26,84 +26,70 @@ export function AccountTabs({ profile, userId }: AccountTabsProps) {
     handlePasswordChange,
   } = useAccountActions({ profile, userId });
 
-  // Promise<SaveResult>를 Promise<void>로 래핑하고 토스트 처리
+  // 저장 핸들러들
   const handleProfileSaveWrapped = async (data: any) => {
     showInfo("프로필 저장 시작", "프로필 정보를 저장하는 중입니다...");
-    const result = await handleProfileSave(data);
-    if (result.success) {
-      showSuccess(
-        "프로필 저장 완료",
-        "프로필 정보가 성공적으로 저장되었습니다."
-      );
-    } else {
-      showError(
-        "프로필 저장 실패",
-        result.error || "프로필 정보 저장에 실패했습니다."
-      );
+
+    try {
+      const result = await handleProfileSave(data);
+      if (result.success) {
+        showSuccess(
+          "프로필 저장 완료",
+          "프로필 정보가 성공적으로 저장되었습니다."
+        );
+      } else {
+        showError(
+          "프로필 저장 실패",
+          result.error || "프로필 정보 저장에 실패했습니다."
+        );
+      }
+    } catch (error) {
+      showError("프로필 저장 실패", "프로필 정보 저장 중 오류가 발생했습니다.");
     }
   };
 
   const handleCompanySaveWrapped = async (data: any) => {
     showInfo("회사 정보 저장 시작", "회사 정보를 저장하는 중입니다...");
-    const result = await handleCompanySave(data);
-    if (result.success) {
-      showSuccess(
-        "회사 정보 저장 완료",
-        "회사 정보가 성공적으로 저장되었습니다."
-      );
-    } else {
+
+    try {
+      const result = await handleCompanySave(data);
+      if (result.success) {
+        showSuccess(
+          "회사 정보 저장 완료",
+          "회사 정보가 성공적으로 저장되었습니다."
+        );
+      } else {
+        showError(
+          "회사 정보 저장 실패",
+          result.error || "회사 정보 저장에 실패했습니다."
+        );
+      }
+    } catch (error) {
       showError(
         "회사 정보 저장 실패",
-        result.error || "회사 정보 저장에 실패했습니다."
+        "회사 정보 저장 중 오류가 발생했습니다."
       );
     }
   };
 
   const handlePasswordChangeWrapped = async (data: any) => {
     showInfo("비밀번호 변경 시작", "비밀번호를 변경하는 중입니다...");
-    const result = await handlePasswordChange(data);
-    if (result.success) {
-      showSuccess(
-        "비밀번호 변경 완료",
-        "비밀번호가 성공적으로 변경되었습니다."
-      );
-    } else {
-      showError(
-        "비밀번호 변경 실패",
-        result.error || "비밀번호 변경에 실패했습니다."
-      );
-    }
-  };
 
-  // 이미지 업로드/삭제 처리
-  const handleImageUploadWrapped = async (file: File | null) => {
-    showInfo("이미지 업로드 시작", "프로필 이미지를 업로드하는 중입니다...");
     try {
-      const result = await handleImageUpload(file);
-      if (result) {
+      const result = await handlePasswordChange(data);
+      if (result.success) {
         showSuccess(
-          "이미지 업로드 완료",
-          "프로필 이미지가 성공적으로 업로드되었습니다."
+          "비밀번호 변경 완료",
+          "비밀번호가 성공적으로 변경되었습니다."
+        );
+      } else {
+        showError(
+          "비밀번호 변경 실패",
+          result.error || "비밀번호 변경에 실패했습니다."
         );
       }
-      return result;
     } catch (error) {
-      showError("이미지 업로드 실패", "프로필 이미지 업로드에 실패했습니다.");
-      throw error;
-    }
-  };
-
-  const handleImageDeleteWrapped = async () => {
-    showInfo("이미지 삭제 시작", "프로필 이미지를 삭제하는 중입니다...");
-    try {
-      await handleImageDelete();
-      showSuccess(
-        "이미지 삭제 완료",
-        "프로필 이미지가 성공적으로 삭제되었습니다."
-      );
-    } catch (error) {
-      showError("이미지 삭제 실패", "프로필 이미지 삭제에 실패했습니다.");
-      throw error;
+      showError("비밀번호 변경 실패", "비밀번호 변경 중 오류가 발생했습니다.");
     }
   };
 
@@ -152,8 +138,8 @@ export function AccountTabs({ profile, userId }: AccountTabsProps) {
               profile={profile}
               loading={isLoading}
               onSave={handleProfileSaveWrapped}
-              onImageUpload={handleImageUploadWrapped}
-              onImageDelete={handleImageDeleteWrapped}
+              onImageUpload={handleImageUpload}
+              onImageDelete={handleImageDelete}
             />
           </TabsContent>
 

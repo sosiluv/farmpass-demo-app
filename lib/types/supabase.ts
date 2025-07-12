@@ -274,8 +274,8 @@ export interface Database {
       system_settings: {
         Row: {
           id: string;
-          createdAt: string;
-          updatedAt: string;
+          created_at: string;
+          updated_at: string;
           siteName: string;
           siteDescription: string;
           language: string;
@@ -315,8 +315,8 @@ export interface Database {
         };
         Insert: {
           id?: string;
-          createdAt?: string;
-          updatedAt: string;
+          created_at?: string;
+          updated_at: string;
           siteName?: string;
           siteDescription?: string;
           language?: string;
@@ -356,8 +356,8 @@ export interface Database {
         };
         Update: {
           id?: string;
-          createdAt?: string;
-          updatedAt?: string;
+          created_at?: string;
+          updated_at?: string;
           siteName?: string;
           siteDescription?: string;
           language?: string;

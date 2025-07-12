@@ -2,18 +2,10 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { devLog } from "@/lib/utils/logging/dev-logger";
 import { useAuth } from "@/components/providers/auth-provider";
-import {
-  uploadImageUniversal,
-  deleteImageUniversal,
-} from "@/lib/utils/media/image-upload";
 import type { Profile } from "@/lib/types";
 import type { PasswordFormData } from "@/lib/types/account";
-import {
-  ALLOWED_IMAGE_TYPES,
-  MAX_UPLOAD_SIZE_MB,
-} from "@/lib/constants/upload";
 import { useAccountMutations } from "@/lib/hooks/query/use-account-mutations";
-import { extractStorageFileName } from "@/lib/utils/media/image-upload";
+import { useUnifiedImageUpload } from "@/hooks/useUnifiedImageUpload";
 
 interface UseAccountActionsProps {
   profile: Profile;
@@ -30,91 +22,50 @@ export function useAccountActions({ profile, userId }: UseAccountActionsProps) {
   const { signOut } = useAuth();
   const accountMutations = useAccountMutations();
 
-  // 공통 성공 처리 함수
-  const handleSuccess = (title: string, description: string) => {
-    devLog.log(`${title}: ${description}`);
-    // 성공 로그만 기록 - 토스트는 컴포넌트에서 처리
-  };
+  // 통합 이미지 업로드 훅 사용
+  const profileImageUpload = useUnifiedImageUpload({
+    uploadType: "profile",
+    userId,
+    dbTable: "profiles",
+    dbId: profile.id,
+    dbField: "profile_image_url",
+    refetchSettings: true, // settings context 즉시 갱신
+    onUpdate: (data) => {
+      devLog.log("프로필 이미지 DB 업데이트 완료:", data);
+    },
+  });
 
-  // 이미지 업로드 함수 (React Query mutation 사용)
+  // 이미지 업로드 함수 (통합 시스템 사용)
   const handleImageUpload = async (
     file: File | null
   ): Promise<{ publicUrl: string; fileName: string } | void> => {
     if (!file) return;
 
     try {
-      // 기존 프로필 이미지 파일명 추출 (prevFileName)
-      let prevFileName: string | undefined = undefined;
-      if (profile?.profile_image_url) {
-        prevFileName = extractStorageFileName(
-          profile.profile_image_url,
-          "profiles"
-        );
+      const result = await profileImageUpload.uploadImage(file);
+
+      if (result) {
+        devLog.log("프로필 이미지 업로드 완료:", result);
+
+        return {
+          publicUrl: result.publicUrl,
+          fileName: result.fileName,
+        };
       }
-
-      const result = await uploadImageUniversal({
-        file,
-        bucket: "profiles",
-        path: (file) => {
-          const ext = file.name.split(".").pop()?.toLowerCase() || "jpg";
-          return `${userId}/profile_${Date.now()}.${ext}`;
-        },
-        maxSizeMB: MAX_UPLOAD_SIZE_MB,
-        allowedTypes: [...ALLOWED_IMAGE_TYPES],
-        prevFileName, // 반드시 넘겨야 기존 파일 삭제됨
-      });
-
-      const cacheBustedUrl = `${result.publicUrl}?t=${Date.now()}`;
-
-      // React Query mutation 사용
-      await accountMutations.uploadImageAsync({
-        publicUrl: result.publicUrl,
-        fileName: result.fileName,
-      });
-
-      handleSuccess(
-        "프로필 이미지 업로드 완료",
-        "프로필 이미지가 성공적으로 업데이트되었습니다."
-      );
-
-      return { publicUrl: cacheBustedUrl, fileName: result.fileName };
     } catch (error: any) {
       devLog.error("프로필 이미지 업로드 실패:", error);
       throw error;
     }
   };
 
-  // 이미지 삭제 함수 (React Query mutation 사용)
+  // 이미지 삭제 함수 (통합 시스템 사용)
   const handleImageDelete = async (): Promise<void> => {
     try {
       devLog.log(
         `[HANDLE_IMAGE_DELETE] Starting image deletion for user: ${userId}`
       );
 
-      // Storage에서 기존 이미지 파일 삭제 (deleteImageUniversal로 일관성 있게)
-      if (profile?.profile_image_url) {
-        const prevFileName = extractStorageFileName(
-          profile.profile_image_url,
-          "profiles"
-        );
-        if (prevFileName) {
-          await deleteImageUniversal({
-            bucket: "profiles",
-            fileName: prevFileName,
-          });
-        }
-      }
-      devLog.log(`[HANDLE_IMAGE_DELETE] Storage cleanup completed`);
-
-      // 2. React Query mutation 사용
-      await accountMutations.deleteImageAsync();
-
-      devLog.log(`[HANDLE_IMAGE_DELETE] Database update completed`);
-
-      handleSuccess(
-        "프로필 이미지 삭제 완료",
-        "프로필 이미지가 성공적으로 삭제되었습니다."
-      );
+      await profileImageUpload.deleteImage();
 
       devLog.log(`[HANDLE_IMAGE_DELETE] Image deletion completed successfully`);
     } catch (error: any) {
@@ -134,7 +85,7 @@ export function useAccountActions({ profile, userId }: UseAccountActionsProps) {
     try {
       await accountMutations.updateProfileAsync(data);
 
-      handleSuccess("저장 완료", "변경사항이 성공적으로 저장되었습니다.");
+      devLog.log("프로필 정보 저장 완료");
 
       return { success: true };
     } catch (error: any) {
@@ -156,7 +107,7 @@ export function useAccountActions({ profile, userId }: UseAccountActionsProps) {
     try {
       await accountMutations.updateCompanyAsync(data);
 
-      handleSuccess("저장 완료", "변경사항이 성공적으로 저장되었습니다.");
+      devLog.log("회사 정보 저장 완료");
 
       return { success: true };
     } catch (error: any) {
@@ -172,10 +123,7 @@ export function useAccountActions({ profile, userId }: UseAccountActionsProps) {
     try {
       await accountMutations.changePasswordAsync(data);
 
-      handleSuccess(
-        "비밀번호 변경 완료",
-        "새로운 비밀번호로 변경되었습니다. 보안을 위해 자동으로 로그아웃됩니다."
-      );
+      devLog.log("비밀번호 변경 완료");
 
       // 비밀번호 변경 성공 후 자동 로그아웃
       setTimeout(async () => {
@@ -191,7 +139,7 @@ export function useAccountActions({ profile, userId }: UseAccountActionsProps) {
   };
 
   return {
-    isLoading: accountMutations.isLoading,
+    isLoading: accountMutations.isLoading || profileImageUpload.loading,
     handleImageUpload,
     handleImageDelete,
     handleProfileSave,

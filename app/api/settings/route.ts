@@ -24,8 +24,8 @@ export async function GET(request: NextRequest) {
         data: {
           ...DEFAULT_SYSTEM_SETTINGS,
           id: crypto.randomUUID(),
-          createdAt: new Date(),
-          updatedAt: new Date(),
+          created_at: new Date(),
+          updated_at: new Date(),
         },
       });
 
@@ -132,7 +132,7 @@ export async function PATCH(request: NextRequest) {
     // 변경된 필드 추적 (날짜 필드 제외)
     const changedFields = Object.keys(data).filter(
       (key) =>
-        !["createdAt", "updatedAt"].includes(key) &&
+        !["created_at", "updated_at"].includes(key) &&
         settings[key as keyof typeof settings] !== data[key]
     );
 

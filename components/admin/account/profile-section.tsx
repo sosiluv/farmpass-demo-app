@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { motion } from "framer-motion";
-import { User, Save } from "lucide-react";
+import { User, Save, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -19,14 +19,10 @@ import {
 import { ImageUpload } from "@/components/ui/image-upload";
 import { ErrorBoundary } from "@/components/error/error-boundary";
 import { formatPhone } from "@/lib/utils/validation/validation";
+import { useAccountForm } from "@/hooks/useAccountForm";
 import type { ProfileSectionProps, ProfileFormData } from "@/lib/types/account";
 import AccountCardHeader from "./AccountCardHeader";
 import { devLog } from "@/lib/utils/logging/dev-logger";
-import { useCommonToast } from "@/lib/utils/notification/toast-messages";
-import {
-  ALLOWED_IMAGE_TYPES,
-  ALLOWED_IMAGE_EXTENSIONS,
-} from "@/lib/constants/upload";
 
 export function ProfileSection({
   profile,
@@ -35,22 +31,35 @@ export function ProfileSection({
   onImageUpload,
   onImageDelete,
 }: ProfileSectionProps) {
-  const [profileData, setProfileData] = useState<ProfileFormData>({
-    name: profile?.name || "",
-    email: profile?.email || "",
-    phoneNumber: profile?.phone || "",
-    position: profile?.position || "",
-    department: profile?.department || "",
-    bio: profile?.bio || "",
-  });
-
   const [profileImagePreview, setProfileImagePreview] = useState<string | null>(
     profile?.profile_image_url
       ? `${profile.profile_image_url}?t=${Date.now()}`
       : null
   );
 
-  const { showInfo, showError } = useCommonToast();
+  // 폼 데이터 관리 - 안정화된 initialData
+  const initialData = useMemo<ProfileFormData>(
+    () => ({
+      name: profile?.name || "",
+      email: profile?.email || "",
+      phoneNumber: profile?.phone || "",
+      position: profile?.position || "",
+      department: profile?.department || "",
+      bio: profile?.bio || "",
+    }),
+    [
+      profile?.name,
+      profile?.email,
+      profile?.phone,
+      profile?.position,
+      profile?.department,
+      profile?.bio,
+    ]
+  );
+
+  const { formData, hasChanges, handleChange, resetChanges } = useAccountForm({
+    initialData,
+  });
 
   // profile prop이 변경될 때마다 프리뷰 업데이트
   useEffect(() => {
@@ -60,43 +69,34 @@ export function ProfileSection({
     } else {
       setProfileImagePreview(null);
     }
-  }, [profile]); // profile 객체 전체를 의존성으로 변경
-
-  // profile prop이 변경될 때마다 폼 데이터 업데이트
-  useEffect(() => {
-    setProfileData({
-      name: profile?.name || "",
-      email: profile?.email || "",
-      phoneNumber: profile?.phone || "",
-      position: profile?.position || "",
-      department: profile?.department || "",
-      bio: profile?.bio || "",
-    });
-  }, [profile]);
+  }, [profile?.profile_image_url]);
 
   const handleInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
   ) => {
     const { name, value } = e.target;
-
-    // 휴대폰 번호 필드에 대해 자동 포맷팅 적용
     const processedValue = name === "phoneNumber" ? formatPhone(value) : value;
-
-    setProfileData((prev) => ({ ...prev, [name]: processedValue }));
+    handleChange(name as keyof ProfileFormData, processedValue);
   };
 
   const handleImageDelete = async () => {
-    showInfo("이미지 삭제 시작", "프로필 이미지를 삭제하는 중입니다...");
     try {
       await onImageDelete();
-      // 삭제 성공 시에만 UI 상태 업데이트
       setProfileImagePreview(null);
     } catch (error) {
       devLog.error("[PROFILE_SECTION] Failed to delete image:", error);
-      // 에러 발생 시 UI 상태를 원래대로 유지
-      // setProfileImagePreview는 변경하지 않음
-      // 사용자에게 에러 메시지를 표시하기 위해 에러를 다시 던짐
       throw error;
+    }
+  };
+
+  const handleSave = async () => {
+    if (!hasChanges || loading) return;
+
+    try {
+      await onSave(formData);
+      resetChanges();
+    } catch (error) {
+      devLog.error("[PROFILE_SECTION] Failed to save profile:", error);
     }
   };
 
@@ -121,33 +121,19 @@ export function ProfileSection({
             <div className="space-y-4">
               <Label>프로필 사진</Label>
               <ImageUpload
+                uploadType="profile"
                 onUpload={async (file) => {
                   if (!file) return;
-                  showInfo(
-                    "이미지 업로드 시작",
-                    "프로필 이미지를 업로드하는 중입니다..."
-                  );
-                  // 허용 타입 검사 (프로필 사진)
-                  if (
-                    !(ALLOWED_IMAGE_TYPES as readonly string[]).includes(
-                      file.type
-                    )
-                  ) {
-                    showError(
-                      "파일 형식 오류",
-                      `허용되지 않은 파일 형식입니다. ${ALLOWED_IMAGE_EXTENSIONS.join(
-                        ", "
-                      )} 만 업로드 가능합니다.`
-                    );
-                    return;
-                  }
                   setProfileImagePreview(URL.createObjectURL(file));
                   const result = await onImageUpload(file);
-                  // 업로드 성공 후 새로운 URL로 캐시 버스팅 적용
                   if (result?.publicUrl) {
-                    setProfileImagePreview(
-                      `${result.publicUrl}?t=${Date.now()}`
-                    );
+                    const cacheBustedUrl = `${
+                      result.publicUrl
+                    }?t=${Date.now()}`;
+                    setProfileImagePreview(cacheBustedUrl);
+                    if (profile) {
+                      profile.profile_image_url = result.publicUrl;
+                    }
                   }
                 }}
                 onDelete={handleImageDelete}
@@ -168,7 +154,7 @@ export function ProfileSection({
                   id="name"
                   name="name"
                   type="text"
-                  value={profileData.name}
+                  value={formData.name}
                   onChange={handleInputChange}
                   disabled={loading}
                 />
@@ -179,7 +165,7 @@ export function ProfileSection({
                   id="email"
                   name="email"
                   type="email"
-                  value={profileData.email}
+                  value={formData.email}
                   onChange={handleInputChange}
                   disabled={loading}
                 />
@@ -193,7 +179,7 @@ export function ProfileSection({
                   id="phoneNumber"
                   name="phoneNumber"
                   type="tel"
-                  value={profileData.phoneNumber}
+                  value={formData.phoneNumber}
                   onChange={handleInputChange}
                   disabled={loading}
                   maxLength={13}
@@ -203,14 +189,12 @@ export function ProfileSection({
               <div className="space-y-2">
                 <Label htmlFor="position">직책</Label>
                 <Select
-                  value={profileData.position}
-                  onValueChange={(value) =>
-                    setProfileData((prev) => ({ ...prev, position: value }))
-                  }
+                  value={formData.position}
+                  onValueChange={(value) => handleChange("position", value)}
                   disabled={loading}
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder="직책 선택" />
+                    <SelectValue placeholder="직책을 선택하세요" />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="대표">대표</SelectItem>
@@ -222,22 +206,51 @@ export function ProfileSection({
               </div>
             </div>
 
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-2">
+                <Label htmlFor="department">부서</Label>
+                <Input
+                  id="department"
+                  name="department"
+                  type="text"
+                  value={formData.department}
+                  onChange={handleInputChange}
+                  disabled={loading}
+                  placeholder="부서명을 입력하세요"
+                />
+              </div>
+            </div>
+
             <div className="space-y-2">
               <Label htmlFor="bio">자기소개</Label>
               <Textarea
                 id="bio"
                 name="bio"
-                value={profileData.bio}
+                value={formData.bio}
                 onChange={handleInputChange}
-                placeholder="간단한 자기소개를 입력하세요"
                 disabled={loading}
+                placeholder="자기소개를 입력하세요"
+                rows={4}
               />
             </div>
 
             <div className="flex justify-end">
-              <Button onClick={() => onSave(profileData)} disabled={loading}>
-                <Save className="mr-2 h-4 w-4" />
-                {loading ? "저장 중..." : "프로필 저장"}
+              <Button
+                onClick={handleSave}
+                disabled={loading || !hasChanges}
+                className="flex items-center gap-2"
+              >
+                {loading ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    저장 중...
+                  </>
+                ) : (
+                  <>
+                    <Save className="h-4 w-4" />
+                    프로필 정보 저장
+                  </>
+                )}
               </Button>
             </div>
           </CardContent>

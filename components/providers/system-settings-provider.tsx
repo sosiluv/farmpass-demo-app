@@ -11,18 +11,22 @@ interface SystemSettingsContextType {
   refetch: () => void;
 }
 
-const SystemSettingsContext = createContext<SystemSettingsContextType | null>(null);
+const SystemSettingsContext = createContext<SystemSettingsContextType | null>(
+  null
+);
 
 interface SystemSettingsProviderProps {
   children: ReactNode;
 }
 
-export function SystemSettingsProvider({ children }: SystemSettingsProviderProps) {
-  const { 
-    data: settings, 
-    isLoading, 
-    error, 
-    refetch 
+export function SystemSettingsProvider({
+  children,
+}: SystemSettingsProviderProps) {
+  const {
+    data: settings,
+    isLoading,
+    error,
+    refetch,
   } = useSystemSettingsQuery();
 
   return (
@@ -42,7 +46,9 @@ export function SystemSettingsProvider({ children }: SystemSettingsProviderProps
 export function useSystemSettings() {
   const context = useContext(SystemSettingsContext);
   if (!context) {
-    throw new Error("useSystemSettings must be used within a SystemSettingsProvider");
+    throw new Error(
+      "useSystemSettings must be used within a SystemSettingsProvider"
+    );
   }
   return context.settings;
 }
@@ -50,7 +56,9 @@ export function useSystemSettings() {
 export function useSystemSettingsContext() {
   const context = useContext(SystemSettingsContext);
   if (!context) {
-    throw new Error("useSystemSettingsContext must be used within a SystemSettingsProvider");
+    throw new Error(
+      "useSystemSettingsContext must be used within a SystemSettingsProvider"
+    );
   }
   return context;
 }
