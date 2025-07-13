@@ -27,7 +27,7 @@ export function useAccountActions({ profile, userId }: UseAccountActionsProps) {
   // 통합 이미지 업로드 훅 사용
   const profileImageUpload = useUnifiedImageUpload({
     uploadType: "profile",
-    userId,
+    contextId: userId, // userId를 contextId로 전달
     dbTable: "profiles",
     dbId: profile.id,
     dbField: "profile_image_url",

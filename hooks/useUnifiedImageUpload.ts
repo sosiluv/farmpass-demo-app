@@ -24,7 +24,7 @@ import { getImageUploadErrorMessage } from "@/lib/utils/validation/validation";
 
 export interface UseUnifiedImageUploadOptions {
   uploadType: UploadType;
-  userId?: string;
+  contextId?: string; // farmId와 userId를 통합한 contextId
   dbTable?: string;
   dbId?: string;
   dbField?: string;
@@ -42,7 +42,7 @@ export function useUnifiedImageUpload(
 ): UseImageUploadReturn {
   const {
     uploadType,
-    userId,
+    contextId, // contextId로 통합
     dbTable,
     dbId,
     dbField,
@@ -70,13 +70,13 @@ export function useUnifiedImageUpload(
   // 매니저 인스턴스 참조
   const managerRef = useRef<UnifiedImageManager | null>(null);
 
-  // 매니저 인스턴스 생성
+  // 매니저 인스턴스 생성 - contextId 전달
   const getManager = useCallback(() => {
     if (!managerRef.current) {
-      managerRef.current = createImageManager(uploadType, userId);
+      managerRef.current = createImageManager(uploadType, contextId);
     }
     return managerRef.current;
-  }, [uploadType, userId]);
+  }, [uploadType, contextId]);
 
   // 상태 업데이트 함수
   const updateState = useCallback((updates: Partial<UploadState>) => {

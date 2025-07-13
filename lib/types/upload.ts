@@ -18,7 +18,7 @@ export interface UploadConfig {
 // 업로드 타입별 설정
 export interface UploadTypeConfig extends UploadConfig {
   bucket: "profiles" | "visitor-photos";
-  pathGenerator: (file: File, userId?: string, type?: string) => string;
+  pathGenerator: (file: File, contextId?: string) => string;
   dbTable?: string;
   dbField?: string;
   cacheBusterField?: string;
@@ -121,9 +121,9 @@ export const UPLOAD_TYPE_CONFIGS: Record<UploadType, UploadTypeConfig> = {
     allowedTypes: ["image/jpeg", "image/png"] as const,
     allowedExtensions: [".jpg", ".jpeg", ".png"] as const,
     cacheControl: "public, max-age=31536000",
-    pathGenerator: (file: File, userId?: string) => {
+    pathGenerator: (file: File, contextId?: string) => {
       const ext = file.name.split(".").pop()?.toLowerCase() || "jpg";
-      return `${userId}/profile_${Date.now()}.${ext}`;
+      return `${contextId}/profile_${Date.now()}.${ext}`;
     },
     dbTable: "profiles",
     dbField: "profile_image_url",
@@ -184,9 +184,9 @@ export const UPLOAD_TYPE_CONFIGS: Record<UploadType, UploadTypeConfig> = {
     allowedTypes: ["image/jpeg", "image/png"] as const,
     allowedExtensions: [".jpg", ".jpeg", ".png"] as const,
     cacheControl: "public, max-age=31536000",
-    pathGenerator: (file: File, userId?: string, farmId?: string) => {
+    pathGenerator: (file: File, contextId?: string) => {
       const ext = file.name.split(".").pop()?.toLowerCase() || "jpg";
-      return `${farmId}/${Date.now()}_${Math.random()
+      return `${contextId}/${Date.now()}_${Math.random()
         .toString(36)
         .substr(2, 9)}.${ext}`;
     },

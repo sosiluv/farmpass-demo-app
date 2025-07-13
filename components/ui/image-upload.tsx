@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useCallback, useState, useEffect } from "react";
 import { Button } from "./button";
 import { Camera, ImageIcon, Trash2, User } from "lucide-react";
 import { Loading } from "./loading";
@@ -37,6 +37,12 @@ export function ImageUpload({
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [isSpinning, setIsSpinning] = useState(false);
+  const [imgError, setImgError] = useState(false);
+
+  // currentImage가 바뀔 때마다 imgError 초기화
+  useEffect(() => {
+    setImgError(false);
+  }, [currentImage]);
 
   // 아바타 크기 매핑
   const avatarSizeMap = {
@@ -176,16 +182,17 @@ export function ImageUpload({
               <div
                 className={`${centerCircleSizeMap[avatarSize]} rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center`}
               >
-                {currentImage ? (
+                {currentImage && currentImage !== "" && !imgError ? (
                   <img
                     src={currentImage}
                     alt={label}
                     className="w-full h-full rounded-full object-cover"
+                    onError={() => setImgError(true)}
                   />
                 ) : loading ? (
                   <Loading spinnerSize={32} showText={false} minHeight="auto" />
                 ) : (
-                  <User className="h-8 w-8 text-white" />
+                  <User className="h-8 w-8 text-white" aria-label={label} />
                 )}
               </div>
             </div>

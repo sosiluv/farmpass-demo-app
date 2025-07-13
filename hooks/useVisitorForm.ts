@@ -3,6 +3,7 @@ import type { VisitorSettings } from "@/lib/types/visitor";
 import type { VisitorFormData } from "@/lib/utils/validation/visitor-validation";
 import { handleError } from "@/lib/utils/error";
 import { useUnifiedImageUpload } from "@/hooks/useUnifiedImageUpload";
+import { createImageManager } from "@/lib/utils/media/unified-image-manager";
 
 // React Query Hooks
 import {
@@ -38,6 +39,7 @@ export const useVisitorForm = (farmId: string, settings: VisitorSettings) => {
   // 통합 이미지 업로드 훅 (지연 업로드용)
   const visitorPhotoUpload = useUnifiedImageUpload({
     uploadType: "visitorPhoto",
+    contextId: farmId, // farmId를 contextId로 전달
     // DB 저장 없음 - 폼 제출 시에만 실제 저장
     onUpdate: () => {
       // 방문자 등록 시에만 DB에 저장되므로 여기서는 아무것도 하지 않음
@@ -81,8 +83,13 @@ export const useVisitorForm = (farmId: string, settings: VisitorSettings) => {
           detailedAddress: lastVisit.visitorDetailedAddress || "",
           carPlateNumber: lastVisit.carPlateNumber || "",
           visitPurpose: lastVisit.visitPurpose || "",
-          profilePhotoUrl: lastVisit.profilePhotoUrl || "", // 추가
+          profilePhotoUrl: lastVisit.profilePhotoUrl || "",
         });
+
+        // 이전 이미지 URL이 있으면 uploadedImageUrl에도 설정
+        if (lastVisit.profilePhotoUrl) {
+          setUploadedImageUrl(lastVisit.profilePhotoUrl);
+        }
 
         // 재방문 허용 시간이 남아있다면 에러 메시지 설정 (폼은 여전히 사용 가능)
         if (sessionInfo.remainingHours > 0) {
@@ -114,8 +121,39 @@ export const useVisitorForm = (farmId: string, settings: VisitorSettings) => {
     }
   };
 
-  // 방문자 이미지 삭제 함수 (기존 로직 유지)
-  const deleteImage = async () => {};
+  // 이미지 삭제 헬퍼 함수 (중복 제거)
+  const deleteImageFromStorage = async (imageUrl: string): Promise<void> => {
+    if (!imageUrl || imageUrl.startsWith("blob:")) return;
+
+    try {
+      const deleteManager = createImageManager("visitorPhoto", farmId);
+      await deleteManager.deleteImage(imageUrl);
+    } catch (error) {
+      console.warn("이미지 삭제 실패:", error);
+      throw error; // 상위에서 처리하도록 에러 전파
+    }
+  };
+
+  // 방문자 이미지 삭제 함수
+  const deleteImage = async () => {
+    try {
+      // 현재 업로드된 이미지가 있는 경우 스토리지에서 삭제
+      if (uploadedImageUrl) {
+        await deleteImageFromStorage(uploadedImageUrl);
+      }
+    } catch (error) {
+      // 삭제 실패해도 UI에서는 제거 (사용자 경험 우선)
+      console.warn("이미지 삭제 중 오류 발생:", error);
+    } finally {
+      // 상태 초기화 (삭제 성공/실패와 관계없이)
+      setUploadedImageUrl(null);
+      setSelectedImageFile(null);
+      setFormData((prev) => ({
+        ...prev,
+        profilePhotoUrl: "",
+      }));
+    }
+  };
 
   const handleSubmit = async (data: VisitorFormData) => {
     // React Hook Form에서 이미 검증된 데이터를 받음
@@ -142,7 +180,15 @@ export const useVisitorForm = (farmId: string, settings: VisitorSettings) => {
       // 1. 새로 선택된 이미지가 있으면 업로드
       if (selectedImageFile) {
         try {
-          // 새 이미지 업로드 (unified-image-manager 사용)
+          // 기존 이미지가 있고 새 이미지를 업로드하는 경우, 기존 이미지 삭제
+          if (
+            formData.profilePhotoUrl &&
+            !formData.profilePhotoUrl.startsWith("blob:")
+          ) {
+            await deleteImageFromStorage(formData.profilePhotoUrl);
+          }
+
+          // 새 이미지 업로드 (기존 hook 사용)
           const result = await visitorPhotoUpload.uploadImage(
             selectedImageFile
           );

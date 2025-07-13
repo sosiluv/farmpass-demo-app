@@ -24,15 +24,15 @@ export class UnifiedImageManager {
   };
 
   private uploadType: UploadType;
-  private userId?: string;
+  private contextId?: string; // userId와 farmId를 통합한 contextId
 
-  constructor(uploadType: UploadType, userId?: string) {
+  constructor(uploadType: UploadType, contextId?: string) {
     this.uploadType = uploadType;
-    this.userId = userId;
+    this.contextId = contextId; // contextId 저장
   }
 
   /**
-   * 현재 업로드 설정 반환
+   * 업로드 설정 가져오기
    */
   private getUploadConfig() {
     return UPLOAD_TYPE_CONFIGS[this.uploadType];
@@ -168,8 +168,8 @@ export class UnifiedImageManager {
         this.state.progress = 30;
       }
 
-      // 파일명 생성
-      const fileName = config.pathGenerator(file, this.userId);
+      // 파일명 생성 - contextId 전달
+      const fileName = config.pathGenerator(file, this.contextId);
       onProgress?.(40);
       this.state.progress = 40;
 
@@ -304,7 +304,7 @@ export class UnifiedImageManager {
  */
 export function createImageManager(
   uploadType: UploadType,
-  userId?: string
+  contextId?: string
 ): UnifiedImageManager {
-  return new UnifiedImageManager(uploadType, userId);
+  return new UnifiedImageManager(uploadType, contextId);
 }
