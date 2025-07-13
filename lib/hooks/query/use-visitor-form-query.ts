@@ -129,7 +129,7 @@ export const useCreateVisitorMutation = () => {
       farmId: string;
       visitorData: VisitorFormData;
       profilePhotoUrl?: string | null;
-    }) => {
+    }): Promise<{ message?: string; visitor?: any }> => {
       devLog.log(`[MUTATION] 방문자 등록 시작: ${farmId}`);
 
       const result = await apiClient(`/api/farms/${farmId}/visitors`, {

@@ -174,7 +174,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         {
           success: false,
-          error: "유효하지 않은 알림 유형입니다.",
+          error: "INVALID_NOTIFICATION_TYPE",
           message: "유효하지 않은 알림 유형입니다.",
         },
         { status: 400 }
@@ -217,7 +217,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         {
           success: false,
-          error: "VAPID 키가 설정되지 않았습니다.",
+          error: "VAPID_KEYS_NOT_SET",
           message: "VAPID 키가 설정되지 않았습니다.",
         },
         { status: 500 }
@@ -308,7 +308,11 @@ export async function POST(request: NextRequest) {
       );
 
       return NextResponse.json(
-        { message: "발송할 구독자가 없습니다.", sentCount: 0 },
+        {
+          message:
+            "발송할 구독자가 없습니다. (푸시 알림을 구독한 사용자가 없음)",
+          sentCount: 0,
+        },
         { status: 200 }
       );
     }
@@ -416,7 +420,11 @@ export async function POST(request: NextRequest) {
       );
 
       return NextResponse.json(
-        { message: "발송할 구독자가 없습니다.", sentCount: 0 },
+        {
+          message:
+            "발송할 구독자가 없습니다. (알림 설정으로 인해 모든 구독자가 필터링됨)",
+          sentCount: 0,
+        },
         { status: 200 }
       );
     }
@@ -590,7 +598,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json(
       {
-        message: "푸시 알림 발송이 완료되었습니다.",
+        message: `푸시 알림이 성공적으로 발송되었습니다. (성공: ${successCount}명, 실패: ${failureCount}명)`,
         sentCount: successCount,
         failureCount,
         results,
@@ -620,7 +628,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(
       {
         success: false,
-        error: "서버 오류가 발생했습니다.",
+        error: "INTERNAL_SERVER_ERROR",
         message: "서버 오류가 발생했습니다.",
       },
       { status: 500 }

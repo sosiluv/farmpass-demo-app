@@ -125,7 +125,11 @@ export async function POST(request: NextRequest) {
 
     statusCode = 201;
     return NextResponse.json(
-      { farm },
+      {
+        farm,
+        success: true,
+        message: `${farm_name}이 등록되었습니다.`,
+      },
       { status: 201, headers: { "Cache-Control": "no-store" } }
     );
   } catch (error) {

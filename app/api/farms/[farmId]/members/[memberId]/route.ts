@@ -182,7 +182,9 @@ export async function PUT(
 
     return NextResponse.json(
       {
-        message: "Member role updated successfully",
+        message: `${(memberToUpdate.profiles as any)?.name}의 역할이 ${
+          oldRole === "manager" ? "관리자" : "조회자"
+        }에서 ${role === "manager" ? "관리자" : "조회자"}로 변경되었습니다.`,
         member: {
           ...memberToUpdate,
           role: role,
@@ -404,7 +406,9 @@ export async function DELETE(
 
     return NextResponse.json(
       {
-        message: "Member removed successfully",
+        message: `${(memberToRemove.profiles as any)?.name || "구성원"}이(가) ${
+          memberToRemove.role === "manager" ? "관리자" : "조회자"
+        } 역할에서 제거되었습니다.`,
         removedMember: memberToRemove,
       },
       {

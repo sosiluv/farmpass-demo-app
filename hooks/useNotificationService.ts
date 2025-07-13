@@ -1,7 +1,7 @@
 import { useState, useCallback } from "react";
 import { devLog } from "@/lib/utils/logging/dev-logger";
 import { safeNotificationAccess } from "@/lib/utils/browser/safari-compat";
-import { getAuthErrorMessage } from "@/lib/utils/validation/validation";
+import { getNotificationErrorMessage } from "@/lib/utils/validation/validation";
 
 // React Query Hooks
 import {
@@ -9,6 +9,7 @@ import {
   useCreateSubscriptionMutation,
   useDeleteSubscriptionMutation,
   useSendTestPushMutation,
+  useCleanupSubscriptionsMutation,
 } from "@/lib/hooks/query/use-push-mutations";
 import { useSaveNotificationSettingsMutation } from "@/lib/hooks/query/use-notification-mutations";
 
@@ -26,6 +27,7 @@ export function useNotificationService(enableVapidKey: boolean = false) {
   const createSubscriptionMutation = useCreateSubscriptionMutation();
   const deleteSubscriptionMutation = useDeleteSubscriptionMutation();
   const sendTestPushMutation = useSendTestPushMutation();
+  const cleanupSubscriptionsMutation = useCleanupSubscriptionsMutation();
   const saveNotificationSettingsMutation =
     useSaveNotificationSettingsMutation();
 
@@ -68,15 +70,15 @@ export function useNotificationService(enableVapidKey: boolean = false) {
       setLastMessage({
         type: "success",
         title: "구독 성공",
-        message: "알림 구독이 완료되었습니다",
+        message: result?.message || "알림 구독이 완료되었습니다",
       });
       return result;
     } catch (error) {
-      const authError = getAuthErrorMessage(error);
+      const notificationError = getNotificationErrorMessage(error);
       setLastMessage({
         type: "error",
         title: "구독 실패",
-        message: authError.message,
+        message: notificationError.message,
       });
       throw error;
     } finally {
@@ -103,15 +105,15 @@ export function useNotificationService(enableVapidKey: boolean = false) {
       setLastMessage({
         type: "success",
         title: "구독 해제 성공",
-        message: "알림 구독이 해제되었습니다",
+        message: result?.message || "알림 구독이 해제되었습니다",
       });
       return result;
     } catch (error) {
-      const authError = getAuthErrorMessage(error);
+      const notificationError = getNotificationErrorMessage(error);
       setLastMessage({
         type: "error",
         title: "구독 해제 실패",
-        message: authError.message,
+        message: notificationError.message,
       });
       throw error;
     } finally {
@@ -136,7 +138,7 @@ export function useNotificationService(enableVapidKey: boolean = false) {
   // 테스트 알림 발송 - React Query 사용
   const sendTestNotification = async () => {
     try {
-      await sendTestPushMutation.mutateAsync({
+      const result = await sendTestPushMutation.mutateAsync({
         title: "테스트 알림",
         body: "푸시 알림이 정상적으로 작동하고 있습니다! 🎉",
       });
@@ -144,30 +146,47 @@ export function useNotificationService(enableVapidKey: boolean = false) {
       setLastMessage({
         type: "success",
         title: "테스트 알림 발송",
-        message: "테스트 알림이 발송되었습니다",
+        message: result?.message || "테스트 알림이 발송되었습니다",
       });
     } catch (error) {
+      const notificationError = getNotificationErrorMessage(error);
       setLastMessage({
         type: "error",
         title: "테스트 실패",
-        message: "테스트 알림 발송에 실패했습니다",
+        message: notificationError.message,
       });
     }
   };
 
-  // 구독 정리 - 현재는 임시로 비워둠 (추후 Mutation Hook 추가 필요)
+  // 구독 정리 - React Query Mutation 사용
   const cleanupSubscriptions = async () => {
     try {
-      devLog.log("구독 정리 기능은 추후 Mutation Hook으로 구현 예정");
+      setIsLoading(true);
+      devLog.log("[NOTIFICATION] 구독 정리 시작");
+
+      // 구독 정리 Mutation 사용
+      const result = await cleanupSubscriptionsMutation.mutateAsync({
+        realTimeCheck: false,
+      });
+
       setLastMessage({
         type: "success",
         title: "구독 정리 완료",
-        message: "구독 정리가 완료되었습니다",
+        message: result.message || "구독 정리가 완료되었습니다",
       });
-      return { message: "구독 정리 완료" };
+
+      return result;
     } catch (error) {
       devLog.error("구독 정리 실패:", error);
+      const notificationError = getNotificationErrorMessage(error);
+      setLastMessage({
+        type: "error",
+        title: "구독 정리 실패",
+        message: notificationError.message,
+      });
       throw error;
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -206,11 +225,11 @@ export function useNotificationService(enableVapidKey: boolean = false) {
       }
     } catch (error) {
       devLog.error("알림 권한 요청 실패:", error);
-      const authError = getAuthErrorMessage(error);
+      const notificationError = getNotificationErrorMessage(error);
       setLastMessage({
         type: "error",
         title: "알림 설정 실패",
-        message: authError.message,
+        message: notificationError.message,
       });
       return false;
     } finally {

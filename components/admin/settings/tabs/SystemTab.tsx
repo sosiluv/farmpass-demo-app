@@ -30,7 +30,7 @@ export default function SystemTab({
   onUpdate,
   isLoading,
 }: SystemTabProps) {
-  const { showError } = useCommonToast();
+  const { showError, showSuccess } = useCommonToast();
 
   // 정리 관리자 훅 사용
   const {
@@ -57,7 +57,8 @@ export default function SystemTab({
   // 정리 요청 핸들러
   const handleCleanupRequest = async (type: "system_logs" | "all") => {
     try {
-      await executeCleanup(type);
+      const result = await executeCleanup(type);
+      showSuccess("정리 완료", result.message);
     } catch (error: any) {
       const authError = getAuthErrorMessage(error);
       showError("정리 요청 실패", authError.message);
@@ -67,7 +68,8 @@ export default function SystemTab({
   // Orphan 파일 정리 요청 핸들러
   const handleOrphanCleanupRequest = async () => {
     try {
-      await executeOrphanCleanup();
+      const result = await executeOrphanCleanup();
+      showSuccess("Orphan 파일 정리 완료", result.message);
     } catch (error: any) {
       const authError = getAuthErrorMessage(error);
       showError("Orphan 파일 정리 요청 실패", authError.message);

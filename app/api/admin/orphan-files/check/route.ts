@@ -148,9 +148,9 @@ export async function GET(request: NextRequest) {
     devLog.error("[CHECK_ORPHAN] General error:", error);
     return NextResponse.json(
       {
+        success: false,
         error: "ORPHAN_FILES_CHECK_FAILED",
-        message: "Failed to check orphan files",
-        details: error instanceof Error ? error.message : "Unknown error",
+        message: "고아 파일 확인에 실패했습니다.",
       },
       { status: 500 }
     );

@@ -73,27 +73,29 @@ export async function POST(request: NextRequest) {
       // 에러 메시지 매핑
       const errorMessages = {
         "User not found": {
-          message: "User not found",
+          message: "사용자를 찾을 수 없습니다.",
           status: 404,
         },
         "Email rate limit exceeded": {
-          message: "Email rate limit exceeded. Please try again later.",
+          message:
+            "이메일 전송 한도가 초과되었습니다. 잠시 후 다시 시도해주세요.",
           status: 429,
         },
         "Too many requests": {
-          message: "Too many requests. Please try again later.",
+          message: "요청이 너무 많습니다. 잠시 후 다시 시도해주세요.",
           status: 429,
         },
         "Invalid email": {
-          message: "Invalid email address",
+          message: "유효하지 않은 이메일 주소입니다.",
           status: 400,
         },
         "Email not confirmed": {
-          message: "Email not confirmed",
+          message: "이메일이 확인되지 않았습니다.",
           status: 400,
         },
         "Error sending recovery email": {
-          message: "Error sending recovery email. Please try again later.",
+          message:
+            "복구 이메일 전송에 실패했습니다. 잠시 후 다시 시도해주세요.",
           status: 500,
         },
       };
@@ -106,7 +108,7 @@ export async function POST(request: NextRequest) {
       const errorResponse = errorKey
         ? errorMessages[errorKey as keyof typeof errorMessages]
         : {
-            message: "Password reset email sending failed",
+            message: "비밀번호 재설정 이메일 전송에 실패했습니다.",
             status: 500,
           };
 
@@ -145,7 +147,7 @@ export async function POST(request: NextRequest) {
     );
 
     return NextResponse.json(
-      { message: "Password reset email has been sent." },
+      { message: "비밀번호 재설정 이메일이 전송되었습니다." },
       { status: 200 }
     );
   } catch (error) {

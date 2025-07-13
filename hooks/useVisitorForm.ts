@@ -164,7 +164,7 @@ export const useVisitorForm = (farmId: string, settings: VisitorSettings) => {
       }
 
       // 방문자 등록 (React Query Mutation 사용)
-      await createVisitorMutation.mutateAsync({
+      const result = await createVisitorMutation.mutateAsync({
         farmId,
         visitorData: data,
         profilePhotoUrl: profile_photo_url, // 실제 URL만 저장
@@ -175,6 +175,7 @@ export const useVisitorForm = (farmId: string, settings: VisitorSettings) => {
       setUploadedImageUrl(null);
       setSelectedImageFile(null);
       // 토스트는 컴포넌트에서 처리
+      return result; // <-- API 응답 반환
     } catch (err) {
       setError("방문자 등록에 실패했습니다");
       handleError(err as Error, "방문자 등록");

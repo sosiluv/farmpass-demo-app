@@ -35,8 +35,8 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       success: true,
       message: force
-        ? "Cache cleared completely"
-        : "Cache invalidated successfully",
+        ? "캐시가 완전히 초기화되었습니다."
+        : "캐시가 성공적으로 무효화되었습니다.",
       cacheInfo,
     });
   } catch (error) {

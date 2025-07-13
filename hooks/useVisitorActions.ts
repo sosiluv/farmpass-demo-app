@@ -44,7 +44,7 @@ export const useVisitorActions = ({
       }
 
       try {
-        await updateVisitorMutation.mutateAsync({
+        const result = await updateVisitorMutation.mutateAsync({
           id: visitor.id,
           farm_id: visitor.farm_id,
           visitor_name: visitor.visitor_name,
@@ -59,7 +59,7 @@ export const useVisitorActions = ({
 
         showSuccess(
           "방문자 정보 수정 완료",
-          "방문자 정보가 성공적으로 수정되었습니다."
+          result.message || "방문자 정보가 성공적으로 수정되었습니다."
         );
       } catch (error) {
         const authError = getAuthErrorMessage(error);
@@ -79,11 +79,14 @@ export const useVisitorActions = ({
       }
 
       try {
-        await deleteVisitorMutation.mutateAsync({
+        const result = await deleteVisitorMutation.mutateAsync({
           visitorId: visitor.id,
           farmId: visitor.farm_id,
         });
-        showSuccess("방문자 삭제 완료", "방문자가 성공적으로 삭제되었습니다.");
+        showSuccess(
+          "방문자 삭제 완료",
+          result.message || "방문자가 성공적으로 삭제되었습니다."
+        );
       } catch (error) {
         const authError = getAuthErrorMessage(error);
         showError("방문자 삭제 실패", authError.message);

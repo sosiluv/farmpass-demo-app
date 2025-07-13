@@ -18,7 +18,8 @@ export function useCleanupManager() {
 
   const executeCleanup = async (type: "system_logs" | "all") => {
     try {
-      await executeCleanupMutation.mutateAsync({ type });
+      const result = await executeCleanupMutation.mutateAsync({ type });
+      return result;
     } catch (error) {
       // 에러는 React Query에서 자동 처리
       throw error;

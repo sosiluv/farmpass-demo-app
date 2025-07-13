@@ -29,7 +29,9 @@ export function useCreateFarmMutation() {
   const { state } = useAuth();
 
   return useMutation({
-    mutationFn: async (data: CreateFarmRequest): Promise<Farm> => {
+    mutationFn: async (
+      data: CreateFarmRequest
+    ): Promise<{ farm: Farm; message: string }> => {
       const response = await apiClient("/api/farms", {
         method: "POST",
         body: JSON.stringify(data),
@@ -38,7 +40,7 @@ export function useCreateFarmMutation() {
           handleError(error, context);
         },
       });
-      return response.farm;
+      return { farm: response.farm, message: response.message };
     },
     onSuccess: (newFarm, variables) => {
       // 사용자의 농장 목록 쿼리 무효화
@@ -59,7 +61,9 @@ export function useUpdateFarmMutation() {
   const { state } = useAuth();
 
   return useMutation({
-    mutationFn: async (data: UpdateFarmRequest): Promise<Farm> => {
+    mutationFn: async (
+      data: UpdateFarmRequest
+    ): Promise<{ farm: Farm; message: string }> => {
       const response = await apiClient(`/api/farms/${data.id}`, {
         method: "PUT",
         body: JSON.stringify(data),
@@ -68,7 +72,7 @@ export function useUpdateFarmMutation() {
           handleError(error, context);
         },
       });
-      return response.farm;
+      return { farm: response.farm, message: response.message };
     },
     onSuccess: (updatedFarm, variables) => {
       // 사용자의 농장 목록 쿼리 무효화
@@ -91,7 +95,7 @@ export function useDeleteFarmMutation() {
   return useMutation({
     mutationFn: async (
       farmId: string
-    ): Promise<{ success: boolean; farm?: Farm }> => {
+    ): Promise<{ success: boolean; message: string }> => {
       const response = await apiClient(`/api/farms/${farmId}`, {
         method: "DELETE",
         context: "농장 삭제",
@@ -99,7 +103,7 @@ export function useDeleteFarmMutation() {
           handleError(error, context);
         },
       });
-      return response;
+      return { success: response.success, message: response.message };
     },
     onSuccess: (result, farmId) => {
       // 1. 사용자의 농장 목록 쿼리 무효화

@@ -7,7 +7,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Key, AlertTriangle, Copy, Check } from "lucide-react";
 import type { SystemSettings } from "@/lib/types/settings";
 import { useCommonToast } from "@/lib/utils/notification/toast-messages";
-import { getAuthErrorMessage } from "@/lib/utils/validation/validation";
+import { getNotificationErrorMessage } from "@/lib/utils/validation/validation";
 import SettingsCardHeader from "../SettingsCardHeader";
 
 interface VapidKeySectionProps {
@@ -16,7 +16,12 @@ interface VapidKeySectionProps {
     key: K,
     value: SystemSettings[K]
   ) => void;
-  onGenerateKeys: () => void;
+  onGenerateKeys: () => Promise<{
+    publicKey: string;
+    privateKey: string;
+    message?: string;
+    warning?: string;
+  }>;
   isLoading: boolean;
 }
 
@@ -35,14 +40,19 @@ const VapidKeySection = React.memo(function VapidKeySection({
   const handleGenerateKeys = async () => {
     showInfo("VAPID 키 생성 시작", "VAPID 키를 생성하는 중입니다...");
     try {
-      await onGenerateKeys();
+      const result = await onGenerateKeys();
       showSuccess(
         "VAPID 키 생성 완료",
-        "VAPID 키가 성공적으로 생성되었습니다."
+        result?.message || "VAPID 키가 성공적으로 생성되었습니다."
       );
+
+      // 경고 메시지가 있으면 표시
+      if (result?.warning) {
+        showWarning("VAPID 키 생성 완료", result.warning);
+      }
     } catch (error) {
-      const authError = getAuthErrorMessage(error);
-      showError("VAPID 키 생성 실패", authError.message);
+      const notificationError = getNotificationErrorMessage(error);
+      showError("VAPID 키 생성 실패", notificationError.message);
     }
   };
 

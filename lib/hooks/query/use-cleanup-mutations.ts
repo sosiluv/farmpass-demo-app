@@ -15,7 +15,7 @@ export function useExecuteCleanupMutation() {
   return useMutation({
     mutationFn: async (data: {
       type: "system_logs" | "all";
-    }): Promise<{ success: boolean; deletedCount?: number }> => {
+    }): Promise<{ success: boolean; message: string; results: any }> => {
       devLog.log("[MUTATION] 정리 작업 시작:", data.type);
 
       const result = await apiClient("/api/admin/logs/cleanup", {

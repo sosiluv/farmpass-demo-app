@@ -151,8 +151,7 @@ export async function POST(request: NextRequest) {
       {
         success: false,
         error: "ORPHAN_FILES_CLEANUP_FAILED",
-        message: "Failed to cleanup orphan files",
-        details: error instanceof Error ? error.message : "Unknown error",
+        message: "고아 파일 정리에 실패했습니다.",
       },
       { status: 500 }
     );

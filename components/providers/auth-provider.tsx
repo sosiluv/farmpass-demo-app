@@ -80,7 +80,7 @@ interface AuthContextType {
   signIn: (credentials: {
     email: string;
     password: string;
-  }) => Promise<{ success: boolean }>;
+  }) => Promise<{ success: boolean; message?: string }>;
   signOut: () => Promise<{ success: boolean }>;
   verifyPassword: (credentials: {
     email: string;
@@ -410,7 +410,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         profile,
       });
 
-      return { success: true };
+      return { success: true, message: result.message };
     } catch (error) {
       devLog.error("Sign in error:", error);
       dispatch({ type: "SET_UNAUTHENTICATED" });

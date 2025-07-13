@@ -55,7 +55,7 @@ export async function POST(request: NextRequest) {
           {
             success: false,
             error: "VISITOR_CLEANUP_FAILED",
-            message: `방문자 데이터 정리 실패: ${visitorError.message}`,
+            message: "방문자 데이터 정리에 실패했습니다.",
           },
           { status: 500 }
         );
@@ -80,7 +80,7 @@ export async function POST(request: NextRequest) {
           {
             success: false,
             error: "SYSTEM_LOG_CLEANUP_FAILED",
-            message: `시스템 로그 정리 실패: ${logError.message}`,
+            message: "시스템 로그 정리에 실패했습니다.",
           },
           { status: 500 }
         );
@@ -114,7 +114,7 @@ export async function POST(request: NextRequest) {
           {
             success: false,
             error: "SYSTEM_LOG_CLEANUP_FAILED",
-            message: `시스템 로그 정리 실패: ${error.message}`,
+            message: "시스템 로그 정리에 실패했습니다.",
           },
           { status: 500 }
         );
@@ -124,9 +124,26 @@ export async function POST(request: NextRequest) {
     }
 
     devLog.log("정리 작업 완료, 응답 반환");
+
+    // 삭제된 개수 계산
+    let totalDeleted = 0;
+    if (type === "all") {
+      // 모든 데이터 정리인 경우
+      if (Array.isArray(result)) {
+        totalDeleted = result.reduce((sum: number, item: any) => {
+          return sum + (item?.deleted_count || 0);
+        }, 0);
+      }
+    } else {
+      // 시스템 로그만 정리인 경우
+      if (result && typeof result === "object" && "deleted_count" in result) {
+        totalDeleted = result.deleted_count || 0;
+      }
+    }
+
     return NextResponse.json({
       success: true,
-      message: "정리 작업이 완료되었습니다.",
+      message: `${totalDeleted}개의 데이터가 정리되었습니다.`,
       results: result,
     });
   } catch (error) {
@@ -146,9 +163,9 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json(
       {
+        success: false,
         error: "LOG_CLEANUP_FAILED",
-        message: "Failed to cleanup logs",
-        details: error instanceof Error ? error.message : "Unknown error",
+        message: "로그 정리에 실패했습니다.",
       },
       { status: 500 }
     );
@@ -246,9 +263,9 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json(
       {
+        success: false,
         error: "CLEANUP_STATUS_QUERY_FAILED",
-        message: "Failed to query cleanup status",
-        details: error instanceof Error ? error.message : "Unknown error",
+        message: "정리 상태 조회에 실패했습니다.",
       },
       { status: 500 }
     );

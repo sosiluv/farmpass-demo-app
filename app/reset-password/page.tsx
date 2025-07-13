@@ -49,7 +49,7 @@ export default function ResetPasswordPage() {
     setLoading(true);
 
     try {
-      await apiClient("/api/auth/reset-password", {
+      const result = await apiClient("/api/auth/reset-password", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -64,7 +64,7 @@ export default function ResetPasswordPage() {
 
       showSuccess(
         "이메일 전송 완료",
-        "비밀번호 재설정 링크가 이메일로 전송되었습니다."
+        result.message || "비밀번호 재설정 링크가 이메일로 전송되었습니다."
       );
 
       // 로그인 페이지로 리다이렉트

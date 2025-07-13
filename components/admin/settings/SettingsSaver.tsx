@@ -28,9 +28,7 @@ export function useSettingsSaver({
 
     try {
       // 1. 설정 저장 (React Query mutation 사용)
-      const updatedSettings = await systemMutations.saveSettingsAsync(
-        localSettings
-      );
+      const result = await systemMutations.saveSettingsAsync(localSettings);
 
       // 2. 캐시 무효화 (React Query mutation 사용)
       try {
@@ -46,13 +44,13 @@ export function useSettingsSaver({
       await refetch();
 
       // 4. UI 상태 업데이트
-      onSettingsUpdate(updatedSettings);
+      onSettingsUpdate(result);
       onUnsavedChangesChange(false);
 
       // 5. 시스템 모드 설정이 변경된 경우 즉시 적용
       await refreshSystemModes();
 
-      showSuccess("설정 저장 완료", "설정이 저장되었습니다.");
+      showSuccess("설정 저장 완료", result.message || "설정이 저장되었습니다.");
     } catch (error) {
       const authError = getAuthErrorMessage(error);
       showError("설정 저장 실패", authError.message);

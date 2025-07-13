@@ -34,7 +34,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         {
           error: "MISSING_REQUIRED_FIELDS",
-          message: "Title, message, and notification type are required",
+          message: "제목, 메시지, 알림 유형은 필수 입력 항목입니다.",
         },
         { status: 400 }
       );
@@ -49,7 +49,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         {
           error: "INVALID_NOTIFICATION_TYPE",
-          message: "Invalid notification type",
+          message: "유효하지 않은 알림 유형입니다.",
         },
         { status: 400 }
       );

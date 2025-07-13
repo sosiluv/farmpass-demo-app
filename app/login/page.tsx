@@ -133,7 +133,7 @@ export default function LoginPage() {
       });
 
       if (result.success) {
-        showSuccess("로그인 성공", "대시보드로 이동합니다.");
+        showSuccess("로그인 성공", result.message || "대시보드로 이동합니다.");
         // 리다이렉트는 useEffect에서 처리하므로 여기서는 제거
         // setRedirecting(true);
         // router.replace("/admin/dashboard");

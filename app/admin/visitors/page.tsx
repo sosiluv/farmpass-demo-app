@@ -36,7 +36,7 @@ export default function VisitorsPage() {
   const { state } = useAuth();
   const profile = state.status === "authenticated" ? state.profile : null;
   const isAdmin = profile?.account_type === "admin";
-  const { showWarning, showSuccess, showError } = useCommonToast();
+  const { showError } = useCommonToast();
 
   // React Query Hooks
   const farmsQuery = useFarmsContext();

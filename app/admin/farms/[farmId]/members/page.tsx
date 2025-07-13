@@ -96,17 +96,12 @@ export default function MembersPage({ params }: PageProps) {
 
       try {
         showInfo("구성원 추가 중", `${email}을(를) 추가하는 중입니다...`);
-        await inviteMemberMutation.mutateAsync({
+        const result = await inviteMemberMutation.mutateAsync({
           farm_id: farmId,
           email,
           role,
         });
-        showSuccess(
-          "구성원 추가 완료",
-          `${email}이 ${
-            role === "manager" ? "관리자" : "조회자"
-          }로 추가되었습니다.`
-        );
+        showSuccess("구성원 추가 완료", result.message);
       } catch (error: any) {
         const authError = getAuthErrorMessage(error);
         showError("구성원 추가 실패", authError.message);
@@ -121,17 +116,12 @@ export default function MembersPage({ params }: PageProps) {
     async (memberId: string, newRole: "manager" | "viewer") => {
       try {
         showInfo("권한 변경 중", "구성원 권한을 변경하는 중입니다...");
-        await updateMemberRoleMutation.mutateAsync({
+        const result = await updateMemberRoleMutation.mutateAsync({
           farm_id: farmId,
           member_id: memberId,
           role: newRole,
         });
-        showSuccess(
-          "권한 변경 완료",
-          `구성원 권한이 ${
-            newRole === "manager" ? "관리자" : "조회자"
-          }로 변경되었습니다.`
-        );
+        showSuccess("권한 변경 완료", result.message);
       } catch (error: any) {
         const authError = getAuthErrorMessage(error);
         showError("권한 변경 실패", authError.message);
@@ -146,13 +136,13 @@ export default function MembersPage({ params }: PageProps) {
 
     try {
       showInfo("구성원 삭제 중", "구성원을 삭제하는 중입니다...");
-      await removeMemberMutation.mutateAsync({
+      const result = await removeMemberMutation.mutateAsync({
         farmId: farmId,
         memberId: memberToDelete,
       });
       setDeleteDialogOpen(false);
       setMemberToDelete(null);
-      showSuccess("구성원 삭제 완료", "구성원이 삭제되었습니다.");
+      showSuccess("구성원 삭제 완료", result.message);
     } catch (error: any) {
       const authError = getAuthErrorMessage(error);
       showError("구성원 삭제 실패", authError.message);

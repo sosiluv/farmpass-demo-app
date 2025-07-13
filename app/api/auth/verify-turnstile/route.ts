@@ -89,7 +89,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(
       {
         success: true,
-        message: "Turnstile verification completed.",
+        message: "Turnstile 검증이 완료되었습니다.",
       },
       {
         headers: {

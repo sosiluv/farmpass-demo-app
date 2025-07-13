@@ -26,7 +26,9 @@ export function useInviteMemberMutation() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (data: InviteMemberRequest): Promise<FarmMember> => {
+    mutationFn: async (
+      data: InviteMemberRequest
+    ): Promise<{ member: FarmMember; message: string }> => {
       // 기존 Zustand store와 동일한 API 엔드포인트 사용
       const response = await apiClient(`/api/farms/${data.farm_id}/members`, {
         method: "POST",
@@ -36,7 +38,7 @@ export function useInviteMemberMutation() {
           handleError(error, context);
         },
       });
-      return response.member;
+      return { member: response.member, message: response.message };
     },
     onSuccess: (newMember, variables) => {
       // 농장 멤버 목록 쿼리 무효화
@@ -54,7 +56,9 @@ export function useUpdateMemberRoleMutation() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (data: UpdateMemberRoleRequest): Promise<FarmMember> => {
+    mutationFn: async (
+      data: UpdateMemberRoleRequest
+    ): Promise<{ message: string; member: FarmMember }> => {
       const response = await apiClient(
         `/api/farms/${data.farm_id}/members/${data.member_id}`,
         {
@@ -66,9 +70,9 @@ export function useUpdateMemberRoleMutation() {
           },
         }
       );
-      return response.member;
+      return response;
     },
-    onSuccess: (updatedMember, variables) => {
+    onSuccess: (result, variables) => {
       // 농장 멤버 목록 쿼리 무효화
       queryClient.invalidateQueries({
         queryKey: farmsKeys.farmMembers(variables.farm_id),
@@ -90,7 +94,7 @@ export function useRemoveMemberMutation() {
     }: {
       farmId: string;
       memberId: string;
-    }): Promise<{ success: boolean }> => {
+    }): Promise<{ success: boolean; message: string }> => {
       const response = await apiClient(
         `/api/farms/${farmId}/members/${memberId}`,
         {
@@ -101,7 +105,7 @@ export function useRemoveMemberMutation() {
           },
         }
       );
-      return response;
+      return { success: response.success, message: response.message };
     },
     onSuccess: (result, variables) => {
       // 농장 멤버 목록 쿼리 무효화

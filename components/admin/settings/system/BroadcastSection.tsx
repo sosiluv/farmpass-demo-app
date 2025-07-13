@@ -77,16 +77,18 @@ export default function BroadcastSection({ isLoading }: BroadcastSectionProps) {
         notificationType: formData.notificationType,
       });
 
-      // 성공 처리
+      // 성공 처리 - API의 message를 그대로 사용
       if (result.success) {
         showSuccess(
-          "브로드캐스트 성공",
-          `총 ${result.totalCount}명 중 ${result.sentCount}명에게 알림을 전송했습니다.`
+          "브로드캐스트 완료",
+          result.message ||
+            `총 ${result.totalCount}명 중 ${result.sentCount}명에게 알림을 전송했습니다.`
         );
       } else {
         showError(
           "브로드캐스트 실패",
-          `알림 전송에 실패했습니다. ${result.errors?.join(", ") || ""}`
+          result.message ||
+            `알림 전송에 실패했습니다. ${result.errors?.join(", ") || ""}`
         );
       }
 
@@ -105,7 +107,7 @@ export default function BroadcastSection({ isLoading }: BroadcastSectionProps) {
         url: "/admin/dashboard",
         notificationType: "notice",
       });
-    } catch (error: any) {
+    } catch (error) {
       const authError = getAuthErrorMessage(error);
       showError("브로드캐스트 오류", authError.message);
 

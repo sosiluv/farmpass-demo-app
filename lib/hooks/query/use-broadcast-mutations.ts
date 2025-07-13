@@ -16,6 +16,7 @@ interface BroadcastResult {
   success: boolean;
   sentCount: number;
   totalCount: number;
+  message?: string;
   errors?: string[];
 }
 

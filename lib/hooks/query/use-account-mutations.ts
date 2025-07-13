@@ -23,7 +23,7 @@ export function useUpdateProfileMutation() {
       position: string;
       department: string;
       bio: string;
-    }): Promise<{ success: boolean }> => {
+    }): Promise<{ success: boolean; message?: string }> => {
       const profileData = {
         name: data.name,
         phone: data.phoneNumber,
@@ -32,7 +32,7 @@ export function useUpdateProfileMutation() {
         bio: data.bio,
       };
 
-      await apiClient("/api/profile", {
+      const result = await apiClient("/api/profile", {
         method: "PATCH",
         body: JSON.stringify(profileData),
         context: "프로필 정보 저장",
@@ -41,7 +41,7 @@ export function useUpdateProfileMutation() {
         },
       });
 
-      return { success: true };
+      return { success: result.success, message: result.message };
     },
     onSuccess: async () => {
       // 프로필 데이터 새로고침
@@ -65,7 +65,7 @@ export function useUpdateCompanyMutation() {
       establishment_date: string;
       employee_count: string;
       company_website: string;
-    }): Promise<{ success: boolean }> => {
+    }): Promise<{ success: boolean; message?: string }> => {
       const companyData = {
         company_name: data.companyName,
         company_address: data.companyAddress,
@@ -76,7 +76,7 @@ export function useUpdateCompanyMutation() {
         company_website: data.company_website,
       };
 
-      await apiClient("/api/profile", {
+      const result = await apiClient("/api/profile", {
         method: "PATCH",
         body: JSON.stringify(companyData),
         context: "회사 정보 저장",
@@ -85,7 +85,7 @@ export function useUpdateCompanyMutation() {
         },
       });
 
-      return { success: true };
+      return { success: result.success, message: result.message };
     },
     onSuccess: async () => {
       // 프로필 데이터 새로고침

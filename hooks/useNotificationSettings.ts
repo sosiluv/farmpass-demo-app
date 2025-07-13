@@ -30,9 +30,17 @@ export function useSystemNotificationSettings(options: {
       onUpdate("vapidPublicKey", data.publicKey);
       onUpdate("vapidPrivateKey", data.privateKey);
 
-      // 토스트는 컴포넌트에서 처리
+      // API 응답 반환 (message, warning 포함)
+      return {
+        publicKey: data.publicKey,
+        privateKey: data.privateKey,
+        message: data.message,
+        warning: data.warning,
+        success: data.success,
+      };
     } catch (error) {
       // 에러는 이미 mutation에서 처리됨
+      throw error;
     }
   }, [onUpdate, notificationMutations]);
 

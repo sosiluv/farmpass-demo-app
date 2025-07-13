@@ -59,18 +59,15 @@ export default function FarmsPage() {
     try {
       if (editingFarm) {
         showInfo("농장 수정 중", "농장 정보를 수정하는 중입니다...");
-        const updatedFarm = await updateFarmAsync({
+        const result = await updateFarmAsync({
           ...values,
           id: editingFarm.id,
         });
-        showSuccess(
-          "농장 수정 완료",
-          `${updatedFarm.farm_name}의 정보가 수정되었습니다.`
-        );
+        showSuccess("농장 수정 완료", result.message);
       } else {
         showInfo("농장 등록 중", "새 농장을 등록하는 중입니다...");
-        const newFarm = await createFarmAsync(values);
-        showSuccess("농장 등록 완료", `${newFarm.farm_name}이 등록되었습니다.`);
+        const result = await createFarmAsync(values);
+        showSuccess("농장 등록 완료", result.message);
       }
       setDialogOpen(false);
       setEditingFarm(null);
@@ -89,16 +86,24 @@ export default function FarmsPage() {
 
     try {
       showInfo("농장 삭제 중", "농장을 삭제하는 중입니다...");
-      await deleteFarmAsync(farmToDelete);
-      showSuccess("농장 삭제 완료", "농장이 삭제되었습니다.");
+      const result = await deleteFarmAsync(farmToDelete);
+      showSuccess("농장 삭제 완료", result.message);
       setDeleteDialogOpen(false);
       setFarmToDelete(null);
     } catch (error: any) {
       console.error("농장 삭제 중 오류:", error);
 
       // 404 에러인 경우 (이미 삭제된 경우)
-      if (error.message && error.message.includes("FARM_NOT_FOUND")) {
-        showSuccess("농장 삭제 완료", "농장이 이미 삭제되었습니다.");
+      if (
+        error &&
+        typeof error === "object" &&
+        "error" in error &&
+        (error as any).error === "FARM_NOT_FOUND"
+      ) {
+        showSuccess(
+          "농장 삭제 완료",
+          (error as any).message || "농장을 찾을 수 없습니다."
+        );
         setDeleteDialogOpen(false);
         setFarmToDelete(null);
       } else {

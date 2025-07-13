@@ -267,35 +267,14 @@ export function getAuthErrorMessage(
   }
 
   // 중복 분기 제거: 각 에러 코드는 한 번만 처리
-  // 동적 처리(예: timeLeft, unauthorizedFarms 등)는 그대로 유지
+  // API에서 받은 메시지를 우선 사용하고, 동적 처리는 API에서 담당
   if (errorMessage.toLowerCase().includes("account_locked")) {
-    if (
-      error &&
-      typeof error === "object" &&
-      "timeLeft" in error &&
-      typeof (error as any).timeLeft === "number"
-    ) {
-      const timeLeftMinutes = Math.ceil((error as any).timeLeft / (60 * 1000));
-      return {
-        message: `계정이 잠겼습니다. ${timeLeftMinutes}분 후에 다시 시도해주세요.`,
-        shouldRedirect: false,
-      };
-    }
     return {
-      message:
-        "계정이 잠겼습니다. 관리자에게 문의하거나 잠시 후 다시 시도해주세요.",
+      message: errorMessage, // API에서 받은 메시지를 그대로 사용
       shouldRedirect: false,
     };
   }
   if (errorMessage.toLowerCase().includes("too many requests")) {
-    let retryAfter: number | undefined;
-    if (retryAfter) {
-      const retryAfterMinutes = Math.ceil(retryAfter / 60);
-      return {
-        message: `요청이 너무 많습니다. ${retryAfterMinutes}분 후에 다시 시도해주세요.`,
-        shouldRedirect: false,
-      };
-    }
     return {
       message: "요청이 너무 많습니다. 잠시 후 다시 시도해주세요.",
       shouldRedirect: false,
@@ -381,22 +360,20 @@ export function getAuthErrorMessage(
     };
   }
   if (errorMessage.toLowerCase().includes("email rate limit exceeded")) {
-    let retryAfter: number | undefined;
-    if (retryAfter) {
-      const retryAfterMinutes = Math.ceil(retryAfter / 60);
-      return {
-        message: `이메일 전송 한도를 초과했습니다. ${retryAfterMinutes}분 후에 다시 시도해주세요.`,
-        shouldRedirect: false,
-      };
-    }
     return {
-      message: "이메일 전송 한도를 초과했습니다. 잠시 후 다시 시도해주세요.",
+      message: "이메일 전송 한도가 초과되었습니다. 잠시 후 다시 시도해주세요.",
       shouldRedirect: false,
     };
   }
   if (errorMessage.toLowerCase().includes("invalid email")) {
     return {
       message: "올바른 이메일 주소를 입력해주세요.",
+      shouldRedirect: false,
+    };
+  }
+  if (errorMessage.toLowerCase().includes("email is already in use")) {
+    return {
+      message: "이미 사용 중인 이메일 주소입니다.",
       shouldRedirect: false,
     };
   }
@@ -464,8 +441,6 @@ export function getAuthErrorMessage(
     invalid_subscription_data: "구독 정보가 올바르지 않습니다.",
     incomplete_subscription: "구독 정보가 불완전합니다.",
     missing_endpoint: "엔드포인트가 필요합니다.",
-    subscriber_fetch_failed: "구독자 조회에 실패했습니다.",
-    notification_settings_fetch_failed: "알림 설정 조회에 실패했습니다.",
     vapid_key_not_configured: "VAPID 키가 설정되지 않았습니다.",
     vapid_key_required_for_realtime:
       "실시간 검사를 위해 VAPID 키가 필요합니다.",
@@ -476,8 +451,6 @@ export function getAuthErrorMessage(
     system_settings_not_found: "시스템 설정을 찾을 수 없습니다.",
     system_settings_update_failed: "시스템 설정 업데이트에 실패했습니다.",
     cache_clear_all_failed: "모든 캐시 초기화에 실패했습니다.",
-    cache_invalidate_failed: "캐시 무효화에 실패했습니다.",
-    cache_info_fetch_failed: "캐시 정보 조회에 실패했습니다.",
     // Visitor 관련
     visitor_count_error: "방문자 수를 확인할 수 없습니다.",
     visitor_create_error: "방문자 등록에 실패했습니다.",
@@ -491,6 +464,9 @@ export function getAuthErrorMessage(
     missing_credentials: "이메일과 비밀번호가 필요합니다.",
     login_system_error: "로그인 중 오류가 발생했습니다.",
     login_failed: "로그인에 실패했습니다.",
+    invalid_credentials: "이메일 또는 비밀번호가 올바르지 않습니다.",
+    account_locked:
+      "계정이 잠겼습니다. 관리자에게 문의하거나 잠시 후 다시 시도해주세요.",
     missing_email: "이메일 주소를 입력해주세요.",
     email_check_error: "이메일 확인 중 오류가 발생했습니다.",
     password_reset_system_error: "비밀번호 재설정 처리 중 오류가 발생했습니다.",
@@ -553,6 +529,13 @@ export function getAuthErrorMessage(
     system_logs_fetch_failed: "시스템 로그 조회에 실패했습니다.",
     // Visitor 관련
     visitor_query_error: "방문자 조회 중 오류가 발생했습니다.",
+    // Push 관련 (새로 추가)
+    vapid_keys_not_set: "VAPID 키가 설정되지 않았습니다.",
+    subscriber_fetch_failed: "구독자 조회에 실패했습니다.",
+    notification_settings_fetch_failed: "알림 설정 조회에 실패했습니다.",
+    // Cache 관련 (새로 추가)
+    cache_invalidate_failed: "캐시 무효화에 실패했습니다.",
+    cache_info_fetch_failed: "캐시 정보 조회에 실패했습니다.",
   };
 
   for (const [key, msg] of Object.entries(errorMap)) {
@@ -644,3 +627,199 @@ export const createChangePasswordFormSchema = (rules: PasswordRules) => {
 export const createDefaultChangePasswordFormSchema = () => {
   return createChangePasswordFormSchema(DEFAULT_PASSWORD_RULES);
 };
+
+/**
+ * 이미지 업로드 에러 메시지 처리
+ */
+export function getImageUploadErrorMessage(error: Error | unknown): {
+  message: string;
+  shouldRedirect?: boolean;
+  redirectTo?: string;
+} {
+  let errorMessage: string | null = null;
+
+  if (error instanceof Error) {
+    errorMessage = error.message;
+  } else if (typeof error === "string") {
+    errorMessage = error;
+  } else if (error && typeof error === "object") {
+    // API 응답 형식 처리
+    if ("success" in error && (error as any).success === false) {
+      if ("message" in error && typeof (error as any).message === "string") {
+        errorMessage = (error as any).message;
+      } else if ("error" in error && typeof (error as any).error === "string") {
+        errorMessage = (error as any).error;
+      }
+    } else if ("error" in error && typeof (error as any).error === "string") {
+      errorMessage = (error as any).error;
+    } else if (
+      "message" in error &&
+      typeof (error as any).message === "string"
+    ) {
+      errorMessage = (error as any).message;
+    }
+  }
+
+  if (!errorMessage) {
+    errorMessage = "이미지 업로드 중 오류가 발생했습니다.";
+  }
+
+  // 이미지 업로드 관련 에러 매핑
+  if (errorMessage.toLowerCase().includes("size_exceeded")) {
+    return {
+      message: "파일 크기가 너무 큽니다. 5MB 이하의 파일을 선택해주세요.",
+      shouldRedirect: false,
+    };
+  }
+  if (errorMessage.toLowerCase().includes("invalid_type")) {
+    return {
+      message:
+        "지원되지 않는 파일 형식입니다. JPG, PNG 파일만 업로드 가능합니다.",
+      shouldRedirect: false,
+    };
+  }
+  if (errorMessage.toLowerCase().includes("upload_failed")) {
+    return {
+      message:
+        "이미지 업로드에 실패했습니다. 네트워크 상태를 확인하고 다시 시도해주세요.",
+      shouldRedirect: false,
+    };
+  }
+  if (errorMessage.toLowerCase().includes("delete_failed")) {
+    return {
+      message: "이미지 삭제에 실패했습니다. 다시 시도해주세요.",
+      shouldRedirect: false,
+    };
+  }
+  if (errorMessage.toLowerCase().includes("permission denied")) {
+    return {
+      message: "이미지 업로드 권한이 없습니다.",
+      shouldRedirect: false,
+    };
+  }
+  if (errorMessage.toLowerCase().includes("storage quota")) {
+    return {
+      message: "저장소 용량이 부족합니다. 관리자에게 문의해주세요.",
+      shouldRedirect: false,
+    };
+  }
+  if (errorMessage.toLowerCase().includes("network")) {
+    return {
+      message: "네트워크 연결을 확인하고 다시 시도해주세요.",
+      shouldRedirect: false,
+    };
+  }
+
+  // 기본 에러 메시지
+  return {
+    message: errorMessage,
+    shouldRedirect: false,
+  };
+}
+
+/**
+ * 알림 권한 관련 에러 메시지 처리
+ */
+export function getNotificationErrorMessage(error: Error | unknown): {
+  message: string;
+  shouldRedirect?: boolean;
+  redirectTo?: string;
+} {
+  let errorMessage: string | null = null;
+
+  if (error instanceof Error) {
+    errorMessage = error.message;
+  } else if (typeof error === "string") {
+    errorMessage = error;
+  } else if (error && typeof error === "object") {
+    // API 응답 형식 처리
+    if ("success" in error && (error as any).success === false) {
+      if ("message" in error && typeof (error as any).message === "string") {
+        errorMessage = (error as any).message;
+      } else if ("error" in error && typeof (error as any).error === "string") {
+        errorMessage = (error as any).error;
+      }
+    } else if ("error" in error && typeof (error as any).error === "string") {
+      errorMessage = (error as any).error;
+    } else if (
+      "message" in error &&
+      typeof (error as any).message === "string"
+    ) {
+      errorMessage = (error as any).message;
+    }
+  }
+
+  if (!errorMessage) {
+    errorMessage = "알림 권한 처리 중 오류가 발생했습니다.";
+  }
+
+  // 알림 권한 관련 에러 매핑
+  if (errorMessage.toLowerCase().includes("permission denied")) {
+    return {
+      message:
+        "알림 권한이 거부되었습니다. 브라우저 설정에서 알림을 허용해주세요.",
+      shouldRedirect: false,
+    };
+  }
+  if (errorMessage.toLowerCase().includes("not supported")) {
+    return {
+      message: "현재 브라우저에서는 알림 기능을 지원하지 않습니다.",
+      shouldRedirect: false,
+    };
+  }
+  if (errorMessage.toLowerCase().includes("service worker")) {
+    return {
+      message:
+        "서비스 워커 등록에 실패했습니다. 브라우저를 새로고침하고 다시 시도해주세요.",
+      shouldRedirect: false,
+    };
+  }
+  if (errorMessage.toLowerCase().includes("vapid")) {
+    return {
+      message: "알림 설정에 문제가 있습니다. 관리자에게 문의해주세요.",
+      shouldRedirect: false,
+    };
+  }
+  if (errorMessage.toLowerCase().includes("subscription")) {
+    return {
+      message: "알림 구독 설정에 실패했습니다. 잠시 후 다시 시도해주세요.",
+      shouldRedirect: false,
+    };
+  }
+  if (errorMessage.toLowerCase().includes("push manager")) {
+    return {
+      message:
+        "푸시 알림 관리자 초기화에 실패했습니다. 브라우저를 새로고침해주세요.",
+      shouldRedirect: false,
+    };
+  }
+  if (errorMessage.toLowerCase().includes("notification")) {
+    return {
+      message: "알림 기능 초기화에 실패했습니다. 브라우저 설정을 확인해주세요.",
+      shouldRedirect: false,
+    };
+  }
+  if (errorMessage.toLowerCase().includes("network")) {
+    return {
+      message: "네트워크 연결을 확인하고 다시 시도해주세요.",
+      shouldRedirect: false,
+    };
+  }
+  if (errorMessage.toLowerCase().includes("timeout")) {
+    return {
+      message: "알림 권한 요청 시간이 초과되었습니다. 다시 시도해주세요.",
+      shouldRedirect: false,
+    };
+  }
+  if (errorMessage.toLowerCase().includes("unsupported")) {
+    return {
+      message: "현재 환경에서는 알림 기능을 사용할 수 없습니다.",
+      shouldRedirect: false,
+    };
+  }
+
+  return {
+    message: errorMessage,
+    shouldRedirect: false,
+  };
+}

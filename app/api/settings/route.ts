@@ -195,12 +195,26 @@ export async function PATCH(request: NextRequest) {
     // 캐시 무효화
     invalidateSystemSettingsCache();
 
-    return NextResponse.json(updatedSettings, {
-      headers: {
-        "Content-Type": "application/json",
-        "Cache-Control": "no-store",
+    // 성공 메시지 생성
+    const message =
+      changedFields.length > 0
+        ? `${changedFields.length}개의 설정이 성공적으로 업데이트되었습니다.`
+        : "설정이 성공적으로 저장되었습니다.";
+
+    return NextResponse.json(
+      {
+        ...updatedSettings,
+        success: true,
+        message,
+        changedFields: changedFields.length > 0 ? changedFields : undefined,
       },
-    });
+      {
+        headers: {
+          "Content-Type": "application/json",
+          "Cache-Control": "no-store",
+        },
+      }
+    );
   } catch (error) {
     // 설정 PATCH 에러 (일반) 로그
     await logApiError(

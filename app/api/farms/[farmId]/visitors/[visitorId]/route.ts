@@ -47,7 +47,11 @@ export async function PUT(
       });
 
       return NextResponse.json(
-        { message: "이름, 연락처, 주소는 필수 입력 항목입니다." },
+        {
+          success: false,
+          error: "MISSING_REQUIRED_FIELDS",
+          message: "이름, 연락처, 주소는 필수 입력 항목입니다.",
+        },
         { status: 400 }
       );
     }
@@ -102,13 +106,21 @@ export async function PUT(
 
       if (error.code === "23505") {
         return NextResponse.json(
-          { message: "중복된 방문자 정보가 있습니다." },
+          {
+            success: false,
+            error: "DUPLICATE_VISITOR_INFO",
+            message: "중복된 방문자 정보가 있습니다.",
+          },
           { status: 400 }
         );
       }
 
       return NextResponse.json(
-        { message: "방문자 정보 수정에 실패했습니다." },
+        {
+          success: false,
+          error: "VISITOR_UPDATE_FAILED",
+          message: "방문자 정보 수정에 실패했습니다.",
+        },
         { status: 500 }
       );
     }
@@ -135,11 +147,19 @@ export async function PUT(
       userAgent
     );
 
-    return NextResponse.json(data);
+    return NextResponse.json({
+      ...data,
+      success: true,
+      message: "방문자 정보가 성공적으로 수정되었습니다.",
+    });
   } catch (error) {
     devLog.error("방문자 수정 중 예외 발생:", error);
     return NextResponse.json(
-      { message: "서버 오류가 발생했습니다." },
+      {
+        success: false,
+        error: "VISITOR_UPDATE_SYSTEM_ERROR",
+        message: "서버 오류가 발생했습니다.",
+      },
       { status: 500 }
     );
   }
@@ -205,7 +225,11 @@ export async function DELETE(
       );
 
       return NextResponse.json(
-        { message: "방문자 삭제에 실패했습니다." },
+        {
+          success: false,
+          error: "VISITOR_DELETE_FAILED",
+          message: "방문자 삭제에 실패했습니다.",
+        },
         { status: 500 }
       );
     }
@@ -231,11 +255,18 @@ export async function DELETE(
       );
     }
 
-    return NextResponse.json({ success: true });
+    return NextResponse.json({
+      success: true,
+      message: "방문자가 성공적으로 삭제되었습니다.",
+    });
   } catch (error) {
     devLog.error("방문자 삭제 중 예외 발생:", error);
     return NextResponse.json(
-      { message: "서버 오류가 발생했습니다." },
+      {
+        success: false,
+        error: "VISITOR_DELETE_SYSTEM_ERROR",
+        message: "서버 오류가 발생했습니다.",
+      },
       { status: 500 }
     );
   }

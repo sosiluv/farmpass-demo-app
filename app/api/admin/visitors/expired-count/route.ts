@@ -37,8 +37,9 @@ export async function GET(request: NextRequest) {
 
       return NextResponse.json(
         {
+          success: false,
           error: "INVALID_RETENTION_PERIOD",
-          message: "Invalid retention period",
+          message: "유효하지 않은 보존 기간입니다.",
         },
         { status: 400 }
       );

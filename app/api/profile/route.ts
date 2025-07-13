@@ -48,7 +48,10 @@ export async function PATCH(request: NextRequest) {
       userAgent
     );
     return NextResponse.json(
-      { success: true },
+      {
+        success: true,
+        message: "프로필 정보가 성공적으로 저장되었습니다.",
+      },
       {
         headers: {
           "Cache-Control": "no-store",

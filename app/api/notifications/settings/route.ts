@@ -295,7 +295,31 @@ export async function PUT(request: NextRequest) {
       result = data;
     }
 
-    return NextResponse.json(result);
+    // 성공 로그
+    await createSystemLog(
+      "NOTIFICATION_SETTINGS_UPDATE_SUCCESS",
+      `알림 설정 업데이트 성공 (사용자 ID: ${user.id})`,
+      "info",
+      user.id,
+      "notification",
+      undefined,
+      {
+        user_id: user.id,
+        action_type: existingSettings ? "update" : "create",
+        status: "success",
+      },
+      user.email,
+      clientIP,
+      userAgent
+    );
+
+    return NextResponse.json({
+      ...result,
+      success: true,
+      message: existingSettings
+        ? "알림 설정이 성공적으로 업데이트되었습니다."
+        : "알림 설정이 성공적으로 생성되었습니다.",
+    });
   } catch (error) {
     devLog.error("알림 설정 업데이트 중 예외 발생:", error);
 

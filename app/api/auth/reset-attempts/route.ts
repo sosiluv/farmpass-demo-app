@@ -42,7 +42,7 @@ export async function POST(request: NextRequest) {
     if (!currentProfile || currentProfile.login_attempts === 0) {
       return NextResponse.json({
         success: true,
-        message: "Account is already unlocked.",
+        message: "계정이 이미 잠금 해제되어 있습니다.",
       });
     }
 
@@ -80,7 +80,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      message: "Account lock has been removed!",
+      message: "계정 잠금이 해제되었습니다!",
     });
   } catch (err) {
     devLog.error("Reset login attempts error:", err);

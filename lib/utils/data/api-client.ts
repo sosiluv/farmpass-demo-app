@@ -74,16 +74,6 @@ export async function apiClient(input: RequestInfo, init?: ApiClientOptions) {
         errorData.error || `${ERROR_MESSAGES.API_ERROR} (${response.status})`
       );
 
-      // timeLeft 정보 보존 (로그인 API의 경우)
-      if (errorData.timeLeft !== undefined) {
-        (error as any).timeLeft = errorData.timeLeft;
-      }
-
-      // retryAfter 정보 보존 (Rate Limiting의 경우)
-      if (errorData.retryAfter !== undefined) {
-        (error as any).retryAfter = errorData.retryAfter;
-      }
-
       if (onError) onError(error, context);
       throw error;
     }

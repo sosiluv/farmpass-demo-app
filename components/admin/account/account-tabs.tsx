@@ -36,12 +36,12 @@ export function AccountTabs({ profile, userId }: AccountTabsProps) {
       if (result.success) {
         showSuccess(
           "프로필 저장 완료",
-          "프로필 정보가 성공적으로 저장되었습니다."
+          result.message || "프로필 정보가 성공적으로 저장되었습니다."
         );
       } else {
         showError(
           "프로필 저장 실패",
-          result.error || "프로필 정보 저장에 실패했습니다."
+          result.message || "프로필 정보 저장에 실패했습니다."
         );
       }
     } catch (error) {
@@ -58,12 +58,12 @@ export function AccountTabs({ profile, userId }: AccountTabsProps) {
       if (result.success) {
         showSuccess(
           "회사 정보 저장 완료",
-          "회사 정보가 성공적으로 저장되었습니다."
+          result.message || "회사 정보가 성공적으로 저장되었습니다."
         );
       } else {
         showError(
           "회사 정보 저장 실패",
-          result.error || "회사 정보 저장에 실패했습니다."
+          result.message || "회사 정보 저장에 실패했습니다."
         );
       }
     } catch (error) {

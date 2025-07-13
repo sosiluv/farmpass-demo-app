@@ -18,7 +18,7 @@ import NotificationCardHeader from "./NotificationCardHeader";
 import { Zap } from "lucide-react";
 import { useCommonToast } from "@/lib/utils/notification/toast-messages";
 import { safeNotificationAccess } from "@/lib/utils/browser/safari-compat";
-import { getAuthErrorMessage } from "@/lib/utils/validation/validation";
+import { getNotificationErrorMessage } from "@/lib/utils/validation/validation";
 
 interface WebPushSubscriptionProps {
   farms?: Farm[];
@@ -180,8 +180,8 @@ export function WebPushSubscription({
       }
     } catch (error) {
       devLog.error("구독 해제 실패:", error);
-      const authError = getAuthErrorMessage(error);
-      showError("구독 해제 실패", authError.message);
+      const notificationError = getNotificationErrorMessage(error);
+      showError("구독 해제 실패", notificationError.message);
     }
   };
 

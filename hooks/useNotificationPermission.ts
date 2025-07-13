@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { useAuth } from "@/components/providers/auth-provider";
 import { devLog } from "@/lib/utils/logging/dev-logger";
 import { handleError } from "@/lib/utils/error";
-import { getAuthErrorMessage } from "@/lib/utils/validation/validation";
+import { getNotificationErrorMessage } from "@/lib/utils/validation/validation";
 import {
   safeLocalStorageAccess,
   safeNotificationAccess,
@@ -181,11 +181,11 @@ export function useNotificationPermission() {
       }));
     } catch (error) {
       handleError(error, "알림 권한 요청");
-      const authError = getAuthErrorMessage(error);
+      const notificationError = getNotificationErrorMessage(error);
       setLastMessage({
         type: "error",
         title: "오류 발생",
-        message: authError.message,
+        message: notificationError.message,
       });
     }
   };
@@ -251,12 +251,21 @@ export function useNotificationPermission() {
       });
 
       // 서버에 구독 정보 전송 (React Query Mutation 사용)
-      await createSubscriptionMutation.mutateAsync({
+      const result = await createSubscriptionMutation.mutateAsync({
         subscription: subscription.toJSON(),
         // farmId 없음 = 전체 구독
       });
 
       devLog.log("웹푸시 구독이 성공적으로 등록되었습니다.");
+
+      // API 응답 메시지를 사용하여 성공 메시지 업데이트
+      if (result?.message) {
+        setLastMessage({
+          type: "success",
+          title: "알림 허용됨",
+          message: result.message,
+        });
+      }
     } catch (error) {
       handleError(error, "웹푸시 구독 초기화");
     }

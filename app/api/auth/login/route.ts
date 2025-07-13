@@ -240,6 +240,7 @@ export async function POST(request: NextRequest) {
         {
           success: false,
           error: "MISSING_CREDENTIALS",
+          message: "이메일과 비밀번호가 필요합니다.",
         },
         { status: 400 }
       );
@@ -268,9 +269,9 @@ export async function POST(request: NextRequest) {
         {
           success: false,
           error: "ACCOUNT_LOCKED",
-          message: `Too many login attempts. Please try again in ${Math.ceil(
+          message: `로그인 시도 횟수가 초과되었습니다. ${Math.ceil(
             attempts.timeLeft / (60 * 1000)
-          )} minutes.`,
+          )}분 후에 다시 시도해주세요.`,
           timeLeft: attempts.timeLeft,
           remainingAttempts: 0,
         },
@@ -320,7 +321,7 @@ export async function POST(request: NextRequest) {
         {
           success: false,
           error: "LOGIN_FAILED",
-          message: "INVALID_CREDENTIALS",
+          message: "이메일 또는 비밀번호가 올바르지 않습니다.",
           remainingAttempts: attempts.remainingAttempts - 1,
           accountLocked: attempts.remainingAttempts - 1 <= 0,
         },
@@ -380,6 +381,7 @@ export async function POST(request: NextRequest) {
     // Supabase 기본 쿠키 사용 (중복 쿠키 설정 제거)
     const response = NextResponse.json({
       success: true,
+      message: "로그인에 성공했습니다. 대시보드로 이동합니다.",
       user: {
         id: user?.id,
         email: user?.email,

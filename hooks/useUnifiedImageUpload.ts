@@ -20,7 +20,7 @@ import {
   UseImageUploadReturn,
 } from "@/lib/types/upload";
 import { useSystemSettingsContext } from "@/components/providers/system-settings-provider";
-import { getAuthErrorMessage } from "@/lib/utils/validation/validation";
+import { getImageUploadErrorMessage } from "@/lib/utils/validation/validation";
 
 export interface UseUnifiedImageUploadOptions {
   uploadType: UploadType;
@@ -87,8 +87,17 @@ export function useUnifiedImageUpload(
   const handleError = useCallback(
     (error: UploadError) => {
       updateState({ error, loading: false });
-      const authError = getAuthErrorMessage(error);
-      showError("이미지 업로드 실패", authError.message);
+      const imageError = getImageUploadErrorMessage(error);
+
+      // 에러 타입에 따른 제목 생성
+      const errorTitle = (() => {
+        if (error.code === "DELETE_FAILED") {
+          return "이미지 삭제 실패";
+        }
+        return "이미지 업로드 실패";
+      })();
+
+      showError(errorTitle, imageError.message);
       onError?.(error);
       devLog.error("이미지 업로드 에러:", error);
     },
@@ -99,10 +108,26 @@ export function useUnifiedImageUpload(
   const handleSuccess = useCallback(
     async (result: UploadResult) => {
       updateState({ result, loading: false, progress: 100 });
-      showSuccess(
-        "이미지 업로드 완료",
-        "이미지가 성공적으로 업로드되었습니다."
-      );
+
+      // 업로드 타입에 따른 성공 메시지 생성
+      const successMessage = (() => {
+        switch (uploadType) {
+          case "profile":
+            return "프로필 이미지가 성공적으로 업로드되었습니다.";
+          case "notificationIcon":
+            return "알림 아이콘이 성공적으로 업로드되었습니다.";
+          case "notificationBadge":
+            return "알림 배지가 성공적으로 업로드되었습니다.";
+          case "favicon":
+            return "파비콘이 성공적으로 업로드되었습니다.";
+          case "logo":
+            return "로고가 성공적으로 업로드되었습니다.";
+          default:
+            return "이미지가 성공적으로 업로드되었습니다.";
+        }
+      })();
+
+      showSuccess("이미지 업로드 완료", successMessage);
       onSuccess?.(result);
       devLog.log("이미지 업로드 성공:", result);
 
@@ -316,7 +341,26 @@ export function useUnifiedImageUpload(
       }
 
       updateState({ loading: false, result: null });
-      showSuccess("이미지 삭제 완료", "이미지가 성공적으로 삭제되었습니다.");
+
+      // 삭제 타입에 따른 성공 메시지 생성
+      const deleteSuccessMessage = (() => {
+        switch (uploadType) {
+          case "profile":
+            return "프로필 이미지가 성공적으로 삭제되었습니다.";
+          case "notificationIcon":
+            return "알림 아이콘이 성공적으로 삭제되었습니다.";
+          case "notificationBadge":
+            return "알림 배지가 성공적으로 삭제되었습니다.";
+          case "favicon":
+            return "파비콘이 성공적으로 삭제되었습니다.";
+          case "logo":
+            return "로고가 성공적으로 삭제되었습니다.";
+          default:
+            return "이미지가 성공적으로 삭제되었습니다.";
+        }
+      })();
+
+      showSuccess("이미지 삭제 완료", deleteSuccessMessage);
       devLog.log("이미지 삭제 완료");
 
       // settings context refetch (삭제 성공 후)

@@ -18,7 +18,8 @@ export function useOrphanFilesManager() {
 
   const executeCleanup = async () => {
     try {
-      await cleanupOrphanFilesMutation.mutateAsync();
+      const result = await cleanupOrphanFilesMutation.mutateAsync();
+      return result;
     } catch (error) {
       // 에러는 React Query에서 자동 처리
       throw error;

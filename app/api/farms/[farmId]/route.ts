@@ -171,7 +171,11 @@ export async function PUT(
     );
 
     return NextResponse.json(
-      { farm },
+      {
+        farm,
+        success: true,
+        message: `${farm.farm_name}의 정보가 수정되었습니다.`,
+      },
       { headers: { "Cache-Control": "no-store" } }
     );
   } catch (error) {
@@ -326,7 +330,13 @@ export async function DELETE(
       throw deleteError;
     }
 
-    return new NextResponse(null, { status: 204 });
+    return NextResponse.json(
+      {
+        success: true,
+        message: `${existingFarm.farm_name}이 삭제되었습니다.`,
+      },
+      { status: 200, headers: { "Cache-Control": "no-store" } }
+    );
   } catch (error) {
     devLog.error("Error deleting farm:", error);
 

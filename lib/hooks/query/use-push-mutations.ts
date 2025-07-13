@@ -66,7 +66,7 @@ export const useCreateSubscriptionMutation = () => {
     }: {
       subscription: PushSubscriptionJSON;
       farmId?: string;
-    }) => {
+    }): Promise<{ success: boolean; message?: string; subscription?: any }> => {
       devLog.log("[MUTATION] 푸시 알림 구독 생성 시작", { farmId });
 
       const result = await apiClient("/api/push/subscription", {
@@ -98,7 +98,9 @@ export const useDeleteSubscriptionMutation = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (endpoint: string) => {
+    mutationFn: async (
+      endpoint: string
+    ): Promise<{ success: boolean; message?: string }> => {
       devLog.log("[MUTATION] 구독 삭제 시작", { endpoint });
 
       const result = await apiClient("/api/push/subscription", {
@@ -132,7 +134,7 @@ export const useSendTestPushMutation = () => {
       title: string;
       body: string;
       farmId?: string;
-    }) => {
+    }): Promise<{ success: boolean; message?: string }> => {
       devLog.log("[MUTATION] 테스트 푸시 전송 시작", data);
 
       const result = await apiClient("/api/push/test", {
@@ -159,7 +161,12 @@ export const useRegenerateVapidKeyMutation = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async () => {
+    mutationFn: async (): Promise<{
+      publicKey: string;
+      privateKey: string;
+      message?: string;
+      warning?: string;
+    }> => {
       devLog.log("[MUTATION] VAPID 키 재생성 시작");
 
       const result = await apiClient("/api/push/vapid", {
@@ -182,6 +189,48 @@ export const useRegenerateVapidKeyMutation = () => {
     },
     onError: (error) => {
       devLog.error("[MUTATION] VAPID 키 재생성 실패:", error);
+    },
+  });
+};
+
+// 구독 정리 (Mutation)
+export const useCleanupSubscriptionsMutation = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (
+      data: {
+        realTimeCheck?: boolean;
+      } = {}
+    ): Promise<{
+      message: string;
+      cleanedCount: number;
+      validCount: number;
+      totalChecked: number;
+      checkType: string;
+    }> => {
+      devLog.log("[MUTATION] 구독 정리 시작", data);
+
+      const result = await apiClient("/api/push/subscription/cleanup", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+        context: "구독 정리",
+        onError: (error, context) => {
+          handleError(error, context);
+        },
+      });
+
+      devLog.log("[MUTATION] 구독 정리 완료");
+      return result;
+    },
+    onSuccess: () => {
+      // 구독 상태 캐시 무효화
+      queryClient.invalidateQueries({ queryKey: pushKeys.status() });
+      devLog.log("[MUTATION] 구독 상태 캐시 무효화 완료");
+    },
+    onError: (error) => {
+      devLog.error("[MUTATION] 구독 정리 실패:", error);
     },
   });
 };

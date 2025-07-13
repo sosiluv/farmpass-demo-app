@@ -17,7 +17,9 @@ export function useSaveNotificationSettingsMutation() {
   return useMutation({
     mutationFn: async (
       settings: UpdateNotificationSettingsDTO
-    ): Promise<NotificationSettings> => {
+    ): Promise<
+      { success: boolean; message?: string } & NotificationSettings
+    > => {
       const response = await apiClient("/api/notifications/settings", {
         method: "PUT",
         body: JSON.stringify(settings),
@@ -44,8 +46,8 @@ export function useSubscribePushMutation() {
   return useMutation({
     mutationFn: async (
       subscription: PushSubscription
-    ): Promise<{ success: boolean }> => {
-      await apiClient("/api/push/subscription", {
+    ): Promise<{ success: boolean; message?: string }> => {
+      const result = await apiClient("/api/push/subscription", {
         method: "POST",
         body: JSON.stringify({ subscription: subscription.toJSON() }),
         context: "푸시 구독 등록",
@@ -53,7 +55,7 @@ export function useSubscribePushMutation() {
           handleError(error, context);
         },
       });
-      return { success: true };
+      return result;
     },
   });
 }
@@ -66,8 +68,8 @@ export function useUnsubscribePushMutation() {
     mutationFn: async (data: {
       endpoint: string;
       farmId?: string;
-    }): Promise<{ success: boolean }> => {
-      await apiClient("/api/push/subscription", {
+    }): Promise<{ success: boolean; message?: string }> => {
+      const result = await apiClient("/api/push/subscription", {
         method: "DELETE",
         body: JSON.stringify(data),
         context: "푸시 구독 해제",
@@ -75,7 +77,7 @@ export function useUnsubscribePushMutation() {
           handleError(error, context);
         },
       });
-      return { success: true };
+      return result;
     },
   });
 }
@@ -91,7 +93,7 @@ export function useSendPushNotificationMutation() {
       notificationType: string;
       farmId?: string;
       targetUserIds?: string[];
-    }): Promise<{ success: boolean; sentCount?: number }> => {
+    }): Promise<{ success: boolean; sentCount?: number; message?: string }> => {
       const response = await apiClient("/api/push/send", {
         method: "POST",
         body: JSON.stringify(data),
@@ -138,8 +140,11 @@ export function useGenerateVapidKeysMutation() {
 
   return useMutation({
     mutationFn: async (): Promise<{
+      success: boolean;
       publicKey: string;
       privateKey: string;
+      message?: string;
+      warning?: string;
     }> => {
       const response = await apiClient("/api/push/vapid", {
         method: "POST",

@@ -15,7 +15,13 @@ export function useSaveSystemSettingsMutation() {
   return useMutation({
     mutationFn: async (
       settings: Partial<SystemSettings>
-    ): Promise<SystemSettings> => {
+    ): Promise<
+      {
+        success: boolean;
+        message?: string;
+        changedFields?: string[];
+      } & SystemSettings
+    > => {
       const response = await apiClient("/api/settings", {
         method: "PATCH",
         body: JSON.stringify(settings),

@@ -16,6 +16,7 @@ interface UseAccountActionsProps {
 interface SaveResult {
   success: boolean;
   error?: string;
+  message?: string;
 }
 
 export function useAccountActions({ profile, userId }: UseAccountActionsProps) {
@@ -84,11 +85,9 @@ export function useAccountActions({ profile, userId }: UseAccountActionsProps) {
     bio: string;
   }): Promise<SaveResult> => {
     try {
-      await accountMutations.updateProfileAsync(data);
-
+      const result = await accountMutations.updateProfileAsync(data);
       devLog.log("프로필 정보 저장 완료");
-
-      return { success: true };
+      return { success: true, message: result.message };
     } catch (error: any) {
       devLog.error("프로필 정보 저장 실패:", error);
       const authError = getAuthErrorMessage(error);
@@ -107,11 +106,9 @@ export function useAccountActions({ profile, userId }: UseAccountActionsProps) {
     company_website: string;
   }): Promise<SaveResult> => {
     try {
-      await accountMutations.updateCompanyAsync(data);
-
+      const result = await accountMutations.updateCompanyAsync(data);
       devLog.log("회사 정보 저장 완료");
-
-      return { success: true };
+      return { success: true, message: result.message };
     } catch (error: any) {
       devLog.error("회사 정보 저장 실패:", error);
       const authError = getAuthErrorMessage(error);

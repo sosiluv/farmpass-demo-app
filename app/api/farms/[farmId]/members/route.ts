@@ -391,7 +391,13 @@ export async function POST(
     };
 
     return NextResponse.json(
-      { success: true, member: memberWithProfile },
+      {
+        success: true,
+        member: memberWithProfile,
+        message: `${userToAdd.name}이 ${
+          role === "manager" ? "관리자" : "조회자"
+        }로 추가되었습니다.`,
+      },
       {
         status: 201,
         headers: {

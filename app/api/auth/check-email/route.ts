@@ -29,7 +29,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({
       success: true,
       isDuplicate: !!existingUser,
-      message: existingUser ? "Email is already in use." : "",
+      message: existingUser ? "이미 사용 중인 이메일 주소입니다." : "",
     });
   } catch (error) {
     devLog.error("Email check error:", error);

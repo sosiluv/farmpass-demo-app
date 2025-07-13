@@ -48,7 +48,10 @@ export async function GET(request: NextRequest) {
       // 429 Too Many Requests 응답 반환
       const response = NextResponse.json(
         {
-          error: "방문자 조회 요청이 너무 많습니다. 1분 후 다시 시도해주세요.",
+          success: false,
+          error: "RATE_LIMIT_EXCEEDED",
+          message:
+            "방문자 조회 요청이 너무 많습니다. 1분 후 다시 시도해주세요.",
           retryAfter: rateLimitResult.retryAfter,
         },
         { status: 429 }
@@ -187,7 +190,7 @@ export async function GET(request: NextRequest) {
         {
           success: false,
           error: "VISITOR_QUERY_ERROR",
-          message: `쿼리 오류: ${visitorError.message}`,
+          message: "방문자 조회 중 오류가 발생했습니다.",
         },
         { status: 500 }
       );
@@ -291,7 +294,9 @@ export async function POST(request: NextRequest) {
     // 429 Too Many Requests 응답 반환
     const response = NextResponse.json(
       {
-        error: "방문자 등록 요청이 너무 많습니다. 1분 후 다시 시도해주세요.",
+        success: false,
+        error: "RATE_LIMIT_EXCEEDED",
+        message: "방문자 등록 요청이 너무 많습니다. 1분 후 다시 시도해주세요.",
         retryAfter: rateLimitResult.retryAfter,
       },
       { status: 429 }

@@ -24,7 +24,10 @@ import { useSystemSettingsContext } from "@/components/providers/system-settings
 import { useVisitorForm } from "@/hooks/useVisitorForm";
 import { VisitorForm } from "@/components/visitor/VisitorForm";
 import { useCommonToast } from "@/lib/utils/notification/toast-messages";
-import { getAuthErrorMessage } from "@/lib/utils/validation/validation";
+import {
+  getAuthErrorMessage,
+  getImageUploadErrorMessage,
+} from "@/lib/utils/validation/validation";
 import { useEffect, useMemo, useState } from "react";
 import { VisitorFormData } from "@/lib/utils/validation/visitor-validation";
 import type { VisitorSettings } from "@/lib/types/visitor";
@@ -123,13 +126,16 @@ export default function VisitPage() {
   const handleSubmitWrapped = async (data: VisitorFormData) => {
     try {
       showInfo("방문자 등록 중", "방문자 정보를 등록하는 중입니다...");
-      await handleSubmit(data);
+      const result = await handleSubmit(data);
 
       // 제출 성공 시 세션 스토리지에 기록
       const sessionKey = `visitor_submitted_${farmId}`;
       sessionStorage.setItem(sessionKey, "true");
       setHasSubmittedInSession(true);
-      showSuccess("방문자 등록 완료", "방문자 정보를 등록하였습니다.");
+      showSuccess(
+        "방문자 등록 완료",
+        result?.message || "방문자 정보를 등록하였습니다."
+      );
       // 성공 시 토스트는 isSubmitted 상태 변경으로 처리
     } catch (error) {
       // 에러는 이미 error 상태로 처리됨
@@ -148,8 +154,8 @@ export default function VisitPage() {
       );
       return result;
     } catch (error) {
-      const authError = getAuthErrorMessage(error);
-      showError("이미지 업로드 실패", authError.message);
+      const imageError = getImageUploadErrorMessage(error);
+      showError("이미지 업로드 실패", imageError.message);
       throw error;
     }
   };
@@ -164,8 +170,8 @@ export default function VisitPage() {
         "프로필 이미지가 성공적으로 삭제되었습니다."
       );
     } catch (error) {
-      const authError = getAuthErrorMessage(error);
-      showError("이미지 삭제 실패", authError.message);
+      const imageError = getImageUploadErrorMessage(error);
+      showError("이미지 삭제 실패", imageError.message);
       throw error;
     }
   };

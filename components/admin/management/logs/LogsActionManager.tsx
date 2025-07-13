@@ -28,10 +28,10 @@ export function LogsActionManager({
     deleteLogsMutation.mutate(
       { action: "delete_single", logId: id },
       {
-        onSuccess: () => {
+        onSuccess: (result) => {
           // React Query가 자동으로 캐시를 무효화하므로 refetch 호출
           refetch();
-          showSuccess("로그 삭제 완료", "로그가 삭제되었습니다.");
+          showSuccess("로그 삭제 완료", result.message);
         },
         onError: (error: any) => {
           const authError = getAuthErrorMessage(error);
@@ -53,10 +53,10 @@ export function LogsActionManager({
     deleteLogsMutation.mutate(
       { action: "delete_all", beforeCount: logs.length },
       {
-        onSuccess: () => {
+        onSuccess: (result) => {
           // React Query가 자동으로 캐시를 무효화하므로 refetch 호출
           refetch();
-          showSuccess("전체 로그 삭제 완료", "모든 로그가 삭제되었습니다.");
+          showSuccess("전체 로그 삭제 완료", result.message);
         },
         onError: (error: any) => {
           const authError = getAuthErrorMessage(error);

@@ -113,9 +113,29 @@ export async function POST(request: NextRequest) {
     );
 
     devLog.log("로그 삭제 작업 완료:", result);
+
+    // 작업 유형에 따른 구체적인 메시지 생성
+    let successMessage = "";
+    switch (action) {
+      case "delete_single":
+        successMessage = "로그가 삭제되었습니다.";
+        break;
+      case "delete_all":
+        successMessage = `${beforeCount}개의 로그가 삭제되었습니다.`;
+        break;
+      case "delete_old":
+        successMessage =
+          result.count > 0
+            ? `${result.count}개의 오래된 로그가 삭제되었습니다.`
+            : "삭제할 오래된 로그가 없습니다.";
+        break;
+      default:
+        successMessage = "로그 삭제가 완료되었습니다.";
+    }
+
     return NextResponse.json({
       success: true,
-      message: "로그 삭제가 완료되었습니다.",
+      message: successMessage,
       result,
     });
   } catch (error) {

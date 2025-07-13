@@ -24,7 +24,7 @@ interface UserDetailModalProps {
 
 export function UserDetailModal({ user, open, onClose }: UserDetailModalProps) {
   const [loading, setLoading] = useState(false);
-  const { showSuccess, showError, showInfo } = useCommonToast();
+  const { showSuccess, showError, showInfo, showWarning } = useCommonToast();
 
   const getRoleColor = (accountType: string) => {
     switch (accountType) {
@@ -82,14 +82,17 @@ export function UserDetailModal({ user, open, onClose }: UserDetailModalProps) {
     showInfo("계정 잠금 해제 시작", "계정 잠금을 해제하는 중입니다...");
     setLoading(true);
     try {
-      await resetAttemptsMutation.mutateAsync({
+      const result = await resetAttemptsMutation.mutateAsync({
         email: user?.email || "",
         reason: "관리자 수동 잠금 해제",
       });
-      showSuccess(
-        "계정 잠금 해제 완료",
-        "계정 잠금이 성공적으로 해제되었습니다."
-      );
+
+      // API 응답 메시지에 따라 토스트 타입 결정
+      if (result.message.includes("이미 잠금 해제되어 있습니다")) {
+        showWarning("계정 상태 확인", result.message);
+      } else {
+        showSuccess("계정 잠금 해제 완료", result.message);
+      }
       onClose();
     } catch (error) {
       const authError = getAuthErrorMessage(error);

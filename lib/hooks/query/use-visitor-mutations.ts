@@ -31,7 +31,9 @@ export function useUpdateVisitorMutation() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (data: UpdateVisitorRequest): Promise<VisitorEntry> => {
+    mutationFn: async (
+      data: UpdateVisitorRequest
+    ): Promise<{ success: boolean; message?: string } & VisitorEntry> => {
       const response = await apiClient(
         `/api/farms/${data.farm_id}/visitors/${data.id}`,
         {
@@ -73,7 +75,11 @@ export function useDeleteVisitorMutation() {
     }: {
       visitorId: string;
       farmId: string;
-    }): Promise<{ success: boolean; visitor?: VisitorEntry }> => {
+    }): Promise<{
+      success: boolean;
+      message?: string;
+      visitor?: VisitorEntry;
+    }> => {
       const response = await apiClient(
         `/api/farms/${farmId}/visitors/${visitorId}`,
         {
