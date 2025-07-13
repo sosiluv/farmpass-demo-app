@@ -32,7 +32,6 @@ export function useVisitorSettingsQuery() {
         return mappedSettings;
       } catch (error) {
         console.error("Failed to load visitor settings:", error);
-        // 에러 시 기본값 반환 대신 에러를 던져서 React Query가 처리하도록 함
         throw new Error("설정을 불러오는데 실패했습니다.");
       }
     },

@@ -49,7 +49,6 @@ export function VisitorActionMenu({
       onSuccess?.();
     } catch (error) {
       devLog.error("Error in handleDelete:", error);
-      // 토스트는 hook에서 처리됨
     } finally {
       setIsProcessing(false);
     }
@@ -69,7 +68,6 @@ export function VisitorActionMenu({
       onSuccess?.();
     } catch (error) {
       devLog.error("방문자 수정 실패:", error);
-      // 토스트는 hook에서 처리됨
     } finally {
       setIsProcessing(false);
     }

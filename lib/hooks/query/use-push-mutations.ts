@@ -6,7 +6,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiClient } from "@/lib/utils/data";
 import { devLog } from "@/lib/utils/logging/dev-logger";
-import { handleError } from "@/lib/utils/error";
 import { pushKeys } from "@/lib/hooks/query/query-keys";
 
 // VAPID 키 조회 (Query)
@@ -19,9 +18,6 @@ export const useVapidKeyQuery = (options?: { enabled?: boolean }) => {
       const data = await apiClient("/api/push/vapid", {
         method: "GET",
         context: "VAPID 키 조회",
-        onError: (error, context) => {
-          handleError(error, context);
-        },
       });
 
       return data.publicKey;
@@ -37,14 +33,9 @@ export const useSubscriptionStatusQuery = (enabled: boolean = true) => {
   return useQuery({
     queryKey: pushKeys.status(),
     queryFn: async () => {
-      devLog.log("[QUERY] 구독 상태 조회 시작");
-
       const data = await apiClient("/api/push/subscription", {
         method: "GET",
         context: "구독 상태 조회",
-        onError: (error, context) => {
-          devLog.error("구독 상태 조회 실패:", error);
-        },
       });
 
       return data.subscriptions || [];
@@ -74,9 +65,6 @@ export const useCreateSubscriptionMutation = () => {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ subscription, farmId }),
         context: "구독 정보 서버 전송",
-        onError: (error, context) => {
-          handleError(error, context);
-        },
       });
 
       devLog.log("[MUTATION] 푸시 알림 구독 생성 완료");
@@ -108,9 +96,6 @@ export const useDeleteSubscriptionMutation = () => {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ endpoint }),
         context: "구독 정보 삭제",
-        onError: (error, context) => {
-          handleError(error, context);
-        },
       });
 
       devLog.log("[MUTATION] 구독 삭제 완료");
@@ -142,9 +127,6 @@ export const useSendTestPushMutation = () => {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),
         context: "테스트 푸시 전송",
-        onError: (error, context) => {
-          handleError(error, context);
-        },
       });
 
       devLog.log("[MUTATION] 테스트 푸시 전송 완료");
@@ -172,9 +154,6 @@ export const useRegenerateVapidKeyMutation = () => {
       const result = await apiClient("/api/push/vapid", {
         method: "POST",
         context: "VAPID 키 재생성",
-        onError: (error, context) => {
-          handleError(error, context);
-        },
       });
 
       devLog.log("[MUTATION] VAPID 키 재생성 완료");
@@ -216,9 +195,6 @@ export const useCleanupSubscriptionsMutation = () => {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),
         context: "구독 정리",
-        onError: (error, context) => {
-          handleError(error, context);
-        },
       });
 
       devLog.log("[MUTATION] 구독 정리 완료");

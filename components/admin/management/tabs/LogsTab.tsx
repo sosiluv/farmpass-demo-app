@@ -59,10 +59,12 @@ export function LogsTab() {
 
   if (loading) {
     return (
-      <div className="space-y-6">
-        <StatsSkeleton columns={4} />
-        <TableSkeleton rows={10} columns={5} />
-      </div>
+      <CommonPageWrapper>
+        <div className="space-y-6">
+          <StatsSkeleton columns={4} />
+          <TableSkeleton rows={10} columns={5} />
+        </div>
+      </CommonPageWrapper>
     );
   }
 

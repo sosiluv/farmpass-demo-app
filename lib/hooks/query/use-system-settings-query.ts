@@ -2,6 +2,7 @@
 
 import { useAuthenticatedQuery } from "@/lib/hooks/query-utils";
 import { useAuth } from "@/components/providers/auth-provider";
+import { apiClient } from "@/lib/utils/data/api-client";
 import { settingsKeys } from "./query-keys";
 import type { SystemSettings } from "@/lib/types/settings";
 
@@ -24,27 +25,12 @@ export function useSystemSettingsQuery() {
       }
 
       // API 라우트를 통해 시스템 설정 조회 (Prisma 사용)
-      const response = await fetch("/api/settings", {
+      const settings = await apiClient("/api/settings", {
         method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        context: "시스템 설정 조회",
       });
 
-      if (!response.ok) {
-        throw new Error(`Settings fetch failed: ${response.status}`);
-      }
-
-      const data = await response.json();
-
-      if (!data) {
-        throw new Error("No settings data received");
-      }
-
       // API는 설정 데이터를 직접 반환함 (data.settings가 아님)
-      const settings = data;
-
-      // API 응답 구조에 맞게 변환
       return {
         id: settings.id,
         created_at: new Date(settings.created_at),
@@ -108,17 +94,6 @@ export function useSystemSettingsQuery() {
       refetchOnWindowFocus: false,
       refetchOnMount: false, // 마운트시 자동 refetch 안함
       refetchOnReconnect: false, // 재연결시 자동 refetch 안함
-      retry: (failureCount, error) => {
-        // 인증 에러는 재시도 안함
-        if (
-          error instanceof Error &&
-          (error.message.includes("401") ||
-            error.message.includes("Unauthorized"))
-        ) {
-          return false;
-        }
-        return failureCount < 2;
-      },
     }
   );
 }

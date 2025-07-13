@@ -17,8 +17,12 @@ function makeQueryClient() {
         retry: (failureCount, error) => {
           // 인증 에러는 재시도 안함
           if (
-            error?.message?.includes("401") ||
-            error?.message?.includes("403")
+            error?.message?.includes("Unauthorized") ||
+            error?.message?.includes("Admin access required") ||
+            error?.message?.includes("Failed to verify admin status") ||
+            (error as any)?.status === 401 ||
+            (error as any)?.status === 403 ||
+            (error as any)?.status === 500
           ) {
             return false;
           }
@@ -55,11 +59,11 @@ function makeQueryClient() {
 
 // 글로벌 에러 처리 함수
 function handleGlobalQueryError(error: any, queryKey: readonly unknown[]) {
-  // 인증 에러
-  if (
-    error?.message?.includes("401") ||
-    error?.message?.includes("Unauthorized")
-  ) {
+  // HTTP 상태 코드로 에러 감지
+  const status = (error as any)?.status;
+
+  // 인증 에러 (401)
+  if (status === 401) {
     console.warn("🔐 Authentication error detected:", queryKey);
     // 인증이 필요한 페이지에서는 로그인 페이지로 리다이렉트
     if (
@@ -71,29 +75,42 @@ function handleGlobalQueryError(error: any, queryKey: readonly unknown[]) {
     return;
   }
 
-  // 권한 에러
-  if (
-    error?.message?.includes("403") ||
-    error?.message?.includes("Forbidden")
-  ) {
+  // 권한 에러 (403)
+  if (status === 403) {
     console.warn("🚫 Permission denied:", queryKey);
     // 권한 에러는 조용히 처리 (컴포넌트 레벨에서 처리)
     return;
   }
 
   // 서버 에러 (500번대)
-  if (error?.message?.includes("500")) {
+  if (status >= 500 && status < 600) {
     console.error("🔥 Server error:", queryKey, error);
     // 서버 에러는 조용히 처리 (너무 많은 토스트 방지)
     return;
   }
 
-  // 네트워크 에러
+  // 요청 제한 에러 (429)
+  if (status === 429) {
+    console.warn("⏰ Rate limit exceeded:", queryKey);
+    // 요청 제한 에러는 조용히 처리
+    return;
+  }
+
+  // 클라이언트 에러 (400번대) - 401, 403, 429 제외
   if (
-    error?.message?.includes("네트워크") ||
-    error?.message?.includes("fetch") ||
-    error?.message?.includes("Network")
+    status >= 400 &&
+    status < 500 &&
+    status !== 401 &&
+    status !== 403 &&
+    status !== 429
   ) {
+    console.warn("⚠️ Client error:", queryKey, error);
+    // 클라이언트 에러는 조용히 처리
+    return;
+  }
+
+  // 네트워크 에러 (상태 코드 0)
+  if (status === 0) {
     console.error("📡 Network error:", queryKey, error);
     // 네트워크 에러는 조용히 처리 (연결 문제일 가능성)
     return;

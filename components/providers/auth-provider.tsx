@@ -104,7 +104,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const profileLoadingPromise = useRef<Promise<Profile | null> | null>(null);
 
   // 구독 관리 훅 사용 (VAPID key는 불필요)
-  const { switchSubscription, cleanupSubscription, setupErrorListener } =
+  const { switchSubscription, cleanupSubscription } =
     useSubscriptionManager(false);
 
   // 프로필 로드 (최적화된 버전)
@@ -134,6 +134,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
         // 기타 에러는 로그 기록
         devLog.warn("Profile loading error:", error);
+        handleError(error, { context: "load-profile" });
         return null;
       } finally {
         // 메모리 누수 방지: 로딩 완료 후 Promise 초기화
@@ -321,12 +322,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, [state.status]);
 
-  // 전역 에러 리스너 설정
-  useEffect(() => {
-    const cleanup = setupErrorListener();
-    return cleanup;
-  }, [setupErrorListener]);
-
   const signIn = async ({
     email,
     password,
@@ -345,9 +340,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         },
         body: JSON.stringify({ email, password }),
         context: "로그인",
-        onError: (error, context) => {
-          handleError(error, context);
-        },
       });
 
       if (!result.success) {
@@ -413,6 +405,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       return { success: true, message: result.message };
     } catch (error) {
       devLog.error("Sign in error:", error);
+      handleError(error, { context: "sign-in" });
       dispatch({ type: "SET_UNAUTHENTICATED" });
 
       throw error;
@@ -461,6 +454,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       return { success: true };
     } catch (error) {
       devLog.error("SignOut error:", error);
+      handleError(error, { context: "sign-out" });
 
       // 에러 발생 시에도 강제로 클라이언트 상태 정리
       try {
@@ -500,6 +494,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       return { success: true };
     } catch (error) {
       devLog.error("Password verification error:", error);
+      handleError(error, { context: "verify-password" });
 
       return {
         success: false,
@@ -550,6 +545,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       return { success: true };
     } catch (error) {
       devLog.error("Password change error:", error);
+      handleError(error, { context: "change-password" });
 
       return {
         success: false,

@@ -2,7 +2,6 @@
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiClient } from "@/lib/utils/data/api-client";
-import { handleError } from "@/lib/utils/error";
 import type {
   NotificationSettings,
   UpdateNotificationSettingsDTO,
@@ -24,9 +23,6 @@ export function useSaveNotificationSettingsMutation() {
         method: "PUT",
         body: JSON.stringify(settings),
         context: "알림 설정 저장",
-        onError: (error, context) => {
-          handleError(error, context);
-        },
       });
       return response;
     },
@@ -51,9 +47,6 @@ export function useSubscribePushMutation() {
         method: "POST",
         body: JSON.stringify({ subscription: subscription.toJSON() }),
         context: "푸시 구독 등록",
-        onError: (error, context) => {
-          handleError(error, context);
-        },
       });
       return result;
     },
@@ -73,9 +66,6 @@ export function useUnsubscribePushMutation() {
         method: "DELETE",
         body: JSON.stringify(data),
         context: "푸시 구독 해제",
-        onError: (error, context) => {
-          handleError(error, context);
-        },
       });
       return result;
     },
@@ -98,9 +88,6 @@ export function useSendPushNotificationMutation() {
         method: "POST",
         body: JSON.stringify(data),
         context: "푸시 알림 전송",
-        onError: (error, context) => {
-          handleError(error, context);
-        },
       });
       return response;
     },
@@ -120,6 +107,7 @@ export function useUpdateNotificationStatusMutation() {
       const response = await apiClient("/api/notifications/settings", {
         method: "PUT",
         body: JSON.stringify(data),
+        context: "알림 설정 상태 변경",
       });
       return response;
     },
@@ -148,6 +136,7 @@ export function useGenerateVapidKeysMutation() {
     }> => {
       const response = await apiClient("/api/push/vapid", {
         method: "POST",
+        context: "VAPID 키 생성",
       });
       return response;
     },

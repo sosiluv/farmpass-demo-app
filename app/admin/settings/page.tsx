@@ -64,6 +64,11 @@ export default function SettingsPage() {
   if (loading || !localSettings) {
     return (
       <div className="flex-1 space-y-4 p-4 md:p-6 pt-2 md:pt-4">
+        <SettingsHeader
+          saving={false}
+          unsavedChanges={false}
+          onSave={() => {}}
+        />
         <CardSkeleton count={5} />
       </div>
     );

@@ -21,7 +21,6 @@ export function useCleanupManager() {
       const result = await executeCleanupMutation.mutateAsync({ type });
       return result;
     } catch (error) {
-      // 에러는 React Query에서 자동 처리
       throw error;
     }
   };

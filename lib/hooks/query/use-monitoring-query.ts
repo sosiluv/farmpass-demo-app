@@ -3,7 +3,6 @@
 import { useAuthenticatedQuery } from "@/lib/hooks/query-utils";
 import { useAuth } from "@/components/providers/auth-provider";
 import { apiClient } from "@/lib/utils/data/api-client";
-import { handleError } from "@/lib/utils/error";
 import { settingsKeys } from "./query-keys";
 
 export interface MonitoringData {
@@ -43,6 +42,19 @@ export interface MonitoringData {
         nodeVersion: string;
         platform: string;
         arch: string;
+        techStack?: {
+          framework: string;
+          runtime: string;
+          react: string;
+          typescript: string;
+          database: string;
+          authentication: string;
+          deployment: string;
+          ui: string;
+          state: string;
+          monitoring: string;
+          analytics: string;
+        };
       };
       services: {
         database: string;
@@ -51,12 +63,22 @@ export interface MonitoringData {
       };
     };
     uptime: {
+      success?: boolean;
+      error?: string;
+      message?: string;
+      details?: string;
       stat: string;
       monitors: Array<{
         id: number;
         friendly_name: string;
         status: number;
         all_time_uptime_ratio: number;
+        custom_uptime_ratio?: number;
+        url?: string;
+        interval?: number;
+        type?: number;
+        port?: string;
+        create_datetime?: number;
       }>;
     };
     analytics: {
@@ -91,9 +113,6 @@ export function useMonitoringQuery() {
     async (): Promise<MonitoringData> => {
       const result = await apiClient("/api/monitoring/dashboard", {
         context: "시스템 모니터링 데이터 조회",
-        onError: (error, context) => {
-          handleError(error, context);
-        },
       });
       return result as MonitoringData;
     },

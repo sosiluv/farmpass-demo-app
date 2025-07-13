@@ -13,6 +13,7 @@ import {
   maliciousBotRateLimiter,
 } from "@/lib/utils/system/rate-limit";
 import { clearServerAuthCookies } from "@/lib/utils/auth";
+import { MALICIOUS_PATTERNS } from "@/constants/security-patterns";
 
 const MIDDLEWARE_CONFIG = {
   // 🌐 공개 접근 가능한 경로들 (인증 불필요)
@@ -33,13 +34,21 @@ const MIDDLEWARE_CONFIG = {
     "/api/health", // 헬스체크 API (모니터링용)
     "/api/monitoring", // 모니터링 API (모니터링용)
     "/api/push/subscription", // 구독 정리 API (세션 만료 시 필요)
+    "/api/404-handler", // 404 핸들러 API
+    "/manifest.json", // PWA 매니페스트
+    "/sw.js", // Service Worker
+    "/workbox-", // Workbox 관련
+    "/push-sw.js", // 푸시 Service Worker
   ] as string[],
 
   // 🔒 정규식 패턴으로 매칭되는 공개 경로들
   // 동적 경로 매개변수가 포함된 API들을 처리합니다.
   PUBLIC_PATTERNS: [
+    /^\/visit\/[^/]+$/, // 특정 농장 방문 페이지 (QR코드로 접근)
     /^\/api\/farms\/[^/]+\/visitors\/check-session$/, // 방문자 세션 체크 API (특정 농장)
     /^\/api\/farms\/[^/]+\/visitors\/count-today$/, // 오늘 방문자 수 API (특정 농장)
+    /^\/api\/farms\/[^/]+\/visitors$/, // 농장별 방문자 등록 API (특정 농장)
+    /^\/api\/404-handler\/.+$/, // 404 핸들러 API (동적)
   ],
 } as const;
 
@@ -138,18 +147,9 @@ export async function middleware(request: NextRequest) {
   // 📍 요청 정보 추출
   const pathname = request.nextUrl.pathname; // 현재 요청 경로
 
-  // 🚫 악성 봇 및 WordPress 관련 요청 차단
+  // 🚫 악성 봇 및 보안 위협 요청 차단
   // 실제 프로젝트에서 사용하지 않는 경로들만 차단
-  const maliciousPatterns = [
-    /\/wordpress/i, // WordPress 관련
-    /\/wp-/i, // WordPress 관련 (wp-admin, wp-content 등)
-    /\.php$/i, // PHP 파일
-    /\/config\//i, // 설정 디렉토리 (실제 사용 안함)
-    /\/backup\//i, // 백업 디렉토리 (실제 사용 안함)
-    /\/database\//i, // 데이터베이스 디렉토리 (실제 사용 안함)
-    /\/install\//i, // 설치 디렉토리 (실제 사용 안함)
-    /\/setup\//i, // 설정 디렉토리 (실제 사용 안함)
-  ];
+  const maliciousPatterns = MALICIOUS_PATTERNS;
 
   if (maliciousPatterns.some((pattern) => pattern.test(pathname))) {
     // 악성 봇 Rate Limiting 적용
@@ -314,7 +314,8 @@ export async function middleware(request: NextRequest) {
 
   // 🚦 Rate Limiting 체크 - API 요청 제한
   // IP당 90초에 100회 요청 제한을 적용합니다.
-  if (pathname.startsWith("/api/")) {
+  // 헬스체크는 Rate Limiting에서 제외
+  if (pathname.startsWith("/api/") && !pathname.startsWith("/api/health")) {
     const rateLimitResult = apiRateLimiter.checkLimit(clientIP);
 
     if (!rateLimitResult.allowed) {
@@ -368,6 +369,6 @@ export async function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
-    "/((?!_next/static|_next/image|favicon\\.(?:ico|png)|api/auth|api/admin|api/settings|api/health|api/monitoring|api/push|api/visitor|api/farms/[^/]+/visitors/check-session|manifest\\.json|sw\\.js|workbox-|push-sw\\.js|docs/|.*\\.(?:svg|png|jpg|jpeg|gif|webp|css|js|woff|woff2|html|json)$).*)",
+    "/((?!_next/static|_next/image|favicon\\.(?:ico|png)|api/auth|api/admin|api/settings|api/health|api/monitoring|api/push|api/visitor|api/farms/[^/]+/visitors/check-session|api/farms/[^/]+/visitors/count-today|manifest\\.json|sw\\.js|workbox-|push-sw\\.js|docs/|.*\\.(?:svg|png|jpg|jpeg|gif|webp|css|js|woff|woff2|html|json)$).*)",
   ],
 };

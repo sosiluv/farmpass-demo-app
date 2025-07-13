@@ -2,7 +2,6 @@
 
 import { Users } from "lucide-react";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
-import { CardSkeleton } from "@/components/common/skeletons";
 import { type FarmMembers } from "@/lib/hooks/query/use-farm-members-query";
 import { generateInitials } from "@/lib/utils/text";
 import type { MemberWithProfile } from "@/lib/hooks/query/use-farm-members-query";

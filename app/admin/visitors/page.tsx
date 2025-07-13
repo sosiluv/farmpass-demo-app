@@ -148,7 +148,18 @@ export default function VisitorsPage() {
 
   if (loading) {
     return (
-      <div className="flex-1 space-y-4 p-4 sm:p-6 md:p-8">
+      <div className="flex-1 space-y-3 sm:space-y-4 md:space-y-6 p-1 sm:p-4 md:p-6 lg:p-8 pt-3 sm:pt-4 md:pt-6">
+        <PageHeader
+          title={isAdmin ? "전체 방문자 기록" : "방문자 기록"}
+          description={
+            isAdmin
+              ? "모든 농장의 방문자 기록을 조회하고 관리합니다."
+              : "내 농장의 방문자 기록을 조회하고 관리합니다."
+          }
+          breadcrumbs={[
+            { label: isAdmin ? "전체 방문자 기록" : "방문자 기록" },
+          ]}
+        />
         <StatsSkeleton columns={4} />
         <TableSkeleton rows={5} columns={6} />
       </div>

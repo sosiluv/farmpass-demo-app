@@ -53,8 +53,6 @@ export function useAuthenticatedMutation<
   mutationFn: (variables: TVariables) => Promise<TData>,
   options?: UseMutationOptions<TData, TError, TVariables>
 ) {
-  const { state } = useAuth();
-
   return useMutation({
     mutationFn,
     ...options,

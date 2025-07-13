@@ -5,7 +5,6 @@ import { farmsKeys } from "@/lib/hooks/query/query-keys";
 import { useAuth } from "@/components/providers/auth-provider";
 import type { FarmMember } from "@/lib/types";
 import { apiClient } from "@/lib/utils/data/api-client";
-import { handleError } from "@/lib/utils/error";
 
 export interface MemberWithProfile extends FarmMember {
   representative_name: string;
@@ -41,7 +40,7 @@ export function useFarmMembersQuery(farmId: string | null) {
       try {
         const response = await apiClient(`/api/farms/${farmId}/members`, {
           method: "GET",
-          onError: (error, context) => handleError(error, context),
+          context: "농장 멤버 데이터 조회",
         });
 
         const { members: membersArray } = response;
@@ -143,7 +142,7 @@ export function useFarmMembersPreviewQuery(farmIds: string[]) {
           `/api/farm-members?farmIds=${uniqueFarmIds.join(",")}`,
           {
             method: "GET",
-            onError: (error, context) => handleError(error, context),
+            context: "농장 멤버 프리뷰 데이터 조회",
           }
         );
 

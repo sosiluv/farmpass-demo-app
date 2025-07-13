@@ -1,7 +1,7 @@
 import { useState, useCallback } from "react";
 import { devLog } from "@/lib/utils/logging/dev-logger";
-import { safeNotificationAccess } from "@/lib/utils/browser/safari-compat";
 import { getNotificationErrorMessage } from "@/lib/utils/validation/validation";
+import { safeNotificationAccess } from "@/lib/utils/browser/safari-compat";
 
 // React Query Hooks
 import {
@@ -10,6 +10,7 @@ import {
   useDeleteSubscriptionMutation,
   useSendTestPushMutation,
   useCleanupSubscriptionsMutation,
+  useSubscriptionStatusQuery,
 } from "@/lib/hooks/query/use-push-mutations";
 import { useSaveNotificationSettingsMutation } from "@/lib/hooks/query/use-notification-mutations";
 
@@ -24,6 +25,8 @@ export function useNotificationService(enableVapidKey: boolean = false) {
 
   // React Query Hooks - VAPID key는 필요할 때만 조회
   const { data: vapidKey } = useVapidKeyQuery({ enabled: enableVapidKey });
+  const { data: subscriptions, refetch: refetchSubscriptions } =
+    useSubscriptionStatusQuery(false); // 수동으로 조회할 때만 사용
   const createSubscriptionMutation = useCreateSubscriptionMutation();
   const deleteSubscriptionMutation = useDeleteSubscriptionMutation();
   const sendTestPushMutation = useSendTestPushMutation();
@@ -121,17 +124,31 @@ export function useNotificationService(enableVapidKey: boolean = false) {
     }
   };
 
-  // 구독 상태 조회 - React Query 사용 권장 (임시로 빈 배열 반환)
+  // 구독 상태 조회 - React Query 사용
   const getSubscriptionStatus = async () => {
     try {
-      // 이 함수는 useSubscriptionStatusQuery로 대체하는 것을 권장
-      devLog.warn(
-        "getSubscriptionStatus는 useSubscriptionStatusQuery로 대체 권장"
-      );
-      return { subscriptions: [] };
+      setIsLoading(true);
+      // React Query를 사용하여 구독 상태 조회
+      const result = await refetchSubscriptions();
+
+      if (result.error) {
+        throw result.error;
+      }
+
+      const subscriptionData = result.data || [];
+
+      return { subscriptions: subscriptionData };
     } catch (error) {
       devLog.error("구독 상태 조회 실패:", error);
+      const notificationError = getNotificationErrorMessage(error);
+      setLastMessage({
+        type: "error",
+        title: "구독 상태 조회 실패",
+        message: notificationError.message,
+      });
       return { subscriptions: [] };
+    } finally {
+      setIsLoading(false);
     }
   };
 

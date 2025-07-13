@@ -3,7 +3,6 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/components/providers/auth-provider";
 import { apiClient } from "@/lib/utils/data/api-client";
-import { handleError } from "@/lib/utils/error";
 import type {
   ProfileFormData,
   CompanyFormData,
@@ -36,9 +35,6 @@ export function useUpdateProfileMutation() {
         method: "PATCH",
         body: JSON.stringify(profileData),
         context: "프로필 정보 저장",
-        onError: (error, context) => {
-          handleError(error, context);
-        },
       });
 
       return { success: result.success, message: result.message };
@@ -80,9 +76,6 @@ export function useUpdateCompanyMutation() {
         method: "PATCH",
         body: JSON.stringify(companyData),
         context: "회사 정보 저장",
-        onError: (error, context) => {
-          handleError(error, context);
-        },
       });
 
       return { success: result.success, message: result.message };

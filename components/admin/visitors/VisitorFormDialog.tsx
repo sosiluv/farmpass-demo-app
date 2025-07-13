@@ -3,6 +3,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useCommonToast } from "@/lib/utils/notification/toast-messages";
 import { devLog } from "@/lib/utils/logging/dev-logger";
+import { handleError } from "@/lib/utils/error";
 import { formatPhone } from "@/lib/utils/validation/validation";
 import { getAuthErrorMessage } from "@/lib/utils/validation/validation";
 
@@ -147,6 +148,7 @@ export function VisitorFormDialog({
       onOpenChange(false);
     } catch (error) {
       devLog.error("폼 제출 실패:", error);
+      handleError(error, "방문자 폼 제출");
       const authError = getAuthErrorMessage(error);
       showError("폼 제출 실패", authError.message);
     } finally {

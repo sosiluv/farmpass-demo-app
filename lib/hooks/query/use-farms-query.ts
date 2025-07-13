@@ -4,7 +4,6 @@ import React from "react";
 import { useAuthenticatedQuery } from "@/lib/hooks/query-utils";
 import { useAuth } from "@/components/providers/auth-provider";
 import { apiClient } from "@/lib/utils/data/api-client";
-import { handleError } from "@/lib/utils/error";
 import { farmsKeys } from "./query-keys";
 import type { Farm } from "@/lib/types/farm";
 
@@ -32,9 +31,6 @@ export function useFarmsQuery(userId?: string) {
       const { farms } = await apiClient("/api/farms", {
         method: "GET",
         context: "농장 목록 조회",
-        onError: (error, context) => {
-          handleError(error, context);
-        },
       });
 
       return farms || [];
@@ -45,17 +41,6 @@ export function useFarmsQuery(userId?: string) {
       gcTime: 20 * 60 * 1000, // 20분간 캐시 유지
       refetchOnWindowFocus: false, // 윈도우 포커스 시 refetch 비활성화
       refetchOnReconnect: true,
-      retry: (failureCount, error) => {
-        // 인증 에러는 재시도 안함
-        if (
-          error instanceof Error &&
-          (error.message.includes("401") ||
-            error.message.includes("Unauthorized"))
-        ) {
-          return false;
-        }
-        return failureCount < 3;
-      },
     }
   );
 

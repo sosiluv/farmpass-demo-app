@@ -1,4 +1,5 @@
 import { refreshToken, handleSessionExpired } from "@/lib/utils/auth";
+import { handleError } from "@/lib/utils/error/handleError";
 
 // 에러 메시지 상수
 const ERROR_MESSAGES = {
@@ -11,6 +12,7 @@ interface ApiClientOptions extends RequestInit {
   onError?: (error: Error, context?: string) => void;
   context?: string;
   skipAuthRefresh?: boolean;
+  skipDefaultErrorHandling?: boolean; // 기본 에러 처리 건너뛰기 옵션
 }
 
 export async function apiClient(input: RequestInfo, init?: ApiClientOptions) {
@@ -18,6 +20,7 @@ export async function apiClient(input: RequestInfo, init?: ApiClientOptions) {
     onError,
     context,
     skipAuthRefresh = false,
+    skipDefaultErrorHandling = false,
     ...fetchOptions
   } = init || {};
 
@@ -41,28 +44,56 @@ export async function apiClient(input: RequestInfo, init?: ApiClientOptions) {
         }
       }
 
+      // 서버 응답 메시지를 먼저 읽기 (한 번만 호출)
+      const errorData = await response.json().catch(() => ({}));
+      const serverErrorMessage = errorData.error || errorData.message;
+
       // 로그인 API의 경우 서버 응답 메시지를 그대로 사용
       if (isLoginApi) {
-        const errorData = await response.json().catch(() => ({}));
-        const errorMessage =
-          errorData.message || errorData.error || ERROR_MESSAGES.UNAUTHORIZED;
+        const errorMessage = serverErrorMessage || ERROR_MESSAGES.UNAUTHORIZED;
         const error = new Error(errorMessage);
+        (error as any).status = 401; // 상태 코드 추가
+
+        // 기본 에러 처리
+        if (!skipDefaultErrorHandling) {
+          handleError(error, { context });
+        }
+
         if (onError) onError(error, context);
         throw error;
       }
 
       // 로그인 API가 아닌 경우에만 세션 만료 처리
       const sessionResult = await handleSessionExpired();
-      const error = new Error(
-        sessionResult.message || ERROR_MESSAGES.UNAUTHORIZED
-      );
+      const errorMessage =
+        serverErrorMessage ||
+        sessionResult.message ||
+        ERROR_MESSAGES.UNAUTHORIZED;
+      const error = new Error(errorMessage);
+      (error as any).status = 401; // 상태 코드 추가
+
+      // 기본 에러 처리
+      if (!skipDefaultErrorHandling) {
+        handleError(error, { context });
+      }
+
       if (onError) onError(error, context);
       throw error;
     }
 
     // 403: 권한 부족
     if (response.status === 403) {
-      const error = new Error(ERROR_MESSAGES.FORBIDDEN);
+      // 서버 응답 메시지를 우선 사용
+      const errorData = await response.json().catch(() => ({}));
+      const errorMessage = errorData.error || ERROR_MESSAGES.FORBIDDEN;
+      const error = new Error(errorMessage);
+      (error as any).status = 403; // 상태 코드 추가
+
+      // 기본 에러 처리
+      if (!skipDefaultErrorHandling) {
+        handleError(error, { context });
+      }
+
       if (onError) onError(error, context);
       throw error;
     }
@@ -73,6 +104,12 @@ export async function apiClient(input: RequestInfo, init?: ApiClientOptions) {
       const error = new Error(
         errorData.error || `${ERROR_MESSAGES.API_ERROR} (${response.status})`
       );
+      (error as any).status = response.status; // 상태 코드 추가
+
+      // 기본 에러 처리
+      if (!skipDefaultErrorHandling) {
+        handleError(error, { context });
+      }
 
       if (onError) onError(error, context);
       throw error;
@@ -93,14 +130,23 @@ export async function apiClient(input: RequestInfo, init?: ApiClientOptions) {
   } catch (error) {
     // 네트워크 에러나 JSON 파싱 에러는 여기서 처리
     if (error instanceof TypeError && error.message.includes("fetch")) {
-      const networkError = new Error(
-        "네트워크 연결에 문제가 있습니다. 인터넷 연결을 확인해주세요."
-      );
+      const networkError = new Error("Failed to fetch");
+      (networkError as any).status = 0; // 네트워크 에러 상태 코드
+
+      // 기본 에러 처리
+      if (!skipDefaultErrorHandling) {
+        handleError(networkError, { context });
+      }
+
       if (onError) onError(networkError, context);
       throw networkError;
     }
 
     // 이미 처리된 에러는 그대로 throw
+    if (!skipDefaultErrorHandling) {
+      handleError(error as Error, { context });
+    }
+
     if (onError) onError(error as Error, context);
     throw error;
   }

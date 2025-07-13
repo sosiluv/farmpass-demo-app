@@ -15,7 +15,6 @@ import {
 import { settingsKeys } from "@/lib/hooks/query/query-keys";
 
 export function useSubscriptionManager(enableVapidKey: boolean = false) {
-  const router = useRouter();
   const queryClient = useQueryClient();
 
   // React Query Hooks - VAPID key는 필요할 때만 조회
@@ -40,9 +39,6 @@ export function useSubscriptionManager(enableVapidKey: boolean = false) {
           const response = await apiClient("/api/notifications/settings", {
             method: "GET",
             context: "알림 설정 조회 (구독 관리용)",
-            onError: (error, context) => {
-              handleError(error, context);
-            },
           });
           return response;
         },
@@ -121,7 +117,6 @@ export function useSubscriptionManager(enableVapidKey: boolean = false) {
         return false;
       }
     } catch (error) {
-      handleError(error, "구독 해제");
       return false;
     }
   };
@@ -203,17 +198,6 @@ export function useSubscriptionManager(enableVapidKey: boolean = false) {
     }
   }, []);
 
-  // 리프레시 토큰 오류 처리
-  const handleRefreshTokenError = useCallback(() => {
-    if (
-      typeof window !== "undefined" &&
-      !window.location.pathname.startsWith("/login")
-    ) {
-      devLog.warn("리프레시 토큰 오류 감지 - 로그인 페이지로 리다이렉트");
-      router.push("/login");
-    }
-  }, [router]);
-
   // 구독 상태 확인 및 동기화 - React Query 사용
   const checkSubscriptionSync = useCallback(async (): Promise<boolean> => {
     try {
@@ -250,29 +234,10 @@ export function useSubscriptionManager(enableVapidKey: boolean = false) {
     }
   }, [subscriptions]);
 
-  // 전역 에러 리스너 설정
-  const setupErrorListener = useCallback(() => {
-    const handleError = (event: ErrorEvent) => {
-      if (
-        event.error?.message?.includes("Invalid Refresh Token") ||
-        event.error?.message?.includes("refresh_token_not_found")
-      ) {
-        handleRefreshTokenError();
-      }
-    };
-
-    window.addEventListener("error", handleError);
-
-    // 클린업 함수 반환
-    return () => window.removeEventListener("error", handleError);
-  }, [handleRefreshTokenError]);
-
   return {
     switchSubscription,
     cleanupSubscription,
-    handleRefreshTokenError,
     checkSubscriptionSync,
-    setupErrorListener,
     unsubscribeCurrent,
   };
 }

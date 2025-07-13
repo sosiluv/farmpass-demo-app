@@ -21,6 +21,7 @@ export interface ImageUploadProps {
   avatarSize?: "sm" | "md" | "lg" | "xl";
   label?: string;
   uploadType?: UploadType | "image";
+  hideGuidelines?: boolean;
 }
 
 export function ImageUpload({
@@ -33,6 +34,7 @@ export function ImageUpload({
   avatarSize = "lg",
   label = "이미지",
   uploadType = "image",
+  hideGuidelines = false,
 }: ImageUploadProps) {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -252,25 +254,27 @@ export function ImageUpload({
         )}
 
         {/* 안내 텍스트 */}
-        <div className="text-xs text-muted-foreground text-center mt-4 space-y-1">
-          <div className="flex items-center justify-center gap-2">
-            <div className="w-1 h-1 bg-blue-400 rounded-full"></div>
-            <p>최대 {getUploadConfig().config.maxSize / (1024 * 1024)}MB</p>
+        {!hideGuidelines && (
+          <div className="text-xs text-muted-foreground text-center mt-4 space-y-1">
+            <div className="flex items-center justify-center gap-2">
+              <div className="w-1 h-1 bg-blue-400 rounded-full"></div>
+              <p>최대 {getUploadConfig().config.maxSize / (1024 * 1024)}MB</p>
+            </div>
+            <div className="flex items-center justify-center gap-2">
+              <div className="w-1 h-1 bg-green-400 rounded-full"></div>
+              <p>{getUploadConfig().guideline}</p>
+            </div>
+            <div className="flex items-center justify-center gap-2">
+              <div className="w-1 h-1 bg-purple-400 rounded-full"></div>
+              <p className="font-medium">
+                {getUploadConfig()
+                  .config.allowedExtensions.map((ext) => ext.toUpperCase())
+                  .join(", ")}{" "}
+                형식 지원
+              </p>
+            </div>
           </div>
-          <div className="flex items-center justify-center gap-2">
-            <div className="w-1 h-1 bg-green-400 rounded-full"></div>
-            <p>{getUploadConfig().guideline}</p>
-          </div>
-          <div className="flex items-center justify-center gap-2">
-            <div className="w-1 h-1 bg-purple-400 rounded-full"></div>
-            <p className="font-medium">
-              {getUploadConfig()
-                .config.allowedExtensions.map((ext) => ext.toUpperCase())
-                .join(", ")}{" "}
-              형식 지원
-            </p>
-          </div>
-        </div>
+        )}
       </div>
     </div>
   );

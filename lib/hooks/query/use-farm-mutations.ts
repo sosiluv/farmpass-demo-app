@@ -3,7 +3,6 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/components/providers/auth-provider";
 import { apiClient } from "@/lib/utils/data/api-client";
-import { handleError } from "@/lib/utils/error";
 import { farmsKeys } from "@/lib/hooks/query/query-keys";
 import type { Farm } from "@/lib/types/farm";
 
@@ -36,9 +35,6 @@ export function useCreateFarmMutation() {
         method: "POST",
         body: JSON.stringify(data),
         context: "농장 생성",
-        onError: (error, context) => {
-          handleError(error, context);
-        },
       });
       return { farm: response.farm, message: response.message };
     },
@@ -68,9 +64,6 @@ export function useUpdateFarmMutation() {
         method: "PUT",
         body: JSON.stringify(data),
         context: "농장 수정",
-        onError: (error, context) => {
-          handleError(error, context);
-        },
       });
       return { farm: response.farm, message: response.message };
     },
@@ -99,9 +92,6 @@ export function useDeleteFarmMutation() {
       const response = await apiClient(`/api/farms/${farmId}`, {
         method: "DELETE",
         context: "농장 삭제",
-        onError: (error, context) => {
-          handleError(error, context);
-        },
       });
       return { success: response.success, message: response.message };
     },
@@ -143,7 +133,7 @@ export function useDeleteFarmMutation() {
     },
     onError: (error: Error, farmId) => {
       // 404 에러인 경우 (농장이 이미 삭제된 경우) 캐시에서 제거
-      if (error.message.includes("Farm not found")) {
+      if ((error as any).error === "FARM_NOT_FOUND") {
         const userId =
           state.status === "authenticated" ? state.user?.id : undefined;
         queryClient.setQueryData(

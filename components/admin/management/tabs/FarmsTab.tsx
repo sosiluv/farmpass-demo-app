@@ -47,10 +47,12 @@ export function FarmsTab() {
 
   if (loading) {
     return (
-      <div className="space-y-6">
-        <StatsSkeleton columns={4} />
-        <TableSkeleton rows={5} columns={6} />
-      </div>
+      <CommonPageWrapper>
+        <div className="space-y-6">
+          <StatsSkeleton columns={4} />
+          <TableSkeleton rows={5} columns={6} />
+        </div>
+      </CommonPageWrapper>
     );
   }
 

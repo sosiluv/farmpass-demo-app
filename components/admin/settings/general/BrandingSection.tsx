@@ -8,7 +8,6 @@ import { Image, Monitor, Bookmark } from "lucide-react";
 import type { SystemSettings } from "@/lib/types/settings";
 import SettingsCardHeader from "../SettingsCardHeader";
 import { useUnifiedImageUpload } from "@/hooks/useUnifiedImageUpload";
-import { UPLOAD_TYPE_CONFIGS } from "@/lib/types/upload";
 
 interface BrandingSectionProps {
   settings: SystemSettings;

@@ -3,7 +3,6 @@
 import { useAuth } from "@/components/providers/auth-provider";
 import { useAuthenticatedQuery } from "@/lib/hooks/query-utils";
 import { apiClient } from "@/lib/utils/data";
-import { handleError } from "@/lib/utils/error";
 import { devLog } from "@/lib/utils/logging/dev-logger";
 import { cleanupKeys } from "./query-keys";
 import type { OrphanFilesStatus } from "@/lib/types/settings";
@@ -23,9 +22,6 @@ export function useOrphanFilesStatusQuery() {
       const data = await apiClient("/api/admin/orphan-files/check", {
         method: "GET",
         context: "Orphan 파일 상태 조회",
-        onError: (error, context) => {
-          handleError(error, context);
-        },
       });
 
       devLog.log("[QUERY] Orphan 파일 상태 조회 완료:", data);

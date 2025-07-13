@@ -1,3 +1,4 @@
+import { withSentryConfig } from "@sentry/nextjs";
 /**
  * 🚀 Next.js 설정 파일
  *
@@ -200,6 +201,23 @@ const config = withPWA({
       },
     },
   ],
+
+  /**
+   * 📱 오프라인 페이지 설정
+   *
+   * 네트워크 연결이 없을 때 표시할 오프라인 페이지를 지정합니다.
+   * 사용자가 오프라인 상태에서도 기본적인 정보를 볼 수 있습니다.
+   */
+  fallbacks: {
+    document: "/offline",
+  },
+
+  /**
+   * 🔄 네비게이션 폴백
+   *
+   * SPA에서 라우팅이 실패할 때 오프라인 페이지로 리다이렉트합니다.
+   */
+  navigateFallback: "/offline",
 })(nextConfig);
 
 /**
@@ -207,4 +225,34 @@ const config = withPWA({
  *
  * Next.js가 이 설정을 사용하여 애플리케이션을 빌드하고 실행합니다.
  */
-export default config;
+export default withSentryConfig(config, {
+  // For all available options, see:
+  // https://www.npmjs.com/package/@sentry/webpack-plugin#options
+
+  org: "samwon",
+  project: "samwon1141-farmpass",
+
+  // Only print logs for uploading source maps in CI
+  silent: !process.env.CI,
+
+  // For all available options, see:
+  // https://docs.sentry.io/platforms/javascript/guides/nextjs/manual-setup/
+
+  // Upload a larger set of source maps for prettier stack traces (increases build time)
+  widenClientFileUpload: true,
+
+  // Uncomment to route browser requests to Sentry through a Next.js rewrite to circumvent ad-blockers.
+  // This can increase your server load as well as your hosting bill.
+  // Note: Check that the configured route will not match with your Next.js middleware, otherwise reporting of client-
+  // side errors will fail.
+  // tunnelRoute: "/monitoring",
+
+  // Automatically tree-shake Sentry logger statements to reduce bundle size
+  disableLogger: true,
+
+  // Enables automatic instrumentation of Vercel Cron Monitors. (Does not yet work with App Router route handlers.)
+  // See the following for more information:
+  // https://docs.sentry.io/product/crons/
+  // https://vercel.com/docs/cron-jobs
+  automaticVercelMonitors: true,
+});

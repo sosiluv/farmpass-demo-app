@@ -5,7 +5,6 @@
  */
 
 import { apiClient } from "@/lib/utils/data/api-client";
-import { handleError } from "@/lib/utils/error";
 import { z } from "zod";
 
 /**
@@ -87,9 +86,6 @@ export const checkEmailDuplicate = async (email: string) => {
       `/api/auth/check-email?email=${encodeURIComponent(email)}`,
       {
         context: "이메일 중복 검사",
-        onError: (error, context) => {
-          handleError(error, context);
-        },
       }
     );
 

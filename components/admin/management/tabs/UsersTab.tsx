@@ -48,10 +48,12 @@ export function UsersTab() {
 
   if (loading) {
     return (
-      <div className="space-y-6">
-        <StatsSkeleton columns={4} />
-        <TableSkeleton rows={5} columns={4} />
-      </div>
+      <CommonPageWrapper>
+        <div className="space-y-6">
+          <StatsSkeleton columns={4} />
+          <TableSkeleton rows={5} columns={4} />
+        </div>
+      </CommonPageWrapper>
     );
   }
 

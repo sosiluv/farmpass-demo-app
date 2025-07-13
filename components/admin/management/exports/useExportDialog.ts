@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useCommonToast } from "@/lib/utils/notification/toast-messages";
 import { devLog } from "@/lib/utils/logging/dev-logger";
+import { handleError } from "@/lib/utils/error";
 
 interface UseExportDialogOptions {
   onExport: (options: any) => Promise<void>;
@@ -45,6 +46,7 @@ export function useExportDialog({
       setIsOpen(false);
     } catch (error) {
       devLog.error("내보내기 오류:", error);
+      handleError(error, "데이터 내보내기");
       const errorMessage =
         error instanceof Error
           ? error.message

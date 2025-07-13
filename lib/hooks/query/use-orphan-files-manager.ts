@@ -21,7 +21,6 @@ export function useOrphanFilesManager() {
       const result = await cleanupOrphanFilesMutation.mutateAsync();
       return result;
     } catch (error) {
-      // 에러는 React Query에서 자동 처리
       throw error;
     }
   };

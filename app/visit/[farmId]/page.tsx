@@ -28,7 +28,7 @@ import {
   getAuthErrorMessage,
   getImageUploadErrorMessage,
 } from "@/lib/utils/validation/validation";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo } from "react";
 import { VisitorFormData } from "@/lib/utils/validation/visitor-validation";
 import type { VisitorSettings } from "@/lib/types/visitor";
 
@@ -42,16 +42,6 @@ export default function VisitPage() {
   const params = useParams();
   const farmId = params.farmId as string;
   const { showInfo, showSuccess, showError } = useCommonToast();
-
-  // 세션 스토리지를 이용한 중복 제출 방지
-  const [hasSubmittedInSession, setHasSubmittedInSession] = useState(false);
-
-  // 컴포넌트 마운트 시 세션 스토리지 확인
-  useEffect(() => {
-    const sessionKey = `visitor_submitted_${farmId}`;
-    const hasSubmitted = sessionStorage.getItem(sessionKey) === "true";
-    setHasSubmittedInSession(hasSubmitted);
-  }, [farmId]);
 
   // 전역 시스템 설정 사용
   const {
@@ -88,7 +78,6 @@ export default function VisitPage() {
     isSubmitting,
     isSubmitted,
     error,
-    isLoading,
     uploadedImageUrl,
     farm,
     farmLoading,
@@ -128,10 +117,6 @@ export default function VisitPage() {
       showInfo("방문자 등록 중", "방문자 정보를 등록하는 중입니다...");
       const result = await handleSubmit(data);
 
-      // 제출 성공 시 세션 스토리지에 기록
-      const sessionKey = `visitor_submitted_${farmId}`;
-      sessionStorage.setItem(sessionKey, "true");
-      setHasSubmittedInSession(true);
       showSuccess(
         "방문자 등록 완료",
         result?.message || "방문자 정보를 등록하였습니다."
@@ -142,36 +127,21 @@ export default function VisitPage() {
     }
   };
 
-  // 이미지 업로드 핸들러 래핑
+  // 이미지 업로드 핸들러 래핑 (토스트 처리 제거)
   const handleImageUploadWrapped = async (file: File) => {
     try {
-      showInfo("이미지 업로드 중", "프로필 이미지를 업로드하는 중입니다...");
       const result = await uploadImage(file);
-      // Base64 프리뷰만 생성되므로 성공 메시지 표시
-      showSuccess(
-        "이미지 선택 완료",
-        "프로필 이미지가 선택되었습니다. 폼 제출 시 업로드됩니다."
-      );
       return result;
     } catch (error) {
-      const imageError = getImageUploadErrorMessage(error);
-      showError("이미지 업로드 실패", imageError.message);
       throw error;
     }
   };
 
-  // 이미지 삭제 핸들러 래핑
+  // 이미지 삭제 핸들러 래핑 (토스트 처리 제거)
   const handleImageDeleteWrapped = async (fileName: string) => {
     try {
-      showInfo("이미지 삭제 중", "프로필 이미지를 삭제하는 중입니다...");
       await deleteImage();
-      showSuccess(
-        "이미지 삭제 완료",
-        "프로필 이미지가 성공적으로 삭제되었습니다."
-      );
     } catch (error) {
-      const imageError = getImageUploadErrorMessage(error);
-      showError("이미지 삭제 실패", imageError.message);
       throw error;
     }
   };
@@ -180,6 +150,7 @@ export default function VisitPage() {
     return (
       <div className="min-h-screen bg-gray-50 py-2 sm:py-4">
         <div className="w-full max-w-sm sm:max-w-md md:max-w-2xl mx-auto px-3 sm:px-4">
+          {farm && <FarmInfoCard farm={farm} />}
           <FormSkeleton
             fields={8}
             className="bg-white shadow-lg rounded-2xl p-6"
@@ -213,7 +184,6 @@ export default function VisitPage() {
             settings={settings}
             formData={formData}
             isSubmitting={isSubmitting}
-            isLoading={isLoading}
             uploadedImageUrl={uploadedImageUrl}
             onSubmit={handleSubmitWrapped}
             onImageUpload={handleImageUploadWrapped}

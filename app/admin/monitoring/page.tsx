@@ -13,82 +13,12 @@ import {
   UptimeCard,
   ErrorLogsCard,
   AnalyticsCard,
+  TechStackCard,
 } from "@/components/admin/monitoring";
 import { AdminError } from "@/components/error/admin-error";
 import { useDataFetchTimeout } from "@/hooks/useTimeout";
 import { useMonitoringQuery } from "@/lib/hooks/query/use-monitoring-query";
 import { getAuthErrorMessage } from "@/lib/utils/validation/validation";
-
-interface MonitoringData {
-  timestamp: string;
-  services: {
-    health: {
-      status: string;
-      timestamp: string;
-      uptime: number;
-      responseTime: string;
-      version: string;
-      performance: {
-        totalResponseTime: string;
-        databaseResponseTime: string;
-        cpu: {
-          user: string;
-          system: string;
-          total: string;
-        };
-      };
-      system: {
-        farmCount: number;
-        visitorCount: number;
-        memory: {
-          used: number;
-          total: number;
-          external: number;
-          status: string;
-        };
-        cpu: {
-          user: number;
-          system: number;
-          total: number;
-          threshold: number;
-          status: string;
-        };
-        nodeVersion: string;
-        platform: string;
-        arch: string;
-      };
-      services: {
-        database: string;
-        api: string;
-        memory: string;
-      };
-    };
-    uptime: {
-      stat: string;
-      monitors: Array<{
-        id: number;
-        friendly_name: string;
-        status: number;
-        all_time_uptime_ratio: number;
-      }>;
-    };
-    analytics: {
-      visitors: number;
-      pageviews: number;
-      avgDuration: number;
-    };
-    errors: Array<{
-      timestamp: string;
-      level: string;
-      message: string;
-      context?: Record<string, any>;
-    }>;
-  };
-  meta: {
-    uptimeConfigured: boolean;
-    analyticsConfigured: boolean;
-  };
-}
 
 export default function MonitoringDashboard() {
   const { data, isLoading: loading, error, refetch } = useMonitoringQuery();
@@ -194,12 +124,21 @@ export default function MonitoringDashboard() {
         {/* 가동시간과 방문자 통계를 2열로 */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {data.meta.uptimeConfigured && (
-            <UptimeCard monitors={data.services.uptime?.monitors ?? []} />
+            <UptimeCard
+              monitors={data.services.uptime?.monitors ?? []}
+              success={data.services.uptime?.success}
+              error={data.services.uptime?.error}
+              message={data.services.uptime?.message}
+              details={data.services.uptime?.details}
+            />
           )}
           {data.meta.analyticsConfigured && (
             <AnalyticsCard data={data.services.analytics} />
           )}
         </div>
+
+        {/* 개발 스택 정보 */}
+        <TechStackCard data={data?.services?.health?.system?.techStack} />
 
         {/* 최근 에러를 아래로 한 칸 내려서 1열로 */}
         <ErrorLogsCard errors={data.services.errors ?? []} />

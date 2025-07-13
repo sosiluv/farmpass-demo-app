@@ -32,6 +32,7 @@ import { formatPhone } from "@/lib/utils/validation/validation";
 import { devLog } from "@/lib/utils/logging/dev-logger";
 import { ErrorBoundary } from "@/components/error/error-boundary";
 import { usePasswordRules } from "@/lib/utils/validation/usePasswordRules";
+import { apiClient } from "@/lib/utils/data/api-client";
 import {
   checkEmailDuplicate,
   getAuthErrorMessage,
@@ -371,19 +372,14 @@ export default function RegisterPage() {
 
       try {
         // Turnstile 토큰 검증
-        const verificationResult = await fetch("/api/auth/verify-turnstile", {
+        await apiClient("/api/auth/verify-turnstile", {
           method: "POST",
           body: JSON.stringify({ token: turnstileToken }),
-          headers: {
-            "Content-Type": "application/json",
+          context: "캡차 인증",
+          onError: (error, context) => {
+            setTurnstileError("캡차 인증에 실패했습니다.");
           },
         });
-
-        if (!verificationResult.ok) {
-          const errorData = await verificationResult.json();
-          setTurnstileError(errorData.error || "캡차 인증에 실패했습니다.");
-          return;
-        }
 
         // Supabase auth를 통한 사용자 생성
         const { data: authData, error: authError } = await supabase.auth.signUp(

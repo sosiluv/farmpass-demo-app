@@ -32,6 +32,7 @@ import { apiClient } from "@/lib/utils/data";
 import { resetPasswordRequestFormSchema } from "@/lib/utils/validation/auth-validation";
 import type { ResetPasswordRequestFormData } from "@/lib/utils/validation/auth-validation";
 import { getAuthErrorMessage } from "@/lib/utils/validation";
+import { handleError } from "@/lib/utils/error";
 
 export default function ResetPasswordPage() {
   const [loading, setLoading] = useState(false);
@@ -56,10 +57,6 @@ export default function ResetPasswordPage() {
         },
         body: JSON.stringify({ email: data.email }),
         context: "비밀번호 재설정 요청",
-        onError: (error, context) => {
-          const authError = getAuthErrorMessage(error);
-          showError("오류", authError.message);
-        },
       });
 
       showSuccess(
@@ -70,7 +67,9 @@ export default function ResetPasswordPage() {
       // 로그인 페이지로 리다이렉트
       router.push("/login");
     } catch (error) {
-      // 에러는 이미 onError에서 처리됨
+      handleError(error, { context: "reset-password-request" });
+      const authError = getAuthErrorMessage(error);
+      showError("오류", authError.message);
     } finally {
       setLoading(false);
     }

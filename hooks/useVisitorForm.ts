@@ -197,7 +197,6 @@ export const useVisitorForm = (farmId: string, settings: VisitorSettings) => {
           }
         } catch (error) {
           setError("이미지 업로드에 실패했습니다");
-          handleError(error as Error, "이미지 업로드");
           return;
         }
       }
@@ -224,7 +223,7 @@ export const useVisitorForm = (farmId: string, settings: VisitorSettings) => {
       return result; // <-- API 응답 반환
     } catch (err) {
       setError("방문자 등록에 실패했습니다");
-      handleError(err as Error, "방문자 등록");
+      // 에러는 apiClient에서 공통 처리됨
     } finally {
       setIsSubmitting(false);
     }

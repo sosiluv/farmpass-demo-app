@@ -1,18 +1,73 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Users, Eye, Clock, TrendingUp } from "lucide-react";
+import { Users, Eye, Clock, TrendingUp, AlertCircle } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 interface AnalyticsCardProps {
   data?: {
+    success?: boolean;
+    error?: string;
+    message?: string;
+    details?: string;
     visitors: number;
     pageviews: number;
     sessions?: number;
     newUsers?: number;
     bounceRate?: number;
-    avgSessionDuration?: number;
+    avgDuration?: number;
   };
 }
 
 export function AnalyticsCard({ data }: AnalyticsCardProps) {
+  // GA 설정이 없거나 에러가 있는 경우
+  if (!data?.success && data?.error) {
+    let errorMessage =
+      data.message || "Google Analytics 데이터를 불러올 수 없습니다.";
+
+    // 구체적인 에러 메시지 제공
+    switch (data.error) {
+      case "GA_CONFIG_NOT_FOUND":
+        errorMessage =
+          "Google Analytics 설정이 완료되지 않았습니다. 환경 변수를 확인해주세요.";
+        break;
+      case "GA_JSON_PARSE_ERROR":
+        errorMessage =
+          "Google Analytics 서비스 계정 키 JSON 형식이 올바르지 않습니다.";
+        break;
+      case "GA_CREDENTIALS_INVALID":
+        errorMessage =
+          "Google Analytics 서비스 계정 키에 필수 필드가 누락되었습니다.";
+        break;
+      case "GA_API_ERROR":
+        errorMessage =
+          "Google Analytics API 호출에 실패했습니다. 권한을 확인해주세요.";
+        break;
+    }
+
+    return (
+      <Card className="bg-gradient-to-br from-background to-muted/20">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <TrendingUp className="h-5 w-5" />
+            방문자 통계
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <Alert>
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>
+              {errorMessage}
+              {data.details && (
+                <div className="mt-2 text-xs text-muted-foreground">
+                  상세 오류: {data.details}
+                </div>
+              )}
+            </AlertDescription>
+          </Alert>
+        </CardContent>
+      </Card>
+    );
+  }
+
   // 데이터가 없거나 undefined인 경우 기본값 사용
   const safeData = {
     visitors: data?.visitors ?? 0,
@@ -20,7 +75,7 @@ export function AnalyticsCard({ data }: AnalyticsCardProps) {
     sessions: data?.sessions ?? 0,
     newUsers: data?.newUsers ?? 0,
     bounceRate: data?.bounceRate ?? 0,
-    avgSessionDuration: data?.avgSessionDuration ?? 0,
+    avgDuration: data?.avgDuration ?? 0,
   };
 
   const formatDuration = (seconds: number) => {
@@ -147,7 +202,7 @@ export function AnalyticsCard({ data }: AnalyticsCardProps) {
               </div>
             </div>
             <p className="text-lg font-bold">
-              {formatDuration(safeData.avgSessionDuration)}
+              {formatDuration(safeData.avgDuration)}
             </p>
           </div>
         </div>

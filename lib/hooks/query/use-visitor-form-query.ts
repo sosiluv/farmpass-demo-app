@@ -6,7 +6,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiClient } from "@/lib/utils/data";
 import { devLog } from "@/lib/utils/logging/dev-logger";
-import { handleError } from "@/lib/utils/error";
 import type { VisitorFormData } from "@/lib/utils/validation/visitor-validation";
 import type { Farm as VisitorFarm } from "@/lib/types/visitor";
 
@@ -20,14 +19,6 @@ export const useFarmInfoQuery = (farmId: string) => {
       const result = await apiClient(`/api/farms/${farmId}`, {
         method: "GET",
         context: "농장 정보 조회",
-        onError: (error, context) => {
-          handleError(error, {
-            context,
-            onStateUpdate: (errorMessage) => {
-              devLog.error("농장 정보 조회 실패:", errorMessage);
-            },
-          });
-        },
       });
 
       const farmData: VisitorFarm = {
@@ -63,14 +54,6 @@ export const useVisitorSessionQuery = (
         {
           method: "GET",
           context: "세션 체크",
-          onError: (error, context) => {
-            handleError(error, {
-              context,
-              onStateUpdate: (errorMessage) => {
-                devLog.error("세션 체크 실패:", errorMessage);
-              },
-            });
-          },
         }
       );
 
@@ -97,14 +80,6 @@ export const useDailyVisitorCountQuery = (
         {
           method: "GET",
           context: "일일 방문자 수 체크",
-          onError: (error, context) => {
-            handleError(error, {
-              context,
-              onStateUpdate: (errorMessage) => {
-                devLog.error("일일 방문자 수 조회 실패:", errorMessage);
-              },
-            });
-          },
         }
       );
 
@@ -142,14 +117,6 @@ export const useCreateVisitorMutation = () => {
           profile_photo_url: profilePhotoUrl,
         }),
         context: "방문자 등록",
-        onError: (error, context) => {
-          handleError(error, {
-            context,
-            onStateUpdate: (errorMessage) => {
-              devLog.error("방문자 등록 실패:", errorMessage);
-            },
-          });
-        },
       });
 
       devLog.log(`[MUTATION] 방문자 등록 완료: ${farmId}`);
@@ -166,9 +133,6 @@ export const useCreateVisitorMutation = () => {
       queryClient.invalidateQueries({ queryKey: ["admin-dashboard"] });
 
       devLog.log("[MUTATION] 방문자 등록 관련 캐시 무효화 완료");
-    },
-    onError: (error, { farmId, visitorData }) => {
-      devLog.error("[MUTATION] 방문자 등록 실패:", error);
     },
   });
 };

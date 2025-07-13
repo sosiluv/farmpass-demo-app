@@ -15,6 +15,7 @@ import {
   validateVisitTemplate,
 } from "@/lib/utils/notification/notification-template";
 import { useCommonToast } from "@/lib/utils/notification/toast-messages";
+import { handleError } from "@/lib/utils/error";
 
 interface NotificationTabProps {
   settings: SystemSettings;
@@ -53,6 +54,7 @@ const NotificationTab = React.memo(function NotificationTab({
 
       showSuccess("템플릿 미리보기 완료", previewText);
     } catch (error) {
+      handleError(error, "템플릿 미리보기");
       showError(
         "템플릿 미리보기 실패",
         "템플릿 미리보기를 생성하는 중 오류가 발생했습니다."

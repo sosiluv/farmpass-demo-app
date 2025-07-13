@@ -6,7 +6,6 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiClient } from "@/lib/utils/data";
 import { devLog } from "@/lib/utils/logging/dev-logger";
-import { handleError } from "@/lib/utils/error";
 import { farmsKeys } from "@/lib/hooks/query/query-keys";
 
 export type MemberRole = "owner" | "manager" | "viewer";
@@ -48,9 +47,6 @@ export const useUpdateMemberRoleMutation = () => {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ role: newRole }),
         context: "멤버 역할 변경",
-        onError: (error, context) => {
-          handleError(error, context);
-        },
       });
 
       return {
@@ -96,9 +92,6 @@ export const useDeleteMemberMutation = () => {
       await apiClient(`/api/farms/${farmId}/members/${memberId}`, {
         method: "DELETE",
         context: "멤버 삭제",
-        onError: (error, context) => {
-          handleError(error, context);
-        },
       });
 
       return {
@@ -156,9 +149,6 @@ export const useBulkUpdateMemberRoleMutation = () => {
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ role: newRole }),
             context: `멤버 일괄 역할 변경 - ${memberId}`,
-            onError: (error, context) => {
-              throw error; // catch 블록에서 처리
-            },
           });
 
           results.push({
@@ -217,9 +207,6 @@ export const useBulkDeleteMembersMutation = () => {
           await apiClient(`/api/farms/${farmId}/members/${memberId}`, {
             method: "DELETE",
             context: `멤버 일괄 삭제 - ${memberId}`,
-            onError: (error, context) => {
-              throw error; // catch 블록에서 처리
-            },
           });
 
           results.push({

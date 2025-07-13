@@ -121,6 +121,13 @@ export default function FarmsPage() {
   if (isLoading) {
     return (
       <div className="flex-1 space-y-4 p-4 md:p-6 pt-2 md:pt-4">
+        <FarmsPageHeader
+          dialogOpen={false}
+          onDialogOpenChange={() => {}}
+          editingFarm={null}
+          onSubmit={async () => {}}
+          onAddClick={() => {}}
+        />
         <StatsSkeleton columns={4} />
         <TableSkeleton rows={5} columns={6} />
       </div>

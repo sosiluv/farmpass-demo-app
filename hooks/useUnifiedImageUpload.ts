@@ -21,6 +21,7 @@ import {
 } from "@/lib/types/upload";
 import { useSystemSettingsContext } from "@/components/providers/system-settings-provider";
 import { getImageUploadErrorMessage } from "@/lib/utils/validation/validation";
+import { handleError } from "@/lib/utils/error/handleError";
 
 export interface UseUnifiedImageUploadOptions {
   uploadType: UploadType;
@@ -84,7 +85,7 @@ export function useUnifiedImageUpload(
   }, []);
 
   // 에러 처리 함수
-  const handleError = useCallback(
+  const handleUploadError = useCallback(
     (error: UploadError) => {
       updateState({ error, loading: false });
       const imageError = getImageUploadErrorMessage(error);
@@ -198,6 +199,7 @@ export function useUnifiedImageUpload(
         return { data, cacheBustedUrl };
       } catch (error) {
         devLog.error("DB 업데이트 실패:", error);
+        handleError(error, { context: `db-update-${dbTable}-${dbId}` });
         throw error;
       }
     },
@@ -224,6 +226,9 @@ export function useUnifiedImageUpload(
       return (data as any)?.[dbField] || null;
     } catch (error) {
       devLog.error("현재 파일 URL 조회 실패:", error);
+      handleError(error, {
+        context: `get-current-file-url-${dbTable}-${dbId}`,
+      });
       return null;
     }
   }, [dbTable, dbId, dbField]);
@@ -277,7 +282,7 @@ export function useUnifiedImageUpload(
               : "알 수 없는 오류가 발생했습니다.",
           details: error,
         };
-        handleError(uploadError);
+        handleUploadError(uploadError);
         throw error;
       }
     },
@@ -287,7 +292,7 @@ export function useUnifiedImageUpload(
       getCurrentFileUrl,
       handleProgress,
       handleSuccess,
-      handleError,
+      handleUploadError,
       dbTable,
       dbId,
       dbField,
@@ -381,14 +386,14 @@ export function useUnifiedImageUpload(
             : "이미지 삭제 중 알 수 없는 오류가 발생했습니다.",
         details: error,
       };
-      handleError(uploadError);
+      handleUploadError(uploadError);
       throw error;
     }
   }, [
     updateState,
     getManager,
     getCurrentFileUrl,
-    handleError,
+    handleUploadError,
     dbTable,
     dbId,
     dbField,

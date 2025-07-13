@@ -2,7 +2,6 @@
 
 import { useMutation } from "@tanstack/react-query";
 import { apiClient } from "@/lib/utils/data/api-client";
-import { handleError } from "@/lib/utils/error";
 
 interface BroadcastData {
   title: string;
@@ -34,9 +33,6 @@ export function useBroadcastMutation() {
         },
         body: JSON.stringify(data),
         context: "브로드캐스트 알림 전송",
-        onError: (error, context) => {
-          handleError(error, context);
-        },
       });
       return result;
     },

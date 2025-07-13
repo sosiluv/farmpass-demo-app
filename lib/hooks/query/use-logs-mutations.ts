@@ -2,7 +2,6 @@
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiClient } from "@/lib/utils/data/api-client";
-import { handleError } from "@/lib/utils/error";
 import { logsKeys, settingsKeys } from "./query-keys";
 
 interface DeleteLogRequest {
@@ -27,9 +26,6 @@ export function useDeleteLogsMutation() {
         },
         body: JSON.stringify(data),
         context: "로그 삭제",
-        onError: (error, context) => {
-          handleError(error, context);
-        },
       });
       return result;
     },

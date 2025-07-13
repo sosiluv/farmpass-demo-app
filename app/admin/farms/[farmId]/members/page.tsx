@@ -177,6 +177,11 @@ export default function MembersPage({ params }: PageProps) {
   if (membersLoading || farmsLoading || !farm) {
     return (
       <div className="flex-1 space-y-3 sm:space-y-4 md:space-y-6 p-2 sm:p-4 md:p-6 lg:p-8 pt-3 sm:pt-4 md:pt-6">
+        <MembersPageHeader
+          farm={farm || ({ id: farmId, farm_name: "로딩 중..." } as any)}
+          canManageMembers={false}
+          onAddMember={async () => {}}
+        />
         <StatsSkeleton columns={3} />
         <TableSkeleton rows={5} columns={4} />
       </div>
@@ -212,7 +217,6 @@ export default function MembersPage({ params }: PageProps) {
 
         <MembersList
           members={members}
-          loading={membersLoading}
           canManageMembers={canManageMembers()}
           onDelete={handleDeleteRequest}
           onRoleChange={handleRoleChange}

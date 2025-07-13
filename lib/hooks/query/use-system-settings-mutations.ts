@@ -2,7 +2,6 @@
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiClient } from "@/lib/utils/data/api-client";
-import { handleError } from "@/lib/utils/error";
 import { settingsKeys } from "@/lib/hooks/query/query-keys";
 import type { SystemSettings } from "@/lib/types/settings";
 
@@ -26,9 +25,6 @@ export function useSaveSystemSettingsMutation() {
         method: "PATCH",
         body: JSON.stringify(settings),
         context: "시스템 설정 저장",
-        onError: (error, context) => {
-          handleError(error, context);
-        },
       });
       return response;
     },
@@ -55,9 +51,6 @@ export function useInvalidateSystemSettingsCacheMutation() {
       await apiClient("/api/settings/invalidate-cache", {
         method: "POST",
         context: "시스템 설정 캐시 무효화",
-        onError: (error, context) => {
-          handleError(error, context);
-        },
       });
       return { success: true };
     },
@@ -88,9 +81,6 @@ export function useExecuteCleanupMutation() {
         method: "POST",
         body: JSON.stringify(data),
         context: "데이터 정리 작업",
-        onError: (error, context) => {
-          handleError(error, context);
-        },
       });
       return response;
     },

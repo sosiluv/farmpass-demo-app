@@ -157,6 +157,15 @@ export default function FarmVisitorsPage() {
   if (loading) {
     return (
       <div className="flex-1 space-y-4 p-4 sm:p-6 md:p-8">
+        <PageHeader
+          title="방문자 기록"
+          description="방문자 기록을 조회하고 관리합니다."
+          breadcrumbs={[
+            { label: "농장 관리", href: "/admin/farms" },
+            { label: "로딩 중...", href: `/admin/farms/${farmId}` },
+            { label: "방문자 기록" },
+          ]}
+        />
         <StatsSkeleton columns={4} />
         <TableSkeleton rows={5} columns={6} />
       </div>

@@ -8,6 +8,7 @@ import {
 } from "@/components/ui/dialog";
 import { UserPlus } from "lucide-react";
 import { devLog } from "@/lib/utils/logging/dev-logger";
+import { apiClient } from "@/lib/utils/data/api-client";
 import {
   AddMemberDialogHeader,
   AddMemberEmailField,
@@ -43,24 +44,19 @@ export function AddMemberDialog({
 
       try {
         // API 라우트를 통해 사용자 검색 (농장 구성원 제외)
-        const response = await fetch(
+        const searchResult = await apiClient(
           `/api/users/search?q=${encodeURIComponent(
             searchTerm
           )}&farmId=${farmId}`,
           {
             method: "GET",
-            credentials: "include",
+            context: "사용자 검색",
           }
         );
 
-        if (response.ok) {
-          const searchResult = await response.json();
-          setAvailableUsers(searchResult.users || []);
-        } else {
-          throw new Error("사용자 검색 API 호출 실패");
-        }
+        setAvailableUsers(searchResult.users || []);
       } catch (error) {
-        devLog.error("사용자 검색 실패:", error);
+        // 에러는 이미 onError에서 처리됨
         setAvailableUsers([]);
       }
     };

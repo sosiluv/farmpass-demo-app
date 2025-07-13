@@ -6,6 +6,7 @@
 
 import { supabase } from "@/lib/supabase/client";
 import { devLog } from "@/lib/utils/logging/dev-logger";
+import { handleError } from "@/lib/utils/error";
 import {
   UPLOAD_TYPE_CONFIGS,
   UploadType,
@@ -188,6 +189,7 @@ export class UnifiedImageManager {
           details: uploadError,
         };
         this.state.error = error;
+        handleError(uploadError, "이미지 업로드");
         throw new Error(error.message);
       }
 
@@ -230,6 +232,7 @@ export class UnifiedImageManager {
         details: error,
       };
       this.state.error = uploadError;
+      handleError(error, "이미지 업로드");
       throw error;
     } finally {
       this.state.loading = false;
@@ -260,6 +263,7 @@ export class UnifiedImageManager {
             details: error,
           };
           this.state.error = uploadError;
+          handleError(error, "이미지 삭제");
           throw new Error(uploadError.message);
         }
       }
@@ -273,6 +277,7 @@ export class UnifiedImageManager {
         details: error,
       };
       this.state.error = uploadError;
+      handleError(error, "이미지 삭제");
       throw error;
     } finally {
       this.state.loading = false;

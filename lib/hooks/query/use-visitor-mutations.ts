@@ -2,7 +2,6 @@
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiClient } from "@/lib/utils/data/api-client";
-import { handleError } from "@/lib/utils/error";
 import { visitorsKeys, dashboardKeys } from "@/lib/hooks/query/query-keys";
 import type { VisitorEntry } from "@/lib/types";
 
@@ -40,9 +39,6 @@ export function useUpdateVisitorMutation() {
           method: "PUT",
           body: JSON.stringify(data),
           context: "방문자 정보 수정",
-          onError: (error, context) => {
-            handleError(error, context);
-          },
         }
       );
       return response;
@@ -85,9 +81,6 @@ export function useDeleteVisitorMutation() {
         {
           method: "DELETE",
           context: "방문자 삭제",
-          onError: (error, context) => {
-            handleError(error, context);
-          },
         }
       );
       return response;

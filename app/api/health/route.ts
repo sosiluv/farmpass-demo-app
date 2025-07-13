@@ -104,13 +104,21 @@ export async function GET() {
     // 4. CPU 사용량 확인
     // =================================
     const cpuStartTime = process.cpuUsage();
-    // CPU 사용량을 측정하기 위해 잠시 대기
-    await new Promise((resolve) => setTimeout(resolve, 100));
+
+    // CPU 사용량을 측정하기 위해 더 긴 시간 대기
+    await new Promise((resolve) => setTimeout(resolve, 500));
+
     const cpuEndTime = process.cpuUsage(cpuStartTime);
+
+    // CPU 사용량 계산 (마이크로초를 초로 변환 후 퍼센트 계산)
     const cpuUsagePercent = {
       user: Math.round((cpuEndTime.user / 1000000) * 100) / 100,
       system: Math.round((cpuEndTime.system / 1000000) * 100) / 100,
     };
+
+    // 최소값 설정으로 0% 방지
+    if (cpuUsagePercent.user < 0.01) cpuUsagePercent.user = 0.01;
+    if (cpuUsagePercent.system < 0.01) cpuUsagePercent.system = 0.01;
 
     // =================================
     // 5. 응답 시간 계산
@@ -227,6 +235,38 @@ export async function GET() {
           nodeVersion: process.version,
           platform: process.platform,
           arch: process.arch,
+          // 개발 스택 버전 정보 추가
+          techStack: {
+            framework: `Next.js ${
+              packageJson.dependencies["next"] || "unknown"
+            }`,
+            runtime: `Node.js ${process.version}`,
+            react: `React ${
+              packageJson.dependencies["react"] || "unknown"
+            } + React DOM ${
+              packageJson.dependencies["react-dom"] || "unknown"
+            }`,
+            typescript: `TypeScript ${
+              packageJson.devDependencies["typescript"] || "unknown"
+            }`,
+            database: `Supabase ${
+              packageJson.dependencies["@supabase/supabase-js"] || "unknown"
+            } + Prisma ${
+              packageJson.dependencies["@prisma/client"] || "unknown"
+            }`,
+            authentication: `Supabase Auth (Client: ${
+              packageJson.dependencies["@supabase/supabase-js"] || "unknown"
+            }, SSR: ${packageJson.dependencies["@supabase/ssr"] || "unknown"})`,
+            deployment: process.env.VERCEL ? "Vercel" : "Local",
+            ui: `ShadCN UI + Tailwind CSS ${
+              packageJson.devDependencies["tailwindcss"] || "unknown"
+            }`,
+            state: `React Query ${
+              packageJson.dependencies["@tanstack/react-query"] || "unknown"
+            } + Zustand ${packageJson.dependencies["zustand"] || "unknown"}`,
+            monitoring: "UptimeRobot",
+            analytics: "Google Analytics 4",
+          },
         },
 
         // 서비스 상태

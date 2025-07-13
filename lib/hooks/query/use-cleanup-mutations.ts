@@ -2,7 +2,6 @@
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiClient } from "@/lib/utils/data";
-import { handleError } from "@/lib/utils/error";
 import { devLog } from "@/lib/utils/logging/dev-logger";
 import { cleanupKeys } from "./query-keys";
 
@@ -25,9 +24,6 @@ export function useExecuteCleanupMutation() {
         },
         body: JSON.stringify(data),
         context: "정리 작업 실행",
-        onError: (error, context) => {
-          handleError(error, context);
-        },
       });
 
       devLog.log("[MUTATION] 정리 작업 완료:", result);

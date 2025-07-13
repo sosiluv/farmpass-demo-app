@@ -1,4 +1,3 @@
-import { createClient } from "@/lib/supabase/server";
 import { NextRequest, NextResponse } from "next/server";
 import { devLog } from "@/lib/utils/logging/dev-logger";
 import { getClientIP, getUserAgent } from "@/lib/server/ip-helpers";
@@ -18,7 +17,6 @@ export async function POST(request: NextRequest) {
     }
 
     const user = authResult.user;
-    const supabase = await createClient();
 
     const body = await request.json();
     const {

@@ -3,7 +3,6 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "@/components/providers/auth-provider";
 import { devLog } from "@/lib/utils/logging/dev-logger";
-import { handleError } from "@/lib/utils/error";
 import { getNotificationErrorMessage } from "@/lib/utils/validation/validation";
 import {
   safeLocalStorageAccess,
@@ -14,6 +13,7 @@ import {
   useCreateSubscriptionMutation,
 } from "@/lib/hooks/query/use-push-mutations";
 import { getDeviceInfo } from "@/lib/utils/browser/device-detection";
+import { handleError } from "@/lib/utils/error/handleError";
 
 interface NotificationPermissionState {
   hasAsked: boolean;
@@ -180,7 +180,6 @@ export function useNotificationPermission() {
         showDialog: false,
       }));
     } catch (error) {
-      handleError(error, "알림 권한 요청");
       const notificationError = getNotificationErrorMessage(error);
       setLastMessage({
         type: "error",
@@ -267,7 +266,7 @@ export function useNotificationPermission() {
         });
       }
     } catch (error) {
-      handleError(error, "웹푸시 구독 초기화");
+      handleError(error, { context: "initializePushSubscription" });
     }
   };
 

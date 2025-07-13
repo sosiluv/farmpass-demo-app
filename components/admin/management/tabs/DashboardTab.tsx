@@ -43,11 +43,13 @@ export function DashboardTab() {
 
   if (loading) {
     return (
-      <div className="space-y-6">
-        <StatsSkeleton columns={4} />
-        <StatsSkeleton columns={2} />
-        <StatsSkeleton columns={3} />
-      </div>
+      <CommonPageWrapper>
+        <div className="space-y-6">
+          <StatsSkeleton columns={4} />
+          <StatsSkeleton columns={2} />
+          <StatsSkeleton columns={3} />
+        </div>
+      </CommonPageWrapper>
     );
   }
 

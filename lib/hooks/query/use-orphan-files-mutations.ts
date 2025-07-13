@@ -2,7 +2,6 @@
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiClient } from "@/lib/utils/data";
-import { handleError } from "@/lib/utils/error";
 import { devLog } from "@/lib/utils/logging/dev-logger";
 import { cleanupKeys } from "./query-keys";
 
@@ -28,9 +27,6 @@ export function useCleanupOrphanFilesMutation() {
       const result = await apiClient("/api/admin/orphan-files/cleanup", {
         method: "POST",
         context: "Orphan 파일 정리",
-        onError: (error, context) => {
-          handleError(error, context);
-        },
       });
 
       devLog.log("[MUTATION] Orphan 파일 정리 완료:", result);

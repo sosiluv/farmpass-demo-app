@@ -2,7 +2,6 @@
 
 import { useMutation } from "@tanstack/react-query";
 import { apiClient } from "@/lib/utils/data/api-client";
-import { handleError } from "@/lib/utils/error";
 
 interface ResetAttemptsRequest {
   email: string;
@@ -23,9 +22,6 @@ export function useResetLoginAttemptsMutation() {
         },
         body: JSON.stringify(data),
         context: "로그인 시도 횟수 리셋",
-        onError: (error, context) => {
-          handleError(error, context);
-        },
       });
       return result;
     },
