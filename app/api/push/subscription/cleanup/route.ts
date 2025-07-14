@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
 import { createSystemLog, logApiError } from "@/lib/utils/logging/system-log";
 import { getSystemSettings } from "@/lib/cache/system-settings-cache";
 import webpush from "web-push";
 import { devLog } from "@/lib/utils/logging/dev-logger";
 import { getClientIP, getUserAgent } from "@/lib/server/ip-helpers";
 import { requireAuth } from "@/lib/server/auth-utils";
+import { prisma } from "@/lib/prisma";
 
 // 만료된 푸시 구독 정리
 export async function POST(request: NextRequest) {
@@ -13,8 +13,6 @@ export async function POST(request: NextRequest) {
   const clientIP = getClientIP(request);
   const userAgent = getUserAgent(request);
   try {
-    const supabase = await createClient();
-
     // 인증 확인
     const authResult = await requireAuth(false);
     if (!authResult.success || !authResult.user) {
@@ -50,22 +48,11 @@ export async function POST(request: NextRequest) {
     }
 
     // 사용자의 모든 구독 조회
-    const { data: subscriptions, error: subscriptionError } = await supabase
-      .from("push_subscriptions")
-      .select("*")
-      .eq("user_id", user.id);
-
-    if (subscriptionError) {
-      devLog.error("구독 조회 오류:", subscriptionError);
-      return NextResponse.json(
-        {
-          success: false,
-          error: "SUBSCRIPTION_CLEANUP_FETCH_FAILED",
-          message: "구독 정리 중 조회에 실패했습니다.",
-        },
-        { status: 500 }
-      );
-    }
+    const subscriptions = await prisma.push_subscriptions.findMany({
+      where: {
+        user_id: user.id,
+      },
+    });
 
     if (!subscriptions || subscriptions.length === 0) {
       // 정리할 구독 없음 로그
@@ -112,6 +99,18 @@ export async function POST(request: NextRequest) {
 
       for (const subscription of subscriptions) {
         try {
+          // 구독 정보가 완전한지 확인
+          if (!subscription.p256dh || !subscription.auth) {
+            devLog.log(`구독 키 정보 불완전 (ID: ${subscription.id})`);
+            cleanedCount++;
+            await prisma.push_subscriptions.delete({
+              where: {
+                id: subscription.id,
+              },
+            });
+            continue;
+          }
+
           const pushSubscription = {
             endpoint: subscription.endpoint,
             keys: {
@@ -137,10 +136,11 @@ export async function POST(request: NextRequest) {
           // 410 Gone 에러 또는 기타 만료 관련 오류인 경우 삭제
           if (error.statusCode === 410 || error.statusCode === 400) {
             cleanedCount++;
-            await supabase
-              .from("push_subscriptions")
-              .delete()
-              .eq("id", subscription.id);
+            await prisma.push_subscriptions.delete({
+              where: {
+                id: subscription.id,
+              },
+            });
             devLog.log(
               `만료된 구독 삭제됨 (실시간 검사) (ID: ${subscription.id})`
             );
@@ -159,10 +159,11 @@ export async function POST(request: NextRequest) {
           ) {
             devLog.log(`구독 정보 불완전 (ID: ${subscription.id})`);
             cleanedCount++;
-            await supabase
-              .from("push_subscriptions")
-              .delete()
-              .eq("id", subscription.id);
+            await prisma.push_subscriptions.delete({
+              where: {
+                id: subscription.id,
+              },
+            });
             continue;
           }
 
@@ -199,10 +200,11 @@ export async function POST(request: NextRequest) {
               subscription.endpoint
             );
             cleanedCount++;
-            await supabase
-              .from("push_subscriptions")
-              .delete()
-              .eq("id", subscription.id);
+            await prisma.push_subscriptions.delete({
+              where: {
+                id: subscription.id,
+              },
+            });
           }
         } catch (error: any) {
           devLog.log(
@@ -210,10 +212,11 @@ export async function POST(request: NextRequest) {
             error.message
           );
           cleanedCount++;
-          await supabase
-            .from("push_subscriptions")
-            .delete()
-            .eq("id", subscription.id);
+          await prisma.push_subscriptions.delete({
+            where: {
+              id: subscription.id,
+            },
+          });
         }
       }
     }

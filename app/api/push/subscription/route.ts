@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
 import { createSystemLog } from "@/lib/utils/logging/system-log";
 import { devLog } from "@/lib/utils/logging/dev-logger";
 import { getClientIP, getUserAgent } from "@/lib/server/ip-helpers";
 import { logApiError } from "@/lib/utils/logging/system-log";
 import { requireAuth } from "@/lib/server/auth-utils";
+import { prisma } from "@/lib/prisma";
 
 /**
  * 푸시 구독 데이터 무결성 검증
@@ -56,8 +56,6 @@ export async function POST(request: NextRequest) {
   const userAgent = getUserAgent(request);
 
   try {
-    const supabase = await createClient();
-
     // 사용자 인증 확인
     // 인증 확인
     const authResult = await requireAuth(false);
@@ -96,12 +94,12 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 기존 구독 확인 및 삭제 (전체 구독만)
-    const { data: existingSubscriptions } = await supabase
-      .from("push_subscriptions")
-      .select("*")
-      .eq("user_id", user.id)
-      .eq("farm_id", null); // 항상 전체 구독
+    // 기존 구독 확인 및 삭제
+    const existingSubscriptions = await prisma.push_subscriptions.findMany({
+      where: {
+        user_id: user.id,
+      },
+    });
 
     // 기존 구독이 있으면 모두 삭제 (디바이스당 하나만 유지)
     if (existingSubscriptions && existingSubscriptions.length > 0) {
@@ -110,75 +108,47 @@ export async function POST(request: NextRequest) {
       );
 
       // 기존 구독 삭제
-      const { error: deleteError } = await supabase
-        .from("push_subscriptions")
-        .delete()
-        .eq("user_id", user.id)
-        .eq("farm_id", null);
-
-      if (deleteError) {
-        devLog.error("기존 구독 삭제 오류:", deleteError);
-        return NextResponse.json(
-          {
-            success: false,
-            error: "SUBSCRIPTION_DELETE_FAILED",
-            message: "기존 구독 삭제에 실패했습니다.",
-          },
-          { status: 500 }
-        );
-      }
+      await prisma.push_subscriptions.deleteMany({
+        where: {
+          user_id: user.id,
+        },
+      });
     }
 
-    // 새 구독 저장 (항상 전체 구독)
-    const { data: newSubscription, error: insertError } = await supabase
-      .from("push_subscriptions")
-      .insert({
+    // 새 구독 저장
+    const newSubscription = await prisma.push_subscriptions.create({
+      data: {
         user_id: user.id,
-        farm_id: null, // 항상 전체 구독
         endpoint: subscription.endpoint,
         p256dh: subscription.keys?.p256dh || null,
         auth: subscription.keys?.auth || null,
-        created_at: new Date().toISOString(),
-      })
-      .select()
-      .single();
-
-    if (insertError) {
-      devLog.error("푸시 구독 저장 오류:", insertError);
-      return NextResponse.json(
-        {
-          success: false,
-          error: "SUBSCRIPTION_SAVE_FAILED",
-          message: "구독 저장에 실패했습니다.",
-        },
-        { status: 500 }
-      );
-    }
+        created_at: new Date(),
+      },
+    });
 
     // user_notification_settings에 기본 설정 자동 생성 (없는 경우에만)
-    const { data: existingSettings } = await supabase
-      .from("user_notification_settings")
-      .select("id")
-      .eq("user_id", user.id)
-      .single();
+    const existingSettings = await prisma.userNotificationSettings.findUnique({
+      where: {
+        user_id: user.id,
+      },
+    });
 
     if (!existingSettings) {
-      const now = new Date().toISOString();
-      const { error: settingsError } = await supabase
-        .from("user_notification_settings")
-        .insert({
-          user_id: user.id,
-          notification_method: "push",
-          visitor_alerts: true,
-          notice_alerts: true,
-          emergency_alerts: true,
-          maintenance_alerts: true,
-          is_active: true,
-          created_at: now,
-          updated_at: now,
+      try {
+        await prisma.userNotificationSettings.create({
+          data: {
+            user_id: user.id,
+            notification_method: "push",
+            visitor_alerts: true,
+            notice_alerts: true,
+            emergency_alerts: true,
+            maintenance_alerts: true,
+            is_active: true,
+            created_at: new Date(),
+            updated_at: new Date(),
+          },
         });
-
-      if (settingsError) {
+      } catch (settingsError: any) {
         devLog.warn("알림 설정 자동 생성 실패:", settingsError);
         // 구독은 성공했으므로 경고만 기록하고 계속 진행
 
@@ -258,8 +228,6 @@ export async function GET(request: NextRequest) {
   const clientIP = getClientIP(request);
   const userAgent = getUserAgent(request);
   try {
-    const supabase = await createClient();
-
     // 인증 확인
     const authResult = await requireAuth(false);
     if (!authResult.success || !authResult.user) {
@@ -271,28 +239,17 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const farmId = searchParams.get("farmId");
 
-    let query = supabase
-      .from("push_subscriptions")
-      .select("*")
-      .eq("user_id", user.id);
+    let whereCondition: any = {
+      user_id: user.id,
+    };
 
     if (farmId) {
-      query = query.eq("farm_id", farmId);
+      whereCondition.farm_id = farmId;
     }
 
-    const { data: subscriptions, error } = await query;
-
-    if (error) {
-      devLog.error("푸시 구독 조회 오류:", error);
-      return NextResponse.json(
-        {
-          success: false,
-          error: "SUBSCRIPTION_FETCH_FAILED",
-          message: "구독 정보 조회에 실패했습니다.",
-        },
-        { status: 500 }
-      );
-    }
+    const subscriptions = await prisma.push_subscriptions.findMany({
+      where: whereCondition,
+    });
 
     // 구독 유효성 검사 (만료된 구독 감지)
     let expiredCount = 0;
@@ -300,18 +257,20 @@ export async function GET(request: NextRequest) {
 
     if (subscriptions && subscriptions.length > 0) {
       // VAPID 키 설정 확인
-      const { data: settings } = await supabase
-        .from("system_settings")
-        .select("vapid_public_key, vapid_private_key")
-        .single();
+      const settings = await prisma.systemSettings.findFirst({
+        select: {
+          vapidPublicKey: true,
+          vapidPrivateKey: true,
+        },
+      });
 
-      if (settings?.vapid_public_key && settings?.vapid_private_key) {
+      if (settings?.vapidPublicKey && settings?.vapidPrivateKey) {
         // web-push 설정
         const webpush = require("web-push");
         webpush.setVapidDetails(
           "mailto:k331502@nate.com",
-          settings.vapid_public_key,
-          settings.vapid_private_key
+          settings.vapidPublicKey,
+          settings.vapidPrivateKey
         );
 
         // 각 구독의 유효성 검사
@@ -352,10 +311,11 @@ export async function GET(request: NextRequest) {
 
             // 만료된 구독으로 간주하고 삭제
             expiredCount++;
-            await supabase
-              .from("push_subscriptions")
-              .delete()
-              .eq("id", subscription.id);
+            await prisma.push_subscriptions.delete({
+              where: {
+                id: subscription.id,
+              },
+            });
 
             devLog.log(`만료된 구독 삭제됨 (ID: ${subscription.id})`);
           }
@@ -419,8 +379,6 @@ export async function DELETE(request: NextRequest) {
   const userAgent = getUserAgent(request);
 
   try {
-    const supabase = await createClient();
-
     // 인증 확인
     const authResult = await requireAuth(false);
     if (!authResult.success || !authResult.user) {
@@ -447,23 +405,12 @@ export async function DELETE(request: NextRequest) {
     // 전체 구독 해제 - 해당 endpoint의 모든 구독 삭제 (전체 + 모든 농장별)
     devLog.log(`전체 구독 해제: endpoint ${endpoint}의 모든 구독 삭제`);
 
-    const { error: deleteError } = await supabase
-      .from("push_subscriptions")
-      .delete()
-      .eq("user_id", user.id)
-      .eq("endpoint", endpoint);
-
-    if (deleteError) {
-      devLog.error("전체 푸시 구독 삭제 오류:", deleteError);
-      return NextResponse.json(
-        {
-          success: false,
-          error: "SUBSCRIPTION_UNSUBSCRIBE_FAILED",
-          message: "구독 해제에 실패했습니다.",
-        },
-        { status: 500 }
-      );
-    }
+    await prisma.push_subscriptions.deleteMany({
+      where: {
+        user_id: user.id,
+        endpoint: endpoint,
+      },
+    });
 
     // 시스템 로그 기록
     await createSystemLog(

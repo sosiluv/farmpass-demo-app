@@ -1,4 +1,3 @@
-import { createClient } from "@/lib/supabase/server";
 import { NextRequest, NextResponse } from "next/server";
 import { createSystemLog } from "@/lib/utils/logging/system-log";
 import { devLog } from "@/lib/utils/logging/dev-logger";
@@ -26,8 +25,6 @@ export async function POST(request: NextRequest) {
   let statusCode = 200;
 
   try {
-    const supabase = await createClient();
-
     // 인증 확인
     const authResult = await requireAuth(false);
     if (!authResult.success || !authResult.user) {
@@ -57,45 +54,50 @@ export async function POST(request: NextRequest) {
     devLog.log("📝 Farm data:", { farm_name, farm_type, manager_name });
 
     // Start a transaction
-    const { data: farm, error: farmError } = await supabase
-      .from("farms")
-      .insert({
-        farm_name,
-        farm_address,
-        farm_detailed_address,
-        farm_type,
-        description,
-        manager_name,
-        manager_phone,
-        owner_id: user.id,
-      })
-      .select()
-      .single();
+    let farm;
 
-    if (farmError) {
-      throw farmError;
-    }
+    try {
+      farm = await prisma.farms.create({
+        data: {
+          farm_name,
+          farm_address,
+          farm_detailed_address,
+          farm_type,
+          description,
+          manager_name,
+          manager_phone,
+          owner_id: user.id,
+        },
+      });
 
-    devLog.log("✅ Farm created successfully:", farm.id);
+      devLog.log("✅ Farm created successfully:", farm.id);
 
-    // 농장주를 farm_members 테이블에 추가
-    devLog.log("🔄 Adding farm owner to farm_members...");
-    const { error: memberError } = await supabase.from("farm_members").insert({
-      farm_id: farm.id,
-      user_id: user.id,
-      role: "owner",
-    });
-
-    if (memberError) {
-      // farm_members 추가 실패 시 farms 테이블에서도 삭제
-      await supabase.from("farms").delete().eq("id", farm.id);
+      // 농장주를 farm_members 테이블에 추가
+      devLog.log("🔄 Adding farm owner to farm_members...");
+      await prisma.farm_members.create({
+        data: {
+          farm_id: farm.id,
+          user_id: user.id,
+          role: "owner",
+        },
+      });
+    } catch (error) {
+      // 트랜잭션 실패 시 farm이 생성되었다면 삭제
+      if (farm?.id) {
+        try {
+          await prisma.farms.delete({
+            where: { id: farm.id },
+          });
+        } catch (deleteError) {
+          devLog.error(
+            "Failed to delete farm after member creation error:",
+            deleteError
+          );
+        }
+      }
       statusCode = 500;
-      throw memberError;
+      throw error;
     }
-
-    devLog.log(
-      `✅ Successfully added farm owner to farm_members: ${user.id} -> ${farm.id}`
-    );
 
     // 농장 생성 로그
     await createSystemLog(

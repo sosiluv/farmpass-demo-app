@@ -20,13 +20,15 @@ export function LoggingRetentionSelect({
 }: LoggingRetentionSelectProps) {
   return (
     <div className="space-y-2">
-      <Label className="text-sm font-medium">로그 보관 기간</Label>
+      <Label htmlFor="logging-retention" className="text-sm font-medium">
+        로그 보관 기간
+      </Label>
       <Select
         value={value.toString()}
         onValueChange={(val) => onChange(parseInt(val))}
         disabled={isLoading}
       >
-        <SelectTrigger>
+        <SelectTrigger id="logging-retention">
           <SelectValue placeholder="보관 기간을 선택하세요" />
         </SelectTrigger>
         <SelectContent>

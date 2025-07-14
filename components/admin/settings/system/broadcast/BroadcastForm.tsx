@@ -125,12 +125,13 @@ export function BroadcastForm({
       {/* 상호작용 필요 설정 */}
       <div className="flex items-center justify-between">
         <div className="space-y-0.5">
-          <Label>사용자 상호작용 필요</Label>
+          <Label htmlFor="require-interaction">사용자 상호작용 필요</Label>
           <div className="text-sm text-muted-foreground">
             활성화하면 사용자가 직접 알림을 닫아야 합니다.
           </div>
         </div>
         <Switch
+          id="require-interaction"
           checked={formData.requireInteraction}
           onCheckedChange={(checked) =>
             onInputChange("requireInteraction", checked)

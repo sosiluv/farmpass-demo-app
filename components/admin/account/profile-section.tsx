@@ -119,8 +119,8 @@ export function ProfileSection({
           <CardContent className="space-y-6">
             {/* 프로필 사진 */}
             <div className="space-y-4">
-              <Label>프로필 사진</Label>
               <ImageUpload
+                id="profile-image-upload"
                 uploadType="profile"
                 onUpload={async (file) => {
                   if (!file) return;
@@ -138,7 +138,7 @@ export function ProfileSection({
                 }}
                 onDelete={handleImageDelete}
                 currentImage={profileImagePreview}
-                avatarSize="xl"
+                avatarSize="lg"
                 label="프로필 사진"
                 showCamera={false}
               />
@@ -157,6 +157,7 @@ export function ProfileSection({
                   value={formData.name}
                   onChange={handleInputChange}
                   disabled={loading}
+                  autoComplete="name"
                 />
               </div>
               <div className="space-y-2">
@@ -168,6 +169,7 @@ export function ProfileSection({
                   value={formData.email}
                   onChange={handleInputChange}
                   disabled={loading}
+                  autoComplete="email"
                 />
               </div>
             </div>
@@ -193,7 +195,7 @@ export function ProfileSection({
                   onValueChange={(value) => handleChange("position", value)}
                   disabled={loading}
                 >
-                  <SelectTrigger>
+                  <SelectTrigger id="position">
                     <SelectValue placeholder="직책을 선택하세요" />
                   </SelectTrigger>
                   <SelectContent>

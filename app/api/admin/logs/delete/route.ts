@@ -1,9 +1,9 @@
-import { createClient } from "@/lib/supabase/server";
 import { NextRequest, NextResponse } from "next/server";
 import { logApiError, createSystemLog } from "@/lib/utils/logging/system-log";
 import { devLog } from "@/lib/utils/logging/dev-logger";
 import { getClientIP, getUserAgent } from "@/lib/server/ip-helpers";
 import { requireAuth } from "@/lib/server/auth-utils";
+import { prisma } from "@/lib/prisma";
 
 export async function POST(request: NextRequest) {
   // 요청 컨텍스트 정보 추출
@@ -18,7 +18,6 @@ export async function POST(request: NextRequest) {
     }
 
     const user = authResult.user;
-    const supabase = await createClient();
 
     const body = await request.json();
     const { action, logId, beforeCount } = body;
@@ -29,12 +28,9 @@ export async function POST(request: NextRequest) {
     switch (action) {
       case "delete_single":
         // 개별 로그 삭제
-        const { error: deleteError } = await supabase
-          .from("system_logs")
-          .delete()
-          .eq("id", logId);
-
-        if (deleteError) throw deleteError;
+        await prisma.system_logs.delete({
+          where: { id: logId },
+        });
 
         result = { deleted: true, logId };
         logMessage = `관리자가 개별 시스템 로그를 삭제했습니다 (로그 ID: ${logId})`;
@@ -42,12 +38,7 @@ export async function POST(request: NextRequest) {
 
       case "delete_all":
         // 전체 로그 삭제
-        const { error: deleteAllError } = await supabase
-          .from("system_logs")
-          .delete()
-          .not("id", "is", null);
-
-        if (deleteAllError) throw deleteAllError;
+        await prisma.system_logs.deleteMany({});
 
         result = { deleted: true, count: beforeCount };
         logMessage = `관리자가 모든 시스템 로그를 완전히 삭제했습니다 (총 ${beforeCount}개 삭제)`;
@@ -58,23 +49,25 @@ export async function POST(request: NextRequest) {
         const thirtyDaysAgo = new Date();
         thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
-        const { count: oldLogsCount, error: countError } = await supabase
-          .from("system_logs")
-          .select("*", { count: "exact", head: true })
-          .lt("created_at", thirtyDaysAgo.toISOString());
-
-        if (countError) throw countError;
+        const oldLogsCount = await prisma.system_logs.count({
+          where: {
+            created_at: {
+              lt: thirtyDaysAgo,
+            },
+          },
+        });
 
         if (!oldLogsCount) {
           result = { deleted: false, count: 0 };
           logMessage = "삭제할 30일 이전 로그가 없습니다.";
         } else {
-          const { error: deleteOldError } = await supabase
-            .from("system_logs")
-            .delete()
-            .lt("created_at", thirtyDaysAgo.toISOString());
-
-          if (deleteOldError) throw deleteOldError;
+          await prisma.system_logs.deleteMany({
+            where: {
+              created_at: {
+                lt: thirtyDaysAgo,
+              },
+            },
+          });
 
           result = { deleted: true, count: oldLogsCount };
           logMessage = `관리자가 30일 이전 시스템 로그를 삭제했습니다 (총 ${oldLogsCount}개 삭제)`;

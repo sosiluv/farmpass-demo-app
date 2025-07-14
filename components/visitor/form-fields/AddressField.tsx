@@ -33,7 +33,10 @@ export const AddressField = ({
         <FormItem
           className={`space-y-2 sm:space-y-2 md:col-span-2 ${className}`}
         >
-          <FormLabel className="flex items-center gap-2 font-semibold text-gray-800 text-sm">
+          <FormLabel
+            htmlFor="visitor-address"
+            className="flex items-center gap-2 font-semibold text-gray-800 text-sm"
+          >
             <MapPin className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
             {LABELS.ADDRESS}
             {required && <span className="text-red-500">*</span>}

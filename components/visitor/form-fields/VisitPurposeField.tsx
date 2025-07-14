@@ -39,14 +39,21 @@ export const VisitPurposeField = ({
       name="visitPurpose"
       render={({ field }) => (
         <FormItem className={`space-y-2 sm:space-y-2 ${className}`}>
-          <FormLabel className="flex items-center gap-2 font-semibold text-gray-800 text-sm">
+          <FormLabel
+            htmlFor="visitor-visitPurpose"
+            className="flex items-center gap-2 font-semibold text-gray-800 text-sm"
+          >
             <FileText className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
             {LABELS.VISIT_PURPOSE}
             {required && <span className="text-red-500">*</span>}
           </FormLabel>
           <FormControl>
             <Select onValueChange={field.onChange} value={field.value}>
-              <SelectTrigger className="h-10 sm:h-12 bg-gray-50 border border-gray-200 text-sm">
+              <SelectTrigger
+                id="visitor-visitPurpose"
+                name="visitPurpose"
+                className="h-10 sm:h-12 bg-gray-50 border border-gray-200 text-sm"
+              >
                 <SelectValue placeholder={PLACEHOLDERS.VISIT_PURPOSE} />
               </SelectTrigger>
               <SelectContent>

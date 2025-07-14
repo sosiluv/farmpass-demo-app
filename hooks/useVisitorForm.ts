@@ -193,7 +193,7 @@ export const useVisitorForm = (farmId: string, settings: VisitorSettings) => {
             selectedImageFile
           );
           if (result) {
-            profile_photo_url = result.publicUrl; // 실제 Supabase URL
+            profile_photo_url = result.publicUrl;
           }
         } catch (error) {
           setError("이미지 업로드에 실패했습니다");

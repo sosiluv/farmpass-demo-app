@@ -82,15 +82,15 @@ export function AddressSearch({
           주소 검색
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[600px]">
+      <DialogContent className="w-[95vw] max-w-[600px] max-h-[90vh] sm:max-h-[80vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>주소 검색</DialogTitle>
-          <DialogDescription>
+          <DialogTitle className="text-base sm:text-lg">주소 검색</DialogTitle>
+          <DialogDescription className="text-sm">
             도로명 주소나 지번 주소로 검색하여 정확한 주소를 입력해주세요.
           </DialogDescription>
         </DialogHeader>
         {!isAddressSelected && isPostcodeLoaded ? (
-          <div className="h-[600px]">
+          <div className="h-[500px] sm:h-[550px] lg:h-[600px]">
             <DaumPostcode
               onComplete={handleComplete}
               style={{ height: "100%" }}
@@ -101,7 +101,7 @@ export function AddressSearch({
             />
           </div>
         ) : !isAddressSelected && !isPostcodeLoaded ? (
-          <div className="h-[600px] flex items-center justify-center">
+          <div className="h-[500px] sm:h-[550px] lg:h-[600px] flex items-center justify-center">
             <div className="text-center">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto mb-4"></div>
               <p className="text-sm text-gray-600">
@@ -112,26 +112,36 @@ export function AddressSearch({
         ) : (
           <div className="space-y-4 py-4">
             <div className="space-y-2">
-              <Label>기본 주소</Label>
-              <Input value={selectedAddress} readOnly />
+              <Label className="text-sm">기본 주소</Label>
+              <Input
+                value={selectedAddress}
+                readOnly
+                className="h-10 sm:h-11 text-sm"
+              />
             </div>
             <div className="space-y-2">
-              <Label>상세 주소</Label>
+              <Label className="text-sm">상세 주소</Label>
               <Input
                 placeholder="상세 주소를 입력하세요 (예: 101동 1234호)"
                 value={detailedAddress}
                 onChange={(e) => setDetailedAddress(e.target.value)}
+                className="h-10 sm:h-11 text-sm"
               />
             </div>
-            <div className="flex justify-end space-x-2">
+            <div className="flex flex-col sm:flex-row justify-end gap-2 sm:gap-3 pt-4">
               <Button
                 type="button"
                 variant="outline"
                 onClick={() => setIsAddressSelected(false)}
+                className="h-10 sm:h-11 text-sm flex-1 sm:flex-none"
               >
                 주소 다시 검색
               </Button>
-              <Button type="button" onClick={handleConfirm}>
+              <Button
+                type="button"
+                onClick={handleConfirm}
+                className="h-10 sm:h-11 text-sm flex-1 sm:flex-none"
+              >
                 확인
               </Button>
             </div>

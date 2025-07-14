@@ -29,9 +29,11 @@ export function FarmMembersPreview({
 
   if (!members || members.length === 0) {
     return (
-      <div className="flex items-center gap-2 text-sm text-muted-foreground">
-        <Users className="w-4 h-4" />
-        <span>멤버 없음</span>
+      <div className="flex items-center justify-between pt-3 border-t border-border/50">
+        <div className="flex items-center space-x-2">
+          <Users className="h-4 w-4 text-muted-foreground" />
+          <span className="text-xs text-muted-foreground">멤버 없음</span>
+        </div>
       </div>
     );
   }

@@ -6,6 +6,7 @@ import { devLog } from "@/lib/utils/logging/dev-logger";
 import { handleError } from "@/lib/utils/error";
 import { formatPhone } from "@/lib/utils/validation/validation";
 import { getAuthErrorMessage } from "@/lib/utils/validation/validation";
+import { User, Phone, MapPin, FileText, Car } from "lucide-react";
 
 import {
   visitorDialogFormSchema,
@@ -194,61 +195,83 @@ export function VisitorFormDialog({
       label: string,
       required = false,
       type: "input" | "textarea" = "input"
-    ) => (
-      <FormField
-        control={form.control}
-        name={name}
-        render={({ field }) => (
-          <FormItem>
-            <FormLabel>
-              {label}
-              {required && " *"}
-            </FormLabel>
-            <FormControl>
-              {type === "input" ? (
-                <Input
-                  {...field}
-                  value={field.value || ""}
-                  disabled={isFormDisabled}
-                  onChange={(e) => {
-                    if (name === "visitor_phone") {
-                      handlePhoneChange(e.target.value, field.onChange);
-                    } else {
-                      field.onChange(e.target.value);
+    ) => {
+      // 아이콘 매핑
+      const iconMap = {
+        visitor_name: User,
+        visitor_phone: Phone,
+        vehicle_number: Car,
+        notes: FileText,
+      };
+
+      const Icon = iconMap[name as keyof typeof iconMap] || FileText;
+
+      return (
+        <FormField
+          control={form.control}
+          name={name}
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel
+                htmlFor={`dialog-${name}`}
+                className="flex items-center gap-2 text-sm"
+              >
+                <Icon className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                {label}
+                {required && <span className="text-red-500">*</span>}
+              </FormLabel>
+              <FormControl>
+                {type === "input" ? (
+                  <Input
+                    {...field}
+                    id={`dialog-${name}`}
+                    name={name}
+                    value={field.value || ""}
+                    disabled={isFormDisabled}
+                    onChange={(e) => {
+                      if (name === "visitor_phone") {
+                        handlePhoneChange(e.target.value, field.onChange);
+                      } else {
+                        field.onChange(e.target.value);
+                      }
+                    }}
+                    maxLength={name === "visitor_phone" ? 13 : undefined}
+                    type={name === "visitor_phone" ? "tel" : "text"}
+                    className="h-10 sm:h-12 text-sm"
+                    placeholder={
+                      name === "visitor_phone"
+                        ? "숫자만 입력 가능합니다"
+                        : name === "visitor_name"
+                        ? "홍길동"
+                        : name === "vehicle_number"
+                        ? "12가3456 (선택사항)"
+                        : undefined
                     }
-                  }}
-                  maxLength={name === "visitor_phone" ? 13 : undefined}
-                  type={name === "visitor_phone" ? "tel" : "text"}
-                  placeholder={
-                    name === "visitor_phone"
-                      ? "숫자만 입력 가능합니다"
-                      : name === "visitor_name"
-                      ? "홍길동"
-                      : name === "vehicle_number"
-                      ? "12가3456 (선택사항)"
-                      : undefined
-                  }
-                />
-              ) : (
-                <Textarea
-                  {...field}
-                  value={field.value || ""}
-                  disabled={isFormDisabled}
-                  onChange={(e) => field.onChange(e.target.value)}
-                  rows={3}
-                  placeholder={
-                    name === "notes"
-                      ? "추가 사항이 있으면 입력해주세요"
-                      : undefined
-                  }
-                />
-              )}
-            </FormControl>
-            <FormMessage />
-          </FormItem>
-        )}
-      />
-    ),
+                  />
+                ) : (
+                  <Textarea
+                    {...field}
+                    id={`dialog-${name}`}
+                    name={name}
+                    value={field.value || ""}
+                    disabled={isFormDisabled}
+                    onChange={(e) => field.onChange(e.target.value)}
+                    rows={4}
+                    className="text-sm min-h-[80px]"
+                    placeholder={
+                      name === "notes"
+                        ? "추가 사항이 있으면 입력해주세요"
+                        : undefined
+                    }
+                  />
+                )}
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+      );
+    },
     [form.control, isFormDisabled, handlePhoneChange]
   );
 
@@ -260,7 +283,14 @@ export function VisitorFormDialog({
         name="visitor_address"
         render={({ field }) => (
           <FormItem>
-            <FormLabel>주소 *</FormLabel>
+            <FormLabel
+              htmlFor="dialog-visitor_address"
+              className="flex items-center gap-2 text-sm"
+            >
+              <MapPin className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+              주소
+              <span className="text-red-500">*</span>
+            </FormLabel>
             <FormControl>
               <div className="space-y-2">
                 <AddressSearch
@@ -274,11 +304,14 @@ export function VisitorFormDialog({
                   defaultDetailedAddress=""
                 />
                 <Textarea
+                  id="dialog-visitor_address"
+                  name="visitor_address"
                   placeholder="주소 검색 버튼을 클릭하여 주소를 입력하세요"
                   value={field.value || ""}
                   readOnly
                   disabled={isFormDisabled}
-                  rows={2}
+                  rows={3}
+                  className="text-sm min-h-[80px]"
                 />
               </div>
             </FormControl>
@@ -298,14 +331,24 @@ export function VisitorFormDialog({
         name="visitor_purpose"
         render={({ field }) => (
           <FormItem>
-            <FormLabel>방문목적 *</FormLabel>
+            <FormLabel
+              htmlFor="dialog-visitor_purpose"
+              className="flex items-center gap-2 text-sm"
+            >
+              <FileText className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+              방문목적
+              <span className="text-red-500">*</span>
+            </FormLabel>
             <FormControl>
               <Select
                 value={field.value || ""}
                 onValueChange={field.onChange}
                 disabled={isFormDisabled}
               >
-                <SelectTrigger>
+                <SelectTrigger
+                  id="dialog-visitor_purpose"
+                  className="h-10 sm:h-12 text-sm"
+                >
                   <SelectValue placeholder="방문 목적을 선택하세요" />
                 </SelectTrigger>
                 <SelectContent>
@@ -332,15 +375,23 @@ export function VisitorFormDialog({
         control={form.control}
         name="disinfection_check"
         render={({ field }) => (
-          <FormItem className="flex flex-row items-center space-x-2 space-y-0">
+          <FormItem className="flex flex-row items-center space-x-3 space-y-0 py-2">
             <FormControl>
               <Checkbox
+                id="dialog-disinfection_check"
+                name="disinfection_check"
                 checked={field.value}
                 onCheckedChange={field.onChange}
                 disabled={isFormDisabled}
+                className="h-5 w-5"
               />
             </FormControl>
-            <FormLabel className="font-normal">소독여부</FormLabel>
+            <FormLabel
+              htmlFor="dialog-disinfection_check"
+              className="font-normal text-sm cursor-pointer"
+            >
+              소독여부
+            </FormLabel>
           </FormItem>
         )}
       />
@@ -354,12 +405,12 @@ export function VisitorFormDialog({
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-[425px]">
-        <DialogHeader>
-          <DialogTitle>
+      <DialogContent className="w-[95vw] max-w-lg max-h-[90vh] overflow-y-auto p-3 sm:p-6">
+        <DialogHeader className="pb-4">
+          <DialogTitle className="text-lg sm:text-xl">
             {mode === "create" ? "방문자 등록" : "방문자 정보 수정"}
           </DialogTitle>
-          <DialogDescription>
+          <DialogDescription className="text-sm">
             {mode === "create"
               ? "새로운 방문자를 등록합니다."
               : "방문자 정보를 수정합니다."}
@@ -378,9 +429,9 @@ export function VisitorFormDialog({
           <Form {...form}>
             <form
               onSubmit={form.handleSubmit(handleSubmit)}
-              className="space-y-4"
+              className="space-y-3 sm:space-y-6"
             >
-              <div className="grid gap-4">
+              <div className="grid gap-3 sm:gap-6">
                 {renderInputField("visitor_name", "성명", true)}
                 {renderInputField("visitor_phone", "연락처", true)}
                 {renderAddressField()}
@@ -390,23 +441,24 @@ export function VisitorFormDialog({
                 {renderDisinfectionField()}
               </div>
 
-              <DialogFooter className="gap-2">
+              <DialogFooter className="gap-3 pt-4">
                 <Button
                   type="button"
                   variant="outline"
                   onClick={handleClose}
                   disabled={isFormDisabled}
+                  className="h-12 px-6 text-base flex-1 sm:flex-none"
                 >
                   취소
                 </Button>
                 <Button
                   type="submit"
                   disabled={isFormDisabled}
-                  className="min-w-[80px]"
+                  className="h-12 px-6 text-base flex-1 sm:flex-none min-w-[100px]"
                 >
                   {isSubmitting ? (
                     <>
-                      <div className="animate-spin mr-2 h-4 w-4 border-2 border-white border-t-transparent rounded-full" />
+                      <div className="animate-spin mr-2 h-5 w-5 border-2 border-white border-t-transparent rounded-full" />
                       처리중...
                     </>
                   ) : mode === "create" ? (

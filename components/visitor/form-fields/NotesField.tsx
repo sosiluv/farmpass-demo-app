@@ -31,7 +31,10 @@ export const NotesField = ({
         <FormItem
           className={`space-y-2 sm:space-y-2 md:col-span-2 ${className}`}
         >
-          <FormLabel className="flex items-center gap-2 font-semibold text-gray-800 text-sm">
+          <FormLabel
+            htmlFor="visitor-notes"
+            className="flex items-center gap-2 font-semibold text-gray-800 text-sm"
+          >
             <FileText className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
             {LABELS.NOTES}
             {required && <span className="text-red-500">*</span>}
@@ -39,6 +42,8 @@ export const NotesField = ({
           <FormControl>
             <Textarea
               {...field}
+              id="visitor-notes"
+              name="notes"
               placeholder={PLACEHOLDERS.NOTES}
               rows={3}
               className="resize-none bg-gray-50 border border-gray-200 text-sm"

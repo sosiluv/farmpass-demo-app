@@ -43,7 +43,10 @@ export const TextField = ({
             fullWidth ? "md:col-span-2" : ""
           } ${className}`}
         >
-          <FormLabel className="flex items-center gap-2 font-semibold text-gray-800 text-sm">
+          <FormLabel
+            htmlFor={`visitor-${name}`}
+            className="flex items-center gap-2 font-semibold text-gray-800 text-sm"
+          >
             <Icon className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
             {LABELS[labelKey]}
             {required && <span className="text-red-500">*</span>}
@@ -51,6 +54,8 @@ export const TextField = ({
           <FormControl>
             <Input
               {...field}
+              id={`visitor-${name}`}
+              name={name}
               placeholder={
                 placeholder ||
                 (placeholderKey ? PLACEHOLDERS[placeholderKey] : "")

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { requireAuth } from "@/lib/server/auth-utils";
 import { devLog } from "@/lib/utils/logging/dev-logger";
+import { prisma } from "@/lib/prisma";
 
 // 재귀적으로 Storage의 모든 파일을 가져오는 함수
 async function getAllStorageFiles(
@@ -71,13 +72,23 @@ export async function GET(request: NextRequest) {
 
   try {
     // 방문자 orphan 파일 체크
-    const { data: usedVisitorUrls, error: visitorDbError } = await supabase
-      .from("visitor_entries")
-      .select("profile_photo_url")
-      .not("profile_photo_url", "is", null)
-      .neq("profile_photo_url", "");
+    let usedVisitorUrls;
+    let visitorDbError = null;
 
-    if (visitorDbError) {
+    try {
+      usedVisitorUrls = await prisma.visitor_entries.findMany({
+        where: {
+          AND: [
+            { profile_photo_url: { not: null } },
+            { profile_photo_url: { not: "" } },
+          ],
+        },
+        select: {
+          profile_photo_url: true,
+        },
+      });
+    } catch (error) {
+      visitorDbError = error;
       devLog.error("[CHECK_ORPHAN] Visitor DB error:", visitorDbError);
     }
 
@@ -95,13 +106,23 @@ export async function GET(request: NextRequest) {
     );
 
     // 프로필 orphan 파일 체크
-    const { data: profiles, error: profileDbError } = await supabase
-      .from("profiles")
-      .select("profile_image_url")
-      .not("profile_image_url", "is", null)
-      .neq("profile_image_url", "");
+    let profiles;
+    let profileDbError = null;
 
-    if (profileDbError) {
+    try {
+      profiles = await prisma.profiles.findMany({
+        where: {
+          AND: [
+            { profile_image_url: { not: null } },
+            { profile_image_url: { not: "" } },
+          ],
+        },
+        select: {
+          profile_image_url: true,
+        },
+      });
+    } catch (error) {
+      profileDbError = error;
       devLog.error("[CHECK_ORPHAN] Profile DB error:", profileDbError);
     }
 

@@ -181,7 +181,7 @@ export default function DashboardPage() {
 
   if (isInitialLoading) {
     return (
-      <div className="flex-1 space-y-6 sm:space-y-8 lg:space-y-10 p-4 sm:p-6 lg:p-8">
+      <div className="flex-1 space-y-6 sm:space-y-8 lg:space-y-10 p-1 sm:p-6 lg:p-8">
         <PageHeader
           title="대시보드"
           description="농장 방문자 현황과 통계를 한눈에 확인하세요"
@@ -199,7 +199,7 @@ export default function DashboardPage() {
       description="대시보드 정보를 불러오는 중 문제가 발생했습니다. 페이지를 새로고침하거나 잠시 후 다시 시도해주세요."
     >
       <>
-        <div className="flex-1 space-y-6 sm:space-y-8 lg:space-y-10 p-4 sm:p-6 lg:p-8">
+        <div className="flex-1 space-y-6 sm:space-y-8 lg:space-y-10 p-1 sm:p-6 lg:p-8">
           {/* 헤더 섹션 */}
           <div className="space-y-4">
             <PageHeader

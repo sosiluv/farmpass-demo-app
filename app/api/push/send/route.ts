@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
 import { createSystemLog, logApiError } from "@/lib/utils/logging/system-log";
 import { devLog } from "@/lib/utils/logging/dev-logger";
 import webpush from "web-push";
 import { getSystemSettings } from "@/lib/cache/system-settings-cache";
 import { getClientIP, getUserAgent } from "@/lib/server/ip-helpers";
 import { requireAuth } from "@/lib/server/auth-utils";
+import { prisma } from "@/lib/prisma";
 
 // VAPID 키 설정 초기화
 async function initializeVapidKeys() {
@@ -81,8 +81,6 @@ export async function POST(request: NextRequest) {
   const userAgent = getUserAgent(request);
 
   try {
-    const supabase = await createClient();
-
     // 서버 사이드 호출인지 확인
     const isServerSideCall = !userAgent || userAgent.includes("node-fetch");
 
@@ -225,7 +223,7 @@ export async function POST(request: NextRequest) {
     }
 
     // 구독자 조회
-    let subscriptionQuery = supabase.from("push_subscriptions").select("*");
+    let subscriptions;
 
     // 디버깅: 쿼리 조건 확인
     devLog.log("구독자 조회 조건:", {
@@ -236,24 +234,23 @@ export async function POST(request: NextRequest) {
       notificationType,
     });
 
-    if (targetUserIds?.length > 0) {
-      // 특정 사용자들에게만 발송
-      subscriptionQuery = subscriptionQuery.in("user_id", targetUserIds);
-      devLog.log("특정 사용자 대상 쿼리 실행:", { targetUserIds });
-    } else if (farmId) {
-      // 특정 농장에 속한 사용자들에게만 발송
-      subscriptionQuery = subscriptionQuery.eq("farm_id", farmId);
-      devLog.log("농장별 대상 쿼리 실행:", farmId);
-    } else {
-      // 브로드캐스트: 전체 구독자에게 발송
-      subscriptionQuery = subscriptionQuery.is("farm_id", null);
-      devLog.log("브로드캐스트 쿼리 실행");
-    }
-
-    const { data: subscriptions, error: subscriptionError } =
-      await subscriptionQuery;
-
-    if (subscriptionError) {
+    try {
+      if (targetUserIds?.length > 0) {
+        // 특정 사용자들에게만 발송
+        subscriptions = await prisma.push_subscriptions.findMany({
+          where: {
+            user_id: {
+              in: targetUserIds,
+            },
+          },
+        });
+        devLog.log("특정 사용자 대상 쿼리 실행:", { targetUserIds });
+      } else {
+        // 브로드캐스트: 모든 구독자에게 발송
+        subscriptions = await prisma.push_subscriptions.findMany();
+        devLog.log("브로드캐스트 쿼리 실행");
+      }
+    } catch (error) {
       await createSystemLog(
         "PUSH_NOTIFICATION_SUBSCRIBER_FETCH_FAILED",
         `푸시 구독자 조회 실패.`,
@@ -267,13 +264,14 @@ export async function POST(request: NextRequest) {
           notificationType,
           targetUserIds,
           farmId,
-          subscriptionError: subscriptionError.message,
+          subscriptionError:
+            error instanceof Error ? error.message : String(error),
         },
         user?.email,
         clientIP,
         userAgent
       );
-      devLog.error("구독자 조회 오류:", subscriptionError);
+      devLog.error("구독자 조회 오류:", error);
       return NextResponse.json(
         {
           success: false,
@@ -323,13 +321,17 @@ export async function POST(request: NextRequest) {
     );
 
     // 알림 설정 조회
-    const { data: notificationSettings, error: settingsError } = await supabase
-      .from("user_notification_settings")
-      .select("*")
-      .in("user_id", userIds)
-      .eq("is_active", true);
-
-    if (settingsError) {
+    let notificationSettings;
+    try {
+      notificationSettings = await prisma.userNotificationSettings.findMany({
+        where: {
+          user_id: {
+            in: userIds,
+          },
+          is_active: true,
+        },
+      });
+    } catch (error) {
       await createSystemLog(
         "PUSH_NOTIFICATION_SETTINGS_FETCH_FAILED",
         `알림 설정 조회 실패.`,
@@ -343,13 +345,13 @@ export async function POST(request: NextRequest) {
           notificationType,
           targetUserIds,
           farmId,
-          settingsError: settingsError.message,
+          settingsError: error instanceof Error ? error.message : String(error),
         },
         user?.email,
         clientIP,
         userAgent
       );
-      devLog.error("알림 설정 조회 오류:", settingsError);
+      devLog.error("알림 설정 조회 오류:", error);
       return NextResponse.json(
         {
           success: false,
@@ -483,10 +485,11 @@ export async function POST(request: NextRequest) {
 
         // 410 Gone 에러인 경우 구독 삭제
         if (error.statusCode === 410) {
-          await supabase
-            .from("push_subscriptions")
-            .delete()
-            .eq("id", subscription.id);
+          await prisma.push_subscriptions.delete({
+            where: {
+              id: subscription.id,
+            },
+          });
         }
 
         return {

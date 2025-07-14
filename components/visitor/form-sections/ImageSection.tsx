@@ -27,6 +27,7 @@ export const ImageSection = ({
   return (
     <div className="mb-3 sm:mb-6 w-full flex flex-col items-center">
       <ImageUpload
+        id="visitor-image-upload"
         onUpload={onImageUpload}
         onDelete={onImageDelete ? () => onImageDelete("") : undefined}
         currentImage={uploadedImageUrl || formData.profilePhotoUrl || null}
@@ -34,6 +35,7 @@ export const ImageSection = ({
         showCamera={true}
         avatarSize="lg"
         hideGuidelines={true}
+        label="방문자 사진"
       />
     </div>
   );

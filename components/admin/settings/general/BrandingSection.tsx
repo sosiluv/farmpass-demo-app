@@ -100,10 +100,11 @@ export function BrandingSection({
             <div className="border-2 border-dashed border-blue-200 bg-blue-50/50 rounded-lg p-4 sm:p-6 space-y-3 sm:space-y-4">
               <div className="flex items-center gap-2 text-blue-700">
                 <Monitor className="h-5 w-5" />
-                <Label className="font-medium">사이트 로고</Label>
+                <span className="font-medium">사이트 로고</span>
               </div>
               <div className="flex flex-col items-center sm:block">
                 <ImageUpload
+                  id="site-logo-upload"
                   onUpload={async (file) => {
                     if (!file) return;
                     await logoUpload.uploadImage(file);
@@ -129,10 +130,11 @@ export function BrandingSection({
             <div className="border-2 border-dashed border-orange-200 bg-orange-50/50 rounded-lg p-4 sm:p-6 space-y-3 sm:space-y-4">
               <div className="flex items-center gap-2 text-orange-700">
                 <Bookmark className="h-5 w-5" />
-                <Label className="font-medium">파비콘</Label>
+                <span className="font-medium">파비콘</span>
               </div>
               <div className="flex flex-col items-center sm:block">
                 <ImageUpload
+                  id="site-favicon-upload"
                   onUpload={async (file) => {
                     if (!file) return;
 

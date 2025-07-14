@@ -85,7 +85,7 @@ export function StatCard({
 
           {/* 오른쪽: 트렌드 표시 */}
           {trend !== undefined && (
-            <div className="flex items-center gap-1 text-xs font-medium">
+            <div className="flex items-center gap-1 text-[10px] sm:text-xs font-medium">
               {trend > 0 ? (
                 <ArrowUpRight className="w-3 h-3 text-emerald-600 dark:text-emerald-400" />
               ) : trend < 0 ? (
@@ -109,7 +109,7 @@ export function StatCard({
         <div className="mt-4">
           <div
             className={cn(
-              "text-2xl sm:text-3xl font-bold tracking-tight transition-colors duration-300",
+              "text-sm sm:text-lg md:text-xl lg:text-2xl font-bold tracking-tight transition-colors duration-300",
               valueColors[variant]
             )}
           >
@@ -119,10 +119,10 @@ export function StatCard({
 
         {/* 제목과 설명 */}
         <div className="mt-2">
-          <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100 transition-colors duration-300">
+          <h3 className="text-xs sm:text-sm md:text-base font-semibold text-slate-900 dark:text-slate-100 transition-colors duration-300">
             {title}
           </h3>
-          <p className="text-xs text-slate-600 dark:text-slate-400 mt-1 transition-colors duration-300">
+          <p className="text-[10px] sm:text-xs text-slate-600 dark:text-slate-400 mt-1 transition-colors duration-300">
             {description}
           </p>
         </div>

@@ -46,7 +46,9 @@ export function FarmList({ farms }: FarmListProps) {
                 <AvatarFallback className="bg-blue-100 dark:bg-blue-900 flex items-center justify-center w-full h-full">
                   {(() => {
                     const Icon = getFarmTypeIcon(farm.farm_type || undefined);
-                    return <Icon className="h-4 w-4 sm:h-6 sm:w-6 lg:h-7 lg:w-7 text-blue-600 dark:text-blue-300" />;
+                    return (
+                      <Icon className="h-4 w-4 sm:h-6 sm:w-6 lg:h-7 lg:w-7 text-blue-600 dark:text-blue-300" />
+                    );
                   })()}
                 </AvatarFallback>
               </Avatar>

@@ -30,7 +30,10 @@ export const PhoneField = ({
       name="phoneNumber"
       render={({ field }) => (
         <FormItem className={`space-y-2 sm:space-y-2 ${className}`}>
-          <FormLabel className="flex items-center gap-2 font-semibold text-gray-800 text-sm">
+          <FormLabel
+            htmlFor="visitor-phoneNumber"
+            className="flex items-center gap-2 font-semibold text-gray-800 text-sm"
+          >
             <Phone className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
             {LABELS.PHONE_NUMBER}
             {required && <span className="text-red-500">*</span>}
@@ -38,6 +41,8 @@ export const PhoneField = ({
           <FormControl>
             <Input
               {...field}
+              id="visitor-phoneNumber"
+              name="phoneNumber"
               type="tel"
               onChange={(e) => {
                 const formattedPhone = formatPhone(e.target.value);

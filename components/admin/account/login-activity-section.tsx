@@ -63,8 +63,18 @@ export function LoginActivitySection({ profile }: LoginActivitySectionProps) {
 
       // 이전 로그인 기록 변환
       logs?.forEach((log) => {
+        // metadata가 string이면 JSON 파싱
+        let metadata = log.metadata;
+        if (typeof metadata === "string") {
+          try {
+            metadata = JSON.parse(metadata);
+          } catch {
+            metadata = {};
+          }
+        }
+
         // 저장된 user_agent 문자열로 DeviceInfo 생성
-        const userAgent = log.metadata?.user_agent || log.user_agent;
+        const userAgent = metadata?.user_agent || log.user_agent;
         // SSR에서도 동작하도록 window 객체를 오버라이드
         const mockWindow = { navigator: { userAgent } };
         const deviceInfo = getDeviceInfo.call({ window: mockWindow });
@@ -72,11 +82,11 @@ export function LoginActivitySection({ profile }: LoginActivitySectionProps) {
         activities.push({
           id: log.id,
           device: deviceInfo.type,
-          location: log.metadata?.location || "알 수 없음",
+          location: metadata?.location || "알 수 없음",
           time: formatTimeAgo(new Date(log.created_at)),
           isCurrent: false,
           icon: deviceInfo.icon,
-          ip: log.metadata?.ip || log.user_ip,
+          ip: metadata?.ip || log.user_ip,
           user_agent: userAgent,
         });
       });

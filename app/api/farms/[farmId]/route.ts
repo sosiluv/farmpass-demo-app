@@ -1,4 +1,3 @@
-import { createClient } from "@/lib/supabase/server";
 import { NextRequest, NextResponse } from "next/server";
 import { createSystemLog } from "@/lib/utils/logging/system-log";
 import { devLog } from "@/lib/utils/logging/dev-logger";
@@ -84,18 +83,16 @@ export async function PUT(
 
     const user = authResult.user;
     const isAdmin = authResult.isAdmin || false;
-    const supabase = await createClient();
     farmData = await request.json();
 
     // Verify ownership (관리자가 아닌 경우에만 소유권 확인)
     if (!isAdmin) {
-      const { data: existingFarm, error: farmCheckError } = await supabase
-        .from("farms")
-        .select("owner_id")
-        .eq("id", params.farmId)
-        .single();
+      const existingFarm = await prisma.farms.findUnique({
+        where: { id: params.farmId },
+        select: { owner_id: true },
+      });
 
-      if (farmCheckError || !existingFarm) {
+      if (!existingFarm) {
         return NextResponse.json(
           {
             success: false,
@@ -118,13 +115,12 @@ export async function PUT(
       }
     } else {
       // 관리자인 경우에도 농장 존재 여부는 확인
-      const { data: existingFarm, error: farmCheckError } = await supabase
-        .from("farms")
-        .select("id")
-        .eq("id", params.farmId)
-        .single();
+      const existingFarm = await prisma.farms.findUnique({
+        where: { id: params.farmId },
+        select: { id: true },
+      });
 
-      if (farmCheckError || !existingFarm) {
+      if (!existingFarm) {
         return NextResponse.json(
           {
             success: false,
@@ -137,16 +133,10 @@ export async function PUT(
     }
 
     // Update farm
-    const { data: farm, error: updateError } = await supabase
-      .from("farms")
-      .update(farmData)
-      .eq("id", params.farmId)
-      .select()
-      .single();
-
-    if (updateError) {
-      throw updateError;
-    }
+    const farm = await prisma.farms.update({
+      where: { id: params.farmId },
+      data: farmData,
+    });
 
     // 농장 수정 로그
     await createSystemLog(
@@ -237,31 +227,26 @@ export async function DELETE(
 
     const user = authResult.user;
     const isAdmin = authResult.isAdmin || false;
-    const supabase = await createClient();
 
     // Verify ownership and get farm info for logging (관리자가 아닌 경우에만 소유권 확인)
-    let farmQuery = supabase
-      .from("farms")
-      .select("owner_id, farm_name")
-      .eq("id", params.farmId)
-      .single();
+    let farm;
 
     if (isAdmin) {
       // 관리자인 경우 farm_name만 조회
-      farmQuery = supabase
-        .from("farms")
-        .select("farm_name")
-        .eq("id", params.farmId)
-        .single();
+      farm = await prisma.farms.findUnique({
+        where: { id: params.farmId },
+        select: { farm_name: true },
+      });
+    } else {
+      // 일반 사용자인 경우 owner_id와 farm_name 조회
+      farm = await prisma.farms.findUnique({
+        where: { id: params.farmId },
+        select: { owner_id: true, farm_name: true },
+      });
     }
 
-    const { data: farm, error: farmCheckError } = await farmQuery;
-
-    if (farmCheckError || !farm) {
-      devLog.error(
-        `Farm not found for deletion: ${params.farmId}`,
-        farmCheckError
-      );
+    if (!farm) {
+      devLog.error(`Farm not found for deletion: ${params.farmId}`);
       return NextResponse.json(
         {
           success: false,
@@ -274,13 +259,14 @@ export async function DELETE(
 
     // 소유권 확인 (관리자가 아닌 경우에만)
     if (!isAdmin) {
+      const farmWithOwner = farm as { owner_id: string; farm_name: string };
       devLog.log(
-        `Farm ownership check for deletion - Farm: ${params.farmId}, Owner: ${farm.owner_id}, User: ${user.id}`
+        `Farm ownership check for deletion - Farm: ${params.farmId}, Owner: ${farmWithOwner.owner_id}, User: ${user.id}`
       );
 
-      if (farm.owner_id !== user.id) {
+      if (farmWithOwner.owner_id !== user.id) {
         devLog.error(
-          `Unauthorized farm deletion - Farm: ${params.farmId}, Owner: ${farm.owner_id}, User: ${user.id}`
+          `Unauthorized farm deletion - Farm: ${params.farmId}, Owner: ${farmWithOwner.owner_id}, User: ${user.id}`
         );
         return NextResponse.json(
           {
@@ -321,14 +307,9 @@ export async function DELETE(
     );
 
     // 농장 삭제 (CASCADE로 farm_members도 자동 삭제됨)
-    const { error: deleteError } = await supabase
-      .from("farms")
-      .delete()
-      .eq("id", params.farmId);
-
-    if (deleteError) {
-      throw deleteError;
-    }
+    await prisma.farms.delete({
+      where: { id: params.farmId },
+    });
 
     return NextResponse.json(
       {

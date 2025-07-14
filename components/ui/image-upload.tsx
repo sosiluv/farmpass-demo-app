@@ -22,6 +22,7 @@ export interface ImageUploadProps {
   label?: string;
   uploadType?: UploadType | "image";
   hideGuidelines?: boolean;
+  id?: string; // 접근성을 위한 id 추가
 }
 
 export function ImageUpload({
@@ -35,6 +36,7 @@ export function ImageUpload({
   label = "이미지",
   uploadType = "image",
   hideGuidelines = false,
+  id = "image-upload", // 기본 id 제공
 }: ImageUploadProps) {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -113,6 +115,20 @@ export function ImageUpload({
         setLoading(true);
         setError(null);
 
+        const { config, errorMessage } = getUploadConfig();
+
+        // 파일 크기 검증
+        if (file.size > config.maxSize) {
+          setError(IMAGE_ERROR_MESSAGES.SIZE_EXCEEDED);
+          return;
+        }
+
+        // 파일 형식 검증
+        if (!config.allowedTypes.includes(file.type as any)) {
+          setError(errorMessage);
+          return;
+        }
+
         onUpload(file);
       } catch (err) {
         setError(IMAGE_ERROR_MESSAGES.PROCESSING_ERROR);
@@ -120,7 +136,7 @@ export function ImageUpload({
         setLoading(false);
       }
     },
-    [onUpload]
+    [onUpload, uploadType]
   );
 
   // 삭제 핸들러

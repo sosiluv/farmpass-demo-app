@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
 import webpush from "web-push";
 import { getSystemSettings } from "@/lib/cache/system-settings-cache";
 import { devLog } from "@/lib/utils/logging/dev-logger";
@@ -21,7 +20,6 @@ export async function POST(request: NextRequest) {
     }
 
     const user = authResult.user;
-    const supabase = await createClient();
 
     // VAPID 키 생성
     const vapidKeys = webpush.generateVAPIDKeys();

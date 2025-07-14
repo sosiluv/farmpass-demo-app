@@ -1,14 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
 import { createSystemLog } from "@/lib/utils/logging/system-log";
 import { devLog } from "@/lib/utils/logging/dev-logger";
 import { requireAuth } from "@/lib/server/auth-utils";
 import { getClientIP, getUserAgent } from "@/lib/server/ip-helpers";
 import { logApiError } from "@/lib/utils/logging/system-log";
+import { prisma } from "@/lib/prisma";
 
 // PATCH: 프로필 정보 수정
 export async function PATCH(request: NextRequest) {
-  const supabase = await createClient();
   const clientIP = getClientIP(request);
   const userAgent = getUserAgent(request);
 
@@ -22,14 +21,17 @@ export async function PATCH(request: NextRequest) {
 
   try {
     const data = await request.json();
-    const { error } = await supabase
-      .from("profiles")
-      .update({
+
+    await prisma.profiles.update({
+      where: {
+        id: user.id,
+      },
+      data: {
         ...data,
-        updated_at: new Date().toISOString(),
-      })
-      .eq("id", user.id);
-    if (error) throw error;
+        updated_at: new Date(),
+      },
+    });
+
     await createSystemLog(
       "PROFILE_UPDATE",
       `프로필 정보 수정: ${Object.keys(data).length}개 필드 수정`,
@@ -107,7 +109,6 @@ export async function PATCH(request: NextRequest) {
 
 // POST: 프로필 이미지 업로드
 export async function POST(request: NextRequest) {
-  const supabase = await createClient();
   const clientIP = getClientIP(request);
   const userAgent = getUserAgent(request);
 
@@ -121,14 +122,17 @@ export async function POST(request: NextRequest) {
 
   try {
     const { publicUrl, fileName } = await request.json();
-    const { error: updateError } = await supabase
-      .from("profiles")
-      .update({
+
+    await prisma.profiles.update({
+      where: {
+        id: user.id,
+      },
+      data: {
         profile_image_url: publicUrl,
-        updated_at: new Date().toISOString(),
-      })
-      .eq("id", user.id);
-    if (updateError) throw updateError;
+        updated_at: new Date(),
+      },
+    });
+
     await createSystemLog(
       "PROFILE_IMAGE_UPLOAD",
       `프로필 이미지 업로드: ${fileName}`,

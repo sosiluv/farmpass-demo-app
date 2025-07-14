@@ -3,7 +3,6 @@ import { prisma } from "@/lib/prisma";
 import { createSystemLog } from "@/lib/utils/logging/system-log";
 import { devLog } from "@/lib/utils/logging/dev-logger";
 import { getClientIP, getUserAgent } from "@/lib/server/ip-helpers";
-import { createClient } from "@/lib/supabase/server";
 import { requireAuth } from "@/lib/server/auth-utils";
 
 export async function POST(request: NextRequest) {

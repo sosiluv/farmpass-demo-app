@@ -115,7 +115,7 @@ export function CompanySection({
                   onValueChange={(value) => handleChange("businessType", value)}
                   disabled={loading}
                 >
-                  <SelectTrigger>
+                  <SelectTrigger id="businessType">
                     <SelectValue placeholder="업종 선택" />
                   </SelectTrigger>
                   <SelectContent>
@@ -171,7 +171,7 @@ export function CompanySection({
                   }
                   disabled={loading}
                 >
-                  <SelectTrigger>
+                  <SelectTrigger id="employee_count">
                     <SelectValue placeholder="직원 수 선택" />
                   </SelectTrigger>
                   <SelectContent>

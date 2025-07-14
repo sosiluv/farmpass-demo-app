@@ -1,10 +1,10 @@
 import { google } from "googleapis";
-import { createClient } from "@/lib/supabase/server";
 import { headers } from "next/headers";
 import { NextRequest, NextResponse } from "next/server";
 import { logApiError, logSystemWarning } from "@/lib/utils/logging/system-log";
 import { devLog } from "@/lib/utils/logging/dev-logger";
 import { getClientIP, getUserAgent } from "@/lib/server/ip-helpers";
+import { prisma } from "@/lib/prisma";
 
 // 시스템 헬스체크 데이터 패치
 async function fetchHealthCheck(baseUrl: string) {
@@ -214,45 +214,43 @@ async function fetchAnalyticsData() {
 // 에러 로그 데이터 패치
 async function fetchErrorLogs() {
   try {
-    const supabase = await createClient();
     const hoursAgo = new Date();
     hoursAgo.setHours(hoursAgo.getHours() - 24);
-    const { data: logs, error } = await supabase
-      .from("system_logs")
-      .select("*")
-      .eq("level", "error")
-      .gte("created_at", hoursAgo.toISOString())
-      .order("created_at", { ascending: false })
-      .limit(50);
-    if (error) {
-      return {
-        success: false,
-        error: "SYSTEM_LOGS_FETCH_FAILED",
-        message: "시스템 로그 조회에 실패했습니다.",
-        details: error.message,
-      };
-    }
-    const formattedLogs =
-      logs?.map((log: any) => {
-        let context = undefined;
-        if (log.metadata) {
-          try {
-            if (typeof log.metadata === "object") {
-              context = log.metadata;
-            } else {
-              context = JSON.parse(log.metadata);
-            }
-          } catch (error) {
-            context = { raw: log.metadata };
+
+    const logs = await prisma.system_logs.findMany({
+      where: {
+        level: "error",
+        created_at: {
+          gte: hoursAgo,
+        },
+      },
+      orderBy: {
+        created_at: "desc",
+      },
+      take: 50,
+    });
+
+    const formattedLogs = logs.map((log: any) => {
+      let context = undefined;
+      if (log.metadata) {
+        try {
+          if (typeof log.metadata === "object") {
+            context = log.metadata;
+          } else {
+            context = JSON.parse(log.metadata);
           }
+        } catch (error) {
+          context = { raw: log.metadata };
         }
-        return {
-          timestamp: log.created_at,
-          level: log.level,
-          message: log.message,
-          context,
-        };
-      }) || [];
+      }
+      return {
+        timestamp: log.created_at,
+        level: log.level,
+        message: log.message,
+        context,
+      };
+    });
+
     return formattedLogs;
   } catch (error) {
     return {

@@ -4,7 +4,12 @@ import { useEffect } from "react";
 import { farmFormSchema, type FarmFormValues } from "@/lib/utils/validation";
 import { Button } from "@/components/ui/button";
 import { Form } from "@/components/ui/form";
-import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogTrigger,
+  DialogFooter,
+} from "@/components/ui/dialog";
 import { Plus } from "lucide-react";
 import type { Farm } from "@/lib/types/farm";
 import type { FarmType } from "@/lib/constants/farm-types";
@@ -92,30 +97,35 @@ export function FarmFormDialog({
           농장 추가
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[600px]">
+      <DialogContent className="w-[95vw] max-w-lg max-h-[90vh] overflow-y-auto p-3 sm:p-6">
         <FarmFormDialogHeader editingFarm={editingFarm} />
         <Form {...form}>
           <form
             onSubmit={form.handleSubmit(handleSubmit)}
-            className="space-y-4"
+            className="space-y-3 sm:space-y-6"
           >
             <FarmFormBasicFields form={form} />
             <FarmFormAddressField form={form} />
             <FarmFormManagerFields form={form} />
 
-            <div className="flex justify-end space-x-2">
+            <DialogFooter className="gap-3 pt-4">
               <Button
                 type="button"
                 variant="outline"
                 onClick={() => onOpenChange(false)}
                 disabled={submitting || isLoading}
+                className="h-12 px-6 text-base flex-1 sm:flex-none"
               >
                 취소
               </Button>
-              <Button type="submit" disabled={submitting || isLoading}>
+              <Button
+                type="submit"
+                disabled={submitting || isLoading}
+                className="h-12 px-6 text-base flex-1 sm:flex-none min-w-[100px]"
+              >
                 {(submitting || isLoading) && (
                   <svg
-                    className="animate-spin mr-2 h-4 w-4"
+                    className="animate-spin mr-2 h-5 w-5"
                     viewBox="0 0 16 16"
                     fill="none"
                     xmlns="http://www.w3.org/2000/svg"
@@ -138,7 +148,7 @@ export function FarmFormDialog({
                 )}
                 {editingFarm ? "수정" : "등록"}
               </Button>
-            </div>
+            </DialogFooter>
           </form>
         </Form>
       </DialogContent>

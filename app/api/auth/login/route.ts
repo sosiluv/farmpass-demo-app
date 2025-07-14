@@ -13,7 +13,11 @@ import {
   logApiPerformance,
   logDatabasePerformance,
 } from "@/lib/utils/logging/system-log";
-import { getClientIP, getUserAgent } from "@/lib/server/ip-helpers";
+import {
+  getClientIP,
+  getUserAgent,
+  getLocationFromIP,
+} from "@/lib/server/ip-helpers";
 
 // 동적 렌더링 강제
 export const dynamic = "force-dynamic";
@@ -174,6 +178,7 @@ async function incrementLoginAttempts(
       attempts: profile.login_attempts || 0,
       ip: clientIP,
       user_agent: userAgent,
+      location: location,
       timestamp: new Date().toISOString(),
     },
     email,
@@ -222,6 +227,7 @@ export async function POST(request: NextRequest) {
   // 요청 컨텍스트 정보 추출
   const clientIP = getClientIP(request);
   const userAgent = getUserAgent(request);
+  const location = await getLocationFromIP(clientIP);
 
   try {
     const { email, password } = await request.json();
@@ -364,6 +370,9 @@ export async function POST(request: NextRequest) {
             reset_reason: "successful_login",
             action_type: "security_event",
             reset_at: new Date().toISOString(),
+            ip: clientIP,
+            user_agent: userAgent,
+            location: location, // IP 기반 위치 정보
           },
           email,
           clientIP,

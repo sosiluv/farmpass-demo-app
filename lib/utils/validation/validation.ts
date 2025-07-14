@@ -525,6 +525,10 @@ export function getAuthErrorMessage(
     system_logs_fetch_failed: "시스템 로그 조회에 실패했습니다.",
     // Visitor 관련
     visitor_query_error: "방문자 조회 중 오류가 발생했습니다.",
+    duplicate_visitor_info: "중복된 방문자 정보가 있습니다.",
+    visitor_not_found: "방문자 정보를 찾을 수 없습니다.",
+    visitor_update_failed: "방문자 정보 수정에 실패했습니다.",
+    visitor_delete_failed: "방문자 삭제에 실패했습니다.",
     // Push 관련 (새로 추가)
     vapid_keys_not_set: "VAPID 키가 설정되지 않았습니다.",
     subscriber_fetch_failed: "구독자 조회에 실패했습니다.",

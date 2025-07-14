@@ -39,7 +39,7 @@ export function LocalizationSection({
               onValueChange={(value) => onSettingChange("language", value)}
               disabled={loading}
             >
-              <SelectTrigger>
+              <SelectTrigger id="language">
                 <SelectValue placeholder="언어 선택" />
               </SelectTrigger>
               <SelectContent>
@@ -62,7 +62,7 @@ export function LocalizationSection({
               onValueChange={(value) => onSettingChange("timezone", value)}
               disabled={loading}
             >
-              <SelectTrigger>
+              <SelectTrigger id="timezone">
                 <SelectValue placeholder="시간대 선택" />
               </SelectTrigger>
               <SelectContent>

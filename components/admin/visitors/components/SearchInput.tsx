@@ -17,6 +17,7 @@ export function SearchInput({
     <div className="relative flex-1 group min-w-0">
       <Search className="absolute left-2 sm:left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-3 w-3 sm:h-4 sm:w-4 group-focus-within:text-blue-500 transition-colors duration-200" />
       <Input
+        id="visitor-search"
         placeholder={placeholder}
         value={searchTerm}
         onChange={(e) => onSearchChange(e.target.value)}

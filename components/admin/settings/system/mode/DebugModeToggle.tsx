@@ -18,7 +18,10 @@ export function DebugModeToggle({
     <div className="flex items-center justify-between py-2">
       <div className="space-y-0.5">
         <div className="flex items-center gap-2">
-          <Label className="text-sm font-medium flex items-center gap-1">
+          <Label
+            htmlFor="debug-mode"
+            className="text-sm font-medium flex items-center gap-1"
+          >
             <Bug className="h-4 w-4" />
             디버그 모드
           </Label>
@@ -42,6 +45,7 @@ export function DebugModeToggle({
         )}
       </div>
       <Switch
+        id="debug-mode"
         checked={debugMode}
         onCheckedChange={onUpdate}
         disabled={isLoading}

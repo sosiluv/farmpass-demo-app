@@ -141,7 +141,7 @@ export default function FarmsPage() {
       title="농장 관리 오류"
       description="농장 정보를 불러오는 중 문제가 발생했습니다. 페이지를 새로고침하거나 잠시 후 다시 시도해주세요."
     >
-      <div className="flex-1 space-y-4 p-4 md:p-6 pt-2 md:pt-4">
+      <div className="flex-1 space-y-4 p-1 md:p-6 pt-2 md:pt-4">
         <FarmsPageHeader
           dialogOpen={dialogOpen}
           onDialogOpenChange={setDialogOpen}
@@ -153,10 +153,11 @@ export default function FarmsPage() {
         {/* 검색 기능 */}
         <div className="mb-6">
           <Input
+            id="farm-search"
             placeholder="농장 검색... (농장명, 주소)"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-64"
+            className="w-full sm:w-64 h-12 text-base placeholder:text-xs sm:placeholder:text-sm"
           />
         </div>
 

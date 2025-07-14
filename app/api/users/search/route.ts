@@ -1,9 +1,9 @@
-import { createClient } from "@/lib/supabase/server";
 import { NextResponse, NextRequest } from "next/server";
 import { createSystemLog } from "@/lib/utils/logging/system-log";
 import { devLog } from "@/lib/utils/logging/dev-logger";
 import { requireAuth } from "@/lib/server/auth-utils";
 import { getClientIP, getUserAgent } from "@/lib/server/ip-helpers";
+import { prisma } from "@/lib/prisma";
 
 // 동적 렌더링 강제
 export const dynamic = "force-dynamic";
@@ -23,7 +23,6 @@ export async function GET(request: NextRequest) {
   const isAdmin = authResult.isAdmin || false;
 
   try {
-    const supabase = await createClient();
     const { searchParams } = new URL(request.url);
     const query = searchParams.get("q");
     const farmId = searchParams.get("farmId");
@@ -36,11 +35,14 @@ export async function GET(request: NextRequest) {
     if (farmId) {
       // 시스템 관리자가 아닌 경우에만 농장별 권한 확인
       if (!isAdmin) {
-        const { data: farm } = await supabase
-          .from("farms")
-          .select("owner_id")
-          .eq("id", farmId)
-          .single();
+        const farm = await prisma.farms.findUnique({
+          where: {
+            id: farmId,
+          },
+          select: {
+            owner_id: true,
+          },
+        });
 
         if (!farm) {
           return NextResponse.json(
@@ -54,12 +56,15 @@ export async function GET(request: NextRequest) {
         }
 
         // 농장 소유자이거나 구성원인지 확인
-        const { data: membership } = await supabase
-          .from("farm_members")
-          .select("role")
-          .eq("farm_id", farmId)
-          .eq("user_id", user.id)
-          .single();
+        const membership = await prisma.farm_members.findFirst({
+          where: {
+            farm_id: farmId,
+            user_id: user.id,
+          },
+          select: {
+            role: true,
+          },
+        });
 
         const isOwner = farm.owner_id === user.id;
         const isMember = !!membership;
@@ -96,23 +101,42 @@ export async function GET(request: NextRequest) {
     }
 
     // 사용자 검색 (이메일, 이름으로 검색)
-    const { data: users, error } = await supabase
-      .from("profiles")
-      .select("id, name, email")
-      .or(`email.ilike.%${query}%,name.ilike.%${query}%`)
-      .limit(10);
-
-    if (error) {
-      throw error;
-    }
+    const users = await prisma.profiles.findMany({
+      where: {
+        OR: [
+          {
+            email: {
+              contains: query,
+              mode: "insensitive",
+            },
+          },
+          {
+            name: {
+              contains: query,
+              mode: "insensitive",
+            },
+          },
+        ],
+      },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+      },
+      take: 10,
+    });
 
     // 농장 ID가 제공된 경우, 이미 해당 농장의 구성원인 사용자 제외
     let filteredUsers = users || [];
     if (farmId) {
-      const { data: existingMembers } = await supabase
-        .from("farm_members")
-        .select("user_id")
-        .eq("farm_id", farmId);
+      const existingMembers = await prisma.farm_members.findMany({
+        where: {
+          farm_id: farmId,
+        },
+        select: {
+          user_id: true,
+        },
+      });
 
       const memberUserIds = new Set(
         existingMembers?.map((m) => m.user_id) || []

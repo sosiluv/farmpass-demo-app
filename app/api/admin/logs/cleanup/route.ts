@@ -5,6 +5,7 @@ import { logApiError } from "@/lib/utils/logging/system-log";
 import { devLog } from "@/lib/utils/logging/dev-logger";
 import { getClientIP, getUserAgent } from "@/lib/server/ip-helpers";
 import { requireAuth } from "@/lib/server/auth-utils";
+import { prisma } from "@/lib/prisma";
 
 export async function POST(request: NextRequest) {
   // 요청 컨텍스트 정보 추출
@@ -186,9 +187,6 @@ export async function GET(request: NextRequest) {
       return authResult.response!;
     }
 
-    const user = authResult.user;
-    const supabase = await createClient();
-
     // 시스템 설정 조회
     const settings = await getSystemSettings();
     devLog.log("settings", settings);
@@ -211,16 +209,22 @@ export async function GET(request: NextRequest) {
     });
 
     // 만료된 로그 개수 조회
-    const { count: expiredLogsCount } = await supabase
-      .from("system_logs")
-      .select("*", { count: "exact", head: true })
-      .lt("created_at", logCutoffDate.toISOString());
+    const expiredLogsCount = await prisma.system_logs.count({
+      where: {
+        created_at: {
+          lt: logCutoffDate,
+        },
+      },
+    });
 
     // 만료된 방문자 데이터 개수 조회
-    const { count: expiredVisitorsCount } = await supabase
-      .from("visitor_entries")
-      .select("*", { count: "exact", head: true })
-      .lt("visit_datetime", visitorCutoffDate.toISOString());
+    const expiredVisitorsCount = await prisma.visitor_entries.count({
+      where: {
+        visit_datetime: {
+          lt: visitorCutoffDate,
+        },
+      },
+    });
 
     devLog.log("데이터 개수 조회 완료:", {
       expiredLogsCount,

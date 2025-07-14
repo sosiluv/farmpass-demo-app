@@ -29,12 +29,15 @@ const NotificationBehaviorSection = React.memo(
         <CardContent className="space-y-4">
           <div className="flex items-center justify-between">
             <div className="space-y-0.5">
-              <Label className="text-sm font-medium">소리 알림</Label>
+              <Label htmlFor="push-sound" className="text-sm font-medium">
+                소리 알림
+              </Label>
               <p className="text-xs text-muted-foreground">
                 알림 수신 시 소리를 재생합니다
               </p>
             </div>
             <Switch
+              id="push-sound"
               checked={settings.pushSoundEnabled || false}
               onCheckedChange={(checked) =>
                 onUpdate("pushSoundEnabled", checked)
@@ -44,12 +47,15 @@ const NotificationBehaviorSection = React.memo(
 
           <div className="flex items-center justify-between">
             <div className="space-y-0.5">
-              <Label className="text-sm font-medium">진동 알림</Label>
+              <Label htmlFor="push-vibrate" className="text-sm font-medium">
+                진동 알림
+              </Label>
               <p className="text-xs text-muted-foreground">
                 모바일 기기에서 진동을 발생시킵니다
               </p>
             </div>
             <Switch
+              id="push-vibrate"
               checked={settings.pushVibrateEnabled || false}
               onCheckedChange={(checked) =>
                 onUpdate("pushVibrateEnabled", checked)
@@ -59,12 +65,18 @@ const NotificationBehaviorSection = React.memo(
 
           <div className="flex items-center justify-between">
             <div className="space-y-0.5">
-              <Label className="text-sm font-medium">지속적 표시</Label>
+              <Label
+                htmlFor="push-require-interaction"
+                className="text-sm font-medium"
+              >
+                지속적 표시
+              </Label>
               <p className="text-xs text-muted-foreground">
                 사용자가 확인할 때까지 알림을 유지합니다
               </p>
             </div>
             <Switch
+              id="push-require-interaction"
               checked={settings.pushRequireInteraction || false}
               onCheckedChange={(checked) =>
                 onUpdate("pushRequireInteraction", checked)

@@ -29,7 +29,10 @@ export const CarPlateField = ({
       name="carPlateNumber"
       render={({ field }) => (
         <FormItem className={`space-y-2 sm:space-y-2 ${className}`}>
-          <FormLabel className="flex items-center gap-2 font-semibold text-gray-800 text-sm">
+          <FormLabel
+            htmlFor="visitor-carPlateNumber"
+            className="flex items-center gap-2 font-semibold text-gray-800 text-sm"
+          >
             <Car className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
             {LABELS.CAR_PLATE}
             {required && <span className="text-red-500">*</span>}
@@ -37,6 +40,8 @@ export const CarPlateField = ({
           <FormControl>
             <Input
               {...field}
+              id="visitor-carPlateNumber"
+              name="carPlateNumber"
               onChange={(e) => field.onChange(e.target.value.toUpperCase())}
               placeholder={PLACEHOLDERS.CAR_PLATE}
               className="h-10 sm:h-12 bg-gray-50 border border-gray-200 uppercase text-sm"

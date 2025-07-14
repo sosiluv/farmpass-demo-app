@@ -4,6 +4,7 @@ import { requireAuth } from "@/lib/server/auth-utils";
 import { devLog } from "@/lib/utils/logging/dev-logger";
 import { createSystemLog } from "@/lib/utils/logging/system-log";
 import { getClientIP, getUserAgent } from "@/lib/server/ip-helpers";
+import { prisma } from "@/lib/prisma";
 
 // 재귀적으로 Storage의 모든 파일을 가져오는 함수
 async function getAllStorageFiles(
@@ -165,13 +166,23 @@ async function cleanupVisitorImages(supabase: any) {
 
   try {
     // 1. DB에서 사용 중인 방문자 이미지 URL들 수집
-    const { data: usedUrls, error: dbError } = await supabase
-      .from("visitor_entries")
-      .select("profile_photo_url")
-      .not("profile_photo_url", "is", null)
-      .neq("profile_photo_url", "");
+    let usedUrls;
+    let dbError = null;
 
-    if (dbError) {
+    try {
+      usedUrls = await prisma.visitor_entries.findMany({
+        where: {
+          AND: [
+            { profile_photo_url: { not: null } },
+            { profile_photo_url: { not: "" } },
+          ],
+        },
+        select: {
+          profile_photo_url: true,
+        },
+      });
+    } catch (error) {
+      dbError = error;
       devLog.error("[CLEANUP_VISITOR_IMAGES] DB error:", dbError);
       return { deleted: 0, total: 0 };
     }
@@ -225,13 +236,23 @@ async function cleanupProfileImages(supabase: any) {
 
   try {
     // 1. DB에서 사용 중인 프로필 이미지 URL들 수집
-    const { data: profiles, error: profilesError } = await supabase
-      .from("profiles")
-      .select("profile_image_url")
-      .not("profile_image_url", "is", null)
-      .neq("profile_image_url", "");
+    let profiles;
+    let profilesError = null;
 
-    if (profilesError) {
+    try {
+      profiles = await prisma.profiles.findMany({
+        where: {
+          AND: [
+            { profile_image_url: { not: null } },
+            { profile_image_url: { not: "" } },
+          ],
+        },
+        select: {
+          profile_image_url: true,
+        },
+      });
+    } catch (error) {
+      profilesError = error;
       devLog.error("[CLEANUP_PROFILE_IMAGES] DB error:", {
         profilesError,
       });

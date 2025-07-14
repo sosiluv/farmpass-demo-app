@@ -18,9 +18,13 @@ export function AddMemberEmailField({
 }: AddMemberEmailFieldProps) {
   return (
     <div className="space-y-1 sm:space-y-2">
-      <Label className="text-xs sm:text-sm">이메일</Label>
+      <Label htmlFor="member-email-search" className="text-xs sm:text-sm">
+        이메일
+      </Label>
       <div className="relative">
         <Input
+          id="member-email-search"
+          name="member-email-search"
           placeholder="이메일 주소 입력 (최소 2글자)"
           value={searchTerm}
           onChange={(e) => onSearchTermChange(e.target.value)}

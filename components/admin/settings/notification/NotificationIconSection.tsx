@@ -99,7 +99,7 @@ const NotificationIconSection = React.memo(function NotificationIconSection({
             <div className="border-2 border-dashed border-blue-200 bg-blue-50/50 rounded-lg p-4 sm:p-6 space-y-3 sm:space-y-4">
               <div className="flex items-center gap-2 text-blue-700">
                 <Bell className="h-5 w-5" />
-                <Label className="font-medium">알림 아이콘</Label>
+                <span className="font-medium">알림 아이콘</span>
               </div>
               <div className="flex flex-col items-center sm:block">
                 <ImageUpload
@@ -127,7 +127,7 @@ const NotificationIconSection = React.memo(function NotificationIconSection({
             <div className="border-2 border-dashed border-orange-200 bg-orange-50/50 rounded-lg p-4 sm:p-6 space-y-3 sm:space-y-4">
               <div className="flex items-center gap-2 text-orange-700">
                 <BadgeCheck className="h-5 w-5" />
-                <Label className="font-medium">배지 아이콘</Label>
+                <span className="font-medium">배지 아이콘</span>
               </div>
               <div className="flex flex-col items-center sm:block">
                 <ImageUpload

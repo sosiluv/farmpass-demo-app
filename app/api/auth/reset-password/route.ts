@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createSystemLog } from "@/lib/utils/logging/system-log";
 import { devLog } from "@/lib/utils/logging/dev-logger";
 import { getClientIP, getUserAgent } from "@/lib/server/ip-helpers";
+import { prisma } from "@/lib/prisma";
 
 export async function POST(request: NextRequest) {
   const clientIP = getClientIP(request);
@@ -25,13 +26,14 @@ export async function POST(request: NextRequest) {
     const supabase = await createClient();
 
     // profiles 테이블에서 사용자 정보 가져오기
-    const { data: userData, error: profileError } = await supabase
-      .from("profiles")
-      .select("id")
-      .eq("email", email)
-      .maybeSingle();
+    let userData;
 
-    if (profileError) {
+    try {
+      userData = await prisma.profiles.findUnique({
+        where: { email },
+        select: { id: true },
+      });
+    } catch (error) {
       return NextResponse.json(
         {
           success: false,
