@@ -276,22 +276,6 @@ export async function GET(request: NextRequest) {
         // 각 구독의 유효성 검사
         for (const subscription of subscriptions) {
           try {
-            const pushSubscription = {
-              endpoint: subscription.endpoint,
-              keys: {
-                p256dh: subscription.p256dh,
-                auth: subscription.auth,
-              },
-            };
-
-            // 빈 알림으로 유효성 테스트 (실제로는 발송하지 않음)
-            const testPayload = {
-              title: "연결 테스트",
-              body: "구독 유효성 검사",
-              tag: "validity-check",
-              silent: true, // 무음 알림
-            };
-
             // 실제로는 발송하지 않고 구독 객체만 검증
             if (
               subscription.endpoint &&

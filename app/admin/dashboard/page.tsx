@@ -162,13 +162,17 @@ export default function DashboardPage() {
     { timeout: 10000 }
   );
 
-  if (timeoutReached) {
-    // 타임아웃 시 경고 메시지 표시
-    showWarning(
-      "데이터 로딩 지연",
-      "네트워크 상태를 확인하거나 다시 시도해 주세요."
-    );
+  // 타임아웃 상태 변경 시 경고 메시지 표시
+  useEffect(() => {
+    if (timeoutReached) {
+      showWarning(
+        "데이터 로딩 지연",
+        "네트워크 상태를 확인하거나 다시 시도해 주세요."
+      );
+    }
+  }, [timeoutReached, showWarning]);
 
+  if (timeoutReached) {
     return (
       <AdminError
         title="데이터를 불러오지 못했습니다"
@@ -319,14 +323,7 @@ export default function DashboardPage() {
           )}
         </div>
 
-        {/* 알림 권한 요청 다이얼로그 */}
-        <NotificationPermissionDialog
-          open={showDialog}
-          onOpenChange={closeDialog}
-          onAllow={handleAllow}
-          onDeny={handleDeny}
-          farmCount={availableFarms.length}
-        />
+        {/* 알림 권한 요청 다이얼로그는 DialogManager에서 관리하므로 제거 */}
       </>
     </ErrorBoundary>
   );

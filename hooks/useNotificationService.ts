@@ -2,13 +2,13 @@ import { useState, useCallback } from "react";
 import { devLog } from "@/lib/utils/logging/dev-logger";
 import { getNotificationErrorMessage } from "@/lib/utils/validation/validation";
 import { safeNotificationAccess } from "@/lib/utils/browser/safari-compat";
+import { requestNotificationPermissionAndSubscribe } from "@/lib/utils/notification/push-subscription";
 
 // React Query Hooks
 import {
   useVapidKeyQuery,
   useCreateSubscriptionMutation,
   useDeleteSubscriptionMutation,
-  useSendTestPushMutation,
   useCleanupSubscriptionsMutation,
   useSubscriptionStatusQuery,
 } from "@/lib/hooks/query/use-push-mutations";
@@ -24,12 +24,13 @@ export function useNotificationService(enableVapidKey: boolean = false) {
   const [isLoading, setIsLoading] = useState(false);
 
   // React Query Hooks - VAPID key는 필요할 때만 조회
-  const { data: vapidKey } = useVapidKeyQuery({ enabled: enableVapidKey });
+  const { data: vapidKey, refetch: refetchVapidKey } = useVapidKeyQuery({
+    enabled: enableVapidKey,
+  });
   const { data: subscriptions, refetch: refetchSubscriptions } =
     useSubscriptionStatusQuery(false); // 수동으로 조회할 때만 사용
   const createSubscriptionMutation = useCreateSubscriptionMutation();
   const deleteSubscriptionMutation = useDeleteSubscriptionMutation();
-  const sendTestPushMutation = useSendTestPushMutation();
   const cleanupSubscriptionsMutation = useCleanupSubscriptionsMutation();
   const saveNotificationSettingsMutation =
     useSaveNotificationSettingsMutation();
@@ -63,7 +64,7 @@ export function useNotificationService(enableVapidKey: boolean = false) {
 
       // 구독 생성 Mutation 사용
       const result = await createSubscriptionMutation.mutateAsync({
-        subscription: subscription.toJSON(),
+        subscription, // toJSON() 제거!
         farmId,
       });
 
@@ -152,29 +153,6 @@ export function useNotificationService(enableVapidKey: boolean = false) {
     }
   };
 
-  // 테스트 알림 발송 - React Query 사용
-  const sendTestNotification = async () => {
-    try {
-      const result = await sendTestPushMutation.mutateAsync({
-        title: "테스트 알림",
-        body: "푸시 알림이 정상적으로 작동하고 있습니다! 🎉",
-      });
-
-      setLastMessage({
-        type: "success",
-        title: "테스트 알림 발송",
-        message: result?.message || "테스트 알림이 발송되었습니다",
-      });
-    } catch (error) {
-      const notificationError = getNotificationErrorMessage(error);
-      setLastMessage({
-        type: "error",
-        title: "테스트 실패",
-        message: notificationError.message,
-      });
-    }
-  };
-
   // 구독 정리 - React Query Mutation 사용
   const cleanupSubscriptions = async () => {
     try {
@@ -207,38 +185,48 @@ export function useNotificationService(enableVapidKey: boolean = false) {
     }
   };
 
-  // 권한 요청 및 구독 처리
+  // 권한 요청 및 구독 처리 - 공통 로직 사용
   const requestNotificationPermission = useCallback(async () => {
     setIsLoading(true);
     try {
-      const safeNotification = safeNotificationAccess();
-
-      if (!safeNotification.isSupported) {
-        throw new Error("이 브라우저는 알림을 지원하지 않습니다.");
+      // VAPID 키가 없으면 강제로 fetch해서 반드시 준비될 때까지 기다림
+      let key = vapidKey;
+      if (!key) {
+        const { data: newKey } = await refetchVapidKey();
+        key = newKey;
       }
-
-      if (safeNotification.permission === "denied") {
-        throw new Error("알림 권한이 거부되었습니다.");
-      }
-
-      // 권한 요청
-      const permission = await safeNotification.requestPermission();
-
-      if (permission === "granted") {
-        const currentVapidKey = await getVapidPublicKey();
-        if (!currentVapidKey)
-          throw new Error("VAPID 키가 설정되지 않았습니다.");
-
-        const registration = await navigator.serviceWorker.ready;
-        const subscription = await registration.pushManager.subscribe({
-          userVisibleOnly: true,
-          applicationServerKey: urlBase64ToUint8Array(currentVapidKey),
+      if (!key) {
+        setLastMessage({
+          type: "error",
+          title: "VAPID 키 오류",
+          message:
+            "VAPID 키가 아직 준비되지 않았습니다. 잠시 후 다시 시도해 주세요.",
         });
-
-        await handleSubscription(subscription);
+        return false;
+      }
+      // 공통 로직 사용
+      const result = await requestNotificationPermissionAndSubscribe(
+        async () => key,
+        async (subscription) => {
+          // 서버에 구독 정보 전송
+          return await handleSubscription(subscription as PushSubscription);
+        }
+      );
+      // 결과에 따른 메시지 설정
+      if (result.success) {
+        setLastMessage({
+          type: "success",
+          title: "구독 성공",
+          message: result.message || "알림 구독이 완료되었습니다",
+        });
         return true;
       } else {
-        throw new Error("알림 권한이 허용되지 않았습니다.");
+        setLastMessage({
+          type: "error",
+          title: "알림 설정 실패",
+          message: result.message || "알림 설정 중 오류가 발생했습니다.",
+        });
+        return false;
       }
     } catch (error) {
       devLog.error("알림 권한 요청 실패:", error);
@@ -252,23 +240,12 @@ export function useNotificationService(enableVapidKey: boolean = false) {
     } finally {
       setIsLoading(false);
     }
-  }, [createSubscriptionMutation, saveNotificationSettingsMutation]);
-
-  // Base64 to Uint8Array 변환
-  const urlBase64ToUint8Array = (base64String: string) => {
-    const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
-    const base64 = (base64String + padding)
-      .replace(/-/g, "+")
-      .replace(/_/g, "/");
-
-    const rawData = window.atob(base64);
-    const outputArray = new Uint8Array(rawData.length);
-
-    for (let i = 0; i < rawData.length; ++i) {
-      outputArray[i] = rawData.charCodeAt(i);
-    }
-    return outputArray;
-  };
+  }, [
+    vapidKey,
+    refetchVapidKey,
+    createSubscriptionMutation,
+    saveNotificationSettingsMutation,
+  ]);
 
   return {
     isLoading,
@@ -276,7 +253,6 @@ export function useNotificationService(enableVapidKey: boolean = false) {
     handleSubscription,
     handleUnsubscription,
     getSubscriptionStatus,
-    sendTestNotification,
     cleanupSubscriptions,
     requestNotificationPermission,
     lastMessage,

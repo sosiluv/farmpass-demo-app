@@ -1,8 +1,7 @@
 "use client";
 
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 // QueryClient 설정
 function makeQueryClient() {
@@ -58,92 +57,63 @@ function makeQueryClient() {
 }
 
 // 글로벌 에러 처리 함수
-function handleGlobalQueryError(error: any, queryKey: readonly unknown[]) {
-  // HTTP 상태 코드로 에러 감지
-  const status = (error as any)?.status;
-
-  // 인증 에러 (401)
-  if (status === 401) {
-    console.warn("🔐 Authentication error detected:", queryKey);
-    // 인증이 필요한 페이지에서는 로그인 페이지로 리다이렉트
-    if (
-      typeof window !== "undefined" &&
-      window.location.pathname.startsWith("/admin")
-    ) {
-      window.location.href = "/login";
-    }
-    return;
+function handleGlobalQueryError(error: any, queryKey: any) {
+  // 개발 환경에서만 콘솔에 에러 출력
+  if (process.env.NODE_ENV === "development") {
+    console.error("React Query Error:", {
+      error: error?.message || error,
+      queryKey,
+      timestamp: new Date().toISOString(),
+    });
   }
 
-  // 권한 에러 (403)
-  if (status === 403) {
-    console.warn("🚫 Permission denied:", queryKey);
-    // 권한 에러는 조용히 처리 (컴포넌트 레벨에서 처리)
-    return;
-  }
-
-  // 서버 에러 (500번대)
-  if (status >= 500 && status < 600) {
-    console.error("🔥 Server error:", queryKey, error);
-    // 서버 에러는 조용히 처리 (너무 많은 토스트 방지)
-    return;
-  }
-
-  // 요청 제한 에러 (429)
-  if (status === 429) {
-    console.warn("⏰ Rate limit exceeded:", queryKey);
-    // 요청 제한 에러는 조용히 처리
-    return;
-  }
-
-  // 클라이언트 에러 (400번대) - 401, 403, 429 제외
+  // 인증 에러는 자동으로 처리하지 않음 (AuthProvider에서 처리)
   if (
-    status >= 400 &&
-    status < 500 &&
-    status !== 401 &&
-    status !== 403 &&
-    status !== 429
+    error?.message?.includes("Unauthorized") ||
+    error?.message?.includes("Admin access required")
   ) {
-    console.warn("⚠️ Client error:", queryKey, error);
-    // 클라이언트 에러는 조용히 처리
     return;
   }
 
-  // 네트워크 에러 (상태 코드 0)
-  if (status === 0) {
-    console.error("📡 Network error:", queryKey, error);
-    // 네트워크 에러는 조용히 처리 (연결 문제일 가능성)
+  // 네트워크 에러는 자동 재시도되므로 별도 처리 안함
+  if (error?.message?.includes("Failed to fetch")) {
     return;
   }
-
-  // 기타 에러는 조용히 로깅
-  console.error("❌ Query error:", queryKey, error);
 }
 
-let browserQueryClient: QueryClient | undefined = undefined;
+// 개발 환경에서만 DevTools 컴포넌트 생성
+function DevTools() {
+  const [DevToolsComponent, setDevToolsComponent] =
+    useState<React.ComponentType<any> | null>(null);
 
-function getQueryClient() {
-  if (typeof window === "undefined") {
-    // 서버에서는 매번 새로운 QueryClient 생성
-    return makeQueryClient();
-  } else {
-    // 브라우저에서는 싱글톤 사용
-    if (!browserQueryClient) browserQueryClient = makeQueryClient();
-    return browserQueryClient;
+  useEffect(() => {
+    // 개발 환경에서만 DevTools 로드
+    if (process.env.NODE_ENV === "development") {
+      import("@tanstack/react-query-devtools")
+        .then((module) => {
+          setDevToolsComponent(() => module.ReactQueryDevtools);
+        })
+        .catch(() => {
+          // DevTools 로드 실패 시 무시
+          console.warn("React Query DevTools 로드 실패");
+        });
+    }
+  }, []);
+
+  if (!DevToolsComponent) {
+    return null;
   }
+
+  return <DevToolsComponent initialIsOpen={false} />;
 }
 
 export function QueryProvider({ children }: { children: React.ReactNode }) {
-  // useState로 QueryClient 생성하여 리렌더링 시 새로 생성되는 것을 방지
-  const [queryClient] = useState(() => getQueryClient());
+  const [queryClient] = useState(() => makeQueryClient());
 
   return (
     <QueryClientProvider client={queryClient}>
       {children}
-      {/* 개발 모드에서만 DevTools 표시 */}
-      {process.env.NODE_ENV === "development" && (
-        <ReactQueryDevtools initialIsOpen={false} />
-      )}
+      <DevTools />
     </QueryClientProvider>
   );
 }

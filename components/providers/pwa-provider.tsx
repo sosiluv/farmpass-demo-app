@@ -23,6 +23,8 @@ interface InstallInfo {
 interface PWAContextType {
   installInfo: InstallInfo;
   isLoading: boolean;
+  deferredPrompt: any; // beforeinstallprompt 이벤트 저장
+  triggerInstall: () => Promise<any>; // 실제 설치 트리거 함수
 }
 
 const PWAContext = createContext<PWAContextType | undefined>(undefined);
@@ -157,6 +159,29 @@ export function PWAProvider({ children }: { children: ReactNode }) {
     userAgent: "",
   });
   const [isLoading, setIsLoading] = useState(true);
+  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
+
+  // 실제 설치 트리거 함수
+  const triggerInstall = async () => {
+    if (deferredPrompt) {
+      try {
+        // 브라우저 네이티브 설치 프롬프트 표시
+        const result = await deferredPrompt.prompt();
+        devLog.log("설치 프롬프트 결과:", result.outcome);
+
+        // 프롬프트 사용 후 초기화
+        setDeferredPrompt(null);
+
+        return result;
+      } catch (error) {
+        devLog.error("설치 프롬프트 실행 실패:", error);
+        throw error;
+      }
+    } else {
+      devLog.warn("설치 프롬프트가 사용 불가능합니다");
+      throw new Error("설치 프롬프트를 사용할 수 없습니다");
+    }
+  };
 
   useEffect(() => {
     // 브라우저 환경에서만 실행
@@ -221,10 +246,14 @@ export function PWAProvider({ children }: { children: ReactNode }) {
         }
       };
 
-      // beforeinstallprompt 이벤트 리스너 추가 (더 정확한 설치 상태 감지)
+      // beforeinstallprompt 이벤트 리스너 추가
       const handleBeforeInstallPrompt = (e: Event) => {
         e.preventDefault();
-        devLog.log("beforeinstallprompt 이벤트 감지 - 아직 설치되지 않음");
+        devLog.log("beforeinstallprompt 이벤트 감지 - 설치 프롬프트 저장");
+
+        // 이벤트를 저장하여 나중에 사용
+        setDeferredPrompt(e);
+
         // 이벤트가 발생하면 아직 설치되지 않은 것으로 판단
         const updatedInfo = checkInstallability();
         // 현재 상태와 다를 때만 업데이트
@@ -298,8 +327,10 @@ export function PWAProvider({ children }: { children: ReactNode }) {
     () => ({
       installInfo,
       isLoading,
+      deferredPrompt,
+      triggerInstall,
     }),
-    [installInfo, isLoading]
+    [installInfo, isLoading, deferredPrompt]
   );
 
   return (
@@ -312,7 +343,10 @@ export function usePWAInstall() {
   if (context === undefined) {
     throw new Error("usePWAInstall must be used within a PWAProvider");
   }
-  return context.installInfo;
+  return {
+    ...context.installInfo,
+    triggerInstall: context.triggerInstall,
+  };
 }
 
 export function usePWALoading() {

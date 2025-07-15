@@ -2,6 +2,7 @@ import { SystemSettings } from "@/lib/types/settings";
 import { DEFAULT_SYSTEM_SETTINGS } from "@/lib/constants/defaults";
 import { devLog } from "@/lib/utils/logging/dev-logger";
 import { apiClient } from "@/lib/utils/data";
+import crypto from "crypto";
 
 export class SystemSettingsCache {
   private cache: SystemSettings | null = null;
@@ -40,21 +41,43 @@ export class SystemSettingsCache {
       if (process.env.NODE_ENV === "development") {
         devLog.log("[CACHE] Fetching settings from API");
       }
-      const baseUrl =
-        typeof window !== "undefined"
-          ? window.location.origin
-          : "http://localhost:3000";
 
-      const settings = await apiClient(`${baseUrl}/api/settings`, {
-        context: "시스템 설정 조회",
-      });
+      // 서버 사이드에서는 직접 데이터베이스 조회
+      if (typeof window === "undefined") {
+        const { prisma } = await import("@/lib/prisma");
+        const settings = await prisma.systemSettings.findFirst();
 
-      // ✅ 캐시 데이터 새로고침 성공 로그 (개발 환경에서만)
-      if (process.env.NODE_ENV === "development") {
-        devLog.log("[CACHE] Settings refreshed successfully");
+        if (settings) {
+          if (process.env.NODE_ENV === "development") {
+            devLog.log("[CACHE] Settings fetched from database directly");
+          }
+          return settings as SystemSettings;
+        } else {
+          // 설정이 없으면 기본값으로 생성
+          const newSettings = await prisma.systemSettings.create({
+            data: {
+              ...DEFAULT_SYSTEM_SETTINGS,
+              id: crypto.randomUUID(),
+              created_at: new Date(),
+              updated_at: new Date(),
+            },
+          });
+          return newSettings as SystemSettings;
+        }
+      } else {
+        // 클라이언트 사이드에서는 API 호출
+        const baseUrl = window.location.origin;
+        const settings = await apiClient(`${baseUrl}/api/settings`, {
+          context: "시스템 설정 조회",
+        });
+
+        // ✅ 캐시 데이터 새로고침 성공 로그 (개발 환경에서만)
+        if (process.env.NODE_ENV === "development") {
+          devLog.log("[CACHE] Settings refreshed successfully");
+        }
+
+        return settings as SystemSettings;
       }
-
-      return settings as SystemSettings;
     } catch (error) {
       if (process.env.NODE_ENV === "development") {
         devLog.error("시스템 설정 조회 실패:", error);
@@ -74,19 +97,6 @@ export class SystemSettingsCache {
    * 설정 조회 (캐시 우선, 백그라운드 리프레시)
    */
   async getSettings(): Promise<SystemSettings> {
-    // 빌드 시점에는 캐시 로직을 건너뛰고 기본값 반환
-    if (
-      process.env.NODE_ENV === "production" &&
-      typeof window === "undefined"
-    ) {
-      return {
-        ...DEFAULT_SYSTEM_SETTINGS,
-        id: "build-default",
-        created_at: new Date(),
-        updated_at: new Date(),
-      };
-    }
-
     // 1. 캐시에서 먼저 확인
     const cached = this.getCachedSettings();
     const isStale = !cached || this.isCacheStale();

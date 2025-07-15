@@ -1,12 +1,11 @@
 import { Bell } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import NotificationCardHeader from "./NotificationCardHeader";
-import { useNotificationSettingsQuery } from "@/lib/hooks/query/use-notification-settings-query";
-import { useNotificationMutations } from "@/lib/hooks/query/use-notification-mutations";
 import { BellRing, MessageSquare } from "lucide-react";
 import NotificationTypeCard from "@/components/admin/notifications/NotificationTypeCard";
+import type { NotificationSettings } from "@/lib/types/notification";
 
-// 알림 방식 옵션을 메모이제이션
+// 알림 방식 옵션
 const notificationTypeOptions = [
   {
     title: "웹 푸시",
@@ -25,17 +24,20 @@ const notificationTypeOptions = [
   },
 ];
 
-export function NotificationMethodsCard() {
-  const { data: settings } = useNotificationSettingsQuery();
-  const { saveSettings } = useNotificationMutations();
+interface NotificationMethodsCardProps {
+  settings: NotificationSettings | null;
+  onSettingChange: <K extends keyof NotificationSettings>(
+    key: K,
+    value: NotificationSettings[K]
+  ) => void;
+}
 
+export function NotificationMethodsCard({
+  settings,
+  onSettingChange,
+}: NotificationMethodsCardProps) {
   const handleOptionSelect = (value: string) => {
-    if (!settings) return;
-
-    saveSettings.mutate({
-      ...settings,
-      notification_method: value as "push" | "kakao",
-    });
+    onSettingChange("notification_method", value as "push" | "kakao");
   };
 
   return (
@@ -48,7 +50,7 @@ export function NotificationMethodsCard() {
       <CardContent>
         <div className="space-y-4">
           <div className="grid gap-4 md:grid-cols-2">
-            {(notificationTypeOptions || []).map((option) => (
+            {notificationTypeOptions.map((option) => (
               <NotificationTypeCard
                 key={option.value}
                 title={option.title}

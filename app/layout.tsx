@@ -11,7 +11,7 @@ import { ToastPositionProvider } from "@/components/providers/toast-position-pro
 import { DebugProvider } from "@/components/providers/debug-provider";
 import { SystemMonitor } from "@/components/common/system-monitor";
 import { PWAUpdater } from "@/components/common/pwa-updater";
-import { DialogManager } from "@/components/common/DialogManager";
+
 import { getMetadataSettings } from "@/lib/server/metadata";
 import { ErrorBoundary } from "@/components/error/error-boundary";
 import { Analytics } from "@vercel/analytics/react";
@@ -112,7 +112,6 @@ export default async function RootLayout({
                       {children}
                       <Toaster />
                       <SystemMonitor />
-                      <DialogManager />
                     </ToastPositionProvider>
                   </PWAProvider>
                 </DebugProvider>

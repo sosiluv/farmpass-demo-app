@@ -16,6 +16,7 @@ import {
 } from "@/components/admin/notifications";
 import { useCommonToast } from "@/lib/utils/notification/toast-messages";
 import { getAuthErrorMessage } from "@/lib/utils/validation/validation";
+import type { NotificationSettings } from "@/lib/types/notification";
 
 export default function NotificationsPage() {
   const { state } = useAuth();
@@ -30,6 +31,36 @@ export default function NotificationsPage() {
   const { data: settings, error: settingsError } =
     useNotificationSettingsQuery();
   const { showInfo, showError } = useCommonToast();
+
+  // 시스템 설정 페이지처럼 로컬 상태 관리
+  const [unsavedChanges, setUnsavedChanges] = useState(false);
+  const [localSettings, setLocalSettings] =
+    useState<NotificationSettings | null>(null);
+
+  // settings가 로드되면 localSettings 업데이트
+  useEffect(() => {
+    if (settings) {
+      setLocalSettings(settings);
+      setUnsavedChanges(false);
+    }
+  }, [settings]);
+
+  // 설정 변경 핸들러
+  const handleSettingChange = <K extends keyof NotificationSettings>(
+    key: K,
+    value: NotificationSettings[K]
+  ) => {
+    if (!localSettings) return;
+
+    // 로컬 상태 즉시 업데이트
+    setLocalSettings((prev) => (prev ? { ...prev, [key]: value } : prev));
+    setUnsavedChanges(true);
+  };
+
+  // 저장 완료 후 상태 초기화
+  const handleSaveComplete = () => {
+    setUnsavedChanges(false);
+  };
 
   // 농장 데이터 로드
   useEffect(() => {
@@ -99,7 +130,6 @@ export default function NotificationsPage() {
 
             {isSubscribed && (
               <>
-                {/* TODO: 임시 비활성화 카카오톡 알림 미구현으로인해 주석처리 */}
                 <motion.div
                   key="methods"
                   initial={{ opacity: 0, y: 20 }}
@@ -107,7 +137,10 @@ export default function NotificationsPage() {
                   exit={{ opacity: 0, y: -20 }}
                   transition={{ duration: 0.3 }}
                 >
-                  <NotificationMethodsCard />
+                  <NotificationMethodsCard
+                    settings={localSettings}
+                    onSettingChange={handleSettingChange}
+                  />
                 </motion.div>
 
                 <motion.div
@@ -117,13 +150,20 @@ export default function NotificationsPage() {
                   exit={{ opacity: 0, y: -20 }}
                   transition={{ duration: 0.3 }}
                 >
-                  <NotificationTypesCard />
+                  <NotificationTypesCard
+                    settings={localSettings}
+                    onSettingChange={handleSettingChange}
+                  />
                 </motion.div>
               </>
             )}
           </AnimatePresence>
         </div>
-        <NotificationSettingsActions />
+        <NotificationSettingsActions
+          hasUnsavedChanges={unsavedChanges}
+          onSaveComplete={handleSaveComplete}
+          currentSettings={localSettings}
+        />
       </div>
     </ErrorBoundary>
   );

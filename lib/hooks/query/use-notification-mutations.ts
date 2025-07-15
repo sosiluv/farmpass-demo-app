@@ -45,7 +45,7 @@ export function useSubscribePushMutation() {
     ): Promise<{ success: boolean; message?: string }> => {
       const result = await apiClient("/api/push/subscription", {
         method: "POST",
-        body: JSON.stringify({ subscription: subscription.toJSON() }),
+        body: JSON.stringify({ subscription }), // toJSON() 제거!
         context: "푸시 구독 등록",
       });
       return result;

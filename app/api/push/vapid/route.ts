@@ -151,7 +151,7 @@ export async function GET(request: NextRequest) {
     );
 
     return NextResponse.json({
-      publicKey: settings.vapidPublicKey,
+      publicKey: publicKey,
     });
   } catch (error) {
     devLog.error("VAPID 키 조회 실패:", error);

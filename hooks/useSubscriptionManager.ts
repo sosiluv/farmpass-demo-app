@@ -168,7 +168,7 @@ export function useSubscriptionManager(enableVapidKey: boolean = false) {
 
         // 7. 서버에 구독 정보 전송 (React Query Mutation 사용)
         await createSubscriptionMutation.mutateAsync({
-          subscription: newSubscription.toJSON(),
+          subscription: newSubscription, // toJSON() 제거!
         });
 
         devLog.log(`구독 전환 완료: ${userId}`);

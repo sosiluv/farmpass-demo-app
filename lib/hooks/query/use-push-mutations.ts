@@ -112,32 +112,6 @@ export const useDeleteSubscriptionMutation = () => {
   });
 };
 
-// 테스트 푸시 전송 (Mutation)
-export const useSendTestPushMutation = () => {
-  return useMutation({
-    mutationFn: async (data: {
-      title: string;
-      body: string;
-      farmId?: string;
-    }): Promise<{ success: boolean; message?: string }> => {
-      devLog.log("[MUTATION] 테스트 푸시 전송 시작", data);
-
-      const result = await apiClient("/api/push/test", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
-        context: "테스트 푸시 전송",
-      });
-
-      devLog.log("[MUTATION] 테스트 푸시 전송 완료");
-      return result;
-    },
-    onError: (error) => {
-      devLog.error("[MUTATION] 테스트 푸시 전송 실패:", error);
-    },
-  });
-};
-
 // VAPID 키 재생성 (Mutation)
 export const useRegenerateVapidKeyMutation = () => {
   const queryClient = useQueryClient();

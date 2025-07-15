@@ -1,7 +1,6 @@
 import {
   Bell,
   BellOff,
-  TestTube,
   CheckCircle,
   Clock,
   AlertTriangle,
@@ -26,7 +25,6 @@ interface StatusProps {
   isLoading?: boolean;
   onAllow?: () => void;
   onDeny?: () => void;
-  onTest?: () => void;
   onCleanup?: () => void;
   onUnsubscribe?: () => void;
   farms?: NotificationFarm[];
@@ -130,7 +128,6 @@ export const GrantedStatus = ({ isLoading, onAllow }: StatusProps) => (
 
 export const SubscribedStatus = ({
   farms,
-  onTest,
   onCleanup,
   onUnsubscribe,
   isLoading,
@@ -154,18 +151,6 @@ export const SubscribedStatus = ({
       </div>
       {/* 버튼 그룹 - PC에서 오른쪽 정렬 및 여백 조정 */}
       <div className="flex gap-2 w-full lg:w-auto lg:ml-auto">
-        {process.env.NODE_ENV === "development" && (
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={onTest}
-            className="flex-1 lg:flex-initial h-10 px-4 hover:bg-primary/10"
-            title="테스트 알림 발송"
-          >
-            <TestTube className="h-4 w-4 lg:mr-2" />
-            <span className="hidden lg:inline">테스트</span>
-          </Button>
-        )}
         <Button
           variant="ghost"
           size="sm"

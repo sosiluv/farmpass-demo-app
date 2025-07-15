@@ -15,7 +15,10 @@ const supabaseDomain = supabaseUrl
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  productionBrowserSourceMaps: true, // Source maps 활성화
+  // 빌드 성능 최적화
+  productionBrowserSourceMaps: false, // Source maps 비활성화로 빌드 시간 단축
+  swcMinify: true, // SWC 압축 활성화 (더 빠른 압축)
+
   /**
    * 🔬 실험적 기능 설정
    * Next.js의 최신 기능들을 안전하게 테스트할 수 있도록 허용
@@ -40,6 +43,17 @@ const nextConfig = {
         "samwon1141.com", // FarmPass 도메인 (www 없이)
       ],
     },
+    // 빌드 성능 최적화
+    optimizePackageImports: [
+      "lucide-react",
+      "@radix-ui/react-icons",
+      "@tanstack/react-query",
+      "@tanstack/react-query-devtools",
+      "sharp",
+      "multer",
+    ],
+    // React Query 최적화
+    optimizeCss: true,
   },
 
   /**
@@ -50,7 +64,7 @@ const nextConfig = {
    *
    * @see https://react.dev/reference/react/StrictMode
    */
-  reactStrictMode: true, // 개발 환경에서 문제 감지를 위해 활성화
+  reactStrictMode: true,
 
   /**
    * 🖼️ 이미지 최적화 설정
@@ -63,6 +77,9 @@ const nextConfig = {
       supabaseDomain, // Supabase Storage 도메인 (환경변수에서 추출)
     ].filter(Boolean), // 빈 값 제거
     unoptimized: false, // 이미지 최적화 활성화 (WebP 변환, 리사이징 등)
+    // 이미지 처리 최적화
+    formats: ["image/webp", "image/avif"],
+    minimumCacheTTL: 60,
   },
 
   /**
@@ -110,6 +127,45 @@ const nextConfig = {
       return config;
     },
   }),
+
+  /**
+   * 🚀 React Query + Prisma 최적화
+   */
+  webpack: (config, { dev, isServer }) => {
+    // 프로덕션 빌드에서 DevTools 제외
+    if (!dev && !isServer) {
+      config.resolve.alias = {
+        ...config.resolve.alias,
+        "@tanstack/react-query-devtools": false,
+      };
+    }
+
+    // React Query + Prisma 최적화
+    config.optimization = {
+      ...config.optimization,
+      splitChunks: {
+        ...config.optimization.splitChunks,
+        cacheGroups: {
+          ...config.optimization.splitChunks.cacheGroups,
+          reactQuery: {
+            test: /[\\/]node_modules[\\/]@tanstack[\\/]/,
+            name: "react-query",
+            chunks: "all",
+            priority: 10,
+          },
+          // 이미지 처리 최적화
+          imageProcessing: {
+            test: /[\\/]node_modules[\\/](sharp|multer|image-size)[\\/]/,
+            name: "image-processing",
+            chunks: "all",
+            priority: 8,
+          },
+        },
+      },
+    };
+
+    return config;
+  },
 };
 
 /**

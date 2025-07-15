@@ -6,6 +6,7 @@ import { NotificationPermissionDialog } from "@/components/admin/notifications";
 import { InstallPrompt } from "./InstallPrompt";
 import { useNotificationPermission } from "@/hooks/useNotificationPermission";
 import { usePWAInstall } from "@/components/providers/pwa-provider";
+import { useFarmsQuery } from "@/lib/hooks/query/use-farms-query";
 
 export function DialogManager() {
   const { currentDialog, isVisible, removeDialog, addDialog, queue } =
@@ -14,6 +15,9 @@ export function DialogManager() {
   const installInfo = usePWAInstall();
   const { showDialog, handleAllow, handleDeny, closeDialog } =
     useNotificationPermission();
+
+  // 농장 데이터 가져오기
+  const { farms } = useFarmsQuery();
 
   // 알림 권한 다이얼로그 관리
   useEffect(() => {
@@ -24,7 +28,6 @@ export function DialogManager() {
         queue.some((dialog) => dialog.type === "notification");
 
       if (!hasNotificationDialog) {
-        console.log("✅ 알림 권한 다이얼로그 추가");
         addDialog({
           type: "notification",
           priority: 100, // 최고 우선순위
@@ -33,15 +36,13 @@ export function DialogManager() {
             handleAllow,
             handleDeny,
             closeDialog,
-            farmCount: 0, // 기본값, 실제로는 농장 개수를 가져와야 함
+            farmCount: farms.length, // 실제 농장 수 사용
           },
           isSystemDialog: true,
         });
-      } else {
-        console.log("🚫 알림 다이얼로그 중복 방지됨");
       }
     }
-  }, [showDialog, addDialog, currentDialog, queue]); // queue도 의존성에 추가
+  }, [showDialog, addDialog, currentDialog, queue, farms.length]); // farms.length 의존성 추가
 
   // PWA 설치 프롬프트 관리
   useEffect(() => {
@@ -81,8 +82,9 @@ export function DialogManager() {
             open={true}
             onOpenChange={(open) => {
               if (!open) {
-                // X 버튼을 누를 때도 closeDialog 호출하여 훅의 상태 업데이트
-                currentDialog.data.closeDialog();
+                // X 버튼을 누를 때는 handleDeny를 호출하여 로컬스토리지에 기록
+                console.log("🔧 X 버튼 클릭됨 - handleDeny 호출");
+                currentDialog.data.handleDeny();
                 removeDialog(currentDialog.id);
               }
             }}

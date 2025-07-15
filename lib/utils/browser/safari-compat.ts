@@ -206,39 +206,3 @@ export function safeNotificationAccess() {
     },
   };
 }
-
-/**
- * Safari 특정 문제 진단
- */
-export function diagnoseSafariIssues(): {
-  isPrivateBrowsing: boolean;
-  localStorageAvailable: boolean;
-  sessionStorageAvailable: boolean;
-  cryptoUUIDAvailable: boolean;
-  notificationSupported: boolean;
-  serviceWorkerSupported: boolean;
-} {
-  if (typeof window === "undefined") {
-    return {
-      isPrivateBrowsing: false,
-      localStorageAvailable: false,
-      sessionStorageAvailable: false,
-      cryptoUUIDAvailable: false,
-      notificationSupported: false,
-      serviceWorkerSupported: false,
-    };
-  }
-
-  const localStorage = safeLocalStorageAccess();
-  const sessionStorage = safeSessionStorageAccess();
-
-  return {
-    isPrivateBrowsing:
-      localStorage.isPrivateBrowsing || sessionStorage.isPrivateBrowsing,
-    localStorageAvailable: !localStorage.isPrivateBrowsing,
-    sessionStorageAvailable: !sessionStorage.isPrivateBrowsing,
-    cryptoUUIDAvailable: typeof crypto !== "undefined" && !!crypto.randomUUID,
-    notificationSupported: "Notification" in window,
-    serviceWorkerSupported: "serviceWorker" in navigator,
-  };
-}
