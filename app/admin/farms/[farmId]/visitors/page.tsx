@@ -48,10 +48,13 @@ export default function FarmVisitorsPage() {
   } = useVisitorFiltersStore();
 
   // React Query 필터링 Hook
+  const allowedDateRanges = ["today", "all", "custom", "week", "month"];
   const visitorsFilteredQuery = useFarmVisitorsWithFiltersQuery({
     farmId: farmId,
     searchTerm: filters.searchTerm || "",
-    dateRange: filters.dateRange || "all",
+    dateRange: allowedDateRanges.includes(filters.dateRange)
+      ? (filters.dateRange as "today" | "all" | "custom" | "week" | "month")
+      : "all",
     dateStart: filters.dateStart || undefined,
     dateEnd: filters.dateEnd || undefined,
   });
