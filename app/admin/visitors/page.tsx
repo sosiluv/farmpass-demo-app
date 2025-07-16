@@ -52,9 +52,11 @@ export default function VisitorsPage() {
 
   // React Query 필터링 Hook
   const visitorsFilteredQuery = useFarmVisitorsWithFiltersQuery({
-    farmId: filters.farmId || null,
+    farmId: filters.farmId || undefined,
     searchTerm: filters.searchTerm || "",
-    dateRange: filters.dateRange || "all",
+    dateRange:
+      (filters.dateRange as "custom" | "all" | "today" | "week" | "month") ||
+      "all",
     dateStart: filters.dateStart || undefined,
     dateEnd: filters.dateEnd || undefined,
   });

@@ -11,7 +11,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { FileX } from "lucide-react";
+import { FileX, Loader2 } from "lucide-react";
 import type { OrphanFilesStatus } from "@/lib/types/settings";
 
 interface OrphanFilesActionsProps {
@@ -74,12 +74,22 @@ export function OrphanFilesActions({
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>취소</AlertDialogCancel>
+            <AlertDialogCancel disabled={orphanFilesLoading}>
+              취소
+            </AlertDialogCancel>
             <AlertDialogAction
               onClick={onCleanupRequest}
+              disabled={orphanFilesLoading}
               className="bg-red-600 hover:bg-red-700"
             >
-              삭제
+              {orphanFilesLoading ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  삭제 중...
+                </>
+              ) : (
+                "삭제"
+              )}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

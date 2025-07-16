@@ -2,16 +2,17 @@ import {
   Bell,
   BellOff,
   CheckCircle,
-  Clock,
   AlertTriangle,
   Shield,
   Zap,
   Activity,
   Building,
   RefreshCw,
+  Loader2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Loading } from "@/components/ui/loading";
 import type { SubscriptionStatus } from "@/lib/types/notification";
 import type { Farm } from "@/lib/types";
 
@@ -32,16 +33,13 @@ interface StatusProps {
 
 export const CheckingStatus = () => (
   <div className="flex items-center justify-center py-12">
-    <div className="flex flex-col items-center gap-3 text-muted-foreground">
-      <div className="relative">
-        <Clock className="h-6 w-6 animate-spin" />
-        <div className="absolute inset-0 rounded-full border-2 border-primary/20 animate-ping" />
-      </div>
-      <div className="text-center">
-        <p className="text-sm font-medium">푸시 알림 상태 확인 중</p>
-        <p className="text-xs text-muted-foreground">잠시만 기다려주세요...</p>
-      </div>
-    </div>
+    <Loading
+      text="푸시 알림 상태 확인 중"
+      minHeight={120}
+      spinnerSize={28}
+      spinnerColor="text-primary"
+      className="py-6 w-full"
+    />
   </div>
 );
 
@@ -57,7 +55,17 @@ export const UnsupportedStatus = () => (
     <p className="text-sm text-muted-foreground mb-4 max-w-sm mx-auto">
       현재 브라우저에서는 푸시 알림을 지원하지 않습니다.
       <br />
-      Chrome, Firefox, Safari 최신 버전을 사용해주세요.
+      <b>지원 브라우저/환경:</b>
+      <br />• <b>Chrome</b> (PC, Android)
+      <br />• <b>Edge</b> (PC)
+      <br />• <b>Firefox</b> (PC, Android)
+      <br />• <b>iOS/iPadOS Safari</b> (16.4 이상, <b>홈 화면에 추가한 PWA</b>만
+      지원)
+      <br />
+      <span className="text-xs text-muted-foreground">
+        ※ iOS 사파리는 브라우저 탭에서는 지원하지 않으며, 반드시 홈 화면에
+        추가한 앱에서만 푸시 알림이 가능합니다.
+      </span>
     </p>
     <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-muted rounded-full text-xs text-muted-foreground">
       <Shield className="h-3 w-3" />
@@ -111,7 +119,7 @@ export const GrantedStatus = ({ isLoading, onAllow }: StatusProps) => (
         >
           {isLoading ? (
             <>
-              <Clock className="mr-2 h-4 w-4 animate-spin" />
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
               구독 진행 중...
             </>
           ) : (

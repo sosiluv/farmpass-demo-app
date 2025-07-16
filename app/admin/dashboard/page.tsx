@@ -9,11 +9,9 @@ import {
   StatsGrid,
   ChartGrid,
 } from "@/components/admin/dashboard";
-import { NotificationPermissionDialog } from "@/components/admin/notifications";
 import { useNotificationPermission } from "@/hooks/useNotificationPermission";
 import { useCommonToast } from "@/lib/utils/notification/toast-messages";
-import { Button } from "@/components/ui/button";
-import { Bell, Bug, RotateCcw, BarChart3, TrendingUp } from "lucide-react";
+import { BarChart3, TrendingUp } from "lucide-react";
 import { ErrorBoundary } from "@/components/error/error-boundary";
 import { calculateUnifiedChartData } from "@/lib/utils/data/common-stats";
 import { devLog } from "@/lib/utils/logging/dev-logger";
@@ -71,17 +69,7 @@ export default function DashboardPage() {
   }, []);
 
   // 알림 권한 관리
-  const {
-    showDialog,
-    handleAllow,
-    handleDeny,
-    closeDialog,
-    showDialogForce,
-    resetPermissionState,
-    getDebugInfo,
-    lastMessage,
-    clearLastMessage,
-  } = useNotificationPermission();
+  const { lastMessage, clearLastMessage } = useNotificationPermission();
 
   const { showWarning, showSuccess, showError } = useCommonToast();
 
@@ -248,79 +236,6 @@ export default function DashboardPage() {
               weekdayStats={chartData.weekdayStats}
             />
           </section>
-
-          {/* 개발 환경에서만 표시되는 알림 다이얼로그 테스트 버튼 */}
-          {process.env.NODE_ENV === "development" && (
-            <section className="border-t pt-6 mt-8">
-              <div className="bg-gradient-to-r from-slate-50 to-slate-100 dark:from-slate-800 dark:to-slate-900 rounded-xl p-6 space-y-4 border border-slate-200 dark:border-slate-700">
-                <div className="flex items-center gap-2 text-sm font-medium text-slate-700 dark:text-slate-300">
-                  <Bug className="h-4 w-4 text-amber-600 dark:text-amber-400" />
-                  알림 다이얼로그 디버깅 (개발 모드)
-                </div>
-
-                <div className="flex flex-wrap gap-3">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={showDialogForce}
-                    className="text-xs hover:bg-slate-100 dark:hover:bg-slate-800"
-                  >
-                    <Bell className="mr-1 h-3 w-3" />
-                    다이얼로그 강제 표시
-                  </Button>
-
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={resetPermissionState}
-                    className="text-xs hover:bg-slate-100 dark:hover:bg-slate-800"
-                  >
-                    <RotateCcw className="mr-1 h-3 w-3" />
-                    권한 상태 초기화
-                  </Button>
-
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => {
-                      const debugInfo = getDebugInfo();
-                      devLog.log("=== 알림 권한 디버깅 정보 ===", debugInfo);
-                      alert(
-                        `디버깅 정보:\n\n권한: ${
-                          debugInfo?.currentPermission
-                        }\n마지막 요청: ${debugInfo?.lastAsked}\n재요청 가능: ${
-                          debugInfo?.canReAsk ? "YES" : "NO"
-                        }\n재요청까지 남은 일수: ${
-                          debugInfo?.daysUntilReAsk
-                        }\n\nPWA 정보:\nPWA 모드: ${
-                          debugInfo?.isPWA ? "YES" : "NO"
-                        }\n표시 모드: ${debugInfo?.displayMode}\n웹푸시 지원: ${
-                          debugInfo?.pushSupported ? "YES" : "NO"
-                        }${
-                          debugInfo?.iosVersion
-                            ? `\niOS 버전: ${debugInfo.iosVersion}`
-                            : ""
-                        }\n\n다이얼로그 표시: ${
-                          debugInfo?.state.showDialog ? "YES" : "NO"
-                        }\n\n자세한 정보는 콘솔을 확인하세요.`
-                      );
-                    }}
-                    className="text-xs hover:bg-slate-100 dark:hover:bg-slate-800"
-                  >
-                    <Bug className="mr-1 h-3 w-3" />
-                    디버깅 정보
-                  </Button>
-                </div>
-
-                <div className="text-xs text-slate-600 dark:text-slate-400 space-y-1">
-                  <p className="font-medium">알림 권한 재요청 정책:</p>
-                  <p>• 권한이 허용된 경우: 더 이상 요청하지 않음</p>
-                  <p>• 권한이 거부되거나 미설정인 경우: 7일 간격으로 재요청</p>
-                  <p>• 위 버튼들로 강제 테스트 가능</p>
-                </div>
-              </div>
-            </section>
-          )}
         </div>
 
         {/* 알림 권한 요청 다이얼로그는 DialogManager에서 관리하므로 제거 */}

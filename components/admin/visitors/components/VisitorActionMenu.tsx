@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { MoreHorizontal, Pencil, Trash } from "lucide-react";
+import { MoreHorizontal, Pencil, Trash, Loader2 } from "lucide-react";
 import { devLog } from "@/lib/utils/logging/dev-logger";
 import {
   DropdownMenu,
@@ -141,7 +141,14 @@ export function VisitorActionMenu({
               className="bg-destructive hover:bg-destructive/90"
               disabled={isProcessing}
             >
-              {isProcessing ? "삭제 중..." : "삭제"}
+              {isProcessing ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  삭제 중...
+                </>
+              ) : (
+                "삭제"
+              )}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

@@ -11,7 +11,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { Trash2, AlertTriangle } from "lucide-react";
+import { Trash2, AlertTriangle, Loader2 } from "lucide-react";
 import type { CleanupStatus } from "@/lib/types/settings";
 
 interface CleanupActionsProps {
@@ -82,12 +82,22 @@ export function CleanupActions({
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>취소</AlertDialogCancel>
+            <AlertDialogCancel disabled={cleanupLoading}>
+              취소
+            </AlertDialogCancel>
             <AlertDialogAction
               onClick={() => onCleanupRequest("system_logs")}
+              disabled={cleanupLoading}
               className="bg-orange-600 hover:bg-orange-700"
             >
-              삭제
+              {cleanupLoading ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  정리 중...
+                </>
+              ) : (
+                "삭제"
+              )}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -153,12 +163,22 @@ export function CleanupActions({
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>취소</AlertDialogCancel>
+            <AlertDialogCancel disabled={cleanupLoading}>
+              취소
+            </AlertDialogCancel>
             <AlertDialogAction
               onClick={() => onCleanupRequest("all")}
+              disabled={cleanupLoading}
               className="bg-red-600 hover:bg-red-700"
             >
-              삭제
+              {cleanupLoading ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  정리 중...
+                </>
+              ) : (
+                "삭제"
+              )}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

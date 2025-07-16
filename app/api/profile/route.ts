@@ -22,7 +22,7 @@ export async function PATCH(request: NextRequest) {
   try {
     const data = await request.json();
 
-    await prisma.profiles.update({
+    const updatedProfile = await prisma.profiles.update({
       where: {
         id: user.id,
       },
@@ -31,6 +31,31 @@ export async function PATCH(request: NextRequest) {
         updated_at: new Date(),
       },
     });
+
+    // 🔥 프로필 수정 실시간 브로드캐스트
+    try {
+      const { createServiceRoleClient } = await import(
+        "@/lib/supabase/service-role"
+      );
+      const supabase = createServiceRoleClient();
+      await supabase.channel("profile_updates").send({
+        type: "broadcast",
+        event: "profile_updated",
+        payload: {
+          eventType: "UPDATE",
+          new: updatedProfile,
+          old: null,
+          table: "profiles",
+          schema: "public",
+        },
+      });
+      console.log("📡 [PROFILE-UPDATE-API] Supabase Broadcast 발송 완료");
+    } catch (broadcastError) {
+      console.error(
+        "⚠️ [PROFILE-UPDATE-API] Broadcast 발송 실패:",
+        broadcastError
+      );
+    }
 
     await createSystemLog(
       "PROFILE_UPDATE",
@@ -123,7 +148,7 @@ export async function POST(request: NextRequest) {
   try {
     const { publicUrl, fileName } = await request.json();
 
-    await prisma.profiles.update({
+    const updatedProfile = await prisma.profiles.update({
       where: {
         id: user.id,
       },
@@ -132,6 +157,31 @@ export async function POST(request: NextRequest) {
         updated_at: new Date(),
       },
     });
+
+    // 🔥 프로필 이미지 업로드 실시간 브로드캐스트
+    try {
+      const { createServiceRoleClient } = await import(
+        "@/lib/supabase/service-role"
+      );
+      const supabase = createServiceRoleClient();
+      await supabase.channel("profile_updates").send({
+        type: "broadcast",
+        event: "profile_updated",
+        payload: {
+          eventType: "UPDATE",
+          new: updatedProfile,
+          old: null,
+          table: "profiles",
+          schema: "public",
+        },
+      });
+      console.log("📡 [PROFILE-IMAGE-API] Supabase Broadcast 발송 완료");
+    } catch (broadcastError) {
+      console.error(
+        "⚠️ [PROFILE-IMAGE-API] Broadcast 발송 실패:",
+        broadcastError
+      );
+    }
 
     await createSystemLog(
       "PROFILE_IMAGE_UPLOAD",

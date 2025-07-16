@@ -10,7 +10,7 @@ import {
   DialogTrigger,
   DialogFooter,
 } from "@/components/ui/dialog";
-import { Plus } from "lucide-react";
+import { Plus, Loader2 } from "lucide-react";
 import type { Farm } from "@/lib/types/farm";
 import type { FarmType } from "@/lib/constants/farm-types";
 import {
@@ -123,30 +123,16 @@ export function FarmFormDialog({
                 disabled={submitting || isLoading}
                 className="h-12 px-6 text-base flex-1 sm:flex-none min-w-[100px]"
               >
-                {(submitting || isLoading) && (
-                  <svg
-                    className="animate-spin mr-2 h-5 w-5"
-                    viewBox="0 0 16 16"
-                    fill="none"
-                    xmlns="http://www.w3.org/2000/svg"
-                  >
-                    <circle
-                      cx="8"
-                      cy="8"
-                      r="7"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      className="opacity-25"
-                    />
-                    <path
-                      d="M15 8a7 7 0 11-7-7"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      className="opacity-75"
-                    />
-                  </svg>
+                {submitting || isLoading ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    {editingFarm ? "수정 중..." : "등록 중..."}
+                  </>
+                ) : editingFarm ? (
+                  "수정"
+                ) : (
+                  "등록"
                 )}
-                {editingFarm ? "수정" : "등록"}
               </Button>
             </DialogFooter>
           </form>

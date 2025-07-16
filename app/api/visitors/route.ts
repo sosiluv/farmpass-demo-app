@@ -115,13 +115,40 @@ export async function GET(request: NextRequest) {
             endpoint: "/api/visitors",
             method: "GET",
             duration_ms: duration,
-            status_code: 200,
-            response_size: JSON.stringify({ visitors: [] }).length,
+            status_code: 403,
+            response_size: 0,
           },
           user.id
         );
 
-        return NextResponse.json({ visitors: [] });
+        // 🔒 농장 소속이 없는 사용자는 완전 차단 (403 에러)
+        await createSystemLog(
+          "VISITOR_ACCESS_DENIED",
+          `방문자 데이터 접근 거부: 농장 소속이 없는 사용자 ${user.email}`,
+          "warn",
+          user.id,
+          "visitor",
+          undefined,
+          {
+            user_id: user.id,
+            user_email: user.email,
+            reason: "no_farm_access",
+            action: "visitor_list_access_denied",
+          },
+          user.email,
+          clientIP,
+          userAgent
+        );
+
+        return NextResponse.json(
+          {
+            success: false,
+            error: "NO_FARM_ACCESS",
+            message:
+              "방문자 기록에 접근할 권한이 없습니다. 농장을 등록하거나 농장 구성원으로 추가되어야 합니다.",
+          },
+          { status: 403 }
+        );
       }
 
       const farmIds = userFarms.map((farm) => farm.id);

@@ -348,6 +348,38 @@ export async function POST(
       throw insertError;
     }
 
+    // 🔥 농장 멤버 추가 실시간 브로드캐스트
+    try {
+      const { createServiceRoleClient } = await import(
+        "@/lib/supabase/service-role"
+      );
+      const supabase = createServiceRoleClient();
+      await supabase.channel("member_updates").send({
+        type: "broadcast",
+        event: "member_created",
+        payload: {
+          eventType: "INSERT",
+          new: {
+            id: newMember.id,
+            farm_id: params.farmId,
+            user_id: userToAdd.id,
+            role: role,
+            name: userToAdd.name,
+            email: userToAdd.email,
+          },
+          old: null,
+          table: "farm_members",
+          schema: "public",
+        },
+      });
+      console.log("📡 [MEMBER-CREATE-API] Supabase Broadcast 발송 완료");
+    } catch (broadcastError) {
+      console.error(
+        "⚠️ [MEMBER-CREATE-API] Broadcast 발송 실패:",
+        broadcastError
+      );
+    }
+
     // 농장 멤버 추가 로그 기록
     await createSystemLog(
       "MEMBER_CREATE",

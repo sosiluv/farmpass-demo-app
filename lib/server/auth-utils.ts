@@ -29,18 +29,18 @@ export async function getAuthenticatedUser(): Promise<AuthCheckResult> {
     } = await supabase.auth.getUser();
 
     if (authError) {
-      return { user: null, error: "Authentication failed" };
+      return { user: null, error: "UNAUTHORIZED" };
     }
 
     if (!user) {
-      return { user: null, error: "User not found" };
+      return { user: null, error: "UNAUTHORIZED" };
     }
 
     return { user };
   } catch (error) {
     return {
       user: null,
-      error: error instanceof Error ? error.message : "Unknown error",
+      error: error instanceof Error ? error.message : "UNKNOWN_ERROR",
     };
   }
 }
@@ -65,7 +65,7 @@ export async function checkSystemAdmin(
         return {
           isAdmin: false,
           user: authData.user as User,
-          error: "User mismatch or authentication failed",
+          error: "USER_MISMATCH_OR_AUTHENTICATION_FAILED",
         };
       }
       user = authData.user;
@@ -76,7 +76,7 @@ export async function checkSystemAdmin(
         return {
           isAdmin: false,
           user: null as any,
-          error: authResult.error || "User not authenticated",
+          error: authResult.error || "UNAUTHORIZED",
         };
       }
       user = authResult.user;
@@ -93,7 +93,7 @@ export async function checkSystemAdmin(
       return {
         isAdmin: false,
         user,
-        error: "Failed to fetch user profile",
+        error: "FAILED_TO_FETCH_USER_PROFILE",
       };
     }
 
@@ -104,7 +104,7 @@ export async function checkSystemAdmin(
     return {
       isAdmin: false,
       user: null as any,
-      error: error instanceof Error ? error.message : "Unknown error",
+      error: error instanceof Error ? error.message : "UNKNOWN_ERROR",
     };
   }
 }
@@ -157,7 +157,7 @@ export async function checkAdminOrCondition(
       hasPermission: false,
       user: adminResult.user,
       isAdmin: false,
-      error: error instanceof Error ? error.message : "Additional check failed",
+      error: error instanceof Error ? error.message : "ADDITIONAL_CHECK_FAILED",
     };
   }
 }
@@ -178,7 +178,7 @@ export async function requireAuth(requireAdmin: boolean = false): Promise<{
   if (!authResult.user) {
     return {
       success: false,
-      response: new Response(JSON.stringify({ error: "Unauthorized" }), {
+      response: new Response(JSON.stringify({ error: "UNAUTHORIZED" }), {
         status: 401,
         headers: { "Content-Type": "application/json" },
       }),
@@ -201,7 +201,7 @@ export async function requireAuth(requireAdmin: boolean = false): Promise<{
     return {
       success: false,
       response: new Response(
-        JSON.stringify({ error: "Failed to verify admin status" }),
+        JSON.stringify({ error: "FAILED_TO_VERIFY_ADMIN_STATUS" }),
         { status: 500, headers: { "Content-Type": "application/json" } }
       ),
     };
@@ -211,7 +211,7 @@ export async function requireAuth(requireAdmin: boolean = false): Promise<{
     return {
       success: false,
       response: new Response(
-        JSON.stringify({ error: "Admin access required" }),
+        JSON.stringify({ error: "ADMIN_ACCESS_REQUIRED" }),
         { status: 403, headers: { "Content-Type": "application/json" } }
       ),
     };

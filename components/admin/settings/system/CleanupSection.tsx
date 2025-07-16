@@ -10,6 +10,8 @@ import {
   CleanupActions,
 } from "./cleanup";
 
+import { Loading } from "@/components/ui/loading";
+
 interface CleanupSectionProps {
   cleanupStatus: CleanupStatus | null;
   statusLoading: boolean;
@@ -49,11 +51,13 @@ export function CleanupSection({
       />
       <CardContent className="space-y-6">
         {statusLoading ? (
-          <div className="text-center py-4">
-            <p className="text-sm text-muted-foreground">
-              정리 상태를 확인하는 중...
-            </p>
-          </div>
+          <Loading
+            text="정리 상태를 확인하는 중..."
+            minHeight={180}
+            spinnerSize={32}
+            spinnerColor="text-primary"
+            className="py-8 w-full"
+          />
         ) : cleanupStatus ? (
           <>
             <CleanupStatusComponent cleanupStatus={cleanupStatus} />

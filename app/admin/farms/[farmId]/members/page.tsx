@@ -226,6 +226,7 @@ export default function MembersPage({ params }: PageProps) {
           open={deleteDialogOpen}
           onOpenChange={setDeleteDialogOpen}
           onConfirm={handleDelete}
+          isLoading={removeMemberMutation.isPending}
         />
       </div>
     </ErrorBoundary>

@@ -159,6 +159,23 @@ export function InstallPrompt({
     }
   };
 
+  const getGuideText = () => {
+    if (installInfo.method === "banner") {
+      // 네이티브 설치 지원 브라우저(Chrome, Edge 등)
+      return "더 빠르고 편리한 경험을 위해 홈화면에 추가하세요";
+    }
+    // manual 또는 none: 홈화면 추가 안내만
+    if (installInfo.platform === "iOS") {
+      return 'iOS에서는 사파리 하단의 공유 버튼을 누른 후 "홈 화면에 추가"를 선택하세요.';
+    }
+    if (installInfo.platform === "Android") {
+      return (
+        installInfo.reason || '브라우저 메뉴에서 "홈 화면에 추가"를 선택하세요.'
+      );
+    }
+    return "이 브라우저에서는 메뉴에서 홈 화면에 추가를 선택하세요.";
+  };
+
   if (!installInfo.canInstall || isDismissed) {
     return null;
   }
@@ -184,9 +201,7 @@ export function InstallPrompt({
                     <h3 className="font-semibold text-sm">
                       {getInstallText()}하세요!
                     </h3>
-                    <p className="text-xs opacity-90 mt-1">
-                      더 빠르고 편리한 경험을 위해 홈화면에 추가하세요
-                    </p>
+                    <p className="text-xs opacity-90 mt-1">{getGuideText()}</p>
                   </div>
                 </div>
 
@@ -199,15 +214,17 @@ export function InstallPrompt({
                   >
                     <X className="w-4 h-4" />
                   </Button>
-                  <Button
-                    onClick={handleInstall}
-                    size="sm"
-                    disabled={isInstalling}
-                    className="bg-white text-blue-600 hover:bg-gray-100 font-medium h-8 px-3"
-                  >
-                    <Download className="w-4 h-4 mr-1" />
-                    {isInstalling ? "설치 중..." : "설치"}
-                  </Button>
+                  {installInfo.method === "banner" && (
+                    <Button
+                      onClick={handleInstall}
+                      size="sm"
+                      disabled={isInstalling}
+                      className="bg-white text-blue-600 hover:bg-gray-100 font-medium h-8 px-3"
+                    >
+                      <Download className="w-4 h-4 mr-1" />
+                      {isInstalling ? "설치 중..." : "설치"}
+                    </Button>
+                  )}
                 </div>
               </div>
             </CardContent>

@@ -99,6 +99,28 @@ export async function POST(request: NextRequest) {
       throw error;
     }
 
+    // 🔥 농장 등록 실시간 브로드캐스트
+    try {
+      const { createServiceRoleClient } = await import(
+        "@/lib/supabase/service-role"
+      );
+      const supabase = createServiceRoleClient();
+      await supabase.channel("farm_updates").send({
+        type: "broadcast",
+        event: "farm_created",
+        payload: {
+          eventType: "INSERT",
+          new: farm,
+          old: null,
+          table: "farms",
+          schema: "public",
+        },
+      });
+      console.log("📡 [FARM-API] Supabase Broadcast 발송 완료");
+    } catch (broadcastError) {
+      console.error("⚠️ [FARM-API] Broadcast 발송 실패:", broadcastError);
+    }
+
     // 농장 생성 로그
     await createSystemLog(
       "FARM_CREATE",

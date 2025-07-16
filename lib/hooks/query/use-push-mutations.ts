@@ -86,15 +86,16 @@ export const useDeleteSubscriptionMutation = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (
-      endpoint: string
-    ): Promise<{ success: boolean; message?: string }> => {
-      devLog.log("[MUTATION] 구독 삭제 시작", { endpoint });
+    mutationFn: async (data: {
+      endpoint: string;
+      forceDelete?: boolean;
+    }): Promise<{ success: boolean; message?: string }> => {
+      devLog.log("[MUTATION] 구독 삭제 시작", data);
 
       const result = await apiClient("/api/push/subscription", {
         method: "DELETE",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ endpoint }),
+        body: JSON.stringify(data),
         context: "구독 정보 삭제",
       });
 

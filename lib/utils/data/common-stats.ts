@@ -169,18 +169,24 @@ export const calculateVisitorStats = ({
 
   const total = visitors.length;
   const todayCount = visitors.filter((visitor) => {
+    // ISO 문자열을 KST로 변환하여 비교
     const visitDate = new Date(visitor.visit_datetime);
-    return visitDate >= todayStart && visitDate <= todayEnd;
+    const kstVisitDate = new Date(visitDate.getTime() + 9 * 60 * 60 * 1000); // UTC+9
+    return kstVisitDate >= todayStart && kstVisitDate <= todayEnd;
   }).length;
 
   const weekCount = visitors.filter((visitor) => {
+    // ISO 문자열을 KST로 변환하여 비교
     const visitDate = new Date(visitor.visit_datetime);
-    return visitDate >= weekAgo;
+    const kstVisitDate = new Date(visitDate.getTime() + 9 * 60 * 60 * 1000); // UTC+9
+    return kstVisitDate >= weekAgo;
   }).length;
 
   const monthCount = visitors.filter((visitor) => {
+    // ISO 문자열을 KST로 변환하여 비교
     const visitDate = new Date(visitor.visit_datetime);
-    return visitDate >= monthAgo;
+    const kstVisitDate = new Date(visitDate.getTime() + 9 * 60 * 60 * 1000); // UTC+9
+    return kstVisitDate >= monthAgo;
   }).length;
 
   // 방역 완료율 계산
@@ -225,11 +231,14 @@ export const calculatePurposeStats = (visitors: Visitor[]) => {
 };
 
 /**
- * 시간대별 방문자 통계 계산
+ * 시간대별 방문자 통계 계산 (KST 기준)
  */
 export const calculateTimeStats = (visitors: Visitor[]) => {
   const timeCounts = visitors.reduce<Record<string, number>>((acc, visitor) => {
-    const hour = new Date(visitor.visit_datetime).getHours();
+    // ISO 문자열을 KST로 변환 (정확한 방식)
+    const visitDate = new Date(visitor.visit_datetime);
+    const kstDate = new Date(visitDate.getTime() + 9 * 60 * 60 * 1000); // UTC+9
+    const hour = kstDate.getHours();
     const hourStr = `${String(hour).padStart(2, "0")}:00`;
     acc[hourStr] = (acc[hourStr] || 0) + 1;
     return acc;
@@ -246,13 +255,15 @@ export const calculateTimeStats = (visitors: Visitor[]) => {
 };
 
 /**
- * 요일별 방문자 통계 계산
+ * 요일별 방문자 통계 계산 (KST 기준)
  */
 export const calculateWeekdayStats = (visitors: Visitor[]) => {
   const weekdayCounts = visitors.reduce<Record<string, number[]>>(
     (acc, visitor) => {
+      // ISO 문자열을 KST로 변환 (정확한 방식)
       const visitDate = new Date(visitor.visit_datetime);
-      const dayIndex = visitDate.getDay();
+      const kstDate = new Date(visitDate.getTime() + 9 * 60 * 60 * 1000); // UTC+9
+      const dayIndex = kstDate.getDay();
       const day = ["일", "월", "화", "수", "목", "금", "토"][dayIndex];
 
       if (!acc[day]) {
@@ -313,7 +324,7 @@ export const calculateRevisitStats = (visitors: Visitor[]) => {
 };
 
 /**
- * 트렌드 계산을 위한 기간별 방문자 수 조회
+ * 트렌드 계산을 위한 기간별 방문자 수 조회 (KST 기준)
  */
 export const calculatePeriodVisitors = (
   visitors: Visitor[],
@@ -321,8 +332,10 @@ export const calculatePeriodVisitors = (
   endDate: Date
 ): number => {
   return visitors.filter((visitor) => {
+    // ISO 문자열을 KST로 변환하여 비교
     const visitDate = new Date(visitor.visit_datetime);
-    return visitDate >= startDate && visitDate <= endDate;
+    const kstVisitDate = new Date(visitDate.getTime() + 9 * 60 * 60 * 1000); // UTC+9
+    return kstVisitDate >= startDate && kstVisitDate <= endDate;
   }).length;
 };
 
@@ -349,16 +362,20 @@ export const calculateMonthlyTrend = (visitors: Visitor[]): string => {
   previous30DaysEnd.setDate(now.getDate() - 31);
   previous30DaysEnd.setHours(23, 59, 59, 999);
 
-  // 최근 30일 방문자 수
+  // 최근 30일 방문자 수 (KST 기준)
   const recentVisitors = visitors.filter((v) => {
     const visitDate = new Date(v.visit_datetime);
-    return visitDate >= last30DaysStart && visitDate <= last30DaysEnd;
+    const kstVisitDate = new Date(visitDate.getTime() + 9 * 60 * 60 * 1000); // UTC+9
+    return kstVisitDate >= last30DaysStart && kstVisitDate <= last30DaysEnd;
   }).length;
 
-  // 이전 30일 방문자 수
+  // 이전 30일 방문자 수 (KST 기준)
   const previousVisitors = visitors.filter((v) => {
     const visitDate = new Date(v.visit_datetime);
-    return visitDate >= previous30DaysStart && visitDate <= previous30DaysEnd;
+    const kstVisitDate = new Date(visitDate.getTime() + 9 * 60 * 60 * 1000); // UTC+9
+    return (
+      kstVisitDate >= previous30DaysStart && kstVisitDate <= previous30DaysEnd
+    );
   }).length;
 
   // 데이터 상황별 처리
@@ -604,10 +621,14 @@ export const calculateUnifiedChartData = (
     }))
     .sort((a, b) => b.count - a.count);
 
-  // 방문자 트렌드 (표준화)
+  // 방문자 트렌드 (표준화) - KST 기준으로 날짜 처리
   const visitorTrend = visitorData
     .reduce<{ date: string; count: number }[]>((acc, visitor) => {
-      const date = new Date(visitor.visit_datetime).toISOString().split("T")[0];
+      // ISO 문자열을 KST로 변환 (정확한 방식)
+      const visitDate = new Date(visitor.visit_datetime);
+      const kstDate = new Date(visitDate.getTime() + 9 * 60 * 60 * 1000); // UTC+9
+      const date = kstDate.toISOString().split("T")[0];
+
       const existing = acc.find((d) => d.date === date);
       if (existing) {
         existing.count++;
@@ -1358,40 +1379,46 @@ export const calculateAdvancedTrends = (
   const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
   const twoWeeksAgo = new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000);
 
-  const thisWeek = visitorData.filter(
-    (v) => new Date(v.visit_datetime) >= weekAgo
-  ).length;
-  const lastWeek = visitorData.filter(
-    (v) =>
-      new Date(v.visit_datetime) >= twoWeeksAgo &&
-      new Date(v.visit_datetime) < weekAgo
-  ).length;
+  const thisWeek = visitorData.filter((v) => {
+    const visitDate = new Date(v.visit_datetime);
+    const kstDate = new Date(visitDate.getTime() + 9 * 60 * 60 * 1000);
+    return kstDate >= weekAgo;
+  }).length;
+  const lastWeek = visitorData.filter((v) => {
+    const visitDate = new Date(v.visit_datetime);
+    const kstDate = new Date(visitDate.getTime() + 9 * 60 * 60 * 1000);
+    return kstDate >= twoWeeksAgo && kstDate < weekAgo;
+  }).length;
 
   // 30일 트렌드
   const monthAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
   const twoMonthsAgo = new Date(now.getTime() - 60 * 24 * 60 * 60 * 1000);
 
-  const thisMonth = visitorData.filter(
-    (v) => new Date(v.visit_datetime) >= monthAgo
-  ).length;
-  const lastMonth = visitorData.filter(
-    (v) =>
-      new Date(v.visit_datetime) >= twoMonthsAgo &&
-      new Date(v.visit_datetime) < monthAgo
-  ).length;
+  const thisMonth = visitorData.filter((v) => {
+    const visitDate = new Date(v.visit_datetime);
+    const kstDate = new Date(visitDate.getTime() + 9 * 60 * 60 * 1000);
+    return kstDate >= monthAgo;
+  }).length;
+  const lastMonth = visitorData.filter((v) => {
+    const visitDate = new Date(v.visit_datetime);
+    const kstDate = new Date(visitDate.getTime() + 9 * 60 * 60 * 1000);
+    return kstDate >= twoMonthsAgo && kstDate < monthAgo;
+  }).length;
 
   // 90일 트렌드
   const quarterAgo = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000);
   const twoQuartersAgo = new Date(now.getTime() - 180 * 24 * 60 * 60 * 1000);
 
-  const thisQuarter = visitorData.filter(
-    (v) => new Date(v.visit_datetime) >= quarterAgo
-  ).length;
-  const lastQuarter = visitorData.filter(
-    (v) =>
-      new Date(v.visit_datetime) >= twoQuartersAgo &&
-      new Date(v.visit_datetime) < quarterAgo
-  ).length;
+  const thisQuarter = visitorData.filter((v) => {
+    const visitDate = new Date(v.visit_datetime);
+    const kstDate = new Date(visitDate.getTime() + 9 * 60 * 60 * 1000);
+    return kstDate >= quarterAgo;
+  }).length;
+  const lastQuarter = visitorData.filter((v) => {
+    const visitDate = new Date(v.visit_datetime);
+    const kstDate = new Date(visitDate.getTime() + 9 * 60 * 60 * 1000);
+    return kstDate >= twoQuartersAgo && kstDate < quarterAgo;
+  }).length;
 
   return {
     weekly: {

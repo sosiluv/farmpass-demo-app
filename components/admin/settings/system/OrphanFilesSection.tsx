@@ -9,6 +9,7 @@ import {
   OrphanFilesSuccessMessage,
   OrphanFilesActions,
 } from "./orphan-files";
+import { Loading } from "@/components/ui/loading";
 
 interface OrphanFilesSectionProps {
   orphanFilesStatus: OrphanFilesStatus | null;
@@ -49,11 +50,13 @@ export function OrphanFilesSection({
       />
       <CardContent className="space-y-6">
         {statusLoading ? (
-          <div className="text-center py-4">
-            <p className="text-sm text-muted-foreground">
-              Orphan 파일 상태를 확인하는 중...
-            </p>
-          </div>
+          <Loading
+            text="Orphan 파일 상태를 확인하는 중..."
+            minHeight={180}
+            spinnerSize={32}
+            spinnerColor="text-primary"
+            className="py-8 w-full"
+          />
         ) : orphanFilesStatus ? (
           <>
             <OrphanFilesStatusComponent orphanFilesStatus={orphanFilesStatus} />

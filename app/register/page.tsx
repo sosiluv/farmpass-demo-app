@@ -26,7 +26,6 @@ import {
 } from "@/components/ui/form";
 import { Mail, User, Lock, Phone } from "lucide-react";
 import { motion } from "framer-motion";
-import { supabase } from "@/lib/supabase/client";
 import { useCommonToast } from "@/lib/utils/notification/toast-messages";
 import { formatPhone } from "@/lib/utils/validation/validation";
 import { devLog } from "@/lib/utils/logging/dev-logger";
@@ -361,52 +360,32 @@ export default function RegisterPage() {
         return;
       }
 
-      // 이메일 중복 검사
-      const emailValidation = await checkEmailDuplicate(data.email);
-      if (!emailValidation.isValid) {
-        setEmailError(emailValidation.message);
-        return;
-      }
-
       setLoading(true);
 
       try {
-        // Turnstile 토큰 검증
-        await apiClient("/api/auth/verify-turnstile", {
+        // 새로운 회원가입 API 호출
+        const response = await apiClient("/api/auth/register", {
           method: "POST",
-          body: JSON.stringify({ token: turnstileToken }),
-          context: "캡차 인증",
-          onError: (error, context) => {
-            setTurnstileError("캡차 인증에 실패했습니다.");
-          },
-        });
-
-        // Supabase auth를 통한 사용자 생성
-        const { data: authData, error: authError } = await supabase.auth.signUp(
-          {
+          body: JSON.stringify({
             email: data.email,
             password: data.password,
-            options: {
-              data: {
-                name: data.name,
-                phone: data.phone,
-              },
-            },
-          }
-        );
+            name: data.name,
+            phone: data.phone,
+            turnstileToken: turnstileToken,
+          }),
+          context: "회원가입",
+        });
 
-        if (authError) throw authError;
-        if (!authData.user) throw new Error("회원가입에 실패했습니다.");
-
-        // 회원가입 후 자동 로그아웃 (Supabase signUp이 자동 로그인을 하기 때문)
-        //await supabase.auth.signOut();
-
-        showSuccess(
-          "회원가입이 완료되었습니다.",
-          "이메일 인증 후 로그인해주세요."
-        );
-
-        router.push("/login");
+        if (response.success) {
+          // 서버에서 반환된 메시지 그대로 사용
+          showSuccess(
+            "회원가입 완료",
+            response.message || "회원가입이 완료되었습니다."
+          );
+          router.push("/login");
+        } else {
+          throw new Error(response.message || "회원가입에 실패했습니다.");
+        }
       } catch (error: any) {
         devLog.error("Registration failed:", error);
         const authError = getAuthErrorMessage(error);

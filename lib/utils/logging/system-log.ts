@@ -177,11 +177,33 @@ async function createLog(
     // 서버 환경: 서비스 롤 키로 직접 insert
 
     const supabase = createServiceRoleClient();
-    const { error } = await supabase.from("system_logs").insert(logData);
+    const { data: insertedLog, error } = await supabase
+      .from("system_logs")
+      .insert(logData)
+      .select()
+      .single();
     if (error) {
       devLog.error("[DEBUG] Supabase direct insert error", error);
     } else {
       devLog.log("[DEBUG] Supabase direct insert success", logData);
+
+      // 🔥 시스템 로그 생성 실시간 브로드캐스트
+      try {
+        await supabase.channel("log_updates").send({
+          type: "broadcast",
+          event: "log_created",
+          payload: {
+            eventType: "INSERT",
+            new: insertedLog,
+            old: null,
+            table: "system_logs",
+            schema: "public",
+          },
+        });
+        devLog.log("📡 [SYSTEM-LOG] Supabase Broadcast 발송 완료");
+      } catch (broadcastError) {
+        devLog.error("⚠️ [SYSTEM-LOG] Broadcast 발송 실패:", broadcastError);
+      }
     }
     return;
   } catch (error) {

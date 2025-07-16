@@ -15,6 +15,7 @@ import {
   generateDashboardStats,
 } from "@/lib/utils/data/common-stats";
 import { getKSTDaysAgo, toKSTDateString } from "@/lib/utils/datetime/date";
+import { useSupabaseRealtime } from "@/hooks/useSupabaseRealtime";
 
 /**
  * React Query 기반 Farm Visitors Hook - 간단한 버전부터 시작
@@ -55,6 +56,35 @@ export function useFarmVisitorsQuery(farmId: string | null) {
       // 💡 stale 상태여도 캐시된 데이터는 계속 사용됨 (백그라운드에서 업데이트)
     }
   );
+
+  // 🔥 방문자 실시간 업데이트를 위한 안정된 필터 함수
+  const visitorFilter = React.useCallback(
+    (payload: any) => {
+      if (!farmId) {
+        // 전체 농장 모드에서는 모든 변경사항 감지
+        return true;
+      }
+
+      // 특정 농장의 변경사항만 감지
+      const visitorFarmId = payload.new?.farm_id || payload.old?.farm_id;
+      const result = visitorFarmId === farmId;
+
+      console.log(
+        `🔥 [VISITOR QUERY FILTER] target farmId: ${farmId}, payload farm_id: ${visitorFarmId}, result: ${result}`
+      );
+      return result;
+    },
+    [farmId]
+  );
+
+  // 실시간 업데이트 - visitor_entries 테이블 변경 시 리프레시
+  useSupabaseRealtime({
+    table: "visitor_entries",
+    refetch: visitorsQuery.refetch,
+    events: ["INSERT", "UPDATE", "DELETE"],
+    filter: visitorFilter,
+  });
+
   // 통계 계산 로직 최적화 - 각 통계별로 분리된 useMemo
   const computedStats = React.useMemo(() => {
     const visitors = visitorsQuery.data || [];
@@ -115,7 +145,7 @@ export function useFarmVisitorsQuery(farmId: string | null) {
     return calculateRevisitStats(compatibleVisitors);
   }, [compatibleVisitors]);
 
-  // 방문자 추이 계산 최적화
+  // 방문자 추이 계산 최적화 - KST 기준으로 날짜 처리
   const visitorTrend = React.useMemo((): VisitorStats[] => {
     if (compatibleVisitors.length === 0) return [];
 
@@ -124,8 +154,16 @@ export function useFarmVisitorsQuery(farmId: string | null) {
       nextDate.setDate(date.getDate() + 1);
 
       const dayVisitors = compatibleVisitors.filter((v) => {
-        const visitDate = new Date(v.visit_datetime);
-        return visitDate >= date && visitDate < nextDate;
+        // visit_datetime이 문자열인지 Date 객체인지 확인
+        const visitDateTime = v.visit_datetime;
+
+        // ISO 문자열을 KST로 변환하여 날짜 비교
+        const visitDate = new Date(visitDateTime);
+        const kstVisitDate = new Date(visitDate.getTime() + 9 * 60 * 60 * 1000); // UTC+9
+        const kstDateStr = kstVisitDate.toISOString().split("T")[0]; // KST 기준 날짜 문자열
+        const targetDateStr = date.toISOString().split("T")[0]; // 목표 날짜 문자열
+
+        return kstDateStr === targetDateStr;
       });
 
       const dayStats = calculateVisitorStats({
@@ -134,7 +172,7 @@ export function useFarmVisitorsQuery(farmId: string | null) {
       });
 
       return {
-        date: toKSTDateString(date),
+        date: date.toISOString().split("T")[0], // 대상 날짜는 이미 KST 기준으로 생성됨
         visitors: dayStats.total,
         disinfectionRate: dayStats.disinfectionRate,
       };

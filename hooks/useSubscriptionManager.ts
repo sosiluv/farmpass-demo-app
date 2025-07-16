@@ -14,11 +14,13 @@ import {
 } from "@/lib/hooks/query/use-push-mutations";
 import { settingsKeys } from "@/lib/hooks/query/query-keys";
 
-export function useSubscriptionManager(enableVapidKey: boolean = false) {
+export function useSubscriptionManager() {
   const queryClient = useQueryClient();
 
-  // React Query Hooks - VAPID key는 필요할 때만 조회
-  const { data: vapidKey } = useVapidKeyQuery({ enabled: enableVapidKey });
+  // React Query Hooks - Lazy Loading으로 최적화
+  const { data: vapidKey, refetch: refetchVapidKey } = useVapidKeyQuery({
+    enabled: false, // 필요할 때만 로드
+  });
   const { data: subscriptions } = useSubscriptionStatusQuery(false); // 수동으로 조회할 때만 사용
   const createSubscriptionMutation = useCreateSubscriptionMutation();
   const deleteSubscriptionMutation = useDeleteSubscriptionMutation();
@@ -52,16 +54,22 @@ export function useSubscriptionManager(enableVapidKey: boolean = false) {
     }
   };
 
-  // VAPID 키 가져오기 (React Query 사용)
+  // VAPID 키 가져오기 - Lazy Loading
   const getVapidKey = async (): Promise<string | null> => {
     try {
-      // 이미 캐시된 VAPID 키가 있으면 사용
-      if (vapidKey) {
-        return vapidKey;
+      // 캐시된 데이터가 있으면 사용
+      let key = vapidKey;
+      if (!key) {
+        const { data: newKey } = await refetchVapidKey();
+        key = newKey;
       }
 
-      devLog.warn("VAPID 키가 캐시되지 않음 - 직접 조회 필요");
-      return null;
+      if (!key) {
+        devLog.error("VAPID 키를 가져올 수 없습니다");
+        return null;
+      }
+
+      return key;
     } catch (error) {
       devLog.error("VAPID 키 조회 실패:", error);
       return null;
@@ -104,7 +112,10 @@ export function useSubscriptionManager(enableVapidKey: boolean = false) {
 
         // 2. 서버에서 구독 정보 삭제 (React Query Mutation 사용)
         try {
-          await deleteSubscriptionMutation.mutateAsync(subscription.endpoint);
+          await deleteSubscriptionMutation.mutateAsync({
+            endpoint: subscription.endpoint,
+            forceDelete: true, // 정상 로그아웃에서도 확실한 삭제 보장
+          });
           devLog.log("서버 구독 정보 삭제 완료");
         } catch (error) {
           // 에러는 mutation에서 처리됨

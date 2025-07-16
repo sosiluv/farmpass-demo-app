@@ -83,6 +83,31 @@ export async function PUT(
 
     devLog.log("방문자 정보 업데이트 성공:", data);
 
+    // 🔥 방문자 수정 실시간 브로드캐스트
+    try {
+      const { createServiceRoleClient } = await import(
+        "@/lib/supabase/service-role"
+      );
+      const supabase = createServiceRoleClient();
+      await supabase.channel("visitor_updates").send({
+        type: "broadcast",
+        event: "visitor_updated",
+        payload: {
+          eventType: "UPDATE",
+          new: data,
+          old: null,
+          table: "visitor_entries",
+          schema: "public",
+        },
+      });
+      console.log("📡 [VISITOR-UPDATE-API] Supabase Broadcast 발송 완료");
+    } catch (broadcastError) {
+      console.error(
+        "⚠️ [VISITOR-UPDATE-API] Broadcast 발송 실패:",
+        broadcastError
+      );
+    }
+
     // 성공 로그 기록
     await createSystemLog(
       "VISITOR_UPDATED",
@@ -214,6 +239,35 @@ export async function DELETE(
         farm_id: farmId,
       },
     });
+
+    // 🔥 방문자 삭제 실시간 브로드캐스트
+    try {
+      const { createServiceRoleClient } = await import(
+        "@/lib/supabase/service-role"
+      );
+      const supabase = createServiceRoleClient();
+      await supabase.channel("visitor_updates").send({
+        type: "broadcast",
+        event: "visitor_deleted",
+        payload: {
+          eventType: "DELETE",
+          new: null,
+          old: {
+            id: visitorId,
+            farm_id: farmId,
+            visitor_name: visitor.visitor_name,
+          },
+          table: "visitor_entries",
+          schema: "public",
+        },
+      });
+      console.log("📡 [VISITOR-DELETE-API] Supabase Broadcast 발송 완료");
+    } catch (broadcastError) {
+      console.error(
+        "⚠️ [VISITOR-DELETE-API] Broadcast 발송 실패:",
+        broadcastError
+      );
+    }
 
     // 성공 로그 기록
     await createSystemLog(

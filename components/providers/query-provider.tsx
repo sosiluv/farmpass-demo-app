@@ -27,10 +27,9 @@ function makeQueryClient() {
           }
           return failureCount < 3;
         },
-        // 윈도우 포커스 시 자동 refetch 비활성화 (중복 호출 방지)
+        // 기본적으로는 수동 새로고침 (성능 최적화)
         refetchOnWindowFocus: false,
         refetchOnReconnect: true,
-        // 마운트 시 refetch 비활성화 (캐시 우선)
         refetchOnMount: false,
       },
       mutations: {
@@ -48,10 +47,38 @@ function makeQueryClient() {
 
       if (error) {
         // 글로벌 에러 처리 로직
-        handleGlobalQueryError(error, query.queryKey);
+        console.warn("React Query Error:", {
+          queryKey: query.queryKey,
+          error: error.message,
+        });
       }
     }
   });
+
+  // 방문자 실시간 업데이트를 위한 Broadcast Channel 설정
+  if (typeof window !== "undefined" && "BroadcastChannel" in window) {
+    const channel = new BroadcastChannel("visitor-updates");
+
+    channel.addEventListener("message", (event) => {
+      const { type, farmId } = event.data;
+
+      if (type === "VISITOR_REGISTERED") {
+        // 방문자 관련 쿼리만 무효화 (실시간 업데이트)
+        queryClient.invalidateQueries({ queryKey: ["visitors"] });
+        queryClient.invalidateQueries({ queryKey: ["farm-info"] });
+
+        // 특정 농장 방문자 관련 쿼리 무효화
+        if (farmId) {
+          queryClient.invalidateQueries({
+            queryKey: ["visitor-session", farmId],
+          });
+          queryClient.invalidateQueries({
+            queryKey: ["daily-visitor-count", farmId],
+          });
+        }
+      }
+    });
+  }
 
   return queryClient;
 }

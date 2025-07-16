@@ -30,7 +30,6 @@ interface PasswordStrengthProps {
 export function PasswordStrength({ password }: PasswordStrengthProps) {
   // 전역 시스템 설정 사용
   const { settings, isLoading, error } = useSystemSettingsContext();
-
   // 시스템 설정에서 비밀번호 규칙 추출
   const rules: PasswordRules = useMemo(() => {
     if (!settings) {

@@ -33,21 +33,25 @@ export default function HomePage() {
     }
   }, [state.status, router]);
 
-  // 로딩 상태를 먼저 체크 (페이지 렌더링 전에)
+  // 로딩 상태별 적절한 텍스트 표시
   if (
-    state.status === "loading" ||
     state.status === "initializing" ||
+    state.status === "loading" ||
     settingsLoading
   ) {
+    let loadingText = "페이지를 불러오는 중...";
+
+    if (state.status === "initializing") {
+      loadingText = "시스템을 초기화하는 중...";
+    } else if (state.status === "loading") {
+      loadingText = "로그인 상태를 확인하는 중...";
+    } else if (settingsLoading) {
+      loadingText = "사이트 설정을 불러오는 중...";
+    }
+
     return (
       <PageLoading
-        text={
-          state.status === "initializing"
-            ? "인증 확인 중..."
-            : settingsLoading
-            ? "설정을 불러오는 중..."
-            : "자동 로그인 중..."
-        }
+        text={loadingText}
         subText="잠시만 기다려주세요"
         variant="gradient"
         fullScreen={true}

@@ -79,7 +79,16 @@ const PathMatcher = {
 /**
  * 🔐 토큰 검증 및 갱신 함수 (서버 사이드 전용)
  */
-async function validateAndRefreshToken(supabase: any) {
+async function validateAndRefreshToken(supabase: any, request: NextRequest) {
+  // 쿠키에서 토큰 정보 확인 (세션 만료 감지용)
+  // Supabase 쿠키명: sb-{projectId}-auth-token
+  const projectId =
+    process.env.NEXT_PUBLIC_SUPABASE_URL?.split("//")[1]?.split(".")[0];
+  const authCookieName = projectId ? `sb-${projectId}-auth-token` : null;
+  const authCookie = authCookieName
+    ? request.cookies.get(authCookieName)?.value
+    : null;
+  const hasTokens = !!authCookie;
   try {
     // 사용자 정보 조회 (보안 강화)
     const {
@@ -89,34 +98,37 @@ async function validateAndRefreshToken(supabase: any) {
 
     if (error) {
       devLog.warn(`[MIDDLEWARE] User validation error: ${error.message}`);
-      return { isValid: false, user: null };
+
+      // 토큰이 있었지만 유효하지 않음 = 세션 만료
+      if (hasTokens) {
+        devLog.warn(`[MIDDLEWARE] Session expired - tokens exist but invalid`);
+        return { isValid: false, user: null, sessionExpired: true };
+      }
+
+      return { isValid: false, user: null, sessionExpired: false };
     }
 
     if (!user) {
       devLog.warn(`[MIDDLEWARE] No authenticated user found`);
-      return { isValid: false, user: null };
+
+      // 토큰이 있었지만 사용자 없음 = 세션 만료
+      if (hasTokens) {
+        devLog.warn(`[MIDDLEWARE] Session expired - tokens exist but no user`);
+        return { isValid: false, user: null, sessionExpired: true };
+      }
+
+      return { isValid: false, user: null, sessionExpired: false };
     }
 
     // getUser()가 성공하면 이미 유효한 사용자임
     // 토큰 갱신은 Supabase가 자동으로 처리
     devLog.log(`[MIDDLEWARE] User authenticated: ${user.id}`);
 
-    return { isValid: true, user: user };
+    return { isValid: true, user: user, sessionExpired: false };
   } catch (error) {
     devLog.error(`[MIDDLEWARE] Token validation error: ${error}`);
-    return { isValid: false, user: null };
-  }
-}
 
-// 구독 정리 함수 (별도로 분리)
-async function cleanupUserSubscriptions(userId: string) {
-  try {
-    const supabase = await createClient();
-    await supabase.from("push_subscriptions").delete().eq("user_id", userId);
-
-    devLog.log(`[MIDDLEWARE] Server subscriptions cleaned for user: ${userId}`);
-  } catch (error) {
-    devLog.warn(`[MIDDLEWARE] Failed to clean server subscriptions: ${error}`);
+    return { isValid: false, user: null, sessionExpired: hasTokens };
   }
 }
 
@@ -202,21 +214,27 @@ export async function middleware(request: NextRequest) {
 
   try {
     // 토큰 검증 및 갱신 시도 (authService 사용)
-    const { isValid, user: authUser } = await validateAndRefreshToken(supabase);
+    const {
+      isValid,
+      user: authUser,
+      sessionExpired,
+    } = await validateAndRefreshToken(supabase, request);
     user = authUser;
     isAuthenticated = isValid;
     devLog.log(
       `[MIDDLEWARE] User: ${
         user?.id ? "authenticated" : "anonymous"
-      }, Token valid: ${isAuthenticated}`
+      }, Token valid: ${isAuthenticated}, Session expired: ${sessionExpired}`
     );
 
-    // 인증 실패 시 세션 정리 (user가 있지만 인증이 실패한 경우)
-    if (!isAuthenticated && user) {
-      devLog.warn(`[MIDDLEWARE] Authentication failed for user: ${user.id}`);
+    // 세션 만료 감지 시 처리 (토큰은 있었지만 유효하지 않은 경우)
+    if (!isAuthenticated && sessionExpired) {
+      devLog.warn(
+        `[MIDDLEWARE] Session expired detected - redirecting to login`
+      );
 
-      // 서버 측 구독 정리 (백그라운드에서 처리)
-      await cleanupUserSubscriptions(user.id);
+      // 세션 만료 시에는 userId를 알 수 없으므로 구독 정리는 클라이언트에서 처리
+      // (로그인 페이지에서 session_expired=true 파라미터로 구독 정리 수행)
 
       // 세션 쿠키 정리 (미들웨어에서는 NextResponse cookies API 사용)
       const loginUrl = new URL("/login", request.url);

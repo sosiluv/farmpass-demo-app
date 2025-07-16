@@ -9,6 +9,7 @@ import {
   createKSTDateRange,
 } from "@/lib/utils/datetime/date";
 import { dashboardKeys } from "./query-keys";
+import { useSupabaseRealtime } from "@/hooks/useSupabaseRealtime";
 
 // 클라이언트 전용 가드
 const isClient = typeof window !== "undefined";
@@ -72,8 +73,8 @@ export function useAdminDashboardQuery() {
   const user = state.status === "authenticated" ? state.user : null;
   const profile = state.status === "authenticated" ? state.profile : null;
 
-  return useAuthenticatedQuery(
-    dashboardKeys.adminStats(),
+  const dashboardQuery = useAuthenticatedQuery(
+    dashboardKeys.all,
     async (): Promise<DashboardStats> => {
       if (!isClient) {
         throw new Error("이 함수는 클라이언트에서만 실행할 수 있습니다.");
@@ -378,6 +379,37 @@ export function useAdminDashboardQuery() {
       refetchOnMount: false, // 마운트 시 refetch 비활성화 (캐시 우선)
     }
   );
+
+  // 🔥 관리자 대시보드 실시간 업데이트 구독 (모든 테이블 변경 시 갱신)
+  useSupabaseRealtime({
+    table: "farms",
+    refetch: dashboardQuery.refetch,
+    events: ["INSERT", "UPDATE", "DELETE"],
+    // 관리자는 모든 농장 변경사항에 대해 대시보드 갱신
+  });
+
+  useSupabaseRealtime({
+    table: "visitor_entries",
+    refetch: dashboardQuery.refetch,
+    events: ["INSERT", "UPDATE", "DELETE"],
+    // 관리자는 모든 방문자 변경사항에 대해 대시보드 갱신
+  });
+
+  useSupabaseRealtime({
+    table: "system_logs",
+    refetch: dashboardQuery.refetch,
+    events: ["INSERT", "UPDATE", "DELETE"],
+    // 시스템 로그 변경 시 대시보드 통계 갱신
+  });
+
+  useSupabaseRealtime({
+    table: "profiles",
+    refetch: dashboardQuery.refetch,
+    events: ["INSERT", "UPDATE", "DELETE"],
+    // 사용자 프로필 변경 시 대시보드 통계 갱신 (회원가입 브로드캐스트 포함)
+  });
+
+  return dashboardQuery;
 }
 
 /**

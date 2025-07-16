@@ -5,13 +5,7 @@
  */
 
 // AuthService exports
-export {
-  refreshToken,
-  handleSessionExpired,
-  logout,
-  isTokenExpired,
-  validateSession,
-} from "./authService";
+export { refreshToken, handleSessionExpired, logout } from "./authService";
 
 // Cookie utilities exports
 export {

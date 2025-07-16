@@ -10,6 +10,7 @@ interface LogsActionManagerProps {
     handleDeleteLog: (id: string) => Promise<void>;
     handleDeleteAllLogs: () => Promise<void>;
     handleDeleteOldLogs: () => Promise<void>;
+    isLoading: boolean;
   }) => React.ReactNode;
 }
 
@@ -96,6 +97,7 @@ export function LogsActionManager({
         handleDeleteLog,
         handleDeleteAllLogs,
         handleDeleteOldLogs,
+        isLoading: deleteLogsMutation.isPending,
       })}
     </>
   );

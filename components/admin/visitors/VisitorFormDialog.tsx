@@ -459,7 +459,7 @@ export function VisitorFormDialog({
                   {isSubmitting ? (
                     <>
                       <div className="animate-spin mr-2 h-5 w-5 border-2 border-white border-t-transparent rounded-full" />
-                      처리중...
+                      처리 중...
                     </>
                   ) : mode === "create" ? (
                     "등록"

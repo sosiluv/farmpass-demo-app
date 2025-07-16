@@ -7,17 +7,20 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
+import { Loader2 } from "lucide-react";
 
 interface DeleteMemberDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onConfirm: () => void;
+  isLoading?: boolean;
 }
 
 export function DeleteMemberDialog({
   open,
   onOpenChange,
   onConfirm,
+  isLoading = false,
 }: DeleteMemberDialogProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -35,6 +38,7 @@ export function DeleteMemberDialog({
             variant="outline"
             onClick={() => onOpenChange(false)}
             className="h-8 sm:h-9 text-xs sm:text-sm px-3 sm:px-4"
+            disabled={isLoading}
           >
             취소
           </Button>
@@ -42,8 +46,16 @@ export function DeleteMemberDialog({
             variant="destructive"
             onClick={onConfirm}
             className="h-8 sm:h-9 text-xs sm:text-sm px-3 sm:px-4"
+            disabled={isLoading}
           >
-            제거
+            {isLoading ? (
+              <>
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                제거 중...
+              </>
+            ) : (
+              "제거"
+            )}
           </Button>
         </DialogFooter>
       </DialogContent>

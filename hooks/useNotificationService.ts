@@ -14,7 +14,7 @@ import {
 } from "@/lib/hooks/query/use-push-mutations";
 import { useSaveNotificationSettingsMutation } from "@/lib/hooks/query/use-notification-mutations";
 
-export function useNotificationService(enableVapidKey: boolean = false) {
+export function useNotificationService() {
   // 토스트 대신 메시지 상태만 반환
   const [lastMessage, setLastMessage] = useState<{
     type: "success" | "error";
@@ -23,9 +23,9 @@ export function useNotificationService(enableVapidKey: boolean = false) {
   } | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
-  // React Query Hooks - VAPID key는 필요할 때만 조회
+  // React Query Hooks - Lazy Loading으로 최적화
   const { data: vapidKey, refetch: refetchVapidKey } = useVapidKeyQuery({
-    enabled: enableVapidKey,
+    enabled: false, // 필요할 때만 로드
   });
   const { data: subscriptions, refetch: refetchSubscriptions } =
     useSubscriptionStatusQuery(false); // 수동으로 조회할 때만 사용
@@ -35,18 +35,24 @@ export function useNotificationService(enableVapidKey: boolean = false) {
   const saveNotificationSettingsMutation =
     useSaveNotificationSettingsMutation();
 
-  // VAPID 키 관리 - React Query 캐시 사용
+  // VAPID 키 관리 - Lazy Loading
   const getVapidPublicKey = async () => {
     try {
       devLog.log("[NOTIFICATION] VAPID 키 조회 시작");
 
-      // React Query 캐시된 데이터 사용
-      if (vapidKey) {
-        return vapidKey;
+      // 캐시된 데이터가 있으면 사용
+      let key = vapidKey;
+      if (!key) {
+        const { data: newKey } = await refetchVapidKey();
+        key = newKey;
       }
 
-      devLog.warn("VAPID 키가 아직 로드되지 않음");
-      return null;
+      if (!key) {
+        devLog.error("VAPID 키를 가져올 수 없습니다");
+        return null;
+      }
+
+      return key;
     } catch (error) {
       devLog.error("VAPID 키 조회 실패:", error);
       return null;
@@ -99,9 +105,10 @@ export function useNotificationService(enableVapidKey: boolean = false) {
       setIsLoading(true);
 
       // 구독 해제 Mutation 사용
-      const result = await deleteSubscriptionMutation.mutateAsync(
-        subscription.endpoint
-      );
+      const result = await deleteSubscriptionMutation.mutateAsync({
+        endpoint: subscription.endpoint,
+        forceDelete: false, // 수동 구독 해제는 인증 사용
+      });
 
       // 구독 해제 시 is_active를 false로 설정 - Mutation 사용
       await saveNotificationSettingsMutation.mutateAsync({ is_active: false });
@@ -189,21 +196,17 @@ export function useNotificationService(enableVapidKey: boolean = false) {
   const requestNotificationPermission = useCallback(async () => {
     setIsLoading(true);
     try {
-      // VAPID 키가 없으면 강제로 fetch해서 반드시 준비될 때까지 기다림
-      let key = vapidKey;
-      if (!key) {
-        const { data: newKey } = await refetchVapidKey();
-        key = newKey;
-      }
+      // VAPID 키 lazy loading
+      const key = await getVapidPublicKey();
       if (!key) {
         setLastMessage({
           type: "error",
           title: "VAPID 키 오류",
-          message:
-            "VAPID 키가 아직 준비되지 않았습니다. 잠시 후 다시 시도해 주세요.",
+          message: "VAPID 키를 가져올 수 없습니다. 잠시 후 다시 시도해 주세요.",
         });
         return false;
       }
+
       // 공통 로직 사용
       const result = await requestNotificationPermissionAndSubscribe(
         async () => key,

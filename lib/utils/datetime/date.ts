@@ -386,8 +386,9 @@ export const getKSTDaysAgo = (days: number = 0): string => {
   const now = new Date();
   // KST는 UTC+9이므로 9시간을 더함
   const kstTime = new Date(now.getTime() + 9 * 60 * 60 * 1000);
-  kstTime.setUTCDate(kstTime.getUTCDate() - days);
-  return kstTime.toISOString();
+  // 날짜 조작은 밀리초 단위로 처리 (더 안전함)
+  const targetTime = new Date(kstTime.getTime() - days * 24 * 60 * 60 * 1000);
+  return targetTime.toISOString();
 };
 
 /**
@@ -400,8 +401,9 @@ export const getKSTDaysAgoDateString = (days: number = 0): string => {
   const now = new Date();
   // KST는 UTC+9이므로 9시간을 더함
   const kstTime = new Date(now.getTime() + 9 * 60 * 60 * 1000);
-  kstTime.setUTCDate(kstTime.getUTCDate() - days);
-  return kstTime.toISOString().split("T")[0];
+  // 날짜 조작은 밀리초 단위로 처리 (더 안전함)
+  const targetTime = new Date(kstTime.getTime() - days * 24 * 60 * 60 * 1000);
+  return targetTime.toISOString().split("T")[0];
 };
 
 /**

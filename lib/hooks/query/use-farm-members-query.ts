@@ -5,6 +5,8 @@ import { farmsKeys } from "@/lib/hooks/query/query-keys";
 import { useAuth } from "@/components/providers/auth-provider";
 import type { FarmMember } from "@/lib/types";
 import { apiClient } from "@/lib/utils/data/api-client";
+import { useSupabaseRealtime } from "@/hooks/useSupabaseRealtime";
+import { useCallback } from "react";
 
 export interface MemberWithProfile extends FarmMember {
   representative_name: string;
@@ -94,6 +96,31 @@ export function useFarmMembersQuery(farmId: string | null) {
       refetchOnReconnect: true,
     }
   );
+
+  // 🔥 농장 멤버 실시간 업데이트를 위한 안정된 필터 함수
+  const memberFilter = useCallback(
+    (payload: any) => {
+      if (!farmId) return false;
+
+      // 특정 농장의 멤버 변경사항만 감지
+      const memberData = payload.new || payload.old;
+      const result = memberData?.farm_id === farmId;
+
+      console.log(
+        `🔥 [MEMBER FILTER] farmId: ${farmId}, payload farm_id: ${memberData?.farm_id}, result: ${result}`
+      );
+      return result;
+    },
+    [farmId]
+  );
+
+  // 🔥 농장 멤버 실시간 업데이트 구독
+  useSupabaseRealtime({
+    table: "farm_members",
+    refetch: membersQuery.refetch,
+    events: ["INSERT", "UPDATE", "DELETE"],
+    filter: farmId ? memberFilter : undefined,
+  });
 
   return {
     // 기존 인터페이스 호환성 유지
@@ -191,6 +218,34 @@ export function useFarmMembersPreviewQuery(farmIds: string[]) {
       refetchOnReconnect: true,
     }
   );
+
+  // 🔥 다중 농장 멤버 실시간 업데이트를 위한 안정된 필터 함수
+  const previewFilter = useCallback(
+    (payload: any) => {
+      if (!farmIds.length) return false;
+
+      // 현재 조회 중인 농장들의 멤버 변경사항만 감지
+      const memberData = payload.new || payload.old;
+      const targetFarmId = memberData?.farm_id;
+      const result = farmIds.includes(targetFarmId);
+
+      console.log(
+        `🔥 [MEMBER PREVIEW FILTER] farmIds: [${farmIds.join(
+          ", "
+        )}], payload farm_id: ${targetFarmId}, result: ${result}`
+      );
+      return result;
+    },
+    [farmIds]
+  );
+
+  // 🔥 농장 멤버 실시간 업데이트 구독 (다중 농장)
+  useSupabaseRealtime({
+    table: "farm_members",
+    refetch: membersQuery.refetch,
+    events: ["INSERT", "UPDATE", "DELETE"],
+    filter: farmIds.length > 0 ? previewFilter : undefined,
+  });
 
   return {
     // 기존 인터페이스 호환성 유지

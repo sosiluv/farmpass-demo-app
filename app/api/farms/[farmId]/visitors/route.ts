@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+// Supabase 서비스 롤 클라이언트 추가 (실시간 이벤트 트리거용)
+import { createServiceRoleClient } from "@/lib/supabase/service-role";
 import { createSystemLog } from "@/lib/utils/logging/system-log";
 import { v4 as uuidv4 } from "uuid";
 import { cookies } from "next/headers";
@@ -283,7 +285,7 @@ export async function POST(
       );
     }
 
-    // 방문자 데이터 저장
+    // 방문자 데이터 저장 (Prisma 사용하되 실시간 위해 BroadcastChannel 활용)
     const visitor = await prisma.visitor_entries.create({
       data: {
         farm_id: farmId,
@@ -305,28 +307,53 @@ export async function POST(
       },
     });
 
+    console.log("🎉 [VISITOR-API] 방문자 등록 완료:", visitor);
+    devLog.log("🎉 [VISITOR-API] 방문자 등록 완료:", visitor);
+
+    // 🔥 실시간 업데이트를 위한 Supabase Broadcast 강제 발송
+    try {
+      const supabase = createServiceRoleClient();
+      await supabase.channel("visitor_updates").send({
+        type: "broadcast",
+        event: "visitor_inserted",
+        payload: {
+          eventType: "INSERT",
+          new: visitor,
+          old: null,
+          table: "visitor_entries",
+          schema: "public",
+        },
+      });
+      console.log("📡 [VISITOR-API] Supabase Broadcast 발송 완료");
+    } catch (broadcastError) {
+      console.error("⚠️ [VISITOR-API] Broadcast 발송 실패:", broadcastError);
+      // 브로드캐스트 실패해도 등록은 성공으로 처리
+    }
+
     // 방문자 등록 성공 로그 생성
     await createSystemLog(
       "VISITOR_CREATED",
-      `방문자 등록: ${visitor.visitor_name} (농장: ${farm.farm_name}, 방문자 ID: ${visitor.id})`,
+      `방문자 등록: ${String(visitor.visitor_name)} (농장: ${
+        farm.farm_name
+      }, 방문자 ID: ${String(visitor.id)})`,
       "info",
       undefined,
       "visitor",
-      visitor.id,
+      String(visitor.id),
       {
         farm_id: farmId,
         farm_name: farm.farm_name,
-        visitor_id: visitor.id,
-        visitor_name: visitor.visitor_name,
+        visitor_id: String(visitor.id),
+        visitor_name: String(visitor.visitor_name),
         access_scope: "single_farm",
         status: "success",
         metadata: {
-          visitor_phone: visitor.visitor_phone,
-          visit_purpose: visitor.visitor_purpose,
+          visitor_phone: String(visitor.visitor_phone || ""),
+          visit_purpose: String(visitor.visitor_purpose || ""),
           has_photo: !!visitor.profile_photo_url,
           has_vehicle: !!visitor.vehicle_number,
-          disinfection_check: visitor.disinfection_check,
-          consent_given: visitor.consent_given,
+          disinfection_check: Boolean(visitor.disinfection_check) || false,
+          consent_given: Boolean(visitor.consent_given) || false,
           is_new_registration: true,
         },
       },
@@ -339,14 +366,20 @@ export async function POST(
     sendVisitorNotificationToFarmMembers(
       farmId,
       {
-        visitor_name: visitor.visitor_name,
-        visitor_phone: visitor.visitor_phone || undefined,
-        visitor_purpose: visitor.visitor_purpose || undefined,
-        vehicle_number: visitor.vehicle_number || undefined,
-        disinfection_check: visitor.disinfection_check || false,
+        visitor_name: String(visitor.visitor_name),
+        visitor_phone: visitor.visitor_phone
+          ? String(visitor.visitor_phone)
+          : undefined,
+        visitor_purpose: visitor.visitor_purpose
+          ? String(visitor.visitor_purpose)
+          : undefined,
+        vehicle_number: visitor.vehicle_number
+          ? String(visitor.vehicle_number)
+          : undefined,
+        disinfection_check: Boolean(visitor.disinfection_check) || false,
       },
       farm.farm_name,
-      visitor.visit_datetime
+      new Date(String(visitor.visit_datetime))
     );
 
     // 응답 생성 및 쿠키 설정

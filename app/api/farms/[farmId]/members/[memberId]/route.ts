@@ -154,6 +154,46 @@ export async function PUT(
       throw updateError;
     }
 
+    // 🔥 농장 멤버 수정 실시간 브로드캐스트
+    try {
+      const { createServiceRoleClient } = await import(
+        "@/lib/supabase/service-role"
+      );
+      const supabase = createServiceRoleClient();
+      await supabase.channel("member_updates").send({
+        type: "broadcast",
+        event: "member_updated",
+        payload: {
+          eventType: "UPDATE",
+          new: {
+            id: params.memberId,
+            farm_id: params.farmId,
+            user_id: memberToUpdate.user_id,
+            role: role,
+            old_role: oldRole,
+            name: (memberToUpdate.profiles as any)?.name,
+            email: (memberToUpdate.profiles as any)?.email,
+          },
+          old: {
+            id: params.memberId,
+            farm_id: params.farmId,
+            user_id: memberToUpdate.user_id,
+            role: oldRole,
+            name: (memberToUpdate.profiles as any)?.name,
+            email: (memberToUpdate.profiles as any)?.email,
+          },
+          table: "farm_members",
+          schema: "public",
+        },
+      });
+      console.log("📡 [MEMBER-UPDATE-API] Supabase Broadcast 발송 완료");
+    } catch (broadcastError) {
+      console.error(
+        "⚠️ [MEMBER-UPDATE-API] Broadcast 발송 실패:",
+        broadcastError
+      );
+    }
+
     // 농장 멤버 역할 변경 로그 기록
     await createSystemLog(
       "MEMBER_UPDATE",
@@ -377,6 +417,38 @@ export async function DELETE(
     } catch (deleteError) {
       devLog.error("Error deleting member:", deleteError);
       throw deleteError;
+    }
+
+    // 🔥 농장 멤버 삭제 실시간 브로드캐스트
+    try {
+      const { createServiceRoleClient } = await import(
+        "@/lib/supabase/service-role"
+      );
+      const supabase = createServiceRoleClient();
+      await supabase.channel("member_updates").send({
+        type: "broadcast",
+        event: "member_deleted",
+        payload: {
+          eventType: "DELETE",
+          new: null,
+          old: {
+            id: params.memberId,
+            farm_id: params.farmId,
+            user_id: memberToRemove.user_id,
+            role: memberToRemove.role,
+            name: (memberToRemove.profiles as any)?.name,
+            email: (memberToRemove.profiles as any)?.email,
+          },
+          table: "farm_members",
+          schema: "public",
+        },
+      });
+      console.log("📡 [MEMBER-DELETE-API] Supabase Broadcast 발송 완료");
+    } catch (broadcastError) {
+      console.error(
+        "⚠️ [MEMBER-DELETE-API] Broadcast 발송 실패:",
+        broadcastError
+      );
     }
 
     // 농장 멤버 제거 로그 기록

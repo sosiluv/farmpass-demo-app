@@ -88,7 +88,7 @@ export async function POST(request: NextRequest) {
         {
           success: false,
           error: "SUBSCRIPTION_VALIDATION_FAILED",
-          message: "구독 데이터가 유효하지 않습니다.",
+          message: validation.errors,
         },
         { status: 400 }
       );
@@ -363,16 +363,8 @@ export async function DELETE(request: NextRequest) {
   const userAgent = getUserAgent(request);
 
   try {
-    // 인증 확인
-    const authResult = await requireAuth(false);
-    if (!authResult.success || !authResult.user) {
-      return authResult.response!;
-    }
-
-    const user = authResult.user;
-
     const body = await request.json();
-    const { endpoint } = body;
+    const { endpoint, forceDelete } = body;
 
     if (!endpoint) {
       return NextResponse.json(
@@ -384,6 +376,75 @@ export async function DELETE(request: NextRequest) {
         { status: 400 }
       );
     }
+
+    // forceDelete가 true인 경우 (특수한 경우에만 사용) 인증 없이 endpoint로만 삭제
+    if (forceDelete) {
+      devLog.log(`강제 구독 해제: endpoint ${endpoint}의 모든 구독 삭제`);
+
+      try {
+        const deletedSubscriptions = await prisma.push_subscriptions.deleteMany(
+          {
+            where: {
+              endpoint: endpoint,
+            },
+          }
+        );
+
+        devLog.log(
+          `강제 삭제 완료: ${deletedSubscriptions.count}개 구독 삭제됨`
+        );
+
+        await createSystemLog(
+          "PUSH_SUBSCRIPTION_FORCE_DELETE",
+          `강제 구독 해제: ${endpoint}`,
+          "info",
+          undefined,
+          "notification",
+          undefined,
+          {
+            endpoint,
+            deletedCount: deletedSubscriptions.count,
+            reason: "force_delete",
+          },
+          undefined,
+          clientIP,
+          userAgent
+        );
+
+        return NextResponse.json({
+          success: true,
+          message: "구독이 강제로 해제되었습니다.",
+          deletedCount: deletedSubscriptions.count,
+        });
+      } catch (error) {
+        devLog.error("강제 구독 해제 실패:", error);
+
+        await logApiError(
+          "/api/push/subscription",
+          "DELETE",
+          error instanceof Error ? error : new Error(String(error)),
+          undefined,
+          { ip: clientIP, userAgent }
+        );
+
+        return NextResponse.json(
+          {
+            success: false,
+            error: "DATABASE_ERROR",
+            message: "구독 해제 중 오류가 발생했습니다.",
+          },
+          { status: 500 }
+        );
+      }
+    }
+
+    // 일반적인 경우 - 인증 필요
+    const authResult = await requireAuth(false);
+    if (!authResult.success || !authResult.user) {
+      return authResult.response!;
+    }
+
+    const user = authResult.user;
 
     // 구독 삭제
     // 전체 구독 해제 - 해당 endpoint의 모든 구독 삭제 (전체 + 모든 농장별)

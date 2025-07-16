@@ -122,17 +122,32 @@ export const useCreateVisitorMutation = () => {
       devLog.log(`[MUTATION] 방문자 등록 완료: ${farmId}`);
       return result;
     },
-    onSuccess: (_, { farmId }) => {
-      // 관련 쿼리들 무효화
+    onSuccess: (result, { farmId }) => {
+      // 방문자 관련 쿼리만 무효화 (실시간 업데이트)
       queryClient.invalidateQueries({ queryKey: ["visitors"] });
       queryClient.invalidateQueries({ queryKey: ["visitor-session", farmId] });
       queryClient.invalidateQueries({
         queryKey: ["daily-visitor-count", farmId],
       });
-      queryClient.invalidateQueries({ queryKey: ["farm-stats"] });
-      queryClient.invalidateQueries({ queryKey: ["admin-dashboard"] });
+      queryClient.invalidateQueries({ queryKey: ["farm-info"] });
 
-      devLog.log("[MUTATION] 방문자 등록 관련 캐시 무효화 완료");
+      // 방문자 실시간 업데이트를 위한 Broadcast Channel
+      try {
+        if (typeof window !== "undefined" && "BroadcastChannel" in window) {
+          const channel = new BroadcastChannel("visitor-updates");
+          channel.postMessage({
+            type: "VISITOR_REGISTERED",
+            farmId,
+            timestamp: Date.now(),
+            data: result,
+          });
+          channel.close();
+        }
+      } catch (error) {
+        console.warn("방문자 실시간 업데이트 브로드캐스트 실패:", error);
+      }
+
+      devLog.log("[MUTATION] 방문자 등록 캐시 무효화 완료");
     },
   });
 };

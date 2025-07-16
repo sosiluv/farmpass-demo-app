@@ -138,6 +138,31 @@ export async function PUT(
       data: farmData,
     });
 
+    // 🔥 농장 수정 실시간 브로드캐스트
+    try {
+      const { createServiceRoleClient } = await import(
+        "@/lib/supabase/service-role"
+      );
+      const supabase = createServiceRoleClient();
+      await supabase.channel("farm_updates").send({
+        type: "broadcast",
+        event: "farm_updated",
+        payload: {
+          eventType: "UPDATE",
+          new: farm,
+          old: null,
+          table: "farms",
+          schema: "public",
+        },
+      });
+      console.log("📡 [FARM-UPDATE-API] Supabase Broadcast 발송 완료");
+    } catch (broadcastError) {
+      console.error(
+        "⚠️ [FARM-UPDATE-API] Broadcast 발송 실패:",
+        broadcastError
+      );
+    }
+
     // 농장 수정 로그
     await createSystemLog(
       "FARM_UPDATE",
@@ -228,22 +253,12 @@ export async function DELETE(
     const user = authResult.user;
     const isAdmin = authResult.isAdmin || false;
 
-    // Verify ownership and get farm info for logging (관리자가 아닌 경우에만 소유권 확인)
-    let farm;
-
-    if (isAdmin) {
-      // 관리자인 경우 farm_name만 조회
-      farm = await prisma.farms.findUnique({
-        where: { id: params.farmId },
-        select: { farm_name: true },
-      });
-    } else {
-      // 일반 사용자인 경우 owner_id와 farm_name 조회
-      farm = await prisma.farms.findUnique({
-        where: { id: params.farmId },
-        select: { owner_id: true, farm_name: true },
-      });
-    }
+    // Verify ownership and get farm info for logging
+    // 브로드캐스트를 위해 항상 owner_id도 조회
+    const farm = await prisma.farms.findUnique({
+      where: { id: params.farmId },
+      select: { owner_id: true, farm_name: true },
+    });
 
     if (!farm) {
       devLog.error(`Farm not found for deletion: ${params.farmId}`);
@@ -259,14 +274,13 @@ export async function DELETE(
 
     // 소유권 확인 (관리자가 아닌 경우에만)
     if (!isAdmin) {
-      const farmWithOwner = farm as { owner_id: string; farm_name: string };
       devLog.log(
-        `Farm ownership check for deletion - Farm: ${params.farmId}, Owner: ${farmWithOwner.owner_id}, User: ${user.id}`
+        `Farm ownership check for deletion - Farm: ${params.farmId}, Owner: ${farm.owner_id}, User: ${user.id}`
       );
 
-      if (farmWithOwner.owner_id !== user.id) {
+      if (farm.owner_id !== user.id) {
         devLog.error(
-          `Unauthorized farm deletion - Farm: ${params.farmId}, Owner: ${farmWithOwner.owner_id}, User: ${user.id}`
+          `Unauthorized farm deletion - Farm: ${params.farmId}, Owner: ${farm.owner_id}, User: ${user.id}`
         );
         return NextResponse.json(
           {
@@ -283,21 +297,17 @@ export async function DELETE(
       );
     }
 
-    existingFarm = farm;
-
     // 농장 삭제 로그 (삭제 전에 기록)
     await createSystemLog(
       "FARM_DELETE",
-      `농장 삭제: ${existingFarm.farm_name || "Unknown"} (농장 ID: ${
-        params.farmId
-      })`,
+      `농장 삭제: ${farm.farm_name || "Unknown"} (농장 ID: ${params.farmId})`,
       "warn",
       user.id,
       "farm",
       params.farmId,
       {
         farm_id: params.farmId,
-        farm_name: existingFarm.farm_name || "Unknown",
+        farm_name: farm.farm_name || "Unknown",
         action_type: "farm_management",
         admin_action: isAdmin, // 관리자 액션 여부 기록
       },
@@ -311,10 +321,39 @@ export async function DELETE(
       where: { id: params.farmId },
     });
 
+    // 🔥 농장 삭제 실시간 브로드캐스트
+    try {
+      const { createServiceRoleClient } = await import(
+        "@/lib/supabase/service-role"
+      );
+      const supabase = createServiceRoleClient();
+      await supabase.channel("farm_updates").send({
+        type: "broadcast",
+        event: "farm_deleted",
+        payload: {
+          eventType: "DELETE",
+          new: null,
+          old: {
+            id: params.farmId,
+            farm_name: farm.farm_name,
+            owner_id: farm.owner_id,
+          },
+          table: "farms",
+          schema: "public",
+        },
+      });
+      console.log("📡 [FARM-DELETE-API] Supabase Broadcast 발송 완료");
+    } catch (broadcastError) {
+      console.error(
+        "⚠️ [FARM-DELETE-API] Broadcast 발송 실패:",
+        broadcastError
+      );
+    }
+
     return NextResponse.json(
       {
         success: true,
-        message: `${existingFarm.farm_name}이 삭제되었습니다.`,
+        message: `${farm.farm_name}이 삭제되었습니다.`,
       },
       { status: 200, headers: { "Cache-Control": "no-store" } }
     );

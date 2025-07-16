@@ -23,6 +23,9 @@ import {
   Globe,
   Wifi,
   WifiOff,
+  FileText,
+  Loader2,
+  UserPlus,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -51,7 +54,7 @@ export default function PushNotificationTestPage() {
   const [testResults, setTestResults] = useState<
     Array<{
       id: string;
-      type: "success" | "error" | "warning";
+      type: "success" | "error" | "warning" | "info";
       message: string;
       timestamp: Date;
     }>
@@ -467,7 +470,7 @@ export default function PushNotificationTestPage() {
     }
   };
 
-  const getStatusIcon = (type: "success" | "error" | "warning") => {
+  const getStatusIcon = (type: "success" | "error" | "warning" | "info") => {
     switch (type) {
       case "success":
         return <CheckCircle className="h-4 w-4 text-green-500" />;
@@ -475,6 +478,8 @@ export default function PushNotificationTestPage() {
         return <XCircle className="h-4 w-4 text-red-500" />;
       case "warning":
         return <AlertTriangle className="h-4 w-4 text-yellow-500" />;
+      case "info":
+        return <FileText className="h-4 w-4 text-blue-500" />;
     }
   };
 
@@ -759,6 +764,110 @@ export default function PushNotificationTestPage() {
               >
                 커스텀 방문자 등록 알림 전송
               </Button>
+            </CardContent>
+          </Card>
+
+          {/* 🧪 회원가입 실시간 테스트 카드 */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <UserPlus className="h-5 w-5" />
+                회원가입 실시간 업데이트 테스트
+              </CardTitle>
+              <CardDescription>
+                회원가입 API와 실시간 브로드캐스트 기능을 테스트합니다. 관리자
+                대시보드에서 실시간 업데이트를 확인하세요.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <Button
+                onClick={async () => {
+                  setTestResults((prev) => [
+                    ...prev,
+                    {
+                      id: Date.now().toString(),
+                      type: "info",
+                      message:
+                        "🧪 회원가입 실시간 브로드캐스트 테스트를 실행합니다...",
+                      timestamp: new Date(),
+                    },
+                  ]);
+
+                  try {
+                    // 테스트용 임시 이메일 생성
+                    const testEmail = `test_${Date.now()}@example.com`;
+
+                    // 회원가입 API 직접 호출 (내부 API 방식)
+                    const response = await fetch("/api/auth/register", {
+                      method: "POST",
+                      headers: {
+                        "Content-Type": "application/json",
+                      },
+                      body: JSON.stringify({
+                        email: testEmail,
+                        password: "TestPassword123!",
+                        name: "테스트 사용자",
+                        phone: "010-1234-5678",
+                        turnstileToken: "test-token", // 테스트용
+                      }),
+                    });
+
+                    const result = await response.json();
+
+                    if (result.success) {
+                      setTestResults((prev) => [
+                        ...prev,
+                        {
+                          id: Date.now().toString(),
+                          type: "success",
+                          message: `✅ 회원가입 성공! 이메일: ${testEmail} - 관리자 대시보드에서 실시간 업데이트를 확인하세요.`,
+                          timestamp: new Date(),
+                        },
+                      ]);
+                      toast.success(
+                        "회원가입 테스트 성공! 관리자 대시보드에서 실시간 업데이트를 확인하세요."
+                      );
+                    } else {
+                      setTestResults((prev) => [
+                        ...prev,
+                        {
+                          id: Date.now().toString(),
+                          type: "error",
+                          message: `❌ 회원가입 실패: ${result.message}`,
+                          timestamp: new Date(),
+                        },
+                      ]);
+                      toast.error(`회원가입 테스트 실패: ${result.message}`);
+                    }
+                  } catch (error) {
+                    setTestResults((prev) => [
+                      ...prev,
+                      {
+                        id: Date.now().toString(),
+                        type: "error",
+                        message: `💥 회원가입 테스트 오류: ${
+                          error instanceof Error ? error.message : String(error)
+                        }`,
+                        timestamp: new Date(),
+                      },
+                    ]);
+                    toast.error(
+                      `회원가입 테스트 오류: ${
+                        error instanceof Error ? error.message : String(error)
+                      }`
+                    );
+                  }
+                }}
+                className="w-full"
+              >
+                <UserPlus className="mr-2 h-4 w-4" />
+                회원가입 실시간 브로드캐스트 테스트
+              </Button>
+              <div className="text-sm text-muted-foreground">
+                이 버튼을 클릭하면 테스트용 회원가입이 생성되고, 관리자
+                대시보드의 "사용자 통계"에서 실시간으로 업데이트되는지 확인할 수
+                있습니다.
+              </div>
             </CardContent>
           </Card>
 

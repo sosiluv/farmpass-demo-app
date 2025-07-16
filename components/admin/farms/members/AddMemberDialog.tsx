@@ -6,7 +6,7 @@ import {
   DialogFooter,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { UserPlus } from "lucide-react";
+import { UserPlus, Loader2 } from "lucide-react";
 import { devLog } from "@/lib/utils/logging/dev-logger";
 import { apiClient } from "@/lib/utils/data/api-client";
 import {
@@ -18,7 +18,7 @@ import {
 interface AddMemberDialogProps {
   canManageMembers: boolean;
   onAddMember: (email: string, role: "manager" | "viewer") => Promise<void>;
-  farmId: string; // farmId 추가
+  farmId: string;
 }
 
 export function AddMemberDialog({
@@ -134,6 +134,7 @@ export function AddMemberDialog({
           <Button
             variant="outline"
             onClick={handleClose}
+            disabled={isAddingMember}
             className="h-8 sm:h-9 text-xs sm:text-sm px-3 sm:px-4"
           >
             취소
@@ -145,27 +146,7 @@ export function AddMemberDialog({
           >
             {isAddingMember ? (
               <>
-                <svg
-                  className="animate-spin mr-2 h-4 w-4"
-                  viewBox="0 0 16 16"
-                  fill="none"
-                  xmlns="http://www.w3.org/2000/svg"
-                >
-                  <circle
-                    cx="8"
-                    cy="8"
-                    r="7"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    className="opacity-25"
-                  />
-                  <path
-                    d="M15 8a7 7 0 11-7-7"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    className="opacity-75"
-                  />
-                </svg>
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                 추가 중...
               </>
             ) : (

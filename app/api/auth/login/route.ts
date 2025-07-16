@@ -150,7 +150,8 @@ async function checkLoginAttempts(email: string): Promise<LoginAttempts> {
 async function incrementLoginAttempts(
   email: string,
   clientIP: string,
-  userAgent: string
+  userAgent: string,
+  location: any // 타입은 getLocationFromIP 반환값에 맞게 지정
 ): Promise<void> {
   const settings = await getSystemSettings();
   const suspiciousThreshold = Math.floor(settings.maxLoginAttempts / 2);
@@ -296,7 +297,7 @@ export async function POST(request: NextRequest) {
       const incrementMonitor = new PerformanceMonitor(
         "auth_increment_attempts"
       );
-      await incrementLoginAttempts(email, clientIP, userAgent);
+      await incrementLoginAttempts(email, clientIP, userAgent, location);
       const incrementDuration = await incrementMonitor.finish();
 
       await logDatabasePerformance(

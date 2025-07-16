@@ -85,6 +85,32 @@ export async function POST(request: NextRequest) {
         );
     }
 
+    // 🔥 로그 삭제 실시간 브로드캐스트
+    try {
+      const { createServiceRoleClient } = await import(
+        "@/lib/supabase/service-role"
+      );
+      const supabase = createServiceRoleClient();
+      await supabase.channel("log_updates").send({
+        type: "broadcast",
+        event: "log_deleted",
+        payload: {
+          eventType: "DELETE",
+          new: null,
+          old: {
+            action: action,
+            deleted_count: result.count || 1,
+            log_id: logId,
+          },
+          table: "system_logs",
+          schema: "public",
+        },
+      });
+      console.log("📡 [LOG-DELETE-API] Supabase Broadcast 발송 완료");
+    } catch (broadcastError) {
+      console.error("⚠️ [LOG-DELETE-API] Broadcast 발송 실패:", broadcastError);
+    }
+
     // 삭제 작업 로그 기록
     await createSystemLog(
       "LOG_DELETE",

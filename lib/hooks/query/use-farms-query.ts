@@ -6,6 +6,7 @@ import { useAuth } from "@/components/providers/auth-provider";
 import { apiClient } from "@/lib/utils/data/api-client";
 import { farmsKeys } from "./query-keys";
 import type { Farm } from "@/lib/types/farm";
+import { useSupabaseRealtime } from "@/hooks/useSupabaseRealtime";
 
 /**
  * React Query 기반 Farms Hook
@@ -43,6 +44,15 @@ export function useFarmsQuery(userId?: string) {
       refetchOnReconnect: true,
     }
   );
+
+  // 🔥 농장 실시간 업데이트 구독
+  useSupabaseRealtime({
+    table: "farms",
+    refetch: farmsQuery.refetch,
+    events: ["INSERT", "UPDATE", "DELETE"],
+    // 필터 제거: 농장 변경사항은 모든 사용자가 refetch
+    // (멤버십 체크가 복잡하고, API에서 필터링하므로 안전함)
+  });
 
   return {
     // 기존 인터페이스 호환성 유지

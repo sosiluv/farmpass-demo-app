@@ -15,11 +15,12 @@ import {
   generateDashboardStats,
 } from "@/lib/utils/data/common-stats";
 import { getKSTDaysAgo, toKSTDateString } from "@/lib/utils/datetime/date";
+import { useSupabaseRealtime } from "@/hooks/useSupabaseRealtime";
 
-export interface VisitorFilters {
-  farmId?: string | null;
+interface VisitorFilters {
+  farmId?: string;
   searchTerm?: string;
-  dateRange?: string; // "all" | "today" | "week" | "month" | "custom"
+  dateRange?: "today" | "week" | "month" | "custom" | "all";
   dateStart?: string;
   dateEnd?: string;
 }
@@ -83,6 +84,34 @@ export function useFarmVisitorsWithFiltersQuery(filters: VisitorFilters = {}) {
     }
   );
 
+  // 🔥 방문자 실시간 업데이트를 위한 안정된 필터 함수
+  const visitorFilter = React.useCallback(
+    (payload: any) => {
+      if (!filters.farmId || filters.farmId === "all") {
+        // 전체 농장 모드에서는 모든 변경사항 감지
+        return true;
+      }
+
+      // 특정 농장의 변경사항만 감지
+      const farmId = payload.new?.farm_id || payload.old?.farm_id;
+      const result = farmId === filters.farmId;
+
+      console.log(
+        `🔥 [VISITOR FILTER] target farmId: ${filters.farmId}, payload farm_id: ${farmId}, result: ${result}`
+      );
+      return result;
+    },
+    [filters.farmId]
+  );
+
+  // 실시간 업데이트 - visitor_entries 테이블 변경 시 리프레시
+  useSupabaseRealtime({
+    table: "visitor_entries",
+    refetch: visitorsQuery.refetch,
+    events: ["INSERT", "UPDATE", "DELETE"],
+    filter: visitorFilter,
+  });
+
   // 필터링된 데이터 및 통계 계산
   const computedStats = React.useMemo(() => {
     const allVisitors = visitorsQuery.data || [];
@@ -117,113 +146,90 @@ export function useFarmVisitorsWithFiltersQuery(filters: VisitorFilters = {}) {
     // 클라이언트 사이드 필터링 (농장 필터는 DB에서 처리됨)
     let filteredVisitors = [...allVisitors];
 
-    // 날짜 필터
-    if (filters.dateRange && filters.dateRange !== "all") {
-      // 한국시간 기준으로 현재 시간 계산
-      const now = new Date();
-      const kstNow = new Date(now.getTime() + 9 * 60 * 60 * 1000); // UTC+9
-      let startDate: Date | null = null;
-      let endDate: Date | null = null;
-
-      switch (filters.dateRange) {
-        case "today":
-          startDate = new Date(kstNow);
-          startDate.setHours(0, 0, 0, 0);
-          endDate = new Date(kstNow);
-          endDate.setHours(23, 59, 59, 999);
-          break;
-        case "week":
-          startDate = new Date(kstNow);
-          startDate.setDate(startDate.getDate() - 7);
-          startDate.setHours(0, 0, 0, 0);
-          endDate = new Date(kstNow);
-          endDate.setHours(23, 59, 59, 999);
-          break;
-        case "month":
-          startDate = new Date(kstNow);
-          startDate.setDate(startDate.getDate() - 30);
-          startDate.setHours(0, 0, 0, 0);
-          endDate = new Date(kstNow);
-          endDate.setHours(23, 59, 59, 999);
-          break;
-        case "custom":
-          if (filters.dateStart) {
-            // 사용자가 선택한 날짜를 한국시간으로 해석
-            startDate = new Date(filters.dateStart + "T00:00:00+09:00");
-          }
-          if (filters.dateEnd) {
-            // 사용자가 선택한 날짜를 한국시간으로 해석
-            endDate = new Date(filters.dateEnd + "T23:59:59+09:00");
-          }
-          break;
-      }
-
-      if (startDate) {
-        filteredVisitors = filteredVisitors.filter(
-          (visitor) => new Date(visitor.visit_datetime) >= startDate!
-        );
-      }
-
-      if (endDate) {
-        filteredVisitors = filteredVisitors.filter(
-          (visitor) => new Date(visitor.visit_datetime) <= endDate!
-        );
-      }
-    }
-
-    // 검색어 필터
-    if (filters.searchTerm) {
+    // 검색어 필터링
+    if (filters.searchTerm?.trim()) {
       const searchLower = filters.searchTerm.toLowerCase();
       filteredVisitors = filteredVisitors.filter(
         (visitor) =>
-          visitor.visitor_name.toLowerCase().includes(searchLower) ||
-          visitor.visitor_phone.toLowerCase().includes(searchLower) ||
-          visitor.visitor_address.toLowerCase().includes(searchLower)
+          visitor.visitor_name?.toLowerCase().includes(searchLower) ||
+          visitor.visitor_phone?.toLowerCase().includes(searchLower) ||
+          visitor.visitor_address?.toLowerCase().includes(searchLower)
       );
     }
 
-    // 타입 호환성 변환
+    // 날짜 범위 필터링 (KST 기준)
+    if (filters.dateRange && filters.dateRange !== "all") {
+      let startDateKST: string;
+      let endDateKST: string;
+
+      switch (filters.dateRange) {
+        case "today":
+          // 오늘 00:00:00 부터 23:59:59까지 (KST)
+          startDateKST = toKSTDateString(new Date()) + " 00:00:00";
+          endDateKST = toKSTDateString(new Date()) + " 23:59:59";
+          break;
+        case "week":
+          // 7일 전부터 오늘까지 (KST)
+          startDateKST = getKSTDaysAgo(7) + " 00:00:00";
+          endDateKST = toKSTDateString(new Date()) + " 23:59:59";
+          break;
+        case "month":
+          // 30일 전부터 오늘까지 (KST)
+          startDateKST = getKSTDaysAgo(30) + " 00:00:00";
+          endDateKST = toKSTDateString(new Date()) + " 23:59:59";
+          break;
+        case "custom":
+          if (filters.dateStart) {
+            startDateKST = filters.dateStart + " 00:00:00";
+          } else {
+            // 기본값: 30일 전
+            startDateKST = getKSTDaysAgo(30) + " 00:00:00";
+          }
+          if (filters.dateEnd) {
+            endDateKST = filters.dateEnd + " 23:59:59";
+          } else {
+            endDateKST = toKSTDateString(new Date()) + " 23:59:59";
+          }
+          break;
+        default:
+          // 기본값: 30일 전부터 오늘까지
+          startDateKST = getKSTDaysAgo(30) + " 00:00:00";
+          endDateKST = toKSTDateString(new Date()) + " 23:59:59";
+      }
+
+      filteredVisitors = filteredVisitors.filter((visitor) => {
+        // ISO 문자열을 KST로 변환하여 비교
+        const visitDate = new Date(visitor.visit_datetime);
+        const kstVisitDate = new Date(visitDate.getTime() + 9 * 60 * 60 * 1000); // UTC+9
+        const kstDateTimeStr = kstVisitDate
+          .toISOString()
+          .replace("T", " ")
+          .substring(0, 19); // "YYYY-MM-DD HH:mm:ss"
+
+        return kstDateTimeStr >= startDateKST && kstDateTimeStr <= endDateKST;
+      });
+    }
+
+    // 타입 호환성을 위한 변환
     const compatibleVisitors = filteredVisitors.map((visitor) => ({
       ...visitor,
       registered_by: visitor.registered_by ?? undefined,
     }));
 
     // 통계 계산
-    const visitorStats = calculateVisitorStats({
+    const visitorTrend = calculateVisitorStats({
       visitors: compatibleVisitors,
     });
     const purposeStats = calculatePurposeStats(compatibleVisitors);
     const weekdayStats = calculateWeekdayStats(compatibleVisitors);
     const revisitStats = calculateRevisitStats(compatibleVisitors);
-
-    // 최다 방문 목적 계산
-    const topPurpose = {
-      purpose: purposeStats[0]?.purpose || "데이터 없음",
-      count: purposeStats[0]?.count || 0,
-      percentage: purposeStats[0]?.percentage || 0,
-    };
-    // 30일 트렌드
-    const dates = Array.from({ length: 30 }, (_, i) => {
-      const date = new Date();
-      date.setDate(date.getDate() - (29 - i));
-      return toKSTDateString(date);
-    });
-
-    const visitorTrend = dates.map((date) => {
-      const dateVisitors = compatibleVisitors.filter((visitor) => {
-        const visitDate = toKSTDateString(new Date(visitor.visit_datetime));
-        return visitDate === date;
-      });
-
-      return {
-        date,
-        count: dateVisitors.length,
-        disinfected: dateVisitors.filter((v) => v.disinfection_check).length,
-        consented: dateVisitors.filter((v) => v.consent_given).length,
-      };
-    });
-
     const dashboardStats = generateDashboardStats(compatibleVisitors);
+
+    // 상위 방문 목적
+    const topPurpose =
+      purposeStats.length > 0
+        ? purposeStats[0]
+        : { purpose: "데이터 없음", count: 0, percentage: 0 };
 
     return {
       allVisitors,
@@ -232,21 +238,23 @@ export function useFarmVisitorsWithFiltersQuery(filters: VisitorFilters = {}) {
       purposeStats,
       weekdayStats,
       revisitStats,
-      dashboardStats,
       topPurpose,
+      dashboardStats,
     };
   }, [visitorsQuery.data, filters]);
 
   return {
     // 데이터
-    visitors: computedStats.filteredVisitors || [],
-    allVisitors: computedStats.allVisitors || [],
+    visitors: computedStats.filteredVisitors,
+    allVisitors: computedStats.allVisitors,
+
+    // 통계
     visitorTrend: computedStats.visitorTrend,
     purposeStats: computedStats.purposeStats,
     weekdayStats: computedStats.weekdayStats,
     revisitStats: computedStats.revisitStats,
-    dashboardStats: computedStats.dashboardStats,
     topPurpose: computedStats.topPurpose,
+    dashboardStats: computedStats.dashboardStats,
 
     // 상태
     loading: visitorsQuery.isLoading,
@@ -256,11 +264,6 @@ export function useFarmVisitorsWithFiltersQuery(filters: VisitorFilters = {}) {
 
     // 액션
     refetch: visitorsQuery.refetch,
-
-    // React Query 상태
-    isFetching: visitorsQuery.isFetching,
-    isStale: visitorsQuery.isStale,
-    dataUpdatedAt: visitorsQuery.dataUpdatedAt,
   };
 }
 

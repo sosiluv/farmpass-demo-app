@@ -13,7 +13,7 @@ export function DialogManager() {
     useDialogQueue();
 
   const installInfo = usePWAInstall();
-  const { showDialog, handleAllow, handleDeny, closeDialog } =
+  const { showDialog, handleAllow, handleDeny, closeDialog, isResubscribe } =
     useNotificationPermission();
 
   // 농장 데이터 가져오기
@@ -37,12 +37,20 @@ export function DialogManager() {
             handleDeny,
             closeDialog,
             farmCount: farms.length, // 실제 농장 수 사용
+            isResubscribe, // 재구독 여부 전달
           },
           isSystemDialog: true,
         });
       }
     }
-  }, [showDialog, addDialog, currentDialog, queue, farms.length]); // farms.length 의존성 추가
+  }, [
+    showDialog,
+    addDialog,
+    currentDialog,
+    queue,
+    farms.length,
+    isResubscribe,
+  ]); // isResubscribe 의존성 추가
 
   // PWA 설치 프롬프트 관리
   useEffect(() => {
@@ -97,6 +105,7 @@ export function DialogManager() {
               removeDialog(currentDialog.id);
             }}
             farmCount={currentDialog.data.farmCount}
+            isResubscribe={currentDialog.data.isResubscribe} // 재구독 여부 전달
           />
         );
 

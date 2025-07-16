@@ -39,7 +39,7 @@ export function WebPushSubscription({
     getSubscriptionStatus,
     lastMessage,
     clearLastMessage,
-  } = useNotificationService(true); // VAPID key 필요
+  } = useNotificationService(); // Lazy Loading으로 최적화
   const { showInfo, showWarning, showSuccess, showError } = useCommonToast();
 
   // props로 받은 농장 데이터 처리

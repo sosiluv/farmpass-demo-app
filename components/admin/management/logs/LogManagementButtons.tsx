@@ -10,13 +10,14 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { Trash2, AlertTriangle } from "lucide-react";
+import { Trash2, AlertTriangle, Loader2 } from "lucide-react";
 import { memo, useCallback } from "react";
 
 interface LogManagementButtonsProps {
   logsCount: number;
   onDeleteOldLogs: () => void;
   onDeleteAllLogs: () => void;
+  isLoading?: boolean;
 }
 
 const WarningIcon = memo(() => (
@@ -25,13 +26,20 @@ const WarningIcon = memo(() => (
 WarningIcon.displayName = "WarningIcon";
 
 const DeleteOldLogsDialog = memo(
-  ({ onDeleteOldLogs }: { onDeleteOldLogs: () => void }) => (
+  ({
+    onDeleteOldLogs,
+    isLoading = false,
+  }: {
+    onDeleteOldLogs: () => void;
+    isLoading?: boolean;
+  }) => (
     <AlertDialog>
       <AlertDialogTrigger asChild>
         <Button
           variant="outline"
           size="sm"
           className="bg-orange-50 text-orange-600 hover:bg-orange-100 hover:text-orange-700 border-orange-200 h-8 px-3 text-xs"
+          disabled={isLoading}
         >
           <Trash2 className="h-3 w-3 sm:h-4 sm:w-4 sm:mr-2" />
           <span className="hidden sm:inline">30일 이전 로그 삭제</span>
@@ -68,12 +76,20 @@ const DeleteOldLogsDialog = memo(
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel>취소</AlertDialogCancel>
+          <AlertDialogCancel disabled={isLoading}>취소</AlertDialogCancel>
           <AlertDialogAction
             onClick={onDeleteOldLogs}
             className="bg-orange-600 hover:bg-orange-700"
+            disabled={isLoading}
           >
-            삭제
+            {isLoading ? (
+              <>
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                삭제 중...
+              </>
+            ) : (
+              "삭제"
+            )}
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>
@@ -86,13 +102,20 @@ const DeleteAllLogsDialog = memo(
   ({
     logsCount,
     onDeleteAllLogs,
+    isLoading = false,
   }: {
     logsCount: number;
     onDeleteAllLogs: () => void;
+    isLoading?: boolean;
   }) => (
     <AlertDialog>
       <AlertDialogTrigger asChild>
-        <Button variant="destructive" size="sm" className="h-8 px-3 text-xs">
+        <Button
+          variant="destructive"
+          size="sm"
+          className="h-8 px-3 text-xs"
+          disabled={isLoading}
+        >
           <Trash2 className="h-3 w-3 sm:h-4 sm:w-4 sm:mr-2" />
           <span className="hidden sm:inline">전체 로그 삭제</span>
           <span className="sm:hidden">전체 삭제</span>
@@ -136,13 +159,23 @@ const DeleteAllLogsDialog = memo(
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel>취소</AlertDialogCancel>
+          <AlertDialogCancel disabled={isLoading}>취소</AlertDialogCancel>
           <AlertDialogAction
             onClick={onDeleteAllLogs}
             className="bg-red-600 hover:bg-red-700"
+            disabled={isLoading}
           >
-            <Trash2 className="h-4 w-4 mr-2" />
-            완전 삭제
+            {isLoading ? (
+              <>
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                삭제 중...
+              </>
+            ) : (
+              <>
+                <Trash2 className="h-4 w-4 mr-2" />
+                완전 삭제
+              </>
+            )}
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>
@@ -156,6 +189,7 @@ export const LogManagementButtons = memo(
     logsCount,
     onDeleteOldLogs,
     onDeleteAllLogs,
+    isLoading = false,
   }: LogManagementButtonsProps) => {
     const handleDeleteOldLogs = useCallback(() => {
       onDeleteOldLogs();
@@ -168,15 +202,18 @@ export const LogManagementButtons = memo(
     return (
       <div className="flex items-center justify-end">
         <div className="flex items-center gap-1 sm:gap-2">
-          <DeleteOldLogsDialog onDeleteOldLogs={handleDeleteOldLogs} />
+          <DeleteOldLogsDialog
+            onDeleteOldLogs={handleDeleteOldLogs}
+            isLoading={isLoading}
+          />
           <DeleteAllLogsDialog
             logsCount={logsCount}
             onDeleteAllLogs={handleDeleteAllLogs}
+            isLoading={isLoading}
           />
         </div>
       </div>
     );
   }
 );
-
 LogManagementButtons.displayName = "LogManagementButtons";

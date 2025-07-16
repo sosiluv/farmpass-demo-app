@@ -267,6 +267,13 @@ export async function GET(request: NextRequest) {
   const userAgent = getUserAgent(request);
 
   try {
+    // 🔒 관리자 권한 확인 (admin만 접근 가능)
+    const { requireAuth } = await import("@/lib/server/auth-utils");
+    const authResult = await requireAuth(true); // admin 권한 필수
+    if (!authResult.success || !authResult.user) {
+      return authResult.response!;
+    }
+
     const host = headers().get("host") || "localhost:3000";
     const baseUrl = `${
       process.env.NODE_ENV === "production" ? "https" : "http"

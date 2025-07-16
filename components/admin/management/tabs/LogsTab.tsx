@@ -92,6 +92,7 @@ export function LogsTab() {
                   handleDeleteLog,
                   handleDeleteAllLogs,
                   handleDeleteOldLogs,
+                  isLoading: logsActionLoading,
                 }) => (
                   <LogsExportManager logs={filteredLogs}>
                     {({ handleLogsExport }) => {
@@ -183,6 +184,7 @@ export function LogsTab() {
                                 logsCount={logs.length}
                                 onDeleteOldLogs={handleDeleteOldLogs}
                                 onDeleteAllLogs={handleDeleteAllLogs}
+                                isLoading={logsActionLoading}
                               />
 
                               {/* 로그 목록 */}

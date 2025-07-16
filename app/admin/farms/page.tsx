@@ -27,8 +27,16 @@ export default function FarmsPage() {
   const [searchTerm, setSearchTerm] = useState("");
 
   const { farms, isLoading, error } = useFarmsContext();
-  const { createFarmAsync, updateFarmAsync, deleteFarmAsync } =
-    useFarmMutations();
+  const {
+    createFarmAsync,
+    updateFarmAsync,
+    deleteFarmAsync,
+    isDeleting,
+    isCreating,
+    isUpdating,
+  } = useFarmMutations();
+  const { state } = useAuth();
+  const profile = state.status === "authenticated" ? state.profile : null;
 
   // 농장별 멤버 데이터는 각 FarmCard에서 개별적으로 로딩
   // 여기서는 전체적인 농장 목록만 관리
@@ -114,8 +122,9 @@ export default function FarmsPage() {
   };
 
   const isOwner = (farm: Farm) => {
-    // TODO: 현재 사용자가 농장 소유자인지 확인하는 로직
-    return true;
+    if (!profile) return false;
+    // 관리자이거나 농장 소유자인 경우
+    return profile.account_type === "admin" || farm.owner_id === profile.id;
   };
 
   if (isLoading) {
@@ -148,6 +157,7 @@ export default function FarmsPage() {
           editingFarm={editingFarm}
           onSubmit={handleSubmit}
           onAddClick={handleAddClick}
+          isLoading={isCreating || isUpdating}
         />
 
         {/* 검색 기능 */}
@@ -193,6 +203,7 @@ export default function FarmsPage() {
           open={deleteDialogOpen}
           onOpenChange={setDeleteDialogOpen}
           onConfirm={handleConfirmDelete}
+          isLoading={isDeleting}
         />
       </div>
     </ErrorBoundary>

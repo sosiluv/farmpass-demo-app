@@ -9,6 +9,7 @@ interface FarmsPageHeaderProps {
   editingFarm: Farm | null;
   onSubmit: (values: FarmFormValues) => Promise<void>;
   onAddClick: () => void;
+  isLoading?: boolean;
 }
 
 export function FarmsPageHeader({
@@ -17,6 +18,7 @@ export function FarmsPageHeader({
   editingFarm,
   onSubmit,
   onAddClick,
+  isLoading = false,
 }: FarmsPageHeaderProps) {
   return (
     <PageHeader
@@ -30,6 +32,7 @@ export function FarmsPageHeader({
           editingFarm={editingFarm}
           onSubmit={onSubmit}
           onAddClick={onAddClick}
+          isLoading={isLoading}
         />
       }
     />

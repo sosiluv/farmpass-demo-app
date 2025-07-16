@@ -101,8 +101,11 @@ export async function apiClient(input: RequestInfo, init?: ApiClientOptions) {
     // 기타 HTTP 오류
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
+      console.log("errorData", errorData);
       const error = new Error(
-        errorData.error || `${ERROR_MESSAGES.API_ERROR} (${response.status})`
+        errorData.message ||
+          errorData.error ||
+          `${ERROR_MESSAGES.API_ERROR} (${response.status})`
       );
       (error as any).status = response.status; // 상태 코드 추가
 

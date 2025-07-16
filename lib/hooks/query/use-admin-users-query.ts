@@ -4,6 +4,7 @@ import { useAuthenticatedQuery } from "@/lib/hooks/query-utils";
 import { useAuth } from "@/components/providers/auth-provider";
 import { supabase } from "@/lib/supabase/client";
 import { settingsKeys } from "./query-keys";
+import { useSupabaseRealtime } from "@/hooks/useSupabaseRealtime";
 
 // 클라이언트 전용 가드
 const isClient = typeof window !== "undefined";
@@ -38,7 +39,7 @@ export function useAdminUsersQuery() {
   const user = state.status === "authenticated" ? state.user : null;
   const profile = state.status === "authenticated" ? state.profile : null;
 
-  return useAuthenticatedQuery(
+  const usersQuery = useAuthenticatedQuery(
     [...settingsKeys.all, "users", "admin-stats"],
     async (): Promise<UserStats> => {
       if (!isClient) {
@@ -190,6 +191,24 @@ export function useAdminUsersQuery() {
       refetchOnMount: false, // 마운트 시 refetch 비활성화 (캐시 우선)
     }
   );
+
+  // 🔥 관리자 사용자 통계 실시간 업데이트 구독
+  useSupabaseRealtime({
+    table: "farm_members",
+    refetch: usersQuery.refetch,
+    events: ["INSERT", "UPDATE", "DELETE"],
+    // 농장 멤버 변경은 사용자 통계에 영향을 줄 수 있음
+  });
+
+  // 🔥 사용자 프로필 변경 시 실시간 갱신 (회원가입 브로드캐스트 포함)
+  useSupabaseRealtime({
+    table: "profiles",
+    refetch: usersQuery.refetch,
+    events: ["INSERT", "UPDATE", "DELETE"],
+    // 사용자 가입/탈퇴/수정 시 통계 갱신 + 회원가입 브로드캐스트 수신
+  });
+
+  return usersQuery;
 }
 
 /**
@@ -223,7 +242,7 @@ export function useAdminUsersListQuery() {
   const user = state.status === "authenticated" ? state.user : null;
   const profile = state.status === "authenticated" ? state.profile : null;
 
-  return useAuthenticatedQuery(
+  const usersListQuery = useAuthenticatedQuery(
     [...settingsKeys.all, "users", "admin-list"],
     async (): Promise<any[]> => {
       if (!isClient) {
@@ -256,4 +275,21 @@ export function useAdminUsersListQuery() {
       refetchOnWindowFocus: true,
     }
   );
+
+  // 🔥 사용자 목록 실시간 업데이트 구독
+  useSupabaseRealtime({
+    table: "profiles",
+    refetch: usersListQuery.refetch,
+    events: ["INSERT", "UPDATE", "DELETE"],
+    // 사용자 가입/탈퇴/수정 시 목록 갱신
+  });
+
+  useSupabaseRealtime({
+    table: "farm_members",
+    refetch: usersListQuery.refetch,
+    events: ["INSERT", "UPDATE", "DELETE"],
+    // 농장 멤버 변경 시 목록 갱신 (역할 정보 포함)
+  });
+
+  return usersListQuery;
 }

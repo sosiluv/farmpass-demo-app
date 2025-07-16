@@ -5,6 +5,7 @@ import { useAuth } from "@/components/providers/auth-provider";
 import { supabase } from "@/lib/supabase/client";
 import { farmsKeys } from "./query-keys";
 import type { ExtendedFarm } from "@/components/admin/management/farms/types";
+import { useSupabaseRealtime } from "@/hooks/useSupabaseRealtime";
 
 // 클라이언트 전용 가드
 const isClient = typeof window !== "undefined";
@@ -41,7 +42,7 @@ export function useAdminFarmsQuery() {
   const user = state.status === "authenticated" ? state.user : null;
   const profile = state.status === "authenticated" ? state.profile : null;
 
-  return useAuthenticatedQuery(
+  const farmsQuery = useAuthenticatedQuery(
     farmsKeys.list({ type: "admin-stats" }),
     async (): Promise<FarmStats> => {
       if (!isClient) {
@@ -163,6 +164,16 @@ export function useAdminFarmsQuery() {
       refetchInterval: 1000 * 60 * 10, // 10분마다 자동 갱신
     }
   );
+
+  // 🔥 관리자 농장 통계 실시간 업데이트 구독 (농장 변경 시 갱신)
+  useSupabaseRealtime({
+    table: "farms",
+    refetch: farmsQuery.refetch,
+    events: ["INSERT", "UPDATE", "DELETE"],
+    // 농장 변경은 농장 통계에 직접적인 영향을 줌
+  });
+
+  return farmsQuery;
 }
 
 /**
@@ -173,7 +184,7 @@ export function useAdminFarmsListQuery() {
   const user = state.status === "authenticated" ? state.user : null;
   const profile = state.status === "authenticated" ? state.profile : null;
 
-  return useAuthenticatedQuery(
+  const farmsListQuery = useAuthenticatedQuery(
     farmsKeys.list({ type: "admin-list" }),
     async (): Promise<ExtendedFarm[]> => {
       if (!isClient) {
@@ -241,4 +252,13 @@ export function useAdminFarmsListQuery() {
       refetchOnWindowFocus: true,
     }
   );
+
+  // 농장 실시간 업데이트 - farms 테이블 변경 시 리프레시
+  useSupabaseRealtime({
+    table: "farms",
+    refetch: farmsListQuery.refetch,
+    events: ["INSERT", "UPDATE", "DELETE"],
+  });
+
+  return farmsListQuery;
 }
