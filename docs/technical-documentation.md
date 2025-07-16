@@ -2186,40 +2186,54 @@ SELECT cron.schedule(
 );
 ```
 
-## 🔍 모니터링 및 운영 시스템
+## 🔍 자동 데이터 정리 시스템 구현
 
-### 무료 모니터링 아키텍처
+### pg_cron 기반 자동화 아키텍처
 
-농장 출입 관리 시스템은 **완전 무료** 모니터링 조합으로 운영됩니다:
+농장 출입 관리 시스템은 **pg_cron 기반** 완전 자동화된 데이터 정리 시스템을 운영합니다:
 
 ```mermaid
 graph TB
-    A[UptimeRobot] --> B[서버 다운 감지]
-    C[Vercel Analytics] --> D[사용자 행동 분석]
-    E[Vercel Logs] --> F[에러 로그 추적]
-    G[Slack 알림] --> H[실시간 알림]
-    I[자체 에러 로깅] --> J[데이터베이스 저장]
+    A[pg_cron 스케줄러] --> B[auto_cleanup_expired_visitor_entries]
+    A --> C[auto_cleanup_expired_system_logs]
+    A --> D[auto_cleanup_expired_push_subscriptions]
+    A --> E[generate_weekly_cleanup_report]
 
-    B --> K[5분 간격 체크]
-    D --> L[실시간 대시보드]
-    F --> M[에러 추적]
-    H --> N[웹훅 알림]
-    J --> O[영구 저장]
+    B --> F[방문자 데이터 정리 (3년)]
+    C --> G[시스템 로그 정리 (90일)]
+    D --> H[푸시 구독 정리 (6개월)]
+    E --> I[주간 보고서 생성]
+
+    F --> J[system_logs 기록]
+    G --> J
+    H --> J
+    I --> J
 ```
 
-### 모니터링 비용 분석
+### 자동화 스케줄링
 
-```bash
-# 무료 모니터링 조합 비용 분석
-✅ UptimeRobot: $0/월 (50개 모니터, 5분 간격)
-✅ Vercel Analytics: $0/월 (Vercel 배포 시 무료)
-✅ Vercel Logs: $0/월 (Vercel 배포 시 무료)
-✅ Slack 알림: $0/월 (무료 플랜)
-✅ 자체 에러 로깅: $0/월 (데이터베이스 저장)
+```sql
+-- 한국 시간 기준 스케줄링 (UTC 기준)
+SELECT cron.schedule('auto-visitor-cleanup', '0 17 * * *',
+  'SELECT auto_cleanup_expired_visitor_entries();'); -- 새벽 2시
 
-# 총 비용: $0/월
-# 기능: 프로덕션급 모니터링
-# 확장성: 필요시 유료 플랜으로 업그레이드 가능
+SELECT cron.schedule('auto-system-logs-cleanup', '0 18 * * *',
+  'SELECT auto_cleanup_expired_system_logs();'); -- 새벽 3시
+
+SELECT cron.schedule('auto-push-subscriptions-cleanup', '0 19 * * *',
+  'SELECT auto_cleanup_expired_push_subscriptions();'); -- 새벽 4시
+
+SELECT cron.schedule('weekly-cleanup-report', '0 19 * * 6',
+  'SELECT generate_weekly_cleanup_report();'); -- 일요일 새벽 4시
+```
+
+### 데이터 보존 정책
+
+```typescript
+// 시스템 설정에서 관리되는 보존 기간
+visitorDataRetentionDays: 1095, // 3년 (법적 요구사항)
+logRetentionDays: 90,           // 90일 (운영 기준)
+pushSubscriptionRetentionDays: 180, // 6개월 (성능 기준)
 ```
 
 이 기술 문서는 농장 출입 관리 시스템의 모든 기술적 세부사항을 포함하고 있습니다. 새로운 개발자가 프로젝트에 참여할 때 이 문서를 참조하여 빠르게 시스템을 이해하고 기여할 수 있습니다.
@@ -2235,18 +2249,33 @@ graph TB
 
 이 문서를 통해 시스템의 기술적 우수성과 확장 가능성을 확인할 수 있습니다.
 
+#### 실시간 브로드캐스트 시스템
+
+- **sendSupabaseBroadcast 공통 유틸**: 모든 API 라우터에서 중복 코드 제거, Sentry 자동 연동
+- **5개 채널 운영**: profile_updates, farm_updates, member_updates, visitor_updates, log_updates
+- **useSupabaseRealtime 전역 구독**: 메모리 효율성 확보, 콘솔 로그 제거로 성능 최적화
+- **실시간 데이터 동기화**: 모든 CRUD 작업에서 즉시 브로드캐스트 발송
+
 #### apiClient/에러 처리 패턴
 
 - 모든 fetch 호출은 apiClient로 통일, context 옵션 및 onError 콜백 지원
 - 에러/토스트는 컴포넌트에서만 처리, 훅에서는 상태만 관리
 - 구조분해 할당 시 응답 구조에 주의(예: const { members = [] } = await apiClient(...))
 - 세션 만료/토큰 만료/자동 로그아웃/구독 해제/쿠키 정리/토큰 자동 갱신 등은 authService에서 일괄 관리
+- 토스트 메시지 variant 패턴: showInfo, showWarning, showError, showSuccess 일관 적용
 
-#### 다크모드/테마/PWA 설치
+#### PWA 설치 가이드 최적화
 
-- next-themes 기반 ThemeProvider, 사이드바 하단 토글, 다크모드 가독성 개선 반복
-- usePWAInstall 훅, 플랫폼별 설치 안내, 다이얼로그 큐 시스템(Zustand)로 안내 중첩 방지
-- 디버그 패널, 자동 데이터 정리(pg_cron), 운영자 패널 등 운영 자동화/모니터링 기능 상세 기술
+- **Context Provider 패턴**: usePWAInstall 훅 중복 호출 문제 해결 (4개 → 1개)
+- **플랫폼별 최적화**: iOS, Android, Desktop 환경별 맞춤 설치 안내
+- **다이얼로그 큐 통합**: Zustand 기반으로 알림 권한, PWA 설치 순차 안내
+- **성능 개선**: 브라우저 환경 체크 1회만 실행, 메모리 효율성 확보
+
+#### 다크모드/테마 시스템
+
+- **next-themes + ShadCN 완벽 통합**: 모든 컴포넌트에서 일관된 테마 적용
+- **가독성 최적화**: 다크모드에서 버튼, 테이블, 뱃지 등 모든 UI 요소 시인성 보장
+- **사이드바 테마 토글**: 즉시 테마 전환 가능
 
 ## PWA (Progressive Web App) 구현
 

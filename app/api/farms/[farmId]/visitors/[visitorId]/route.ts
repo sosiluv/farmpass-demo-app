@@ -4,6 +4,7 @@ import { createSystemLog } from "@/lib/utils/logging/system-log";
 import { devLog } from "@/lib/utils/logging/dev-logger";
 import { getClientIP, getUserAgent } from "@/lib/server/ip-helpers";
 import { requireAuth } from "@/lib/server/auth-utils";
+import { sendSupabaseBroadcast } from "@/lib/supabase/broadcast";
 
 export async function PUT(
   request: NextRequest,
@@ -84,29 +85,17 @@ export async function PUT(
     devLog.log("방문자 정보 업데이트 성공:", data);
 
     // 🔥 방문자 수정 실시간 브로드캐스트
-    try {
-      const { createServiceRoleClient } = await import(
-        "@/lib/supabase/service-role"
-      );
-      const supabase = createServiceRoleClient();
-      await supabase.channel("visitor_updates").send({
-        type: "broadcast",
-        event: "visitor_updated",
-        payload: {
-          eventType: "UPDATE",
-          new: data,
-          old: null,
-          table: "visitor_entries",
-          schema: "public",
-        },
-      });
-      console.log("📡 [VISITOR-UPDATE-API] Supabase Broadcast 발송 완료");
-    } catch (broadcastError) {
-      console.error(
-        "⚠️ [VISITOR-UPDATE-API] Broadcast 발송 실패:",
-        broadcastError
-      );
-    }
+    await sendSupabaseBroadcast({
+      channel: "visitor_updates",
+      event: "visitor_updated",
+      payload: {
+        eventType: "UPDATE",
+        new: data,
+        old: null,
+        table: "visitor_entries",
+        schema: "public",
+      },
+    });
 
     // 성공 로그 기록
     await createSystemLog(
@@ -241,33 +230,21 @@ export async function DELETE(
     });
 
     // 🔥 방문자 삭제 실시간 브로드캐스트
-    try {
-      const { createServiceRoleClient } = await import(
-        "@/lib/supabase/service-role"
-      );
-      const supabase = createServiceRoleClient();
-      await supabase.channel("visitor_updates").send({
-        type: "broadcast",
-        event: "visitor_deleted",
-        payload: {
-          eventType: "DELETE",
-          new: null,
-          old: {
-            id: visitorId,
-            farm_id: farmId,
-            visitor_name: visitor.visitor_name,
-          },
-          table: "visitor_entries",
-          schema: "public",
+    await sendSupabaseBroadcast({
+      channel: "visitor_updates",
+      event: "visitor_deleted",
+      payload: {
+        eventType: "DELETE",
+        new: null,
+        old: {
+          id: visitorId,
+          farm_id: farmId,
+          visitor_name: visitor.visitor_name,
         },
-      });
-      console.log("📡 [VISITOR-DELETE-API] Supabase Broadcast 발송 완료");
-    } catch (broadcastError) {
-      console.error(
-        "⚠️ [VISITOR-DELETE-API] Broadcast 발송 실패:",
-        broadcastError
-      );
-    }
+        table: "visitor_entries",
+        schema: "public",
+      },
+    });
 
     // 성공 로그 기록
     await createSystemLog(

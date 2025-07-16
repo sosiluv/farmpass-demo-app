@@ -24,38 +24,7 @@ BEGIN
     )
     RETURNING id INTO v_profile_id;
 
-        -- 성공 시 로그 생성 (system-log.ts 양식에 맞춤)
-    INSERT INTO public.system_logs (
-        level,
-        action,
-        message,
-        user_id,
-            user_email,
-            user_ip,
-            user_agent,
-        resource_type,
-        resource_id,
-        metadata
-    ) VALUES (
-        'info',
-            'USER_CREATED',
-            '새로운 사용자가 등록되었습니다: ' || NEW.email,
-        v_profile_id,
-            NEW.email,
-            'server',
-            'Database Trigger',
-        'user',
-        v_profile_id,
-        jsonb_build_object(
-            'email', NEW.email,
-            'name', COALESCE(NEW.raw_user_meta_data->>'name', ''),
-                'phone', COALESCE(NEW.raw_user_meta_data->>'phone', ''),
-                'account_type', 'user',
-                'timestamp', NOW()::text,
-                'trigger_source', 'handle_new_user',
-                'status', 'success'
-        )
-    );
+
 
     RETURN NEW;
 
@@ -63,48 +32,14 @@ BEGIN
         -- 에러 정보 수집
         GET STACKED DIAGNOSTICS v_error_message = MESSAGE_TEXT;
         
-        -- 실패 시 로그 생성
-        INSERT INTO public.system_logs (
-            level,
-            action,
-            message,
-            user_id,
-            user_email,
-            user_ip,
-            user_agent,
-            resource_type,
-            resource_id,
-            metadata
-        ) VALUES (
-            'error',
-            'USER_CREATION_FAILED',
-            '사용자 등록 실패: ' || NEW.email || ' - ' || v_error_message,
-            NEW.id,
-            NEW.email,
-            'server',
-            'Database Trigger',
-            'user',
-            NEW.id,
-            jsonb_build_object(
-                'email', NEW.email,
-                'name', COALESCE(NEW.raw_user_meta_data->>'name', ''),
-                'phone', COALESCE(NEW.raw_user_meta_data->>'phone', ''),
-                'account_type', 'user',
-                'error_message', v_error_message,
-                'error_code', SQLSTATE,
-                'timestamp', NOW()::text,
-                'trigger_source', 'handle_new_user',
-                'status', 'failed'
-            )
-        );
 
-        -- 에러를 다시 발생시켜 상위 트랜잭션에서 처리하도록 함
         RAISE;
     END;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public; 
 
 -- 7.2 새 사용자 트리거 생성
+DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
 CREATE TRIGGER on_auth_user_created
     AFTER INSERT ON auth.users
     FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();

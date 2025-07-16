@@ -51,13 +51,15 @@
 Framework: Next.js 14 (App Router)
 Language: TypeScript
 UI Library: Radix UI + ShadCN/UI
-Styling: Tailwind CSS
-State Management: React Context API
+Styling: Tailwind CSS + next-themes (다크모드)
+State Management: React Context API + Zustand (다이얼로그 큐)
 Forms: React Hook Form + Zod Validation
 Charts: Recharts
-PWA: next-pwa
+PWA: next-pwa (플랫폼별 설치 가이드)
 Animation: Framer Motion
 Icons: Lucide React
+Real-time: useSupabaseRealtime 커스텀 훅
+Error Handling: apiClient 통일 + handleError
 ```
 
 ### Backend 기술 스택
@@ -66,12 +68,14 @@ Icons: Lucide React
 Runtime: Node.js
 Framework: Next.js API Routes
 Database: PostgreSQL (Supabase)
-Auth: Supabase Auth
+Auth: Supabase Auth (JWT + 자동 토큰 갱신)
 Storage: Supabase Storage
-Real-time: Supabase Realtime
+Real-time: Supabase Realtime (sendSupabaseBroadcast 통일)
 ORM: Prisma
 Validation: Zod
-Security: Row Level Security (RLS)
+Security: Row Level Security (RLS) - 8개 테이블 정책
+Automation: pg_cron (자동 데이터 정리)
+Monitoring: Sentry + 자체 에러 로깅
 ```
 
 ### 개발/배포 도구
@@ -172,29 +176,48 @@ graph TB
 - **데이터 정리**: 자동/수동 데이터 정리 기능
 - **유지보수 모드**: 시스템 점검 시 유지보수 모드 지원
 
-### 6. 다이얼로그 큐 시스템
+### 6. 실시간 브로드캐스트 시스템
 
-- **Zustand 기반, 여러 안내/권한/설치 다이얼로그를 순차적으로 표시**
+- **sendSupabaseBroadcast 공통 유틸**: 모든 API에서 실시간 데이터 동기화
+- **5개 채널 운영**: profile_updates, farm_updates, member_updates, visitor_updates, log_updates
+- **Sentry 연동**: 브로드캐스트 실패 시 자동 에러 추적 및 알림
 
-### 7. 자동 데이터 정리
+### 7. 다이얼로그 큐 시스템
 
-- **pg_cron + SQL 함수, 관리자 패널에서 현황/리포트 확인**
+- **Zustand 기반**: 알림 권한, PWA 설치, 기타 안내 다이얼로그 순차 표시
+- **우선순위 관리**: 중요도에 따른 다이얼로그 순서 자동 조정
 
-### 8. 디버그 패널
+### 8. 자동 데이터 정리 시스템
 
-- **운영자/개발자용 실시간 상태/로그/성능 모니터링 도구**
+- **pg_cron 스케줄링**: 한국 시간 기준 새벽 2~4시 자동 실행
+- **데이터 보존 정책**: 방문자(3년), 시스템로그(90일), 푸시구독(6개월)
+- **주간 보고서**: 정리 현황, 예상량, 권장사항 자동 생성
 
-### 9. PWA 설치 가이드
+### 9. 디버그 패널 및 운영 지원
 
-- **usePWAInstall 훅, 플랫폼별 안내, 설치 테스트 페이지**
+- **실시간 모니터링**: 시스템 상태, 성능, 네트워크 상태 확인
+- **개발자 도구**: 실시간 로그, 에러 추적, 성능 메트릭
 
-### 10. 세션/구독 관리
+### 10. PWA 설치 가이드
 
-- **세션 만료 시 자동 로그아웃, 구독 해제, 쿠키 정리, 토큰 자동 갱신**
+- **플랫폼별 최적화**: iOS, Android, Desktop 환경별 맞춤 안내
+- **Context Provider**: usePWAInstall 훅 최적화로 성능 향상
 
-### 11. apiClient/에러 처리
+### 11. 세션 관리 고도화
 
-- **fetch→apiClient 통일, 구조분해 할당/에러/토스트 패턴 일관화**
+- **토큰 자동 갱신**: 미들웨어 레벨에서 토큰 만료 시 자동 처리
+- **안전한 로그아웃**: 세션 만료 시 구독 해제, 쿠키 정리 자동화
+
+### 12. 다크모드 시스템
+
+- **next-themes 기반**: ShadCN 컴포넌트와 완벽 통합
+- **가독성 최적화**: 다크모드에서 모든 UI 요소 시인성 보장
+
+### 13. apiClient 통일 시스템
+
+- **에러 처리 일관화**: 모든 fetch 호출을 apiClient로 통일
+- **구조분해 할당 패턴**: API 응답 구조에 맞는 안전한 처리
+- **토스트 메시지 variant**: showInfo, showWarning, showError, showSuccess 패턴 적용
 
 ---
 
@@ -550,15 +573,39 @@ const logUserAction = async (action: string, metadata?: object) => {
 
 ### 1. 프론트엔드 최적화
 
+#### PWA 설치 훅 최적화
+
+```typescript
+// 개선: Context Provider 패턴으로 중앙 관리 (중복 호출 제거)
+export function PWAProvider({ children }: { children: ReactNode }) {
+  const [installInfo, setInstallInfo] = useState<InstallInfo>({...});
+  const contextValue = useMemo(() => ({ installInfo }), [installInfo]);
+
+  return (
+    <PWAContext.Provider value={contextValue}>
+      {children}
+    </PWAContext.Provider>
+  );
+}
+```
+
+#### 실시간 브로드캐스트 최적화
+
+```typescript
+// sendSupabaseBroadcast 공통 유틸로 중복 코드 제거 및 Sentry 연동
+await sendSupabaseBroadcast({
+  channel: "farm_updates",
+  event: "farm_created",
+  payload: { eventType: "INSERT", new: farm },
+});
+```
+
 #### 코드 분할 및 지연 로딩
 
 ```typescript
 // 페이지 단위 코드 분할
 const AdminDashboard = lazy(() => import("./AdminDashboard"));
 const VisitorManagement = lazy(() => import("./VisitorManagement"));
-
-// 컴포넌트 단위 지연 로딩
-const HeavyChart = lazy(() => import("./HeavyChart"));
 ```
 
 #### 이미지 최적화

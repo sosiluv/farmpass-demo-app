@@ -1,10 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { createServiceRoleClient } from "@/lib/supabase/service-role";
-import { checkEmailDuplicate } from "@/lib/utils/validation";
 import { createSystemLog, logApiError } from "@/lib/utils/logging/system-log";
 import { getClientIP, getUserAgent } from "@/lib/server/ip-helpers";
 import { devLog } from "@/lib/utils/logging/dev-logger";
+import { sendSupabaseBroadcast } from "@/lib/supabase/broadcast";
 
 // Turnstile 검증 함수
 async function verifyTurnstile(
@@ -34,16 +33,24 @@ async function verifyTurnstile(
   const verificationResult = await verificationResponse.json();
 
   if (!verificationResult.success) {
+    const errorCodes = verificationResult["error-codes"] || [];
+    const firstErrorCode = errorCodes[0] || "unknown-error";
     await logApiError(
       "/api/auth/register",
       "POST",
-      `Turnstile verification failed: ${verificationResult["error-codes"]?.join(
-        ", "
-      )}`,
+      `Turnstile verification failed: ${errorCodes.join(", ")}`,
       undefined,
       { ip: clientIP, userAgent }
     );
-    throw new Error("캡차 인증에 실패했습니다.");
+    return NextResponse.json(
+      {
+        success: false,
+        error: "TURNSTILE_VERIFICATION_FAILED",
+        message: firstErrorCode,
+        details: errorCodes,
+      },
+      { status: 400 }
+    );
   }
 
   return true;
@@ -108,6 +115,74 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       );
     }
+
+    if (!authData.user) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: "USER_CREATION_FAILED",
+          message: "회원가입에 실패했습니다.",
+        },
+        { status: 500 }
+      );
+    }
+
+    // 🔥 회원가입 성공 실시간 브로드캐스트
+    await sendSupabaseBroadcast({
+      channel: "profile_updates",
+      event: "profile_created",
+      payload: {
+        eventType: "INSERT",
+        new: {
+          id: authData.user.id,
+          email: validatedData.email,
+          name: validatedData.name,
+          phone: validatedData.phone,
+          created_at: new Date().toISOString(),
+          account_type: "user",
+        },
+        old: null,
+        table: "profiles",
+        schema: "public",
+      },
+    });
+
+    // 회원가입 성공 로그 기록
+    await createSystemLog(
+      "USER_CREATED",
+      `새로운 사용자 회원가입 완료: ${validatedData.name} (${validatedData.email})`,
+      "info",
+      authData.user.id,
+      "user",
+      authData.user.id,
+      {
+        user_id: authData.user.id,
+        email: validatedData.email,
+        name: validatedData.name,
+        phone: validatedData.phone,
+        account_type: "user",
+        registration_source: "web",
+      },
+      validatedData.email,
+      clientIP,
+      userAgent
+    );
+
+    // 서버 사이드에서는 자동 로그인이 되지 않으므로 signOut 불필요
+    // await supabase.auth.signOut();
+
+    return NextResponse.json(
+      {
+        success: true,
+        message: "회원가입이 완료되었습니다. 이메일 인증 후 로그인해주세요.",
+        user: {
+          id: authData.user.id,
+          email: validatedData.email,
+          name: validatedData.name,
+        },
+      },
+      { status: 201 }
+    );
   } catch (error) {
     devLog.error("Registration error:", error);
 

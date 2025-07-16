@@ -315,12 +315,6 @@ export function getAuthErrorMessage(
     "user already registered": {
       message: "이미 등록된 이메일입니다.",
     },
-    "already registered": {
-      message: "이미 등록된 이메일입니다.",
-    },
-    "already exists": {
-      message: "이미 등록된 이메일입니다.",
-    },
     "signup requires a valid password": {
       message:
         "비밀번호는 최소 6자 이상이어야 하며, 영문, 숫자, 특수문자를 포함해야 합니다.",

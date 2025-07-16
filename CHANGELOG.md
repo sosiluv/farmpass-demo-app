@@ -579,6 +579,36 @@ const { members } = await apiClient("/api/farm-members", { method: "GET" });
 
 ## [Unreleased]
 
+### 🚀 실시간 브로드캐스트 시스템 완성
+
+- **sendSupabaseBroadcast 공통 유틸 구현**: 모든 API 라우터에서 실시간 브로드캐스트 일관화
+
+  - `lib/supabase/broadcast.ts` 신규 생성
+  - 10개 이상 API 라우터에서 중복 코드 제거 및 통일
+  - 공통 에러 로깅 (console.error + Sentry 연동)
+  - 성공 로그 (devLog) 통합 관리
+  - 채널별 브로드캐스트: profile_updates, farm_updates, member_updates, visitor_updates, log_updates
+
+- **실시간 데이터 동기화 최적화**:
+  - 회원가입/로그인/프로필 수정 시 실시간 브로드캐스트
+  - 농장 생성/수정/삭제 시 실시간 브로드캐스트
+  - 농장 멤버 추가/수정/삭제 시 실시간 브로드캐스트
+  - 방문자 등록/수정/삭제 시 실시간 브로드캐스트
+  - 시스템 로그 생성/삭제 시 실시간 브로드캐스트
+
+### 🔧 기술적 개선
+
+- **실시간 구독 시스템 정리**:
+
+  - `hooks/useSupabaseRealtime.ts`에서 콘솔 로그 제거로 성능 최적화
+  - 5개 채널 (profile, farm, member, visitor, log) 실시간 구독
+  - 전역 구독 방식으로 메모리 효율성 확보
+
+- **Sentry 에러 추적 강화**:
+  - sendSupabaseBroadcast에서 Sentry.captureException 자동 호출
+  - 브로드캐스트 실패 시 채널명, 이벤트명, payload 정보 함께 전송
+  - 실시간 에러 모니터링 및 알림 시스템 구축
+
 ### 🚀 성능 최적화
 
 - **PWA 설치 훅 최적화**: `usePWAInstall` 훅의 중복 호출 문제 해결

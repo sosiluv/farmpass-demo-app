@@ -4,6 +4,7 @@ import { devLog } from "@/lib/utils/logging/dev-logger";
 import { getClientIP, getUserAgent } from "@/lib/server/ip-helpers";
 import { requireAuth } from "@/lib/server/auth-utils";
 import { prisma } from "@/lib/prisma";
+import { sendSupabaseBroadcast } from "@/lib/supabase/broadcast";
 
 export async function GET(
   request: NextRequest,
@@ -139,29 +140,17 @@ export async function PUT(
     });
 
     // 🔥 농장 수정 실시간 브로드캐스트
-    try {
-      const { createServiceRoleClient } = await import(
-        "@/lib/supabase/service-role"
-      );
-      const supabase = createServiceRoleClient();
-      await supabase.channel("farm_updates").send({
-        type: "broadcast",
-        event: "farm_updated",
-        payload: {
-          eventType: "UPDATE",
-          new: farm,
-          old: null,
-          table: "farms",
-          schema: "public",
-        },
-      });
-      console.log("📡 [FARM-UPDATE-API] Supabase Broadcast 발송 완료");
-    } catch (broadcastError) {
-      console.error(
-        "⚠️ [FARM-UPDATE-API] Broadcast 발송 실패:",
-        broadcastError
-      );
-    }
+    await sendSupabaseBroadcast({
+      channel: "farm_updates",
+      event: "farm_updated",
+      payload: {
+        eventType: "UPDATE",
+        new: farm,
+        old: null,
+        table: "farms",
+        schema: "public",
+      },
+    });
 
     // 농장 수정 로그
     await createSystemLog(
@@ -322,33 +311,21 @@ export async function DELETE(
     });
 
     // 🔥 농장 삭제 실시간 브로드캐스트
-    try {
-      const { createServiceRoleClient } = await import(
-        "@/lib/supabase/service-role"
-      );
-      const supabase = createServiceRoleClient();
-      await supabase.channel("farm_updates").send({
-        type: "broadcast",
-        event: "farm_deleted",
-        payload: {
-          eventType: "DELETE",
-          new: null,
-          old: {
-            id: params.farmId,
-            farm_name: farm.farm_name,
-            owner_id: farm.owner_id,
-          },
-          table: "farms",
-          schema: "public",
+    await sendSupabaseBroadcast({
+      channel: "farm_updates",
+      event: "farm_deleted",
+      payload: {
+        eventType: "DELETE",
+        new: null,
+        old: {
+          id: params.farmId,
+          farm_name: farm.farm_name,
+          owner_id: farm.owner_id,
         },
-      });
-      console.log("📡 [FARM-DELETE-API] Supabase Broadcast 발송 완료");
-    } catch (broadcastError) {
-      console.error(
-        "⚠️ [FARM-DELETE-API] Broadcast 발송 실패:",
-        broadcastError
-      );
-    }
+        table: "farms",
+        schema: "public",
+      },
+    });
 
     return NextResponse.json(
       {

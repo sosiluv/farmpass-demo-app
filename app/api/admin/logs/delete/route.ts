@@ -4,6 +4,7 @@ import { devLog } from "@/lib/utils/logging/dev-logger";
 import { getClientIP, getUserAgent } from "@/lib/server/ip-helpers";
 import { requireAuth } from "@/lib/server/auth-utils";
 import { prisma } from "@/lib/prisma";
+import { sendSupabaseBroadcast } from "@/lib/supabase/broadcast";
 
 export async function POST(request: NextRequest) {
   // 요청 컨텍스트 정보 추출
@@ -87,12 +88,8 @@ export async function POST(request: NextRequest) {
 
     // 🔥 로그 삭제 실시간 브로드캐스트
     try {
-      const { createServiceRoleClient } = await import(
-        "@/lib/supabase/service-role"
-      );
-      const supabase = createServiceRoleClient();
-      await supabase.channel("log_updates").send({
-        type: "broadcast",
+      await sendSupabaseBroadcast({
+        channel: "log_updates",
         event: "log_deleted",
         payload: {
           eventType: "DELETE",

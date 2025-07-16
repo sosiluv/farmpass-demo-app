@@ -247,13 +247,18 @@ PhoneField.displayName = "PhoneField";
 // 메모이제이션된 회원가입 버튼 컴포넌트
 const RegisterButton = memo(
   ({ loading, disabled }: { loading: boolean; disabled: boolean }) => (
-    <Button type="submit" className="h-12 w-full" disabled={disabled}>
+    <Button
+      type="submit"
+      className="h-12 w-full flex items-center justify-center"
+      disabled={disabled}
+    >
       {loading ? (
         <>
           <Loading
-            spinnerSize={16}
+            spinnerSize={20}
             showText={false}
             minHeight="auto"
+            spinnerColor="text-white"
             className="mr-2"
           />
           가입 중...

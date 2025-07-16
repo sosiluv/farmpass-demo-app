@@ -1,7 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-// Supabase 서비스 롤 클라이언트 추가 (실시간 이벤트 트리거용)
-import { createServiceRoleClient } from "@/lib/supabase/service-role";
 import { createSystemLog } from "@/lib/utils/logging/system-log";
 import { v4 as uuidv4 } from "uuid";
 import { cookies } from "next/headers";
@@ -15,6 +13,7 @@ import {
 } from "@/lib/utils/notification/notification-template";
 import { devLog } from "@/lib/utils/logging/dev-logger";
 import { getClientIP, getUserAgent } from "@/lib/server/ip-helpers";
+import { sendSupabaseBroadcast } from "@/lib/supabase/broadcast";
 
 interface VisitorData {
   fullName: string;
@@ -311,24 +310,17 @@ export async function POST(
     devLog.log("🎉 [VISITOR-API] 방문자 등록 완료:", visitor);
 
     // 🔥 실시간 업데이트를 위한 Supabase Broadcast 강제 발송
-    try {
-      const supabase = createServiceRoleClient();
-      await supabase.channel("visitor_updates").send({
-        type: "broadcast",
-        event: "visitor_inserted",
-        payload: {
-          eventType: "INSERT",
-          new: visitor,
-          old: null,
-          table: "visitor_entries",
-          schema: "public",
-        },
-      });
-      console.log("📡 [VISITOR-API] Supabase Broadcast 발송 완료");
-    } catch (broadcastError) {
-      console.error("⚠️ [VISITOR-API] Broadcast 발송 실패:", broadcastError);
-      // 브로드캐스트 실패해도 등록은 성공으로 처리
-    }
+    await sendSupabaseBroadcast({
+      channel: "visitor_updates",
+      event: "visitor_inserted",
+      payload: {
+        eventType: "INSERT",
+        new: visitor,
+        old: null,
+        table: "visitor_entries",
+        schema: "public",
+      },
+    });
 
     // 방문자 등록 성공 로그 생성
     await createSystemLog(

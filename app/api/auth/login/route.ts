@@ -18,6 +18,7 @@ import {
   getUserAgent,
   getLocationFromIP,
 } from "@/lib/server/ip-helpers";
+import { sendSupabaseBroadcast } from "@/lib/supabase/broadcast";
 
 // 동적 렌더링 강제
 export const dynamic = "force-dynamic";
@@ -354,6 +355,24 @@ export async function POST(request: NextRequest) {
         },
       },
     });
+
+    // ✅ 로그인 성공 시 프로필 실시간 브로드캐스트 추가
+    const updatedProfile = await prisma.profiles.findUnique({
+      where: { email },
+    });
+    if (updatedProfile) {
+      await sendSupabaseBroadcast({
+        channel: "profile_updates",
+        event: "profile_updated",
+        payload: {
+          eventType: "UPDATE",
+          new: updatedProfile,
+          old: null,
+          table: "profiles",
+          schema: "public",
+        },
+      });
+    }
 
     // 로그인 성공 로그 기록 (백그라운드에서 처리)
     setTimeout(async () => {
