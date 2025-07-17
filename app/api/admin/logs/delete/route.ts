@@ -103,9 +103,9 @@ export async function POST(request: NextRequest) {
           schema: "public",
         },
       });
-      console.log("📡 [LOG-DELETE-API] Supabase Broadcast 발송 완료");
+      devLog.log("[LOG-DELETE-API] Supabase Broadcast 발송 완료");
     } catch (broadcastError) {
-      console.error("⚠️ [LOG-DELETE-API] Broadcast 발송 실패:", broadcastError);
+      devLog.error("[LOG-DELETE-API] Broadcast 발송 실패:", broadcastError);
     }
 
     // 삭제 작업 로그 기록
@@ -128,7 +128,7 @@ export async function POST(request: NextRequest) {
       userAgent
     );
 
-    devLog.log("로그 삭제 작업 완료:", result);
+    devLog.log("[LOG-DELETE] 로그 삭제 작업 완료:", result);
 
     // 작업 유형에 따른 구체적인 메시지 생성
     let successMessage = "";
@@ -155,7 +155,7 @@ export async function POST(request: NextRequest) {
       result,
     });
   } catch (error) {
-    devLog.error("로그 삭제 API 오류:", error);
+    devLog.error("[LOG-DELETE] 로그 삭제 API 오류:", error);
 
     // API 에러 로그 기록
     await logApiError(

@@ -53,17 +53,30 @@ export const useCreateSubscriptionMutation = () => {
   return useMutation({
     mutationFn: async ({
       subscription,
-      farmId,
+      deviceId,
+      options,
     }: {
       subscription: PushSubscriptionJSON;
-      farmId?: string;
+      deviceId?: string;
+      options?: {
+        isResubscribe?: boolean;
+        updateSettings?: boolean;
+      };
     }): Promise<{ success: boolean; message?: string; subscription?: any }> => {
-      devLog.log("[MUTATION] 푸시 알림 구독 생성 시작", { farmId });
+      devLog.log("[MUTATION] 푸시 알림 구독 생성 시작", {
+        deviceId,
+        isResubscribe: options?.isResubscribe,
+        updateSettings: options?.updateSettings,
+      });
 
       const result = await apiClient("/api/push/subscription", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ subscription, farmId }),
+        body: JSON.stringify({
+          subscription,
+          deviceId,
+          options,
+        }),
         context: "구독 정보 서버 전송",
       });
 
@@ -81,25 +94,40 @@ export const useCreateSubscriptionMutation = () => {
   });
 };
 
-// 구독 삭제 (Mutation)
+// 구독 해제 (Mutation)
 export const useDeleteSubscriptionMutation = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (data: {
+    mutationFn: async ({
+      endpoint,
+      forceDelete = false,
+      options,
+    }: {
       endpoint: string;
       forceDelete?: boolean;
-    }): Promise<{ success: boolean; message?: string }> => {
-      devLog.log("[MUTATION] 구독 삭제 시작", data);
+      options?: {
+        updateSettings?: boolean;
+      };
+    }): Promise<{
+      success: boolean;
+      message?: string;
+      deletedCount?: number;
+    }> => {
+      devLog.log("[MUTATION] 푸시 알림 구독 해제 시작", {
+        endpoint,
+        forceDelete,
+        updateSettings: options?.updateSettings,
+      });
 
       const result = await apiClient("/api/push/subscription", {
         method: "DELETE",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
-        context: "구독 정보 삭제",
+        body: JSON.stringify({ endpoint, forceDelete, options }),
+        context: "구독 해제",
       });
 
-      devLog.log("[MUTATION] 구독 삭제 완료");
+      devLog.log("[MUTATION] 푸시 알림 구독 해제 완료");
       return result;
     },
     onSuccess: () => {
@@ -108,7 +136,7 @@ export const useDeleteSubscriptionMutation = () => {
       devLog.log("[MUTATION] 구독 상태 캐시 무효화 완료");
     },
     onError: (error) => {
-      devLog.error("[MUTATION] 구독 삭제 실패:", error);
+      devLog.error("[MUTATION] 구독 해제 실패:", error);
     },
   });
 };

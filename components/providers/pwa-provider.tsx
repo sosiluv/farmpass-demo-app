@@ -10,6 +10,7 @@ import {
 } from "react";
 import { devLog } from "@/lib/utils/logging/dev-logger";
 import { getDeviceInfo } from "@/lib/utils/browser/device-detection";
+import { useCommonToast } from "@/lib/utils/notification/toast-messages";
 
 interface InstallInfo {
   canInstall: boolean;
@@ -151,6 +152,7 @@ const checkInstallability = (): InstallInfo => {
 };
 
 export function PWAProvider({ children }: { children: ReactNode }) {
+  const { showWarning } = useCommonToast();
   const [installInfo, setInstallInfo] = useState<InstallInfo>({
     canInstall: false,
     platform: "Unknown",
@@ -175,10 +177,15 @@ export function PWAProvider({ children }: { children: ReactNode }) {
         return result;
       } catch (error) {
         devLog.error("설치 프롬프트 실행 실패:", error);
+        showWarning("설치 오류", "설치 중 오류가 발생했습니다.");
         throw error;
       }
     } else {
       devLog.warn("설치 프롬프트가 사용 불가능합니다");
+      showWarning(
+        "설치 불가",
+        "설치 프롬프트를 사용할 수 없습니다. 이미 설치했거나, 브라우저가 지원하지 않는 환경입니다."
+      );
       throw new Error("설치 프롬프트를 사용할 수 없습니다");
     }
   };

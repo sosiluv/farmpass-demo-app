@@ -249,13 +249,19 @@ export function useNotificationPermission() {
         return;
       }
 
-      // 공통 로직 사용
+      // 공통 로직 사용 (다이얼로그용)
       const result = await requestNotificationPermissionAndSubscribe(
         async () => key, // 확보된 VAPID 키 사용
-        async (subscription) => {
-          // 서버에 구독 정보 전송
+        async (subscription, deviceId, options) => {
+          // 서버에 구독 정보 전송 (device_id 포함)
           return await createSubscriptionMutation.mutateAsync({
             subscription,
+            deviceId,
+            options: {
+              ...options,
+              isResubscribe: state.isResubscribe,
+              updateSettings: true, // 자동 다이얼로그에서도 설정 업데이트
+            },
           });
         }
       );

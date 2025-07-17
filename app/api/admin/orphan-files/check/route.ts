@@ -3,6 +3,8 @@ import { createClient } from "@/lib/supabase/server";
 import { requireAuth } from "@/lib/server/auth-utils";
 import { devLog } from "@/lib/utils/logging/dev-logger";
 import { prisma } from "@/lib/prisma";
+import { logApiError } from "@/lib/utils/logging/system-log";
+import { getClientIP, getUserAgent } from "@/lib/server/ip-helpers";
 
 // 재귀적으로 Storage의 모든 파일을 가져오는 함수
 async function getAllStorageFiles(
@@ -62,6 +64,9 @@ async function getAllStorageFiles(
 }
 
 export async function GET(request: NextRequest) {
+  // 요청 컨텍스트 정보 추출
+  const clientIP = getClientIP(request);
+  const userAgent = getUserAgent(request);
   const supabase = await createClient();
 
   // 인증 및 권한 확인 (admin만 접근 가능)
@@ -141,12 +146,37 @@ export async function GET(request: NextRequest) {
         )
     );
 
+    // 방문자 DB orphan (DB에는 있는데 Storage에는 없는 profile_photo_url)
+    const visitorDbOrphans = (usedVisitorUrls || []).filter((entry: any) => {
+      const url = entry.profile_photo_url;
+      if (!url) return false;
+      const match = url.match(/visitor-photos\/(.+)$/);
+      const filePath = match ? match[1] : null;
+      if (!filePath) return false;
+      return !visitorFiles.includes(filePath);
+    });
+
+    // 프로필 DB orphan (DB에는 있는데 Storage에는 없는 profile_image_url)
+    const profileDbOrphans = (profiles || []).filter((profile: any) => {
+      const url = profile.profile_image_url;
+      if (!url) return false;
+      const match = url.match(/profiles\/(.+)$/);
+      const filePath = match ? match[1] : null;
+      if (!filePath) return false;
+      if (filePath.startsWith("systems/")) return false;
+      return !profileFiles.includes(filePath);
+    });
+
     // 디버깅을 위한 상세 정보 반환
     return NextResponse.json({
       visitorOrphans: orphanVisitorFiles,
       profileOrphans: orphanProfileFiles,
       visitorOrphanCount: orphanVisitorFiles.length,
       profileOrphanCount: orphanProfileFiles.length,
+      visitorDbOrphans,
+      profileDbOrphans,
+      visitorDbOrphanCount: visitorDbOrphans.length,
+      profileDbOrphanCount: profileDbOrphans.length,
       // 디버깅 정보
       debug: {
         visitor: {
@@ -167,6 +197,19 @@ export async function GET(request: NextRequest) {
     });
   } catch (error) {
     devLog.error("[CHECK_ORPHAN] General error:", error);
+
+    // API 에러 로그 기록
+    await logApiError(
+      "/api/admin/orphan-files/check",
+      "GET",
+      error instanceof Error ? error : String(error),
+      undefined,
+      {
+        ip: clientIP,
+        userAgent,
+      }
+    );
+
     return NextResponse.json(
       {
         success: false,

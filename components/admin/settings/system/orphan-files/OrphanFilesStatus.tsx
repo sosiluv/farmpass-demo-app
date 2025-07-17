@@ -14,62 +14,92 @@ export function OrphanFilesStatus({
       <div className="space-y-2">
         <div className="flex items-center justify-between">
           <Label className="text-sm font-medium">방문자 이미지</Label>
-          <Badge
-            variant={
-              orphanFilesStatus.visitorOrphanCount > 0
-                ? "destructive"
-                : "default"
-            }
-          >
-            {orphanFilesStatus.visitorOrphanCount}개
-          </Badge>
         </div>
         <div className="p-3 bg-muted rounded-lg">
-          <p
-            className={`text-2xl font-bold ${
-              orphanFilesStatus.visitorOrphanCount === 0
-                ? "text-green-600"
-                : "text-orange-600"
-            }`}
-          >
-            {orphanFilesStatus.visitorOrphanCount.toLocaleString()}건
-          </p>
-          <p className="text-sm text-muted-foreground">
-            {orphanFilesStatus.visitorOrphanCount === 0
-              ? "정리할 orphan 파일이 없습니다"
-              : "사용되지 않는 방문자 이미지"}
-          </p>
+          {/* Storage orphan 표시 */}
+          <div className="flex flex-col mb-2">
+            <div>
+              <Badge
+                variant={
+                  orphanFilesStatus.visitorOrphanCount > 0
+                    ? "destructive"
+                    : "default"
+                }
+              >
+                Storage orphan {orphanFilesStatus.visitorOrphanCount}개
+              </Badge>
+            </div>
+            <span className="text-xs text-muted-foreground mt-1">
+              {orphanFilesStatus.visitorOrphanCount === 0
+                ? "정리할 Storage orphan 파일이 없습니다"
+                : "Storage에는 있는데 DB에는 없는 방문자 이미지"}
+            </span>
+          </div>
+          {/* DB orphan 표시 */}
+          <div className="flex flex-col mt-2">
+            <div>
+              <Badge
+                variant={
+                  orphanFilesStatus.visitorDbOrphanCount > 0
+                    ? "destructive"
+                    : "default"
+                }
+              >
+                DB orphan {orphanFilesStatus.visitorDbOrphanCount}개
+              </Badge>
+            </div>
+            <span className="text-xs text-muted-foreground mt-1">
+              {orphanFilesStatus.visitorDbOrphanCount === 0
+                ? "정리할 DB orphan 파일이 없습니다"
+                : "DB에는 있는데 Storage에는 없는 방문자 이미지"}
+            </span>
+          </div>
         </div>
       </div>
 
       <div className="space-y-2">
         <div className="flex items-center justify-between">
           <Label className="text-sm font-medium">프로필 이미지</Label>
-          <Badge
-            variant={
-              orphanFilesStatus.profileOrphanCount > 0
-                ? "destructive"
-                : "default"
-            }
-          >
-            {orphanFilesStatus.profileOrphanCount}개
-          </Badge>
         </div>
         <div className="p-3 bg-muted rounded-lg">
-          <p
-            className={`text-2xl font-bold ${
-              orphanFilesStatus.profileOrphanCount === 0
-                ? "text-green-600"
-                : "text-blue-600"
-            }`}
-          >
-            {orphanFilesStatus.profileOrphanCount.toLocaleString()}건
-          </p>
-          <p className="text-sm text-muted-foreground">
-            {orphanFilesStatus.profileOrphanCount === 0
-              ? "정리할 orphan 파일이 없습니다"
-              : "사용되지 않는 프로필 이미지"}
-          </p>
+          {/* Storage orphan 표시 */}
+          <div className="flex flex-col mb-2">
+            <div>
+              <Badge
+                variant={
+                  orphanFilesStatus.profileOrphanCount > 0
+                    ? "destructive"
+                    : "default"
+                }
+              >
+                Storage orphan {orphanFilesStatus.profileOrphanCount}개
+              </Badge>
+            </div>
+            <span className="text-xs text-muted-foreground mt-1">
+              {orphanFilesStatus.profileOrphanCount === 0
+                ? "정리할 Storage orphan 파일이 없습니다"
+                : "Storage에는 있는데 DB에는 없는 프로필 이미지"}
+            </span>
+          </div>
+          {/* DB orphan 표시 */}
+          <div className="flex flex-col mt-2">
+            <div>
+              <Badge
+                variant={
+                  orphanFilesStatus.profileDbOrphanCount > 0
+                    ? "destructive"
+                    : "default"
+                }
+              >
+                DB orphan {orphanFilesStatus.profileDbOrphanCount}개
+              </Badge>
+            </div>
+            <span className="text-xs text-muted-foreground mt-1">
+              {orphanFilesStatus.profileDbOrphanCount === 0
+                ? "정리할 DB orphan 파일이 없습니다"
+                : "DB에는 있는데 Storage에는 없는 프로필 이미지"}
+            </span>
+          </div>
         </div>
       </div>
     </div>

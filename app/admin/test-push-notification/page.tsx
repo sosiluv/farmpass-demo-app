@@ -28,6 +28,7 @@ import {
   UserPlus,
 } from "lucide-react";
 import { toast } from "sonner";
+import { generateDeviceId } from "@/lib/utils/notification/push-subscription";
 
 interface PushTestState {
   isSupported: boolean;
@@ -270,16 +271,26 @@ export default function PushNotificationTestPage() {
         applicationServerKey: testState.vapidPublicKey,
       });
 
+      // device_id 생성 (공통 함수 사용)
+      const deviceId = generateDeviceId();
+
       // 구독 데이터 확인
       console.log("전송할 구독 데이터:", subscription);
+      console.log("생성된 device_id:", deviceId);
 
-      // 서버에 구독 정보 전송
+      // 서버에 구독 정보 전송 (device_id 포함)
       const response = await fetch("/api/push/subscription", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ subscription }),
+        body: JSON.stringify({
+          subscription,
+          deviceId,
+          options: {
+            updateSettings: true, // 테스트에서도 설정 업데이트
+          },
+        }),
       });
 
       if (response.ok) {
@@ -342,6 +353,9 @@ export default function PushNotificationTestPage() {
           },
           body: JSON.stringify({
             endpoint: testState.subscription?.endpoint,
+            options: {
+              updateSettings: true, // 테스트에서도 설정 업데이트
+            },
           }),
         });
 

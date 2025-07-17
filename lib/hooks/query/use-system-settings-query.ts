@@ -71,6 +71,12 @@ export function useSystemSettingsQuery() {
         pushVibrateEnabled: settings.pushVibrateEnabled,
         pushRequireInteraction: settings.pushRequireInteraction,
 
+        // 구독 정리 설정
+        subscriptionCleanupDays: settings.subscriptionCleanupDays,
+        subscriptionFailCountThreshold: settings.subscriptionFailCountThreshold,
+        subscriptionCleanupInactive: settings.subscriptionCleanupInactive,
+        subscriptionForceDelete: settings.subscriptionForceDelete,
+
         // 시스템 설정
         logLevel: settings.logLevel,
         logRetentionDays: settings.logRetentionDays,

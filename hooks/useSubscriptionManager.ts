@@ -4,6 +4,8 @@ import { devLog } from "@/lib/utils/logging/dev-logger";
 import { handleError } from "@/lib/utils/error";
 import { useQueryClient } from "@tanstack/react-query";
 import { apiClient } from "@/lib/utils/data/api-client";
+import { getDeviceInfo } from "@/lib/utils/browser/device-detection";
+import { createSubscriptionFromExisting } from "@/lib/utils/notification/push-subscription";
 
 // React Query Hooks
 import {
@@ -54,7 +56,7 @@ export function useSubscriptionManager() {
     }
   };
 
-  // VAPID 키 가져오기 - Lazy Loading
+  // VAPID 키 가져오기 (React Query 사용)
   const getVapidKey = async (): Promise<string | null> => {
     try {
       // 캐시된 데이터가 있으면 사용
@@ -77,7 +79,7 @@ export function useSubscriptionManager() {
   };
 
   // Base64 to Uint8Array 변환
-  const urlBase64ToUint8Array = (base64String: string): Uint8Array => {
+  const urlBase64ToUint8Array = (base64String: string) => {
     const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
     const base64 = (base64String + padding)
       .replace(/-/g, "+")
@@ -92,47 +94,43 @@ export function useSubscriptionManager() {
     return outputArray;
   };
 
-  // 현재 구독 해제 (브라우저 + 서버) - React Query 사용
+  // 현재 구독 해제
   const unsubscribeCurrent = async (): Promise<boolean> => {
     try {
       if (!("serviceWorker" in navigator) || !("PushManager" in window)) {
-        devLog.log("브라우저에서 푸시 알림을 지원하지 않습니다.");
-        return false;
+        return true; // 지원하지 않는 브라우저는 성공으로 처리
       }
 
       const registration = await navigator.serviceWorker.ready;
       const subscription = await registration.pushManager.getSubscription();
 
       if (subscription) {
-        devLog.log("기존 구독 발견:", subscription.endpoint);
-
-        // 1. 브라우저 구독 해제
+        // 브라우저에서 구독 해제
         await subscription.unsubscribe();
-        devLog.log("브라우저 구독 해제 완료");
 
-        // 2. 서버에서 구독 정보 삭제 (React Query Mutation 사용)
-        try {
-          await deleteSubscriptionMutation.mutateAsync({
-            endpoint: subscription.endpoint,
-            forceDelete: true, // 정상 로그아웃에서도 확실한 삭제 보장
-          });
-          devLog.log("서버 구독 정보 삭제 완료");
-        } catch (error) {
-          // 에러는 mutation에서 처리됨
-          // 브라우저 구독은 해제되었으므로 true 반환
-        }
+        // 서버에서도 구독 해제 (React Query Mutation 사용)
+        const result = await deleteSubscriptionMutation.mutateAsync({
+          endpoint: subscription.endpoint,
+          forceDelete: true, // 사용자 전환 시 강제 삭제
+          options: {
+            updateSettings: false, // 사용자 전환 시에는 설정 업데이트 안함
+          },
+        });
 
-        return true;
-      } else {
-        devLog.log("삭제할 구독이 없습니다.");
-        return false;
+        devLog.log("기존 구독 해제 완료", {
+          endpoint: subscription.endpoint,
+          deletedCount: result.deletedCount,
+        });
       }
+
+      return true;
     } catch (error) {
+      devLog.error("구독 해제 실패:", error);
       return false;
     }
   };
 
-  // 새 사용자로 구독 전환 - React Query 사용
+  // 새 사용자로 구독 전환 - 공통 로직 사용
   const switchSubscription = useCallback(
     async (userId: string): Promise<boolean> => {
       try {
@@ -170,85 +168,84 @@ export function useSubscriptionManager() {
           return false;
         }
 
-        // 6. 새 구독 생성
+        // 6. 새 구독 생성 (공통 로직 사용)
         const registration = await navigator.serviceWorker.ready;
         const newSubscription = await registration.pushManager.subscribe({
           userVisibleOnly: true,
           applicationServerKey: urlBase64ToUint8Array(currentVapidKey),
         });
 
-        // 7. 서버에 구독 정보 전송 (React Query Mutation 사용)
-        await createSubscriptionMutation.mutateAsync({
-          subscription: newSubscription, // toJSON() 제거!
-        });
+        // 7. 서버에 구독 정보 전송 (공통 로직 사용)
+        const result = await createSubscriptionFromExisting(
+          async (subscription, deviceId, options) => {
+            return await createSubscriptionMutation.mutateAsync({
+              subscription: subscription as PushSubscription,
+              deviceId,
+              options: {
+                ...options,
+                updateSettings: true, // 사용자 전환 시에도 설정 업데이트
+              },
+            });
+          },
+          {
+            updateSettings: false,
+          }
+        );
 
-        devLog.log(`구독 전환 완료: ${userId}`);
-        return true;
+        if (result.success) {
+          devLog.log(`구독 전환 완료: ${userId}`);
+          return true;
+        } else {
+          devLog.error(`구독 전환 실패: ${userId}`, result.message);
+          return false;
+        }
       } catch (error) {
-        devLog.error("구독 전환 실패:", error);
+        devLog.error(`구독 전환 중 오류 발생: ${userId}`, error);
+        handleError(error, { context: "switch-subscription" });
         return false;
       }
     },
-    [unsubscribeCurrent, getVapidKey, createSubscriptionMutation]
+    [
+      vapidKey,
+      refetchVapidKey,
+      createSubscriptionMutation,
+      deleteSubscriptionMutation,
+    ]
   );
 
-  // 로그아웃 시 구독 정리
+  // 구독 정리 (사용자 로그아웃 시)
   const cleanupSubscription = useCallback(async (): Promise<boolean> => {
     try {
       devLog.log("구독 정리 시작");
 
-      // 브라우저 및 서버 구독 해제
-      const result = await unsubscribeCurrent();
-      devLog.log(`구독 정리 결과: ${result}`);
+      // 브라우저에서 구독 해제
+      if ("serviceWorker" in navigator && "PushManager" in window) {
+        const registration = await navigator.serviceWorker.ready;
+        const subscription = await registration.pushManager.getSubscription();
+
+        if (subscription) {
+          await subscription.unsubscribe();
+          devLog.log("브라우저 구독 해제 완료");
+        }
+      }
+
+      // 서버에서 구독 정리 (React Query Mutation 사용)
+      await deleteSubscriptionMutation.mutateAsync({
+        endpoint: "", // 빈 문자열로 모든 구독 정리
+        forceDelete: true,
+      });
 
       devLog.log("구독 정리 완료");
-      return result;
+      return true;
     } catch (error) {
-      handleError(error, "구독 정리");
+      devLog.error("구독 정리 실패:", error);
+      handleError(error, { context: "cleanup-subscription" });
       return false;
     }
-  }, []);
-
-  // 구독 상태 확인 및 동기화 - React Query 사용
-  const checkSubscriptionSync = useCallback(async (): Promise<boolean> => {
-    try {
-      if (!("serviceWorker" in navigator) || !("PushManager" in window)) {
-        return false;
-      }
-
-      const registration = await navigator.serviceWorker.ready;
-      const browserSubscription =
-        await registration.pushManager.getSubscription();
-
-      if (!browserSubscription) {
-        return false;
-      }
-
-      // 서버 구독 정보 확인 (React Query 사용)
-      // subscriptions가 이미 캐시되어 있으면 사용, 없으면 수동으로 fetch
-      let currentSubscriptions = subscriptions;
-
-      if (!currentSubscriptions) {
-        // 수동으로 구독 상태 조회 (React Query refetch 사용 권장)
-        devLog.warn("구독 상태가 캐시되지 않음 - 수동 조회 필요");
-        return false;
-      }
-
-      const hasValidSubscription = currentSubscriptions?.some(
-        (sub: any) => sub.endpoint === browserSubscription.endpoint
-      );
-
-      return hasValidSubscription;
-    } catch (error) {
-      devLog.error("구독 상태 확인 실패:", error);
-      return false;
-    }
-  }, [subscriptions]);
+  }, [deleteSubscriptionMutation]);
 
   return {
     switchSubscription,
     cleanupSubscription,
-    checkSubscriptionSync,
-    unsubscribeCurrent,
   };
 }

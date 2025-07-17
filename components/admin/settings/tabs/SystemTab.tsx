@@ -15,6 +15,7 @@ import { OrphanFilesSection } from "../system/OrphanFilesSection";
 import { SystemModeSection } from "../system/SystemModeSection";
 import { DocumentationSection } from "../system/DocumentationSection";
 import BroadcastSection from "../system/BroadcastSection";
+import { SubscriptionCleanupSection } from "../system/SubscriptionCleanupSection";
 
 interface SystemTabProps {
   settings: SystemSettings;
@@ -112,6 +113,13 @@ export default function SystemTab({
           lastCleanupSuccess={orphanLastCleanupSuccess}
           onCleanupRequest={handleOrphanCleanupRequest}
           onRefreshStatus={fetchOrphanFilesStatus}
+        />
+
+        {/* 구독 정리 설정 */}
+        <SubscriptionCleanupSection
+          settings={settings}
+          onUpdate={onUpdate}
+          isLoading={isLoading}
         />
 
         {/* 시스템 모드 */}

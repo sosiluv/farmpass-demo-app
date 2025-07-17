@@ -26,7 +26,10 @@ export function OrphanFilesActions({
   onCleanupRequest,
 }: OrphanFilesActionsProps) {
   const totalOrphanCount =
-    orphanFilesStatus.visitorOrphanCount + orphanFilesStatus.profileOrphanCount;
+    (orphanFilesStatus.visitorOrphanCount || 0) +
+    (orphanFilesStatus.profileOrphanCount || 0) +
+    (orphanFilesStatus.visitorDbOrphanCount || 0) +
+    (orphanFilesStatus.profileDbOrphanCount || 0);
 
   return (
     <div className="flex flex-col sm:flex-row gap-3">
@@ -64,7 +67,15 @@ export function OrphanFilesActions({
                         방문자 이미지: {orphanFilesStatus.visitorOrphanCount}개
                       </li>
                       <li>
+                        방문자 DB orphan:{" "}
+                        {orphanFilesStatus.visitorDbOrphanCount}개
+                      </li>
+                      <li>
                         프로필 이미지: {orphanFilesStatus.profileOrphanCount}개
+                      </li>
+                      <li>
+                        프로필 DB orphan:{" "}
+                        {orphanFilesStatus.profileDbOrphanCount}개
                       </li>
                       <li>삭제된 파일은 복구할 수 없습니다</li>
                     </ul>

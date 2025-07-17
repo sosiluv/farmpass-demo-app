@@ -949,7 +949,6 @@ CREATE INDEX idx_visitors_phone ON visitors(phone);
 CREATE INDEX idx_visitors_created_at ON visitors(created_at DESC);
 CREATE INDEX idx_visit_logs_visitor_timestamp ON visit_logs(visitor_id, timestamp DESC);
 CREATE INDEX idx_visit_logs_type_timestamp ON visit_logs(type, timestamp DESC);
-CREATE INDEX idx_qr_codes_expires_at ON qr_codes(expires_at);
 CREATE INDEX idx_qr_codes_visitor_created ON qr_codes(visitor_id, created_at DESC);
 CREATE INDEX idx_system_logs_category_level ON system_logs(category, level);
 CREATE INDEX idx_system_logs_created_at ON system_logs(created_at DESC);

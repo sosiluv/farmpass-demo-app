@@ -60,7 +60,6 @@ export function useUnsubscribePushMutation() {
   return useMutation({
     mutationFn: async (data: {
       endpoint: string;
-      farmId?: string;
     }): Promise<{ success: boolean; message?: string }> => {
       const result = await apiClient("/api/push/subscription", {
         method: "DELETE",
@@ -81,8 +80,6 @@ export function useSendPushNotificationMutation() {
       title: string;
       message: string;
       notificationType: string;
-      farmId?: string;
-      targetUserIds?: string[];
     }): Promise<{ success: boolean; sentCount?: number; message?: string }> => {
       const response = await apiClient("/api/push/send", {
         method: "POST",

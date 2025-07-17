@@ -17,6 +17,7 @@ import {
 import { useCommonToast } from "@/lib/utils/notification/toast-messages";
 import { getAuthErrorMessage } from "@/lib/utils/validation/validation";
 import type { NotificationSettings } from "@/lib/types/notification";
+import { FormSkeleton } from "@/components/common/skeletons/form-skeleton";
 
 export default function NotificationsPage() {
   const { state } = useAuth();
@@ -28,8 +29,11 @@ export default function NotificationsPage() {
     refetch: refetchFarms,
   } = useFarmsContext();
   const [isSubscribed, setIsSubscribed] = useState(false);
-  const { data: settings, error: settingsError } =
-    useNotificationSettingsQuery();
+  const {
+    data: settings,
+    error: settingsError,
+    isLoading: settingsLoading,
+  } = useNotificationSettingsQuery();
   const { showInfo, showError } = useCommonToast();
 
   // 시스템 설정 페이지처럼 로컬 상태 관리
@@ -88,6 +92,21 @@ export default function NotificationsPage() {
 
   // 농장 데이터를 WebPushSubscription 컴포넌트에 직접 전달
   const farmData = farms || [];
+
+  const isLoading = farmsLoading || settingsLoading;
+
+  if (isLoading) {
+    return (
+      <div className="flex-1 space-y-4 p-3 md:p-6 pt-2 md:pt-4">
+        <PageHeader
+          title="알림 설정"
+          description="농장 관련 알림과 푸시 설정을 관리하세요"
+          breadcrumbs={[{ label: "알림 설정" }]}
+        />
+        <FormSkeleton fields={5} />
+      </div>
+    );
+  }
 
   return (
     <ErrorBoundary

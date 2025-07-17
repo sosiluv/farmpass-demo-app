@@ -175,11 +175,44 @@ export function checkPushSupport(): {
 }
 
 /**
+ * 디바이스 정보를 기반으로 고유한 device_id를 생성하는 함수
+ * @returns device_id 문자열
+ */
+export function generateDeviceId(): string {
+  try {
+    const deviceInfo = getDeviceInfo();
+    const timestamp = Date.now();
+
+    // 더 정확한 디바이스 식별자 생성
+    const deviceType = deviceInfo.isMobile
+      ? "mobile"
+      : deviceInfo.isTablet
+      ? "tablet"
+      : "desktop";
+
+    return `${deviceInfo.browser}_${deviceInfo.os}_${deviceType}_${timestamp}`;
+  } catch (error) {
+    // 에러 발생 시 기본값 반환
+    devLog.warn("디바이스 정보 생성 실패, 기본값 사용:", error);
+    return `device_${Date.now()}`;
+  }
+}
+
+/**
  * 알림 권한 요청 및 구독 처리 공통 로직
+ * 모든 구독 생성 시나리오를 처리하는 통합 함수
  */
 export async function requestNotificationPermissionAndSubscribe(
   getVapidKey: () => Promise<string | null>,
-  createSubscription: (subscription: PushSubscriptionJSON) => Promise<any>
+  createSubscription: (
+    subscription: PushSubscriptionJSON,
+    deviceId?: string,
+    options?: {
+      farmId?: string;
+      isResubscribe?: boolean;
+      updateSettings?: boolean;
+    }
+  ) => Promise<any>
 ): Promise<PushSubscriptionResult> {
   try {
     const safeNotification = safeNotificationAccess();
@@ -238,8 +271,11 @@ export async function requestNotificationPermissionAndSubscribe(
         applicationServerKey: urlBase64ToUint8Array(vapidKey),
       });
 
-      // 서버에 구독 정보 전송
-      const result = await createSubscription(subscription.toJSON());
+      // device_id 생성
+      const deviceId = generateDeviceId();
+
+      // 서버에 구독 정보 전송 (device_id 포함)
+      const result = await createSubscription(subscription.toJSON(), deviceId);
 
       devLog.log("웹푸시 구독이 성공적으로 등록되었습니다.");
 
@@ -262,6 +298,76 @@ export async function requestNotificationPermissionAndSubscribe(
     }
   } catch (error) {
     devLog.error("알림 권한 요청 및 구독 실패:", error);
+    const notificationError = getNotificationErrorMessage(error);
+    return {
+      success: false,
+      error: "SUBSCRIPTION_FAILED",
+      message: notificationError.message,
+    };
+  }
+}
+
+/**
+ * 기존 구독을 사용한 구독 생성 (권한 요청 없음)
+ * 사용자 전환이나 재구독 시 사용
+ */
+export async function createSubscriptionFromExisting(
+  createSubscription: (
+    subscription: PushSubscriptionJSON,
+    deviceId?: string,
+    options?: {
+      farmId?: string;
+      isResubscribe?: boolean;
+      updateSettings?: boolean;
+    }
+  ) => Promise<any>,
+  options?: {
+    farmId?: string;
+    isResubscribe?: boolean;
+    updateSettings?: boolean;
+  }
+): Promise<PushSubscriptionResult> {
+  try {
+    // 브라우저 지원 확인
+    if (!("serviceWorker" in navigator) || !("PushManager" in window)) {
+      return {
+        success: false,
+        error: "UNSUPPORTED_BROWSER",
+        message: "이 브라우저는 알림을 지원하지 않습니다.",
+      };
+    }
+
+    // 기존 구독 확인
+    const registration = await navigator.serviceWorker.ready;
+    const existingSubscription =
+      await registration.pushManager.getSubscription();
+
+    if (!existingSubscription) {
+      return {
+        success: false,
+        error: "NO_EXISTING_SUBSCRIPTION",
+        message: "기존 구독이 없습니다. 권한 요청이 필요합니다.",
+      };
+    }
+
+    // device_id 생성
+    const deviceId = generateDeviceId();
+
+    // 서버에 구독 정보 전송
+    const result = await createSubscription(
+      existingSubscription.toJSON(),
+      deviceId,
+      options
+    );
+
+    devLog.log("기존 구독을 사용한 구독 등록 완료");
+
+    return {
+      success: true,
+      message: result?.message || "구독이 완료되었습니다.",
+    };
+  } catch (error) {
+    devLog.error("기존 구독 사용 실패:", error);
     const notificationError = getNotificationErrorMessage(error);
     return {
       success: false,

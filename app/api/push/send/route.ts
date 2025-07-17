@@ -107,7 +107,6 @@ export async function POST(request: NextRequest) {
     const {
       title,
       message,
-      farmId,
       targetUserIds,
       url = "/admin/dashboard",
       icon,
@@ -124,13 +123,12 @@ export async function POST(request: NextRequest) {
         "warn",
         user?.id,
         "system",
-        farmId || "all",
+        "all",
         {
           title,
           message,
           notificationType,
           targetUserIds,
-          farmId,
         },
         user?.email,
         clientIP,
@@ -157,13 +155,12 @@ export async function POST(request: NextRequest) {
         "warn",
         user?.id,
         "system",
-        farmId || "all",
+        "all",
         {
           title,
           message,
           notificationType,
           targetUserIds,
-          farmId,
         },
         user?.email,
         clientIP,
@@ -200,13 +197,12 @@ export async function POST(request: NextRequest) {
         "error",
         user?.id,
         "system",
-        farmId || "all",
+        "all",
         {
           title,
           message,
           notificationType,
           targetUserIds,
-          farmId,
         },
         user?.email,
         clientIP,
@@ -229,26 +225,36 @@ export async function POST(request: NextRequest) {
     devLog.log("구독자 조회 조건:", {
       hasTargetUserIds: !!targetUserIds?.length,
       targetUserIdsCount: targetUserIds?.length || 0,
-      hasFarmId: !!farmId,
-      farmId,
       notificationType,
     });
 
     try {
       if (targetUserIds?.length > 0) {
-        // 특정 사용자들에게만 발송
+        // 특정 사용자들에게만 발송 (활성 구독만)
         subscriptions = await prisma.push_subscriptions.findMany({
           where: {
             user_id: {
               in: targetUserIds,
             },
+            is_active: true, // 활성 구독만
+            deleted_at: null, // 삭제되지 않은 구독만
           },
         });
-        devLog.log("특정 사용자 대상 쿼리 실행:", { targetUserIds });
+        devLog.log("특정 사용자 대상 쿼리 실행:", {
+          targetUserIds,
+          foundSubscriptions: subscriptions.length,
+        });
       } else {
-        // 브로드캐스트: 모든 구독자에게 발송
-        subscriptions = await prisma.push_subscriptions.findMany();
-        devLog.log("브로드캐스트 쿼리 실행");
+        // 브로드캐스트: 모든 활성 구독자에게 발송
+        subscriptions = await prisma.push_subscriptions.findMany({
+          where: {
+            is_active: true, // 활성 구독만
+            deleted_at: null, // 삭제되지 않은 구독만
+          },
+        });
+        devLog.log("브로드캐스트 쿼리 실행", {
+          foundSubscriptions: subscriptions.length,
+        });
       }
     } catch (error) {
       await createSystemLog(
@@ -257,13 +263,12 @@ export async function POST(request: NextRequest) {
         "error",
         user?.id,
         "system",
-        farmId || "all",
+        "all",
         {
           title,
           message,
           notificationType,
           targetUserIds,
-          farmId,
           subscriptionError:
             error instanceof Error ? error.message : String(error),
         },
@@ -292,11 +297,10 @@ export async function POST(request: NextRequest) {
         "warn",
         user.id,
         "system",
-        farmId || "all",
+        "all",
         {
           notification_type: notificationType,
           target_user_ids: targetUserIds,
-          farm_id: farmId,
           title,
           message,
         },
@@ -338,13 +342,12 @@ export async function POST(request: NextRequest) {
         "error",
         user?.id,
         "system",
-        farmId || "all",
+        "all",
         {
           title,
           message,
           notificationType,
           targetUserIds,
-          farmId,
           settingsError: error instanceof Error ? error.message : String(error),
         },
         user?.email,
@@ -402,13 +405,12 @@ export async function POST(request: NextRequest) {
         "warn",
         user.id,
         "system",
-        farmId || "all",
+        "all",
         {
           notification_type: notificationType,
           total_subscribers: subscriptions.length,
           filtered_subscribers: 0,
           target_user_ids: targetUserIds,
-          farm_id: farmId,
           title,
           message,
           settings_summary: {
@@ -455,7 +457,6 @@ export async function POST(request: NextRequest) {
       ],
       data: {
         url,
-        farmId,
         timestamp: Date.now(),
         type: notificationType,
       },
@@ -467,13 +468,27 @@ export async function POST(request: NextRequest) {
         devLog.log("푸시 알림 발송 시도:", {
           subscriptionId: subscription.id,
           user_id: subscription.user_id,
-          farm_id: subscription.farm_id,
           endpoint: subscription.endpoint,
+          currentFailCount: subscription.fail_count || 0,
         });
+
         const result = await sendPushWithRetry(
           subscription,
           JSON.stringify(notificationPayload)
         );
+
+        // 성공 시 fail_count 초기화 및 last_used_at 업데이트
+        if (result.success) {
+          await prisma.push_subscriptions.update({
+            where: { id: subscription.id },
+            data: {
+              fail_count: 0,
+              last_used_at: new Date(),
+              updated_at: new Date(),
+            },
+          });
+        }
+
         return {
           success: result.success,
           subscriptionId: subscription.id,
@@ -483,13 +498,42 @@ export async function POST(request: NextRequest) {
       } catch (error: any) {
         devLog.error(`푸시 발송 실패 (구독 ID: ${subscription.id}):`, error);
 
-        // 410 Gone 에러인 경우 구독 삭제
-        if (error.statusCode === 410) {
-          await prisma.push_subscriptions.delete({
-            where: {
-              id: subscription.id,
+        // 실패 시 fail_count 증가 및 last_fail_at 업데이트
+        const newFailCount = (subscription.fail_count || 0) + 1;
+
+        try {
+          await prisma.push_subscriptions.update({
+            where: { id: subscription.id },
+            data: {
+              fail_count: newFailCount,
+              last_fail_at: new Date(),
+              updated_at: new Date(),
             },
           });
+        } catch (updateError) {
+          devLog.error("fail_count 업데이트 실패:", updateError);
+        }
+
+        // 410 Gone 에러이거나 fail_count가 5회 이상인 경우 구독 비활성화
+        if (error.statusCode === 410 || newFailCount >= 5) {
+          try {
+            await prisma.push_subscriptions.update({
+              where: { id: subscription.id },
+              data: {
+                is_active: false,
+                deleted_at: new Date(),
+                updated_at: new Date(),
+              },
+            });
+
+            devLog.log(
+              `구독 비활성화됨 (ID: ${subscription.id}, 이유: ${
+                error.statusCode === 410 ? "410_GONE" : "FAIL_COUNT_EXCEEDED"
+              })`
+            );
+          } catch (deactivateError) {
+            devLog.error("구독 비활성화 실패:", deactivateError);
+          }
         }
 
         return {
@@ -535,7 +579,7 @@ export async function POST(request: NextRequest) {
         "warn",
         user.id,
         "system",
-        farmId || "all",
+        "all",
         {
           notification_type: notificationType,
           title,
@@ -545,7 +589,6 @@ export async function POST(request: NextRequest) {
           failure_count: failureCount,
           failure_stats: failureStats,
           target_user_ids: targetUserIds,
-          farm_id: farmId,
           // 첫 번째 실패 사례만 상세 정보 포함
           first_failure_example: results.find((r) => !r.success)
             ? {
@@ -570,7 +613,7 @@ export async function POST(request: NextRequest) {
       "info",
       user.id,
       "system",
-      farmId || "all",
+      "all",
       {
         notification_type: notificationType,
         title,
@@ -580,7 +623,6 @@ export async function POST(request: NextRequest) {
         success_count: successCount,
         failure_count: failureCount,
         target_user_ids: targetUserIds,
-        farm_id: farmId,
         settings_summary: {
           total_settings: userIds.length,
           active_settings: notificationSettings?.length || 0,
@@ -604,6 +646,16 @@ export async function POST(request: NextRequest) {
         message: `푸시 알림이 성공적으로 발송되었습니다. (성공: ${successCount}명, 실패: ${failureCount}명)`,
         sentCount: successCount,
         failureCount,
+        totalAttempts: filteredSubscriptions.length,
+        stats: {
+          success: successCount,
+          failure: failureCount,
+          total: filteredSubscriptions.length,
+          successRate:
+            filteredSubscriptions.length > 0
+              ? Math.round((successCount / filteredSubscriptions.length) * 100)
+              : 0,
+        },
         results,
       },
       {

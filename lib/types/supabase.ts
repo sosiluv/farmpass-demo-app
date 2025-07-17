@@ -312,6 +312,10 @@ export interface Database {
           pushVibrateEnabled: boolean;
           vapidPrivateKey: string | null;
           vapidPublicKey: string | null;
+          subscriptionCleanupDays: number;
+          subscriptionFailCountThreshold: number;
+          subscriptionCleanupInactive: boolean;
+          subscriptionForceDelete: boolean;
         };
         Insert: {
           id?: string;
@@ -353,6 +357,10 @@ export interface Database {
           pushVibrateEnabled?: boolean;
           vapidPrivateKey?: string | null;
           vapidPublicKey?: string | null;
+          subscriptionCleanupDays?: number;
+          subscriptionFailCountThreshold?: number;
+          subscriptionCleanupInactive?: boolean;
+          subscriptionForceDelete?: boolean;
         };
         Update: {
           id?: string;
@@ -394,6 +402,63 @@ export interface Database {
           pushVibrateEnabled?: boolean;
           vapidPrivateKey?: string | null;
           vapidPublicKey?: string | null;
+          subscriptionCleanupDays?: number;
+          subscriptionFailCountThreshold?: number;
+          subscriptionCleanupInactive?: boolean;
+          subscriptionForceDelete?: boolean;
+        };
+      };
+      push_subscriptions: {
+        Row: {
+          id: string;
+          user_id: string;
+          farm_id: string | null;
+          endpoint: string;
+          p256dh: string | null;
+          auth: string | null;
+          created_at: string | null;
+          updated_at: string | null;
+          deleted_at: string | null;
+          device_id: string | null;
+          fail_count: number | null;
+          is_active: boolean | null;
+          last_fail_at: string | null;
+          last_used_at: string | null;
+          user_agent: string | null;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          farm_id?: string | null;
+          endpoint: string;
+          p256dh?: string | null;
+          auth?: string | null;
+          created_at?: string | null;
+          updated_at?: string | null;
+          deleted_at?: string | null;
+          device_id?: string | null;
+          fail_count?: number | null;
+          is_active?: boolean | null;
+          last_fail_at?: string | null;
+          last_used_at?: string | null;
+          user_agent?: string | null;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          farm_id?: string | null;
+          endpoint?: string;
+          p256dh?: string | null;
+          auth?: string | null;
+          created_at?: string | null;
+          updated_at?: string | null;
+          deleted_at?: string | null;
+          device_id?: string | null;
+          fail_count?: number | null;
+          is_active?: boolean | null;
+          last_fail_at?: string | null;
+          last_used_at?: string | null;
+          user_agent?: string | null;
         };
       };
       user_notification_settings: {

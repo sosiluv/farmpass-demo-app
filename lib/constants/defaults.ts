@@ -53,6 +53,16 @@ export const NOTIFICATION_DEFAULTS = {
 } as const;
 
 // =================================
+// 구독 정리 설정 기본값
+// =================================
+export const SUBSCRIPTION_CLEANUP_DEFAULTS = {
+  subscriptionCleanupDays: 30,
+  subscriptionFailCountThreshold: 5,
+  subscriptionCleanupInactive: true,
+  subscriptionForceDelete: false,
+} as const;
+
+// =================================
 // 일반 설정 기본값
 // =================================
 export const GENERAL_DEFAULTS = {
@@ -165,4 +175,14 @@ export const DEFAULT_SYSTEM_SETTINGS = {
   vapidPrivateKey: null,
   notificationIcon: null,
   notificationBadge: null,
+
+  // 구독 정리 설정
+  subscriptionCleanupDays:
+    SUBSCRIPTION_CLEANUP_DEFAULTS.subscriptionCleanupDays,
+  subscriptionFailCountThreshold:
+    SUBSCRIPTION_CLEANUP_DEFAULTS.subscriptionFailCountThreshold,
+  subscriptionCleanupInactive:
+    SUBSCRIPTION_CLEANUP_DEFAULTS.subscriptionCleanupInactive,
+  subscriptionForceDelete:
+    SUBSCRIPTION_CLEANUP_DEFAULTS.subscriptionForceDelete,
 } as const;

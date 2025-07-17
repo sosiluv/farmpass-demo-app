@@ -303,6 +303,10 @@ CREATE TABLE "public"."system_settings" (
   "pushVibrateEnabled" BOOLEAN NOT NULL DEFAULT false,
   "vapidPrivateKey" TEXT,
   "vapidPublicKey" TEXT,
+  "subscriptionCleanupDays" INTEGER NOT NULL DEFAULT 30,
+  "subscriptionFailCountThreshold" INTEGER NOT NULL DEFAULT 5,
+  "subscriptionCleanupInactive" BOOLEAN NOT NULL DEFAULT true,
+  "subscriptionForceDelete" BOOLEAN NOT NULL DEFAULT false,
 
   CONSTRAINT "system_settings_pkey" PRIMARY KEY ("id")
 );
@@ -343,6 +347,10 @@ COMMENT ON COLUMN public.system_settings."notificationBadge" IS '푸시 알림 �
 COMMENT ON COLUMN public.system_settings."pushSoundEnabled" IS '푸시 알림 소리 활성화 여부';
 COMMENT ON COLUMN public.system_settings."pushVibrateEnabled" IS '푸시 알림 진동 활성화 여부';
 COMMENT ON COLUMN public.system_settings."pushRequireInteraction" IS '푸시 알림 사용자 상호작용 필요 여부';
+COMMENT ON COLUMN public.system_settings."subscriptionCleanupDays" IS '구독 정리 삭제 일수 (soft delete 후 완전 삭제까지)';
+COMMENT ON COLUMN public.system_settings."subscriptionFailCountThreshold" IS '구독 비활성화 실패 횟수 임계값';
+COMMENT ON COLUMN public.system_settings."subscriptionCleanupInactive" IS '비활성 구독 자동 정리 여부';
+COMMENT ON COLUMN public.system_settings."subscriptionForceDelete" IS '구독 강제 삭제 여부 (soft delete 대신)';
 
 -- 푸시 구독 정보 테이블
 CREATE TABLE public.push_subscriptions (
@@ -354,12 +362,19 @@ CREATE TABLE public.push_subscriptions (
   auth TEXT,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  deleted_at TIMESTAMP WITH TIME ZONE,
+  device_id TEXT,
+  fail_count INTEGER DEFAULT 0,
+  is_active BOOLEAN DEFAULT true,
+  last_fail_at TIMESTAMP WITH TIME ZONE,
+  last_used_at TIMESTAMP WITH TIME ZONE,
+  user_agent TEXT,
   
   -- 중복 구독 방지를 위한 유니크 제약
   UNIQUE(user_id, farm_id, endpoint)
 );
 
--- 기존 푸시 구독 테이블 주석 유지
+-- 푸시 구독 테이블 주석
 COMMENT ON TABLE public.push_subscriptions IS '웹푸시 구독 정보를 저장하는 테이블';
 COMMENT ON COLUMN public.push_subscriptions.user_id IS '구독한 사용자 ID';
 COMMENT ON COLUMN public.push_subscriptions.farm_id IS '구독한 농장 ID (NULL이면 전체 구독)';
@@ -368,6 +383,13 @@ COMMENT ON COLUMN public.push_subscriptions.p256dh IS '공개키 (P-256 ECDH)';
 COMMENT ON COLUMN public.push_subscriptions.auth IS '인증 비밀키';
 COMMENT ON COLUMN public.push_subscriptions.created_at IS '구독 생성 시간';
 COMMENT ON COLUMN public.push_subscriptions.updated_at IS '구독 정보 수정 시간';
+COMMENT ON COLUMN public.push_subscriptions.deleted_at IS '구독 삭제 시간 (soft delete)';
+COMMENT ON COLUMN public.push_subscriptions.device_id IS '디바이스 식별자';
+COMMENT ON COLUMN public.push_subscriptions.fail_count IS '푸시 발송 실패 횟수';
+COMMENT ON COLUMN public.push_subscriptions.is_active IS '구독 활성화 상태';
+COMMENT ON COLUMN public.push_subscriptions.last_fail_at IS '마지막 실패 시간';
+COMMENT ON COLUMN public.push_subscriptions.last_used_at IS '마지막 사용 시간';
+COMMENT ON COLUMN public.push_subscriptions.user_agent IS '사용자 브라우저 정보';
 
 
 -----------------------------------------------------------------------------------------------------------------------------
@@ -379,11 +401,11 @@ CREATE TABLE user_notification_settings (
     visitor_alerts BOOLEAN DEFAULT true,      -- 방문자 알림
     emergency_alerts BOOLEAN DEFAULT true,    -- 긴급 알림
     maintenance_alerts BOOLEAN DEFAULT true,  -- 시스템 알림
+    notice_alerts BOOLEAN DEFAULT true,      -- 공지사항 알림
     kakao_user_id VARCHAR(100),              -- 카카오톡 사용 시 필요한 정보
     is_active BOOLEAN DEFAULT false,         -- 기본적으로 알림 비활성화
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    notice_alerts BOOLEAN DEFAULT true,      -- 공지사항 알림
     UNIQUE(user_id)
 );
 

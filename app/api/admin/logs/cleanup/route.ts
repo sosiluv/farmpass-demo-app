@@ -13,8 +13,6 @@ export async function POST(request: NextRequest) {
   const userAgent = getUserAgent(request);
 
   try {
-    devLog.log("로그 정리 API 시작");
-
     // 관리자 권한 인증 확인
     const authResult = await requireAuth(true);
     if (!authResult.success || !authResult.user) {
@@ -23,20 +21,14 @@ export async function POST(request: NextRequest) {
 
     const user = authResult.user;
     const supabase = await createClient();
-    devLog.log("Supabase 클라이언트 생성 완료");
 
     const body = await request.json();
     const { type = "system_logs" } = body; // "system_logs" 또는 "all"
 
-    devLog.log("정리 타입:", type);
-
     let result;
 
     if (type === "all") {
-      devLog.log("모든 데이터 정리 시작");
-
       // 방문자 데이터 정리
-      devLog.log("방문자 데이터 정리 시작");
       let visitorData;
       try {
         const { data, error: visitorError } = await supabase.rpc(
@@ -44,14 +36,17 @@ export async function POST(request: NextRequest) {
         );
 
         if (visitorError) {
-          devLog.error("방문자 데이터 정리 오류:", visitorError);
+          devLog.error("[LOG-CLEANUP] 방문자 데이터 정리 오류:", visitorError);
           throw new Error(
             `Visitor data cleanup failed: ${visitorError.message}`
           );
         }
         visitorData = data;
       } catch (visitorError: any) {
-        devLog.error("Visitor data cleanup failed:", visitorError);
+        devLog.error(
+          "[LOG-CLEANUP] Visitor data cleanup failed:",
+          visitorError
+        );
         return NextResponse.json(
           {
             success: false,
@@ -63,7 +58,6 @@ export async function POST(request: NextRequest) {
       }
 
       // 시스템 로그 정리
-      devLog.log("시스템 로그 정리 시작");
       let logData;
       try {
         const { data, error: logError } = await supabase.rpc(
@@ -71,12 +65,12 @@ export async function POST(request: NextRequest) {
         );
 
         if (logError) {
-          devLog.error("시스템 로그 정리 오류:", logError);
+          devLog.error("[LOG-CLEANUP] 시스템 로그 정리 오류:", logError);
           throw new Error(`System log cleanup failed: ${logError.message}`);
         }
         logData = data;
       } catch (logError: any) {
-        devLog.error("System log cleanup failed:", logError);
+        devLog.error("[LOG-CLEANUP] System log cleanup failed:", logError);
         return NextResponse.json(
           {
             success: false,
@@ -93,9 +87,12 @@ export async function POST(request: NextRequest) {
         ...(Array.isArray(logData) ? logData : [logData]),
       ];
 
-      devLog.log("통합 정리 결과:", { visitorData, logData, result });
+      devLog.log("[LOG-CLEANUP] 통합 정리 결과:", {
+        visitorData,
+        logData,
+        result,
+      });
     } else {
-      devLog.log("시스템 로그 정리 시작");
       // 시스템 로그만 정리
       let data;
       try {
@@ -103,14 +100,17 @@ export async function POST(request: NextRequest) {
           "auto_cleanup_expired_system_logs"
         );
 
-        devLog.log("로그 정리 결과:", { data: cleanupData, error });
+        devLog.log("[LOG-CLEANUP] 로그 정리 결과:", {
+          data: cleanupData,
+          error,
+        });
 
         if (error) {
           throw new Error(`System log cleanup failed: ${error.message}`);
         }
         data = cleanupData;
       } catch (error: any) {
-        devLog.error("System log cleanup failed:", error);
+        devLog.error("[LOG-CLEANUP] System log cleanup failed:", error);
         return NextResponse.json(
           {
             success: false,
@@ -123,8 +123,6 @@ export async function POST(request: NextRequest) {
 
       result = data;
     }
-
-    devLog.log("정리 작업 완료, 응답 반환");
 
     // 삭제된 개수 계산
     let totalDeleted = 0;
@@ -148,7 +146,7 @@ export async function POST(request: NextRequest) {
       results: result,
     });
   } catch (error) {
-    devLog.error("로그 정리 API 오류:", error);
+    devLog.error("[LOG-CLEANUP] 로그 정리 API 오류:", error);
 
     // API 에러 로그 기록
     await logApiError(
@@ -179,8 +177,6 @@ export async function GET(request: NextRequest) {
   const userAgent = getUserAgent(request);
 
   try {
-    devLog.log("정리 상태 조회 API 시작");
-
     // 관리자 권한 인증 확인
     const authResult = await requireAuth(true);
     if (!authResult.success || !authResult.user) {
@@ -189,7 +185,6 @@ export async function GET(request: NextRequest) {
 
     // 시스템 설정 조회
     const settings = await getSystemSettings();
-    devLog.log("settings", settings);
     // 기본값 설정
     const effectiveLogRetentionDays = settings.logRetentionDays || 90;
     const effectiveVisitorRetentionDays =
@@ -202,11 +197,6 @@ export async function GET(request: NextRequest) {
     visitorCutoffDate.setDate(
       visitorCutoffDate.getDate() - effectiveVisitorRetentionDays
     );
-
-    devLog.log("날짜 기준:", {
-      logCutoffDate: logCutoffDate.toISOString(),
-      visitorCutoffDate: visitorCutoffDate.toISOString(),
-    });
 
     // 만료된 로그 개수 조회
     const expiredLogsCount = await prisma.system_logs.count({
@@ -226,7 +216,7 @@ export async function GET(request: NextRequest) {
       },
     });
 
-    devLog.log("데이터 개수 조회 완료:", {
+    devLog.log("[LOG-CLEANUP] 데이터 개수 조회 완료:", {
       expiredLogsCount,
       expiredVisitorsCount,
     });
@@ -248,10 +238,9 @@ export async function GET(request: NextRequest) {
       },
     };
 
-    devLog.log("정리 상태 조회 성공");
     return NextResponse.json(result);
   } catch (error) {
-    devLog.error("정리 상태 조회 API 오류:", error);
+    devLog.error("[LOG-CLEANUP] 정리 상태 조회 API 오류:", error);
 
     // API 에러 로그 기록
     await logApiError(

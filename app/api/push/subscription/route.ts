@@ -66,8 +66,8 @@ export async function POST(request: NextRequest) {
     const user = authResult.user;
 
     const body = await request.json();
-    const { subscription } = body;
-    // farmId는 더 이상 사용하지 않음 - 항상 전체 구독으로 통합
+    const { subscription, deviceId, options } = body;
+    // 더 이상 사용하지 않음 - 항상 전체 구독으로 통합
 
     if (!subscription || !subscription.endpoint) {
       return NextResponse.json(
@@ -94,83 +94,113 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 기존 구독 확인 및 삭제
-    const existingSubscriptions = await prisma.push_subscriptions.findMany({
+    // 기존 구독 확인 (활성/비활성 모두 포함)
+    const existingSubscription = await prisma.push_subscriptions.findFirst({
       where: {
         user_id: user.id,
+        endpoint: subscription.endpoint,
       },
+      orderBy: { created_at: "asc" },
     });
 
-    // 기존 구독이 있으면 모두 삭제 (디바이스당 하나만 유지)
-    if (existingSubscriptions && existingSubscriptions.length > 0) {
+    let newSubscription;
+    if (existingSubscription) {
+      // 기존 구독이 있으면 재활성화 (soft delete 해제)
       devLog.log(
-        `기존 구독 ${existingSubscriptions.length}개 발견, 삭제 후 새로 생성`
+        `기존 구독 발견, 재활성화 처리 (id: ${existingSubscription.id})`
       );
-
-      // 기존 구독 삭제
-      await prisma.push_subscriptions.deleteMany({
-        where: {
+      newSubscription = await prisma.push_subscriptions.update({
+        where: { id: existingSubscription.id },
+        data: {
+          is_active: true,
+          p256dh: subscription.keys?.p256dh || null,
+          auth: subscription.keys?.auth || null,
+          device_id: deviceId || null,
+          user_agent: userAgent || null,
+          last_used_at: new Date(),
+          fail_count: 0,
+          deleted_at: null,
+          updated_at: new Date(),
+        },
+      });
+    } else {
+      // 기존 구독이 없으면 새로 생성
+      devLog.log("새 구독 생성");
+      newSubscription = await prisma.push_subscriptions.create({
+        data: {
           user_id: user.id,
+          endpoint: subscription.endpoint,
+          p256dh: subscription.keys?.p256dh || null,
+          auth: subscription.keys?.auth || null,
+          device_id: deviceId || null,
+          user_agent: userAgent || null,
+          is_active: true,
+          fail_count: 0,
+          last_used_at: new Date(),
+          created_at: new Date(),
+          updated_at: new Date(),
         },
       });
     }
 
-    // 새 구독 저장
-    const newSubscription = await prisma.push_subscriptions.create({
-      data: {
-        user_id: user.id,
-        endpoint: subscription.endpoint,
-        p256dh: subscription.keys?.p256dh || null,
-        auth: subscription.keys?.auth || null,
-        created_at: new Date(),
-      },
-    });
-
-    // user_notification_settings에 기본 설정 자동 생성 (없는 경우에만)
-    const existingSettings = await prisma.userNotificationSettings.findUnique({
-      where: {
-        user_id: user.id,
-      },
-    });
-
-    if (!existingSettings) {
-      try {
-        await prisma.userNotificationSettings.create({
-          data: {
-            user_id: user.id,
-            notification_method: "push",
-            visitor_alerts: true,
-            notice_alerts: true,
-            emergency_alerts: true,
-            maintenance_alerts: true,
-            is_active: true,
-            created_at: new Date(),
-            updated_at: new Date(),
-          },
-        });
-      } catch (settingsError: any) {
-        devLog.warn("알림 설정 자동 생성 실패:", settingsError);
-        // 구독은 성공했으므로 경고만 기록하고 계속 진행
-
-        // 알림 설정 생성 실패 시 시스템 로그 기록
-        await createSystemLog(
-          "NOTIFICATION_SETTINGS_CREATION_FAILED",
-          `푸시 구독 시 알림 설정 자동 생성에 실패했습니다.`,
-          "warn",
-          user.id,
-          "system",
-          newSubscription.id,
-          {
-            error: settingsError.message,
-            subscription_id: newSubscription.id,
+    // 알림 설정 업데이트 (options.updateSettings가 true인 경우에만)
+    if (options?.updateSettings !== false) {
+      const existingSettings = await prisma.userNotificationSettings.findUnique(
+        {
+          where: {
             user_id: user.id,
           },
-          user.email,
-          clientIP,
-          userAgent
-        );
+        }
+      );
+
+      if (!existingSettings) {
+        try {
+          await prisma.userNotificationSettings.create({
+            data: {
+              user_id: user.id,
+              notification_method: "push",
+              visitor_alerts: true,
+              notice_alerts: true,
+              emergency_alerts: true,
+              maintenance_alerts: true,
+              is_active: true,
+              created_at: new Date(),
+              updated_at: new Date(),
+            },
+          });
+        } catch (settingsError: any) {
+          devLog.warn("알림 설정 자동 생성 실패:", settingsError);
+          // 구독은 성공했으므로 경고만 기록하고 계속 진행
+
+          // 알림 설정 생성 실패 시 시스템 로그 기록
+          await createSystemLog(
+            "NOTIFICATION_SETTINGS_CREATION_FAILED",
+            `푸시 구독 시 알림 설정 자동 생성에 실패했습니다.`,
+            "warn",
+            user.id,
+            "system",
+            newSubscription.id,
+            {
+              error: settingsError.message,
+              subscription_id: newSubscription.id,
+              user_id: user.id,
+            },
+            user.email,
+            clientIP,
+            userAgent
+          );
+        }
+      } else if (options?.isResubscribe) {
+        // 재구독 시 알림 설정 활성화
+        try {
+          await prisma.userNotificationSettings.update({
+            where: { user_id: user.id },
+            data: { is_active: true, updated_at: new Date() },
+          });
+        } catch (settingsError: any) {
+          devLog.warn("알림 설정 업데이트 실패:", settingsError);
+        }
       }
-      // 성공 시는 로그 제거 - 정상적인 동작이므로 로그 불필요
     }
 
     // 푸시 구독 성공 시 시스템 로그 기록 (기본 동작)
@@ -236,16 +266,10 @@ export async function GET(request: NextRequest) {
 
     const user = authResult.user;
 
-    const { searchParams } = new URL(request.url);
-    const farmId = searchParams.get("farmId");
-
     let whereCondition: any = {
       user_id: user.id,
+      is_active: true, // 활성 구독만 조회
     };
-
-    if (farmId) {
-      whereCondition.farm_id = farmId;
-    }
 
     const subscriptions = await prisma.push_subscriptions.findMany({
       where: whereCondition,
@@ -364,7 +388,7 @@ export async function DELETE(request: NextRequest) {
 
   try {
     const body = await request.json();
-    const { endpoint, forceDelete } = body;
+    const { endpoint, forceDelete, options } = body;
 
     if (!endpoint) {
       return NextResponse.json(
@@ -382,6 +406,7 @@ export async function DELETE(request: NextRequest) {
       devLog.log(`강제 구독 해제: endpoint ${endpoint}의 모든 구독 삭제`);
 
       try {
+        // 강제 삭제 시에는 실제 삭제 (soft delete 아님)
         const deletedSubscriptions = await prisma.push_subscriptions.deleteMany(
           {
             where: {
@@ -405,6 +430,7 @@ export async function DELETE(request: NextRequest) {
             endpoint,
             deletedCount: deletedSubscriptions.count,
             reason: "force_delete",
+            userAgent,
           },
           undefined,
           clientIP,
@@ -446,35 +472,111 @@ export async function DELETE(request: NextRequest) {
 
     const user = authResult.user;
 
-    // 구독 삭제
-    // 전체 구독 해제 - 해당 endpoint의 모든 구독 삭제 (전체 + 모든 농장별)
-    devLog.log(`전체 구독 해제: endpoint ${endpoint}의 모든 구독 삭제`);
-
-    await prisma.push_subscriptions.deleteMany({
+    // 구독 정보 조회 (soft delete 전에 정보 확인)
+    const existingSubscriptions = await prisma.push_subscriptions.findMany({
       where: {
         user_id: user.id,
         endpoint: endpoint,
+        is_active: true, // 활성 구독만
       },
     });
 
-    // 시스템 로그 기록
+    if (existingSubscriptions.length === 0) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: "SUBSCRIPTION_NOT_FOUND",
+          message: "해당 구독을 찾을 수 없습니다.",
+        },
+        { status: 404 }
+      );
+    }
+
+    // 구독 soft delete (전체 구독 해제)
+    devLog.log(
+      `구독 해제: endpoint ${endpoint}의 ${existingSubscriptions.length}개 구독 soft delete`
+    );
+
+    const updateResult = await prisma.push_subscriptions.updateMany({
+      where: {
+        user_id: user.id,
+        endpoint: endpoint,
+        is_active: true, // 활성 구독만
+      },
+      data: {
+        is_active: false,
+        deleted_at: new Date(),
+        updated_at: new Date(),
+        // fail_count는 0으로 초기화 (수동 해제이므로)
+        fail_count: 0,
+        last_fail_at: null,
+      },
+    });
+
+    // 알림 설정 업데이트 (options.updateSettings가 true인 경우에만)
+    if (options?.updateSettings !== false) {
+      try {
+        // 구독 해제 시 알림 설정 비활성화
+        await prisma.userNotificationSettings.update({
+          where: { user_id: user.id },
+          data: {
+            is_active: false,
+            updated_at: new Date(),
+          },
+        });
+        devLog.log(`사용자 ${user.id}의 알림 설정 비활성화 완료`);
+      } catch (settingsError: any) {
+        devLog.warn("알림 설정 업데이트 실패:", settingsError);
+
+        // 알림 설정 업데이트 실패 시 시스템 로그 기록
+        await createSystemLog(
+          "NOTIFICATION_SETTINGS_UPDATE_FAILED",
+          `구독 해제 시 알림 설정 업데이트에 실패했습니다.`,
+          "warn",
+          user.id,
+          "system",
+          endpoint,
+          {
+            error: settingsError.message,
+            endpoint,
+            user_id: user.id,
+          },
+          user.email,
+          clientIP,
+          userAgent
+        );
+      }
+    }
+
+    // 시스템 로그 기록 (상세 정보 포함)
     await createSystemLog(
       "PUSH_SUBSCRIPTION_DELETED",
-      `사용자가 푸시 알림 구독을 해제했습니다.${
-        endpoint ? ` (엔드포인트: ${endpoint})` : ""
-      }`,
+      `사용자가 푸시 알림 구독을 해제했습니다. (엔드포인트: ${endpoint})`,
       "info",
       user.id,
       "system",
       endpoint,
-      undefined,
+      {
+        endpoint,
+        deletedCount: updateResult.count,
+        deviceIds: existingSubscriptions
+          .map((sub) => sub.device_id)
+          .filter(Boolean),
+        userAgent,
+        updateSettings: options?.updateSettings !== false,
+      },
       user.email,
       clientIP,
       userAgent
     );
 
     return NextResponse.json(
-      { message: "푸시 알림 구독이 해제되었습니다." },
+      {
+        success: true,
+        message: "푸시 알림 구독이 해제되었습니다.",
+        deletedCount: updateResult.count,
+        endpoint,
+      },
       { status: 200 }
     );
   } catch (error) {

@@ -12,75 +12,57 @@ export function CleanupStatus({ cleanupStatus }: CleanupStatusProps) {
       <div className="space-y-2">
         <div className="flex items-center justify-between">
           <Label className="text-sm font-medium">만료된 시스템 로그</Label>
-          <Badge
-            variant={
-              cleanupStatus.expiredData.systemLogs.count > 0
-                ? "destructive"
-                : "default"
-            }
-          >
-            {cleanupStatus.expiredData.systemLogs.count}개
-          </Badge>
         </div>
         <div className="p-3 bg-muted rounded-lg">
-          <p
-            className={`text-2xl font-bold ${
-              cleanupStatus.expiredData.systemLogs.count === 0
-                ? "text-green-600"
-                : "text-orange-600"
-            }`}
-          >
-            {cleanupStatus.expiredData.systemLogs.count.toLocaleString()}건
-          </p>
-          <p className="text-sm text-muted-foreground">
-            {cleanupStatus.expiredData.systemLogs.count === 0 ? (
-              "정리할 만료된 로그가 없습니다"
-            ) : (
-              <>
-                {new Date(
-                  cleanupStatus.expiredData.systemLogs.cutoffDate
-                ).toLocaleDateString("ko-KR")}{" "}
-                이전 로그
-              </>
-            )}
-          </p>
+          {/* Badge + 설명 텍스트 한 줄/아래로 */}
+          <div className="flex flex-col mb-2">
+            <div>
+              <Badge
+                variant={
+                  cleanupStatus.expiredData.systemLogs.count > 0
+                    ? "destructive"
+                    : "default"
+                }
+              >
+                {cleanupStatus.expiredData.systemLogs.count}개
+              </Badge>
+            </div>
+            <span className="text-xs text-muted-foreground mt-1">
+              {cleanupStatus.expiredData.systemLogs.count === 0
+                ? "정리할 만료된 로그가 없습니다"
+                : `${new Date(
+                    cleanupStatus.expiredData.systemLogs.cutoffDate
+                  ).toLocaleDateString("ko-KR")} 이전 로그`}
+            </span>
+          </div>
         </div>
       </div>
       <div className="space-y-2">
         <div className="flex items-center justify-between">
           <Label className="text-sm font-medium">만료된 방문자 데이터</Label>
-          <Badge
-            variant={
-              cleanupStatus.expiredData.visitorEntries.count > 0
-                ? "destructive"
-                : "default"
-            }
-          >
-            {cleanupStatus.expiredData.visitorEntries.count}개
-          </Badge>
         </div>
         <div className="p-3 bg-muted rounded-lg">
-          <p
-            className={`text-2xl font-bold ${
-              cleanupStatus.expiredData.visitorEntries.count === 0
-                ? "text-green-600"
-                : "text-blue-600"
-            }`}
-          >
-            {cleanupStatus.expiredData.visitorEntries.count.toLocaleString()}건
-          </p>
-          <p className="text-sm text-muted-foreground">
-            {cleanupStatus.expiredData.visitorEntries.count === 0 ? (
-              "정리할 만료된 데이터가 없습니다"
-            ) : (
-              <>
-                {new Date(
-                  cleanupStatus.expiredData.visitorEntries.cutoffDate
-                ).toLocaleDateString("ko-KR")}{" "}
-                이전 데이터
-              </>
-            )}
-          </p>
+          {/* Badge + 설명 텍스트 한 줄/아래로 */}
+          <div className="flex flex-col mb-2">
+            <div>
+              <Badge
+                variant={
+                  cleanupStatus.expiredData.visitorEntries.count > 0
+                    ? "destructive"
+                    : "default"
+                }
+              >
+                {cleanupStatus.expiredData.visitorEntries.count}개
+              </Badge>
+            </div>
+            <span className="text-xs text-muted-foreground mt-1">
+              {cleanupStatus.expiredData.visitorEntries.count === 0
+                ? "정리할 만료된 데이터가 없습니다"
+                : `${new Date(
+                    cleanupStatus.expiredData.visitorEntries.cutoffDate
+                  ).toLocaleDateString("ko-KR")} 이전 데이터`}
+            </span>
+          </div>
         </div>
       </div>
     </div>

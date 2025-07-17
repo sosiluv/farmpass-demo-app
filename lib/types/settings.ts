@@ -45,6 +45,12 @@ export interface SystemSettings {
   pushVibrateEnabled: boolean;
   pushRequireInteraction: boolean;
 
+  // 구독 정리 설정
+  subscriptionCleanupDays: number;
+  subscriptionFailCountThreshold: number;
+  subscriptionCleanupInactive: boolean;
+  subscriptionForceDelete: boolean;
+
   // 시스템 설정
   logLevel: Database["public"]["Enums"]["LogLevel"];
   logRetentionDays: number;
@@ -80,6 +86,8 @@ export interface OrphanFilesStatus {
   profileOrphans: string[];
   visitorOrphanCount: number;
   profileOrphanCount: number;
+  visitorDbOrphanCount: number;
+  profileDbOrphanCount: number;
   debug?: {
     visitor: {
       usedUrls: string[];
