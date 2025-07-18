@@ -1,6 +1,10 @@
 import { useMemo } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Target, Zap, Clock, BarChart3, LucideIcon } from "lucide-react";
+import {
+  calculateDailyAverage,
+  calculateActivityIndex,
+} from "@/lib/utils/data/common-stats";
 
 interface InsightCardProps {
   totalVisitors: number;
@@ -25,23 +29,6 @@ export function InsightCard({
 }: InsightCardProps) {
   // insights 배열을 useMemo로 메모이제이션하여 무한 렌더링 방지
   const insights = useMemo((): InsightItem[] => {
-    // 실제 운영 기간 계산 (더 정확한 평균을 위해)
-    const calculateDailyAverage = (total: number): number => {
-      if (total === 0) return 0;
-
-      // 최소 30일, 최대 365일로 제한하여 현실적인 평균 계산
-      const assumedDays = Math.min(Math.max(30, total), 365);
-      return Math.round((total / assumedDays) * 10) / 10; // 소수점 1자리
-    };
-
-    // 활성도 지수 계산 (오늘 vs 평균 비교)
-    const calculateActivityIndex = (today: number, total: number): number => {
-      const dailyAverage = calculateDailyAverage(total);
-      if (dailyAverage === 0) return 0;
-
-      return Math.round((today / dailyAverage) * 100);
-    };
-
     const dailyAverage = calculateDailyAverage(totalVisitors);
     const activityIndex = calculateActivityIndex(todayVisitors, totalVisitors);
 

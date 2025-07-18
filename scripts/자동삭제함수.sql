@@ -509,8 +509,8 @@ BEGIN
   BEGIN
     -- 시스템 설정에서 정리 옵션 가져오기
     SELECT 
-      "cleanupInactiveSubscriptions",
-      "forceDeleteSubscriptions",
+      "subscriptionCleanupInactive",
+      "subscriptionForceDelete",
       "subscriptionFailCountThreshold",
       "subscriptionCleanupDays"
     INTO v_cleanup_inactive, v_force_delete, 

@@ -1,4 +1,6 @@
-export type LogLevel = "info" | "warn" | "error" | "debug";
+import type { LogLevel } from "@/lib/types/common";
+
+export type { LogLevel };
 
 export type LogCategory =
   | "auth"
@@ -12,7 +14,7 @@ export type LogCategory =
 export interface SystemLog {
   id: string;
   created_at: string;
-  level: "error" | "warn" | "info" | "debug";
+  level: LogLevel;
   action: string;
   message: string;
   user_id?: string;
@@ -26,7 +28,7 @@ export interface SystemLog {
 
 export interface LogFilter {
   search?: string;
-  level?: "error" | "warn" | "info" | "debug";
+  level?: LogLevel;
   startDate?: Date;
   endDate?: Date;
 }

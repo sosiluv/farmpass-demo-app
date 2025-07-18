@@ -290,7 +290,7 @@ export async function GET(request: NextRequest) {
     // 각 서비스의 실패 상태 확인 및 로깅
     if (healthCheck.status === "rejected") {
       await logSystemWarning(
-        "monitoring_health_check_failed",
+        "MONITORING_HEALTH_CHECK_FAILED",
         "헬스 체크 데이터 조회 실패",
         { ip: clientIP, userAgent },
         {
@@ -303,7 +303,7 @@ export async function GET(request: NextRequest) {
 
     if (uptimeStatus.status === "rejected") {
       await logSystemWarning(
-        "monitoring_uptime_failed",
+        "MONITORING_UPTIME_FAILED",
         "업타임 상태 조회 실패",
         { ip: clientIP, userAgent },
         {
@@ -316,7 +316,7 @@ export async function GET(request: NextRequest) {
 
     if (analyticsData.status === "rejected") {
       await logSystemWarning(
-        "monitoring_analytics_failed",
+        "MONITORING_ANALYTICS_FAILED",
         "GA4 데이터 조회 실패",
         { ip: clientIP, userAgent },
         {
@@ -329,7 +329,7 @@ export async function GET(request: NextRequest) {
 
     if (errorLogs.status === "rejected") {
       await logSystemWarning(
-        "monitoring_error_logs_failed",
+        "MONITORING_ERROR_LOGS_FAILED",
         "에러 로그 조회 실패",
         { ip: clientIP, userAgent },
         {

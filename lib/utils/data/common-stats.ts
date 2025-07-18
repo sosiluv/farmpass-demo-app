@@ -1,7 +1,11 @@
 import type { VisitorWithFarm as Visitor } from "@/lib/types/visitor";
 import type { VisitorEntry } from "@/lib/types";
 import { getRegionFromAddress } from "../system/region";
-import { getKSTTodayRange } from "@/lib/utils/datetime/date";
+import {
+  getKSTTodayRange,
+  toDateString,
+  toKSTDate,
+} from "@/lib/utils/datetime/date";
 
 /**
  * =================================
@@ -67,14 +71,6 @@ export interface NumericTrendData {
 }
 
 /**
- * 통합 트렌드 데이터 (둘 다 지원)
- */
-export interface UnifiedTrendData extends TrendData {
-  // 숫자 기반 트렌드도 포함
-  numeric?: NumericTrendData;
-}
-
-/**
  * 차트 데이터 타입 (표준화)
  */
 export interface ChartDataPoint {
@@ -94,41 +90,6 @@ export interface DistributionData {
   category: string;
   count: number;
   percentage: number;
-}
-
-/**
- * 통합 통계 응답 타입 (모든 페이지 호환)
- */
-export interface UnifiedStatsResponse {
-  // 기본 통계
-  stats: ExtendedStats;
-
-  // 트렌드
-  trends: TrendData;
-
-  // 차트 데이터
-  charts: {
-    visitorTrend?: TimeSeriesData[];
-    purposeStats?: DistributionData[];
-    timeStats?: ChartDataPoint[];
-    regionStats?: DistributionData[];
-    weekdayStats?: ChartDataPoint[];
-    farmTypeData?: DistributionData[];
-    userRoleData?: DistributionData[];
-    monthlyData?: TimeSeriesData[];
-  };
-
-  // 인사이트
-  insights?: {
-    averageDailyVisitors: number;
-    activityScore: number;
-    averageVisitorsPerFarm: number;
-    topPurpose?: {
-      purpose: string;
-      count: number;
-      percentage: number;
-    };
-  };
 }
 
 // =================================
@@ -157,7 +118,6 @@ export const calculateVisitorStats = ({
 }: VisitorStatsOptions): VisitorStats => {
   // KST 기준으로 오늘 범위 계산 (조회용)
   const { start: todayStart, end: todayEnd } = getKSTTodayRange();
-  const now = new Date();
 
   // 7일 전 시작 시간 (KST 기준)
   const weekAgo = new Date(todayStart);
@@ -171,21 +131,21 @@ export const calculateVisitorStats = ({
   const todayCount = visitors.filter((visitor) => {
     // ISO 문자열을 KST로 변환하여 비교
     const visitDate = new Date(visitor.visit_datetime);
-    const kstVisitDate = new Date(visitDate.getTime() + 9 * 60 * 60 * 1000); // UTC+9
+    const kstVisitDate = toKSTDate(visitDate);
     return kstVisitDate >= todayStart && kstVisitDate <= todayEnd;
   }).length;
 
   const weekCount = visitors.filter((visitor) => {
     // ISO 문자열을 KST로 변환하여 비교
     const visitDate = new Date(visitor.visit_datetime);
-    const kstVisitDate = new Date(visitDate.getTime() + 9 * 60 * 60 * 1000); // UTC+9
+    const kstVisitDate = toKSTDate(visitDate);
     return kstVisitDate >= weekAgo;
   }).length;
 
   const monthCount = visitors.filter((visitor) => {
     // ISO 문자열을 KST로 변환하여 비교
     const visitDate = new Date(visitor.visit_datetime);
-    const kstVisitDate = new Date(visitDate.getTime() + 9 * 60 * 60 * 1000); // UTC+9
+    const kstVisitDate = toKSTDate(visitDate);
     return kstVisitDate >= monthAgo;
   }).length;
 
@@ -237,7 +197,7 @@ export const calculateTimeStats = (visitors: Visitor[]) => {
   const timeCounts = visitors.reduce<Record<string, number>>((acc, visitor) => {
     // ISO 문자열을 KST로 변환 (정확한 방식)
     const visitDate = new Date(visitor.visit_datetime);
-    const kstDate = new Date(visitDate.getTime() + 9 * 60 * 60 * 1000); // UTC+9
+    const kstDate = toKSTDate(visitDate);
     const hour = kstDate.getHours();
     const hourStr = `${String(hour).padStart(2, "0")}:00`;
     acc[hourStr] = (acc[hourStr] || 0) + 1;
@@ -262,7 +222,7 @@ export const calculateWeekdayStats = (visitors: Visitor[]) => {
     (acc, visitor) => {
       // ISO 문자열을 KST로 변환 (정확한 방식)
       const visitDate = new Date(visitor.visit_datetime);
-      const kstDate = new Date(visitDate.getTime() + 9 * 60 * 60 * 1000); // UTC+9
+      const kstDate = toKSTDate(visitDate);
       const dayIndex = kstDate.getDay();
       const day = ["일", "월", "화", "수", "목", "금", "토"][dayIndex];
 
@@ -334,7 +294,7 @@ export const calculatePeriodVisitors = (
   return visitors.filter((visitor) => {
     // ISO 문자열을 KST로 변환하여 비교
     const visitDate = new Date(visitor.visit_datetime);
-    const kstVisitDate = new Date(visitDate.getTime() + 9 * 60 * 60 * 1000); // UTC+9
+    const kstVisitDate = toKSTDate(visitDate);
     return kstVisitDate >= startDate && kstVisitDate <= endDate;
   }).length;
 };
@@ -365,14 +325,14 @@ export const calculateMonthlyTrend = (visitors: Visitor[]): string => {
   // 최근 30일 방문자 수 (KST 기준)
   const recentVisitors = visitors.filter((v) => {
     const visitDate = new Date(v.visit_datetime);
-    const kstVisitDate = new Date(visitDate.getTime() + 9 * 60 * 60 * 1000); // UTC+9
+    const kstVisitDate = toKSTDate(visitDate);
     return kstVisitDate >= last30DaysStart && kstVisitDate <= last30DaysEnd;
   }).length;
 
   // 이전 30일 방문자 수 (KST 기준)
   const previousVisitors = visitors.filter((v) => {
     const visitDate = new Date(v.visit_datetime);
-    const kstVisitDate = new Date(visitDate.getTime() + 9 * 60 * 60 * 1000); // UTC+9
+    const kstVisitDate = toKSTDate(visitDate);
     return (
       kstVisitDate >= previous30DaysStart && kstVisitDate <= previous30DaysEnd
     );
@@ -626,8 +586,8 @@ export const calculateUnifiedChartData = (
     .reduce<{ date: string; count: number }[]>((acc, visitor) => {
       // ISO 문자열을 KST로 변환 (정확한 방식)
       const visitDate = new Date(visitor.visit_datetime);
-      const kstDate = new Date(visitDate.getTime() + 9 * 60 * 60 * 1000); // UTC+9
-      const date = kstDate.toISOString().split("T")[0];
+      const kstDate = toKSTDate(visitDate);
+      const date = toDateString(kstDate);
 
       const existing = acc.find((d) => d.date === date);
       if (existing) {
@@ -653,58 +613,6 @@ export const calculateUnifiedChartData = (
 };
 
 /**
- * 인사이트 데이터 계산
- */
-export const calculateUnifiedInsights = (
-  visitors: Visitor[] | VisitorEntry[],
-  totalFarms: number = 1
-) => {
-  const stats = calculateUnifiedBaseStats(visitors);
-
-  // 평균 일일 방문자 계산
-  const calculateDailyAverage = (totalVisitors: number): number => {
-    if (totalVisitors === 0) return 0;
-    const assumedDays = Math.min(Math.max(30, totalVisitors), 365);
-    return Math.round((totalVisitors / assumedDays) * 10) / 10;
-  };
-
-  // 활성도 지수 계산
-  const calculateActivityScore = (
-    todayVisitors: number,
-    totalVisitors: number
-  ): number => {
-    const dailyAverage = calculateDailyAverage(totalVisitors);
-    if (dailyAverage === 0) return 0;
-    return Math.round((todayVisitors / dailyAverage) * 100);
-  };
-
-  // 가장 많은 방문 목적
-  const visitorData = (visitors || []) as any[];
-  const purposeStats = calculatePurposeStats(visitorData);
-  const topPurpose =
-    purposeStats.length > 0
-      ? {
-          purpose: purposeStats[0].purpose,
-          count: purposeStats[0].count,
-          percentage: purposeStats[0].percentage,
-        }
-      : undefined;
-
-  return {
-    averageDailyVisitors: calculateDailyAverage(stats.totalVisitors),
-    activityScore: calculateActivityScore(
-      stats.todayVisitors,
-      stats.totalVisitors
-    ),
-    averageVisitorsPerFarm:
-      totalFarms > 0
-        ? Math.round((stats.totalVisitors / totalFarms) * 10) / 10
-        : 0,
-    topPurpose,
-  };
-};
-
-/**
  * =================================
  * 인사이트 계산 함수들
  * =================================
@@ -713,7 +621,7 @@ export const calculateUnifiedInsights = (
 /**
  * 평균 일일 방문자 계산
  */
-const calculateDailyAverage = (totalVisitors: number): number => {
+export const calculateDailyAverage = (totalVisitors: number): number => {
   if (totalVisitors === 0) return 0;
 
   // 최소 30일, 최대 365일로 제한하여 현실적인 평균 계산
@@ -724,7 +632,7 @@ const calculateDailyAverage = (totalVisitors: number): number => {
 /**
  * 활성도 지수 계산
  */
-const calculateActivityIndex = (
+export const calculateActivityIndex = (
   todayVisitors: number,
   totalVisitors: number
 ): number => {
@@ -732,17 +640,6 @@ const calculateActivityIndex = (
   if (dailyAverage === 0) return 0;
 
   return Math.round((todayVisitors / dailyAverage) * 100);
-};
-
-/**
- * 농장당 평균 방문자 계산
- */
-const calculateAveragePerFarm = (
-  totalVisitors: number,
-  totalFarms: number
-): number => {
-  if (totalFarms === 0) return 0;
-  return Math.round((totalVisitors / totalFarms) * 10) / 10;
 };
 
 /**
@@ -828,190 +725,6 @@ export const generateFarmVisitorPageStats = (
     },
   };
 };
-
-/**
- * =================================
- * 🔍 전체 페이지 통계/차트 통합 운영 분석
- * =================================
- *
- * 📊 현재 운영 중인 통계 시스템들:
- *
- * 1️⃣ /admin/dashboard (일반 대시보드)
- * - StatCard: dashboard/StatsCards/StatCard.tsx
- * - StatsGrid: dashboard/StatsCards/StatsGrid.tsx
- * - ChartCard: dashboard/ChartGrid/ChartCard.tsx
- * - 데이터: useFarmVisitors 훅 (방문자 중심)
- *
- * 2️⃣ /admin/visitors (방문자 기록)
- * - StatCard: visitors/components/StatCard.tsx (완전히 다른 디자인)
- * - VisitorStats: visitors/VisitorStats.tsx
- * - InsightCard: visitors/components/InsightCard.tsx
- * - 데이터: visitor-stats.ts 유틸 (실제 데이터 기반)
- *
- * 3️⃣ /admin/farms/[farmId]/visitors (농장별 방문자)
- * - 동일한 VisitorStats, StatCard 사용 (visitors와 공유)
- * - 데이터: visitor-stats.ts 유틸
- *
- * 4️⃣ /admin/management (시스템 관리)
- * - StatCard: management/dashboard/StatCard.tsx (또 다른 디자인)
- * - DashboardStats: management/dashboard/DashboardStats.tsx
- * - ChartCard: management/dashboard/ChartCard.tsx (dashboard와 동일)
- * - 데이터: useAdminDashboard 훅 (시스템 전체 통계)
- *
- * 5️⃣ /admin/all-visitors (전체 방문자 - 하드코딩)
- * - 일반 Card 컴포넌트 사용 (통계 시스템 없음)
- * - 하드코딩된 단순 카운트
- *
- * 📈 차트 시스템들:
- * - dashboard: ChartGrid (방문자 트렌드, 목적, 시간대, 지역, 요일)
- * - management: 각종 분포 차트 (농장 타입, 사용자 역할, 지역, 월별 트렌드, 시스템 사용량)
- *
- * 🔄 통합 가능성 분석:
- *
- * ✅ EASY (쉬움) - 즉시 통합 가능:
- * 1. 트렌드 계산 로직 → 이미 common-stats.ts로 통합 완료
- * 2. ChartCard → dashboard와 management가 완전 동일 (1개로 통합 가능)
- * 3. 데이터 타입 정의 → 공통 인터페이스로 표준화 가능
- *
- * 🟡 MEDIUM (보통) - 점진적 통합 가능:
- * 1. StatCard 인터페이스 → 3가지 다른 디자인이지만 prop 구조 비슷
- * 2. 기본 통계 계산 → 이미 공통 함수들로 통합 중
- * 3. 차트 데이터 준비 → 각 페이지별 특성 고려하여 어댑터 패턴 적용
- *
- * 🔴 HARD (어려움) - 신중한 접근 필요:
- * 1. StatCard 디자인 → 각 페이지마다 완전히 다른 UI/UX
- *    - dashboard: 미니멀한 카드
- *    - visitors: 화려한 그라데이션 + 배지
- *    - management: 프로페셔널한 카드
- * 2. 차트 종류 → 페이지별로 다른 차트 요구사항
- * 3. 기존 사용자 경험 → 갑작스런 UI 변경 시 혼란 가능성
- *
- * 💡 현실적 통합 방안:
- *
- * Phase 1 (단기 - 1주) ✅ 완료:
- * - 트렌드 계산 로직 통합
- * - 공통 데이터 타입 정의
- * - ChartCard 통합
- *
- * Phase 2 (중기 - 2-3주):
- * - StatCard 어댑터 패턴 적용 (디자인은 유지, 로직만 통합)
- * - 공통 데이터 fetching 훅 생성
- * - 차트 데이터 준비 함수 통합
- *
- * Phase 3 (장기 - 1-2개월):
- * - UI 컴포넌트 점진적 통합 (사용자 피드백 기반)
- * - 성능 최적화 및 코드 정리
- * - 통합 테스트 및 품질 보증
- */
-
-/**
- * 시스템 관리용 통계 데이터 타입
- */
-export interface SystemAdminStats {
-  // 사용자/농장/방문자 기본 통계
-  totalUsers: number;
-  totalFarms: number;
-  totalVisitors: number;
-  totalLogs: number;
-
-  // 시스템 활동 통계
-  activeUsers: number;
-  todayLogins: number;
-  todayVisitors: number;
-
-  // 로그 레벨별 통계
-  infoLogs: number;
-  warningLogs: number;
-  errorLogs: number;
-
-  // 트렌드 (문자열 메시지로 통합)
-  trends: {
-    userGrowth: string;
-    farmGrowth: string;
-    visitorGrowth: string;
-    logGrowth: string;
-    errorTrend: string;
-    warningTrend: string;
-    infoTrend: string;
-  };
-
-  // 차트 데이터 (통합 표준)
-  charts: {
-    farmTypeData?: DistributionData[];
-    userRoleData?: DistributionData[];
-    regionData?: DistributionData[];
-    monthlyData?: TimeSeriesData[];
-    systemUsageData?: DistributionData[];
-  };
-}
-
-/**
- * =================================
- * 📚 통합 통계 시스템 사용 가이드
- * =================================
- *
- * 🎯 목적: 모든 admin 페이지의 통계/차트/트렌드 로직을 통합 관리
- * 💡 원칙: 디자인은 페이지별 유지, 로직과 데이터 계층만 통합
- *
- * 📊 핵심 함수들:
- *
- * 1️⃣ calculateUnifiedBaseStats(visitors)
- *    → 기본 통계 (총 방문자, 오늘 방문자, 주간/월간, 방역율)
- *
- * 2️⃣ calculateUnifiedTrends(visitors)
- *    → 트렌드 메시지 (증감률을 문자열로 변환)
- *
- * 3️⃣ calculateUnifiedChartData(visitors)
- *    → 표준화된 차트 데이터 (목적별, 시간대별, 지역별, 요일별)
- *
- * 4️⃣ calculateUnifiedInsights(visitors, totalFarms)
- *    → 인사이트 (평균 일일 방문자, 활성도 지수, 농장당 평균)
- *
- * 🔧 페이지별 어댑터 함수들:
- *
- * • generateDashboardStats(visitors)
- *   → /admin/dashboard용 (기존 useFarmVisitors 호환)
- *
- * • generateVisitorPageStats(visitors, options)
- *   → /admin/visitors용 (농장 수, 방역율 옵션)
- *
- * • generateFarmVisitorPageStats(visitors, options)
- *   → /admin/farms/[id]/visitors용 (농장별 특화)
- *
- * • generateSystemAdminStats()
- *   → /admin/management용 (시스템 전체 통계)
- *
- * 📝 사용 예시:
- *
- * ```typescript
- * // 기본 통계 + 트렌드
- * const stats = calculateUnifiedBaseStats(visitors);
- * const trends = calculateUnifiedTrends(visitors);
- *
- * // 차트 데이터
- * const chartData = calculateUnifiedChartData(visitors);
- *
- * // 페이지별 어댑터 사용
- * const dashboardData = generateDashboardStats(visitors);
- * ```
- *
- * 🔄 마이그레이션 상태:
- * ✅ 대시보드: generateDashboardStats 적용 완료
- * ✅ 방문자 기록: generateVisitorPageStats 적용 완료
- * ✅ 농장별 방문자: generateFarmVisitorPageStats 적용 완료
- * 🔄 시스템 관리: generateSystemAdminStats 구현 중
- *
- * 📈 통합 데이터 타입:
- * • BaseStats: 기본 통계 (모든 페이지 공통)
- * • ExtendedStats: 확장 통계 (농장/사용자 정보 포함)
- * • TrendData: 트렌드 메시지 (문자열 기반)
- * • ChartDataPoint: 차트 포인트 (라벨, 값, 퍼센티지)
- * • TimeSeriesData: 시계열 데이터 (날짜, 값)
- * • DistributionData: 분포 데이터 (카테고리, 수량, 퍼센티지)
- * • UnifiedStatsResponse: 통합 응답 (모든 데이터 포함)
- */
-
-// 통합 시스템 구현 끝
 
 /**
  * =================================
@@ -1195,282 +908,4 @@ export const generateLogManagementStats = (
       icon: "info",
     },
   ];
-};
-
-/**
- * =================================
- * 숫자 ↔ 문자열 트렌드 변환 유틸리티
- * =================================
- */
-
-/**
- * 숫자 트렌드를 문자열 메시지로 변환
- */
-export const convertNumericTrendToString = (
-  trend: number | undefined,
-  unit: string = "증가"
-): string => {
-  if (trend === undefined || trend === 0) return "변화 없음";
-
-  const absValue = Math.abs(trend);
-  const direction = trend > 0 ? unit : "감소";
-
-  if (absValue >= 100) {
-    return `${absValue}% 이상 ${direction}`;
-  } else if (absValue >= 50) {
-    return `크게 ${direction} (${absValue}%)`;
-  } else if (absValue >= 20) {
-    return `${absValue}% ${direction}`;
-  } else if (absValue >= 5) {
-    return `소폭 ${direction} (${absValue}%)`;
-  } else {
-    return `미미한 ${direction} (${absValue}%)`;
-  }
-};
-
-/**
- * 문자열 트렌드에서 숫자 추출
- */
-export const extractNumericFromStringTrend = (trendString: string): number => {
-  const match = trendString.match(/(\d+)%/);
-  if (!match) return 0;
-
-  const value = parseInt(match[1]);
-  const isDecrease =
-    trendString.includes("감소") || trendString.includes("하락");
-
-  return isDecrease ? -value : value;
-};
-
-/**
- * 통합 트렌드 데이터 생성 (숫자 + 문자열 동시 지원)
- */
-export const generateUnifiedTrendData = (
-  visitors: Visitor[] | VisitorEntry[],
-  numericTrends?: NumericTrendData
-): UnifiedTrendData => {
-  // 기본 문자열 트렌드 계산
-  const stringTrends = calculateUnifiedTrends(visitors || []);
-
-  // 숫자 트렌드가 제공된 경우 병합
-  const result: UnifiedTrendData = {
-    ...stringTrends,
-  };
-
-  if (numericTrends) {
-    result.numeric = numericTrends;
-
-    // 숫자 트렌드를 문자열로도 변환하여 호환성 제공
-    if (numericTrends.userGrowth !== undefined) {
-      result.userGrowthTrend = convertNumericTrendToString(
-        numericTrends.userGrowth
-      );
-    }
-    if (numericTrends.farmGrowth !== undefined) {
-      result.farmGrowthTrend = convertNumericTrendToString(
-        numericTrends.farmGrowth
-      );
-    }
-    if (numericTrends.logGrowth !== undefined) {
-      result.logGrowthTrend = convertNumericTrendToString(
-        numericTrends.logGrowth
-      );
-    }
-  }
-
-  return result;
-};
-
-/**
- * 범용 트렌드 계산기 (숫자/문자열 자동 감지)
- */
-export const calculateTrendValue = <T extends string | number>(
-  current: number,
-  previous: number,
-  returnType: "string" | "number" = "string"
-): T => {
-  if (previous === 0) {
-    return (returnType === "string" ? "변화 없음" : 0) as T;
-  }
-
-  const percentChange = Math.round(((current - previous) / previous) * 100);
-
-  if (returnType === "number") {
-    return percentChange as T;
-  } else {
-    return convertNumericTrendToString(percentChange) as T;
-  }
-};
-
-/**
- * =================================
- * 다중 데이터 소스 통합 함수
- * =================================
- */
-
-/**
- * 여러 데이터 소스를 통합하여 완전한 통계 생성
- */
-export const generateCompleteUnifiedStats = (config: {
-  visitors: Visitor[] | VisitorEntry[];
-  totalFarms?: number;
-  totalUsers?: number;
-  totalLogs?: number;
-  includeManagement?: boolean;
-  customTrends?: NumericTrendData;
-}): UnifiedStatsResponse => {
-  const {
-    visitors,
-    totalFarms = 1,
-    totalUsers,
-    totalLogs,
-    includeManagement = false,
-    customTrends,
-  } = config;
-
-  // 기본 통계 계산
-  const baseStats = calculateUnifiedBaseStats(visitors || []);
-
-  // 확장 통계 생성
-  const extendedStats: ExtendedStats = {
-    ...baseStats,
-    ...(totalFarms && { totalFarms }),
-    ...(totalUsers && { totalUsers }),
-    ...(totalLogs && { totalLogs }),
-  };
-
-  // 통합 트렌드 계산
-  const trends = generateUnifiedTrendData(visitors || [], customTrends);
-
-  // 차트 데이터 계산
-  const chartData = calculateUnifiedChartData(visitors || []);
-
-  // 인사이트 계산
-  const insights = calculateUnifiedInsights(visitors || [], totalFarms);
-
-  return {
-    stats: extendedStats,
-    trends,
-    charts: chartData,
-    insights,
-  };
-};
-
-/**
- * =================================
- * 고급 통계 확장 함수들
- * =================================
- */
-
-/**
- * 시계열 트렌드 분석 (7일, 30일, 90일)
- */
-export const calculateAdvancedTrends = (
-  visitors: Visitor[] | VisitorEntry[]
-): {
-  weekly: { current: number; trend: number };
-  monthly: { current: number; trend: number };
-  quarterly: { current: number; trend: number };
-} => {
-  const now = new Date();
-  const visitorData = (visitors || []) as any[];
-
-  // 7일 트렌드
-  const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-  const twoWeeksAgo = new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000);
-
-  const thisWeek = visitorData.filter((v) => {
-    const visitDate = new Date(v.visit_datetime);
-    const kstDate = new Date(visitDate.getTime() + 9 * 60 * 60 * 1000);
-    return kstDate >= weekAgo;
-  }).length;
-  const lastWeek = visitorData.filter((v) => {
-    const visitDate = new Date(v.visit_datetime);
-    const kstDate = new Date(visitDate.getTime() + 9 * 60 * 60 * 1000);
-    return kstDate >= twoWeeksAgo && kstDate < weekAgo;
-  }).length;
-
-  // 30일 트렌드
-  const monthAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
-  const twoMonthsAgo = new Date(now.getTime() - 60 * 24 * 60 * 60 * 1000);
-
-  const thisMonth = visitorData.filter((v) => {
-    const visitDate = new Date(v.visit_datetime);
-    const kstDate = new Date(visitDate.getTime() + 9 * 60 * 60 * 1000);
-    return kstDate >= monthAgo;
-  }).length;
-  const lastMonth = visitorData.filter((v) => {
-    const visitDate = new Date(v.visit_datetime);
-    const kstDate = new Date(visitDate.getTime() + 9 * 60 * 60 * 1000);
-    return kstDate >= twoMonthsAgo && kstDate < monthAgo;
-  }).length;
-
-  // 90일 트렌드
-  const quarterAgo = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000);
-  const twoQuartersAgo = new Date(now.getTime() - 180 * 24 * 60 * 60 * 1000);
-
-  const thisQuarter = visitorData.filter((v) => {
-    const visitDate = new Date(v.visit_datetime);
-    const kstDate = new Date(visitDate.getTime() + 9 * 60 * 60 * 1000);
-    return kstDate >= quarterAgo;
-  }).length;
-  const lastQuarter = visitorData.filter((v) => {
-    const visitDate = new Date(v.visit_datetime);
-    const kstDate = new Date(visitDate.getTime() + 9 * 60 * 60 * 1000);
-    return kstDate >= twoQuartersAgo && kstDate < quarterAgo;
-  }).length;
-
-  return {
-    weekly: {
-      current: thisWeek,
-      trend: calculateTrendValue<number>(thisWeek, lastWeek, "number"),
-    },
-    monthly: {
-      current: thisMonth,
-      trend: calculateTrendValue<number>(thisMonth, lastMonth, "number"),
-    },
-    quarterly: {
-      current: thisQuarter,
-      trend: calculateTrendValue<number>(thisQuarter, lastQuarter, "number"),
-    },
-  };
-};
-
-/**
- * 성능 지표 계산
- */
-export const calculatePerformanceMetrics = (
-  visitors: Visitor[] | VisitorEntry[]
-): {
-  consistency: number; // 일관성 지수 (0-100)
-  growth: number; // 성장 지수 (0-100)
-  engagement: number; // 참여도 지수 (0-100)
-} => {
-  const visitorData = (visitors || []) as any[];
-  const trends = calculateAdvancedTrends(visitors || []);
-
-  // 일관성 지수 - 주간, 월간, 분기 트렌드의 편차
-  const trendVariance =
-    Math.abs(trends.weekly.trend - trends.monthly.trend) +
-    Math.abs(trends.monthly.trend - trends.quarterly.trend);
-  const consistency = Math.max(0, 100 - trendVariance / 2);
-
-  // 성장 지수 - 각 기간별 트렌드의 평균
-  const avgTrend =
-    (trends.weekly.trend + trends.monthly.trend + trends.quarterly.trend) / 3;
-  const growth = Math.min(100, Math.max(0, 50 + avgTrend));
-
-  // 참여도 지수 - 방역 완료율과 방문 빈도
-  const stats = calculateUnifiedBaseStats(visitors || []);
-  const engagement = Math.min(
-    100,
-    stats.disinfectionRate +
-      (stats.todayVisitors / Math.max(1, stats.totalVisitors / 30)) * 20
-  );
-
-  return {
-    consistency: Math.round(consistency),
-    growth: Math.round(growth),
-    engagement: Math.round(engagement),
-  };
 };

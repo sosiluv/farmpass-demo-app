@@ -63,8 +63,6 @@ async function getAllStorageFiles(
   return allFiles;
 }
 
-export { getAllStorageFiles };
-
 // 프로필 orphan 정리(파일 삭제 + DB orphan 초기화)를 하나의 함수로 통합
 async function cleanupProfileOrphans(supabase: any) {
   let deleted = 0;

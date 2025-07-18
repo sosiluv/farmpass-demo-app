@@ -14,7 +14,14 @@ import {
   calculateRevisitStats,
   generateDashboardStats,
 } from "@/lib/utils/data/common-stats";
-import { getKSTDaysAgo, toKSTDateString } from "@/lib/utils/datetime/date";
+import {
+  getKSTDaysAgo,
+  toKSTDateString,
+  toKSTDate,
+  createKSTDateRange,
+  toDateString,
+  createKSTDateRangeSimple,
+} from "@/lib/utils/datetime/date";
 import { useSupabaseRealtime } from "@/hooks/useSupabaseRealtime";
 
 interface VisitorFilters {
@@ -159,71 +166,63 @@ export function useFarmVisitorsWithFiltersQuery(filters: VisitorFilters = {}) {
 
     // 날짜 범위 필터링 (KST 기준)
     if (filters.dateRange && filters.dateRange !== "all") {
-      let startDateKST: string;
-      let endDateKST: string;
+      let startDate: Date;
+      let endDate: Date;
 
       switch (filters.dateRange) {
         case "today":
           // 오늘 00:00:00 부터 23:59:59까지 (KST)
-          startDateKST = toKSTDateString(new Date()) + " 00:00:00";
-          endDateKST = toKSTDateString(new Date()) + " 23:59:59";
+          ({ start: startDate, end: endDate } = createKSTDateRangeSimple(0, 0));
           break;
         case "week":
           // 7일 전부터 오늘까지 (KST)
-          startDateKST = getKSTDaysAgo(7) + " 00:00:00";
-          endDateKST = toKSTDateString(new Date()) + " 23:59:59";
+          ({ start: startDate, end: endDate } = createKSTDateRangeSimple(7, 0));
           break;
         case "month":
           // 30일 전부터 오늘까지 (KST)
-          startDateKST = getKSTDaysAgo(30) + " 00:00:00";
-          endDateKST = toKSTDateString(new Date()) + " 23:59:59";
+          ({ start: startDate, end: endDate } = createKSTDateRangeSimple(
+            30,
+            0
+          ));
           break;
         case "custom":
           if (filters.dateStart) {
-            startDateKST = filters.dateStart + " 00:00:00";
+            startDate = createKSTDateRange(filters.dateStart, false);
           } else {
             // 기본값: 30일 전
-            startDateKST = getKSTDaysAgo(30) + " 00:00:00";
+            startDate = createKSTDateRangeSimple(30, 30).start;
           }
           if (filters.dateEnd) {
-            endDateKST = filters.dateEnd + " 23:59:59";
+            endDate = createKSTDateRange(filters.dateEnd, true);
           } else {
-            endDateKST = toKSTDateString(new Date()) + " 23:59:59";
+            endDate = createKSTDateRangeSimple(0, 0).end;
           }
           break;
         default:
           // 기본값: 30일 전부터 오늘까지
-          startDateKST = getKSTDaysAgo(30) + " 00:00:00";
-          endDateKST = toKSTDateString(new Date()) + " 23:59:59";
+          ({ start: startDate, end: endDate } = createKSTDateRangeSimple(
+            30,
+            0
+          ));
       }
 
       filteredVisitors = filteredVisitors.filter((visitor) => {
         // ISO 문자열을 KST로 변환하여 비교
         const visitDate = new Date(visitor.visit_datetime);
-        const kstVisitDate = new Date(visitDate.getTime() + 9 * 60 * 60 * 1000); // UTC+9
-        const kstDateTimeStr = kstVisitDate
-          .toISOString()
-          .replace("T", " ")
-          .substring(0, 19); // "YYYY-MM-DD HH:mm:ss"
+        const kstVisitDate = toKSTDate(visitDate);
 
-        return kstDateTimeStr >= startDateKST && kstDateTimeStr <= endDateKST;
+        return kstVisitDate >= startDate && kstVisitDate <= endDate;
       });
     }
 
-    // 타입 호환성을 위한 변환
-    const compatibleVisitors = filteredVisitors.map((visitor) => ({
-      ...visitor,
-      registered_by: visitor.registered_by ?? undefined,
-    }));
-
     // 통계 계산
     const visitorTrend = calculateVisitorStats({
-      visitors: compatibleVisitors,
+      visitors: filteredVisitors,
     });
-    const purposeStats = calculatePurposeStats(compatibleVisitors);
-    const weekdayStats = calculateWeekdayStats(compatibleVisitors);
-    const revisitStats = calculateRevisitStats(compatibleVisitors);
-    const dashboardStats = generateDashboardStats(compatibleVisitors);
+    const purposeStats = calculatePurposeStats(filteredVisitors);
+    const weekdayStats = calculateWeekdayStats(filteredVisitors);
+    const revisitStats = calculateRevisitStats(filteredVisitors);
+    const dashboardStats = generateDashboardStats(filteredVisitors);
 
     // 상위 방문 목적
     const topPurpose =
@@ -233,7 +232,7 @@ export function useFarmVisitorsWithFiltersQuery(filters: VisitorFilters = {}) {
 
     return {
       allVisitors,
-      filteredVisitors: compatibleVisitors,
+      filteredVisitors: filteredVisitors,
       visitorTrend,
       purposeStats,
       weekdayStats,

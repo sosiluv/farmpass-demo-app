@@ -5,6 +5,7 @@ import { useAuth } from "@/components/providers/auth-provider";
 import { supabase } from "@/lib/supabase/client";
 import { settingsKeys } from "./query-keys";
 import { useSupabaseRealtime } from "@/hooks/useSupabaseRealtime";
+import { toDateString } from "@/lib/utils/datetime/date";
 
 // 클라이언트 전용 가드
 const isClient = typeof window !== "undefined";
@@ -67,7 +68,7 @@ export function useAdminUsersQuery() {
         }).length ?? 0;
 
       // 오늘 로그인 수 (시스템 로그에서 로그인 성공 액션만 조회)
-      const today = new Date().toISOString().split("T")[0];
+      const today = toDateString(new Date());
       const { data: todayLogs } = await supabase
         .from("system_logs")
         .select("*")
@@ -146,7 +147,7 @@ export function useAdminUsersQuery() {
         now.getMonth() - 1,
         now.getDate()
       );
-      const lastMonthStart = lastMonthDate.toISOString().split("T")[0];
+      const lastMonthStart = toDateString(lastMonthDate);
       const { data: lastMonthLogs } = await supabase
         .from("system_logs")
         .select("*")
@@ -154,9 +155,7 @@ export function useAdminUsersQuery() {
         .gte("created_at", lastMonthStart)
         .lt(
           "created_at",
-          new Date(lastMonthDate.getTime() + 24 * 60 * 60 * 1000)
-            .toISOString()
-            .split("T")[0]
+          toDateString(new Date(lastMonthDate.getTime() + 24 * 60 * 60 * 1000))
         );
       const todayLoginsLastMonth = lastMonthLogs?.length ?? 0;
 

@@ -27,11 +27,6 @@ export type {
 
   // 공통 유틸리티 타입
   ApiResponse,
-  PaginationInfo,
-  PaginatedResponse,
-  SortOption,
-  DateRange,
-  BaseFilter,
 } from "./common";
 
 // ===========================================
@@ -65,7 +60,6 @@ export type {
   SubscriptionStatus,
   PushSubscriptionData,
   NotificationPayload,
-  NotificationFilter,
 } from "./notification";
 
 // 통계 관련 타입

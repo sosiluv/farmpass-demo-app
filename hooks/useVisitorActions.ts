@@ -1,6 +1,7 @@
 import { useCallback } from "react";
 import { useCommonToast } from "@/lib/utils/notification/toast-messages";
 import { exportVisitorsCSV } from "@/lib/utils/data/csv-unified";
+import { toKSTDate, createKSTDateRange } from "@/lib/utils/datetime/date";
 import { getAuthErrorMessage } from "@/lib/utils/validation/validation";
 import { useAuth } from "@/components/providers/auth-provider";
 import type { VisitorsExportOptions } from "@/components/admin/management/exports/types";
@@ -108,21 +109,31 @@ export const useVisitorActions = ({
         );
       }
 
-      // 날짜 필터 적용
-      if (options.startDate) {
-        const startDate = new Date(options.startDate);
-        startDate.setHours(0, 0, 0, 0);
-        dataToExport = dataToExport.filter(
-          (v) => new Date(v.visit_datetime) >= startDate
-        );
-      }
+      // 날짜 필터 적용 - KST 기준
+      if (options.startDate || options.endDate) {
+        dataToExport = dataToExport.filter((v) => {
+          // 방문 시간을 KST로 변환
+          const visitDate = new Date(v.visit_datetime);
+          const kstVisitDate = toKSTDate(visitDate);
 
-      if (options.endDate) {
-        const endDate = new Date(options.endDate);
-        endDate.setHours(23, 59, 59, 999);
-        dataToExport = dataToExport.filter(
-          (v) => new Date(v.visit_datetime) <= endDate
-        );
+          if (options.startDate) {
+            // 시작 날짜를 KST 기준 00:00:00으로 설정
+            const startDateKST = createKSTDateRange(options.startDate, false);
+            if (kstVisitDate < startDateKST) {
+              return false;
+            }
+          }
+
+          if (options.endDate) {
+            // 종료 날짜를 KST 기준 23:59:59로 설정
+            const endDateKST = createKSTDateRange(options.endDate, true);
+            if (kstVisitDate > endDateKST) {
+              return false;
+            }
+          }
+
+          return true;
+        });
       }
 
       // 방문자 유형 필터 적용
@@ -145,7 +156,8 @@ export const useVisitorActions = ({
             selectedFarm ? `_${selectedFarm.farm_name}` : ""
           }`,
           includeDate: true,
-          useAdvancedParser: true,
+          farmFilter: options.farmFilter,
+          visitorType: options.visitorType,
         });
 
         showSuccess("내보내기 완료", "내보내기가 성공적으로 완료되었습니다.");

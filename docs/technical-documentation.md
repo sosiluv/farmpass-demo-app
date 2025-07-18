@@ -491,13 +491,6 @@ export enum LogLevel {
   DEBUG = "debug",
 }
 
-export enum LogCategory {
-  AUTH = "auth",
-  VISITOR = "visitor",
-  SYSTEM = "system",
-  API = (CACHE = "cache"),
-}
-
 interface LogEntry {
   level: LogLevel;
   category: LogCategory;

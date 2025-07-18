@@ -68,21 +68,6 @@ export default function VisitorsPage() {
   const loading = visitorsFilteredQuery.loading || farmsQuery.isLoading;
   const error = visitorsFilteredQuery.error || farmsQuery.error;
 
-  // Farm 타입 변환 - visitor 타입의 Farm은 간소화된 버전
-  const typedFarms = useMemo(() => {
-    if (!farms || farms.length === 0) return [];
-
-    return farms.map((farm) => ({
-      id: farm.id,
-      farm_name: farm.farm_name,
-      farm_type: farm.farm_type || undefined,
-      farm_address: farm.farm_address,
-      owner_id: farm.owner_id,
-      manager_name: farm.manager_name,
-      manager_phone: farm.manager_phone,
-    }));
-  }, [farms]);
-
   // 에러 처리
   useEffect(() => {
     if (error) {
@@ -100,26 +85,10 @@ export default function VisitorsPage() {
 
   // 공통 방문자 액션 훅 사용
   const { handleEdit, handleDelete, handleExport } = useVisitorActions({
-    farms: typedFarms.map((farm) => ({
-      id: farm.id,
-      farm_name: farm.farm_name,
-      description: null,
-      farm_address: farm.farm_address || "",
-      farm_detailed_address: null,
-      farm_type: farm.farm_type || null,
-      owner_id: farm.owner_id || "",
-      manager_phone: null,
-      manager_name: null,
-      is_active: true,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-    })),
+    farms: farms, // 변환 없이 그대로 전달
     isAdmin,
     profileId: profile?.id,
-    allVisitors: allVisitors.map((v) => ({
-      ...v,
-      registered_by: v.registered_by || undefined,
-    })),
+    allVisitors: allVisitors,
   });
 
   // 통계 계산
@@ -127,9 +96,9 @@ export default function VisitorsPage() {
     return generateVisitorPageStats(allVisitors, {
       showFarmCount: true,
       showDisinfectionRate: true,
-      totalFarms: typedFarms.length,
+      totalFarms: farms.length,
     });
-  }, [allVisitors, typedFarms.length]);
+  }, [allVisitors, farms.length]);
 
   // 정렬 함수 (최신순)
   const sortFn = useMemo(() => {
@@ -186,20 +155,7 @@ export default function VisitorsPage() {
           ]}
           actions={
             <VisitorExportRefactored
-              farms={typedFarms.map((farm) => ({
-                id: farm.id,
-                farm_name: farm.farm_name,
-                farm_type: farm.farm_type || null,
-                farm_address: farm.farm_address || "",
-                owner_id: farm.owner_id || "",
-                description: null,
-                farm_detailed_address: null,
-                manager_phone: null,
-                manager_name: null,
-                is_active: true,
-                created_at: new Date().toISOString(),
-                updated_at: new Date().toISOString(),
-              }))}
+              farms={farms} // 변환 없이 그대로 전달
               isAdmin={isAdmin}
               onExport={handleExport}
             />
@@ -242,7 +198,7 @@ export default function VisitorsPage() {
             setCustomDateRange(currentStart, date);
           }}
           onClearCustomDates={handleClearCustomDates}
-          farms={typedFarms}
+          farms={farms}
           activeFiltersCount={activeFiltersCount}
           filteredCount={visitors.length}
           totalCount={allVisitors.length}
@@ -261,7 +217,7 @@ export default function VisitorsPage() {
           {({ paginatedData, isLoadingMore, hasMore }) => (
             <VisitorTable
               visitors={paginatedData}
-              showFarmColumn={isAdmin || typedFarms.length > 1} // 관리자이거나 농장이 여러 개인 경우 농장 컬럼 표시
+              showFarmColumn={isAdmin || farms.length > 1} // 관리자이거나 농장이 여러 개인 경우 농장 컬럼 표시
               loading={loading}
               isAdmin={true}
               onEdit={handleEdit}

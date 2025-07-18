@@ -56,15 +56,6 @@ export function useAdminFarmsQuery() {
 
       if (farmsError) throw farmsError;
 
-      // 고유 소유자 수
-      const uniqueOwners = new Set(farms?.map((f) => f.owner_id));
-      const totalOwners = uniqueOwners.size;
-
-      // 지역 수
-      const uniqueRegions = new Set(
-        farms?.map((f) => f.farm_address?.split(" ")[0])
-      );
-
       // 트렌드 계산을 위한 데이터
       const now = new Date();
       const thisMonthEnd = new Date(

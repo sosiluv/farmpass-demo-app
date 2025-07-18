@@ -81,10 +81,10 @@ export function LogsTab() {
             {({
               filters,
               setFilters,
-              auditFilter,
-              setAuditFilter,
-              categoryFilter,
-              setCategoryFilter,
+              categoryFilters,
+              setCategoryFilters,
+              levelFilters,
+              setLevelFilters,
               filteredLogs,
             }) => (
               <LogsActionManager logs={logs} refetch={refetch}>
@@ -164,18 +164,30 @@ export function LogsTab() {
                                 <LogFilters
                                   filters={filters}
                                   onFiltersChange={setFilters}
+                                  levelFilters={levelFilters}
+                                  onLevelFiltersChange={setLevelFilters}
+                                  onCategoryFiltersChange={setCategoryFilters}
                                 />
                                 <LogCategoryFilters
-                                  auditFilter={auditFilter}
-                                  categoryFilter={categoryFilter}
-                                  onAuditFilterChange={setAuditFilter}
-                                  onCategoryFilterChange={setCategoryFilter}
+                                  categoryFilters={categoryFilters}
+                                  onCategoryFiltersChange={setCategoryFilters}
                                 />
                                 <LogFilterStatus
                                   totalCount={logs.length}
                                   filteredCount={filteredLogs.length}
-                                  auditFilter={auditFilter}
-                                  categoryFilter={categoryFilter}
+                                  categoryFilters={categoryFilters}
+                                  filters={filters}
+                                  levelFilters={levelFilters}
+                                  onClearAllFilters={() => {
+                                    setFilters({
+                                      search: "",
+                                      level: undefined,
+                                      startDate: undefined,
+                                      endDate: undefined,
+                                    });
+                                    setLevelFilters(["all"]);
+                                    setCategoryFilters(["all"]);
+                                  }}
                                 />
                               </div>
 

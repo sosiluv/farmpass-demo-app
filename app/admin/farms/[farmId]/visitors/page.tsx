@@ -80,26 +80,10 @@ export default function FarmVisitorsPage() {
 
   // 방문자 액션 훅
   const { handleEdit, handleDelete, handleExport } = useVisitorActions({
-    farms: farms.map((f) => ({
-      id: f.id,
-      farm_name: f.farm_name,
-      description: f.description,
-      farm_address: f.farm_address,
-      farm_detailed_address: f.farm_detailed_address,
-      farm_type: f.farm_type,
-      owner_id: f.owner_id,
-      manager_phone: f.manager_phone,
-      manager_name: f.manager_name,
-      is_active: f.is_active,
-      created_at: f.created_at,
-      updated_at: f.updated_at,
-    })),
+    farms: farms, // map 변환 없이 그대로 전달
     isAdmin: false,
     profileId: user?.id,
-    allVisitors: allVisitors.map((v) => ({
-      ...v,
-      registered_by: v.registered_by || undefined,
-    })),
+    allVisitors: allVisitors, // map 변환 없이 그대로 전달
   });
 
   // 농장 정보 로드
@@ -218,20 +202,7 @@ export default function FarmVisitorsPage() {
           ]}
           actions={
             <VisitorExportRefactored
-              farms={farms.map((f) => ({
-                id: f.id,
-                farm_name: f.farm_name,
-                farm_type: f.farm_type,
-                farm_address: f.farm_address,
-                owner_id: f.owner_id,
-                description: f.description,
-                farm_detailed_address: f.farm_detailed_address,
-                manager_phone: f.manager_phone,
-                manager_name: f.manager_name,
-                is_active: f.is_active,
-                created_at: f.created_at,
-                updated_at: f.updated_at,
-              }))}
+              farms={farms} // map 변환 없이 그대로 전달
               isAdmin={false}
               onExport={handleExport}
             />

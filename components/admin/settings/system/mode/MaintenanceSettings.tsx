@@ -2,6 +2,7 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { MessageSquare, Clock, Phone } from "lucide-react";
+import { formatDateTime } from "@/lib/utils/datetime/date";
 import type { SystemSettings } from "@/lib/types/settings";
 
 interface MaintenanceSettingsProps {
@@ -89,7 +90,7 @@ export function MaintenanceSettings({
         <div className="space-y-2">
           <Label className="text-sm font-medium">유지보수 시작 시간</Label>
           <p className="text-sm text-muted-foreground">
-            {new Date(settings.maintenanceStartTime).toLocaleString("ko-KR")}
+            {formatDateTime(settings.maintenanceStartTime)}
           </p>
         </div>
       )}

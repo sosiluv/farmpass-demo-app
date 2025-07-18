@@ -2,7 +2,7 @@
  * 알림 관련 타입 정의
  */
 
-import type { NotificationMethod, BaseFilter } from "./common";
+import type { NotificationMethod } from "./common";
 
 // Re-export common types
 export type { NotificationMethod } from "./common";
@@ -97,11 +97,6 @@ export interface NotificationPayload {
   tag?: string;
   data?: Record<string, any>;
   test?: boolean;
-}
-
-export interface NotificationFilter extends BaseFilter {
-  userId?: string;
-  isRead?: boolean;
 }
 
 // ===========================================

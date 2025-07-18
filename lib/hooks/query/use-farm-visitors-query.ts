@@ -14,7 +14,11 @@ import {
   calculateRevisitStats,
   generateDashboardStats,
 } from "@/lib/utils/data/common-stats";
-import { getKSTDaysAgo, toKSTDateString } from "@/lib/utils/datetime/date";
+import {
+  getKSTDaysAgo,
+  toDateString,
+  toKSTDate,
+} from "@/lib/utils/datetime/date";
 import { useSupabaseRealtime } from "@/hooks/useSupabaseRealtime";
 
 /**
@@ -85,6 +89,11 @@ export function useFarmVisitorsQuery(farmId: string | null) {
     filter: visitorFilter,
   });
 
+  // 30일 날짜 배열 - 한 번만 생성하여 재사용
+  const last30Days = React.useMemo(() => {
+    return [...Array(30)].map((_, i) => new Date(getKSTDaysAgo(i))).reverse();
+  }, []); // 의존성 없음 - 항상 최근 30일
+
   // 통계 계산 로직 최적화 - 각 통계별로 분리된 useMemo
   const computedStats = React.useMemo(() => {
     const visitors = visitorsQuery.data || [];
@@ -114,54 +123,43 @@ export function useFarmVisitorsQuery(farmId: string | null) {
   }, [visitorsQuery.data]);
 
   // 타입 호환성 변환 최적화 - 별도 메모이제이션
-  const compatibleVisitors = React.useMemo(() => {
+  // compatibleVisitors 변수 제거, computedStats.visitors 직접 사용
+  const purposeStats = React.useMemo(() => {
     if (!computedStats.visitors || computedStats.visitors.length === 0)
       return [];
-
-    return computedStats.visitors.map((visitor) => ({
-      ...visitor,
-      registered_by: visitor.registered_by ?? undefined,
-    }));
+    return calculatePurposeStats(computedStats.visitors);
   }, [computedStats.visitors]);
 
-  // 30일 날짜 배열 - 한 번만 생성하여 재사용
-  const last30Days = React.useMemo(() => {
-    return [...Array(30)].map((_, i) => new Date(getKSTDaysAgo(i))).reverse();
-  }, []); // 의존성 없음 - 항상 최근 30일
-
-  // 개별 통계 계산 - 각각 독립적으로 메모이제이션
-  const purposeStats = React.useMemo(() => {
-    if (compatibleVisitors.length === 0) return [];
-    return calculatePurposeStats(compatibleVisitors);
-  }, [compatibleVisitors]);
-
   const weekdayStats = React.useMemo(() => {
-    if (compatibleVisitors.length === 0) return [];
-    return calculateWeekdayStats(compatibleVisitors);
-  }, [compatibleVisitors]);
+    if (!computedStats.visitors || computedStats.visitors.length === 0)
+      return [];
+    return calculateWeekdayStats(computedStats.visitors);
+  }, [computedStats.visitors]);
 
   const revisitStats = React.useMemo(() => {
-    if (compatibleVisitors.length === 0) return [];
-    return calculateRevisitStats(compatibleVisitors);
-  }, [compatibleVisitors]);
+    if (!computedStats.visitors || computedStats.visitors.length === 0)
+      return [];
+    return calculateRevisitStats(computedStats.visitors);
+  }, [computedStats.visitors]);
 
   // 방문자 추이 계산 최적화 - KST 기준으로 날짜 처리
   const visitorTrend = React.useMemo((): VisitorStats[] => {
-    if (compatibleVisitors.length === 0) return [];
+    if (!computedStats.visitors || computedStats.visitors.length === 0)
+      return [];
 
     return last30Days.map((date) => {
       const nextDate = new Date(date);
       nextDate.setDate(date.getDate() + 1);
 
-      const dayVisitors = compatibleVisitors.filter((v) => {
+      const dayVisitors = computedStats.visitors.filter((v) => {
         // visit_datetime이 문자열인지 Date 객체인지 확인
         const visitDateTime = v.visit_datetime;
 
         // ISO 문자열을 KST로 변환하여 날짜 비교
         const visitDate = new Date(visitDateTime);
-        const kstVisitDate = new Date(visitDate.getTime() + 9 * 60 * 60 * 1000); // UTC+9
-        const kstDateStr = kstVisitDate.toISOString().split("T")[0]; // KST 기준 날짜 문자열
-        const targetDateStr = date.toISOString().split("T")[0]; // 목표 날짜 문자열
+        const kstVisitDate = toKSTDate(visitDate);
+        const kstDateStr = toDateString(kstVisitDate); // KST 기준 날짜 문자열
+        const targetDateStr = toDateString(date); // 목표 날짜 문자열
 
         return kstDateStr === targetDateStr;
       });
@@ -172,16 +170,16 @@ export function useFarmVisitorsQuery(farmId: string | null) {
       });
 
       return {
-        date: date.toISOString().split("T")[0], // 대상 날짜는 이미 KST 기준으로 생성됨
+        date: toDateString(date), // 대상 날짜는 이미 KST 기준으로 생성됨
         visitors: dayStats.total,
         disinfectionRate: dayStats.disinfectionRate,
       };
     });
-  }, [compatibleVisitors, last30Days]);
+  }, [computedStats.visitors, last30Days]);
 
   // 대시보드 통계 계산
   const dashboardStats = React.useMemo(() => {
-    if (compatibleVisitors.length === 0) {
+    if (!computedStats.visitors || computedStats.visitors.length === 0) {
       return {
         totalVisitors: 0,
         todayVisitors: 0,
@@ -195,8 +193,8 @@ export function useFarmVisitorsQuery(farmId: string | null) {
         },
       };
     }
-    return generateDashboardStats(compatibleVisitors);
-  }, [compatibleVisitors]);
+    return generateDashboardStats(computedStats.visitors);
+  }, [computedStats.visitors]);
 
   return {
     // 기존 인터페이스 호환성 유지

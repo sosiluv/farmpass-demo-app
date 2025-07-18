@@ -24,7 +24,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         {
           success: false,
-          error: "MISSING_EMAIL",
+          error: "USER_MISSING_EMAIL",
           message: "이메일 주소가 필요합니다.",
         },
         { status: 400 }
@@ -110,7 +110,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(
       {
         success: false,
-        error: "RESET_ATTEMPTS_ERROR",
+        error: "LOGIN_ATTEMPTS_RESET_ERROR",
         message: "로그인 시도 횟수 초기화 중 오류가 발생했습니다.",
       },
       { status: 500 }

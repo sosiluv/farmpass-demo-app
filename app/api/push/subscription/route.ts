@@ -94,65 +94,48 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 기존 구독 확인 (활성/비활성 모두 포함)
-    const existingSubscription = await prisma.push_subscriptions.findFirst({
+    // 기존 구독 확인 및 등록/갱신을 upsert로 통합
+    const newSubscription = await prisma.push_subscriptions.upsert({
       where: {
-        user_id: user.id,
-        endpoint: subscription.endpoint,
-      },
-      orderBy: { created_at: "asc" },
-    });
-
-    let newSubscription;
-    if (existingSubscription) {
-      // 기존 구독이 있으면 재활성화 (soft delete 해제)
-      devLog.log(
-        `기존 구독 발견, 재활성화 처리 (id: ${existingSubscription.id})`
-      );
-      newSubscription = await prisma.push_subscriptions.update({
-        where: { id: existingSubscription.id },
-        data: {
-          is_active: true,
-          p256dh: subscription.keys?.p256dh || null,
-          auth: subscription.keys?.auth || null,
-          device_id: deviceId || null,
-          user_agent: userAgent || null,
-          last_used_at: new Date(),
-          fail_count: 0,
-          deleted_at: null,
-          updated_at: new Date(),
-        },
-      });
-    } else {
-      // 기존 구독이 없으면 새로 생성
-      devLog.log("새 구독 생성");
-      newSubscription = await prisma.push_subscriptions.create({
-        data: {
+        // user_id와 endpoint의 복합 unique 인덱스가 필요합니다.
+        user_id_endpoint: {
           user_id: user.id,
           endpoint: subscription.endpoint,
-          p256dh: subscription.keys?.p256dh || null,
-          auth: subscription.keys?.auth || null,
-          device_id: deviceId || null,
-          user_agent: userAgent || null,
-          is_active: true,
-          fail_count: 0,
-          last_used_at: new Date(),
-          created_at: new Date(),
-          updated_at: new Date(),
         },
-      });
-    }
+      },
+      update: {
+        is_active: true,
+        p256dh: subscription.keys?.p256dh || null,
+        auth: subscription.keys?.auth || null,
+        device_id: deviceId || null,
+        user_agent: userAgent || null,
+        last_used_at: new Date(),
+        fail_count: 0,
+        deleted_at: null,
+        updated_at: new Date(),
+      },
+      create: {
+        user_id: user.id,
+        endpoint: subscription.endpoint,
+        p256dh: subscription.keys?.p256dh || null,
+        auth: subscription.keys?.auth || null,
+        device_id: deviceId || null,
+        user_agent: userAgent || null,
+        is_active: true,
+        fail_count: 0,
+        last_used_at: new Date(),
+        created_at: new Date(),
+        updated_at: new Date(),
+      },
+    });
 
     // 알림 설정 업데이트 (options.updateSettings가 true인 경우에만)
     if (options?.updateSettings !== false) {
       const existingSettings = await prisma.userNotificationSettings.findUnique(
         {
-          where: {
-            user_id: user.id,
-          },
+          where: { user_id: user.id },
         }
       );
-
       if (!existingSettings) {
         try {
           await prisma.userNotificationSettings.create({
@@ -170,9 +153,6 @@ export async function POST(request: NextRequest) {
           });
         } catch (settingsError: any) {
           devLog.warn("알림 설정 자동 생성 실패:", settingsError);
-          // 구독은 성공했으므로 경고만 기록하고 계속 진행
-
-          // 알림 설정 생성 실패 시 시스템 로그 기록
           await createSystemLog(
             "NOTIFICATION_SETTINGS_CREATION_FAILED",
             `푸시 구독 시 알림 설정 자동 생성에 실패했습니다.`,
@@ -191,7 +171,6 @@ export async function POST(request: NextRequest) {
           );
         }
       } else if (options?.isResubscribe) {
-        // 재구독 시 알림 설정 활성화
         try {
           await prisma.userNotificationSettings.update({
             where: { user_id: user.id },

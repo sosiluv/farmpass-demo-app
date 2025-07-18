@@ -1,4 +1,4 @@
-import type { Database } from "./supabase";
+import type { LogLevel } from "./common";
 
 export interface SystemSettings {
   id: string;
@@ -52,7 +52,7 @@ export interface SystemSettings {
   subscriptionForceDelete: boolean;
 
   // 시스템 설정
-  logLevel: Database["public"]["Enums"]["LogLevel"];
+  logLevel: LogLevel;
   logRetentionDays: number;
   maintenanceMode: boolean;
   debugMode: boolean;

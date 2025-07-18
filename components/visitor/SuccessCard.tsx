@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Logo } from "@/components/common";
+import { formatDateTime } from "@/lib/utils/datetime/date";
 
 export const SuccessCard = () => {
   return (
@@ -35,7 +36,7 @@ export const SuccessCard = () => {
           </div>
 
           <Badge variant="outline" className="text-xs sm:text-sm">
-            등록 시간: {new Date().toLocaleString("ko-KR")}
+            등록 시간: {formatDateTime(new Date())}
           </Badge>
 
           {/* 완료 안내 */}

@@ -473,7 +473,7 @@ export function getAuthErrorMessage(
     invalid_credentials: {
       message: "이메일 또는 비밀번호가 올바르지 않습니다.",
     },
-    missing_email: { message: "이메일 주소를 입력해주세요." },
+    user_missing_email: { message: "이메일 주소를 입력해주세요." },
     email_check_error: { message: "이메일 확인 중 오류가 발생했습니다." },
     password_reset_system_error: {
       message: "비밀번호 재설정 처리 중 오류가 발생했습니다.",
@@ -481,7 +481,7 @@ export function getAuthErrorMessage(
     password_reset_error: {
       message: "비밀번호 재설정 중 오류가 발생했습니다.",
     },
-    reset_attempts_error: {
+    login_attempts_reset_error: {
       message: "로그인 시도 횟수 초기화 중 오류가 발생했습니다.",
     },
     missing_turnstile_token: { message: "캡차 토큰이 필요합니다." },

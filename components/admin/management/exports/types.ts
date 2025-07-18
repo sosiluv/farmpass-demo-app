@@ -70,7 +70,6 @@ export interface FarmsExportOptions extends BaseExportOptions {
 export interface LogsExportOptions extends BaseExportOptions {
   levelFilter: string;
   categoryFilter: string;
-  auditFilter: string;
   includeBasic: boolean;
   includeUser: boolean;
   includeSystem: boolean;

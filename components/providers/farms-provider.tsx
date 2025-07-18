@@ -77,19 +77,6 @@ export function FarmsProvider({ children }: { children: React.ReactNode }) {
     }
   }, [profile?.id, refetchFarms]);
 
-  // 🔥 농장 데이터 변경 감지 디버그 로그
-  useEffect(() => {
-    if (farms.length > 0) {
-      devLog.log(
-        `🔥 [FarmsProvider] Farms data updated: ${farms.length} farms`,
-        farms.map((f) => ({
-          id: f.id,
-          name: f.farm_name,
-        }))
-      );
-    }
-  }, [farms]);
-
   return (
     <FarmsContext.Provider
       value={{

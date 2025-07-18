@@ -2,7 +2,7 @@
  * 방문자 관련 타입 정의
  */
 
-import type { Profile, VisitorEntry, BaseFilter } from "./common";
+import type { Profile, VisitorEntry } from "./common";
 import type { VisitorPurposeStats } from "./statistics";
 
 // ===========================================
@@ -20,7 +20,7 @@ export interface Farm {
 }
 
 // Re-export common types for convenience
-export type { Profile, VisitorEntry, BaseFilter } from "./common";
+export type { Profile, VisitorEntry } from "./common";
 
 // Re-export VisitorEntry from common as VisitorBase for backward compatibility
 export type { VisitorEntry as VisitorBase } from "./common";
@@ -86,7 +86,7 @@ export interface UpdateVisitorData {
 /**
  * 방문자 필터 (BaseFilter 확장)
  */
-export interface VisitorFilter extends BaseFilter {
+export interface VisitorFilter {
   farmId?: string;
   disinfectionCheck?: boolean;
   consentGiven?: boolean;

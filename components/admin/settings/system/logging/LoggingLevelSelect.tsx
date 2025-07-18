@@ -7,8 +7,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { AlertTriangle } from "lucide-react";
-
-type LogLevel = "error" | "warn" | "info" | "debug";
+import type { LogLevel } from "@/lib/types/common";
 
 interface LoggingLevelSelectProps {
   value: LogLevel;

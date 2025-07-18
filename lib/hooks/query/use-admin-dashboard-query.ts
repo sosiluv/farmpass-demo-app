@@ -198,10 +198,7 @@ export function useAdminDashboardQuery() {
         // KST 기준 월 시작/끝 계산 (유틸리티 사용)
         const year = targetDate.getFullYear();
         const month = targetDate.getMonth();
-        const monthStartStr = `${year}-${String(month + 1).padStart(
-          2,
-          "0"
-        )}-01`;
+
         const nextMonth = month === 11 ? 0 : month + 1;
         const nextYear = month === 11 ? year + 1 : year;
         const lastDay = new Date(nextYear, nextMonth, 0).getDate();
@@ -210,7 +207,6 @@ export function useAdminDashboardQuery() {
           "0"
         )}-${String(lastDay).padStart(2, "0")}`;
 
-        const monthStartKST = createKSTDateRange(monthStartStr, false); // 월 시작 00:00:00
         const monthEndKST = createKSTDateRange(monthEndStr, true); // 월 끝 23:59:59
 
         // 해당 월까지의 누적 사용자 수 (KST 기준)

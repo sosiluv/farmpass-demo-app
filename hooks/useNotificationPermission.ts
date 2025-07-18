@@ -48,10 +48,9 @@ export function useNotificationPermission() {
     isResubscribe: false,
   });
 
-  // 로컬스토리지 키
-  const getStorageKey = (userId: string) => `notification_permission_${userId}`;
-  const getResubscribeStorageKey = (userId: string) =>
-    `notification_resubscribe_${userId}`;
+  // 로컬스토리지 키 (통합)
+  const getPromptStorageKey = (userId: string) =>
+    `notification_prompt_${userId}`;
 
   // 브라우저 구독 상태 확인
   const checkBrowserSubscription = async (): Promise<boolean> => {
@@ -78,15 +77,14 @@ export function useNotificationPermission() {
     let timeoutId: NodeJS.Timeout | null = null;
 
     const checkNotificationPermission = async () => {
-      const storageKey = getStorageKey(user.id);
-      const resubscribeStorageKey = getResubscribeStorageKey(user.id);
+      const promptStorageKey = getPromptStorageKey(user.id);
       const safeLocalStorage = safeLocalStorageAccess();
       const safeNotification = safeNotificationAccess();
-      const lastAsked = safeLocalStorage.getItem(storageKey);
-      const lastResubscribeAsked = safeLocalStorage.getItem(
-        resubscribeStorageKey
-      );
+      const lastPrompted = safeLocalStorage.getItem(promptStorageKey);
       const currentPermission = safeNotification.permission;
+      const FOURTEEN_DAYS = 14 * 24 * 60 * 60 * 1000;
+      const canReAsk =
+        !lastPrompted || parseInt(lastPrompted) < Date.now() - FOURTEEN_DAYS;
 
       // 브라우저에서 알림을 지원하지 않는 경우
       if (!safeNotification.isSupported) {
@@ -115,18 +113,10 @@ export function useNotificationPermission() {
           return;
         } else {
           // 권한은 있지만 구독이 없음 - 재구독 필요
-          const fourteenDaysAgo = Date.now() - 14 * 24 * 60 * 60 * 1000;
-          const canReAsk =
-            !lastResubscribeAsked ||
-            parseInt(lastResubscribeAsked) < fourteenDaysAgo;
-
           if (canReAsk) {
-            // 로그인 직후에는 구독 복구 시간을 더 길게 주고, 그래도 실패하면 표시
             timeoutId = setTimeout(async () => {
-              // 한 번 더 브라우저 구독 상태 확인 (구독 복구 완료되었을 수도 있음)
               const hasSubscriptionNow = await checkBrowserSubscription();
               if (hasSubscriptionNow) {
-                // 구독이 복구되었으면 다이얼로그 표시하지 않음
                 setState({
                   hasAsked: true,
                   permission: currentPermission,
@@ -135,8 +125,6 @@ export function useNotificationPermission() {
                 });
                 return;
               }
-
-              // 여전히 구독이 없으면 재구독 다이얼로그 표시
               setState((prev) => {
                 if (prev.showDialog) {
                   return prev;
@@ -151,9 +139,8 @@ export function useNotificationPermission() {
                   isResubscribe: true,
                 };
               });
-            }, 6000); // 8초 후 재확인하여 불필요한 다이얼로그 방지
+            }, 6000);
           } else {
-            // 아직 재구독 요청 기간이 되지 않음
             setState({
               hasAsked: true,
               permission: currentPermission,
@@ -176,16 +163,11 @@ export function useNotificationPermission() {
         return;
       }
 
-      // 권한이 default인 경우 - 7일 간격으로 재요청
+      // 권한이 default인 경우 - 14일 간격으로 재요청
       if (currentPermission === "default") {
-        const sevenDaysAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
-        const canReAsk = !lastAsked || parseInt(lastAsked) < sevenDaysAgo;
-
         if (canReAsk) {
-          // 로그인 후 2초 후에 표시 (사용자 경험 개선)
           timeoutId = setTimeout(() => {
             setState((prev) => {
-              // 이미 다이얼로그가 표시되고 있다면 상태 변경하지 않음
               if (prev.showDialog) {
                 return prev;
               }
@@ -201,7 +183,6 @@ export function useNotificationPermission() {
             });
           }, 2000);
         } else {
-          // 아직 재요청 기간이 되지 않은 경우
           setState({
             hasAsked: true,
             permission: currentPermission,
@@ -214,26 +195,23 @@ export function useNotificationPermission() {
 
     checkNotificationPermission();
 
-    // cleanup 함수
     return () => {
       if (timeoutId) {
         clearTimeout(timeoutId);
       }
     };
-  }, [user?.id, profile?.id]); // showDialog 제거 - 무한 렌더링 방지
+  }, [user?.id, profile?.id]);
 
   // 알림 허용 처리 - 공통 로직 사용
   const handleAllow = async () => {
     if (!user) return;
 
-    // 중복 실행 방지 (재구독일 때는 제외)
     if (state.hasAsked && !state.isResubscribe) {
       console.log("🚫 알림 권한 이미 처리됨 - 중복 실행 방지");
       return;
     }
 
     try {
-      // VAPID 키 lazy loading - 필요할 때만 로드
       let key = vapidData;
       if (!key) {
         const { data: newKey } = await refetchVapidKey();
@@ -249,24 +227,21 @@ export function useNotificationPermission() {
         return;
       }
 
-      // 공통 로직 사용 (다이얼로그용)
       const result = await requestNotificationPermissionAndSubscribe(
-        async () => key, // 확보된 VAPID 키 사용
+        async () => key,
         async (subscription, deviceId, options) => {
-          // 서버에 구독 정보 전송 (device_id 포함)
           return await createSubscriptionMutation.mutateAsync({
             subscription,
             deviceId,
             options: {
               ...options,
               isResubscribe: state.isResubscribe,
-              updateSettings: true, // 자동 다이얼로그에서도 설정 업데이트
+              updateSettings: true,
             },
           });
         }
       );
 
-      // 결과에 따른 메시지 설정
       if (result.success) {
         const messageText = state.isResubscribe
           ? "알림 구독이 다시 설정되었습니다."
@@ -290,12 +265,10 @@ export function useNotificationPermission() {
         });
       }
 
-      // 상태 업데이트 및 로컬스토리지에 타임스탬프 기록
-      const storageKey = state.isResubscribe
-        ? getResubscribeStorageKey(user.id)
-        : getStorageKey(user.id);
+      // 상태 업데이트 및 로컬스토리지에 타임스탬프 기록 (통합)
+      const promptStorageKey = getPromptStorageKey(user.id);
       const safeLocalStorage = safeLocalStorageAccess();
-      safeLocalStorage.setItem(storageKey, Date.now().toString());
+      safeLocalStorage.setItem(promptStorageKey, Date.now().toString());
 
       setState((prev) => ({
         ...prev,
@@ -318,18 +291,15 @@ export function useNotificationPermission() {
   const handleDeny = () => {
     if (!user) return;
 
-    // 중복 실행 방지 (재구독일 때는 제외)
     if (state.hasAsked && !state.isResubscribe) {
       console.log("🚫 알림 권한 이미 처리됨 - 중복 실행 방지");
       return;
     }
 
     console.log("✅ 알림 권한 거부 처리 시작");
-    const storageKey = state.isResubscribe
-      ? getResubscribeStorageKey(user.id)
-      : getStorageKey(user.id);
+    const promptStorageKey = getPromptStorageKey(user.id);
     const safeLocalStorage = safeLocalStorageAccess();
-    safeLocalStorage.setItem(storageKey, Date.now().toString());
+    safeLocalStorage.setItem(promptStorageKey, Date.now().toString());
 
     setState((prev) => ({
       ...prev,
