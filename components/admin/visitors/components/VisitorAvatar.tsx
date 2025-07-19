@@ -1,4 +1,5 @@
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { getAvatarUrl, generateInitials } from "@/lib/utils/media/avatar";
 
 interface VisitorAvatarProps {
   name: string;
@@ -42,9 +43,14 @@ export function VisitorAvatar({
       <Avatar
         className={`${sizeClasses[size]} border-2 border-white shadow-sm`}
       >
-        <AvatarImage src={imageUrl || undefined} />
+        <AvatarImage
+          src={getAvatarUrl(
+            { profile_image_url: imageUrl, name },
+            { size: 128 }
+          )}
+        />
         <AvatarFallback className="bg-gradient-to-br from-blue-100 to-blue-200 text-blue-700 font-semibold">
-          {name.charAt(0)}
+          {generateInitials(name)}
         </AvatarFallback>
       </Avatar>
       {showStatus && (

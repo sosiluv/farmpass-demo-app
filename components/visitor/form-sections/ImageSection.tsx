@@ -32,7 +32,6 @@ export const ImageSection = ({
         onDelete={onImageDelete ? () => onImageDelete("") : undefined}
         currentImage={uploadedImageUrl || formData.profilePhotoUrl || null}
         required={settings.requireVisitorPhoto}
-        showCamera={true}
         avatarSize="lg"
         hideGuidelines={true}
         label="방문자 사진"

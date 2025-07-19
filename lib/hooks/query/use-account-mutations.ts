@@ -3,6 +3,8 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/components/providers/auth-provider";
 import { apiClient } from "@/lib/utils/data/api-client";
+import { createClient } from "@/lib/supabase/client";
+import { settingsKeys, farmsKeys } from "@/lib/hooks/query/query-keys";
 import type {
   ProfileFormData,
   CompanyFormData,
@@ -108,6 +110,45 @@ export function useChangePasswordMutation() {
       }
 
       return { success: true };
+    },
+  });
+}
+
+/**
+ * 아바타 시드 업데이트 Mutation Hook
+ */
+export function useUpdateAvatarSeedMutation() {
+  const { refreshProfile } = useAuth();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (data: {
+      userId: string;
+      seed: string;
+    }): Promise<{ success: boolean; message?: string }> => {
+      const { userId, seed } = data;
+
+      const supabase = createClient();
+
+      const { error } = await supabase
+        .from("profiles")
+        .update({
+          avatar_seed: seed.trim(),
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", userId)
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      return {
+        success: true,
+        message: "아바타가 성공적으로 업데이트되었습니다.",
+      };
+    },
+    onSuccess: async (data, variables) => {
+      await refreshProfile();
     },
   });
 }

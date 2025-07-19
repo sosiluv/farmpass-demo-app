@@ -15,11 +15,8 @@ import {
   generateDashboardStats,
 } from "@/lib/utils/data/common-stats";
 import {
-  getKSTDaysAgo,
-  toKSTDateString,
   toKSTDate,
   createKSTDateRange,
-  toDateString,
   createKSTDateRangeSimple,
 } from "@/lib/utils/datetime/date";
 import { useSupabaseRealtime } from "@/hooks/useSupabaseRealtime";

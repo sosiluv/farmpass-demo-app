@@ -2,7 +2,7 @@
 
 import { useCallback, useState, useEffect } from "react";
 import { Button } from "./button";
-import { Camera, ImageIcon, Trash2, User } from "lucide-react";
+import { Camera, ImageIcon, Trash2, User, RefreshCw } from "lucide-react";
 import { Loading } from "./loading";
 import {
   IMAGE_UPLOAD_CONFIG,
@@ -10,33 +10,36 @@ import {
 } from "@/lib/constants/upload";
 import { UPLOAD_TYPE_CONFIGS, UploadType } from "@/lib/types/upload";
 import { cn } from "@/lib/utils";
+import { getAvatarUrl } from "@/lib/utils/media/avatar";
 
 export interface ImageUploadProps {
   onUpload: (file: File) => void;
   onDelete?: () => Promise<void>;
+  onAvatarChange?: (seed: string) => Promise<void>; // 아바타 시드 변경 콜백 추가
   currentImage?: string | null;
   required?: boolean;
   className?: string;
-  showCamera?: boolean;
   avatarSize?: "sm" | "md" | "lg" | "xl";
   label?: string;
   uploadType?: UploadType | "image";
   hideGuidelines?: boolean;
   id?: string; // 접근성을 위한 id 추가
+  profile?: any; // 프로필 데이터 (아바타 시드 포함)
 }
 
 export function ImageUpload({
   onUpload,
   onDelete,
+  onAvatarChange,
   currentImage,
   required = false,
   className = "",
-  showCamera = true,
   avatarSize = "lg",
   label = "이미지",
   uploadType = "image",
   hideGuidelines = false,
   id = "image-upload", // 기본 id 제공
+  profile, // 프로필 데이터
 }: ImageUploadProps) {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -60,7 +63,7 @@ export function ImageUpload({
   const centerCircleSizeMap = {
     sm: "w-16 h-16",
     md: "w-20 h-20",
-    lg: "w-24 h-24",
+    lg: "w-28 h-28",
     xl: "w-32 h-32",
   };
 
@@ -157,6 +160,23 @@ export function ImageUpload({
     }
   }, [onDelete]);
 
+  // 아바타 변경 핸들러
+  const handleAvatarChange = useCallback(async () => {
+    if (!profile?.name) return;
+
+    try {
+      // DB 업데이트 콜백이 있으면 실행 (시드 생성은 콜백에서 처리)
+      if (onAvatarChange) {
+        await onAvatarChange("");
+      }
+
+      // 로컬 상태는 콜백에서 처리된 후 업데이트됨
+      setImgError(false);
+    } catch (error) {
+      console.error("아바타 변경 실패:", error);
+    }
+  }, [profile?.name, onAvatarChange]);
+
   // 파일 선택 핸들러 (카메라/갤러리)
   const handleFileSelectWithCamera = useCallback(
     (useCamera: boolean = false) => {
@@ -209,6 +229,15 @@ export function ImageUpload({
                   />
                 ) : loading ? (
                   <Loading spinnerSize={32} showText={false} minHeight="auto" />
+                ) : profile?.name && !imgError ? (
+                  <img
+                    src={getAvatarUrl(profile, {
+                      size: 128,
+                    })}
+                    alt={label}
+                    className="w-full h-full rounded-full object-cover"
+                    onError={() => setImgError(true)}
+                  />
                 ) : (
                   <User className="h-8 w-8 text-white" aria-label={label} />
                 )}
@@ -216,40 +245,40 @@ export function ImageUpload({
             </div>
           </div>
 
-          {/* 카메라 버튼 - 12시 방향 */}
-          {showCamera && (
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() => handleFileSelectWithCamera(true)}
-              disabled={loading}
-              className="absolute top-0 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-white shadow-lg border-2 border-blue-200 hover:border-blue-300 rounded-full w-10 h-10 p-0"
-            >
-              <Camera className="h-4 w-4 text-blue-600" />
-            </Button>
-          )}
-
-          {/* 갤러리 버튼 - 3시 방향 */}
+          {/* 카메라 버튼 - 우하단 (아바타에 가깝게) */}
           <Button
             size="sm"
             variant="outline"
-            onClick={() => handleFileSelectWithCamera(false)}
+            onClick={() => handleFileSelectWithCamera(true)}
             disabled={loading}
-            className="absolute top-1/2 right-0 transform translate-x-1/2 -translate-y-1/2 bg-white shadow-lg border-2 border-purple-200 hover:border-purple-300 rounded-full w-10 h-10 p-0"
+            className="absolute bottom-3 right-3 bg-white shadow-lg border-2 border-blue-200 hover:border-blue-300 rounded-full w-10 h-10 p-0"
           >
-            <ImageIcon className="h-4 w-4 text-purple-600" />
+            <Camera className="h-4 w-4 text-blue-600" />
           </Button>
 
-          {/* 삭제 버튼 - 6시 방향 */}
+          {/* 삭제 버튼 - 우상단 */}
           {currentImage && onDelete && (
             <Button
               size="sm"
               variant="outline"
               onClick={handleDelete}
               disabled={loading}
-              className="absolute bottom-0 left-1/2 transform -translate-x-1/2 translate-y-1/2 bg-white shadow-lg border-2 border-red-200 hover:border-red-300 rounded-full w-10 h-10 p-0"
+              className="absolute top-3 right-3 bg-white shadow-lg border-2 border-red-200 hover:border-red-300 rounded-full w-10 h-10 p-0"
             >
               <Trash2 className="h-4 w-4 text-red-600" />
+            </Button>
+          )}
+
+          {/* 아바타 변경 버튼 - 3시 방향 */}
+          {profile?.name && !currentImage && (
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={handleAvatarChange}
+              disabled={loading}
+              className="absolute top-1/2 right-0 transform translate-x-1/2 -translate-y-1/2 bg-white shadow-lg border-2 border-green-200 hover:border-green-300 rounded-full w-10 h-10 p-0"
+            >
+              <RefreshCw className="h-4 w-4 text-green-600" />
             </Button>
           )}
 

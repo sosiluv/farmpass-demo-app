@@ -25,15 +25,6 @@ export interface UploadTypeConfig extends UploadConfig {
   preUploadCleanup?: () => Promise<void>;
 }
 
-// 업로드 옵션 타입
-export interface UploadOptions {
-  file: File;
-  userId?: string;
-  type?: string;
-  prevFileName?: string;
-  onProgress?: (progress: number) => void;
-}
-
 // 업로드 결과 타입
 export interface UploadResult {
   publicUrl: string;
@@ -57,30 +48,6 @@ export interface UploadState {
   result: UploadResult | null;
 }
 
-// 이미지 매니저 설정 타입
-export interface ImageManagerConfig {
-  uploadType: keyof typeof UPLOAD_TYPE_CONFIGS;
-  userId?: string;
-  onUpdate?: (data: any) => void;
-  onError?: (error: UploadError) => void;
-  onProgress?: (progress: number) => void;
-}
-
-// 컴포넌트 프롭스 타입
-export interface ImageUploadComponentProps {
-  onUpload: (file: File) => Promise<UploadResult | void>;
-  onDelete?: () => Promise<void>;
-  currentImage?: string | null;
-  required?: boolean;
-  className?: string;
-  showCamera?: boolean;
-  avatarSize?: "sm" | "md" | "lg" | "xl";
-  label?: string;
-  uploadType?: keyof typeof UPLOAD_TYPE_CONFIGS;
-  disabled?: boolean;
-  loading?: boolean;
-}
-
 // 훅 반환 타입
 export interface UseImageUploadReturn {
   state: UploadState;
@@ -92,13 +59,6 @@ export interface UseImageUploadReturn {
   deleteImage: () => Promise<void>;
   reset: () => void;
 }
-
-// 파일명 생성 함수 타입
-export type PathGenerator = (
-  file: File,
-  userId?: string,
-  type?: string
-) => string;
 
 // 업로드 타입 정의
 export type UploadType =

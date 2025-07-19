@@ -6,15 +6,15 @@ INSERT INTO storage.buckets (id, name, public) VALUES ('profiles', 'profiles', f
 -- public: false = 비공개 버킷 (인증된 사용자만 접근 가능)
 -- public: true = 공개 버킷 (누구나 접근 가능)
 
---------------------------------------------------
--- 2. RLS(Row Level Security) 활성화
---------------------------------------------------
-ALTER TABLE storage.objects ENABLE ROW LEVEL SECURITY;
 
 --------------------------------------------------
 -- 3. INSERT 정책 (파일 업로드)
 --------------------------------------------------
 DROP POLICY IF EXISTS "프로필/시스템 이미지 업로드 정책" ON storage.objects;
+DROP POLICY IF EXISTS "프로필 이미지 조회 정책" ON storage.objects;
+DROP POLICY IF EXISTS "프로필/시스템 이미지 수정 정책" ON storage.objects;
+DROP POLICY IF EXISTS "프로필/시스템 이미지 삭제 정책" ON storage.objects;
+
 
 CREATE POLICY "프로필/시스템 이미지 업로드 정책" ON storage.objects
 FOR INSERT TO authenticated
@@ -37,7 +37,7 @@ WITH CHECK (
 --------------------------------------------------
 -- 4. SELECT 정책 (파일 조회)
 --------------------------------------------------
-DROP POLICY IF EXISTS "프로필 이미지 조회 정책" ON storage.objects;
+
 
 CREATE POLICY "프로필 이미지 조회 정책" ON storage.objects
 FOR SELECT TO authenticated  -- 인증된 사용자만 조회 가능
@@ -69,7 +69,7 @@ USING (
 --------------------------------------------------
 -- 5. UPDATE 정책 (파일 수정)
 --------------------------------------------------
-DROP POLICY IF EXISTS "프로필/시스템 이미지 수정 정책" ON storage.objects;
+
 
 CREATE POLICY "프로필/시스템 이미지 수정 정책" ON storage.objects
 FOR UPDATE TO authenticated
@@ -105,7 +105,7 @@ WITH CHECK (
 --------------------------------------------------
 -- 6. DELETE 정책 (파일 삭제)
 --------------------------------------------------
-DROP POLICY IF EXISTS "프로필/시스템 이미지 삭제 정책" ON storage.objects;
+
 
 CREATE POLICY "프로필/시스템 이미지 삭제 정책" ON storage.objects
 FOR DELETE TO authenticated

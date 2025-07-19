@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo } from "react";
 import { motion } from "framer-motion";
-import { User, Save, Loader2 } from "lucide-react";
+import { User, Save, Loader2, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -20,6 +20,7 @@ import { ImageUpload } from "@/components/ui/image-upload";
 import { ErrorBoundary } from "@/components/error/error-boundary";
 import { formatPhone } from "@/lib/utils/validation/validation";
 import { useAccountForm } from "@/hooks/useAccountForm";
+import { useAvatarSeedManager } from "@/hooks/useAvatarSeedManager";
 import type { ProfileSectionProps, ProfileFormData } from "@/lib/types/account";
 import AccountCardHeader from "./AccountCardHeader";
 import { devLog } from "@/lib/utils/logging/dev-logger";
@@ -31,6 +32,14 @@ export function ProfileSection({
   onImageUpload,
   onImageDelete,
 }: ProfileSectionProps) {
+  // 아바타 시드 관리 훅
+  const {
+    updateAvatarSeed,
+    generateRandomSeed,
+    loading: avatarLoading,
+  } = useAvatarSeedManager({
+    userId: profile?.id || "",
+  });
   const [profileImagePreview, setProfileImagePreview] = useState<string | null>(
     profile?.profile_image_url
       ? `${profile.profile_image_url}?t=${Date.now()}`
@@ -137,10 +146,14 @@ export function ProfileSection({
                   }
                 }}
                 onDelete={handleImageDelete}
+                onAvatarChange={async () => {
+                  const newSeed = generateRandomSeed();
+                  await updateAvatarSeed(newSeed);
+                }}
                 currentImage={profileImagePreview}
                 avatarSize="lg"
                 label="프로필 사진"
-                showCamera={false}
+                profile={profile}
               />
             </div>
 

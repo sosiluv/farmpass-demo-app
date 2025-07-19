@@ -122,6 +122,14 @@ export function useFarmMembersQuery(farmId: string | null) {
     filter: farmId ? memberFilter : undefined,
   });
 
+  // 🔥 프로필 변경 시 멤버 아바타 업데이트를 위한 구독
+  useSupabaseRealtime({
+    table: "profiles",
+    refetch: membersQuery.refetch,
+    events: ["UPDATE"],
+    // 멤버의 프로필이 변경되면 아바타도 업데이트
+  });
+
   return {
     // 기존 인터페이스 호환성 유지
     farmMembers: {
@@ -245,6 +253,14 @@ export function useFarmMembersPreviewQuery(farmIds: string[]) {
     refetch: membersQuery.refetch,
     events: ["INSERT", "UPDATE", "DELETE"],
     filter: farmIds.length > 0 ? previewFilter : undefined,
+  });
+
+  // 🔥 프로필 변경 시 멤버 아바타 업데이트를 위한 구독 (다중 농장)
+  useSupabaseRealtime({
+    table: "profiles",
+    refetch: membersQuery.refetch,
+    events: ["UPDATE"],
+    // 멤버의 프로필이 변경되면 아바타도 업데이트
   });
 
   return {

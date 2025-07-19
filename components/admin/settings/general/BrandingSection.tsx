@@ -104,19 +104,14 @@ export function BrandingSection({
               </div>
               <div className="flex flex-col items-center sm:block">
                 <ImageUpload
-                  id="site-logo-upload"
-                  onUpload={async (file) => {
-                    if (!file) return;
-                    await logoUpload.uploadImage(file);
-                  }}
-                  onDelete={async () => {
-                    await logoUpload.deleteImage();
-                  }}
+                  id="logo-upload"
+                  uploadType="logo"
+                  onUpload={logoUpload.uploadImage}
+                  onDelete={logoUpload.deleteImage}
                   currentImage={logoPreview}
                   avatarSize="md"
-                  label="사이트 로고"
-                  showCamera={false}
-                  uploadType="logo"
+                  label="로고"
+                  hideGuidelines={false}
                 />
               </div>
               <div className="text-sm text-blue-600/80 space-y-1 text-center">
@@ -134,29 +129,14 @@ export function BrandingSection({
               </div>
               <div className="flex flex-col items-center sm:block">
                 <ImageUpload
-                  id="site-favicon-upload"
-                  onUpload={async (file) => {
-                    if (!file) return;
-
-                    // 파비콘 파일명 정리 (캐시 문제 방지)
-                    const cleanFileName = file.name.replace(
-                      /[^a-zA-Z0-9.-]/g,
-                      "_"
-                    );
-                    const renamedFile = new File([file], cleanFileName, {
-                      type: file.type,
-                    });
-
-                    await faviconUpload.uploadImage(renamedFile);
-                  }}
-                  onDelete={async () => {
-                    await faviconUpload.deleteImage();
-                  }}
+                  id="favicon-upload"
+                  uploadType="favicon"
+                  onUpload={faviconUpload.uploadImage}
+                  onDelete={faviconUpload.deleteImage}
                   currentImage={faviconPreview}
                   avatarSize="md"
                   label="파비콘"
-                  showCamera={false}
-                  uploadType="favicon"
+                  hideGuidelines={false}
                 />
               </div>
               <div className="text-sm text-orange-600/80 space-y-1 text-center">

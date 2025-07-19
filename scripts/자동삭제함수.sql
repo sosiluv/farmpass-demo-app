@@ -819,32 +819,6 @@ SELECT cron.schedule('cleanup-all-data', '0 17 * * *', 'SELECT auto_cleanup_all_
 ----------------------------------------------------------------------------------------------------------------
 
 
--- 크론에서 호출할 간단한 래퍼 함수
--- CREATE OR REPLACE FUNCTION cron_visitor_cleanup()
--- RETURNS void
--- LANGUAGE plpgsql
--- SECURITY DEFINER
--- AS $$
--- DECLARE
---   v_result RECORD;
--- BEGIN
---   -- 자동 정리 실행
---   SELECT * INTO v_result 
---   FROM auto_cleanup_expired_visitor_entries() 
---   LIMIT 1;
-  
---   -- 결과를 PostgreSQL 로그에도 기록 (선택사항)
---   IF v_result.status = 'SUCCESS' THEN
---     RAISE NOTICE '[CRON] 방문자 데이터 정리 성공: %건 삭제', v_result.deleted_count;
---   ELSE
---     RAISE WARNING '[CRON] 방문자 데이터 정리 실패';
---   END IF;
--- END;
--- $$;
-
-
-----------------------------------------------------------------------------------------------------------------
-
 
 -- 기존 스케줄이 있다면 삭제
 SELECT cron.unschedule('auto-visitor-cleanup');

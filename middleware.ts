@@ -263,11 +263,11 @@ export async function middleware(request: NextRequest) {
   if (!isMaintenancePath && !isPublicPath) {
     try {
       // 유지보수 모드 상태 확인 (캐시 활용으로 성능 최적화)
-      const maintenanceMode = await isMaintenanceMode(false);
+      const maintenanceMode = await isMaintenanceMode();
 
       if (maintenanceMode) {
         // 관리자는 유지보수 모드에서도 접근 가능 (캐시 활용)
-        const isAdmin = user ? await isAdminUser(user.id, false) : false;
+        const isAdmin = user ? await isAdminUser(user.id) : false;
 
         if (!isAdmin) {
           devLog.log(`[MIDDLEWARE] Redirecting to maintenance page`);

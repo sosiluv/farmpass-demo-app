@@ -15,6 +15,7 @@ import { useState } from "react";
 import { UserDetailModal } from "./UserDetailModal";
 import { CommonListWrapper } from "../shared/CommonListWrapper";
 import { ImagePreviewDialog } from "@/components/common/ImagePreviewDialog";
+import { generateInitials, getAvatarUrl } from "@/lib/utils/media/avatar";
 
 interface UserListProps {
   users: Profile[];
@@ -50,15 +51,6 @@ export function UserList({ users, onUserClick }: UserListProps) {
     return isActive
       ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200"
       : "bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200";
-  };
-
-  const getInitials = (name: string) => {
-    if (!name) return "U";
-    return name
-      .split(" ")
-      .map((n) => n[0])
-      .join("")
-      .toUpperCase();
   };
 
   const getAvatarColor = (name: string) => {
@@ -99,20 +91,15 @@ export function UserList({ users, onUserClick }: UserListProps) {
                   cursor: user.profile_image_url ? "pointer" : undefined,
                 }}
               >
-                {user.profile_image_url ? (
-                  <AvatarImage
-                    src={user.profile_image_url}
-                    alt={user.name || "User"}
-                  />
-                ) : (
-                  <AvatarFallback
-                    className={`${getAvatarColor(
-                      user.name
-                    )} text-white text-sm`}
-                  >
-                    {getInitials(user.name)}
-                  </AvatarFallback>
-                )}
+                <AvatarImage
+                  src={getAvatarUrl(user, { size: 128 })}
+                  alt={user.name || "User"}
+                />
+                <AvatarFallback
+                  className={`${getAvatarColor(user.name)} text-white text-sm`}
+                >
+                  {generateInitials(user.name)}
+                </AvatarFallback>
               </Avatar>
             }
             primary={user.name}

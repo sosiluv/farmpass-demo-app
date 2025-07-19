@@ -3,7 +3,7 @@
 import { Users } from "lucide-react";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { type FarmMembers } from "@/lib/hooks/query/use-farm-members-query";
-import { generateInitials } from "@/lib/utils/text";
+import { generateInitials, getAvatarUrl } from "@/lib/utils/media/avatar";
 import type { MemberWithProfile } from "@/lib/hooks/query/use-farm-members-query";
 
 interface FarmMembersPreviewProps {
@@ -74,7 +74,13 @@ export function FarmMembersPreview({
               title={`${member.representative_name} (${member.role})`}
             >
               <AvatarImage
-                src={member.profile_image_url || ""}
+                src={getAvatarUrl(
+                  {
+                    ...member,
+                    name: member.representative_name,
+                  },
+                  { size: 64 }
+                )}
                 alt={member.representative_name}
                 className="object-cover"
               />

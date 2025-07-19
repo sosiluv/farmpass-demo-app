@@ -331,7 +331,6 @@ COMMENT ON COLUMN public.system_settings."subscriptionForceDelete" IS '구독 �
 -- 푸시 구독 테이블 주석
 COMMENT ON TABLE public.push_subscriptions IS '웹푸시 구독 정보를 저장하는 테이블';
 COMMENT ON COLUMN public.push_subscriptions.user_id IS '구독한 사용자 ID';
-COMMENT ON COLUMN public.push_subscriptions.farm_id IS '구독한 농장 ID (NULL이면 전체 구독)';
 COMMENT ON COLUMN public.push_subscriptions.endpoint IS '푸시 서비스 엔드포인트 URL';
 COMMENT ON COLUMN public.push_subscriptions.p256dh IS '공개키 (P-256 ECDH)';
 COMMENT ON COLUMN public.push_subscriptions.auth IS '인증 비밀키';

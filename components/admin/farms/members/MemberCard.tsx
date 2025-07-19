@@ -3,28 +3,7 @@ import { RoleBadge, UserRole } from "@/components/user/role-badge";
 import { QuickActionButtons } from "@/components/user/quick-action-buttons";
 import { useState } from "react";
 import { ImagePreviewDialog } from "@/components/common/ImagePreviewDialog";
-
-// 이니셜 생성 함수 - 한글/영문 지원, null/빈값 처리 강화
-function getInitials(name: string | null | undefined): string {
-  if (!name || typeof name !== "string" || name.trim() === "") return "?";
-
-  const trimmedName = name.trim();
-  if (trimmedName === "알 수 없음") return "?";
-
-  // 한글인 경우 성과 이름의 첫 글자
-  if (/[가-힣]/.test(trimmedName)) {
-    return trimmedName.length >= 2 ? trimmedName.slice(0, 2) : trimmedName;
-  }
-
-  // 영문인 경우 각 단어의 첫 글자
-  const words = trimmedName.split(/\s+/).filter((word) => word.length > 0);
-  if (words.length === 0) return "?";
-
-  return words
-    .slice(0, 2) // 최대 2개 단어만
-    .map((word) => word.charAt(0).toUpperCase())
-    .join("");
-}
+import { generateInitials, getAvatarUrl } from "@/lib/utils/media/avatar";
 
 // 역할별 아바타 스타일 설정
 function getRoleStyles(role: string): {
@@ -66,6 +45,8 @@ interface Member {
   email: string;
   role: string;
   profile_image_url?: string | null;
+  avatar_seed?: string | null;
+  name?: string | null;
 }
 
 interface MemberCardProps {
@@ -96,14 +77,20 @@ export function MemberCard({
           onClick={() => member.profile_image_url && setPreviewOpen(true)}
         >
           <AvatarImage
-            src={member.profile_image_url || ""}
+            src={getAvatarUrl(
+              {
+                ...member,
+                name: member.representative_name,
+              },
+              { size: 128 }
+            )}
             alt={member.representative_name}
             className="object-cover"
           />
           <AvatarFallback
             className={`font-medium text-xs sm:text-sm ${roleStyles.textColor}`}
           >
-            {getInitials(member.representative_name)}
+            {generateInitials(member.representative_name)}
           </AvatarFallback>
         </Avatar>
         <ImagePreviewDialog

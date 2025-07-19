@@ -103,18 +103,14 @@ const NotificationIconSection = React.memo(function NotificationIconSection({
               </div>
               <div className="flex flex-col items-center sm:block">
                 <ImageUpload
-                  onUpload={async (file) => {
-                    if (!file) return;
-                    await notificationIconUpload.uploadImage(file);
-                  }}
-                  onDelete={async () => {
-                    await notificationIconUpload.deleteImage();
-                  }}
+                  id="notification-icon-upload"
+                  uploadType="notificationIcon"
+                  onUpload={notificationIconUpload.uploadImage}
+                  onDelete={notificationIconUpload.deleteImage}
                   currentImage={iconPreview}
                   avatarSize="md"
                   label="알림 아이콘"
-                  showCamera={false}
-                  uploadType="notificationIcon"
+                  hideGuidelines={false}
                 />
               </div>
               <div className="text-sm text-blue-600/80 space-y-1 text-center">
@@ -131,18 +127,14 @@ const NotificationIconSection = React.memo(function NotificationIconSection({
               </div>
               <div className="flex flex-col items-center sm:block">
                 <ImageUpload
-                  onUpload={async (file) => {
-                    if (!file) return;
-                    await notificationBadgeUpload.uploadImage(file);
-                  }}
-                  onDelete={async () => {
-                    await notificationBadgeUpload.deleteImage();
-                  }}
+                  id="notification-badge-upload"
+                  uploadType="notificationBadge"
+                  onUpload={notificationBadgeUpload.uploadImage}
+                  onDelete={notificationBadgeUpload.deleteImage}
                   currentImage={badgePreview}
                   avatarSize="md"
                   label="배지 아이콘"
-                  showCamera={false}
-                  uploadType="notificationBadge"
+                  hideGuidelines={false}
                 />
               </div>
               <div className="text-sm text-orange-600/80 space-y-1 text-center">

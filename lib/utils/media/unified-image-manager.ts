@@ -10,7 +10,6 @@ import { handleError } from "@/lib/utils/error";
 import {
   UPLOAD_TYPE_CONFIGS,
   UploadType,
-  UploadOptions,
   UploadResult,
   UploadError,
   UploadState,
@@ -133,7 +132,11 @@ export class UnifiedImageManager {
   /**
    * 이미지 업로드 실행
    */
-  async uploadImage(options: UploadOptions): Promise<UploadResult> {
+  async uploadImage(options: {
+    file: File;
+    prevFileName?: string;
+    onProgress?: (progress: number) => void;
+  }): Promise<UploadResult> {
     const { file, prevFileName, onProgress } = options;
     const config = this.getUploadConfig();
 

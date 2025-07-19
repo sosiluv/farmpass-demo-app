@@ -115,6 +115,7 @@ model profiles {
   bio                 String?                                                         // 자기소개
   is_active           Boolean           @default(true)                                // 계정 활성화 상태
   profile_image_url   String?                                                         // 프로필 이미지 URL
+  avatar_seed         String?                                                         // 아바타 생성용 seed (Dicebear)
   last_login_at       DateTime?         @db.Timestamptz(6)                            // 마지막 로그인 시간
   password_changed_at DateTime?         @db.Timestamptz(6)                            // 비밀번호 변경 시간
   login_count         Int               @default(0)                                   // 총 로그인 횟수
