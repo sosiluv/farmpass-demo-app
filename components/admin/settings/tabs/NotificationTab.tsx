@@ -15,6 +15,7 @@ import {
   validateVisitTemplate,
 } from "@/lib/utils/notification/notification-template";
 import { useCommonToast } from "@/lib/utils/notification/toast-messages";
+import { handleError } from "@/lib/utils/error";
 
 interface NotificationTabProps {
   settings: SystemSettings;
@@ -23,76 +24,14 @@ interface NotificationTabProps {
     value: SystemSettings[K]
   ) => void;
   isLoading: boolean;
-  handleImageUpload: (
-    file: File,
-    type: "notificationIcon" | "notificationBadge"
-  ) => Promise<void>;
-  handleImageDelete: (
-    type: "notificationIcon" | "notificationBadge"
-  ) => Promise<void>;
 }
 
 const NotificationTab = React.memo(function NotificationTab({
   settings,
   onUpdate,
   isLoading,
-  handleImageUpload,
-  handleImageDelete,
 }: NotificationTabProps) {
-  const { showInfo, showWarning, showSuccess, showError } = useCommonToast();
-
-  // 이미지 업로드 핸들러 (토스트 처리 포함)
-  const handleImageUploadWithToast = useCallback(
-    async (file: File, type: "notificationIcon" | "notificationBadge") => {
-      showInfo("이미지 업로드 시작", "이미지를 업로드하는 중입니다...");
-      if (!file) {
-        showWarning("입력 오류", "파일이 선택되지 않았습니다.");
-        return;
-      }
-      try {
-        await handleImageUpload(file, type);
-        const typeName =
-          type === "notificationIcon" ? "알림 아이콘" : "알림 배지";
-        showSuccess(
-          "이미지 업로드 완료",
-          `${typeName}이 성공적으로 업로드되었습니다.`
-        );
-      } catch (error) {
-        const typeName =
-          type === "notificationIcon" ? "알림 아이콘" : "알림 배지";
-        showError(
-          "이미지 업로드 실패",
-          `${typeName} 업로드 중 오류가 발생했습니다.`
-        );
-        throw error; // 에러를 다시 던져서 원래 핸들러에서도 처리할 수 있도록
-      }
-    },
-    [handleImageUpload] // 토스트 함수들을 의존성에서 제거
-  );
-
-  // 이미지 삭제 핸들러 (토스트 처리 포함)
-  const handleImageDeleteWithToast = useCallback(
-    async (type: "notificationIcon" | "notificationBadge") => {
-      try {
-        await handleImageDelete(type);
-        const typeName =
-          type === "notificationIcon" ? "알림 아이콘" : "알림 배지";
-        showSuccess(
-          "이미지 삭제 완료",
-          `${typeName}이 성공적으로 삭제되었습니다.`
-        );
-      } catch (error) {
-        const typeName =
-          type === "notificationIcon" ? "알림 아이콘" : "알림 배지";
-        showError(
-          "이미지 삭제 실패",
-          `${typeName} 삭제 중 오류가 발생했습니다.`
-        );
-        throw error; // 에러를 다시 던져서 원래 핸들러에서도 처리할 수 있도록
-      }
-    },
-    [handleImageDelete] // 토스트 함수들을 의존성에서 제거
-  );
+  const { showError, showSuccess } = useCommonToast();
 
   // 템플릿 미리보기 함수
   const handlePreviewTemplate = useCallback(() => {
@@ -115,12 +54,13 @@ const NotificationTab = React.memo(function NotificationTab({
 
       showSuccess("템플릿 미리보기 완료", previewText);
     } catch (error) {
+      handleError(error, "템플릿 미리보기");
       showError(
         "템플릿 미리보기 실패",
         "템플릿 미리보기를 생성하는 중 오류가 발생했습니다."
       );
     }
-  }, [settings.visitTemplate]); // 토스트 함수들을 의존성에서 제거
+  }, [settings.visitTemplate, showError, showSuccess]);
 
   return (
     <ErrorBoundary
@@ -172,8 +112,6 @@ const NotificationTab = React.memo(function NotificationTab({
           settings={settings}
           onUpdate={onUpdate}
           isLoading={isLoading}
-          handleImageUpload={handleImageUploadWithToast}
-          handleImageDelete={handleImageDeleteWithToast}
         />
       </div>
     </ErrorBoundary>

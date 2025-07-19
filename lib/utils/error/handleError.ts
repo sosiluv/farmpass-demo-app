@@ -1,4 +1,4 @@
-// import * as Sentry from "@sentry/nextjs";
+import { devLog } from "@/lib/utils/logging/dev-logger";
 
 interface ErrorHandlerOptions {
   context?: string;
@@ -34,7 +34,14 @@ export function handleError(
   }
 
   // Sentry 등 외부 로깅 (실서비스에서 주석 해제)
-  // Sentry.captureException(error, { extra: { context: opts.context } });
+  if (process.env.NODE_ENV === "production") {
+    try {
+      const Sentry = require("@sentry/nextjs");
+      Sentry.captureException(error, { extra: { context: opts.context } });
+    } catch (sentryError) {
+      console.warn("Sentry capture failed:", sentryError);
+    }
+  }
 
   // 상태 업데이트 콜백 실행 (토스트는 apiClient에서 처리됨)
   if (opts.onStateUpdate) {

@@ -2,6 +2,7 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { MessageSquare, Clock, Phone } from "lucide-react";
+import { formatDateTime } from "@/lib/utils/datetime/date";
 import type { SystemSettings } from "@/lib/types/settings";
 
 interface MaintenanceSettingsProps {
@@ -21,11 +22,15 @@ export function MaintenanceSettings({
   return (
     <div className="space-y-4">
       <div className="space-y-2">
-        <Label className="text-sm font-medium flex items-center gap-1">
+        <Label
+          htmlFor="maintenance-message"
+          className="text-sm font-medium flex items-center gap-1"
+        >
           <MessageSquare className="h-4 w-4" />
           유지보수 메시지
         </Label>
         <Textarea
+          id="maintenance-message"
           value={settings.maintenanceMessage}
           onChange={(e) => onUpdate("maintenanceMessage", e.target.value)}
           placeholder="유지보수 중 사용자에게 표시할 메시지를 입력하세요"
@@ -34,11 +39,15 @@ export function MaintenanceSettings({
         />
       </div>
       <div className="space-y-2">
-        <Label className="text-sm font-medium flex items-center gap-1">
+        <Label
+          htmlFor="maintenance-time"
+          className="text-sm font-medium flex items-center gap-1"
+        >
           <Clock className="h-4 w-4" />
           예상 완료 시간 (분)
         </Label>
         <Input
+          id="maintenance-time"
           type="number"
           min="1"
           max="10080" // 1주일
@@ -81,7 +90,7 @@ export function MaintenanceSettings({
         <div className="space-y-2">
           <Label className="text-sm font-medium">유지보수 시작 시간</Label>
           <p className="text-sm text-muted-foreground">
-            {new Date(settings.maintenanceStartTime).toLocaleString("ko-KR")}
+            {formatDateTime(settings.maintenanceStartTime)}
           </p>
         </div>
       )}

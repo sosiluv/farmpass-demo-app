@@ -1,8 +1,8 @@
 "use client";
 
-import { useSystemSettings } from "@/lib/hooks/use-system-settings";
 import { DEFAULT_SYSTEM_SETTINGS } from "@/lib/constants/defaults";
 import { useMemo } from "react";
+import type { SystemSettings } from "@/lib/types/settings";
 
 interface LogoInfo {
   logoUrl: string | null;
@@ -13,23 +13,30 @@ interface LogoInfo {
 /**
  * 시스템 로고 정보를 가져오는 훅
  * 업로드된 로고가 있으면 해당 URL을, 없으면 null을 반환
+ * settings는 상위 컴포넌트에서 prop으로 전달받음
  */
-export function useLogo(): LogoInfo {
-  const { settings } = useSystemSettings();
+export function useLogo(settings?: SystemSettings | null): LogoInfo {
+  // settings가 undefined인 경우 기본값 사용
+  const currentSettings = settings || {
+    ...DEFAULT_SYSTEM_SETTINGS,
+    id: "",
+    created_at: new Date(),
+    updated_at: new Date(),
+  };
 
   const imageUrl = useMemo(() => {
-    if (!settings?.logo) return null;
-    // 캐시 버스터를 설정의 updatedAt을 기반으로 생성하여 설정 변경 시에만 새로고침
-    const cacheBuster = settings.updatedAt
-      ? new Date(settings.updatedAt).getTime()
+    if (!currentSettings?.logo) return null;
+    // 캐시 버스터를 설정의 updated_at을 기반으로 생성하여 설정 변경 시에만 새로고침
+    const cacheBuster = currentSettings.updated_at
+      ? new Date(currentSettings.updated_at).getTime()
       : Date.now();
-    // DB에 저장된 publicUrl을 그대로 사용
-    return `${settings.logo}?t=${cacheBuster}`;
-  }, [settings?.logo, settings?.updatedAt]);
+    // DB에 저장된 publicUrl을 그대로 사용하되, 더 강력한 캐시 버스터 적용
+    return `${currentSettings.logo}?t=${cacheBuster}&v=${Date.now()}`;
+  }, [currentSettings?.logo, currentSettings?.updated_at]);
 
   return {
     logoUrl: imageUrl,
-    siteName: settings?.siteName || DEFAULT_SYSTEM_SETTINGS.siteName,
-    hasLogo: !!settings?.logo,
+    siteName: currentSettings?.siteName || DEFAULT_SYSTEM_SETTINGS.siteName,
+    hasLogo: !!currentSettings?.logo,
   };
 }

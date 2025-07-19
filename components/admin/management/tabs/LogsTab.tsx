@@ -5,7 +5,7 @@ import { useState } from "react";
 import { FileText } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useAdminLogs } from "@/hooks/admin/useAdminLogs";
+import { useAdminLogsQuery } from "@/lib/hooks/query/use-admin-logs-query";
 import { StatsSkeleton, TableSkeleton } from "@/components/common/skeletons";
 
 import type { SystemLog } from "@/lib/types/system";
@@ -32,13 +32,19 @@ import { AdminError } from "@/components/error/admin-error";
 import { useDataFetchTimeout } from "@/hooks/useTimeout";
 
 export function LogsTab() {
-  const { stats, loading, refetch } = useAdminLogs();
+  const { data: stats, isLoading: loading, refetch } = useAdminLogsQuery();
   const [selectedLog, setSelectedLog] = useState<SystemLog | null>(null);
 
   // 타임아웃 관리
-  const { timeoutReached, retry } = useDataFetchTimeout(loading, refetch, {
-    timeout: 10000,
-  });
+  const { timeoutReached, retry } = useDataFetchTimeout(
+    loading,
+    async () => {
+      await refetch();
+    },
+    {
+      timeout: 10000,
+    }
+  );
 
   if (timeoutReached) {
     return (
@@ -53,10 +59,12 @@ export function LogsTab() {
 
   if (loading) {
     return (
-      <div className="space-y-6">
-        <StatsSkeleton columns={4} />
-        <TableSkeleton rows={10} columns={5} />
-      </div>
+      <CommonPageWrapper>
+        <div className="space-y-6">
+          <StatsSkeleton columns={4} />
+          <TableSkeleton rows={10} columns={5} />
+        </div>
+      </CommonPageWrapper>
     );
   }
 
@@ -68,22 +76,23 @@ export function LogsTab() {
       description="로그 정보를 불러오는 중 문제가 발생했습니다. 페이지를 새로고침하거나 잠시 후 다시 시도해주세요."
     >
       <LogsDataManager>
-        {({ logs, isLoading, error, lastUpdate, setLogs }) => (
+        {({ logs, isLoading, error, lastUpdate, refetch }) => (
           <LogsFilterManager logs={logs}>
             {({
               filters,
               setFilters,
-              auditFilter,
-              setAuditFilter,
-              categoryFilter,
-              setCategoryFilter,
+              categoryFilters,
+              setCategoryFilters,
+              levelFilters,
+              setLevelFilters,
               filteredLogs,
             }) => (
-              <LogsActionManager logs={logs} setLogs={setLogs}>
+              <LogsActionManager logs={logs} refetch={refetch}>
                 {({
                   handleDeleteLog,
                   handleDeleteAllLogs,
                   handleDeleteOldLogs,
+                  isLoading: logsActionLoading,
                 }) => (
                   <LogsExportManager logs={filteredLogs}>
                     {({ handleLogsExport }) => {
@@ -155,18 +164,30 @@ export function LogsTab() {
                                 <LogFilters
                                   filters={filters}
                                   onFiltersChange={setFilters}
+                                  levelFilters={levelFilters}
+                                  onLevelFiltersChange={setLevelFilters}
+                                  onCategoryFiltersChange={setCategoryFilters}
                                 />
                                 <LogCategoryFilters
-                                  auditFilter={auditFilter}
-                                  categoryFilter={categoryFilter}
-                                  onAuditFilterChange={setAuditFilter}
-                                  onCategoryFilterChange={setCategoryFilter}
+                                  categoryFilters={categoryFilters}
+                                  onCategoryFiltersChange={setCategoryFilters}
                                 />
                                 <LogFilterStatus
                                   totalCount={logs.length}
                                   filteredCount={filteredLogs.length}
-                                  auditFilter={auditFilter}
-                                  categoryFilter={categoryFilter}
+                                  categoryFilters={categoryFilters}
+                                  filters={filters}
+                                  levelFilters={levelFilters}
+                                  onClearAllFilters={() => {
+                                    setFilters({
+                                      search: "",
+                                      level: undefined,
+                                      startDate: undefined,
+                                      endDate: undefined,
+                                    });
+                                    setLevelFilters(["all"]);
+                                    setCategoryFilters(["all"]);
+                                  }}
                                 />
                               </div>
 
@@ -175,6 +196,7 @@ export function LogsTab() {
                                 logsCount={logs.length}
                                 onDeleteOldLogs={handleDeleteOldLogs}
                                 onDeleteAllLogs={handleDeleteAllLogs}
+                                isLoading={logsActionLoading}
                               />
 
                               {/* 로그 목록 */}

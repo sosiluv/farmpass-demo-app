@@ -1,6 +1,7 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { Trash2 } from "lucide-react";
+import { Trash2, RotateCcw } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import type { CleanupStatus } from "@/lib/types/settings";
 import SettingsCardHeader from "../SettingsCardHeader";
 import {
@@ -8,6 +9,8 @@ import {
   CleanupSuccessMessage,
   CleanupActions,
 } from "./cleanup";
+
+import { Loading } from "@/components/ui/loading";
 
 interface CleanupSectionProps {
   cleanupStatus: CleanupStatus | null;
@@ -32,14 +35,29 @@ export function CleanupSection({
         icon={Trash2}
         title="로그 정리 관리"
         description="만료된 시스템 로그와 방문자 데이터를 수동으로 정리할 수 있습니다"
+        actions={
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={onRefreshStatus}
+            disabled={cleanupLoading || statusLoading}
+          >
+            <RotateCcw
+              className={`h-4 w-4 mr-2 ${statusLoading ? "animate-spin" : ""}`}
+            />
+            새로고침
+          </Button>
+        }
       />
       <CardContent className="space-y-6">
         {statusLoading ? (
-          <div className="text-center py-4">
-            <p className="text-sm text-muted-foreground">
-              정리 상태를 확인하는 중...
-            </p>
-          </div>
+          <Loading
+            text="정리 상태를 확인하는 중..."
+            minHeight={180}
+            spinnerSize={32}
+            spinnerColor="text-primary"
+            className="py-8 w-full"
+          />
         ) : cleanupStatus ? (
           <>
             <CleanupStatusComponent cleanupStatus={cleanupStatus} />

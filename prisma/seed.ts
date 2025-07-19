@@ -1,6 +1,6 @@
 import { PrismaClient } from "@prisma/client";
 import { devLog } from "../lib/utils/logging/dev-logger";
-import { DEFAULT_SYSTEM_SETTINGS } from "@/lib/constants/defaults";
+import { DEFAULT_SYSTEM_SETTINGS } from "../lib/constants/defaults";
 
 const prisma = new PrismaClient();
 
@@ -12,7 +12,6 @@ async function main() {
     // 초기 시스템 설정 생성
     await prisma.systemSettings.create({
       data: {
-        id: "default-system-settings",
         ...DEFAULT_SYSTEM_SETTINGS,
       },
     });

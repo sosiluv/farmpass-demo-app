@@ -18,7 +18,10 @@ export function MaintenanceModeToggle({
     <div className="flex items-center justify-between py-2">
       <div className="space-y-0.5">
         <div className="flex items-center gap-2">
-          <Label className="text-sm font-medium flex items-center gap-1">
+          <Label
+            htmlFor="maintenance-mode"
+            className="text-sm font-medium flex items-center gap-1"
+          >
             <Wrench className="h-4 w-4" />
             유지보수 모드
           </Label>
@@ -39,6 +42,7 @@ export function MaintenanceModeToggle({
         )}
       </div>
       <Switch
+        id="maintenance-mode"
         checked={maintenanceMode}
         onCheckedChange={onUpdate}
         disabled={isLoading}

@@ -2,99 +2,26 @@
 
 import { useEffect, useMemo, useState, useCallback } from "react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Skeleton } from "@/components/ui/skeleton";
-import { AlertCircle, Activity, Bug } from "lucide-react";
+import { StatsSkeleton, CardSkeleton } from "@/components/common/skeletons";
+import { AlertCircle } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/components/providers/auth-provider";
 import { AccessDenied } from "@/components/error/access-denied";
 import { PageHeader } from "@/components/layout";
-import { Button } from "@/components/ui/button";
 import {
   SystemStatusCard,
   UptimeCard,
   ErrorLogsCard,
   AnalyticsCard,
+  TechStackCard,
 } from "@/components/admin/monitoring";
 import { AdminError } from "@/components/error/admin-error";
 import { useDataFetchTimeout } from "@/hooks/useTimeout";
-import { apiClient } from "@/lib/utils/data";
-import { handleError } from "@/lib/utils/error";
-
-interface MonitoringData {
-  timestamp: string;
-  services: {
-    health: {
-      status: string;
-      timestamp: string;
-      uptime: number;
-      responseTime: string;
-      version: string;
-      performance: {
-        totalResponseTime: string;
-        databaseResponseTime: string;
-        cpu: {
-          user: string;
-          system: string;
-          total: string;
-        };
-      };
-      system: {
-        farmCount: number;
-        visitorCount: number;
-        memory: {
-          used: number;
-          total: number;
-          external: number;
-          status: string;
-        };
-        cpu: {
-          user: number;
-          system: number;
-          total: number;
-          threshold: number;
-          status: string;
-        };
-        nodeVersion: string;
-        platform: string;
-        arch: string;
-      };
-      services: {
-        database: string;
-        api: string;
-        memory: string;
-      };
-    };
-    uptime: {
-      stat: string;
-      monitors: Array<{
-        id: number;
-        friendly_name: string;
-        status: number;
-        all_time_uptime_ratio: number;
-      }>;
-    };
-    analytics: {
-      visitors: number;
-      pageviews: number;
-      avgDuration: number;
-    };
-    errors: Array<{
-      timestamp: string;
-      level: string;
-      message: string;
-      context?: Record<string, any>;
-    }>;
-  };
-  meta: {
-    uptimeConfigured: boolean;
-    analyticsConfigured: boolean;
-  };
-}
+import { useMonitoringQuery } from "@/lib/hooks/query/use-monitoring-query";
+import { getAuthErrorMessage } from "@/lib/utils/validation/validation";
 
 export default function MonitoringDashboard() {
-  const [data, setData] = useState<MonitoringData | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const { data, isLoading: loading, error, refetch } = useMonitoringQuery();
 
   const router = useRouter();
   const { state } = useAuth();
@@ -111,40 +38,16 @@ export default function MonitoringDashboard() {
     }
   }, [isAdmin, router]);
 
-  const fetchData = useCallback(async () => {
-    try {
-      const result = await apiClient("/api/monitoring/dashboard", {
-        context: "시스템 모니터링 데이터 조회",
-        onError: (error, context) => {
-          handleError(error, {
-            context,
-            onStateUpdate: (errorMessage) => {
-              setError(errorMessage);
-            },
-          });
-        },
-      });
-      setData(result);
-      setError(null);
-    } catch (err) {
-      // 에러는 이미 onError에서 처리됨
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
   // 타임아웃 관리
-  const { timeoutReached, retry } = useDataFetchTimeout(loading, fetchData, {
-    timeout: 10000,
-  });
-
-  useEffect(() => {
-    fetchData();
-    const interval = setInterval(fetchData, 30 * 60 * 1000); // 30분마다 갱신
-    return () => {
-      clearInterval(interval);
-    };
-  }, [fetchData]);
+  const { timeoutReached, retry } = useDataFetchTimeout(
+    loading,
+    async () => {
+      await refetch();
+    },
+    {
+      timeout: 10000,
+    }
+  );
 
   // 권한이 없는 경우
   if (!isAdmin) {
@@ -177,17 +80,18 @@ export default function MonitoringDashboard() {
           description="서버 상태, 가동시간, 에러 로그를 실시간으로 모니터링하세요"
           breadcrumbs={[{ label: "시스템 모니터링" }]}
         />
-        <Skeleton className="h-[125px] w-full" />
+        <CardSkeleton />
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          <Skeleton className="h-[200px] w-full" />
-          <Skeleton className="h-[200px] w-full" />
-          <Skeleton className="h-[200px] w-full" />
+          <CardSkeleton />
+          <CardSkeleton />
+          <CardSkeleton />
         </div>
       </div>
     );
   }
 
   if (error) {
+    const authError = getAuthErrorMessage(error);
     return (
       <div className="flex-1 space-y-6 p-4 md:p-6 pt-2 md:pt-4">
         <PageHeader
@@ -198,7 +102,7 @@ export default function MonitoringDashboard() {
         <Alert variant="destructive">
           <AlertCircle className="h-4 w-4" />
           <AlertTitle>Error</AlertTitle>
-          <AlertDescription>{error}</AlertDescription>
+          <AlertDescription>{authError.message}</AlertDescription>
         </Alert>
       </div>
     );
@@ -220,12 +124,21 @@ export default function MonitoringDashboard() {
         {/* 가동시간과 방문자 통계를 2열로 */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {data.meta.uptimeConfigured && (
-            <UptimeCard monitors={data.services.uptime?.monitors ?? []} />
+            <UptimeCard
+              monitors={data.services.uptime?.monitors ?? []}
+              success={data.services.uptime?.success}
+              error={data.services.uptime?.error}
+              message={data.services.uptime?.message}
+              details={data.services.uptime?.details}
+            />
           )}
           {data.meta.analyticsConfigured && (
             <AnalyticsCard data={data.services.analytics} />
           )}
         </div>
+
+        {/* 개발 스택 정보 */}
+        <TechStackCard data={data?.services?.health?.system?.techStack} />
 
         {/* 최근 에러를 아래로 한 칸 내려서 1열로 */}
         <ErrorLogsCard errors={data.services.errors ?? []} />

@@ -1,25 +1,66 @@
-import type { Database } from "./supabase";
+/**
+ * 🏗️ 메인 타입 정의 모듈
+ *
+ * 프로젝트에서 사용되는 모든 타입들의 중앙 집중 관리
+ */
 
-// 기본 데이터베이스 테이블 타입
-export type Tables = Database["public"]["Tables"];
-export type Profile = Tables["profiles"]["Row"];
-export type Farm = Database["public"]["Tables"]["farms"]["Row"];
-export type FarmMember = Tables["farm_members"]["Row"] & {
-  email: Tables["profiles"]["Row"]["email"];
-  representative_name: Tables["profiles"]["Row"]["name"];
-  profile_image_url: Tables["profiles"]["Row"]["profile_image_url"];
-};
-export type VisitorEntry = Tables["visitor_entries"]["Row"];
-export type SystemLog = Tables["system_logs"]["Row"];
-export type SystemSetting = Tables["system_settings"]["Row"];
+// ===========================================
+// 공통 기본 타입 (최우선 import)
+// ===========================================
 
-// Enum 타입
-export type Enums = Database["public"]["Enums"];
-export type LogLevel = Enums["LogLevel"];
+export type {
+  // 데이터베이스 기본 타입
+  Tables,
+  Enums,
+  Profile,
+  Farm,
+  FarmMember,
+  VisitorEntry,
+  SystemLog,
+  SystemSetting,
 
-// 공통 타입
-export type UserRole = "admin" | "owner" | "manager" | "viewer";
-export type AccountType = "admin" | "user";
+  // 공통 열거형
+  LogLevel,
+  UserRole,
+  AccountType,
+  NotificationMethod,
+
+  // 공통 유틸리티 타입
+  ApiResponse,
+} from "./common";
+
+// ===========================================
+// 도메인별 타입 (알파벳 순서)
+// ===========================================
+
+// 계정 관련 타입
+export type {
+  ProfileFormData,
+  CompanyFormData,
+  PasswordFormData,
+  ProfileSectionProps,
+  CompanySectionProps,
+  SecuritySectionProps,
+} from "./account";
+
+// 농장 관련 타입
+export type {
+  FarmFormValues,
+  MemberWithProfile,
+  FarmMembers,
+  FarmStats,
+} from "./farm";
+
+// 알림 관련 타입
+export type {
+  Notification,
+  NotificationSettings,
+  UpdateNotificationSettingsDTO,
+  NotificationPreference,
+  SubscriptionStatus,
+  PushSubscriptionData,
+  NotificationPayload,
+} from "./notification";
 
 // 통계 관련 타입
 export type {
@@ -35,21 +76,26 @@ export type {
 
 // 방문자 관련 타입
 export type {
+  VisitorWithFarm,
   VisitorWithProfile,
+  CreateVisitorData,
+  UpdateVisitorData,
   VisitorFilter,
+  VisitorFilters,
   VisitorExportOptions,
+  VisitorSettings,
+  VisitorStatistics,
+  VisitorApiResponse,
+  VisitorListApiResponse,
+  VisitorStatsApiResponse,
+  VisitorTableProps,
+  VisitorFormProps,
+  VisitorFiltersProps,
 } from "./visitor";
 
-// 알림 관련 타입
-export type {
-  Notification,
-  NotificationPreference,
-  NotificationPayload,
-  NotificationFilter,
-} from "./notification";
+// ===========================================
+// 레거시 호환성 (필요시에만 유지)
+// ===========================================
 
-export interface ExtendedFarm extends Farm {
-  owner_name: string;
-  member_count: number;
-  visitor_count: number;
-}
+// 기존 코드 호환성을 위한 타입 별칭
+export type { VisitorEntry as VisitorBase } from "./common";

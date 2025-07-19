@@ -25,7 +25,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(
       {
         success: true,
-        message: "All caches cleared successfully",
+        message: "모든 캐시가 성공적으로 초기화되었습니다.",
         settings: {
           maintenanceMode: freshSettings.maintenanceMode,
           debugMode: freshSettings.debugMode,
@@ -61,7 +61,11 @@ export async function POST(request: NextRequest) {
     );
 
     return NextResponse.json(
-      { success: false, error: "Failed to clear all caches" },
+      {
+        success: false,
+        error: "CACHE_CLEAR_ALL_FAILED",
+        message: "모든 캐시 초기화에 실패했습니다.",
+      },
       { status: 500 }
     );
   }

@@ -18,9 +18,14 @@ export function AddMemberRoleField({
 }: AddMemberRoleFieldProps) {
   return (
     <div className="space-y-1 sm:space-y-2">
-      <Label className="text-xs sm:text-sm">권한</Label>
+      <Label htmlFor="member-role-select" className="text-xs sm:text-sm">
+        권한
+      </Label>
       <Select value={role} onValueChange={(value: any) => onRoleChange(value)}>
-        <SelectTrigger className="h-8 sm:h-9 md:h-10 text-xs sm:text-sm">
+        <SelectTrigger
+          id="member-role-select"
+          className="h-8 sm:h-9 md:h-10 text-xs sm:text-sm"
+        >
           <SelectValue placeholder="권한 선택" />
         </SelectTrigger>
         <SelectContent>

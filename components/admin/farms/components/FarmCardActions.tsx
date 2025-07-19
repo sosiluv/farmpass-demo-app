@@ -1,7 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { FarmQRCode } from "../farm-qr-code";
 import { Edit, Trash2, Users } from "lucide-react";
-import type { Farm } from "@/lib/hooks/use-farms";
+import type { Farm } from "@/lib/types/farm";
 import Link from "next/link";
 
 interface FarmCardActionsProps {

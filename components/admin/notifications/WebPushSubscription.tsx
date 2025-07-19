@@ -4,13 +4,21 @@ import React, { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { devLog } from "@/lib/utils/logging/dev-logger";
 
-import type { SubscriptionStatus, Farm } from "@/lib/types/notification";
+import type { SubscriptionStatus } from "@/lib/types/notification";
+import type { Farm } from "@/lib/types";
+
+// 알림 전용 확장 Farm 타입
+interface NotificationFarm extends Pick<Farm, "id" | "farm_name"> {
+  address?: string;
+  isSubscribed?: boolean;
+}
 import { useNotificationService } from "@/hooks/useNotificationService";
 import { renderNotificationStatus } from "./status/NotificationStatus";
 import NotificationCardHeader from "./NotificationCardHeader";
 import { Zap } from "lucide-react";
 import { useCommonToast } from "@/lib/utils/notification/toast-messages";
 import { safeNotificationAccess } from "@/lib/utils/browser/safari-compat";
+import { getNotificationErrorMessage } from "@/lib/utils/validation/validation";
 
 interface WebPushSubscriptionProps {
   farms?: Farm[];
@@ -22,24 +30,25 @@ export function WebPushSubscription({
   onSubscriptionStatusChange,
 }: WebPushSubscriptionProps) {
   const [status, setStatus] = useState<SubscriptionStatus>("checking");
-  const [farms, setFarms] = useState<Farm[]>([]);
+  const [farms, setFarms] = useState<NotificationFarm[]>([]);
   const {
     isLoading,
     requestNotificationPermission,
-    sendTestNotification,
     cleanupSubscriptions,
     handleUnsubscription,
     getSubscriptionStatus,
     lastMessage,
     clearLastMessage,
-  } = useNotificationService();
+  } = useNotificationService(); // Lazy Loading으로 최적화
   const { showInfo, showWarning, showSuccess, showError } = useCommonToast();
 
   // props로 받은 농장 데이터 처리
   useEffect(() => {
     setFarms(
       (propFarms || []).map((farm) => ({
-        ...farm,
+        id: farm.id,
+        farm_name: farm.farm_name,
+        address: farm.farm_address,
         isSubscribed: false,
       }))
     );
@@ -62,16 +71,6 @@ export function WebPushSubscription({
 
   const initializeNotifications = async () => {
     try {
-      // Service Worker 지원 여부 확인
-      if (!("serviceWorker" in navigator) || !("PushManager" in window)) {
-        showWarning(
-          "브라우저 미지원",
-          "이 브라우저는 푸시 알림을 지원하지 않습니다."
-        );
-        setStatus("unsupported");
-        return;
-      }
-
       // Service Worker 등록
       try {
         const registration = await navigator.serviceWorker.register(
@@ -90,14 +89,15 @@ export function WebPushSubscription({
   };
 
   const checkNotificationStatus = async () => {
-    devLog.log("알림 상태 확인 시작");
-
     const safeNotification = safeNotificationAccess();
     devLog.log("현재 권한 상태:", safeNotification.permission);
 
     // 브라우저 지원 여부 확인
     if (!safeNotification.isSupported) {
-      devLog.log("브라우저에서 알림 미지원");
+      showWarning(
+        "브라우저 미지원",
+        "이 브라우저는 푸시 알림을 지원하지 않습니다."
+      );
       setStatus("unsupported");
       return;
     }
@@ -105,20 +105,16 @@ export function WebPushSubscription({
     // 권한 상태 확인
     switch (safeNotification.permission) {
       case "denied":
-        devLog.log("알림 권한 거부됨");
         setStatus("denied");
         break;
       case "granted":
-        devLog.log("알림 권한 허용됨, 구독 상태 확인");
         const registration = await navigator.serviceWorker.ready;
         const subscription = await registration.pushManager.getSubscription();
         if (subscription) {
-          devLog.log("기존 구독 발견");
           setStatus("subscribed");
           // 구독된 농장 정보 로드
           const { subscriptions } = await getSubscriptionStatus();
           if (subscriptions?.length > 0) {
-            devLog.log("구독된 농장 정보:", subscriptions);
             const subscribedFarms = (subscriptions || [])
               .map((sub: any) => sub.farm)
               .filter(Boolean);
@@ -134,12 +130,10 @@ export function WebPushSubscription({
             );
           }
         } else {
-          devLog.log("구독 없음, granted 상태로 설정");
           setStatus("granted");
         }
         break;
       default:
-        devLog.log("알림 권한 미설정");
         setStatus("granted");
     }
   };
@@ -170,11 +164,9 @@ export function WebPushSubscription({
       }
     } catch (error) {
       devLog.error("구독 해제 실패:", error);
+      const notificationError = getNotificationErrorMessage(error);
+      showError("구독 해제 실패", notificationError.message);
     }
-  };
-
-  const handleTest = () => {
-    sendTestNotification();
   };
 
   const handleCleanup = async () => {
@@ -199,7 +191,6 @@ export function WebPushSubscription({
         {renderNotificationStatus(status, {
           isLoading,
           onAllow: handleAllow,
-          onTest: handleTest,
           onCleanup: handleCleanup,
           onUnsubscribe: handleUnsubscribe,
           farms,

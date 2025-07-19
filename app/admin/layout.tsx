@@ -12,6 +12,7 @@ import { ProtectedRoute } from "@/components/providers/protected-route";
 import { MaintenanceBanner } from "@/components/maintenance";
 import { ErrorBoundary } from "@/components/error/error-boundary";
 import { ThemeProvider } from "@/components/common/theme-provider";
+import { DialogManager } from "@/components/common/DialogManager";
 
 export default function AdminLayout({
   children,
@@ -39,6 +40,8 @@ export default function AdminLayout({
                 <main className="flex-1 p-4 md:p-6">{children}</main>
               </SidebarInset>
               <MobileMenuButton />
+              {/* Admin 페이지에서만 알림 권한 다이얼로그 관리 */}
+              <DialogManager />
             </FarmsProvider>
           </SidebarProvider>
         </ErrorBoundary>

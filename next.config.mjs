@@ -1,3 +1,4 @@
+import { withSentryConfig } from "@sentry/nextjs";
 /**
  * 🚀 Next.js 설정 파일
  *
@@ -14,7 +15,10 @@ const supabaseDomain = supabaseUrl
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  productionBrowserSourceMaps: true, // Source maps 활성화
+  // 빌드 성능 최적화
+  productionBrowserSourceMaps: false, // Source maps 비활성화로 빌드 시간 단축
+  swcMinify: true, // SWC 압축 활성화 (더 빠른 압축)
+
   /**
    * 🔬 실험적 기능 설정
    * Next.js의 최신 기능들을 안전하게 테스트할 수 있도록 허용
@@ -39,6 +43,17 @@ const nextConfig = {
         "samwon1141.com", // FarmPass 도메인 (www 없이)
       ],
     },
+    // 빌드 성능 최적화
+    optimizePackageImports: [
+      "lucide-react",
+      "@radix-ui/react-icons",
+      "@tanstack/react-query",
+      "@tanstack/react-query-devtools",
+      "sharp",
+      "multer",
+    ],
+    // React Query 최적화
+    optimizeCss: true,
   },
 
   /**
@@ -49,7 +64,7 @@ const nextConfig = {
    *
    * @see https://react.dev/reference/react/StrictMode
    */
-  reactStrictMode: true, // 개발 환경에서 문제 감지를 위해 활성화
+  reactStrictMode: true,
 
   /**
    * 🖼️ 이미지 최적화 설정
@@ -59,12 +74,12 @@ const nextConfig = {
    */
   images: {
     domains: [
-      "placeholder.svg", // 플레이스홀더 이미지용
-      "images.unsplash.com", // Unsplash 고품질 이미지
-      "picsum.photos", // Lorem Picsum 테스트 이미지
       supabaseDomain, // Supabase Storage 도메인 (환경변수에서 추출)
     ].filter(Boolean), // 빈 값 제거
     unoptimized: false, // 이미지 최적화 활성화 (WebP 변환, 리사이징 등)
+    // 이미지 처리 최적화
+    formats: ["image/webp", "image/avif"],
+    minimumCacheTTL: 60,
   },
 
   /**
@@ -112,6 +127,45 @@ const nextConfig = {
       return config;
     },
   }),
+
+  /**
+   * 🚀 React Query + Prisma 최적화
+   */
+  webpack: (config, { dev, isServer }) => {
+    // 프로덕션 빌드에서 DevTools 제외
+    if (!dev && !isServer) {
+      config.resolve.alias = {
+        ...config.resolve.alias,
+        "@tanstack/react-query-devtools": false,
+      };
+    }
+
+    // React Query + Prisma 최적화
+    config.optimization = {
+      ...config.optimization,
+      splitChunks: {
+        ...config.optimization.splitChunks,
+        cacheGroups: {
+          ...config.optimization.splitChunks.cacheGroups,
+          reactQuery: {
+            test: /[\\/]node_modules[\\/]@tanstack[\\/]/,
+            name: "react-query",
+            chunks: "all",
+            priority: 10,
+          },
+          // 이미지 처리 최적화
+          imageProcessing: {
+            test: /[\\/]node_modules[\\/](sharp|multer|image-size)[\\/]/,
+            name: "image-processing",
+            chunks: "all",
+            priority: 8,
+          },
+        },
+      },
+    };
+
+    return config;
+  },
 };
 
 /**
@@ -203,6 +257,23 @@ const config = withPWA({
       },
     },
   ],
+
+  /**
+   * 📱 오프라인 페이지 설정
+   *
+   * 네트워크 연결이 없을 때 표시할 오프라인 페이지를 지정합니다.
+   * 사용자가 오프라인 상태에서도 기본적인 정보를 볼 수 있습니다.
+   */
+  fallbacks: {
+    document: "/offline",
+  },
+
+  /**
+   * 🔄 네비게이션 폴백
+   *
+   * SPA에서 라우팅이 실패할 때 오프라인 페이지로 리다이렉트합니다.
+   */
+  navigateFallback: "/offline",
 })(nextConfig);
 
 /**
@@ -210,4 +281,34 @@ const config = withPWA({
  *
  * Next.js가 이 설정을 사용하여 애플리케이션을 빌드하고 실행합니다.
  */
-export default config;
+export default withSentryConfig(config, {
+  // For all available options, see:
+  // https://www.npmjs.com/package/@sentry/webpack-plugin#options
+
+  org: "samwon",
+  project: "samwon1141-farmpass",
+
+  // Only print logs for uploading source maps in CI
+  silent: !process.env.CI,
+
+  // For all available options, see:
+  // https://docs.sentry.io/platforms/javascript/guides/nextjs/manual-setup/
+
+  // Upload a larger set of source maps for prettier stack traces (increases build time)
+  widenClientFileUpload: true,
+
+  // Uncomment to route browser requests to Sentry through a Next.js rewrite to circumvent ad-blockers.
+  // This can increase your server load as well as your hosting bill.
+  // Note: Check that the configured route will not match with your Next.js middleware, otherwise reporting of client-
+  // side errors will fail.
+  // tunnelRoute: "/monitoring",
+
+  // Automatically tree-shake Sentry logger statements to reduce bundle size
+  disableLogger: true,
+
+  // Enables automatic instrumentation of Vercel Cron Monitors. (Does not yet work with App Router route handlers.)
+  // See the following for more information:
+  // https://docs.sentry.io/product/crons/
+  // https://vercel.com/docs/cron-jobs
+  automaticVercelMonitors: true,
+});

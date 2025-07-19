@@ -26,12 +26,13 @@ import { Input } from "@/components/ui/input";
 import { Mail } from "lucide-react";
 import { motion } from "framer-motion";
 import { useCommonToast } from "@/lib/utils/notification/toast-messages";
-import { devLog } from "@/lib/utils/logging/dev-logger";
 import { Logo } from "@/components/common";
 import { Loading } from "@/components/ui/loading";
 import { apiClient } from "@/lib/utils/data";
 import { resetPasswordRequestFormSchema } from "@/lib/utils/validation/auth-validation";
 import type { ResetPasswordRequestFormData } from "@/lib/utils/validation/auth-validation";
+import { getAuthErrorMessage } from "@/lib/utils/validation";
+import { handleError } from "@/lib/utils/error";
 
 export default function ResetPasswordPage() {
   const [loading, setLoading] = useState(false);
@@ -49,28 +50,26 @@ export default function ResetPasswordPage() {
     setLoading(true);
 
     try {
-      await apiClient("/api/auth/reset-password", {
+      const result = await apiClient("/api/auth/reset-password", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({ email: data.email }),
         context: "비밀번호 재설정 요청",
-        onError: (error, context) => {
-          devLog.error("Password reset error:", error);
-          showError("오류", error.message);
-        },
       });
 
       showSuccess(
         "이메일 전송 완료",
-        "비밀번호 재설정 링크가 이메일로 전송되었습니다."
+        result.message || "비밀번호 재설정 링크가 이메일로 전송되었습니다."
       );
 
       // 로그인 페이지로 리다이렉트
       router.push("/login");
     } catch (error) {
-      // 에러는 이미 onError에서 처리됨
+      handleError(error, { context: "reset-password-request" });
+      const authError = getAuthErrorMessage(error);
+      showError("오류", authError.message);
     } finally {
       setLoading(false);
     }

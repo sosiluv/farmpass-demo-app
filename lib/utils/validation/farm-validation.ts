@@ -24,7 +24,7 @@ export const farmFormSchema = z.object({
       required_error: "관리자 연락처를 입력해주세요",
     })
     .refine((value) => validatePhone(value), {
-      message: "(010-0000-0000)휴대폰 형식으로 입력해주세요",
+      message: "올바른 전화번호 형식(010-XXXX-XXXX)을 입력해주세요",
     }),
 });
 

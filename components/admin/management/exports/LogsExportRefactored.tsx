@@ -1,14 +1,15 @@
 import { useState } from "react";
+import type { SystemLog } from "@/lib/types/system";
+import { LOG_CATEGORIES_NO_ICON } from "@/lib/constants/log-categories";
 import {
   ExportDialogWrapper,
-  ExportActions,
   DateRangeSection,
   FilterSection,
   OptionsSection,
   SummarySection,
+  ExportActions,
   useExportDialog,
 } from "./index";
-import type { SystemLog } from "@/lib/types/system";
 
 interface LogsExportProps {
   logs: SystemLog[];
@@ -20,7 +21,6 @@ export interface LogsExportOptions {
   endDate: string;
   levelFilter: string;
   categoryFilter: string;
-  auditFilter: string;
   includeBasic: boolean;
   includeUser: boolean;
   includeSystem: boolean;
@@ -33,7 +33,7 @@ export function LogsExportRefactored({ logs, onExport }: LogsExportProps) {
   const [endDate, setEndDate] = useState("");
   const [levelFilter, setLevelFilter] = useState("all");
   const [categoryFilter, setCategoryFilter] = useState("all");
-  const [auditFilter, setAuditFilter] = useState("all");
+
   const [includeBasic, setIncludeBasic] = useState(true);
   const [includeUser, setIncludeUser] = useState(true);
   const [includeSystem, setIncludeSystem] = useState(false);
@@ -81,7 +81,6 @@ export function LogsExportRefactored({ logs, onExport }: LogsExportProps) {
     setEndDate("");
     setLevelFilter("all");
     setCategoryFilter("all");
-    setAuditFilter("all");
     setIncludeBasic(true);
     setIncludeUser(true);
     setIncludeSystem(false);
@@ -101,7 +100,6 @@ export function LogsExportRefactored({ logs, onExport }: LogsExportProps) {
     endDate,
     levelFilter,
     categoryFilter,
-    auditFilter,
     includeBasic,
     includeUser,
     includeSystem,
@@ -149,35 +147,8 @@ export function LogsExportRefactored({ logs, onExport }: LogsExportProps) {
               key: "categoryFilter",
               label: "카테고리",
               value: categoryFilter,
-              options: [
-                { value: "all", label: "모든 카테고리" },
-                { value: "auth", label: "인증" },
-                { value: "farm", label: "농장" },
-                { value: "visitor", label: "방문자" },
-                { value: "member", label: "멤버" },
-                { value: "settings", label: "설정" },
-                { value: "security", label: "보안" },
-                { value: "file", label: "파일" },
-                { value: "notification", label: "알림" },
-                { value: "data", label: "데이터" },
-                { value: "log", label: "로그관리" },
-                { value: "application", label: "앱" },
-                { value: "performance", label: "성능" },
-                { value: "error", label: "에러" },
-                { value: "system", label: "기타" },
-              ],
+              options: LOG_CATEGORIES_NO_ICON,
               onChange: setCategoryFilter,
-            },
-            {
-              key: "auditFilter",
-              label: "감사 로그",
-              value: auditFilter,
-              options: [
-                { value: "all", label: "모든 로그" },
-                { value: "audit", label: "감사 로그만" },
-                { value: "system", label: "시스템 로그만" },
-              ],
-              onChange: setAuditFilter,
             },
           ]}
         />

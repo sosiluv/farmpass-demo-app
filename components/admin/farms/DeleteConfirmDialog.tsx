@@ -7,17 +7,20 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { Loader2 } from "lucide-react";
 
 interface DeleteConfirmDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onConfirm: () => void;
+  isLoading?: boolean;
 }
 
 export function DeleteConfirmDialog({
   open,
   onOpenChange,
   onConfirm,
+  isLoading = false,
 }: DeleteConfirmDialogProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -33,11 +36,24 @@ export function DeleteConfirmDialog({
             type="button"
             variant="outline"
             onClick={() => onOpenChange(false)}
+            disabled={isLoading}
           >
             취소
           </Button>
-          <Button type="button" variant="destructive" onClick={onConfirm}>
-            삭제
+          <Button
+            type="button"
+            variant="destructive"
+            onClick={onConfirm}
+            disabled={isLoading}
+          >
+            {isLoading ? (
+              <>
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                삭제 중...
+              </>
+            ) : (
+              "삭제"
+            )}
           </Button>
         </DialogFooter>
       </DialogContent>

@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
 import webpush from "web-push";
 import { getSystemSettings } from "@/lib/cache/system-settings-cache";
 import { devLog } from "@/lib/utils/logging/dev-logger";
 import { logApiError } from "@/lib/utils/logging/system-log";
 import { getClientIP, getUserAgent } from "@/lib/server/ip-helpers";
 import { createSystemLog } from "@/lib/utils/logging/system-log";
+import { requireAuth } from "@/lib/server/auth-utils";
 
 // VAPID 키 생성
 export async function POST(request: NextRequest) {
@@ -13,33 +13,13 @@ export async function POST(request: NextRequest) {
   const clientIP = getClientIP(request);
   const userAgent = getUserAgent(request);
   try {
-    const supabase = await createClient();
-
-    // 사용자 인증 확인 (관리자만 가능)
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser();
-    if (authError || !user) {
-      return NextResponse.json(
-        { error: "인증이 필요합니다." },
-        { status: 401 }
-      );
+    // 관리자 권한 인증 확인
+    const authResult = await requireAuth(true);
+    if (!authResult.success || !authResult.user) {
+      return authResult.response!;
     }
 
-    // 관리자 권한 확인
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("account_type")
-      .eq("id", user.id)
-      .single();
-
-    if (!profile || profile.account_type !== "admin") {
-      return NextResponse.json(
-        { error: "관리자 권한이 필요합니다." },
-        { status: 403 }
-      );
-    }
+    const user = authResult.user;
 
     // VAPID 키 생성
     const vapidKeys = webpush.generateVAPIDKeys();
@@ -98,7 +78,11 @@ export async function POST(request: NextRequest) {
     );
 
     return NextResponse.json(
-      { error: "VAPID 키 생성에 실패했습니다." },
+      {
+        success: false,
+        error: "VAPID_KEY_GENERATION_FAILED",
+        message: "VAPID 키 생성에 실패했습니다.",
+      },
       { status: 500 }
     );
   }
@@ -143,8 +127,12 @@ export async function GET(request: NextRequest) {
         userAgent
       );
       return NextResponse.json(
-        { error: "VAPID 키가 설정되지 않았습니다." },
-        { status: 404 }
+        {
+          success: false,
+          error: "VAPID_KEY_NOT_CONFIGURED",
+          message: "VAPID 키가 설정되지 않았습니다.",
+        },
+        { status: 500 }
       );
     }
 
@@ -163,7 +151,7 @@ export async function GET(request: NextRequest) {
     );
 
     return NextResponse.json({
-      publicKey: settings.vapidPublicKey,
+      publicKey: publicKey,
     });
   } catch (error) {
     devLog.error("VAPID 키 조회 실패:", error);
@@ -195,7 +183,11 @@ export async function GET(request: NextRequest) {
     );
 
     return NextResponse.json(
-      { error: "VAPID 키 조회에 실패했습니다." },
+      {
+        success: false,
+        error: "VAPID_KEY_FETCH_FAILED",
+        message: "VAPID 키 조회에 실패했습니다.",
+      },
       { status: 500 }
     );
   }

@@ -14,7 +14,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Loader2, CheckCircle, AlertCircle, Mail } from "lucide-react";
+import { CheckCircle, AlertCircle, Mail } from "lucide-react";
 import { motion } from "framer-motion";
 import { ErrorBoundary } from "@/components/error/error-boundary";
 import { Logo } from "@/components/common";

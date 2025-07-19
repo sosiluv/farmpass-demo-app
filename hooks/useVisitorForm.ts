@@ -1,17 +1,17 @@
-import { useState, useEffect, useCallback } from "react";
-import {
-  uploadImageUniversal,
-  deleteImageUniversal,
-} from "@/lib/utils/media/image-upload";
+import { useState, useEffect } from "react";
 import type { VisitorSettings } from "@/lib/types/visitor";
 import type { VisitorFormData } from "@/lib/utils/validation/visitor-validation";
-import type { Farm as VisitorFarm } from "@/lib/types/visitor";
-import {
-  ALLOWED_IMAGE_TYPES,
-  MAX_UPLOAD_SIZE_MB,
-} from "@/lib/constants/upload";
-import { apiClient } from "@/lib/utils/data";
 import { handleError } from "@/lib/utils/error";
+import { useUnifiedImageUpload } from "@/hooks/useUnifiedImageUpload";
+import { createImageManager } from "@/lib/utils/media/unified-image-manager";
+
+// React Query Hooks
+import {
+  useFarmInfoQuery,
+  useVisitorSessionQuery,
+  useDailyVisitorCountQuery,
+  useCreateVisitorMutation,
+} from "@/lib/hooks/query/use-visitor-form-query";
 
 const initialFormData: VisitorFormData = {
   fullName: "",
@@ -31,45 +31,50 @@ export const useVisitorForm = (farmId: string, settings: VisitorSettings) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
   const [uploadedImageUrl, setUploadedImageUrl] = useState<string | null>(null);
   const [isImageUploading, setIsImageUploading] = useState(false);
-  const [farm, setFarm] = useState<VisitorFarm | null>(null);
-  const [farmLoading, setFarmLoading] = useState(true);
-  const [farmError, setFarmError] = useState<string | null>(null);
   const [isInitialized, setIsInitialized] = useState(false);
+  const [selectedImageFile, setSelectedImageFile] = useState<File | null>(null);
 
-  // 세션 기반 재방문 체크 함수 (useCallback으로 메모이제이션)
-  const checkSession = useCallback(async () => {
-    try {
-      const data = await apiClient(
-        `/api/farms/${farmId}/visitors/check-session`,
-        {
-          method: "GET",
-          context: "세션 체크",
-          onError: (error, context) => {
-            handleError(error, {
-              context,
-              onStateUpdate: (errorMessage) => {
-                setError(errorMessage);
-              },
-            });
-          },
-        }
-      );
+  // 통합 이미지 업로드 훅 (지연 업로드용)
+  const visitorPhotoUpload = useUnifiedImageUpload({
+    uploadType: "visitorPhoto",
+    contextId: farmId, // farmId를 contextId로 전달
+    // DB 저장 없음 - 폼 제출 시에만 실제 저장
+    onUpdate: () => {
+      // 방문자 등록 시에만 DB에 저장되므로 여기서는 아무것도 하지 않음
+    },
+    onError: (error) => {
+      setError(`이미지 업로드 실패: ${error.message}`);
+    },
+  });
 
-      // 첫 방문이 아닌 경우, 이전 방문 정보로 폼 초기화
-      if (!data.isFirstVisit && data.lastVisit) {
-        const { lastVisit, sessionInfo } = data;
+  // React Query Hooks
+  const {
+    data: farm,
+    isLoading: farmLoading,
+    error: farmError,
+  } = useFarmInfoQuery(farmId);
 
-        // 재방문 제한 메시지에 남은 시간 표시
-        setError(
-          `${sessionInfo.reVisitAllowInterval} (남은 시간: ${Math.ceil(
-            sessionInfo.remainingHours
-          )}시간)`
-        );
+  const { data: sessionData, isLoading: sessionLoading } =
+    useVisitorSessionQuery(farmId, !isInitialized && !!farmId);
 
-        // 이전 방문 정보로 폼 초기화
+  const { data: dailyCountData, refetch: refetchDailyCount } =
+    useDailyVisitorCountQuery(farmId, false); // 수동으로 조회
+
+  const createVisitorMutation = useCreateVisitorMutation();
+
+  // isLoading은 세션 로딩 상태를 참조
+  const isLoading = sessionLoading;
+
+  // 세션 기반 재방문 체크 (React Query 사용)
+  useEffect(() => {
+    if (!isInitialized && farmId && sessionData) {
+      // 첫 방문이 아닌 경우, 항상 이전 방문 정보로 폼 초기화
+      if (!sessionData.isFirstVisit && sessionData.lastVisit) {
+        const { lastVisit, sessionInfo } = sessionData;
+
+        // 이전 방문 정보로 폼 초기화 (항상 실행)
         setFormData({
           ...initialFormData,
           fullName: lastVisit.visitorName,
@@ -78,71 +83,77 @@ export const useVisitorForm = (farmId: string, settings: VisitorSettings) => {
           detailedAddress: lastVisit.visitorDetailedAddress || "",
           carPlateNumber: lastVisit.carPlateNumber || "",
           visitPurpose: lastVisit.visitPurpose || "",
+          profilePhotoUrl: lastVisit.profilePhotoUrl || "",
         });
-      }
-    } catch (error) {
-      // 에러는 이미 onError에서 처리됨
-    } finally {
-      setIsLoading(false);
-    }
-  }, [farmId]);
 
-  // 세션 기반 재방문 체크 (한 번만 실행)
-  useEffect(() => {
-    if (!isInitialized && farmId) {
-      checkSession();
+        // 이전 이미지 URL이 있으면 uploadedImageUrl에도 설정
+        if (lastVisit.profilePhotoUrl) {
+          setUploadedImageUrl(lastVisit.profilePhotoUrl);
+        }
+
+        // 재방문 허용 시간이 남아있다면 에러 메시지 설정 (폼은 여전히 사용 가능)
+        if (sessionInfo.remainingHours > 0) {
+          setError(
+            `마지막 방문 후 ${
+              sessionInfo.reVisitAllowInterval
+            }시간 후에 재방문이 가능합니다. (남은 시간: ${Math.ceil(
+              sessionInfo.remainingHours
+            )}시간)`
+          );
+        }
+      }
+
       setIsInitialized(true);
     }
-  }, [farmId, isInitialized, checkSession]);
+  }, [sessionData, farmId, isInitialized]);
 
-  // 농장 정보 가져오기 함수 (useCallback으로 메모이제이션)
-  const fetchFarm = useCallback(async () => {
-    if (!farmId) {
-      setFarmError("농장 ID가 없습니다.");
-      setFarmLoading(false);
-      return;
+  // Base64 프리뷰용 이미지 업로드 함수 (기존 로직 유지)
+  const uploadImage = async (file: File) => {
+    setIsImageUploading(true);
+    try {
+      // Base64 프리뷰 생성 (즉시 Storage 업로드 안함)
+      const previewUrl = URL.createObjectURL(file);
+      setUploadedImageUrl(previewUrl);
+      setSelectedImageFile(file);
+      return { publicUrl: previewUrl, fileName: file.name };
+    } finally {
+      setIsImageUploading(false);
     }
+  };
+
+  // 이미지 삭제 헬퍼 함수 (중복 제거)
+  const deleteImageFromStorage = async (imageUrl: string): Promise<void> => {
+    if (!imageUrl || imageUrl.startsWith("blob:")) return;
 
     try {
-      setFarmLoading(true);
-      setFarmError(null);
-
-      const result = await apiClient(`/api/farms/${farmId}`, {
-        method: "GET",
-        context: "농장 정보 조회",
-        onError: (error, context) => {
-          handleError(error, {
-            context,
-            onStateUpdate: (errorMessage) => {
-              setFarmError(errorMessage);
-            },
-          });
-        },
-      });
-
-      const farmData: VisitorFarm = {
-        id: result.farm.id,
-        farm_name: result.farm.farm_name,
-        farm_address: result.farm.farm_address,
-        manager_name: result.farm.manager_name || "",
-        manager_phone: result.farm.manager_phone || "",
-        farm_type: result.farm.farm_type || undefined,
-      };
-
-      setFarm(farmData);
+      const deleteManager = createImageManager("visitorPhoto", farmId);
+      await deleteManager.deleteImage(imageUrl);
     } catch (error) {
-      // 에러는 이미 onError에서 처리됨
-    } finally {
-      setFarmLoading(false);
+      console.warn("이미지 삭제 실패:", error);
+      throw error; // 상위에서 처리하도록 에러 전파
     }
-  }, [farmId]);
+  };
 
-  // 농장 정보 가져오기 (한 번만 실행)
-  useEffect(() => {
-    if (!isInitialized && farmId) {
-      fetchFarm();
+  // 방문자 이미지 삭제 함수
+  const deleteImage = async () => {
+    try {
+      // 현재 업로드된 이미지가 있는 경우 스토리지에서 삭제
+      if (uploadedImageUrl) {
+        await deleteImageFromStorage(uploadedImageUrl);
+      }
+    } catch (error) {
+      // 삭제 실패해도 UI에서는 제거 (사용자 경험 우선)
+      console.warn("이미지 삭제 중 오류 발생:", error);
+    } finally {
+      // 상태 초기화 (삭제 성공/실패와 관계없이)
+      setUploadedImageUrl(null);
+      setSelectedImageFile(null);
+      setFormData((prev) => ({
+        ...prev,
+        profilePhotoUrl: "",
+      }));
     }
-  }, [farmId, isInitialized, fetchFarm]);
+  };
 
   const handleSubmit = async (data: VisitorFormData) => {
     // React Hook Form에서 이미 검증된 데이터를 받음
@@ -152,22 +163,9 @@ export const useVisitorForm = (farmId: string, settings: VisitorSettings) => {
     setError(null);
 
     try {
-      // 일일 방문자 수 체크
-      const { count = 0, farm_name } = await apiClient(
-        `/api/farms/${farmId}/visitors/count-today`,
-        {
-          method: "GET",
-          context: "일일 방문자 수 체크",
-          onError: (error, context) => {
-            handleError(error, {
-              context,
-              onStateUpdate: (errorMessage) => {
-                setError(errorMessage);
-              },
-            });
-          },
-        }
-      );
+      // 일일 방문자 수 체크 (React Query 사용)
+      const { data: countData } = await refetchDailyCount();
+      const { count = 0 } = countData || {};
 
       if (count >= settings.maxVisitorsPerDay) {
         const errorMessage = `일일 방문자 수 초과: ${count} / ${settings.maxVisitorsPerDay}`;
@@ -176,87 +174,58 @@ export const useVisitorForm = (farmId: string, settings: VisitorSettings) => {
         return;
       }
 
-      // 프로필 사진 업로드
-      let profile_photo_url = uploadedImageUrl;
-      if (data.profilePhoto && !uploadedImageUrl) {
+      // 프로필 사진 업로드 (제출 시에만 실제 업로드)
+      let profile_photo_url = null; // 초기값을 null로
+
+      // 1. 새로 선택된 이미지가 있으면 업로드
+      if (selectedImageFile) {
         try {
-          const result = await uploadImage(data.profilePhoto);
-          profile_photo_url = result?.publicUrl || null;
+          // 기존 이미지가 있고 새 이미지를 업로드하는 경우, 기존 이미지 삭제
+          if (
+            formData.profilePhotoUrl &&
+            !formData.profilePhotoUrl.startsWith("blob:")
+          ) {
+            await deleteImageFromStorage(formData.profilePhotoUrl);
+          }
+
+          // 새 이미지 업로드 (기존 hook 사용)
+          const result = await visitorPhotoUpload.uploadImage(
+            selectedImageFile
+          );
+          if (result) {
+            profile_photo_url = result.publicUrl;
+          }
         } catch (error) {
           setError("이미지 업로드에 실패했습니다");
-          handleError(error as Error, "이미지 업로드");
           return;
         }
       }
+      // 2. 기존 이미지가 있으면 그대로 사용 (blob이 아닌 경우만)
+      else if (
+        formData.profilePhotoUrl &&
+        !formData.profilePhotoUrl.startsWith("blob:")
+      ) {
+        profile_photo_url = formData.profilePhotoUrl;
+      }
 
-      // 방문자 등록
-      await apiClient(`/api/farms/${farmId}/visitors`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          ...data,
-          profile_photo_url,
-        }),
-        context: "방문자 등록",
-        onError: (error, context) => {
-          handleError(error, {
-            context,
-            onStateUpdate: (errorMessage) => {
-              setError(errorMessage);
-            },
-          });
-        },
+      // 방문자 등록 (React Query Mutation 사용)
+      const result = await createVisitorMutation.mutateAsync({
+        farmId,
+        visitorData: data,
+        profilePhotoUrl: profile_photo_url, // 실제 URL만 저장
       });
 
       setIsSubmitted(true);
       setFormData(initialFormData);
       setUploadedImageUrl(null);
+      setSelectedImageFile(null);
       // 토스트는 컴포넌트에서 처리
+      return result; // <-- API 응답 반환
     } catch (err) {
-      // 에러는 이미 onError에서 처리됨
+      setError("방문자 등록에 실패했습니다");
+      // 에러는 apiClient에서 공통 처리됨
     } finally {
       setIsSubmitting(false);
-    }
-  };
-
-  // 이미지 업로드 함수
-  const uploadImage = async (file: File) => {
-    try {
-      setIsImageUploading(true);
-
-      const result = await uploadImageUniversal({
-        file,
-        bucket: "visitor-photos",
-        farmId,
-        maxSizeMB: MAX_UPLOAD_SIZE_MB,
-        allowedTypes: [...ALLOWED_IMAGE_TYPES],
-      });
-
-      setUploadedImageUrl(result.publicUrl);
-      // 토스트는 컴포넌트에서 처리
-      return result;
-    } catch (error) {
-      handleError(error as Error, "이미지 업로드");
-      throw error;
-    } finally {
-      setIsImageUploading(false);
-    }
-  };
-
-  // 이미지 삭제 함수
-  const deleteImage = async (fileName: string) => {
-    try {
-      await deleteImageUniversal({
-        bucket: "visitor-photos",
-        fileName,
-      });
-      setUploadedImageUrl(null);
-      // 토스트는 컴포넌트에서 처리
-    } catch (error) {
-      handleError(error as Error, "이미지 삭제");
-      throw error;
     }
   };
 

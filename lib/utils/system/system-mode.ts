@@ -23,13 +23,7 @@ const SystemCache = {
   /**
    * 유지보수 모드 상태를 캐시와 함께 조회
    */
-  async getMaintenanceMode(bypassCache = false): Promise<boolean> {
-    // 캐시 우회 요청인 경우 DB에서 직접 조회
-    if (bypassCache) {
-      devLog.log("[CACHE] Bypassing cache for maintenance mode check");
-      return await SystemCache.fetchMaintenanceModeFromDB();
-    }
-
+  async getMaintenanceMode(): Promise<boolean> {
     // 캐시가 유효한 경우 캐시 값 반환
     if (
       this.maintenanceModeCache &&
@@ -52,16 +46,10 @@ const SystemCache = {
   /**
    * 사용자의 관리자 권한을 캐시와 함께 조회
    */
-  async getAdminStatus(userId: string, bypassCache = false): Promise<boolean> {
+  async getAdminStatus(userId: string): Promise<boolean> {
     if (!userId) {
       devLog.log(`[CACHE] No userId provided, not admin`);
       return false;
-    }
-
-    // 캐시 우회 요청인 경우 DB에서 직접 조회
-    if (bypassCache) {
-      devLog.log(`[CACHE] Bypassing cache for admin status check: ${userId}`);
-      return await SystemCache.fetchAdminStatusFromDB(userId);
     }
 
     // 캐시가 유효한 경우 캐시 값 반환
@@ -167,10 +155,9 @@ const SystemCache = {
 
 /**
  * 현재 유지보수 모드 상태 확인
- * @param bypassCache 캐시를 우회하고 DB에서 직접 조회할지 여부 (기본값: false)
  */
-export async function isMaintenanceMode(bypassCache = false): Promise<boolean> {
-  return await SystemCache.getMaintenanceMode(bypassCache);
+export async function isMaintenanceMode(): Promise<boolean> {
+  return await SystemCache.getMaintenanceMode();
 }
 
 /**
@@ -191,18 +178,14 @@ export async function isDebugMode(): Promise<boolean> {
 /**
  * 사용자가 관리자인지 확인
  * @param userId 사용자 ID
- * @param bypassCache 캐시를 우회하고 DB에서 직접 조회할지 여부 (기본값: false)
  */
-export async function isAdminUser(
-  userId?: string,
-  bypassCache = false
-): Promise<boolean> {
+export async function isAdminUser(userId?: string): Promise<boolean> {
   if (!userId) {
     devLog.log(`[SYSTEM-MODE] No userId provided, not admin`);
     return false;
   }
 
-  return await SystemCache.getAdminStatus(userId, bypassCache);
+  return await SystemCache.getAdminStatus(userId);
 }
 
 /**

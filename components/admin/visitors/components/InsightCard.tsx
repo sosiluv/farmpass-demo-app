@@ -1,5 +1,10 @@
+import { useMemo } from "react";
 import { Card, CardContent } from "@/components/ui/card";
-import { Target, Zap, Clock, BarChart3 } from "lucide-react";
+import { Target, Zap, Clock, BarChart3, LucideIcon } from "lucide-react";
+import {
+  calculateDailyAverage,
+  calculateActivityIndex,
+} from "@/lib/utils/data/common-stats";
 
 interface InsightCardProps {
   totalVisitors: number;
@@ -8,60 +13,55 @@ interface InsightCardProps {
   showFarmCount?: boolean;
 }
 
+interface InsightItem {
+  icon: LucideIcon;
+  label: string;
+  value: string;
+  bgColor: string;
+  textColor: string;
+}
+
 export function InsightCard({
   totalVisitors,
   todayVisitors,
   totalFarms,
   showFarmCount = false,
 }: InsightCardProps) {
-  // 실제 운영 기간 계산 (더 정확한 평균을 위해)
-  const calculateDailyAverage = (total: number): number => {
-    if (total === 0) return 0;
+  // insights 배열을 useMemo로 메모이제이션하여 무한 렌더링 방지
+  const insights = useMemo((): InsightItem[] => {
+    const dailyAverage = calculateDailyAverage(totalVisitors);
+    const activityIndex = calculateActivityIndex(todayVisitors, totalVisitors);
 
-    // 최소 30일, 최대 365일로 제한하여 현실적인 평균 계산
-    const assumedDays = Math.min(Math.max(30, total), 365);
-    return Math.round((total / assumedDays) * 10) / 10; // 소수점 1자리
-  };
+    const baseInsights: InsightItem[] = [
+      {
+        icon: Target,
+        label: "평균 일일 방문자",
+        value: totalVisitors === 0 ? "0명" : `${dailyAverage}명`,
+        bgColor: "bg-blue-100",
+        textColor: "text-blue-600",
+      },
+      {
+        icon: Zap,
+        label: "활성도 지수",
+        value: totalVisitors === 0 ? "0%" : `${activityIndex}%`,
+        bgColor: "bg-emerald-100",
+        textColor: "text-emerald-600",
+      },
+    ];
 
-  // 활성도 지수 계산 (오늘 vs 평균 비교)
-  const calculateActivityIndex = (today: number, total: number): number => {
-    const dailyAverage = calculateDailyAverage(total);
-    if (dailyAverage === 0) return 0;
+    if (showFarmCount && totalFarms !== undefined && totalFarms > 0) {
+      const avgPerFarm = Math.round(totalVisitors / totalFarms);
+      baseInsights.push({
+        icon: Clock,
+        label: "농장당 평균 방문자",
+        value: `${avgPerFarm}명`,
+        bgColor: "bg-purple-100",
+        textColor: "text-purple-600",
+      });
+    }
 
-    return Math.round((today / dailyAverage) * 100);
-  };
-
-  const dailyAverage = calculateDailyAverage(totalVisitors);
-  const activityIndex = calculateActivityIndex(todayVisitors, totalVisitors);
-
-  const insights = [
-    {
-      icon: Target,
-      label: "평균 일일 방문자",
-      value: totalVisitors === 0 ? "0명" : `${dailyAverage}명`,
-      bgColor: "bg-blue-100",
-      textColor: "text-blue-600",
-    },
-    {
-      icon: Zap,
-      label: "활성도 지수",
-      value: totalVisitors === 0 ? "0%" : `${activityIndex}%`,
-      bgColor: "bg-emerald-100",
-      textColor: "text-emerald-600",
-    },
-  ];
-
-  if (showFarmCount && totalFarms !== undefined) {
-    const avgPerFarm =
-      totalFarms === 0 ? 0 : Math.round(totalVisitors / totalFarms);
-    insights.push({
-      icon: Clock,
-      label: "농장당 평균 방문자",
-      value: totalFarms === 0 ? "농장 없음" : `${avgPerFarm}명`,
-      bgColor: "bg-purple-100",
-      textColor: "text-purple-600",
-    });
-  }
+    return baseInsights;
+  }, [totalVisitors, todayVisitors, totalFarms, showFarmCount]);
 
   return (
     <Card className="relative overflow-hidden border border-amber-200 bg-amber-50 hover:shadow-md transition-all duration-200 hover:scale-[1.02] group hidden md:block md:col-span-full">
@@ -83,7 +83,7 @@ export function InsightCard({
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-3">
-          {(insights || []).map((insight) => {
+          {insights.map((insight: InsightItem) => {
             const Icon = insight.icon;
             return (
               <div

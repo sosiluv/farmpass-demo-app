@@ -1,12 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { getSystemSettings } from "@/lib/cache/system-settings-cache";
-import {
-  logPermissionError,
-  logApiError,
-} from "@/lib/utils/logging/system-log";
+import { logApiError } from "@/lib/utils/logging/system-log";
 import { devLog } from "@/lib/utils/logging/dev-logger";
 import { getClientIP, getUserAgent } from "@/lib/server/ip-helpers";
+import { requireAuth } from "@/lib/server/auth-utils";
+import { prisma } from "@/lib/prisma";
 
 export async function POST(request: NextRequest) {
   // 요청 컨텍스트 정보 추출
@@ -14,82 +13,72 @@ export async function POST(request: NextRequest) {
   const userAgent = getUserAgent(request);
 
   try {
-    devLog.log("로그 정리 API 시작");
+    // 관리자 권한 인증 확인
+    const authResult = await requireAuth(true);
+    if (!authResult.success || !authResult.user) {
+      return authResult.response!;
+    }
 
+    const user = authResult.user;
     const supabase = await createClient();
-    devLog.log("Supabase 클라이언트 생성 완료");
-
-    // 세션 확인 (getUser 사용)
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser();
-
-    devLog.log("인증 확인:", { user: user?.id, authError });
-
-    if (authError || !user) {
-      devLog.log("인증 실패:", authError);
-      return NextResponse.json(
-        { error: "인증이 필요합니다." },
-        { status: 401 }
-      );
-    }
-
-    // 관리자 권한 확인
-    const { data: profile, error: profileError } = await supabase
-      .from("profiles")
-      .select("account_type")
-      .eq("id", user.id)
-      .single();
-
-    devLog.log("프로필 확인:", { profile, profileError });
-
-    if (profileError || !profile || profile.account_type !== "admin") {
-      devLog.log("권한 확인 실패:", profileError);
-
-      // 권한 없는 접근 시도 로그
-      await logPermissionError("logs_cleanup", "execute", user.id, "admin", {
-        ip: clientIP,
-        email: user.email,
-        userAgent,
-      });
-
-      return NextResponse.json(
-        { error: "관리자 권한이 필요합니다." },
-        { status: 403 }
-      );
-    }
 
     const body = await request.json();
     const { type = "system_logs" } = body; // "system_logs" 또는 "all"
 
-    devLog.log("정리 타입:", type);
-
     let result;
 
     if (type === "all") {
-      devLog.log("모든 데이터 정리 시작");
-
       // 방문자 데이터 정리
-      devLog.log("방문자 데이터 정리 시작");
-      const { data: visitorData, error: visitorError } = await supabase.rpc(
-        "auto_cleanup_expired_visitor_entries"
-      );
+      let visitorData;
+      try {
+        const { data, error: visitorError } = await supabase.rpc(
+          "auto_cleanup_expired_visitor_entries"
+        );
 
-      if (visitorError) {
-        devLog.error("방문자 데이터 정리 오류:", visitorError);
-        throw new Error(`방문자 데이터 정리 실패: ${visitorError.message}`);
+        if (visitorError) {
+          devLog.error("[LOG-CLEANUP] 방문자 데이터 정리 오류:", visitorError);
+          throw new Error(
+            `Visitor data cleanup failed: ${visitorError.message}`
+          );
+        }
+        visitorData = data;
+      } catch (visitorError: any) {
+        devLog.error(
+          "[LOG-CLEANUP] Visitor data cleanup failed:",
+          visitorError
+        );
+        return NextResponse.json(
+          {
+            success: false,
+            error: "VISITOR_CLEANUP_FAILED",
+            message: "방문자 데이터 정리에 실패했습니다.",
+          },
+          { status: 500 }
+        );
       }
 
       // 시스템 로그 정리
-      devLog.log("시스템 로그 정리 시작");
-      const { data: logData, error: logError } = await supabase.rpc(
-        "auto_cleanup_expired_system_logs"
-      );
+      let logData;
+      try {
+        const { data, error: logError } = await supabase.rpc(
+          "auto_cleanup_expired_system_logs"
+        );
 
-      if (logError) {
-        devLog.error("시스템 로그 정리 오류:", logError);
-        throw new Error(`시스템 로그 정리 실패: ${logError.message}`);
+        if (logError) {
+          devLog.error("[LOG-CLEANUP] 시스템 로그 정리 오류:", logError);
+          throw new Error(`System log cleanup failed: ${logError.message}`);
+        }
+        logData = data;
+      } catch (logError: any) {
+        devLog.error("[LOG-CLEANUP] System log cleanup failed:", logError);
+        return NextResponse.json(
+          {
+            success: false,
+            error: "SYSTEM_LOG_CLEANUP_FAILED",
+            message: "시스템 로그 정리에 실패했습니다.",
+          },
+          { status: 500 }
+        );
       }
 
       // 결과 통합
@@ -98,31 +87,66 @@ export async function POST(request: NextRequest) {
         ...(Array.isArray(logData) ? logData : [logData]),
       ];
 
-      devLog.log("통합 정리 결과:", { visitorData, logData, result });
+      devLog.log("[LOG-CLEANUP] 통합 정리 결과:", {
+        visitorData,
+        logData,
+        result,
+      });
     } else {
-      devLog.log("시스템 로그 정리 시작");
       // 시스템 로그만 정리
-      const { data, error } = await supabase.rpc(
-        "auto_cleanup_expired_system_logs"
-      );
+      let data;
+      try {
+        const { data: cleanupData, error } = await supabase.rpc(
+          "auto_cleanup_expired_system_logs"
+        );
 
-      devLog.log("로그 정리 결과:", { data, error });
+        devLog.log("[LOG-CLEANUP] 로그 정리 결과:", {
+          data: cleanupData,
+          error,
+        });
 
-      if (error) {
-        throw new Error(`시스템 로그 정리 실패: ${error.message}`);
+        if (error) {
+          throw new Error(`System log cleanup failed: ${error.message}`);
+        }
+        data = cleanupData;
+      } catch (error: any) {
+        devLog.error("[LOG-CLEANUP] System log cleanup failed:", error);
+        return NextResponse.json(
+          {
+            success: false,
+            error: "SYSTEM_LOG_CLEANUP_FAILED",
+            message: "시스템 로그 정리에 실패했습니다.",
+          },
+          { status: 500 }
+        );
       }
 
       result = data;
     }
 
-    devLog.log("정리 작업 완료, 응답 반환");
+    // 삭제된 개수 계산
+    let totalDeleted = 0;
+    if (type === "all") {
+      // 모든 데이터 정리인 경우
+      if (Array.isArray(result)) {
+        totalDeleted = result.reduce((sum: number, item: any) => {
+          return sum + (item?.deleted_count || 0);
+        }, 0);
+      }
+    } else {
+      // 시스템 로그만 정리인 경우
+      if (result && typeof result === "object" && "deleted_count" in result) {
+        totalDeleted = result.deleted_count || 0;
+      }
+    }
+
     return NextResponse.json({
       success: true,
-      message: "정리 작업이 완료되었습니다.",
+      message: `${totalDeleted}개의 데이터가 정리되었습니다.`,
       results: result,
     });
   } catch (error) {
-    devLog.error("로그 정리 API 오류:", error);
+    devLog.error("[LOG-CLEANUP] 로그 정리 API 오류:", error);
 
     // API 에러 로그 기록
     await logApiError(
@@ -138,8 +162,9 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json(
       {
-        error: "로그 정리 중 오류가 발생했습니다.",
-        details: error instanceof Error ? error.message : "알 수 없는 오류",
+        success: false,
+        error: "LOG_CLEANUP_FAILED",
+        message: "로그 정리에 실패했습니다.",
       },
       { status: 500 }
     );
@@ -152,47 +177,14 @@ export async function GET(request: NextRequest) {
   const userAgent = getUserAgent(request);
 
   try {
-    devLog.log("정리 상태 조회 API 시작");
-
-    const supabase = await createClient();
-
-    // 세션 확인 (getUser 사용)
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser();
-
-    if (authError || !user) {
-      return NextResponse.json(
-        { error: "인증이 필요합니다." },
-        { status: 401 }
-      );
-    }
-
-    // 관리자 권한 확인
-    const { data: profile, error: profileError } = await supabase
-      .from("profiles")
-      .select("account_type")
-      .eq("id", user.id)
-      .single();
-
-    if (profileError || !profile || profile.account_type !== "admin") {
-      // 권한 없는 접근 시도 로그
-      await logPermissionError("logs_cleanup", "view", user.id, "admin", {
-        ip: clientIP,
-        email: user.email,
-        userAgent,
-      });
-
-      return NextResponse.json(
-        { error: "관리자 권한이 필요합니다." },
-        { status: 403 }
-      );
+    // 관리자 권한 인증 확인
+    const authResult = await requireAuth(true);
+    if (!authResult.success || !authResult.user) {
+      return authResult.response!;
     }
 
     // 시스템 설정 조회
     const settings = await getSystemSettings();
-    devLog.log("settings", settings);
     // 기본값 설정
     const effectiveLogRetentionDays = settings.logRetentionDays || 90;
     const effectiveVisitorRetentionDays =
@@ -206,24 +198,25 @@ export async function GET(request: NextRequest) {
       visitorCutoffDate.getDate() - effectiveVisitorRetentionDays
     );
 
-    devLog.log("날짜 기준:", {
-      logCutoffDate: logCutoffDate.toISOString(),
-      visitorCutoffDate: visitorCutoffDate.toISOString(),
+    // 만료된 로그 개수 조회
+    const expiredLogsCount = await prisma.system_logs.count({
+      where: {
+        created_at: {
+          lt: logCutoffDate,
+        },
+      },
     });
 
-    // 만료된 로그 개수 조회
-    const { count: expiredLogsCount } = await supabase
-      .from("system_logs")
-      .select("*", { count: "exact", head: true })
-      .lt("created_at", logCutoffDate.toISOString());
-
     // 만료된 방문자 데이터 개수 조회
-    const { count: expiredVisitorsCount } = await supabase
-      .from("visitor_entries")
-      .select("*", { count: "exact", head: true })
-      .lt("visit_datetime", visitorCutoffDate.toISOString());
+    const expiredVisitorsCount = await prisma.visitor_entries.count({
+      where: {
+        visit_datetime: {
+          lt: visitorCutoffDate,
+        },
+      },
+    });
 
-    devLog.log("데이터 개수 조회 완료:", {
+    devLog.log("[LOG-CLEANUP] 데이터 개수 조회 완료:", {
       expiredLogsCount,
       expiredVisitorsCount,
     });
@@ -245,10 +238,9 @@ export async function GET(request: NextRequest) {
       },
     };
 
-    devLog.log("정리 상태 조회 성공");
     return NextResponse.json(result);
   } catch (error) {
-    devLog.error("정리 상태 조회 API 오류:", error);
+    devLog.error("[LOG-CLEANUP] 정리 상태 조회 API 오류:", error);
 
     // API 에러 로그 기록
     await logApiError(
@@ -264,8 +256,9 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json(
       {
-        error: "정리 상태 조회 중 오류가 발생했습니다.",
-        details: error instanceof Error ? error.message : "알 수 없는 오류",
+        success: false,
+        error: "CLEANUP_STATUS_QUERY_FAILED",
+        message: "정리 상태 조회에 실패했습니다.",
       },
       { status: 500 }
     );

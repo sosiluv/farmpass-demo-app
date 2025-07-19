@@ -12,10 +12,10 @@ import { formatDateTime } from "@/lib/utils/datetime/date";
 import { Profile } from "@/lib/types";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { useAuth } from "@/components/providers/auth-provider";
 import { useCommonToast } from "@/lib/utils/notification/toast-messages";
-import { apiClient } from "@/lib/utils/data";
-import { handleError } from "@/lib/utils/error";
+import { useResetLoginAttemptsMutation } from "@/lib/hooks/query/use-auth-mutations";
+import { getAuthErrorMessage } from "@/lib/utils/validation/validation";
+import { generateInitials, getAvatarUrl } from "@/lib/utils/media/avatar";
 
 interface UserDetailModalProps {
   user: Profile | null;
@@ -25,7 +25,7 @@ interface UserDetailModalProps {
 
 export function UserDetailModal({ user, open, onClose }: UserDetailModalProps) {
   const [loading, setLoading] = useState(false);
-  const { showSuccess, showError, showInfo } = useCommonToast();
+  const { showSuccess, showError, showInfo, showWarning } = useCommonToast();
 
   const getRoleColor = (accountType: string) => {
     switch (accountType) {
@@ -42,15 +42,6 @@ export function UserDetailModal({ user, open, onClose }: UserDetailModalProps) {
     return isActive
       ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200"
       : "bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200";
-  };
-
-  const getInitials = (name: string) => {
-    if (!name) return "U";
-    return name
-      .split(" ")
-      .map((n) => n[0])
-      .join("")
-      .toUpperCase();
   };
 
   const getAvatarColor = (name: string) => {
@@ -77,33 +68,27 @@ export function UserDetailModal({ user, open, onClose }: UserDetailModalProps) {
     return colors[index];
   };
 
+  const resetAttemptsMutation = useResetLoginAttemptsMutation();
+
   const handleUnlock = async () => {
     showInfo("계정 잠금 해제 시작", "계정 잠금을 해제하는 중입니다...");
     setLoading(true);
     try {
-      const data = await apiClient("/api/auth/reset-attempts", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          email: user?.email,
-          reason: "관리자 수동 잠금 해제",
-        }),
-        context: "계정 잠금 해제",
-        onError: (error, context) => {
-          handleError(error, context);
-          showError("잠금 해제 실패", error.message || "잠금 해제 실패");
-        },
+      const result = await resetAttemptsMutation.mutateAsync({
+        email: user?.email || "",
+        reason: "관리자 수동 잠금 해제",
       });
 
-      showSuccess(
-        "계정 잠금 해제",
-        data.message || "계정 잠금이 해제되었습니다!"
-      );
+      // API 응답 메시지에 따라 토스트 타입 결정
+      if (result.message.includes("이미 잠금 해제되어 있습니다")) {
+        showWarning("계정 상태 확인", result.message);
+      } else {
+        showSuccess("계정 잠금 해제 완료", result.message);
+      }
       onClose();
-    } catch {
-      // onError에서 이미 처리함
+    } catch (error) {
+      const authError = getAuthErrorMessage(error);
+      showError("계정 잠금 해제 실패", authError.message);
     } finally {
       setLoading(false);
     }
@@ -126,20 +111,17 @@ export function UserDetailModal({ user, open, onClose }: UserDetailModalProps) {
               {/* 기본 정보 */}
               <div className="flex flex-col sm:flex-row items-center sm:items-start gap-3 sm:gap-4">
                 <Avatar className="h-12 w-12 sm:h-16 sm:w-16 flex-shrink-0">
-                  {user.profile_image_url ? (
-                    <AvatarImage
-                      src={user.profile_image_url}
-                      alt={user.name || "User"}
-                    />
-                  ) : (
-                    <AvatarFallback
-                      className={`${getAvatarColor(
-                        user.name
-                      )} text-white text-sm sm:text-base`}
-                    >
-                      {getInitials(user.name)}
-                    </AvatarFallback>
-                  )}
+                  <AvatarImage
+                    src={getAvatarUrl(user, { size: 128 })}
+                    alt={user.name || "User"}
+                  />
+                  <AvatarFallback
+                    className={`${getAvatarColor(
+                      user.name
+                    )} text-white text-sm sm:text-base`}
+                  >
+                    {generateInitials(user.name)}
+                  </AvatarFallback>
                 </Avatar>
                 <div className="text-center sm:text-left flex-1">
                   <div className="text-lg sm:text-xl font-semibold">

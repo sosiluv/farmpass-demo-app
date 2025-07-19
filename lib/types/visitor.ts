@@ -1,7 +1,13 @@
-import type { Database } from "./supabase";
-import { VisitorPurposeStats } from "./index";
+/**
+ * 방문자 관련 타입 정의
+ */
 
-export type Profile = Database["public"]["Tables"]["profiles"]["Row"];
+import type { Profile, VisitorEntry } from "./common";
+import type { VisitorPurposeStats } from "./statistics";
+
+// ===========================================
+// 방문자 전용 Farm 타입 (간소화된 버전)
+// ===========================================
 
 export interface Farm {
   id: string;
@@ -13,36 +19,40 @@ export interface Farm {
   manager_phone?: string | null;
 }
 
-export interface VisitorBase {
-  id: string;
-  farm_id: string;
-  visit_datetime: string;
-  visitor_name: string;
-  visitor_phone: string;
-  visitor_address: string;
-  visitor_purpose: string | null;
-  vehicle_number: string | null;
-  notes: string | null;
-  disinfection_check: boolean;
-  consent_given: boolean;
-  session_token: string;
-  registered_by?: string;
-  created_at: string;
-  updated_at?: string;
-  profile_photo_url?: string | null;
-}
+// Re-export common types for convenience
+export type { Profile, VisitorEntry } from "./common";
 
-export interface VisitorWithFarm extends VisitorBase {
+// Re-export VisitorEntry from common as VisitorBase for backward compatibility
+export type { VisitorEntry as VisitorBase } from "./common";
+
+// ===========================================
+// 방문자 확장 타입
+// ===========================================
+
+/**
+ * 농장 정보가 포함된 방문자
+ */
+export interface VisitorWithFarm extends VisitorEntry {
   farms?: Farm;
 }
 
-export interface VisitorWithProfile extends VisitorBase {
+/**
+ * 등록자 프로필 정보가 포함된 방문자
+ */
+export interface VisitorWithProfile extends VisitorEntry {
   registered_by_profile?: Pick<
     Profile,
     "name" | "email" | "company_name" | "profile_image_url"
   >;
 }
 
+// ===========================================
+// 방문자 폼 데이터 타입
+// ===========================================
+
+/**
+ * 방문자 생성 데이터
+ */
 export interface CreateVisitorData {
   farm_id: string;
   visitor_name: string;
@@ -56,6 +66,9 @@ export interface CreateVisitorData {
   profile_photo_url?: string | null;
 }
 
+/**
+ * 방문자 수정 데이터
+ */
 export interface UpdateVisitorData {
   visitor_name?: string;
   visitor_phone?: string;
@@ -66,22 +79,46 @@ export interface UpdateVisitorData {
   disinfection_check?: boolean;
 }
 
+// ===========================================
+// 방문자 필터 및 검색 타입
+// ===========================================
+
+/**
+ * 방문자 필터 (BaseFilter 확장)
+ */
 export interface VisitorFilter {
   farmId?: string;
-  startDate?: string;
-  endDate?: string;
-  searchTerm?: string;
   disinfectionCheck?: boolean;
   consentGiven?: boolean;
   sortBy?: "visit_datetime" | "visitor_name" | "created_at";
-  sortOrder?: "asc" | "desc";
 }
 
+/**
+ * 방문자 필터 (레거시 호환성용)
+ * @deprecated VisitorFilter 사용 권장
+ */
+export interface VisitorFilters {
+  searchTerm: string;
+  farmId?: string;
+  dateRange: string; // "all" | "today" | "week" | "month" | "custom"
+  dateStart?: string;
+  dateEnd?: string;
+  disinfectionCheck?: boolean;
+  consentGiven?: boolean;
+}
+
+/**
+ * 방문자 내보내기 옵션
+ */
 export interface VisitorExportOptions extends VisitorFilter {
   format: "csv" | "excel";
-  includeFields: Array<keyof VisitorBase>;
+  includeFields: Array<keyof VisitorEntry>;
   anonymize?: boolean;
 }
+
+// ===========================================
+// 방문자 설정 및 통계 타입
+// ===========================================
 
 export interface VisitorSettings {
   reVisitAllowInterval: number;
@@ -109,6 +146,10 @@ export interface VisitorStatistics {
   }>;
 }
 
+// ===========================================
+// API 응답 타입
+// ===========================================
+
 export interface VisitorApiResponse {
   success: boolean;
   data?: VisitorWithFarm | VisitorWithFarm[];
@@ -135,6 +176,10 @@ export interface VisitorStatsApiResponse {
   error?: string;
   message?: string;
 }
+
+// ===========================================
+// 컴포넌트 Props 타입
+// ===========================================
 
 export interface VisitorTableProps {
   visitors: VisitorWithFarm[];
@@ -176,6 +221,10 @@ export interface VisitorFiltersProps {
   isAdmin?: boolean;
 }
 
+// ===========================================
+// 스키마 및 타입 가드
+// ===========================================
+
 export const visitorSchema = {
   id: "string",
   farm_id: "string",
@@ -195,7 +244,7 @@ export const visitorSchema = {
   profile_photo_url: "string|null|undefined",
 } as const;
 
-export function isVisitorBase(obj: any): obj is VisitorBase {
+export function isVisitorEntry(obj: any): obj is VisitorEntry {
   return (
     typeof obj === "object" &&
     obj !== null &&
@@ -220,10 +269,10 @@ export function isFarm(obj: any): obj is Farm {
     typeof obj === "object" &&
     obj !== null &&
     typeof obj.id === "string" &&
-    typeof obj.farm_name === "string" &&
-    (obj.farm_type === null || typeof obj.farm_type === "string")
+    typeof obj.farm_name === "string"
   );
 }
 
-export type VisitorEntry = VisitorBase;
+// Backward compatibility
+export const isVisitorBase = isVisitorEntry;
 export type VisitorEntryWithFarm = VisitorWithFarm;

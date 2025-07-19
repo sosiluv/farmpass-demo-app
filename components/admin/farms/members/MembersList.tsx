@@ -1,4 +1,3 @@
-import { TableSkeleton } from "@/components/common/skeletons";
 import { MemberCard } from "./MemberCard";
 
 interface Member {
@@ -11,7 +10,6 @@ interface Member {
 
 interface MembersListProps {
   members: Member[];
-  loading: boolean;
   canManageMembers: boolean;
   onDelete: (id: string) => void;
   onRoleChange: (memberId: string, newRole: "manager" | "viewer") => void;
@@ -19,19 +17,10 @@ interface MembersListProps {
 
 export function MembersList({
   members,
-  loading,
   canManageMembers,
   onDelete,
   onRoleChange,
 }: MembersListProps) {
-  if (loading) {
-    return (
-      <div className="py-8 sm:py-12">
-        <TableSkeleton rows={3} columns={3} />
-      </div>
-    );
-  }
-
   if (members.length === 0) {
     return (
       <div className="text-center py-8 sm:py-12 px-4">

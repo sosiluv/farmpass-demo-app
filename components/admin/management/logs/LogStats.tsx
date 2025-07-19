@@ -5,7 +5,7 @@ import {
   type LogManagementStats,
   type NumericTrendData,
 } from "@/lib/utils/data/common-stats";
-import type { LogStats as LogStatsType } from "@/hooks/admin/useAdminLogs";
+import type { LogStats as LogStatsType } from "@/lib/hooks/query/use-admin-logs-query";
 
 interface LogStatsProps {
   stats: LogStatsType;

@@ -26,15 +26,15 @@ import {
 } from "@/components/ui/form";
 import { Mail, User, Lock, Phone } from "lucide-react";
 import { motion } from "framer-motion";
-import { supabase } from "@/lib/supabase/client";
 import { useCommonToast } from "@/lib/utils/notification/toast-messages";
+import { formatPhone } from "@/lib/utils/validation/validation";
 import { devLog } from "@/lib/utils/logging/dev-logger";
 import { ErrorBoundary } from "@/components/error/error-boundary";
-import { apiClient } from "@/lib/utils/data";
+import { usePasswordRules } from "@/lib/utils/validation/usePasswordRules";
+import { apiClient } from "@/lib/utils/data/api-client";
 import {
   checkEmailDuplicate,
-  getRegistrationErrorMessage,
-  getPasswordRules,
+  getAuthErrorMessage,
 } from "@/lib/utils/validation";
 import {
   createRegistrationFormSchema,
@@ -226,9 +226,14 @@ const PhoneField = memo(
           <Input
             {...field}
             type="tel"
-            placeholder="010-0000-0000"
+            placeholder="숫자만 입력 가능합니다"
             className="h-12 pl-10 input-focus"
             disabled={loading}
+            onChange={(e) => {
+              const formattedPhone = formatPhone(e.target.value);
+              field.onChange(formattedPhone);
+            }}
+            maxLength={13}
           />
         </FormControl>
       </div>
@@ -242,13 +247,18 @@ PhoneField.displayName = "PhoneField";
 // 메모이제이션된 회원가입 버튼 컴포넌트
 const RegisterButton = memo(
   ({ loading, disabled }: { loading: boolean; disabled: boolean }) => (
-    <Button type="submit" className="h-12 w-full" disabled={disabled}>
+    <Button
+      type="submit"
+      className="h-12 w-full flex items-center justify-center"
+      disabled={disabled}
+    >
       {loading ? (
         <>
           <Loading
-            spinnerSize={16}
+            spinnerSize={20}
             showText={false}
             minHeight="auto"
+            spinnerColor="text-white"
             className="mr-2"
           />
           가입 중...
@@ -266,32 +276,26 @@ export default function RegisterPage() {
   const [loading, setLoading] = useState(false);
   const [isCheckingEmail, setIsCheckingEmail] = useState(false);
   const [emailError, setEmailError] = useState<string>("");
-  const [schema, setSchema] = useState<any>(null);
-  const [isSchemaLoading, setIsSchemaLoading] = useState(true);
   const [turnstileToken, setTurnstileToken] = useState<string>("");
   const [turnstileError, setTurnstileError] = useState<string>("");
   const router = useRouter();
   const { showInfo, showSuccess, showError } = useCommonToast();
 
-  // 시스템 설정에 따른 동적 스키마 생성 - 최적화됨
-  useEffect(() => {
-    const initSchema = async () => {
-      if (schema) return; // 이미 로드된 경우 스킵
+  // 시스템 설정에서 비밀번호 규칙 가져오기 (React Query 기반)
+  const { rules: passwordRules, isLoading: isPasswordRulesLoading } =
+    usePasswordRules();
 
-      try {
-        setIsSchemaLoading(true);
-        const passwordRules = await getPasswordRules();
-        const dynamicSchema = createRegistrationFormSchema(passwordRules);
-        setSchema(dynamicSchema);
-      } catch (error) {
-        devLog.error("Failed to load password rules:", error);
-        // 에러 시 기본 스키마 사용
-      } finally {
-        setIsSchemaLoading(false);
-      }
-    };
-    initSchema();
-  }, [schema]);
+  // 동적 스키마 생성 - React Query 기반으로 최적화
+  const schema = useMemo(() => {
+    if (isPasswordRulesLoading) return null;
+
+    try {
+      return createRegistrationFormSchema(passwordRules);
+    } catch (error) {
+      devLog.error("Failed to create registration schema:", error);
+      return createDefaultRegistrationFormSchema();
+    }
+  }, [passwordRules, isPasswordRulesLoading]);
 
   // 메모이제이션된 폼 설정
   const formConfig = useMemo(
@@ -361,63 +365,38 @@ export default function RegisterPage() {
         return;
       }
 
-      // 이메일 중복 검사
-      const emailValidation = await checkEmailDuplicate(data.email);
-      if (!emailValidation.isValid) {
-        setEmailError(emailValidation.message);
-        return;
-      }
-
       setLoading(true);
 
       try {
-        // Turnstile 토큰 검증
-        const verificationResult = await fetch("/api/auth/verify-turnstile", {
+        // 새로운 회원가입 API 호출
+        const response = await apiClient("/api/auth/register", {
           method: "POST",
-          body: JSON.stringify({ token: turnstileToken }),
-          headers: {
-            "Content-Type": "application/json",
-          },
-        });
-
-        if (!verificationResult.ok) {
-          const errorData = await verificationResult.json();
-          setTurnstileError(errorData.error || "캡차 인증에 실패했습니다.");
-          return;
-        }
-
-        // Supabase auth를 통한 사용자 생성
-        const { data: authData, error: authError } = await supabase.auth.signUp(
-          {
+          body: JSON.stringify({
             email: data.email,
             password: data.password,
-            options: {
-              data: {
-                name: data.name,
-                phone: data.phone,
-              },
-            },
-          }
-        );
+            name: data.name,
+            phone: data.phone,
+            turnstileToken: turnstileToken,
+          }),
+          context: "회원가입",
+        });
 
-        if (authError) throw authError;
-        if (!authData.user) throw new Error("회원가입에 실패했습니다.");
-
-        // 회원가입 후 자동 로그아웃 (Supabase signUp이 자동 로그인을 하기 때문)
-        //await supabase.auth.signOut();
-
-        showSuccess(
-          "회원가입이 완료되었습니다.",
-          "이메일 인증 후 로그인해주세요."
-        );
-
-        router.push("/login");
+        if (response.success) {
+          // 서버에서 반환된 메시지 그대로 사용
+          showSuccess(
+            "회원가입 완료",
+            response.message || "회원가입이 완료되었습니다."
+          );
+          router.push("/login");
+        } else {
+          throw new Error(response.message || "회원가입에 실패했습니다.");
+        }
       } catch (error: any) {
         devLog.error("Registration failed:", error);
-        const errorMessage = getRegistrationErrorMessage(error);
-        setEmailError(errorMessage);
+        const authError = getAuthErrorMessage(error);
+        setEmailError(authError.message);
 
-        showError("회원가입 실패", errorMessage);
+        showError("회원가입 실패", authError.message);
       } finally {
         setLoading(false);
       }
@@ -431,7 +410,7 @@ export default function RegisterPage() {
   }, [loading, emailError, turnstileToken]);
 
   // 스키마 로딩 중이면 스켈레톤 표시
-  if (isSchemaLoading) {
+  if (isPasswordRulesLoading) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-gradient-farm p-4">
         <div className="w-full max-w-md">

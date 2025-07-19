@@ -1,175 +1,119 @@
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
+import { LOG_CATEGORIES } from "@/lib/constants/log-categories";
+import { cn } from "@/lib/utils";
 
 interface LogCategoryFiltersProps {
-  auditFilter: string;
-  categoryFilter: string;
-  onAuditFilterChange: (filter: string) => void;
-  onCategoryFilterChange: (filter: string) => void;
+  categoryFilters: string[];
+  onCategoryFiltersChange: (filters: string[]) => void;
 }
 
 export function LogCategoryFilters({
-  auditFilter,
-  categoryFilter,
-  onAuditFilterChange,
-  onCategoryFilterChange,
+  categoryFilters,
+  onCategoryFiltersChange,
 }: LogCategoryFiltersProps) {
+  const handleCategoryToggle = (categoryValue: string) => {
+    if (categoryValue === "all") {
+      // "전체" 선택 시 다른 모든 선택 해제
+      onCategoryFiltersChange(["all"]);
+    } else {
+      // "전체"가 선택되어 있으면 해제하고 현재 카테고리만 선택
+      if (categoryFilters.includes("all")) {
+        onCategoryFiltersChange([categoryValue]);
+      } else {
+        // 현재 카테고리가 이미 선택되어 있으면 제거, 아니면 추가
+        if (categoryFilters.includes(categoryValue)) {
+          const newFilters = categoryFilters.filter((f) => f !== categoryValue);
+          // 아무것도 선택되지 않으면 "전체" 선택
+          onCategoryFiltersChange(newFilters.length > 0 ? newFilters : ["all"]);
+        } else {
+          onCategoryFiltersChange([...categoryFilters, categoryValue]);
+        }
+      }
+    }
+  };
+
+  const isSelected = (categoryValue: string) => {
+    return categoryFilters.includes(categoryValue);
+  };
+
+  const selectedCount = categoryFilters.includes("all")
+    ? 0
+    : categoryFilters.length;
+
   return (
-    <div className="flex flex-col gap-2">
-      <div className="flex items-center gap-2">
-        <span className="text-xs sm:text-sm font-medium text-muted-foreground">
-          필터:
-        </span>
-        <div className="flex gap-1">
-          <Button
-            variant={auditFilter === "all" ? "default" : "outline"}
-            size="sm"
-            onClick={() => onAuditFilterChange("all")}
-            className="h-7 px-2 text-xs"
-          >
-            전체
-          </Button>
-          <Button
-            variant={auditFilter === "audit" ? "default" : "outline"}
-            size="sm"
-            onClick={() => onAuditFilterChange("audit")}
-            className="h-7 px-2 text-xs"
-          >
-            <span className="hidden sm:inline">👤 </span>사용자
-          </Button>
-          <Button
-            variant={auditFilter === "system" ? "default" : "outline"}
-            size="sm"
-            onClick={() => onAuditFilterChange("system")}
-            className="h-7 px-2 text-xs"
-          >
-            <span className="hidden sm:inline">⚙️ </span>시스템
-          </Button>
+    <div className="space-y-3">
+      {/* 헤더 */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <h4 className="text-sm font-medium text-foreground">카테고리 필터</h4>
+          {selectedCount > 0 && (
+            <Badge variant="secondary" className="text-xs">
+              {selectedCount}개 선택
+            </Badge>
+          )}
         </div>
+        {selectedCount > 0 && (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => onCategoryFiltersChange(["all"])}
+            className="h-6 px-2 text-xs text-muted-foreground hover:text-foreground"
+          >
+            전체 선택
+          </Button>
+        )}
       </div>
 
-      <div className="flex gap-1 flex-wrap">
-        <Button
-          variant={categoryFilter === "all" ? "default" : "outline"}
-          size="sm"
-          onClick={() => onCategoryFilterChange("all")}
-          className="h-7 px-2 text-xs"
-        >
-          <span className="sm:hidden">전체</span>
-          <span className="hidden sm:inline">모든 카테고리</span>
-        </Button>
-        <Button
-          variant={categoryFilter === "auth" ? "default" : "outline"}
-          size="sm"
-          onClick={() => onCategoryFilterChange("auth")}
-          className="h-7 px-2 text-xs"
-        >
-          <span className="hidden sm:inline">🔐 </span>인증
-        </Button>
-        <Button
-          variant={categoryFilter === "farm" ? "default" : "outline"}
-          size="sm"
-          onClick={() => onCategoryFilterChange("farm")}
-          className="h-7 px-2 text-xs"
-        >
-          <span className="hidden sm:inline">🏡 </span>농장
-        </Button>
-        <Button
-          variant={categoryFilter === "visitor" ? "default" : "outline"}
-          size="sm"
-          onClick={() => onCategoryFilterChange("visitor")}
-          className="h-7 px-2 text-xs"
-        >
-          <span className="hidden sm:inline">👥 </span>방문자
-        </Button>
-        <Button
-          variant={categoryFilter === "member" ? "default" : "outline"}
-          size="sm"
-          onClick={() => onCategoryFilterChange("member")}
-          className="h-7 px-2 text-xs"
-        >
-          <span className="hidden sm:inline">👨‍💼 </span>멤버
-        </Button>
-        <Button
-          variant={categoryFilter === "settings" ? "default" : "outline"}
-          size="sm"
-          onClick={() => onCategoryFilterChange("settings")}
-          className="h-7 px-2 text-xs"
-        >
-          <span className="hidden sm:inline">⚙️ </span>설정
-        </Button>
-        <Button
-          variant={categoryFilter === "security" ? "default" : "outline"}
-          size="sm"
-          onClick={() => onCategoryFilterChange("security")}
-          className="h-7 px-2 text-xs"
-        >
-          <span className="hidden sm:inline">🛡️ </span>보안
-        </Button>
-        <Button
-          variant={categoryFilter === "file" ? "default" : "outline"}
-          size="sm"
-          onClick={() => onCategoryFilterChange("file")}
-          className="h-7 px-2 text-xs"
-        >
-          <span className="hidden sm:inline">📁 </span>파일
-        </Button>
-        <Button
-          variant={categoryFilter === "notification" ? "default" : "outline"}
-          size="sm"
-          onClick={() => onCategoryFilterChange("notification")}
-          className="h-7 px-2 text-xs"
-        >
-          <span className="hidden sm:inline">🔔 </span>알림
-        </Button>
-        <Button
-          variant={categoryFilter === "data" ? "default" : "outline"}
-          size="sm"
-          onClick={() => onCategoryFilterChange("data")}
-          className="h-7 px-2 text-xs"
-        >
-          <span className="hidden sm:inline">📊 </span>데이터
-        </Button>
-        <Button
-          variant={categoryFilter === "log" ? "default" : "outline"}
-          size="sm"
-          onClick={() => onCategoryFilterChange("log")}
-          className="h-7 px-2 text-xs"
-        >
-          <span className="hidden sm:inline">📋 </span>로그관리
-        </Button>
-        <Button
-          variant={categoryFilter === "application" ? "default" : "outline"}
-          size="sm"
-          onClick={() => onCategoryFilterChange("application")}
-          className="h-7 px-2 text-xs"
-        >
-          <span className="hidden sm:inline">🖥️ </span>앱
-        </Button>
-        <Button
-          variant={categoryFilter === "performance" ? "default" : "outline"}
-          size="sm"
-          onClick={() => onCategoryFilterChange("performance")}
-          className="h-7 px-2 text-xs"
-        >
-          <span className="hidden sm:inline">⚡ </span>성능
-        </Button>
-        <Button
-          variant={categoryFilter === "error" ? "default" : "outline"}
-          size="sm"
-          onClick={() => onCategoryFilterChange("error")}
-          className="h-7 px-2 text-xs"
-        >
-          <span className="hidden sm:inline">❌ </span>에러
-        </Button>
-        <Button
-          variant={categoryFilter === "system" ? "default" : "outline"}
-          size="sm"
-          onClick={() => onCategoryFilterChange("system")}
-          className="h-7 px-2 text-xs"
-        >
-          <span className="hidden sm:inline">🔧 </span>기타
-        </Button>
+      {/* 카테고리 버튼들 */}
+      <div className="flex flex-wrap gap-2">
+        {LOG_CATEGORIES.map((category) => {
+          const selected = isSelected(category.value);
+          const isAll = category.value === "all";
+
+          return (
+            <Button
+              key={category.value}
+              variant={selected ? "default" : "outline"}
+              size="sm"
+              onClick={() => handleCategoryToggle(category.value)}
+              className={cn(
+                "h-8 px-3 text-xs font-medium transition-all duration-200",
+                "border border-border hover:border-primary/50",
+                "focus:ring-2 focus:ring-primary/20 focus:ring-offset-1",
+                selected && [
+                  "bg-primary text-primary-foreground",
+                  "shadow-sm shadow-primary/25",
+                  "border-primary hover:bg-primary/90",
+                ],
+                !selected && [
+                  "bg-background hover:bg-accent/50",
+                  "text-muted-foreground hover:text-foreground",
+                ],
+                isAll && selected && "bg-primary/90 hover:bg-primary"
+              )}
+            >
+              <div className="flex items-center gap-1.5">
+                {!isAll && (
+                  <span className="text-sm leading-none">{category.icon}</span>
+                )}
+                <span className="leading-none">
+                  {isAll ? "전체" : category.label}
+                </span>
+              </div>
+            </Button>
+          );
+        })}
       </div>
+
+      {/* 선택 상태 표시 */}
+      {selectedCount > 0 && (
+        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+          <Separator orientation="vertical" className="h-3" />
+          <span>선택된 카테고리: {categoryFilters.join(", ")}</span>
+        </div>
+      )}
     </div>
   );
 }

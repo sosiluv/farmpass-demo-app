@@ -1,5 +1,7 @@
 import { CommonFilters } from "../shared/CommonFilters";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
 import { Calendar } from "@/components/ui/calendar";
 import {
   Popover,
@@ -12,18 +14,23 @@ import { ko } from "date-fns/locale";
 import type { LogFilter } from "@/lib/types/system";
 import React, { useState } from "react";
 import { cn } from "@/lib/utils";
+import type { LogLevel } from "@/lib/types/common";
 
 interface LogFiltersProps {
   filters: LogFilter;
   onFiltersChange: (filters: LogFilter) => void;
+  levelFilters: string[];
+  onLevelFiltersChange: (filters: string[]) => void;
+  onCategoryFiltersChange?: (filters: string[]) => void;
   onExport?: () => void;
 }
-
-type LogLevel = "error" | "warn" | "info" | "debug";
 
 export function LogFilters({
   filters,
   onFiltersChange,
+  levelFilters,
+  onLevelFiltersChange,
+  onCategoryFiltersChange,
   onExport,
 }: LogFiltersProps) {
   const [showEndCalendar, setShowEndCalendar] = useState(false);
@@ -32,11 +39,21 @@ export function LogFilters({
     onFiltersChange({ ...filters, search: e.target.value });
   };
 
-  const handleLevelChange = (value: string) => {
-    onFiltersChange({
-      ...filters,
-      level: value === "all" ? undefined : (value as LogLevel),
-    });
+  const handleLevelToggle = (level: string) => {
+    if (level === "all") {
+      onLevelFiltersChange(["all"]);
+    } else {
+      if (levelFilters.includes("all")) {
+        onLevelFiltersChange([level]);
+      } else {
+        if (levelFilters.includes(level)) {
+          const newFilters = levelFilters.filter((f) => f !== level);
+          onLevelFiltersChange(newFilters.length > 0 ? newFilters : ["all"]);
+        } else {
+          onLevelFiltersChange([...levelFilters, level]);
+        }
+      }
+    }
   };
 
   const handleStartDateChange = (date: Date | undefined) => {
@@ -54,166 +71,173 @@ export function LogFilters({
       startDate: undefined,
       endDate: undefined,
     });
+    onLevelFiltersChange(["all"]);
+    if (onCategoryFiltersChange) {
+      onCategoryFiltersChange(["all"]);
+    }
   };
 
   const hasActiveFilters =
-    filters.search || filters.level || filters.startDate || filters.endDate;
+    filters.search ||
+    filters.startDate ||
+    filters.endDate ||
+    !levelFilters.includes("all");
 
-  // 날짜 선택기와 버튼
+  const levelOptions = [
+    { value: "all", label: "모든 레벨", icon: "📊" },
+    { value: "info", label: "정보", icon: "ℹ️" },
+    { value: "warn", label: "경고", icon: "⚠️" },
+    { value: "error", label: "오류", icon: "❌" },
+    { value: "debug", label: "디버그", icon: "🐛" },
+  ];
+
+  const selectedLevelCount = levelFilters.includes("all")
+    ? 0
+    : levelFilters.length;
+
   const datePickers = (
-    <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2">
+    <div className="flex flex-col sm:flex-row gap-2">
+      {/* 시작 날짜 */}
       <Popover>
         <PopoverTrigger asChild>
           <Button
             variant="outline"
             className={cn(
-              "w-full sm:w-[280px] justify-start text-left font-normal h-10 px-3 text-sm",
-              !filters.startDate && !filters.endDate && "text-muted-foreground"
+              "w-full sm:w-auto justify-start text-left font-normal",
+              !filters.startDate && "text-muted-foreground"
             )}
           >
-            <CalendarIcon className="mr-2 h-4 w-4 flex-shrink-0" />
-            <span className="truncate">
-              {filters.startDate && filters.endDate ? (
-                <>
-                  {format(filters.startDate, "PPP", { locale: ko })} ~{" "}
-                  {format(filters.endDate, "PPP", { locale: ko })}
-                </>
-              ) : filters.startDate ? (
-                <>
-                  {format(filters.startDate, "PPP", { locale: ko })} ~ 종료일
-                  선택
-                </>
-              ) : filters.endDate ? (
-                <>
-                  시작일 선택 ~ {format(filters.endDate, "PPP", { locale: ko })}
-                </>
-              ) : (
-                "기간 선택"
-              )}
-            </span>
+            <CalendarIcon className="mr-2 h-4 w-4" />
+            {filters.startDate ? (
+              format(filters.startDate, "PPP", { locale: ko })
+            ) : (
+              <span>시작 날짜</span>
+            )}
           </Button>
         </PopoverTrigger>
-        <PopoverContent
-          className="w-[min(calc(100vw-1rem),300px)] sm:w-auto p-0"
-          align="start"
-          sideOffset={4}
-        >
-          <div className="flex flex-col sm:flex-row gap-2 p-2 sm:p-3">
-            <div className="block sm:hidden bg-muted/50 rounded-lg p-2">
-              <div className="flex justify-between items-center mb-2">
-                <span className="text-xs font-medium">
-                  {showEndCalendar ? "종료일" : "시작일"} 선택
-                </span>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-7 text-xs px-2"
-                  onClick={() => setShowEndCalendar(!showEndCalendar)}
-                >
-                  {showEndCalendar ? "시작일" : "종료일"} 선택하기
-                </Button>
-              </div>
-              {!showEndCalendar ? (
-                <Calendar
-                  mode="single"
-                  selected={filters.startDate}
-                  onSelect={handleStartDateChange}
-                  initialFocus
-                  disabled={(date) =>
-                    filters.endDate ? date > filters.endDate : false
-                  }
-                  className="w-full rounded-md border bg-white [&_.rdp]:p-0 [&_.rdp-caption]:text-xs [&_.rdp-cell]:p-0 [&_.rdp-button]:p-0 [&_.rdp-button]:h-7 [&_.rdp-button]:w-7 [&_.rdp-head_th]:p-0 [&_.rdp-head_th]:text-[10px] [&_.rdp-button]:text-xs"
-                />
-              ) : (
-                <Calendar
-                  mode="single"
-                  selected={filters.endDate}
-                  onSelect={handleEndDateChange}
-                  initialFocus
-                  disabled={(date) =>
-                    filters.startDate ? date < filters.startDate : false
-                  }
-                  className="w-full rounded-md border bg-white [&_.rdp]:p-0 [&_.rdp-caption]:text-xs [&_.rdp-cell]:p-0 [&_.rdp-button]:p-0 [&_.rdp-button]:h-7 [&_.rdp-button]:w-7 [&_.rdp-head_th]:p-0 [&_.rdp-head_th]:text-[10px] [&_.rdp-button]:text-xs"
-                />
-              )}
-            </div>
-            <div className="hidden sm:flex sm:flex-row gap-2">
-              <Calendar
-                mode="single"
-                selected={filters.startDate}
-                onSelect={handleStartDateChange}
-                initialFocus
-                disabled={(date) =>
-                  filters.endDate ? date > filters.endDate : false
-                }
-                className="rounded-md border"
-              />
-              <div className="self-center w-[1px] h-[200px] bg-border" />
-              <Calendar
-                mode="single"
-                selected={filters.endDate}
-                onSelect={handleEndDateChange}
-                initialFocus
-                disabled={(date) =>
-                  filters.startDate ? date < filters.startDate : false
-                }
-                className="rounded-md border"
-              />
-            </div>
-          </div>
+        <PopoverContent className="w-auto p-0" align="start">
+          <Calendar
+            mode="single"
+            selected={filters.startDate}
+            onSelect={handleStartDateChange}
+            initialFocus
+          />
         </PopoverContent>
       </Popover>
-      <div className="flex items-center gap-2 w-full sm:w-auto">
-        {onExport && (
+
+      {/* 종료 날짜 */}
+      <Popover open={showEndCalendar} onOpenChange={setShowEndCalendar}>
+        <PopoverTrigger asChild>
           <Button
             variant="outline"
-            onClick={onExport}
-            className="flex-1 sm:flex-none whitespace-nowrap h-9 px-3"
-            size="sm"
+            className={cn(
+              "w-full sm:w-auto justify-start text-left font-normal",
+              !filters.endDate && "text-muted-foreground"
+            )}
           >
-            <Download className="w-3 h-3 sm:w-4 sm:h-4 sm:mr-2" />
-            <span className="hidden sm:inline">CSV 내보내기</span>
-            <span className="sm:hidden ml-2">내보내기</span>
+            <CalendarIcon className="mr-2 h-4 w-4" />
+            {filters.endDate ? (
+              format(filters.endDate, "PPP", { locale: ko })
+            ) : (
+              <span>종료 날짜</span>
+            )}
           </Button>
-        )}
-        {hasActiveFilters && (
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={clearFilters}
-            className="flex-1 sm:flex-none h-9 px-3 text-sm"
-          >
-            <X className="h-3 w-3 mr-2" />
-            <span className="hidden sm:inline">날짜 초기화</span>
-            <span className="sm:hidden">초기화</span>
-          </Button>
-        )}
-      </div>
+        </PopoverTrigger>
+        <PopoverContent className="w-auto p-0" align="start">
+          <Calendar
+            mode="single"
+            selected={filters.endDate}
+            onSelect={handleEndDateChange}
+            initialFocus
+          />
+        </PopoverContent>
+      </Popover>
     </div>
   );
 
   return (
-    <div className="space-y-2">
+    <div className="space-y-4">
       <CommonFilters
         searchPlaceholder="로그 검색..."
         searchValue={filters.search || ""}
         onSearchChange={handleSearchChange}
-        selects={[
-          {
-            value: filters.level || "all",
-            onChange: handleLevelChange,
-            options: [
-              { value: "all", label: "모든 레벨" },
-              { value: "info", label: "정보" },
-              { value: "warn", label: "경고" },
-              { value: "error", label: "오류" },
-              { value: "debug", label: "디버그" },
-            ],
-            placeholder: "로그 레벨",
-          },
-        ]}
       />
+
       {datePickers}
+
+      {/* 레벨 필터 (다중 선택) */}
+      <div className="space-y-3">
+        {/* 헤더 */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <h4 className="text-sm font-medium text-foreground">로그 레벨</h4>
+            {selectedLevelCount > 0 && (
+              <Badge variant="secondary" className="text-xs">
+                {selectedLevelCount}개 선택
+              </Badge>
+            )}
+          </div>
+          {selectedLevelCount > 0 && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => onLevelFiltersChange(["all"])}
+              className="h-6 px-2 text-xs text-muted-foreground hover:text-foreground"
+            >
+              전체 선택
+            </Button>
+          )}
+        </div>
+
+        {/* 레벨 버튼들 */}
+        <div className="flex flex-wrap gap-2">
+          {levelOptions.map((option) => {
+            const selected = levelFilters.includes(option.value);
+            const isAll = option.value === "all";
+
+            return (
+              <Button
+                key={option.value}
+                variant={selected ? "default" : "outline"}
+                size="sm"
+                onClick={() => handleLevelToggle(option.value)}
+                className={cn(
+                  "h-8 px-3 text-xs font-medium transition-all duration-200",
+                  "border border-border hover:border-primary/50",
+                  "focus:ring-2 focus:ring-primary/20 focus:ring-offset-1",
+                  selected && [
+                    "bg-primary text-primary-foreground",
+                    "shadow-sm shadow-primary/25",
+                    "border-primary hover:bg-primary/90",
+                  ],
+                  !selected && [
+                    "bg-background hover:bg-accent/50",
+                    "text-muted-foreground hover:text-foreground",
+                  ],
+                  isAll && selected && "bg-primary/90 hover:bg-primary"
+                )}
+              >
+                <div className="flex items-center gap-1.5">
+                  {!isAll && (
+                    <span className="text-sm leading-none">{option.icon}</span>
+                  )}
+                  <span className="leading-none">
+                    {isAll ? "전체" : option.label}
+                  </span>
+                </div>
+              </Button>
+            );
+          })}
+        </div>
+
+        {/* 선택 상태 표시 */}
+        {selectedLevelCount > 0 && (
+          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+            <Separator orientation="vertical" className="h-3" />
+            <span>선택된 레벨: {levelFilters.join(", ")}</span>
+          </div>
+        )}
+      </div>
     </div>
   );
 }

@@ -80,7 +80,7 @@ interface AuthContextType {
   signIn: (credentials: {
     email: string;
     password: string;
-  }) => Promise<{ success: boolean }>;
+  }) => Promise<{ success: boolean; message?: string }>;
   signOut: () => Promise<{ success: boolean }>;
   verifyPassword: (credentials: {
     email: string;
@@ -103,9 +103,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const isSigningOutRef = useRef<boolean>(false);
   const profileLoadingPromise = useRef<Promise<Profile | null> | null>(null);
 
-  // 구독 관리 훅 사용
-  const { switchSubscription, cleanupSubscription, setupErrorListener } =
-    useSubscriptionManager();
+  // 구독 관리 훅 사용 - Lazy Loading으로 최적화
+  const { switchSubscription, cleanupSubscription } = useSubscriptionManager();
 
   // 프로필 로드 (최적화된 버전)
   const loadProfile = async (userId: string): Promise<Profile | null> => {
@@ -134,6 +133,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
         // 기타 에러는 로그 기록
         devLog.warn("Profile loading error:", error);
+        handleError(error, { context: "load-profile" });
         return null;
       } finally {
         // 메모리 누수 방지: 로딩 완료 후 Promise 초기화
@@ -321,12 +321,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, [state.status]);
 
-  // 전역 에러 리스너 설정
-  useEffect(() => {
-    const cleanup = setupErrorListener();
-    return cleanup;
-  }, [setupErrorListener]);
-
   const signIn = async ({
     email,
     password,
@@ -345,16 +339,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         },
         body: JSON.stringify({ email, password }),
         context: "로그인",
-        onError: (error, context) => {
-          handleError(error, context);
-        },
       });
 
       if (!result.success) {
         // 로그인 실패 시 에러 처리
         if (result.status === 429) {
-          // 계정 잠금
-          throw new Error(result.message || "계정이 잠겼습니다.");
+          // 계정 잠금 - timeLeft 정보 포함
+          const error = new Error(result.message || "계정이 잠겼습니다.");
+          (error as any).timeLeft = result.timeLeft;
+          throw error;
         } else if (result.status === 401) {
           // 인증 실패
           throw new Error(
@@ -395,10 +388,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         profile = retryProfile;
       }
 
-      // 구독 전환 (백그라운드에서 처리)
-      switchSubscription(session.user.id).catch((error) => {
-        devLog.warn("구독 전환 실패:", error);
-        // 구독 실패해도 로그인은 계속 진행
+      // 구독 전환 (백그라운드에서 처리) - 로그에 더 상세한 정보 표시
+      switchSubscription(session.user.id).catch((error: any) => {
+        devLog.warn(
+          "로그인 시 구독 전환 실패 - 사용자는 재구독 다이얼로그에서 수동 구독 가능:",
+          error
+        );
+        // 구독 실패해도 로그인은 계속 진행 (재구독 다이얼로그로 처리)
       });
 
       dispatch({
@@ -408,9 +404,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         profile,
       });
 
-      return { success: true };
+      return { success: true, message: result.message };
     } catch (error) {
       devLog.error("Sign in error:", error);
+      handleError(error, { context: "sign-in" });
       dispatch({ type: "SET_UNAUTHENTICATED" });
 
       throw error;
@@ -459,6 +456,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       return { success: true };
     } catch (error) {
       devLog.error("SignOut error:", error);
+      handleError(error, { context: "sign-out" });
 
       // 에러 발생 시에도 강제로 클라이언트 상태 정리
       try {
@@ -498,6 +496,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       return { success: true };
     } catch (error) {
       devLog.error("Password verification error:", error);
+      handleError(error, { context: "verify-password" });
 
       return {
         success: false,
@@ -548,6 +547,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       return { success: true };
     } catch (error) {
       devLog.error("Password change error:", error);
+      handleError(error, { context: "change-password" });
 
       return {
         success: false,

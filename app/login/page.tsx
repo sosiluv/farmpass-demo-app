@@ -25,7 +25,6 @@ import { getAuthErrorMessage } from "@/lib/utils/validation/validation";
 import { PageLoading } from "@/components/ui/loading";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { safariLoginRetry } from "@/lib/utils/browser/safari-debug";
 
 import {
   loginFormSchema,
@@ -64,56 +63,41 @@ export default function LoginPage() {
     },
   });
 
-  // 세션 만료로 인한 로그인 페이지 진입 시 브라우저 구독 정리
+  // 세션 만료 시 URL 파라미터 정리 (일반 웹서비스 방식: 구독은 유지)
   useEffect(() => {
-    const cleanupBrowserSubscriptions = async () => {
-      try {
-        // Service Worker 등록 확인
-        if ("serviceWorker" in navigator && "PushManager" in window) {
-          const registration = await navigator.serviceWorker.getRegistration();
-          if (registration) {
-            // 기존 구독 해제
-            const subscription =
-              await registration.pushManager.getSubscription();
-            if (subscription) {
-              await subscription.unsubscribe();
-              devLog.log("[LOGIN] Browser push subscription cleaned");
-            }
-          }
-        }
-      } catch (error) {
-        devLog.warn("[LOGIN] Failed to clean browser subscriptions:", error);
-      }
-    };
-
     // URL 파라미터로 세션 만료 여부 확인
     const urlParams = new URLSearchParams(window.location.search);
     const sessionExpired = urlParams.get("session_expired");
 
     if (sessionExpired === "true") {
-      cleanupBrowserSubscriptions();
-      // URL에서 파라미터 제거
+      devLog.log("[LOGIN] 세션 만료로 인한 로그인 페이지 진입 - 구독은 유지");
+
+      // URL에서 파라미터 제거 (구독 관련 처리는 하지 않음)
       const newUrl = new URL(window.location.href);
       newUrl.searchParams.delete("session_expired");
       window.history.replaceState({}, "", newUrl.toString());
     }
   }, []);
 
-  // 로딩 상태를 먼저 체크 (페이지 렌더링 전에)
+  // 로딩 상태별 적절한 텍스트 표시
   if (
     state.status === "loading" ||
     state.status === "initializing" ||
     redirecting
   ) {
+    let loadingText = "페이지를 불러오는 중...";
+
+    if (redirecting) {
+      loadingText = "대시보드로 이동 중...";
+    } else if (state.status === "initializing") {
+      loadingText = "시스템을 초기화하는 중...";
+    } else if (state.status === "loading") {
+      loadingText = "로그인 상태를 확인하는 중...";
+    }
+
     return (
       <PageLoading
-        text={
-          redirecting
-            ? "대시보드로 이동 중..."
-            : state.status === "initializing"
-            ? "인증 확인 중..."
-            : "자동 로그인 중..."
-        }
+        text={loadingText}
         subText="잠시만 기다려주세요"
         variant="gradient"
         fullScreen={true}
@@ -127,16 +111,14 @@ export default function LoginPage() {
     showInfo("로그인 시도 중", "잠시만 기다려주세요.");
 
     try {
-      // Safari에서 재시도 로직을 포함한 로그인 수행
-      const result = await safariLoginRetry(async () => {
-        return await signIn({
-          email: data.email,
-          password: data.password,
-        });
+      // Safari 재시도 로직 제거, signIn 직접 호출
+      const result = await signIn({
+        email: data.email,
+        password: data.password,
       });
 
       if (result.success) {
-        showSuccess("로그인 성공", "대시보드로 이동합니다.");
+        showSuccess("로그인 성공", result.message || "대시보드로 이동합니다.");
         // 리다이렉트는 useEffect에서 처리하므로 여기서는 제거
         // setRedirecting(true);
         // router.replace("/admin/dashboard");

@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useMemo } from "react";
 import { Progress } from "./progress";
-import { getSystemSettings } from "@/lib/cache/system-settings-cache";
+import { useSystemSettingsContext } from "@/components/providers/system-settings-provider";
 import type { SystemSettings } from "@/lib/types/settings";
 import { devLog } from "@/lib/utils/logging/dev-logger";
 
@@ -28,31 +28,31 @@ interface PasswordStrengthProps {
 }
 
 export function PasswordStrength({ password }: PasswordStrengthProps) {
-  const [rules, setRules] = useState<PasswordRules>(DEFAULT_PASSWORD_RULES);
-  const [isLoading, setIsLoading] = useState(true);
+  // 전역 시스템 설정 사용
+  const { settings, isLoading, error } = useSystemSettingsContext();
+  // 시스템 설정에서 비밀번호 규칙 추출
+  const rules: PasswordRules = useMemo(() => {
+    if (!settings) {
+      devLog.warn(
+        "System settings not available, using default password rules"
+      );
+      return DEFAULT_PASSWORD_RULES;
+    }
 
-  useEffect(() => {
-    // 시스템 설정에서 비밀번호 규칙 가져오기
-    setIsLoading(true);
-    getSystemSettings()
-      .then((settings: SystemSettings) => {
-        setRules({
-          passwordMinLength: settings.passwordMinLength,
-          passwordRequireSpecialChar: settings.passwordRequireSpecialChar,
-          passwordRequireNumber: settings.passwordRequireNumber,
-          passwordRequireUpperCase: settings.passwordRequireUpperCase,
-          passwordRequireLowerCase: settings.passwordRequireLowerCase,
-        });
-      })
-      .catch((error) => {
-        devLog.error("Failed to fetch password rules:", error);
-        devLog.warn("Using default password rules as fallback");
-        setRules(DEFAULT_PASSWORD_RULES);
-      })
-      .finally(() => {
-        setIsLoading(false);
-      });
-  }, []); // 컴포넌트 마운트 시에만 실행
+    return {
+      passwordMinLength: settings.passwordMinLength,
+      passwordRequireSpecialChar: settings.passwordRequireSpecialChar,
+      passwordRequireNumber: settings.passwordRequireNumber,
+      passwordRequireUpperCase: settings.passwordRequireUpperCase,
+      passwordRequireLowerCase: settings.passwordRequireLowerCase,
+    };
+  }, [settings]);
+
+  // 에러 처리
+  if (error) {
+    devLog.error("Failed to fetch password rules:", error);
+    devLog.warn("Using default password rules as fallback");
+  } // 컴포넌트 마운트 시에만 실행
 
   const requirements = [
     {

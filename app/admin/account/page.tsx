@@ -9,19 +9,6 @@ import { CardSkeleton } from "@/components/common/skeletons";
 export default function AccountPage() {
   const { state } = useAuth();
 
-  if (state.status !== "authenticated") {
-    return (
-      <div className="flex-1 space-y-4 p-4 md:p-6 pt-2 md:pt-4">
-        <CardSkeleton
-          count={3}
-          className="grid-cols-1 md:grid-cols-2 lg:grid-cols-3"
-        />
-      </div>
-    );
-  }
-
-  const { profile, user } = state;
-
   return (
     <ErrorBoundary
       title="계정 관리 페이지 오류"
@@ -34,7 +21,14 @@ export default function AccountPage() {
           breadcrumbs={[{ label: "계정 관리" }]}
         />
 
-        <AccountTabs profile={profile} userId={user.id} />
+        {state.status !== "authenticated" ? (
+          <CardSkeleton
+            count={3}
+            className="grid-cols-1 md:grid-cols-2 lg:grid-cols-3"
+          />
+        ) : (
+          <AccountTabs profile={state.profile} userId={state.user.id} />
+        )}
       </div>
     </ErrorBoundary>
   );

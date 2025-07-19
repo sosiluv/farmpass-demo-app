@@ -7,8 +7,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { AlertTriangle } from "lucide-react";
-
-type LogLevel = "error" | "warn" | "info" | "debug";
+import type { LogLevel } from "@/lib/types/common";
 
 interface LoggingLevelSelectProps {
   value: LogLevel;
@@ -46,9 +45,11 @@ export function LoggingLevelSelect({
 
   return (
     <div className="space-y-2">
-      <Label className="text-sm font-medium">로깅 레벨</Label>
+      <Label htmlFor="logging-level" className="text-sm font-medium">
+        로깅 레벨
+      </Label>
       <Select value={value} onValueChange={onChange} disabled={isLoading}>
-        <SelectTrigger className="w-full text-center">
+        <SelectTrigger id="logging-level" className="w-full text-center">
           <SelectValue placeholder="로그 레벨 선택">
             {options.find((option) => option.value === value)?.label}
           </SelectValue>

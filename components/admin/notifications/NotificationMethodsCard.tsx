@@ -1,11 +1,11 @@
 import { Bell } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import NotificationCardHeader from "./NotificationCardHeader";
-import { useNotificationSettingsStore } from "@/store/use-notification-settings-store";
 import { BellRing, MessageSquare } from "lucide-react";
 import NotificationTypeCard from "@/components/admin/notifications/NotificationTypeCard";
+import type { NotificationSettings } from "@/lib/types/notification";
 
-// 알림 방식 옵션을 메모이제이션
+// 알림 방식 옵션
 const notificationTypeOptions = [
   {
     title: "웹 푸시",
@@ -24,12 +24,20 @@ const notificationTypeOptions = [
   },
 ];
 
-export function NotificationMethodsCard() {
-  const { unsavedSettings, updateUnsavedSettings } =
-    useNotificationSettingsStore();
+interface NotificationMethodsCardProps {
+  settings: NotificationSettings | null;
+  onSettingChange: <K extends keyof NotificationSettings>(
+    key: K,
+    value: NotificationSettings[K]
+  ) => void;
+}
 
-  const handleMethodChange = (value: string) => {
-    updateUnsavedSettings("notification_method", value);
+export function NotificationMethodsCard({
+  settings,
+  onSettingChange,
+}: NotificationMethodsCardProps) {
+  const handleOptionSelect = (value: string) => {
+    onSettingChange("notification_method", value as "push" | "kakao");
   };
 
   return (
@@ -42,21 +50,30 @@ export function NotificationMethodsCard() {
       <CardContent>
         <div className="space-y-4">
           <div className="grid gap-4 md:grid-cols-2">
-            {(notificationTypeOptions || []).map((option) => (
+            {notificationTypeOptions.map((option) => (
               <NotificationTypeCard
                 key={option.value}
                 title={option.title}
                 description={option.description}
                 icon={option.icon}
                 value={option.value}
-                selected={unsavedSettings?.notification_method === option.value}
+                selected={settings?.notification_method === option.value}
                 onClick={() =>
-                  !option.disabled && handleMethodChange(option.value)
+                  !option.disabled && handleOptionSelect(option.value)
                 }
-                badge={option.badge}
                 disabled={option.disabled}
+                badge={option.badge}
               />
             ))}
+          </div>
+          <div className="text-sm text-muted-foreground">
+            <p>
+              • 웹 푸시: 브라우저에서 실시간 알림을 받으려면 알림 권한을
+              허용해야 합니다.
+            </p>
+            <p>
+              • 카카오톡: 카카오톡 비즈니스 API를 통한 알림입니다. (추후 지원)
+            </p>
           </div>
         </div>
       </CardContent>

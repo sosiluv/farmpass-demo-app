@@ -31,6 +31,7 @@ export function MembersPageHeader({
         <AddMemberDialog
           canManageMembers={canManageMembers}
           onAddMember={onAddMember}
+          farmId={farm.id}
         />
       }
     />

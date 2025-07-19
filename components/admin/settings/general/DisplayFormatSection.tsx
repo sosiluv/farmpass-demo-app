@@ -38,7 +38,7 @@ export function DisplayFormatSection({
             onValueChange={(value) => onSettingChange("dateFormat", value)}
             disabled={loading}
           >
-            <SelectTrigger>
+            <SelectTrigger id="dateFormat">
               <SelectValue placeholder="날짜 형식 선택" />
             </SelectTrigger>
             <SelectContent>

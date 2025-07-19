@@ -8,6 +8,7 @@ interface SettingsCardHeaderProps {
   description: string;
   iconClassName?: string;
   titleClassName?: string;
+  actions?: React.ReactNode;
 }
 
 const SettingsCardHeader = React.memo(function SettingsCardHeader({
@@ -16,14 +17,20 @@ const SettingsCardHeader = React.memo(function SettingsCardHeader({
   description,
   iconClassName = "h-5 w-5",
   titleClassName = "text-base",
+  actions,
 }: SettingsCardHeaderProps) {
   return (
     <CardHeader>
-      <CardTitle className={`flex items-center gap-2 ${titleClassName}`}>
-        <Icon className={iconClassName} />
-        {title}
-      </CardTitle>
-      <CardDescription>{description}</CardDescription>
+      <div className="flex items-start justify-between">
+        <div className="flex-1">
+          <CardTitle className={`flex items-center gap-2 ${titleClassName}`}>
+            <Icon className={iconClassName} />
+            {title}
+          </CardTitle>
+          <CardDescription>{description}</CardDescription>
+        </div>
+        {actions && <div className="flex-shrink-0 ml-4">{actions}</div>}
+      </div>
     </CardHeader>
   );
 });

@@ -9,6 +9,8 @@ import {
   useMemo,
 } from "react";
 import { devLog } from "@/lib/utils/logging/dev-logger";
+import { getDeviceInfo } from "@/lib/utils/browser/device-detection";
+import { useCommonToast } from "@/lib/utils/notification/toast-messages";
 
 interface InstallInfo {
   canInstall: boolean;
@@ -22,20 +24,24 @@ interface InstallInfo {
 interface PWAContextType {
   installInfo: InstallInfo;
   isLoading: boolean;
+  deferredPrompt: any; // beforeinstallprompt 이벤트 저장
+  triggerInstall: () => Promise<any>; // 실제 설치 트리거 함수
 }
 
 const PWAContext = createContext<PWAContextType | undefined>(undefined);
 
 // 브라우저 환경 체크 함수를 메모이제이션
 const checkInstallability = (): InstallInfo => {
-  const userAgent = navigator.userAgent;
+  const deviceInfo = getDeviceInfo();
+  const userAgent = deviceInfo.userAgent;
   const isStandalone = window.matchMedia("(display-mode: standalone)").matches;
-  const isIOS = /iPad|iPhone|iPod/.test(userAgent);
-  const isAndroid = /Android/.test(userAgent);
-  const isChrome = /Chrome/.test(userAgent);
-  const isSafari = /Safari/.test(userAgent) && !/Chrome/.test(userAgent);
-  const isFirefox = /Firefox/.test(userAgent);
-  const isEdge = /Edg/.test(userAgent);
+  const isIOS = deviceInfo.os === "iOS";
+  const isAndroid = deviceInfo.os === "Android";
+  const isChrome = deviceInfo.browser === "Chrome";
+  const isSafari = deviceInfo.browser === "Safari";
+  const isFirefox = deviceInfo.browser === "Firefox";
+  const isEdge = deviceInfo.browser === "Edge";
+  const isSamsung = deviceInfo.browser === "Samsung";
 
   // 이미 PWA로 실행 중이면 설치 불필요
   if (isStandalone) {
@@ -87,7 +93,7 @@ const checkInstallability = (): InstallInfo => {
   }
 
   // Android Samsung Internet
-  if (isAndroid && /SamsungBrowser/.test(userAgent)) {
+  if (isAndroid && isSamsung) {
     return {
       canInstall: true,
       platform: "Android",
@@ -146,6 +152,7 @@ const checkInstallability = (): InstallInfo => {
 };
 
 export function PWAProvider({ children }: { children: ReactNode }) {
+  const { showWarning } = useCommonToast();
   const [installInfo, setInstallInfo] = useState<InstallInfo>({
     canInstall: false,
     platform: "Unknown",
@@ -154,6 +161,34 @@ export function PWAProvider({ children }: { children: ReactNode }) {
     userAgent: "",
   });
   const [isLoading, setIsLoading] = useState(true);
+  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
+
+  // 실제 설치 트리거 함수
+  const triggerInstall = async () => {
+    if (deferredPrompt) {
+      try {
+        // 브라우저 네이티브 설치 프롬프트 표시
+        const result = await deferredPrompt.prompt();
+        devLog.log("설치 프롬프트 결과:", result.outcome);
+
+        // 프롬프트 사용 후 초기화
+        setDeferredPrompt(null);
+
+        return result;
+      } catch (error) {
+        devLog.error("설치 프롬프트 실행 실패:", error);
+        showWarning("설치 오류", "설치 중 오류가 발생했습니다.");
+        throw error;
+      }
+    } else {
+      devLog.warn("설치 프롬프트가 사용 불가능합니다");
+      showWarning(
+        "설치 불가",
+        "설치 프롬프트를 사용할 수 없습니다. 이미 설치했거나, 브라우저가 지원하지 않는 환경입니다."
+      );
+      throw new Error("설치 프롬프트를 사용할 수 없습니다");
+    }
+  };
 
   useEffect(() => {
     // 브라우저 환경에서만 실행
@@ -173,19 +208,34 @@ export function PWAProvider({ children }: { children: ReactNode }) {
         // 설치 완료 기록이 있지만 standalone 모드가 아닌 경우
         // → 사용자가 PWA를 삭제했을 가능성 있음
         if (installCompleted && !isStandalone) {
-          // beforeinstallprompt 이벤트 재확인
+          // beforeinstallprompt 이벤트 재확인을 더 안전하게 처리
           let canReinstall = false;
+          let testHandlerAdded = false;
 
           const testPrompt = (e: Event) => {
             canReinstall = true;
             e.preventDefault();
           };
 
-          window.addEventListener("beforeinstallprompt", testPrompt);
+          try {
+            window.addEventListener("beforeinstallprompt", testPrompt);
+            testHandlerAdded = true;
+          } catch (error) {
+            devLog.warn("beforeinstallprompt 이벤트 리스너 추가 실패:", error);
+          }
 
           // 짧은 시간 후 이벤트 확인
           setTimeout(() => {
-            window.removeEventListener("beforeinstallprompt", testPrompt);
+            if (testHandlerAdded) {
+              try {
+                window.removeEventListener("beforeinstallprompt", testPrompt);
+              } catch (error) {
+                devLog.warn(
+                  "beforeinstallprompt 이벤트 리스너 제거 실패:",
+                  error
+                );
+              }
+            }
 
             if (canReinstall) {
               devLog.log("PWA 삭제 감지됨 - localStorage 정리");
@@ -193,21 +243,31 @@ export function PWAProvider({ children }: { children: ReactNode }) {
               localStorage.removeItem("pwa_install_completed");
               localStorage.removeItem("pwa_install_dismissed");
 
-              // 설치 가능 상태로 업데이트
+              // 설치 가능 상태로 업데이트 (현재 상태와 다를 때만)
               const updatedInfo = checkInstallability();
-              setInstallInfo(updatedInfo);
+              if (updatedInfo.canInstall !== installInfo.canInstall) {
+                setInstallInfo(updatedInfo);
+              }
             }
           }, 1000);
         }
       };
 
-      // beforeinstallprompt 이벤트 리스너 추가 (더 정확한 설치 상태 감지)
+      // beforeinstallprompt 이벤트 리스너 추가
       const handleBeforeInstallPrompt = (e: Event) => {
         e.preventDefault();
-        devLog.log("beforeinstallprompt 이벤트 감지 - 아직 설치되지 않음");
+        devLog.log("beforeinstallprompt 이벤트 감지 - 설치 프롬프트 저장");
+
+        // 이벤트를 저장하여 나중에 사용
+        setDeferredPrompt(e);
+
         // 이벤트가 발생하면 아직 설치되지 않은 것으로 판단
         const updatedInfo = checkInstallability();
-        if (updatedInfo.canInstall) {
+        // 현재 상태와 다를 때만 업데이트
+        if (
+          updatedInfo.canInstall !== installInfo.canInstall ||
+          updatedInfo.reason !== installInfo.reason
+        ) {
           setInstallInfo(updatedInfo);
         }
       };
@@ -226,13 +286,28 @@ export function PWAProvider({ children }: { children: ReactNode }) {
         });
       };
 
-      // 페이지 로드 시 PWA 삭제 체크
-      checkPWAUninstall();
+      // 페이지 로드 시 PWA 삭제 체크 (한 번만 실행)
+      let hasCheckedUninstall = false;
+
+      const checkPWAUninstallOnce = () => {
+        if (hasCheckedUninstall) return;
+        hasCheckedUninstall = true;
+        checkPWAUninstall();
+      };
+
+      checkPWAUninstallOnce();
 
       // 포커스 이벤트로 PWA 삭제 재체크 (사용자가 다른 탭에서 돌아올 때)
+      // 짧은 간격으로 중복 실행 방지
+      let lastVisibilityCheck = 0;
       const handleVisibilityChange = () => {
         if (document.visibilityState === "visible") {
-          setTimeout(checkPWAUninstall, 500);
+          const now = Date.now();
+          if (now - lastVisibilityCheck > 5000) {
+            // 5초 간격 제한
+            lastVisibilityCheck = now;
+            setTimeout(checkPWAUninstall, 500);
+          }
         }
       };
 
@@ -259,8 +334,10 @@ export function PWAProvider({ children }: { children: ReactNode }) {
     () => ({
       installInfo,
       isLoading,
+      deferredPrompt,
+      triggerInstall,
     }),
-    [installInfo, isLoading]
+    [installInfo, isLoading, deferredPrompt]
   );
 
   return (
@@ -273,7 +350,10 @@ export function usePWAInstall() {
   if (context === undefined) {
     throw new Error("usePWAInstall must be used within a PWAProvider");
   }
-  return context.installInfo;
+  return {
+    ...context.installInfo,
+    triggerInstall: context.triggerInstall,
+  };
 }
 
 export function usePWALoading() {

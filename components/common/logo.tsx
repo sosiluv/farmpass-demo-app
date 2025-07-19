@@ -3,6 +3,7 @@
 import { useLogo } from "@/hooks/use-logo";
 import { cn } from "@/lib/utils";
 import Image from "next/image";
+import type { SystemSettings } from "@/lib/types/settings";
 
 interface LogoProps {
   className?: string;
@@ -10,6 +11,7 @@ interface LogoProps {
   showText?: boolean;
   textClassName?: string;
   size?: "sm" | "md" | "lg" | "xl" | "xxl";
+  settings?: SystemSettings | null; // 중복 query 방지용
 }
 
 const sizeMap = {
@@ -50,13 +52,14 @@ export function Logo({
   showText = false,
   textClassName,
   size = "md",
+  settings, // 중복 query 방지용
 }: LogoProps) {
-  const { logoUrl, siteName, hasLogo } = useLogo();
+  const { logoUrl, siteName, hasLogo } = useLogo(settings);
   const sizeConfig = sizeMap[size];
 
   if (hasLogo && logoUrl) {
     return (
-      <div className={cn("flex items-center gap-2", className)}>
+      <div className={cn("flex flex-col items-center gap-2", className)}>
         <div
           className={cn(
             "relative overflow-hidden rounded-lg",
@@ -83,7 +86,7 @@ export function Logo({
 
   // 로고가 없을 때 기본 이미지 사용
   return (
-    <div className={cn("flex items-center gap-2", className)}>
+    <div className={cn("flex flex-col items-center gap-2", className)}>
       <div
         className={cn(
           "relative overflow-hidden rounded-lg",

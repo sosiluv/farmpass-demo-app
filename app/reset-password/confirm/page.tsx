@@ -30,7 +30,8 @@ import { devLog } from "@/lib/utils/logging/dev-logger";
 import { supabase } from "@/lib/supabase/client";
 import { useAuth } from "@/components/providers/auth-provider";
 import { ErrorBoundary } from "@/components/error/error-boundary";
-import { getAuthErrorMessage, getPasswordRules } from "@/lib/utils/validation";
+import { getAuthErrorMessage } from "@/lib/utils/validation";
+import { usePasswordRules } from "@/lib/utils/validation/usePasswordRules";
 import {
   createResetPasswordFormSchema,
   createDefaultResetPasswordFormSchema,
@@ -52,20 +53,23 @@ export default function ResetPasswordConfirmPage() {
   const searchParams = useSearchParams();
   const processingRef = useRef(false);
 
-  // 시스템 설정에 따른 동적 스키마 생성
+  // 시스템 설정에서 비밀번호 규칙 가져오기 (React Query 기반)
+  const { rules: passwordRules, isLoading: isPasswordRulesLoading } =
+    usePasswordRules();
+
+  // 동적 스키마 생성
   useEffect(() => {
-    const initSchema = async () => {
-      try {
-        const passwordRules = await getPasswordRules();
-        const dynamicSchema = createResetPasswordFormSchema(passwordRules);
-        setSchema(dynamicSchema);
-      } catch (error) {
-        devLog.error("Failed to load password rules:", error);
-        // 에러 시 기본 스키마 사용
-      }
-    };
-    initSchema();
-  }, []);
+    if (isPasswordRulesLoading) return;
+
+    try {
+      const dynamicSchema = createResetPasswordFormSchema(passwordRules);
+      setSchema(dynamicSchema);
+    } catch (error) {
+      devLog.error("Failed to create reset password schema:", error);
+      // 에러 시 기본 스키마 사용
+      setSchema(createDefaultResetPasswordFormSchema());
+    }
+  }, [passwordRules, isPasswordRulesLoading]);
 
   const form = useForm<ResetPasswordFormData>({
     resolver: schema

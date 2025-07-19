@@ -1,3 +1,44 @@
+# 🚀 Farm Management System - Changelog
+
+## [2024-12-19] - React Query 사용 현황 최종 분석 및 아키텍처 최적화
+
+### 🔍 React Query 적용 현황 분석 완료
+
+#### ✅ React Query 적절히 사용 중 (95% 달성)
+
+- **Admin 페이지들**: 100% React Query 마이그레이션 완료
+- **데이터 조회/수정**: 농장, 방문자, 멤버 데이터 CRUD 최적화
+- **전역 설정 관리**: SystemSettingsProvider로 React Query 기반 통합 관리
+
+#### 🗑️ 중복 코드 제거 및 아키텍처 정리
+
+- **Legacy hooks 제거**: `hooks/admin/useAdminFarms.ts` 등 사용되지 않는 파일들 정리
+- **불필요한 hooks 제거**: `hooks/useVisitorSettings.ts` - SystemSettingsProvider와 중복
+- **코드 일관성 향상**: 전역 시스템 설정 활용으로 중복 제거
+
+#### 🎯 최적화 완료 영역
+
+1. **전역 시스템 설정**: SystemSettingsProvider 기반 React Query 통합
+2. **방문자 설정**: 별도 훅 대신 전역 설정에서 필드 추출
+3. **이미지 업로드**: 적절한 비-React Query 구현 유지
+4. **브라우저 API**: Notification API 등 적절한 구현 유지
+
+#### 📊 React Query 부적합 영역 (5% - 올바른 구현)
+
+- **이미지 업로드**: 일회성 작업, 캐싱 불필요
+- **브라우저 API 래핑**: Notification API 등
+- **인증 관련**: 일회성 가입/로그인 작업
+- **외부 API**: 서버사이드 Slack, Uptime Robot 호출
+
+### ✨ 최종 아키텍처 권장사항
+
+- **React Query 사용률**: 95% (최적 수준 달성)
+- **코드 일관성**: 전역 Provider 패턴으로 중복 제거
+- **성능 최적화**: 이중 캐싱 (서버 5분 + 클라이언트 5분)
+- **유지보수성**: 단일 책임 원칙 준수
+
+---
+
 # CHANGELOG
 
 ## [2025-7-7] - 로그아웃 타임아웃 및 세션 정리 개선
@@ -204,13 +245,6 @@ const benefits = useMemo(() => [...], []); // 메모이제이션
 - **효과**: 약 100-200ms 단축
 - **구현**: `prisma.profiles.update()`로 모든 필드 한 번에 업데이트
 
-#### 4. **세션 설정 최적화**
-
-- **기존**: API 응답 후 클라이언트에서 별도 세션 설정 (`supabase.auth.setSession`)
-- **개선**: 서버에서 세션 쿠키 직접 설정하여 클라이언트 세션 설정 불필요
-- **효과**: 약 200-300ms 단축
-- **구현**: `response.cookies.set()`로 세션 쿠키 직접 설정
-
 #### 5. **프로필 로드 최적화**
 
 - **기존**: 실패 시 1초 대기 후 재시도
@@ -289,21 +323,6 @@ await prisma.profiles.update({
     last_login_attempt: null,
     last_login_at: new Date(),
   },
-});
-```
-
-#### 세션 쿠키 설정
-
-```typescript
-// 기존: 클라이언트에서 세션 설정
-const { error: setSessionError } = await supabase.auth.setSession(session);
-
-// 개선: 서버에서 쿠키 설정
-response.cookies.set("sb-access-token", session!.access_token, {
-  httpOnly: true,
-  secure: process.env.NODE_ENV === "production",
-  sameSite: "lax",
-  maxAge: session!.expires_at ? session!.expires_at * 1000 - Date.now() : 3600,
 });
 ```
 
@@ -560,6 +579,36 @@ const { members } = await apiClient("/api/farm-members", { method: "GET" });
 
 ## [Unreleased]
 
+### 🚀 실시간 브로드캐스트 시스템 완성
+
+- **sendSupabaseBroadcast 공통 유틸 구현**: 모든 API 라우터에서 실시간 브로드캐스트 일관화
+
+  - `lib/supabase/broadcast.ts` 신규 생성
+  - 10개 이상 API 라우터에서 중복 코드 제거 및 통일
+  - 공통 에러 로깅 (console.error + Sentry 연동)
+  - 성공 로그 (devLog) 통합 관리
+  - 채널별 브로드캐스트: profile_updates, farm_updates, member_updates, visitor_updates, log_updates
+
+- **실시간 데이터 동기화 최적화**:
+  - 회원가입/로그인/프로필 수정 시 실시간 브로드캐스트
+  - 농장 생성/수정/삭제 시 실시간 브로드캐스트
+  - 농장 멤버 추가/수정/삭제 시 실시간 브로드캐스트
+  - 방문자 등록/수정/삭제 시 실시간 브로드캐스트
+  - 시스템 로그 생성/삭제 시 실시간 브로드캐스트
+
+### 🔧 기술적 개선
+
+- **실시간 구독 시스템 정리**:
+
+  - `hooks/useSupabaseRealtime.ts`에서 콘솔 로그 제거로 성능 최적화
+  - 5개 채널 (profile, farm, member, visitor, log) 실시간 구독
+  - 전역 구독 방식으로 메모리 효율성 확보
+
+- **Sentry 에러 추적 강화**:
+  - sendSupabaseBroadcast에서 Sentry.captureException 자동 호출
+  - 브로드캐스트 실패 시 채널명, 이벤트명, payload 정보 함께 전송
+  - 실시간 에러 모니터링 및 알림 시스템 구축
+
 ### 🚀 성능 최적화
 
 - **PWA 설치 훅 최적화**: `usePWAInstall` 훅의 중복 호출 문제 해결
@@ -606,10 +655,10 @@ const { members } = await apiClient("/api/farm-members", { method: "GET" });
 ### 🚀 성능 최적화
 
 - **로그인 프로세스 대폭 개선**:
+
   - 로그인 시도 횟수 확인과 Supabase 인증 병렬 처리 (Promise.all)
   - 비동기 성능 로깅으로 응답 지연 방지
   - DB 쿼리 통합으로 데이터베이스 호출 최소화
-  - 서버에서 세션 쿠키 직접 설정으로 클라이언트 작업 감소
   - 프로필 로드 즉시 재시도 및 백그라운드 로드
   - 예상 성능 향상: 로그인 2-4초 → 1-2초, 대시보드 3-5초 → 2-3초
 
@@ -918,3 +967,127 @@ const { members } = await apiClient("/api/farm-members", { method: "GET" });
 - **우선순위**: 알림 권한(100) > PWA 설치(50)
 
 ---
+
+## [2024-12-19] - 클라이언트 설정 조회 최적화 및 아키텍처 개선
+
+### 🔍 getSystemSettings 사용 분석 완료
+
+#### 📊 사용 현황 분석 결과:
+
+- **서버 API Routes**: 19곳에서 사용 (보안 검증, 설정 기반 로직)
+- **서버 유틸리티**: system-mode.ts, metadata.ts 등 7곳
+- **클라이언트 컴포넌트**: getPasswordRules() 3곳에서 불필요한 중복 조회
+
+#### ⚖️ 클라이언트 캐시 vs 서버 재조회 전략 결정:
+
+**❌ 클라이언트 캐시 → 서버 파라미터 전달 방식 (부적절)**:
+
+- 보안 위험: 클라이언트에서 조작 가능한 설정값
+- 데이터 무결성: 캐시 불일치 시 신뢰성 문제
+- 복잡성: API 인터페이스 변경 및 검증 로직 필요
+
+**✅ 서버 재조회 방식 유지 (최적)**:
+
+- 보안성: 서버에서 신뢰할 수 있는 최신 설정 사용
+- 성능: SystemSettingsCache 5분 캐싱으로 이미 최적화
+- 단순성: 기존 아키텍처 유지, 각 레이어 독립성
+
+#### 🚀 클라이언트 최적화 개선:
+
+**문제**: `getPasswordRules()` 함수가 클라이언트에서 불필요한 서버 요청 발생
+
+```typescript
+// Before: 중복 서버 요청
+const passwordRules = await getPasswordRules(); // → getSystemSettings() 재호출
+```
+
+**해결**: React Hook 기반으로 전역 캐시 활용
+
+```typescript
+// After: 전역 캐시 활용
+const { rules } = usePasswordRules(); // SystemSettingsProvider 캐시 사용
+```
+
+#### 🛠️ 구현한 개선사항:
+
+1. **usePasswordRules Hook 생성**: SystemSettingsProvider의 캐시된 설정 활용
+2. **password-strength.tsx 최적화**: React Query 기반 전환
+3. **중복 제거**: 클라이언트에서 불필요한 서버 호출 제거
+4. **타입 안전성**: PasswordRules 타입 export로 타입 안전성 향상
+
+### ✨ 최종 하이브리드 아키텍처:
+
+```
+┌─────────────────────┐    ┌─────────────────────┐
+│   클라이언트         │    │      서버           │
+│                     │    │                     │
+│ SystemProvider      │    │ SystemSettingsCache │
+│ (React Query)       │    │ (5분 캐싱)          │
+│                     │    │                     │
+│ - UI 반응성         │    │ - 보안 검증         │
+│ - 실시간 업데이트   │    │ - 데이터 무결성     │
+│ - 중복 요청 방지    │    │ - API 신뢰성        │
+└─────────────────────┘    └─────────────────────┘
+```
+
+### 🎯 권장사항:
+
+- **서버 API**: 기존 getSystemSettings() 방식 유지 (보안 우선)
+- **클라이언트**: SystemSettingsProvider 활용 (성능 최적화)
+- **하이브리드**: 각 레이어에서 최적의 방식 사용
+
+---
+
+## [2024-12-19] 사용하지 않는 Admin Hook 파일들 정리 🧹
+
+### 🗑️ 삭제된 파일
+
+- `hooks/admin/useAdminDashboard.ts`: React Query 버전(`useAdminDashboardQuery`)으로 완전 교체됨
+- `hooks/admin/useAdminLogs.ts`: React Query 버전(`useAdminLogsQuery`)으로 완전 교체됨
+- `hooks/admin/useAdminUsers.ts`: React Query 버전(`useAdminUsersQuery`)으로 완전 교체됨
+- `hooks/admin/` 폴더: 빈 폴더 정리
+
+### 🔄 교체된 Import
+
+- `components/admin/management/logs/LogStats.tsx`: 타입 import를 React Query 버전으로 변경
+  - `@/hooks/admin/useAdminLogs` → `@/lib/hooks/query/use-admin-logs-query`
+
+### 💡 정리 근거
+
+- 모든 Admin Hook들이 React Query 기반 버전으로 완전히 교체되어 사용 중
+- 기존 Hook들은 더 이상 사용되지 않아 코드베이스 정리 차원에서 삭제
+- React Query 버전이 더 나은 캐싱, 에러 처리, 상태 관리 제공
+
+### ✅ 확인 완료
+
+- 모든 컴포넌트가 React Query 버전 사용 중
+- 삭제된 파일들의 실제 사용처 없음 확인
+- 타입 정의도 React Query 버전과 동일하여 호환성 문제 없음
+
+---
+
+## [2025-07-08] - 이미지 정책 통일 및 orphan/로그 정리 기능·UI/UX 개선
+
+### ✨ 주요 개선 및 신규 기능
+
+- 방문자/계정관리 이미지 업로드·삭제 정책을 공통 유틸로 통일하여 일관성 확보
+- orphan(고아) 파일 정리 기능 및 관리자 페이지 섹션 추가
+- orphan 파일/로그 정리 API 및 재귀 조회, 삭제 기능 구현
+- 테스트 페이지에 orphan 파일 삭제 및 토스트 알림 추가
+- 로그 정리 관리 상태 표시 오류 수정 및 React Query 데이터 연동
+- 새로고침 버튼 위치 및 동작 개선, actions prop 패턴 도입
+- orphan/로그 정리 버튼 반응형 디자인 통일(flex-1, flex-col, sm:flex-row, gap-3)
+- 버튼 내 개수 배지 및 UI 일관성 강화
+- 오펜 파일 정리 버튼을 카드 하단 오른쪽에서 반응형으로 정렬해 UI 밸런스 개선
+- 로딩 아이콘 애니메이션 및 최소 로딩 UX 개선
+- 불필요/테스트 파일 및 훅 정리, 코드 구조 일관성 유지
+
+### 🗑️ 삭제/정리
+
+- 테스트용 페이지, 훅, SQL 스크립트 등 불필요 파일 다수 삭제
+- hooks, 컴포넌트 구조 일관성 강화 및 네이밍 정비
+
+### 🛠️ 기타
+
+- 관리자 페이지 유지보수성 및 품질 향상
+- 코드 주석 및 문서화 보강

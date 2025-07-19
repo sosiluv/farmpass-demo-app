@@ -14,20 +14,23 @@
  * @route /visit/[farmId]
  * @param farmId - 농장 고유 식별자 (UUID)
  */
-
 "use client";
-
 import { useParams } from "next/navigation";
 import { FormSkeleton } from "@/components/common/skeletons";
 import { FarmInfoCard } from "@/components/visitor/FarmInfoCard";
 import { SuccessCard } from "@/components/visitor/SuccessCard";
 import { ErrorBoundary } from "@/components/error/error-boundary";
-import { useVisitorSettings } from "@/hooks/useVisitorSettings";
+import { useSystemSettingsContext } from "@/components/providers/system-settings-provider";
 import { useVisitorForm } from "@/hooks/useVisitorForm";
 import { VisitorForm } from "@/components/visitor/VisitorForm";
 import { useCommonToast } from "@/lib/utils/notification/toast-messages";
-import { useEffect } from "react";
+import {
+  getAuthErrorMessage,
+  getImageUploadErrorMessage,
+} from "@/lib/utils/validation/validation";
+import { useEffect, useMemo } from "react";
 import { VisitorFormData } from "@/lib/utils/validation/visitor-validation";
+import type { VisitorSettings } from "@/lib/types/visitor";
 
 /**
  * 방문자 등록 페이지 메인 컴포넌트
@@ -38,20 +41,43 @@ import { VisitorFormData } from "@/lib/utils/validation/visitor-validation";
 export default function VisitPage() {
   const params = useParams();
   const farmId = params.farmId as string;
-  const { showInfo, showWarning, showSuccess, showError } = useCommonToast();
+  const { showInfo, showSuccess, showError } = useCommonToast();
 
+  // 전역 시스템 설정 사용
   const {
-    settings,
+    settings: systemSettings,
     isLoading: isSettingsLoading,
     error: settingsError,
-  } = useVisitorSettings();
+  } = useSystemSettingsContext();
+
+  // 시스템 설정에서 방문자 설정 추출
+  const settings: VisitorSettings = useMemo(() => {
+    if (!systemSettings) {
+      return {
+        reVisitAllowInterval: 6,
+        maxVisitorsPerDay: 100,
+        visitorDataRetentionDays: 1095,
+        requireVisitorPhoto: false,
+        requireVisitorContact: true,
+        requireVisitPurpose: true,
+      };
+    }
+
+    return {
+      reVisitAllowInterval: systemSettings.reVisitAllowInterval,
+      maxVisitorsPerDay: systemSettings.maxVisitorsPerDay,
+      visitorDataRetentionDays: systemSettings.visitorDataRetentionDays,
+      requireVisitorPhoto: systemSettings.requireVisitorPhoto,
+      requireVisitorContact: systemSettings.requireVisitorContact,
+      requireVisitPurpose: systemSettings.requireVisitPurpose,
+    };
+  }, [systemSettings]);
 
   const {
     formData,
     isSubmitting,
     isSubmitted,
     error,
-    isLoading,
     uploadedImageUrl,
     farm,
     farmLoading,
@@ -59,27 +85,29 @@ export default function VisitPage() {
     handleSubmit,
     uploadImage,
     deleteImage,
-    isImageUploading,
   } = useVisitorForm(farmId, settings);
 
   // 에러 상태에 따른 토스트 처리
   useEffect(() => {
     if (error) {
-      showError("방문자 등록 오류", error);
+      const authError = getAuthErrorMessage(error);
+      showError("방문자 등록 오류", authError.message);
     }
   }, [error, showError]);
 
   // 농장 에러에 따른 토스트 처리
   useEffect(() => {
     if (farmError) {
-      showError("농장 정보 조회 실패", farmError);
+      const authError = getAuthErrorMessage(farmError);
+      showError("농장 정보 조회 실패", authError.message);
     }
   }, [farmError, showError]);
 
   // 설정 에러에 따른 토스트 처리
   useEffect(() => {
     if (settingsError) {
-      showError("설정 로드 실패", settingsError);
+      const authError = getAuthErrorMessage(settingsError);
+      showError("설정 로드 실패", authError.message);
     }
   }, [settingsError, showError]);
 
@@ -87,65 +115,34 @@ export default function VisitPage() {
   const handleSubmitWrapped = async (data: VisitorFormData) => {
     try {
       showInfo("방문자 등록 중", "방문자 정보를 등록하는 중입니다...");
-      await handleSubmit(data);
+      const result = await handleSubmit(data);
+
+      showSuccess(
+        "방문자 등록 완료",
+        result?.message || "방문자 정보를 등록하였습니다."
+      );
       // 성공 시 토스트는 isSubmitted 상태 변경으로 처리
     } catch (error) {
       // 에러는 이미 error 상태로 처리됨
     }
   };
 
-  // 이미지 업로드 핸들러 래핑
+  // 이미지 업로드 핸들러 래핑 (토스트 처리 제거)
   const handleImageUploadWrapped = async (file: File) => {
     try {
-      showInfo("이미지 업로드 중", "프로필 이미지를 업로드하는 중입니다...");
-      await uploadImage(file);
-      showSuccess(
-        "이미지 업로드 완료",
-        "프로필 이미지가 성공적으로 업로드되었습니다."
-      );
+      const result = await uploadImage(file);
+      return result;
     } catch (error) {
-      showError("이미지 업로드 실패", "프로필 이미지 업로드에 실패했습니다.");
       throw error;
     }
   };
 
-  // 이미지 삭제 핸들러 래핑
+  // 이미지 삭제 핸들러 래핑 (토스트 처리 제거)
   const handleImageDeleteWrapped = async (fileName: string) => {
     try {
-      showInfo("이미지 삭제 중", "프로필 이미지를 삭제하는 중입니다...");
-      await deleteImage(fileName);
-      showSuccess(
-        "이미지 삭제 완료",
-        "프로필 이미지가 성공적으로 삭제되었습니다."
-      );
+      await deleteImage();
     } catch (error) {
-      showError("이미지 삭제 실패", "프로필 이미지 삭제에 실패했습니다.");
       throw error;
-    }
-  };
-
-  /**
-   * 창 닫기 함수 (수동 방식)
-   *
-   * 브라우저 호환성 문제로 인해 자동 닫기 대신 수동 닫기 방식을 사용합니다.
-   * 다양한 브라우저 환경에 대응하여 적절한 닫기 방법을 시도합니다.
-   */
-  const handleClose = () => {
-    try {
-      if (window.opener) {
-        window.close();
-      } else {
-        if (window.history.length > 1) {
-          window.history.back();
-        } else {
-          window.location.href = "/";
-        }
-      }
-    } catch (error) {
-      showWarning(
-        "브라우저 호환성 문제",
-        "브라우저의 뒤로가기 버튼을 사용하거나 직접 창을 닫아주세요."
-      );
     }
   };
 
@@ -153,6 +150,7 @@ export default function VisitPage() {
     return (
       <div className="min-h-screen bg-gray-50 py-2 sm:py-4">
         <div className="w-full max-w-sm sm:max-w-md md:max-w-2xl mx-auto px-3 sm:px-4">
+          {farm && <FarmInfoCard farm={farm} />}
           <FormSkeleton
             fields={8}
             className="bg-white shadow-lg rounded-2xl p-6"
@@ -171,7 +169,7 @@ export default function VisitPage() {
   }
 
   if (isSubmitted) {
-    return <SuccessCard onClose={handleClose} />;
+    return <SuccessCard />;
   }
 
   return (
@@ -186,12 +184,11 @@ export default function VisitPage() {
             settings={settings}
             formData={formData}
             isSubmitting={isSubmitting}
-            isLoading={isLoading}
             uploadedImageUrl={uploadedImageUrl}
             onSubmit={handleSubmitWrapped}
             onImageUpload={handleImageUploadWrapped}
             onImageDelete={handleImageDeleteWrapped}
-            isImageUploading={isImageUploading}
+            error={error}
           />
         </div>
       </div>

@@ -75,6 +75,20 @@ export const useDialogQueue = create<DialogQueueState>()(
         };
 
         set((state) => {
+          // 중복 방지: 같은 타입의 다이얼로그가 이미 있는지 확인
+          const hasSameTypeInCurrent =
+            state.currentDialog?.type === newDialog.type;
+          const hasSameTypeInQueue = state.queue.some(
+            (dialog) => dialog.type === newDialog.type
+          );
+
+          if (hasSameTypeInCurrent || hasSameTypeInQueue) {
+            console.log(
+              `🚫 중복 다이얼로그 방지: ${newDialog.type} 타입이 이미 존재함`
+            );
+            return state; // 아무것도 변경하지 않음
+          }
+
           // 현재 다이얼로그가 없으면 바로 표시
           if (!state.currentDialog) {
             return {

@@ -6,15 +6,17 @@ import Script from "next/script";
 import { cn } from "@/lib/utils";
 import { Toaster } from "@/components/ui/toaster";
 import { AuthProvider } from "@/components/providers/auth-provider";
+import { QueryProvider } from "@/components/providers/query-provider";
 import { ToastPositionProvider } from "@/components/providers/toast-position-provider";
 import { DebugProvider } from "@/components/providers/debug-provider";
 import { SystemMonitor } from "@/components/common/system-monitor";
 import { PWAUpdater } from "@/components/common/pwa-updater";
-import { DialogManager } from "@/components/common/DialogManager";
+
 import { getMetadataSettings } from "@/lib/server/metadata";
 import { ErrorBoundary } from "@/components/error/error-boundary";
 import { Analytics } from "@vercel/analytics/react";
 import { PWAProvider } from "@/components/providers/pwa-provider";
+import { SystemSettingsProvider } from "@/components/providers/system-settings-provider";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -76,7 +78,11 @@ export default async function RootLayout({
   return (
     <html lang="ko" suppressHydrationWarning>
       <head>
-        <link rel="/manifest" href="/manifest.json" />
+        <link rel="manifest" href="/manifest.json" />
+        <link rel="apple-touch-icon" href="/icon-180x180.png" sizes="180x180" />
+        <link rel="apple-touch-icon" href="/icon-167x167.png" sizes="167x167" />
+        <link rel="apple-touch-icon" href="/icon-152x152.png" sizes="152x152" />
+        <link rel="apple-touch-icon" href="/icon-120x120.png" sizes="120x120" />
         {/* Google Analytics */}
         <Script
           src="https://www.googletagmanager.com/gtag/js?id=G-MQ40J6BMTC"
@@ -97,18 +103,21 @@ export default async function RootLayout({
           description="앱에서 예상치 못한 오류가 발생했습니다. 페이지를 새로고침하거나 잠시 후 다시 시도해주세요."
         >
           <PWAUpdater />
-          <AuthProvider>
-            <DebugProvider>
-              <PWAProvider>
-                <ToastPositionProvider>
-                  {children}
-                  <Toaster />
-                  <SystemMonitor />
-                  <DialogManager />
-                </ToastPositionProvider>
-              </PWAProvider>
-            </DebugProvider>
-          </AuthProvider>
+          <QueryProvider>
+            <AuthProvider>
+              <SystemSettingsProvider>
+                <DebugProvider>
+                  <PWAProvider>
+                    <ToastPositionProvider>
+                      {children}
+                      <Toaster />
+                      <SystemMonitor />
+                    </ToastPositionProvider>
+                  </PWAProvider>
+                </DebugProvider>
+              </SystemSettingsProvider>
+            </AuthProvider>
+          </QueryProvider>
           <Analytics />
         </ErrorBoundary>
       </body>

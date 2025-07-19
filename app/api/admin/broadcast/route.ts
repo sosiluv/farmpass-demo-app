@@ -1,42 +1,22 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
 import { devLog } from "@/lib/utils/logging/dev-logger";
 import { getClientIP, getUserAgent } from "@/lib/server/ip-helpers";
 import { createSystemLog } from "@/lib/utils/logging/system-log";
+import { requireAuth } from "@/lib/server/auth-utils";
+import { logApiError } from "@/lib/utils/logging/system-log";
 
 export async function POST(request: NextRequest) {
   const clientIP = getClientIP(request);
   const userAgent = getUserAgent(request);
 
   try {
-    const supabase = await createClient();
-
-    // 인증 확인 (브로드캐스트는 클라이언트에서만 호출됨)
-    const {
-      data: { user: authUser },
-      error: authError,
-    } = await supabase.auth.getUser();
-
-    if (authError || !authUser) {
-      return NextResponse.json(
-        { error: "인증이 필요합니다." },
-        { status: 401 }
-      );
+    // 관리자 권한 인증 확인
+    const authResult = await requireAuth(true);
+    if (!authResult.success || !authResult.user) {
+      return authResult.response!;
     }
 
-    // 관리자 권한 확인
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("account_type")
-      .eq("id", authUser.id)
-      .single();
-
-    if (!profile || profile.account_type !== "admin") {
-      return NextResponse.json(
-        { error: "관리자 권한이 필요합니다." },
-        { status: 403 }
-      );
-    }
+    const user = authResult.user;
 
     const body = await request.json();
     const {
@@ -50,7 +30,10 @@ export async function POST(request: NextRequest) {
     // 입력 검증
     if (!title || !message || !notificationType) {
       return NextResponse.json(
-        { error: "제목, 메시지, 알림 유형은 필수입니다." },
+        {
+          error: "MISSING_REQUIRED_FIELDS",
+          message: "제목, 메시지, 알림 유형은 필수 입력 항목입니다.",
+        },
         { status: 400 }
       );
     }
@@ -62,7 +45,10 @@ export async function POST(request: NextRequest) {
       )
     ) {
       return NextResponse.json(
-        { error: "유효하지 않은 알림 유형입니다." },
+        {
+          error: "INVALID_NOTIFICATION_TYPE",
+          message: "유효하지 않은 알림 유형입니다.",
+        },
         { status: 400 }
       );
     }
@@ -87,7 +73,14 @@ export async function POST(request: NextRequest) {
     const result = await response.json();
 
     if (!response.ok) {
-      throw new Error(result.error || "푸시 알림 발송에 실패했습니다.");
+      return NextResponse.json(
+        {
+          success: false,
+          error: "PUSH_NOTIFICATION_SENDING_FAILED",
+          message: result.error || "푸시 알림 발송에 실패했습니다.",
+        },
+        { status: 500 }
+      );
     }
 
     // 성공 로그
@@ -95,7 +88,7 @@ export async function POST(request: NextRequest) {
       "BROADCAST_NOTIFICATION_SENT",
       `브로드캐스트 알림 발송 완료: ${result.sentCount}명에게 발송`,
       "info",
-      authUser.id,
+      user.id,
       "system",
       "all",
       {
@@ -107,7 +100,7 @@ export async function POST(request: NextRequest) {
         url,
         require_interaction: requireInteraction,
       },
-      authUser.email,
+      user.email,
       clientIP,
       userAgent
     );
@@ -115,6 +108,18 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(result);
   } catch (error) {
     devLog.error("브로드캐스트 API 오류:", error);
+
+    // API 에러 로깅
+    await logApiError(
+      "/api/admin/broadcast",
+      "POST",
+      error instanceof Error ? error : String(error),
+      undefined,
+      {
+        ip: clientIP,
+        userAgent,
+      }
+    );
 
     // 실패 로그
     await createSystemLog(
@@ -136,7 +141,11 @@ export async function POST(request: NextRequest) {
     );
 
     return NextResponse.json(
-      { error: "브로드캐스트 알림 발송에 실패했습니다." },
+      {
+        success: false,
+        error: "BROADCAST_SENDING_FAILED",
+        message: "브로드캐스트 알림 발송에 실패했습니다.",
+      },
       { status: 500 }
     );
   }

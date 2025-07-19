@@ -21,6 +21,7 @@ export function InstallPrompt({
   const installInfo = usePWAInstall();
   const [showPrompt, setShowPrompt] = useState(false);
   const [isDismissed, setIsDismissed] = useState(false);
+  const [isInstalling, setIsInstalling] = useState(false);
 
   useEffect(() => {
     // 설치 가능하고 아직 표시되지 않았을 때만 타이머 시작
@@ -93,12 +94,43 @@ export function InstallPrompt({
     onDismiss?.();
   };
 
-  const handleInstall = () => {
-    setShowPrompt(false);
-    setIsDismissed(true);
-    // 설치 버튼 클릭 시에도 localStorage에 저장 (설치 완료 상태로)
-    localStorage.setItem("pwa_install_completed", Date.now().toString());
-    onInstall?.();
+  const handleInstall = async () => {
+    try {
+      setIsInstalling(true);
+      console.log("🔧 설치 버튼 클릭됨 - 네이티브 프롬프트 트리거 시도");
+
+      // 브라우저 네이티브 설치 프롬프트 트리거
+      const result = await installInfo.triggerInstall?.();
+      console.log("📱 설치 프롬프트 결과:", result);
+
+      if (result?.outcome === "accepted") {
+        // 사용자가 설치를 수락한 경우
+        console.log("✅ 설치 수락됨");
+        setShowPrompt(false);
+        setIsDismissed(true);
+        localStorage.setItem("pwa_install_completed", Date.now().toString());
+        onInstall?.();
+      } else if (result?.outcome === "dismissed") {
+        // 사용자가 설치를 거부한 경우
+        console.log("❌ 설치 거부됨");
+        setShowPrompt(false);
+        setIsDismissed(true);
+        localStorage.setItem("pwa_install_dismissed", Date.now().toString());
+        onDismiss?.();
+      } else {
+        // outcome이 없거나 다른 경우는 프롬프트 유지
+        console.log("⚠️ 설치 프롬프트 결과 없음 - 프롬프트 유지");
+      }
+    } catch (error) {
+      console.error("❌ 설치 프롬프트 실행 실패:", error);
+      // 에러 발생 시에도 커스텀 프롬프트는 닫기
+      setShowPrompt(false);
+      setIsDismissed(true);
+      localStorage.setItem("pwa_install_completed", Date.now().toString());
+      onInstall?.();
+    } finally {
+      setIsInstalling(false);
+    }
   };
 
   const getPlatformIcon = () => {
@@ -127,6 +159,23 @@ export function InstallPrompt({
     }
   };
 
+  const getGuideText = () => {
+    if (installInfo.method === "banner") {
+      // 네이티브 설치 지원 브라우저(Chrome, Edge 등)
+      return "더 빠르고 편리한 경험을 위해 홈화면에 추가하세요";
+    }
+    // manual 또는 none: 홈화면 추가 안내만
+    if (installInfo.platform === "iOS") {
+      return 'iOS에서는 사파리 하단의 공유 버튼을 누른 후 "홈 화면에 추가"를 선택하세요.';
+    }
+    if (installInfo.platform === "Android") {
+      return (
+        installInfo.reason || '브라우저 메뉴에서 "홈 화면에 추가"를 선택하세요.'
+      );
+    }
+    return "이 브라우저에서는 메뉴에서 홈 화면에 추가를 선택하세요.";
+  };
+
   if (!installInfo.canInstall || isDismissed) {
     return null;
   }
@@ -152,9 +201,7 @@ export function InstallPrompt({
                     <h3 className="font-semibold text-sm">
                       {getInstallText()}하세요!
                     </h3>
-                    <p className="text-xs opacity-90 mt-1">
-                      더 빠르고 편리한 경험을 위해 홈화면에 추가하세요
-                    </p>
+                    <p className="text-xs opacity-90 mt-1">{getGuideText()}</p>
                   </div>
                 </div>
 
@@ -167,14 +214,17 @@ export function InstallPrompt({
                   >
                     <X className="w-4 h-4" />
                   </Button>
-                  <Button
-                    onClick={handleInstall}
-                    size="sm"
-                    className="bg-white text-blue-600 hover:bg-gray-100 font-medium h-8 px-3"
-                  >
-                    <Download className="w-4 h-4 mr-1" />
-                    설치
-                  </Button>
+                  {installInfo.method === "banner" && (
+                    <Button
+                      onClick={handleInstall}
+                      size="sm"
+                      disabled={isInstalling}
+                      className="bg-white text-blue-600 hover:bg-gray-100 font-medium h-8 px-3"
+                    >
+                      <Download className="w-4 h-4 mr-1" />
+                      {isInstalling ? "설치 중..." : "설치"}
+                    </Button>
+                  )}
                 </div>
               </div>
             </CardContent>

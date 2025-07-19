@@ -34,18 +34,18 @@ import {
   VisitorTableLoading,
   VisitorTableEmpty,
 } from "./components";
-import type { VisitorEntryWithFarm } from "@/store/use-visitor-store";
+import type { VisitorWithFarm } from "@/lib/types/visitor";
 
 interface VisitorVirtualizedTableProps {
-  visitors: VisitorEntryWithFarm[];
+  visitors: VisitorWithFarm[];
   showFarmColumn?: boolean;
   loading?: boolean;
   isAdmin?: boolean;
-  onEdit?: (visitor: VisitorEntryWithFarm) => Promise<void>;
-  onDelete?: (visitor: VisitorEntryWithFarm) => Promise<void>;
+  onEdit?: (visitor: VisitorWithFarm) => Promise<void>;
+  onDelete?: (visitor: VisitorWithFarm) => Promise<void>;
 }
 
-// 모바일 카드 뷰 컴포넌트
+// 모바??카드 �?컴포?�트
 const MobileVisitorCard = memo(function MobileVisitorCard({
   visitor,
   index,
@@ -55,13 +55,13 @@ const MobileVisitorCard = memo(function MobileVisitorCard({
   onEdit,
   onDelete,
 }: {
-  visitor: VisitorEntryWithFarm;
+  visitor: VisitorWithFarm;
   index: number;
   showFarmColumn: boolean;
-  onViewDetails: (visitor: VisitorEntryWithFarm) => void;
+  onViewDetails: (visitor: VisitorWithFarm) => void;
   isAdmin?: boolean;
-  onEdit?: (visitor: VisitorEntryWithFarm) => Promise<void>;
-  onDelete?: (visitor: VisitorEntryWithFarm) => Promise<void>;
+  onEdit?: (visitor: VisitorWithFarm) => Promise<void>;
+  onDelete?: (visitor: VisitorWithFarm) => Promise<void>;
 }) {
   return (
     <Card className="border border-gray-200/60 hover:border-gray-300 hover:shadow-lg transition-all duration-300 bg-white/80 backdrop-blur-sm overflow-hidden group">
@@ -138,11 +138,11 @@ const MobileVisitorCard = memo(function MobileVisitorCard({
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <div className="cursor-help">
-                        {/* 년도/날짜 - 항상 한 줄로 표시 */}
+                        {/* ?�도/?�짜 - ??�� ??줄로 ?�시 */}
                         <p className="font-medium text-gray-700 leading-tight">
                           {datePart}
                         </p>
-                        {/* 시간 - 다음 줄에 표시 */}
+                        {/* ?�간 - ?�음 줄에 ?�시 */}
                         <p className="text-[10px] sm:text-xs text-gray-600 leading-tight">
                           {timePart}
                         </p>
@@ -192,7 +192,7 @@ const MobileVisitorCard = memo(function MobileVisitorCard({
             <Tooltip delayDuration={300}>
               <TooltipTrigger asChild>
                 <span className="font-medium text-gray-700 truncate cursor-help touch-manipulation">
-                  {visitor.visitor_purpose || "기타"}
+                  {visitor.visitor_purpose || "기�?"}
                 </span>
               </TooltipTrigger>
               <TooltipContent
@@ -201,7 +201,7 @@ const MobileVisitorCard = memo(function MobileVisitorCard({
                 className="max-w-[200px] z-[9999]"
                 sideOffset={8}
               >
-                <p>{visitor.visitor_purpose || "기타"}</p>
+                <p>{visitor.visitor_purpose || "기�?"}</p>
               </TooltipContent>
             </Tooltip>
           </div>
@@ -240,7 +240,7 @@ const MobileVisitorCard = memo(function MobileVisitorCard({
               onClick={() => onViewDetails(visitor)}
               className="text-[10px] sm:text-xs text-blue-600 hover:text-blue-800 font-medium"
             >
-              상세보기
+              ?�세보기
             </button>
           </div>
         </div>
@@ -249,7 +249,7 @@ const MobileVisitorCard = memo(function MobileVisitorCard({
   );
 });
 
-// 데스크톱 테이블 행 컴포넌트
+// ?�스?�톱 ?�이�???컴포?�트
 const DesktopTableRow = memo(function DesktopTableRow({
   visitor,
   index,
@@ -259,13 +259,13 @@ const DesktopTableRow = memo(function DesktopTableRow({
   onEdit,
   onDelete,
 }: {
-  visitor: VisitorEntryWithFarm;
+  visitor: VisitorWithFarm;
   index: number;
   showFarmColumn: boolean;
-  onViewDetails: (visitor: VisitorEntryWithFarm) => void;
+  onViewDetails: (visitor: VisitorWithFarm) => void;
   isAdmin?: boolean;
-  onEdit?: (visitor: VisitorEntryWithFarm) => Promise<void>;
-  onDelete?: (visitor: VisitorEntryWithFarm) => Promise<void>;
+  onEdit?: (visitor: VisitorWithFarm) => Promise<void>;
+  onDelete?: (visitor: VisitorWithFarm) => Promise<void>;
 }) {
   return (
     <div className="flex border-b border-gray-100 hover:bg-gray-50/80 transition-colors duration-200 group w-full min-w-0">
@@ -279,7 +279,7 @@ const DesktopTableRow = memo(function DesktopTableRow({
         </Badge>
       </div>
 
-      {/* 방문자 정보 */}
+      {/* 방문???�보 */}
       <div className="flex-1 min-w-[150px] px-3 py-3">
         <div className="flex items-center space-x-2 sm:space-x-3">
           <VisitorAvatar
@@ -301,24 +301,24 @@ const DesktopTableRow = memo(function DesktopTableRow({
         </div>
       </div>
 
-      {/* 농장 정보 (조건부 표시) */}
+      {/* ?�장 ?�보 (조건부 ?�시) */}
       {showFarmColumn && (
         <div className="flex-1 min-w-[120px] px-2 sm:px-3 py-3">
           <div className="flex items-center space-x-1 sm:space-x-2">
             <Building2 className="w-3 h-3 sm:w-4 sm:h-4 text-purple-500" />
             <span className="text-xs sm:text-sm font-semibold text-gray-700">
-              농장
+              ?�장
             </span>
           </div>
         </div>
       )}
 
-      {/* 방문일시 */}
+      {/* 방문?�시 */}
       <div className="flex-1 min-w-[100px] px-2 sm:px-3 py-3">
         <div className="flex items-center space-x-1 sm:space-x-2">
           <Calendar className="w-3 h-3 sm:w-4 sm:h-4 text-blue-500" />
           <span className="text-xs sm:text-sm font-semibold text-gray-700">
-            방문일시
+            방문?�시
           </span>
         </div>
       </div>
@@ -343,7 +343,7 @@ const DesktopTableRow = memo(function DesktopTableRow({
         </div>
       </div>
 
-      {/* 방역 완료 상태 */}
+      {/* 방역 ?�료 ?�태 */}
       <div className="flex-1 w-12 sm:w-16 min-w-0 px-2 sm:px-3 py-3">
         <div className="flex items-center space-x-1 sm:space-x-2">
           <Sparkles className="w-3 h-3 sm:w-4 sm:h-4 text-green-500" />
@@ -353,12 +353,12 @@ const DesktopTableRow = memo(function DesktopTableRow({
         </div>
       </div>
 
-      {/* 액션 */}
+      {/* ?�션 */}
       <div className="flex-shrink-0 w-12 sm:w-16 text-center min-w-0 px-2 sm:px-3 py-3">
         <div className="flex items-center justify-center space-x-1">
           <Eye className="w-3 h-3 sm:w-4 sm:h-4 text-gray-500" />
           <span className="text-xs sm:text-sm font-semibold text-gray-700">
-            액션
+            ?�션
           </span>
         </div>
       </div>
@@ -366,7 +366,7 @@ const DesktopTableRow = memo(function DesktopTableRow({
   );
 });
 
-// 데스크톱 테이블 헤더 컴포넌트
+// ?�스?�톱 ?�이�??�더 컴포?�트
 const DesktopTableHeader = memo(function DesktopTableHeader({
   showFarmColumn,
   isAdmin,
@@ -385,34 +385,34 @@ const DesktopTableHeader = memo(function DesktopTableHeader({
         </div>
       </div>
 
-      {/* 방문자 정보 */}
+      {/* 방문???�보 */}
       <div className="flex-1 min-w-[150px] px-3 py-3">
         <div className="flex items-center space-x-2 sm:space-x-3">
           <User className="w-3 h-3 sm:w-4 sm:h-4 text-blue-500" />
           <span className="text-xs sm:text-sm font-semibold text-gray-700">
-            방문자
+            방문??
           </span>
         </div>
       </div>
 
-      {/* 농장 정보 (조건부 표시) */}
+      {/* ?�장 ?�보 (조건부 ?�시) */}
       {showFarmColumn && (
         <div className="flex-1 min-w-[120px] px-2 sm:px-3 py-3">
           <div className="flex items-center space-x-1 sm:space-x-2">
             <Building2 className="w-3 h-3 sm:w-4 sm:h-4 text-purple-500" />
             <span className="text-xs sm:text-sm font-semibold text-gray-700">
-              농장
+              ?�장
             </span>
           </div>
         </div>
       )}
 
-      {/* 방문일시 */}
+      {/* 방문?�시 */}
       <div className="flex-1 min-w-[100px] px-2 sm:px-3 py-3">
         <div className="flex items-center space-x-1 sm:space-x-2">
           <Calendar className="w-3 h-3 sm:w-4 sm:h-4 text-blue-500" />
           <span className="text-xs sm:text-sm font-semibold text-gray-700">
-            방문일시
+            방문?�시
           </span>
         </div>
       </div>
@@ -437,7 +437,7 @@ const DesktopTableHeader = memo(function DesktopTableHeader({
         </div>
       </div>
 
-      {/* 방역 완료 상태 */}
+      {/* 방역 ?�료 ?�태 */}
       <div className="flex-1 w-12 sm:w-16 min-w-0 px-2 sm:px-3 py-3">
         <div className="flex items-center space-x-1 sm:space-x-2">
           <Sparkles className="w-3 h-3 sm:w-4 sm:h-4 text-green-500" />
@@ -447,12 +447,12 @@ const DesktopTableHeader = memo(function DesktopTableHeader({
         </div>
       </div>
 
-      {/* 액션 */}
+      {/* ?�션 */}
       <div className="flex-shrink-0 w-12 sm:w-16 text-center min-w-0 px-2 sm:px-3 py-3">
         <div className="flex items-center justify-center space-x-1">
           <Eye className="w-3 h-3 sm:w-4 sm:h-4 text-gray-500" />
           <span className="text-xs sm:text-sm font-semibold text-gray-700">
-            액션
+            ?�션
           </span>
         </div>
       </div>
@@ -469,11 +469,11 @@ export const VisitorVirtualizedTable = memo(function VisitorVirtualizedTable({
   onDelete,
 }: VisitorVirtualizedTableProps) {
   const [selectedVisitor, setSelectedVisitor] =
-    useState<VisitorEntryWithFarm | null>(null);
+    useState<VisitorWithFarm | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
-  // 메모이제이션된 핸들러들
-  const handleViewDetails = useCallback((visitor: VisitorEntryWithFarm) => {
+  // 메모?�제?�션???�들?�들
+  const handleViewDetails = useCallback((visitor: VisitorWithFarm) => {
     setSelectedVisitor(visitor);
     setIsModalOpen(true);
   }, []);
@@ -483,9 +483,9 @@ export const VisitorVirtualizedTable = memo(function VisitorVirtualizedTable({
     setSelectedVisitor(null);
   }, []);
 
-  // 메모이제이션된 렌더 함수들
+  // 메모?�제?�션???�더 ?�수??
   const renderDesktopRow = useCallback(
-    (visitor: VisitorEntryWithFarm, index: number) => (
+    (visitor: VisitorWithFarm, index: number) => (
       <DesktopTableRow
         visitor={visitor}
         index={index}
@@ -500,7 +500,7 @@ export const VisitorVirtualizedTable = memo(function VisitorVirtualizedTable({
   );
 
   const renderMobileCard = useCallback(
-    (visitor: VisitorEntryWithFarm, index: number) => (
+    (visitor: VisitorWithFarm, index: number) => (
       <MobileVisitorCard
         key={visitor.id}
         visitor={visitor}
@@ -515,7 +515,7 @@ export const VisitorVirtualizedTable = memo(function VisitorVirtualizedTable({
     [showFarmColumn, handleViewDetails, isAdmin, onEdit, onDelete]
   );
 
-  // 메모이제이션된 헤더
+  // 메모?�제?�션???�더
   const desktopHeader = useMemo(
     () => (
       <DesktopTableHeader showFarmColumn={showFarmColumn} isAdmin={isAdmin} />
@@ -523,19 +523,19 @@ export const VisitorVirtualizedTable = memo(function VisitorVirtualizedTable({
     [showFarmColumn, isAdmin]
   );
 
-  // 로딩 상태
+  // 로딩 ?�태
   if (loading) {
     return <VisitorTableLoading />;
   }
 
-  // 빈 상태
+  // �??�태
   if (!visitors || visitors.length === 0) {
     return <VisitorTableEmpty />;
   }
 
   return (
     <>
-      {/* 데스크톱 가상화 테이블 */}
+      {/* ?�스?�톱 가?�화 ?�이�?*/}
       <div className="hidden lg:block w-full">
         <div className="rounded-lg border border-gray-200 bg-white shadow-sm overflow-hidden w-full">
           {desktopHeader}
@@ -544,27 +544,27 @@ export const VisitorVirtualizedTable = memo(function VisitorVirtualizedTable({
             height={600}
             rowHeight={72}
             renderRow={renderDesktopRow}
-            keyExtractor={(visitor: VisitorEntryWithFarm) => visitor.id}
+            keyExtractor={(visitor: VisitorWithFarm) => visitor.id}
           />
         </div>
       </div>
 
-      {/* 태블릿/모바일 카드 뷰 */}
+      {/* ?�블�?모바??카드 �?*/}
       <div className="lg:hidden space-y-3 sm:space-y-4">
         {(visitors || []).map(renderMobileCard)}
       </div>
 
-      {/* 방문자 상세 모달 */}
+      {/* 방문???�세 모달 */}
       <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
         <DialogContent className="w-[95vw] max-w-[350px] sm:max-w-[500px] md:max-w-[600px] lg:max-w-[700px] max-h-[90vh] sm:max-h-[85vh] overflow-hidden p-3 sm:p-4 md:p-6">
           <DialogHeader className="sr-only">
             <DialogTitle>
               {selectedVisitor
-                ? `${selectedVisitor.visitor_name} 방문자 상세 정보`
-                : "방문자 상세 정보"}
+                ? `${selectedVisitor.visitor_name} 방문???�세 ?�보`
+                : "방문???�세 ?�보"}
             </DialogTitle>
             <DialogDescription>
-              방문자의 기본 정보, 방문 정보, 방역 상태 등을 확인할 수 있습니다.
+              방문?�의 기본 ?�보, 방문 ?�보, 방역 ?�태 ?�을 ?�인?????�습?�다.
             </DialogDescription>
           </DialogHeader>
           <VisitorDetailModal

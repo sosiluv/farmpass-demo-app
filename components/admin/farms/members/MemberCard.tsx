@@ -1,18 +1,9 @@
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { RoleBadge, UserRole } from "@/components/user/role-badge";
 import { QuickActionButtons } from "@/components/user/quick-action-buttons";
-
-// 이니셜 생성 함수
-function getInitials(name: string): string {
-  if (!name) return "?";
-  return name
-    ? (name.split(" ") || [])
-        .map((part) => part[0])
-        .join("")
-        .toUpperCase()
-        .slice(0, 2)
-    : "?";
-}
+import { useState } from "react";
+import { ImagePreviewDialog } from "@/components/common/ImagePreviewDialog";
+import { generateInitials, getAvatarUrl } from "@/lib/utils/media/avatar";
 
 // 역할별 아바타 스타일 설정
 function getRoleStyles(role: string): {
@@ -54,6 +45,8 @@ interface Member {
   email: string;
   role: string;
   profile_image_url?: string | null;
+  avatar_seed?: string | null;
+  name?: string | null;
 }
 
 interface MemberCardProps {
@@ -70,48 +63,59 @@ export function MemberCard({
   onRoleChange,
 }: MemberCardProps) {
   const roleStyles = getRoleStyles(member.role);
-
+  const [previewOpen, setPreviewOpen] = useState(false);
   return (
     <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-3 sm:p-4 border rounded-lg hover:bg-accent/5 transition-colors gap-3 sm:gap-4">
       {/* 모바일: 세로 레이아웃, 태블릿+: 가로 레이아웃 */}
       <div className="flex items-center gap-3 sm:gap-4 min-w-0 flex-1">
         <Avatar
-          className={`h-10 w-10 sm:h-12 sm:w-12 border-2 ${roleStyles.borderColor} ${roleStyles.bgColor} flex-shrink-0`}
+          className={`h-10 w-10 sm:h-12 sm:w-12 border-2 ${
+            roleStyles.borderColor
+          } ${roleStyles.bgColor} flex-shrink-0 ${
+            member.profile_image_url ? "cursor-pointer" : ""
+          }`}
+          onClick={() => member.profile_image_url && setPreviewOpen(true)}
         >
           <AvatarImage
-            src={member.profile_image_url || ""}
+            src={getAvatarUrl(
+              {
+                ...member,
+                name: member.representative_name,
+              },
+              { size: 128 }
+            )}
             alt={member.representative_name}
             className="object-cover"
           />
           <AvatarFallback
             className={`font-medium text-xs sm:text-sm ${roleStyles.textColor}`}
           >
-            {getInitials(member.representative_name)}
+            {generateInitials(member.representative_name)}
           </AvatarFallback>
         </Avatar>
+        <ImagePreviewDialog
+          src={member.profile_image_url || ""}
+          alt={member.representative_name}
+          open={previewOpen}
+          onOpenChange={setPreviewOpen}
+          caption={member.representative_name}
+        />
 
         <div className="min-w-0 flex-1">
-          <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
-            <div className="font-medium text-sm sm:text-base truncate">
+          <div className="flex items-center gap-1 sm:gap-2">
+            <span className="font-medium text-sm sm:text-base truncate">
               {member.representative_name}
               {member.role === "owner" && (
                 <span className="ml-2 text-xs sm:text-sm text-purple-600 font-normal">
                   (농장 소유자)
                 </span>
               )}
-            </div>
-            <div className="sm:hidden">
-              <RoleBadge role={member.role as UserRole} />
-            </div>
+            </span>
+            <RoleBadge role={member.role as UserRole} />
           </div>
           <div className="text-xs sm:text-sm text-muted-foreground truncate">
             {member.email}
           </div>
-        </div>
-
-        {/* 태블릿+ 화면에서만 표시 */}
-        <div className="hidden sm:block flex-shrink-0">
-          <RoleBadge role={member.role as UserRole} />
         </div>
       </div>
 

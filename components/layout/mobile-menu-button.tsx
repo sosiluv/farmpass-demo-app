@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Menu, X, ChevronLeft } from "lucide-react";
 import { SidebarTrigger, useSidebar } from "@/components/ui/sidebar";
 import {
@@ -25,31 +25,33 @@ export function MobileMenuButton({ className }: MobileMenuButtonProps) {
   const isMobile = useIsMobile();
   const isTablet = useIsTablet();
   const isMobileOrTablet = useIsMobileOrTablet();
-  const [showNewBadge, setShowNewBadge] = useState(false);
-
-  useEffect(() => {
-    if (typeof window !== "undefined") {
-      const hasVisitedBefore = localStorage.getItem("hasVisitedDashboard");
-      if (!hasVisitedBefore) {
-        setShowNewBadge(true);
-      }
-    }
-  }, []);
+  const introTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     // 첫 방문 여부 확인
     const hasVisitedBefore = localStorage.getItem("hasVisitedDashboard");
+
     if (!hasVisitedBefore) {
       setHasShownIntro(true);
-      localStorage.setItem("hasVisitedDashboard", "true");
+
+      // 기존 타이머가 있다면 클리어
+      if (introTimerRef.current) {
+        clearTimeout(introTimerRef.current);
+      }
 
       // 5초 후에 인트로 효과 제거
-      const timer = setTimeout(() => {
+      introTimerRef.current = setTimeout(() => {
         setHasShownIntro(false);
+        localStorage.setItem("hasVisitedDashboard", "true");
       }, 5000);
-
-      return () => clearTimeout(timer);
     }
+
+    // 컴포넌트 언마운트 시 타이머 클리어
+    return () => {
+      if (introTimerRef.current) {
+        clearTimeout(introTimerRef.current);
+      }
+    };
   }, []);
 
   // 스크롤 반응형 동작
@@ -104,7 +106,6 @@ export function MobileMenuButton({ className }: MobileMenuButtonProps) {
     if (typeof window !== "undefined") {
       localStorage.setItem("hasVisitedDashboard", "true");
     }
-    setShowNewBadge(false);
     // 햅틱 피드백 (지원하는 기기에서만)
     if ("vibrate" in navigator) {
       navigator.vibrate(50);
