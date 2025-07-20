@@ -25,7 +25,7 @@ export function useAvatarSeedManager(
   options: UseAvatarSeedManagerOptions
 ): UseAvatarSeedManagerReturn {
   const { userId, onError, onSuccess } = options;
-  const { showInfo, showSuccess, showError } = useCommonToast();
+  const { showError } = useCommonToast();
 
   // 커스텀 mutation 생성 - 토스트 제거된 버전
   const avatarSeedMutation = useUpdateAvatarSeedMutation();

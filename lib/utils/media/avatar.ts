@@ -30,11 +30,17 @@ export function getAvatarUrl(
 
   // 2. 커스텀 아바타 seed가 있으면 사용
   if (user.avatar_seed) {
-    return generateAvatarUrl(user.avatar_seed, options);
+    return generateAvatarUrl(user.avatar_seed, {
+      ...options,
+      username: user.name || undefined,
+    });
   }
 
   // 3. 기본 아바타 (이름 기반)
-  return generateAvatarUrl(user.name, options);
+  return generateAvatarUrl(user.name, {
+    ...options,
+    username: user.name || undefined,
+  });
 }
 
 /**
@@ -77,6 +83,7 @@ export function generateAvatarUrl(
   seed: string | null | undefined,
   options?: {
     size?: number;
+    username?: string; // username 추가
   }
 ): string {
   if (!seed || typeof seed !== "string") {
@@ -95,37 +102,49 @@ export function generateAvatarUrl(
   const params = new URLSearchParams({
     seed: trimmedSeed,
     size: size.toString(),
-    backgroundColor: "b6e3f4,c0aede,ffdfbf",
+    backgroundColor: "b6e3f4,c0aede,d1d4f9,ffd5dc",
+    skinColor: "d08b5b,edb98a,fd9841,ffdbb4",
     radius: "50",
+    accessoriesProbability: "30",
+    mouth: "smile,tongue,twinkle",
+    topProbability: "90",
+    accessories:
+      "kurt,prescription01,prescription02,round,sunglasses,wayfarers",
   });
 
-  // 이름 기반인 경우에만 성별 추정 적용
-  if (trimmedSeed.length < 20 && !trimmedSeed.includes("-")) {
-    // 이름으로 추정되는 경우 (짧고 하이픈이 없는 경우)
-    const gender = estimateGenderFromName(trimmedSeed);
+  // 성별 추정 및 스타일 적용
+  let gender: "male" | "female" | "unknown" = "unknown";
 
-    // 성별에 따른 추가 옵션
-    switch (gender) {
-      case "female":
-        params.append(
-          "top",
-          "bigHair,bob,bun,curly,curvy,dreads01,dreads02,frida,frizzle,fro,froBand,longButNotTooLong,miaWallace,shaggy,shaggyMullet,shavedSides,straight01,straight02,straightAndStrand"
-        );
-        break;
-      case "male":
-        params.append(
-          "top",
-          "shortCurly,shortFlat,shortRound,shortWaved,sides,theCaesar,theCaesarAndSidePart"
-        );
-        break;
-      default:
-        // 중성적 스타일 (모든 옵션 포함)
-        params.append(
-          "top",
-          "bigHair,bob,bun,curly,curvy,dreads,dreads01,dreads02,frida,frizzle,fro,froBand,hat,longButNotTooLong,miaWallace,shaggy,shaggyMullet,shavedSides,shortCurly,shortFlat,shortRound,shortWaved,sides,straight01,straight02,straightAndStrand,theCaesar,theCaesarAndSidePart,winterHat1,winterHat02,winterHat03,winterHat04"
-        );
-        break;
-    }
+  // username이 있으면 username으로 성별 추정
+  if (options?.username) {
+    gender = estimateGenderFromName(options.username);
+  } else if (trimmedSeed.length < 20 && !trimmedSeed.includes("-")) {
+    // username이 없고 이름으로 추정되는 경우
+    gender = estimateGenderFromName(trimmedSeed);
+  }
+
+  // 성별에 따른 스타일 적용
+  switch (gender) {
+    case "female":
+      params.append(
+        "top",
+        "bigHair,bob,bun,curly,curvy,frida,longButNotTooLong,miaWallace,shavedSides,straight01,straight02,straightAndStrand"
+      );
+      params.append("facialHairProbability", "0");
+      break;
+    case "male":
+      params.append(
+        "top",
+        "shortCurly,hat,shaggy,shaggyMullet,shortFlat,shortRound,shortWaved,sides,theCaesar,theCaesarAndSidePart,winterHat1,winterHat02,winterHat03,winterHat04"
+      );
+      break;
+    default:
+      // 중성적 스타일 (모든 옵션 포함)
+      params.append(
+        "top",
+        "bigHair,bob,bun,curly,curvy,dreads,dreads01,dreads02,frida,frizzle,fro,froBand,hat,longButNotTooLong,miaWallace,shaggy,shaggyMullet,shavedSides,shortCurly,shortFlat,shortRound,shortWaved,sides,straight01,straight02,straightAndStrand,theCaesar,theCaesarAndSidePart,winterHat1,winterHat02,winterHat03,winterHat04"
+      );
+      break;
   }
 
   return `${baseUrl}/avataaars/svg?${params.toString()}`;
