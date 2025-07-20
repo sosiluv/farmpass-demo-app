@@ -13,7 +13,7 @@ import {
   maliciousBotRateLimiter,
 } from "@/lib/utils/system/rate-limit";
 import { clearServerAuthCookies } from "@/lib/utils/auth";
-import { MALICIOUS_PATTERNS } from "@/constants/security-patterns";
+import { MALICIOUS_PATTERNS } from "@/lib/constants/security-patterns";
 
 const MIDDLEWARE_CONFIG = {
   // 🌐 공개 접근 가능한 경로들 (인증 불필요)
