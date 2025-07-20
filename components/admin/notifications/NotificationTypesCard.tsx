@@ -2,38 +2,16 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import { NotificationSettings } from "@/lib/types/notification";
 import NotificationCardHeader from "./NotificationCardHeader";
+import { NOTIFICATION_TYPES, PAGE_HEADER } from "@/lib/constants/notifications";
 import { Bell, AlertTriangle, Wrench, Megaphone } from "lucide-react";
 
-const NOTIFICATION_TYPES = [
-  {
-    key: "visitor_alerts" as const,
-    icon: <Bell className="h-4 w-4" />,
-    label: "방문자 알림",
-    description: "새로운 방문자가 등록되면 알림을 받습니다.",
-    iconColor: "bg-blue-100 text-blue-600",
-  },
-  {
-    key: "notice_alerts" as const,
-    icon: <Megaphone className="h-4 w-4" />,
-    label: "공지사항 알림",
-    description: "새로운 공지사항이 등록되면 알림을 받습니다.",
-    iconColor: "bg-purple-100 text-purple-600",
-  },
-  {
-    key: "emergency_alerts" as const,
-    icon: <AlertTriangle className="h-4 w-4" />,
-    label: "긴급 알림",
-    description: "긴급 상황 발생 시 알림을 받습니다.",
-    iconColor: "bg-red-100 text-red-600",
-  },
-  {
-    key: "maintenance_alerts" as const,
-    icon: <Wrench className="h-4 w-4" />,
-    label: "유지보수 알림",
-    description: "시스템 유지보수 일정 알림을 받습니다.",
-    iconColor: "bg-yellow-100 text-yellow-600",
-  },
-] as const;
+// 아이콘 매핑
+const ICON_MAP = {
+  Bell: Bell,
+  Megaphone: Megaphone,
+  AlertTriangle: AlertTriangle,
+  Wrench: Wrench,
+} as const;
 
 interface NotificationTypesCardProps {
   settings: NotificationSettings | null;
@@ -56,8 +34,8 @@ export function NotificationTypesCard({
     <Card>
       <NotificationCardHeader
         icon={Bell}
-        title="알림 유형 설정"
-        description="받고 싶은 알림 유형을 선택하세요."
+        title={PAGE_HEADER.NOTIFICATION_TYPES_TITLE}
+        description={PAGE_HEADER.NOTIFICATION_TYPES_DESCRIPTION}
       />
       <CardContent>
         <div className="space-y-4">
@@ -68,7 +46,11 @@ export function NotificationTypesCard({
             >
               <div className="flex items-center gap-3">
                 <div className={`p-2 rounded-full ${type.iconColor}`}>
-                  {type.icon}
+                  {(() => {
+                    const IconComponent =
+                      ICON_MAP[type.icon as keyof typeof ICON_MAP];
+                    return <IconComponent className="h-4 w-4" />;
+                  })()}
                 </div>
                 <div>
                   <p className="font-medium">{type.label}</p>

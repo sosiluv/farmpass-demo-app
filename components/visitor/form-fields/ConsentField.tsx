@@ -9,7 +9,7 @@ import {
 } from "@/components/ui/form";
 import type { UseFormReturn } from "react-hook-form";
 import type { VisitorFormData } from "@/lib/utils/validation/visitor-validation";
-import { LABELS } from "@/constants/visitor-form";
+import { LABELS } from "@/lib/constants/visitor";
 
 interface ConsentFieldProps {
   form: UseFormReturn<VisitorFormData>;
@@ -41,11 +41,12 @@ export const ConsentField = ({ form, className = "" }: ConsentFieldProps) => {
                 className="text-xs sm:text-sm leading-relaxed"
               >
                 <span className="font-medium">{LABELS.CONSENT}</span>
-                <span className="text-red-500 ml-1">*</span>
+                <span className="text-red-500 ml-1">
+                  {LABELS.REQUIRED_MARK}
+                </span>
                 <br />
                 <span className="text-xs text-muted-foreground mt-1 block">
-                  수집된 정보는 방역 관리 목적으로만 사용되며, 관련 법령에 따라
-                  보관됩니다.
+                  {LABELS.CONSENT_DESCRIPTION}
                 </span>
               </Label>
             </div>

@@ -11,6 +11,7 @@ import type { UseFormReturn } from "react-hook-form";
 import type { FarmFormValues } from "@/lib/utils/validation";
 import { formatPhone } from "@/lib/utils/validation/validation";
 import { User, Phone, FileText } from "lucide-react";
+import { LABELS, PLACEHOLDERS } from "@/lib/constants/farms";
 
 interface FarmFormManagerFieldsProps {
   form: UseFormReturn<FarmFormValues>;
@@ -27,12 +28,12 @@ export function FarmFormManagerFields({ form }: FarmFormManagerFieldsProps) {
             <FormItem>
               <FormLabel className="flex items-center gap-2 text-sm">
                 <User className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-                관리자명
+                {LABELS.MANAGER_NAME}
                 <span className="text-red-500">*</span>
               </FormLabel>
               <FormControl>
                 <Input
-                  placeholder="홍길동"
+                  placeholder={PLACEHOLDERS.MANAGER_NAME}
                   {...field}
                   className="h-10 sm:h-12 text-sm"
                 />
@@ -48,13 +49,13 @@ export function FarmFormManagerFields({ form }: FarmFormManagerFieldsProps) {
             <FormItem>
               <FormLabel className="flex items-center gap-2 text-sm">
                 <Phone className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-                관리자 연락처
+                {LABELS.MANAGER_PHONE}
                 <span className="text-red-500">*</span>
               </FormLabel>
               <FormControl>
                 <Input
                   type="tel"
-                  placeholder="숫자만 입력 가능합니다"
+                  placeholder={PLACEHOLDERS.MANAGER_PHONE}
                   {...field}
                   className="h-10 sm:h-12 text-sm"
                   onChange={(e) => {
@@ -77,11 +78,11 @@ export function FarmFormManagerFields({ form }: FarmFormManagerFieldsProps) {
           <FormItem>
             <FormLabel className="flex items-center gap-2 text-sm">
               <FileText className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-              농장 설명
+              {LABELS.DESCRIPTION}
             </FormLabel>
             <FormControl>
               <Textarea
-                placeholder="농장에 대한 설명을 입력하세요"
+                placeholder={PLACEHOLDERS.DESCRIPTION}
                 {...field}
                 value={field.value || ""}
                 className="text-sm min-h-[80px]"

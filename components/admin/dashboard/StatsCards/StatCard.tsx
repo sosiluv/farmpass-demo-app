@@ -9,6 +9,7 @@ import {
   ArrowUpRight,
   ArrowDownRight,
 } from "lucide-react";
+import { LABELS } from "@/lib/constants/dashboard";
 
 interface StatCardProps {
   title: string;
@@ -19,10 +20,10 @@ interface StatCardProps {
 }
 
 const iconMap = {
-  "총 방문자": Users,
-  "오늘 방문자": Calendar,
-  "이번 주 방문자": TrendingUp,
-  "소독 실시율": Shield,
+  [LABELS.TOTAL_VISITORS]: Users,
+  [LABELS.TODAY_VISITORS]: Calendar,
+  [LABELS.WEEKLY_VISITORS]: TrendingUp,
+  [LABELS.DISINFECTION_RATE]: Shield,
 };
 
 const variantStyles = {

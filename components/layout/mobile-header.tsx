@@ -4,6 +4,7 @@ import { useAuth } from "@/components/providers/auth-provider";
 import { useFarmsContext } from "@/components/providers/farms-provider";
 import { Logo } from "@/components/common";
 import { usePathname } from "next/navigation";
+import { LABELS } from "@/lib/constants/common";
 
 export function MobileHeader() {
   const { state } = useAuth();
@@ -13,15 +14,23 @@ export function MobileHeader() {
 
   // 현재 경로에 따른 페이지 제목
   const getPageTitle = () => {
-    if (pathname.includes("/admin/dashboard")) return "대시보드";
-    if (pathname.includes("/admin/farms")) return "농장 관리";
-    if (pathname.includes("/admin/visitors")) return "방문자 관리";
-    if (pathname.includes("/admin/management")) return "시스템 관리";
-    if (pathname.includes("/admin/monitoring")) return "모니터링";
-    if (pathname.includes("/admin/notifications")) return "알림 설정";
-    if (pathname.includes("/admin/settings")) return "설정";
-    if (pathname.includes("/admin/account")) return "계정 관리";
-    return "관리자";
+    if (pathname.includes("/admin/dashboard"))
+      return LABELS.MOBILE_HEADER_DASHBOARD;
+    if (pathname.includes("/admin/farms"))
+      return LABELS.MOBILE_HEADER_FARM_MANAGEMENT;
+    if (pathname.includes("/admin/visitors"))
+      return LABELS.MOBILE_HEADER_VISITOR_MANAGEMENT;
+    if (pathname.includes("/admin/management"))
+      return LABELS.MOBILE_HEADER_SYSTEM_MANAGEMENT;
+    if (pathname.includes("/admin/monitoring"))
+      return LABELS.MOBILE_HEADER_MONITORING;
+    if (pathname.includes("/admin/notifications"))
+      return LABELS.MOBILE_HEADER_NOTIFICATION_SETTINGS;
+    if (pathname.includes("/admin/settings"))
+      return LABELS.MOBILE_HEADER_SETTINGS;
+    if (pathname.includes("/admin/account"))
+      return LABELS.MOBILE_HEADER_ACCOUNT_MANAGEMENT;
+    return LABELS.MOBILE_HEADER_ADMIN;
   };
 
   return (
@@ -32,10 +41,13 @@ export function MobileHeader() {
           <span className="text-sm font-semibold">{getPageTitle()}</span>
           <span className="text-xs text-muted-foreground">
             {profile?.account_type === "admin"
-              ? "시스템 관리자"
+              ? LABELS.MOBILE_HEADER_SYSTEM_ADMIN
               : farms.length > 0
-              ? `${farms.length}개 농장`
-              : "농장 등록 필요"}
+              ? LABELS.MOBILE_HEADER_FARM_COUNT.replace(
+                  "{count}",
+                  farms.length.toString()
+                )
+              : LABELS.MOBILE_HEADER_FARM_REGISTRATION_NEEDED}
           </span>
         </div>
       </div>

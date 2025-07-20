@@ -19,7 +19,7 @@ import {
   LABELS,
   PLACEHOLDERS,
   VISIT_PURPOSE_OPTIONS,
-} from "@/constants/visitor-form";
+} from "@/lib/constants/visitor";
 import { FileText } from "lucide-react";
 
 interface VisitPurposeFieldProps {
@@ -45,7 +45,9 @@ export const VisitPurposeField = ({
           >
             <FileText className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
             {LABELS.VISIT_PURPOSE}
-            {required && <span className="text-red-500">*</span>}
+            {required && (
+              <span className="text-red-500">{LABELS.REQUIRED_MARK}</span>
+            )}
           </FormLabel>
           <FormControl>
             <Select onValueChange={field.onChange} value={field.value}>

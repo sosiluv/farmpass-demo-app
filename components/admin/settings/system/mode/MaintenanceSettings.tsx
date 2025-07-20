@@ -2,6 +2,7 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { MessageSquare, Clock, Phone } from "lucide-react";
+import { LABELS, PLACEHOLDERS } from "@/lib/constants/settings";
 import { formatDateTime } from "@/lib/utils/datetime/date";
 import type { SystemSettings } from "@/lib/types/settings";
 
@@ -27,13 +28,13 @@ export function MaintenanceSettings({
           className="text-sm font-medium flex items-center gap-1"
         >
           <MessageSquare className="h-4 w-4" />
-          유지보수 메시지
+          {LABELS.MAINTENANCE_MESSAGE}
         </Label>
         <Textarea
           id="maintenance-message"
           value={settings.maintenanceMessage}
           onChange={(e) => onUpdate("maintenanceMessage", e.target.value)}
-          placeholder="유지보수 중 사용자에게 표시할 메시지를 입력하세요"
+          placeholder={PLACEHOLDERS.MAINTENANCE_MESSAGE}
           className="min-h-[80px]"
           disabled={isLoading}
         />
@@ -44,7 +45,7 @@ export function MaintenanceSettings({
           className="text-sm font-medium flex items-center gap-1"
         >
           <Clock className="h-4 w-4" />
-          예상 완료 시간 (분)
+          {LABELS.MAINTENANCE_ESTIMATED_TIME}
         </Label>
         <Input
           id="maintenance-time"
@@ -55,11 +56,11 @@ export function MaintenanceSettings({
           onChange={(e) =>
             onUpdate("maintenanceEstimatedTime", parseInt(e.target.value) || 30)
           }
-          placeholder="30"
+          placeholder={PLACEHOLDERS.MAINTENANCE_ESTIMATED_TIME}
           disabled={isLoading}
         />
         <p className="text-xs text-muted-foreground">
-          현재 설정:{" "}
+          {LABELS.MAINTENANCE_CURRENT_SETTING}{" "}
           {settings.maintenanceEstimatedTime < 60
             ? `${settings.maintenanceEstimatedTime}분`
             : settings.maintenanceEstimatedTime < 1440
@@ -76,19 +77,21 @@ export function MaintenanceSettings({
       <div className="space-y-2">
         <Label className="text-sm font-medium flex items-center gap-1">
           <Phone className="h-4 w-4" />
-          연락처 정보
+          {LABELS.MAINTENANCE_CONTACT_INFO}
         </Label>
         <Textarea
           value={settings.maintenanceContactInfo}
           onChange={(e) => onUpdate("maintenanceContactInfo", e.target.value)}
-          placeholder="문의사항이 있으시면 관리자에게 연락해 주세요."
+          placeholder={PLACEHOLDERS.MAINTENANCE_CONTACT_INFO}
           className="min-h-[60px]"
           disabled={isLoading}
         />
       </div>
       {settings.maintenanceStartTime && (
         <div className="space-y-2">
-          <Label className="text-sm font-medium">유지보수 시작 시간</Label>
+          <Label className="text-sm font-medium">
+            {LABELS.MAINTENANCE_START_TIME}
+          </Label>
           <p className="text-sm text-muted-foreground">
             {formatDateTime(settings.maintenanceStartTime)}
           </p>

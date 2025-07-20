@@ -19,7 +19,9 @@ import { ResponsivePagination } from "@/components/common/responsive-pagination"
 import { ErrorBoundary } from "@/components/error/error-boundary";
 import { devLog } from "@/lib/utils/logging/dev-logger";
 import { AdminError } from "@/components/error/admin-error";
+import { ERROR_CONFIGS } from "@/lib/constants/error";
 import { useDataFetchTimeout } from "@/hooks/useTimeout";
+import { LABELS } from "@/lib/constants/management";
 
 export function UsersTab() {
   const { data: stats, isLoading: loading, refetch } = useAdminUsersQuery();
@@ -38,8 +40,8 @@ export function UsersTab() {
   if (timeoutReached) {
     return (
       <AdminError
-        title="데이터를 불러오지 못했습니다"
-        description="네트워크 상태를 확인하거나 다시 시도해 주세요."
+        title={ERROR_CONFIGS.TIMEOUT.title}
+        description={ERROR_CONFIGS.TIMEOUT.description}
         retry={retry}
         error={new Error("Timeout: 데이터 로딩 10초 초과")}
       />
@@ -61,8 +63,8 @@ export function UsersTab() {
 
   return (
     <ErrorBoundary
-      title="사용자 관리 오류"
-      description="사용자 정보를 불러오는 중 문제가 발생했습니다. 페이지를 새로고침하거나 잠시 후 다시 시도해주세요."
+      title={ERROR_CONFIGS.LOADING.title}
+      description={ERROR_CONFIGS.LOADING.description}
     >
       <UsersDataManager>
         {({ users, lastUpdate }) => (
@@ -92,15 +94,18 @@ export function UsersTab() {
                           <div>
                             <h3 className="flex items-center gap-2 text-lg font-semibold">
                               <Users className="h-5 w-5" />
-                              사용자 관리
+                              {LABELS.USER_MANAGEMENT}
                             </h3>
                             <p className="text-sm text-muted-foreground mt-1">
-                              시스템에 등록된 모든 사용자를 관리합니다
+                              {LABELS.USER_MANAGEMENT_DESC}
                             </p>
                           </div>
                           <div className="flex flex-col lg:flex-row lg:items-center gap-2 lg:gap-4">
                             <div className="text-sm text-muted-foreground">
-                              마지막 업데이트: {formatDateTime(lastUpdate)}
+                              {LABELS.LAST_UPDATE_TAB.replace(
+                                "{datetime}",
+                                formatDateTime(lastUpdate)
+                              )}
                             </div>
                             <UsersExportRefactored
                               users={users.filter(filterFn)}
@@ -131,7 +136,10 @@ export function UsersTab() {
                             <>
                               {/* 사용자 수 표시 */}
                               <div className="text-sm text-muted-foreground">
-                                총 {totalItems}명의 사용자
+                                {LABELS.TOTAL_USERS_COUNT_TAB.replace(
+                                  "{count}",
+                                  totalItems.toString()
+                                )}
                               </div>
 
                               {/* 사용자 목록 */}

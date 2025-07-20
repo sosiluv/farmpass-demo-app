@@ -9,7 +9,7 @@ import {
 import { AddressSearch } from "@/components/common/address-search";
 import type { UseFormReturn } from "react-hook-form";
 import type { VisitorFormData } from "@/lib/utils/validation/visitor-validation";
-import { LABELS } from "@/constants/visitor-form";
+import { LABELS } from "@/lib/constants/visitor";
 import { MapPin } from "lucide-react";
 
 interface AddressFieldProps {
@@ -39,7 +39,9 @@ export const AddressField = ({
           >
             <MapPin className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
             {LABELS.ADDRESS}
-            {required && <span className="text-red-500">*</span>}
+            {required && (
+              <span className="text-red-500">{LABELS.REQUIRED_MARK}</span>
+            )}
           </FormLabel>
           <FormControl>
             <AddressSearch
@@ -54,7 +56,9 @@ export const AddressField = ({
           {field.value && (
             <div className="mt-2 p-2.5 sm:p-3 bg-gray-50 border border-gray-200 rounded-lg">
               <div className="text-xs sm:text-sm">
-                <div className="font-medium text-gray-700">선택된 주소:</div>
+                <div className="font-medium text-gray-700">
+                  {LABELS.SELECTED_ADDRESS}
+                </div>
                 <div className="text-gray-600 mt-1">
                   {field.value}
                   {form.watch("detailedAddress") && (

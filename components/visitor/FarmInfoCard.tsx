@@ -8,6 +8,7 @@ import {
 } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import type { Farm } from "@/lib/types/visitor";
+import { LABELS } from "@/lib/constants/visitor";
 
 interface FarmInfoCardProps {
   farm: Farm;
@@ -28,7 +29,7 @@ export const FarmInfoCard = ({ farm }: FarmInfoCardProps) => {
           <span className="break-all leading-tight">{farm.farm_address}</span>
         </CardDescription>
         <div className="mt-1.5 sm:mt-2 mb-0.5 text-xs sm:text-sm text-gray-700 font-medium">
-          용무가 있으신 분은 아래로 연락바랍니다.
+          {LABELS.FARM_INFO_CONTACT_GUIDE}
         </div>
       </CardHeader>
       <CardContent className="pt-2 sm:pt-4 pb-2 sm:pb-6 px-3 sm:px-6 space-y-2 sm:space-y-4">
@@ -38,13 +39,13 @@ export const FarmInfoCard = ({ farm }: FarmInfoCardProps) => {
             <AlertTriangle className="h-3.5 sm:h-5 w-3.5 sm:w-5 text-red-600 flex-shrink-0 mt-0" />
           </span>
           <AlertDescription className="font-semibold text-red-700 text-xs sm:text-base leading-tight flex items-center">
-            축사출입금지 - 방역상 출입을 금지합니다
+            {LABELS.FARM_INFO_NO_ENTRY_WARNING}
           </AlertDescription>
         </Alert>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3">
           <div className="flex flex-col gap-1 sm:gap-1">
             <span className="text-xs sm:text-xs text-gray-500 font-medium">
-              관리자
+              {LABELS.FARM_INFO_MANAGER_LABEL}
             </span>
             <span className="flex items-center gap-1 sm:gap-1 font-medium text-gray-800">
               <User2 className="h-3.5 sm:h-4 w-3.5 sm:w-4 text-gray-400 flex-shrink-0" />
@@ -55,7 +56,7 @@ export const FarmInfoCard = ({ farm }: FarmInfoCardProps) => {
           </div>
           <div className="flex flex-col gap-1 sm:gap-1">
             <span className="text-xs sm:text-xs text-gray-500 font-medium">
-              연락처
+              {LABELS.FARM_INFO_CONTACT_LABEL}
             </span>
             <span className="flex items-center gap-1 sm:gap-1 font-medium text-gray-800">
               <Phone className="h-3.5 sm:h-4 w-3.5 sm:w-4 text-blue-400 flex-shrink-0" />

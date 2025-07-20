@@ -1,6 +1,7 @@
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { FileX } from "lucide-react";
 import type { OrphanFilesStatus } from "@/lib/types/settings";
+import { LABELS } from "@/lib/constants/settings";
 
 interface OrphanFilesSuccessMessageProps {
   lastCleanupSuccess: string | null;
@@ -17,11 +18,14 @@ export function OrphanFilesSuccessMessage({
         <div className="flex items-center gap-2">
           <div className="h-2 w-2 bg-green-500 rounded-full animate-pulse"></div>
           <p className="text-sm text-green-700 font-medium">
-            🎉 {lastCleanupSuccess} 정리가 완료되었습니다!
+            {LABELS.ORPHAN_FILES_SUCCESS_TITLE.replace(
+              "{type}",
+              lastCleanupSuccess
+            )}
           </p>
         </div>
         <p className="text-xs text-green-600 mt-1">
-          Orphan 파일이 성공적으로 정리되었고 상태가 업데이트되었습니다.
+          {LABELS.ORPHAN_FILES_SUCCESS_DESC}
         </p>
       </div>
     );
@@ -37,12 +41,11 @@ export function OrphanFilesSuccessMessage({
         <div className="flex items-center gap-2">
           <div className="h-2 w-2 bg-green-500 rounded-full"></div>
           <p className="text-sm text-green-700 font-medium">
-            ✅ 모든 orphan 파일이 정리되었습니다
+            {LABELS.ORPHAN_FILES_ALL_CLEANED_TITLE}
           </p>
         </div>
         <p className="text-xs text-green-600 mt-1">
-          현재 정리할 orphan 파일이 없습니다. 새로운 이미지 업로드 시 orphan
-          파일이 생성될 수 있습니다.
+          {LABELS.ORPHAN_FILES_ALL_CLEANED_DESC}
         </p>
       </div>
     );

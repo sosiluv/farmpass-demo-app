@@ -15,6 +15,8 @@ import type { Farm } from "@/lib/types/farm";
 import { useCommonToast } from "@/lib/utils/notification/toast-messages";
 import { getAuthErrorMessage } from "@/lib/utils/validation/validation";
 import { AccessDenied } from "@/components/error/access-denied";
+import { LABELS, PAGE_HEADER } from "@/lib/constants/farms";
+import { ERROR_CONFIGS } from "@/lib/constants/error";
 
 // Zustand Store 사용
 import { useVisitorFiltersStore } from "@/lib/hooks/query/use-visitor-filters";
@@ -145,12 +147,12 @@ export default function FarmVisitorsPage() {
     return (
       <div className="flex-1 space-y-4 p-4 sm:p-6 md:p-8">
         <PageHeader
-          title="방문자 기록"
-          description="방문자 기록을 조회하고 관리합니다."
+          title={PAGE_HEADER.FARM_VISITORS_PAGE_TITLE}
+          description={PAGE_HEADER.FARM_VISITORS_PAGE_DESCRIPTION}
           breadcrumbs={[
-            { label: "농장 관리", href: "/admin/farms" },
-            { label: "로딩 중...", href: `/admin/farms/${farmId}` },
-            { label: "방문자 기록" },
+            { label: LABELS.FARM_MANAGEMENT, href: "/admin/farms" },
+            { label: LABELS.LOADING, href: `/admin/farms/${farmId}` },
+            { label: PAGE_HEADER.FARM_VISITORS_PAGE_TITLE },
           ]}
         />
         <StatsSkeleton columns={4} />
@@ -178,8 +180,8 @@ export default function FarmVisitorsPage() {
   if (!farms.some((f) => f.id === farmId)) {
     return (
       <AccessDenied
-        title="농장 접근 권한이 없습니다"
-        description="이 농장에 대한 접근 권한이 없습니다. 농장 소유자나 관리자에게 문의하세요."
+        title={ERROR_CONFIGS.PERMISSION.title}
+        description={ERROR_CONFIGS.PERMISSION.description}
         requiredRole="농장 소유자 또는 관리자"
         currentRole="일반 사용자"
       />
@@ -188,17 +190,23 @@ export default function FarmVisitorsPage() {
 
   return (
     <ErrorBoundary
-      title="농장 방문자 기록 오류"
-      description="농장 방문자 정보를 불러오는 중 문제가 발생했습니다."
+      title={ERROR_CONFIGS.LOADING.title}
+      description={ERROR_CONFIGS.LOADING.description}
     >
       <div className="flex-1 space-y-3 sm:space-y-4 md:space-y-6 p-1 sm:p-4 md:p-6 lg:p-8 pt-3 sm:pt-4 md:pt-6">
         <PageHeader
-          title={`${currentFarm.farm_name} 방문자 기록`}
-          description={`${currentFarm.farm_name}의 방문자 기록을 조회하고 관리합니다.`}
+          title={PAGE_HEADER.FARM_VISITORS_TITLE.replace(
+            "{farmName}",
+            currentFarm.farm_name
+          )}
+          description={PAGE_HEADER.FARM_VISITORS_DETAILED_DESCRIPTION.replace(
+            "{farmName}",
+            currentFarm.farm_name
+          )}
           breadcrumbs={[
-            { label: "농장 관리", href: "/admin/farms" },
+            { label: LABELS.FARM_MANAGEMENT, href: "/admin/farms" },
             { label: currentFarm.farm_name, href: `/admin/farms/${farmId}` },
-            { label: "방문자 기록" },
+            { label: PAGE_HEADER.FARM_VISITORS_PAGE_TITLE },
           ]}
           actions={
             <VisitorExportRefactored

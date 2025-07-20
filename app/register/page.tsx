@@ -1,7 +1,7 @@
 "use client";
 
 import type React from "react";
-import { useState, useEffect, useCallback, useMemo, memo } from "react";
+import { useState, useCallback, useMemo, memo } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useForm } from "react-hook-form";
@@ -30,6 +30,7 @@ import { useCommonToast } from "@/lib/utils/notification/toast-messages";
 import { formatPhone } from "@/lib/utils/validation/validation";
 import { devLog } from "@/lib/utils/logging/dev-logger";
 import { ErrorBoundary } from "@/components/error/error-boundary";
+import { ERROR_CONFIGS } from "@/lib/constants/error";
 import { usePasswordRules } from "@/lib/utils/validation/usePasswordRules";
 import { apiClient } from "@/lib/utils/data/api-client";
 import {
@@ -44,6 +45,12 @@ import {
 import { PasswordStrength } from "@/components/ui/password-strength";
 import { Logo, Turnstile } from "@/components/common";
 import { Loading } from "@/components/ui/loading";
+import {
+  BUTTONS,
+  LABELS,
+  PLACEHOLDERS,
+  PAGE_HEADER,
+} from "@/lib/constants/auth";
 
 // 메모이제이션된 Turnstile 섹션 컴포넌트
 const TurnstileSection = memo(
@@ -60,7 +67,7 @@ const TurnstileSection = memo(
   }) => (
     <div className="space-y-2">
       <label className="text-sm text-gray-800">
-        캡차 인증 <span className="text-red-500">*</span>
+        {LABELS.CAPTCHA_LABEL} <span className="text-red-500">*</span>
       </label>
       <Turnstile
         siteKey={process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY || ""}
@@ -95,7 +102,7 @@ const EmailField = memo(
   }) => (
     <FormItem>
       <FormLabel className="text-sm text-gray-800">
-        이메일 <span className="text-red-500">*</span>
+        {LABELS.EMAIL} <span className="text-red-500">*</span>
       </FormLabel>
       <div className="relative">
         <Mail className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -103,7 +110,7 @@ const EmailField = memo(
           <Input
             {...field}
             type="email"
-            placeholder="name@example.com"
+            placeholder={PLACEHOLDERS.EMAIL}
             onBlur={(e) => {
               field.onBlur();
               onBlur();
@@ -136,7 +143,7 @@ const NameField = memo(
   ({ field, loading }: { field: any; loading: boolean }) => (
     <FormItem>
       <FormLabel className="text-sm text-gray-800">
-        이름 <span className="text-red-500">*</span>
+        {LABELS.NAME} <span className="text-red-500">*</span>
       </FormLabel>
       <div className="relative">
         <User className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -144,7 +151,7 @@ const NameField = memo(
           <Input
             {...field}
             type="text"
-            placeholder="홍길동"
+            placeholder={PLACEHOLDERS.NAME}
             autoComplete="name"
             className="h-12 pl-10 input-focus"
             disabled={loading}
@@ -163,7 +170,7 @@ const PasswordField = memo(
   ({ field, loading }: { field: any; loading: boolean }) => (
     <FormItem>
       <FormLabel className="text-sm text-gray-800">
-        비밀번호 <span className="text-red-500">*</span>
+        {LABELS.PASSWORD} <span className="text-red-500">*</span>
       </FormLabel>
       <div className="relative">
         <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -171,7 +178,7 @@ const PasswordField = memo(
           <Input
             {...field}
             type="password"
-            placeholder="비밀번호를 입력하세요"
+            placeholder={PLACEHOLDERS.PASSWORD}
             autoComplete="new-password"
             className="h-12 pl-10 input-focus"
             disabled={loading}
@@ -191,7 +198,7 @@ const ConfirmPasswordField = memo(
   ({ field, loading }: { field: any; loading: boolean }) => (
     <FormItem>
       <FormLabel className="text-sm text-gray-800">
-        비밀번호 확인 <span className="text-red-500">*</span>
+        {LABELS.CONFIRM_PASSWORD} <span className="text-red-500">*</span>
       </FormLabel>
       <div className="relative">
         <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -199,7 +206,7 @@ const ConfirmPasswordField = memo(
           <Input
             {...field}
             type="password"
-            placeholder="비밀번호를 다시 입력하세요"
+            placeholder={PLACEHOLDERS.CONFIRM_PASSWORD}
             autoComplete="new-password"
             className="h-12 pl-10 input-focus"
             disabled={loading}
@@ -218,7 +225,7 @@ const PhoneField = memo(
   ({ field, loading }: { field: any; loading: boolean }) => (
     <FormItem>
       <FormLabel className="text-sm text-gray-800">
-        휴대폰 번호 <span className="text-red-500">*</span>
+        {LABELS.PHONE} <span className="text-red-500">*</span>
       </FormLabel>
       <div className="relative">
         <Phone className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -226,7 +233,7 @@ const PhoneField = memo(
           <Input
             {...field}
             type="tel"
-            placeholder="숫자만 입력 가능합니다"
+            placeholder={PLACEHOLDERS.PHONE}
             className="h-12 pl-10 input-focus"
             disabled={loading}
             onChange={(e) => {
@@ -261,10 +268,10 @@ const RegisterButton = memo(
             spinnerColor="text-white"
             className="mr-2"
           />
-          가입 중...
+          {BUTTONS.REGISTER_LOADING}
         </>
       ) : (
-        "회원가입"
+        BUTTONS.REGISTER_BUTTON
       )}
     </Button>
   )
@@ -424,8 +431,8 @@ export default function RegisterPage() {
 
   return (
     <ErrorBoundary
-      title="회원가입 페이지 오류"
-      description="회원가입 처리 중 문제가 발생했습니다. 페이지를 새로고침하거나 잠시 후 다시 시도해주세요."
+      title={ERROR_CONFIGS.LOADING.title}
+      description={ERROR_CONFIGS.LOADING.description}
     >
       <div className="flex min-h-screen items-center justify-center bg-gradient-farm p-4">
         <motion.div
@@ -439,9 +446,11 @@ export default function RegisterPage() {
               <div className="mx-auto mb-4 flex justify-center">
                 <Logo size="xl" />
               </div>
-              <CardTitle className="text-3xl">회원가입</CardTitle>
+              <CardTitle className="text-3xl">
+                {PAGE_HEADER.REGISTER_TITLE}
+              </CardTitle>
               <CardDescription>
-                농장 출입 관리 시스템에 가입하세요
+                {PAGE_HEADER.REGISTER_DESCRIPTION}
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -514,12 +523,12 @@ export default function RegisterPage() {
             </CardContent>
             <CardFooter className="flex justify-center">
               <p className="text-sm text-muted-foreground">
-                이미 계정이 있으신가요?{" "}
+                {BUTTONS.HAS_ACCOUNT}{" "}
                 <Link
                   href="/login"
                   className="font-medium text-primary hover:underline"
                 >
-                  로그인
+                  {BUTTONS.LOGIN_BUTTON}
                 </Link>
               </p>
             </CardFooter>

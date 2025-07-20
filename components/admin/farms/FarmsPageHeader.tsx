@@ -2,6 +2,7 @@ import { PageHeader } from "@/components/layout";
 import { FarmFormDialog } from "./FarmFormDialog";
 import type { Farm } from "@/lib/types/farm";
 import type { FarmFormValues } from "@/lib/utils/validation";
+import { PAGE_HEADER } from "@/lib/constants/farms";
 
 interface FarmsPageHeaderProps {
   dialogOpen: boolean;
@@ -22,9 +23,9 @@ export function FarmsPageHeader({
 }: FarmsPageHeaderProps) {
   return (
     <PageHeader
-      title="농장 관리"
-      description="등록된 농장을 관리하고 QR 코드를 생성하세요"
-      breadcrumbs={[{ label: "농장 관리" }]}
+      title={PAGE_HEADER.FARMS_PAGE_TITLE}
+      description={PAGE_HEADER.FARMS_PAGE_DESCRIPTION}
+      breadcrumbs={[{ label: PAGE_HEADER.FARMS_BREADCRUMB }]}
       actions={
         <FarmFormDialog
           open={dialogOpen}

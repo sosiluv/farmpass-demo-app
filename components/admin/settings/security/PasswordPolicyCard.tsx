@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Lock } from "lucide-react";
+import { LABELS, PLACEHOLDERS, PAGE_HEADER } from "@/lib/constants/settings";
 import type { SystemSettings } from "@/lib/types/settings";
 import { useNumberInput } from "@/hooks/use-number-input";
 import SettingsCardHeader from "../SettingsCardHeader";
@@ -48,13 +49,15 @@ export default function PasswordPolicyCard({
     <Card>
       <SettingsCardHeader
         icon={Lock}
-        title="비밀번호 정책"
-        description="사용자 계정의 비밀번호 보안 규칙을 설정합니다"
+        title={PAGE_HEADER.PASSWORD_POLICY_TITLE}
+        description={PAGE_HEADER.PASSWORD_POLICY_DESCRIPTION}
       />
       <CardContent className="space-y-4">
         <div className="grid gap-4">
           <div className="space-y-2">
-            <Label htmlFor="passwordMinLength">최소 비밀번호 길이</Label>
+            <Label htmlFor="passwordMinLength">
+              {PLACEHOLDERS.PASSWORD_MIN_LENGTH}
+            </Label>
             <Input
               id="passwordMinLength"
               type="number"
@@ -79,14 +82,16 @@ export default function PasswordPolicyCard({
               disabled={isLoading}
             />
             <p className="text-sm text-muted-foreground">
-              사용자가 설정해야 하는 최소 비밀번호 길이입니다 (8-20자)
+              {LABELS.PASSWORD_MIN_LENGTH_DESC}
             </p>
           </div>
           <div className="flex items-center justify-between">
             <div className="space-y-0.5">
-              <Label htmlFor="passwordRequireSpecialChar">특수문자 포함</Label>
+              <Label htmlFor="passwordRequireSpecialChar">
+                {LABELS.PASSWORD_SPECIAL_CHAR}
+              </Label>
               <p className="text-sm text-muted-foreground">
-                !@#$%^&* 등의 특수문자를 반드시 포함하도록 합니다
+                {LABELS.PASSWORD_SPECIAL_CHAR_DESC}
               </p>
             </div>
             <Switch
@@ -100,9 +105,11 @@ export default function PasswordPolicyCard({
           </div>
           <div className="flex items-center justify-between">
             <div className="space-y-0.5">
-              <Label htmlFor="passwordRequireNumber">숫자 포함</Label>
+              <Label htmlFor="passwordRequireNumber">
+                {LABELS.PASSWORD_NUMBER}
+              </Label>
               <p className="text-sm text-muted-foreground">
-                0-9 숫자를 반드시 포함하도록 합니다
+                {LABELS.PASSWORD_NUMBER_DESC}
               </p>
             </div>
             <Switch
@@ -116,9 +123,11 @@ export default function PasswordPolicyCard({
           </div>
           <div className="flex items-center justify-between">
             <div className="space-y-0.5">
-              <Label htmlFor="passwordRequireUpperCase">대문자 포함</Label>
+              <Label htmlFor="passwordRequireUpperCase">
+                {LABELS.PASSWORD_UPPERCASE}
+              </Label>
               <p className="text-sm text-muted-foreground">
-                A-Z 대문자를 반드시 포함하도록 합니다
+                {LABELS.PASSWORD_UPPERCASE_DESC}
               </p>
             </div>
             <Switch
@@ -132,9 +141,11 @@ export default function PasswordPolicyCard({
           </div>
           <div className="flex items-center justify-between">
             <div className="space-y-0.5">
-              <Label htmlFor="passwordRequireLowerCase">소문자 포함</Label>
+              <Label htmlFor="passwordRequireLowerCase">
+                {LABELS.PASSWORD_LOWERCASE}
+              </Label>
               <p className="text-sm text-muted-foreground">
-                a-z 소문자를 반드시 포함하도록 합니다
+                {LABELS.PASSWORD_LOWERCASE_DESC}
               </p>
             </div>
             <Switch

@@ -8,6 +8,7 @@ import {
 import type { SystemLog } from "@/lib/types/system";
 import type { LogsExportOptions } from "../exports";
 import { devLog } from "@/lib/utils/logging/dev-logger";
+import { LABELS } from "@/lib/constants/management";
 
 interface LogsExportManagerProps {
   logs: SystemLog[];
@@ -66,25 +67,27 @@ export function LogsExportManager({ logs, children }: LogsExportManagerProps) {
         const row: Record<string, any> = {};
 
         if (options.includeBasic) {
-          row["시간"] = formatDateTime(log.created_at);
-          row["레벨"] = log.level?.toUpperCase() || "UNKNOWN";
-          row["액션"] = log.action || "";
-          row["메시지"] = log.message || "";
+          row[LABELS.TIME] = formatDateTime(log.created_at);
+          row[LABELS.LEVEL] = log.level?.toUpperCase() || LABELS.UNKNOWN;
+          row[LABELS.ACTION] = log.action || "";
+          row[LABELS.MESSAGE] = log.message || "";
         }
 
         if (options.includeUser) {
-          row["사용자"] = log.user_email || "시스템";
-          row["IP주소"] = log.user_ip || "-";
+          row[LABELS.USER] = log.user_email || LABELS.SYSTEM_CSV;
+          row[LABELS.IP_ADDRESS_CSV] = log.user_ip || LABELS.NO_DATA_CSV;
         }
 
         if (options.includeSystem) {
-          row["카테고리"] = getLogCategory(log);
-          row["리소스ID"] = log.resource_id || "-";
+          row[LABELS.CATEGORY_CSV] = getLogCategory(log);
+          row[LABELS.RESOURCE_ID_CSV] = log.resource_id || LABELS.NO_DATA_CSV;
         }
 
         if (options.includeMetadata) {
-          row["브라우저"] = log.user_agent || "-";
-          row["추가데이터"] = log.metadata ? JSON.stringify(log.metadata) : "-";
+          row[LABELS.BROWSER] = log.user_agent || LABELS.NO_DATA_CSV;
+          row[LABELS.ADDITIONAL_DATA] = log.metadata
+            ? JSON.stringify(log.metadata)
+            : LABELS.NO_DATA_CSV;
         }
 
         return row;

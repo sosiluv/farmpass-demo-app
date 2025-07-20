@@ -9,6 +9,7 @@ import {
 import { UserPlus, Loader2 } from "lucide-react";
 import { devLog } from "@/lib/utils/logging/dev-logger";
 import { apiClient } from "@/lib/utils/data/api-client";
+import { BUTTONS, LABELS } from "@/lib/constants/farms";
 import {
   AddMemberDialogHeader,
   AddMemberEmailField,
@@ -115,8 +116,8 @@ export function AddMemberDialog({
           className="h-8 sm:h-9 md:h-10 text-xs sm:text-sm px-3 sm:px-4"
         >
           <UserPlus className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
-          <span className="hidden sm:inline">구성원 추가</span>
-          <span className="sm:hidden">추가</span>
+          <span className="hidden sm:inline">{BUTTONS.ADD_MEMBER}</span>
+          <span className="sm:hidden">{BUTTONS.ADD_MEMBER_SHORT}</span>
         </Button>
       </DialogTrigger>
       <DialogContent className="w-[95vw] max-w-[350px] sm:max-w-[500px] md:max-w-[600px] lg:max-w-[700px] max-h-[90vh] sm:max-h-[85vh] overflow-hidden p-3 sm:p-4 md:p-6">
@@ -137,7 +138,7 @@ export function AddMemberDialog({
             disabled={isAddingMember}
             className="h-8 sm:h-9 text-xs sm:text-sm px-3 sm:px-4"
           >
-            취소
+            {BUTTONS.CANCEL_BUTTON}
           </Button>
           <Button
             onClick={handleAddMember}
@@ -147,10 +148,10 @@ export function AddMemberDialog({
             {isAddingMember ? (
               <>
                 <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                추가 중...
+                {BUTTONS.REGISTERING_LOADING}
               </>
             ) : (
-              "추가"
+              BUTTONS.REGISTER_BUTTON
             )}
           </Button>
         </DialogFooter>

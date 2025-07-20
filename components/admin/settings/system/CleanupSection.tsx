@@ -9,8 +9,8 @@ import {
   CleanupSuccessMessage,
   CleanupActions,
 } from "./cleanup";
-
 import { Loading } from "@/components/ui/loading";
+import { BUTTONS, LABELS, PAGE_HEADER } from "@/lib/constants/settings";
 
 interface CleanupSectionProps {
   cleanupStatus: CleanupStatus | null;
@@ -33,8 +33,8 @@ export function CleanupSection({
     <Card>
       <SettingsCardHeader
         icon={Trash2}
-        title="로그 정리 관리"
-        description="만료된 시스템 로그와 방문자 데이터를 수동으로 정리할 수 있습니다"
+        title={PAGE_HEADER.CLEANUP_SECTION_TITLE}
+        description={PAGE_HEADER.CLEANUP_SECTION_DESC}
         actions={
           <Button
             variant="outline"
@@ -45,14 +45,14 @@ export function CleanupSection({
             <RotateCcw
               className={`h-4 w-4 mr-2 ${statusLoading ? "animate-spin" : ""}`}
             />
-            새로고침
+            {BUTTONS.CLEANUP_REFRESH_BUTTON}
           </Button>
         }
       />
       <CardContent className="space-y-6">
         {statusLoading ? (
           <Loading
-            text="정리 상태를 확인하는 중..."
+            text={LABELS.CLEANUP_STATUS_CHECKING}
             minHeight={180}
             spinnerSize={32}
             spinnerColor="text-primary"

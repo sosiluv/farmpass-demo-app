@@ -20,6 +20,7 @@ import {
   Activity,
 } from "lucide-react";
 import { formatDateTime } from "@/lib/utils/datetime/date";
+import { LABELS } from "@/lib/constants/management";
 import type { SystemLog } from "@/lib/types/system";
 
 type LevelConfig = {
@@ -32,48 +33,33 @@ const LOG_LEVEL_CONFIG: Record<string, LevelConfig> = {
   info: {
     icon: Info,
     className: "bg-blue-100 text-blue-800 border-blue-300",
-    label: "정보",
+    label: LABELS.INFO,
   },
   warn: {
     icon: AlertTriangle,
     className: "bg-yellow-100 text-yellow-800 border-yellow-300",
-    label: "경고",
+    label: LABELS.WARN,
   },
   warning: {
     icon: AlertTriangle,
     className: "bg-yellow-100 text-yellow-800 border-yellow-300",
-    label: "경고",
+    label: LABELS.WARN,
   },
   error: {
     icon: AlertCircle,
     className: "bg-red-100 text-red-800 border-red-300",
-    label: "오류",
+    label: LABELS.ERROR,
   },
   debug: {
     icon: Info,
     className: "bg-gray-100 text-gray-800 border-gray-300",
-    label: "디버그",
+    label: LABELS.DEBUG,
   },
   success: {
     icon: CheckCircle,
     className: "bg-green-100 text-green-800 border-green-300",
-    label: "성공",
+    label: LABELS.SUCCESS,
   },
-};
-
-const LOG_CATEGORY_LABELS: Record<string, string> = {
-  auth: "인증",
-  farm: "농장",
-  member: "구성원",
-  visitor: "방문자",
-  system: "기타",
-  settings: "설정",
-  security: "보안",
-  performance: "성능",
-  error: "에러",
-  profile: "프로필",
-  system_log: "시스템 로그",
-  user_activity: "사용자 활동",
 };
 
 interface LogDetailModalProps {
@@ -96,10 +82,10 @@ export function LogDetailModal({ log, isOpen, onClose }: LogDetailModalProps) {
         <DialogHeader className="space-y-2">
           <DialogTitle className="flex items-center gap-2 text-base sm:text-lg">
             <Activity className="h-4 w-4 sm:h-5 sm:w-5" />
-            로그 상세 정보
+            {LABELS.LOG_DETAIL_TITLE}
           </DialogTitle>
           <DialogDescription className="text-xs sm:text-sm text-muted-foreground">
-            선택된 시스템 로그의 상세 정보를 확인할 수 있습니다.
+            {LABELS.LOG_DETAIL_DESCRIPTION}
           </DialogDescription>
         </DialogHeader>
         <ScrollArea className="h-full max-h-[calc(90vh-8rem)] sm:max-h-[calc(85vh-10rem)]">
@@ -119,8 +105,9 @@ export function LogDetailModal({ log, isOpen, onClose }: LogDetailModalProps) {
                     variant="secondary"
                     className="text-[10px] sm:text-xs md:text-sm"
                   >
-                    {LOG_CATEGORY_LABELS[log.resource_type] ||
-                      log.resource_type}
+                    {LABELS.LOG_CATEGORY_LABELS[
+                      log.resource_type as keyof typeof LABELS.LOG_CATEGORY_LABELS
+                    ] || log.resource_type}
                   </Badge>
                 )}
                 <div className="flex items-center text-[10px] sm:text-xs md:text-sm text-muted-foreground">
@@ -144,13 +131,13 @@ export function LogDetailModal({ log, isOpen, onClose }: LogDetailModalProps) {
               <div className="space-y-2 sm:space-y-3">
                 <h4 className="text-xs sm:text-sm md:text-base font-medium flex items-center gap-2">
                   <User className="h-3 w-3 sm:h-4 sm:w-4" />
-                  사용자 정보
+                  {LABELS.USER_INFO}
                 </h4>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-2 sm:gap-3 text-[10px] sm:text-xs md:text-sm">
                   {log.user_email && (
                     <div className="p-2 sm:p-3 bg-muted rounded-lg">
                       <span className="text-muted-foreground font-medium">
-                        이메일:
+                        {LABELS.EMAIL}
                       </span>
                       <p className="font-medium mt-1 break-all">
                         {log.user_email}
@@ -160,7 +147,7 @@ export function LogDetailModal({ log, isOpen, onClose }: LogDetailModalProps) {
                   {log.user_ip && (
                     <div className="p-2 sm:p-3 bg-muted rounded-lg">
                       <span className="text-muted-foreground font-medium">
-                        IP 주소:
+                        {LABELS.IP_ADDRESS}
                       </span>
                       <div className="flex items-center gap-1 sm:gap-1.5 md:gap-2 mt-1">
                         <Globe className="h-2 w-2 sm:h-3 sm:w-3 md:h-4 md:w-4 flex-shrink-0" />
@@ -171,7 +158,7 @@ export function LogDetailModal({ log, isOpen, onClose }: LogDetailModalProps) {
                   {log.user_agent && (
                     <div className="p-2 sm:p-3 bg-muted rounded-lg col-span-full">
                       <span className="text-muted-foreground font-medium">
-                        User Agent:
+                        {LABELS.USER_AGENT}
                       </span>
                       <div className="flex items-start gap-1 sm:gap-1.5 md:gap-2 mt-1">
                         <Monitor className="h-2 w-2 sm:h-3 sm:w-3 md:h-4 md:w-4 mt-0.5 flex-shrink-0" />
@@ -192,24 +179,25 @@ export function LogDetailModal({ log, isOpen, onClose }: LogDetailModalProps) {
                 <div className="space-y-2 sm:space-y-3">
                   <h4 className="text-xs sm:text-sm md:text-base font-medium flex items-center gap-2">
                     <Activity className="h-3 w-3 sm:h-4 sm:w-4" />
-                    리소스 정보
+                    {LABELS.RESOURCE_INFO}
                   </h4>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-2 sm:gap-3 text-[10px] sm:text-xs md:text-sm">
                     {log.resource_type && (
                       <div className="p-2 sm:p-3 bg-muted rounded-lg">
                         <span className="text-muted-foreground font-medium">
-                          리소스 유형:
+                          {LABELS.RESOURCE_TYPE}
                         </span>
                         <p className="font-medium mt-1">
-                          {LOG_CATEGORY_LABELS[log.resource_type] ||
-                            log.resource_type}
+                          {LABELS.LOG_CATEGORY_LABELS[
+                            log.resource_type as keyof typeof LABELS.LOG_CATEGORY_LABELS
+                          ] || log.resource_type}
                         </p>
                       </div>
                     )}
                     {log.resource_id && (
                       <div className="p-2 sm:p-3 bg-muted rounded-lg">
                         <span className="text-muted-foreground font-medium">
-                          리소스 ID:
+                          {LABELS.RESOURCE_ID}
                         </span>
                         <p className="font-medium mt-1 break-all">
                           {log.resource_id}
@@ -228,7 +216,7 @@ export function LogDetailModal({ log, isOpen, onClose }: LogDetailModalProps) {
                 <div className="space-y-2 sm:space-y-3">
                   <h4 className="text-xs sm:text-sm md:text-base font-medium flex items-center gap-2">
                     <Info className="h-3 w-3 sm:h-4 sm:w-4" />
-                    추가 정보
+                    {LABELS.ADDITIONAL_INFO}
                   </h4>
                   <div className="p-2 sm:p-3 bg-muted rounded-lg">
                     <pre className="text-[10px] sm:text-xs md:text-sm font-mono whitespace-pre-wrap break-all">

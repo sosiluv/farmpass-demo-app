@@ -1,5 +1,6 @@
 import { Users, TrendingUp, Building2, Activity, Target } from "lucide-react";
 import { StatCard, InsightCard } from "./components";
+import { LABELS } from "@/lib/constants/visitor";
 
 interface VisitorStatsProps {
   visitorStats: {
@@ -42,7 +43,7 @@ const createStatConfig = (
   visitorStats: VisitorStatsProps["visitorStats"]
 ): StatConfig[] => [
   {
-    title: "총 방문자",
+    title: LABELS.VISITOR_STATS_TOTAL_VISITORS,
     value: visitorStats.totalVisitors,
     icon: Users,
     color: "from-blue-500 to-blue-600",
@@ -50,11 +51,12 @@ const createStatConfig = (
     borderColor: "border-blue-200",
     textColor: "text-blue-700",
     iconBg: "bg-blue-100",
-    description: "전체 방문자",
-    trend: visitorStats.trends?.totalVisitorsTrend || "데이터 없음",
+    description: LABELS.VISITOR_STATS_TOTAL_VISITORS_DESC,
+    trend:
+      visitorStats.trends?.totalVisitorsTrend || LABELS.VISITOR_STATS_NO_DATA,
   },
   {
-    title: "오늘 방문자",
+    title: LABELS.VISITOR_STATS_TODAY_VISITORS,
     value: visitorStats.todayVisitors,
     icon: TrendingUp,
     color: "from-emerald-500 to-emerald-600",
@@ -62,8 +64,9 @@ const createStatConfig = (
     borderColor: "border-emerald-200",
     textColor: "text-emerald-700",
     iconBg: "bg-emerald-100",
-    description: "오늘 방문",
-    trend: visitorStats.trends?.todayVisitorsTrend || "데이터 없음",
+    description: LABELS.VISITOR_STATS_TODAY_VISITORS_DESC,
+    trend:
+      visitorStats.trends?.todayVisitorsTrend || LABELS.VISITOR_STATS_NO_DATA,
   },
 ];
 
@@ -79,7 +82,7 @@ export function VisitorStats({
   // 농장 수 통계 (조건부 추가)
   if (showFarmCount && visitorStats.totalFarms !== undefined) {
     baseStats.push({
-      title: "등록 농장",
+      title: LABELS.VISITOR_STATS_REGISTERED_FARMS,
       value: visitorStats.totalFarms,
       icon: Building2,
       color: "from-purple-500 to-purple-600",
@@ -87,15 +90,18 @@ export function VisitorStats({
       borderColor: "border-purple-200",
       textColor: "text-purple-700",
       iconBg: "bg-purple-100",
-      description: "관리 농장",
-      trend: visitorStats.totalFarms === 0 ? "농장 없음" : "운영중",
+      description: LABELS.VISITOR_STATS_REGISTERED_FARMS_DESC,
+      trend:
+        visitorStats.totalFarms === 0
+          ? LABELS.VISITOR_STATS_NO_FARMS
+          : LABELS.VISITOR_STATS_OPERATING,
     });
   }
 
   // 방역 완료율 통계 (조건부 추가)
   if (showDisinfectionRate && visitorStats.disinfectionRate !== undefined) {
     baseStats.push({
-      title: "방역 완료율",
+      title: LABELS.VISITOR_STATS_DISINFECTION_RATE,
       value: visitorStats.disinfectionRate,
       icon: Activity,
       color: "from-orange-500 to-orange-600",
@@ -103,8 +109,9 @@ export function VisitorStats({
       borderColor: "border-orange-200",
       textColor: "text-orange-700",
       iconBg: "bg-orange-100",
-      description: "방역 완료",
-      trend: visitorStats.trends?.disinfectionTrend || "안전",
+      description: LABELS.VISITOR_STATS_DISINFECTION_RATE_DESC,
+      trend:
+        visitorStats.trends?.disinfectionTrend || LABELS.VISITOR_STATS_SAFE,
       suffix: "%",
     });
   }
@@ -112,7 +119,7 @@ export function VisitorStats({
   // 방문 목적 TOP1 카드 추가 (방역 완료율 옆)
   if (topPurpose) {
     baseStats.push({
-      title: "가장 많은 방문 목적",
+      title: LABELS.VISITOR_STATS_TOP_PURPOSE,
       value: topPurpose.count,
       icon: Target,
       color: "from-pink-500 to-pink-600",

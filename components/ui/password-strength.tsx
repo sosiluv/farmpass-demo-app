@@ -5,6 +5,7 @@ import { Progress } from "./progress";
 import { useSystemSettingsContext } from "@/components/providers/system-settings-provider";
 import type { SystemSettings } from "@/lib/types/settings";
 import { devLog } from "@/lib/utils/logging/dev-logger";
+import { LABELS } from "@/lib/constants/common";
 
 interface PasswordRules {
   passwordMinLength: number;
@@ -57,38 +58,44 @@ export function PasswordStrength({ password }: PasswordStrengthProps) {
   const requirements = [
     {
       id: "length",
-      label: `${rules.passwordMinLength}자 이상`,
-      shortLabel: `${rules.passwordMinLength}+`,
+      label: LABELS.PASSWORD_STRENGTH_LENGTH_LABEL.replace(
+        "{minLength}",
+        rules.passwordMinLength.toString()
+      ),
+      shortLabel: LABELS.PASSWORD_STRENGTH_LENGTH_SHORT.replace(
+        "{minLength}",
+        rules.passwordMinLength.toString()
+      ),
       validator: (pass: string) => pass.length >= rules.passwordMinLength,
     },
     {
       id: "number",
-      label: "숫자 포함",
-      shortLabel: "123",
+      label: LABELS.PASSWORD_STRENGTH_NUMBER_LABEL,
+      shortLabel: LABELS.PASSWORD_STRENGTH_NUMBER_SHORT,
       validator: (pass: string) =>
         !rules.passwordRequireNumber || /\d/.test(pass),
       optional: !rules.passwordRequireNumber,
     },
     {
       id: "uppercase",
-      label: "대문자 포함",
-      shortLabel: "ABC",
+      label: LABELS.PASSWORD_STRENGTH_UPPERCASE_LABEL,
+      shortLabel: LABELS.PASSWORD_STRENGTH_UPPERCASE_SHORT,
       validator: (pass: string) =>
         !rules.passwordRequireUpperCase || /[A-Z]/.test(pass),
       optional: !rules.passwordRequireUpperCase,
     },
     {
       id: "lowercase",
-      label: "소문자 포함",
-      shortLabel: "abc",
+      label: LABELS.PASSWORD_STRENGTH_LOWERCASE_LABEL,
+      shortLabel: LABELS.PASSWORD_STRENGTH_LOWERCASE_SHORT,
       validator: (pass: string) =>
         !rules.passwordRequireLowerCase || /[a-z]/.test(pass),
       optional: !rules.passwordRequireLowerCase,
     },
     {
       id: "special",
-      label: "특수문자 포함",
-      shortLabel: "#@!",
+      label: LABELS.PASSWORD_STRENGTH_SPECIAL_LABEL,
+      shortLabel: LABELS.PASSWORD_STRENGTH_SPECIAL_SHORT,
       validator: (pass: string) =>
         !rules.passwordRequireSpecialChar ||
         /[!@#$%^&*(),.?":{}|<>]/.test(pass),
@@ -124,11 +131,11 @@ export function PasswordStrength({ password }: PasswordStrengthProps) {
 
   const getStrengthText = () => {
     const strength = getStrengthPercentage();
-    if (strength <= 20) return "매우 취약";
-    if (strength <= 40) return "취약";
-    if (strength <= 60) return "보통";
-    if (strength <= 80) return "강력";
-    return "매우 강력";
+    if (strength <= 20) return LABELS.PASSWORD_STRENGTH_VERY_WEAK;
+    if (strength <= 40) return LABELS.PASSWORD_STRENGTH_WEAK;
+    if (strength <= 60) return LABELS.PASSWORD_STRENGTH_NORMAL;
+    if (strength <= 80) return LABELS.PASSWORD_STRENGTH_STRONG;
+    return LABELS.PASSWORD_STRENGTH_VERY_STRONG;
   };
 
   if (isLoading) {
@@ -158,7 +165,7 @@ export function PasswordStrength({ password }: PasswordStrengthProps) {
               style={{ minWidth: 40 }}
             >
               {req.shortLabel}
-              {req.optional && " (선택)"}
+              {req.optional && LABELS.PASSWORD_STRENGTH_OPTIONAL}
             </span>
           ))}
         </div>

@@ -20,6 +20,7 @@ import { useCommonToast } from "@/lib/utils/notification/toast-messages";
 import { devLog } from "@/lib/utils/logging/dev-logger";
 import { useAuth } from "@/components/providers/auth-provider";
 import { ErrorBoundary } from "@/components/error/error-boundary";
+import { ERROR_CONFIGS } from "@/lib/constants/error";
 import { Logo } from "@/components/common";
 import { getAuthErrorMessage } from "@/lib/utils/validation/validation";
 import { PageLoading } from "@/components/ui/loading";
@@ -38,6 +39,12 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
+import {
+  LABELS,
+  PLACEHOLDERS,
+  PAGE_HEADER,
+  BUTTONS,
+} from "@/lib/constants/auth";
 
 export default function LoginPage() {
   const [loading, setLoading] = useState(false);
@@ -137,8 +144,8 @@ export default function LoginPage() {
 
   return (
     <ErrorBoundary
-      title="로그인 페이지 오류"
-      description="로그인 처리 중 문제가 발생했습니다. 페이지를 새로고침하거나 잠시 후 다시 시도해주세요."
+      title={ERROR_CONFIGS.LOADING.title}
+      description={ERROR_CONFIGS.LOADING.description}
     >
       <div className="flex min-h-screen items-center justify-center bg-gradient-farm p-4">
         <motion.div
@@ -152,10 +159,10 @@ export default function LoginPage() {
               <div className="mx-auto mb-4 flex justify-center">
                 <Logo size="xl" />
               </div>
-              <CardTitle className="text-3xl">로그인</CardTitle>
-              <CardDescription>
-                농장 출입 관리 시스템에 로그인하세요
-              </CardDescription>
+              <CardTitle className="text-3xl">
+                {PAGE_HEADER.LOGIN_TITLE}
+              </CardTitle>
+              <CardDescription>{PAGE_HEADER.LOGIN_DESCRIPTION}</CardDescription>
             </CardHeader>
             <CardContent>
               <Form {...form}>
@@ -169,7 +176,7 @@ export default function LoginPage() {
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel className="text-sm text-gray-800">
-                          아이디(이메일) <span className="text-red-500">*</span>
+                          {LABELS.EMAIL} <span className="text-red-500">*</span>
                         </FormLabel>
                         <div className="relative">
                           <Mail className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -177,7 +184,7 @@ export default function LoginPage() {
                             <Input
                               {...field}
                               type="email"
-                              placeholder="name@example.com"
+                              placeholder={PLACEHOLDERS.EMAIL}
                               autoComplete="username"
                               className="h-12 pl-10 input-focus"
                               disabled={loading || redirecting}
@@ -194,7 +201,8 @@ export default function LoginPage() {
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel className="text-sm text-gray-800">
-                          비밀번호 <span className="text-red-500">*</span>
+                          {LABELS.PASSWORD}{" "}
+                          <span className="text-red-500">*</span>
                         </FormLabel>
                         <div className="relative">
                           <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -202,7 +210,7 @@ export default function LoginPage() {
                             <Input
                               {...field}
                               type="password"
-                              placeholder="비밀번호를 입력하세요"
+                              placeholder={PLACEHOLDERS.PASSWORD}
                               autoComplete="current-password"
                               className="h-12 pl-10 input-focus"
                               disabled={loading || redirecting}
@@ -224,10 +232,12 @@ export default function LoginPage() {
                     {loading || redirecting ? (
                       <>
                         <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        {redirecting ? "이동 중..." : "로그인 중..."}
+                        {redirecting
+                          ? BUTTONS.REDIRECTING
+                          : BUTTONS.LOGIN_LOADING}
                       </>
                     ) : (
-                      "로그인"
+                      BUTTONS.LOGIN_BUTTON
                     )}
                   </Button>
                 </form>
@@ -239,13 +249,13 @@ export default function LoginPage() {
                   href="/reset-password"
                   className="text-primary hover:underline"
                 >
-                  비밀번호를 잊으셨나요?
+                  {BUTTONS.FORGOT_PASSWORD}
                 </Link>
               </div>
               <div className="text-center text-sm">
-                계정이 없으신가요?{" "}
+                {BUTTONS.NO_ACCOUNT}{" "}
                 <Link href="/register" className="text-primary hover:underline">
-                  회원가입
+                  {BUTTONS.REGISTER_BUTTON}
                 </Link>
               </div>
             </CardFooter>

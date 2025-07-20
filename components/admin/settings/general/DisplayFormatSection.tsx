@@ -8,6 +8,12 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Calendar } from "lucide-react";
+import {
+  LABELS,
+  PLACEHOLDERS,
+  DATE_FORMAT_OPTIONS,
+  PAGE_HEADER,
+} from "@/lib/constants/settings";
 import type { SystemSettings } from "@/lib/types/settings";
 import SettingsCardHeader from "../SettingsCardHeader";
 
@@ -26,38 +32,31 @@ export function DisplayFormatSection({
     <Card>
       <SettingsCardHeader
         icon={Calendar}
-        title="표시 형식 설정"
-        description="날짜 및 시간 표시 형식을 설정합니다"
+        title={PAGE_HEADER.DISPLAY_FORMAT_TITLE}
+        description={PAGE_HEADER.DISPLAY_FORMAT_DESCRIPTION}
       />
       <CardContent className="space-y-6">
         {/* 날짜 형식 */}
         <div className="space-y-2">
-          <Label htmlFor="dateFormat">날짜 형식</Label>
+          <Label htmlFor="dateFormat">{LABELS.DATE_FORMAT}</Label>
           <Select
             value={settings.dateFormat}
             onValueChange={(value) => onSettingChange("dateFormat", value)}
             disabled={loading}
           >
             <SelectTrigger id="dateFormat">
-              <SelectValue placeholder="날짜 형식 선택" />
+              <SelectValue placeholder={PLACEHOLDERS.DATE_FORMAT_SELECT} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="YYYY-MM-DD">
-                YYYY-MM-DD (2025-01-21)
-              </SelectItem>
-              <SelectItem value="DD/MM/YYYY">
-                DD/MM/YYYY (21/01/2025)
-              </SelectItem>
-              <SelectItem value="MM/DD/YYYY">
-                MM/DD/YYYY (01/21/2025)
-              </SelectItem>
-              <SelectItem value="YYYY년 MM월 DD일">
-                YYYY년 MM월 DD일 (2025년 01월 21일)
-              </SelectItem>
+              {DATE_FORMAT_OPTIONS.map((option) => (
+                <SelectItem key={option.value} value={option.value}>
+                  {option.label}
+                </SelectItem>
+              ))}
             </SelectContent>
           </Select>
           <p className="text-sm text-muted-foreground">
-            시스템 전체에서 사용할 날짜 표시 형식입니다
+            {LABELS.DATE_FORMAT_DESCRIPTION}
           </p>
         </div>
       </CardContent>

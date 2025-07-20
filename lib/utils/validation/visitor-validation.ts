@@ -4,18 +4,7 @@ import {
   validateVehicleNumber,
 } from "@/lib/utils/validation/validation";
 import type { VisitorSettings } from "@/lib/types/visitor";
-
-// 에러 메시지 직접 정의
-const ERROR_MESSAGES = {
-  REQUIRED_NAME: "성명을 입력해주세요",
-  REQUIRED_CONTACT: "연락처를 입력해주세요",
-  REQUIRED_ADDRESS: "주소를 검색해주세요",
-  REQUIRED_PURPOSE: "방문목적을 선택해주세요",
-  REQUIRED_PHOTO: "방문자 사진을 등록해주세요",
-  REQUIRED_CONSENT: "개인정보 수집에 동의해주세요",
-  INVALID_PHONE: "올바른 전화번호 형식(010-XXXX-XXXX)을 입력해주세요",
-  INVALID_CAR_PLATE: "올바른 차량번호 형식을 입력해주세요. (예: 12가1234)",
-};
+import { ERROR_MESSAGES } from "@/lib/constants/visitor";
 
 /**
  * 방문자 폼 동적 스키마 생성

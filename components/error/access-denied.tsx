@@ -3,6 +3,7 @@
 import { Button } from "@/components/ui/button";
 import { Shield, Lock, Key } from "lucide-react";
 import Link from "next/link";
+import { ERROR_LABELS } from "@/lib/constants/error";
 
 interface AccessDeniedProps {
   title?: string;
@@ -13,8 +14,8 @@ interface AccessDeniedProps {
 }
 
 export function AccessDenied({
-  title = "접근할 수 있는 권한이 없어요",
-  description = "이 기능을 사용하려면 추가 권한이 필요합니다.",
+  title = ERROR_LABELS.PERMISSION_ERROR_TITLE,
+  description = ERROR_LABELS.PERMISSION_ERROR_DESCRIPTION,
   requiredRole,
   currentRole,
   showNavigation = true,
@@ -49,18 +50,18 @@ export function AccessDenied({
             <div className="flex items-center justify-center mb-2">
               <Key className="w-4 h-4 text-blue-600 mr-2" />
               <span className="text-sm font-medium text-blue-800">
-                권한 정보
+                {ERROR_LABELS.ACCESS_DENIED_PERMISSION_INFO}
               </span>
             </div>
             <div className="text-sm text-slate-600 space-y-1">
               <div>
-                필요 권한:{" "}
+                {ERROR_LABELS.ACCESS_DENIED_REQUIRED_ROLE}{" "}
                 <span className="font-semibold text-blue-700">
                   {requiredRole}
                 </span>
               </div>
               <div>
-                현재 권한:{" "}
+                {ERROR_LABELS.ACCESS_DENIED_CURRENT_ROLE}{" "}
                 <span className="font-semibold text-slate-700">
                   {currentRole}
                 </span>
@@ -72,7 +73,7 @@ export function AccessDenied({
         {/* 세련된 액션 버튼 */}
         <Link href="/admin/dashboard">
           <Button className="px-8 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-medium rounded-lg transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5">
-            대시보드로 이동
+            {ERROR_LABELS.ACCESS_DENIED_GO_DASHBOARD}
           </Button>
         </Link>
 

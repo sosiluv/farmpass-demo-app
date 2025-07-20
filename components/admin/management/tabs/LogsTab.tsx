@@ -29,7 +29,9 @@ import { ResponsivePagination } from "@/components/common/responsive-pagination"
 import { LogFilters } from "../logs";
 import { ErrorBoundary } from "@/components/error/error-boundary";
 import { AdminError } from "@/components/error/admin-error";
+import { ERROR_CONFIGS } from "@/lib/constants/error";
 import { useDataFetchTimeout } from "@/hooks/useTimeout";
+import { LABELS } from "@/lib/constants/management";
 
 export function LogsTab() {
   const { data: stats, isLoading: loading, refetch } = useAdminLogsQuery();
@@ -49,8 +51,8 @@ export function LogsTab() {
   if (timeoutReached) {
     return (
       <AdminError
-        title="데이터를 불러오지 못했습니다"
-        description="네트워크 상태를 확인하거나 다시 시도해 주세요."
+        title={ERROR_CONFIGS.TIMEOUT.title}
+        description={ERROR_CONFIGS.TIMEOUT.description}
         retry={retry}
         error={new Error("Timeout: 데이터 로딩 10초 초과")}
       />
@@ -72,8 +74,8 @@ export function LogsTab() {
 
   return (
     <ErrorBoundary
-      title="로그 관리 오류"
-      description="로그 정보를 불러오는 중 문제가 발생했습니다. 페이지를 새로고침하거나 잠시 후 다시 시도해주세요."
+      title={ERROR_CONFIGS.LOADING.title}
+      description={ERROR_CONFIGS.LOADING.description}
     >
       <LogsDataManager>
         {({ logs, isLoading, error, lastUpdate, refetch }) => (
@@ -140,17 +142,18 @@ export function LogsTab() {
                                 <div>
                                   <h3 className="flex items-center gap-1 sm:gap-2 text-base sm:text-lg font-semibold">
                                     <FileText className="h-4 w-4 sm:h-5 sm:w-5" />
-                                    시스템 로그
+                                    {LABELS.SYSTEM_LOGS_TAB}
                                   </h3>
                                   <p className="text-xs sm:text-sm text-muted-foreground mt-0.5 sm:mt-1">
-                                    시스템의 모든 활동과 이벤트를 확인하고
-                                    관리합니다
+                                    {LABELS.SYSTEM_LOGS_TAB_DESC}
                                   </p>
                                 </div>
                                 <div className="flex flex-col lg:flex-row lg:items-center gap-1 lg:gap-4">
                                   <div className="text-xs sm:text-sm text-muted-foreground">
-                                    마지막 업데이트:{" "}
-                                    {formatDateTime(lastUpdate)}
+                                    {LABELS.LAST_UPDATE_TAB.replace(
+                                      "{datetime}",
+                                      formatDateTime(lastUpdate)
+                                    )}
                                   </div>
                                   <LogsExportRefactored
                                     logs={filteredLogs}
@@ -216,8 +219,10 @@ export function LogsTab() {
                                     <>
                                       {/* 로그 수 표시 */}
                                       <div className="text-sm text-muted-foreground">
-                                        총 {totalItems}개의 로그 (최근 5,000개
-                                        중)
+                                        {LABELS.TOTAL_LOGS_COUNT.replace(
+                                          "{count}",
+                                          totalItems.toString()
+                                        )}
                                       </div>
 
                                       {/* 로그 목록 */}

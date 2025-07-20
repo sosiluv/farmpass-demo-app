@@ -23,6 +23,8 @@ import {
   useSettingsSaver,
   SettingsHeader,
 } from "@/components/admin/settings";
+import { ERROR_CONFIGS } from "@/lib/constants/error";
+import { LABELS } from "@/lib/constants/settings";
 
 export default function SettingsPage() {
   const { settings, isLoading: loading, refetch } = useSystemSettingsContext();
@@ -78,8 +80,8 @@ export default function SettingsPage() {
   if (profile && profile.account_type !== "admin") {
     return (
       <AccessDenied
-        title="시스템 설정 접근 권한이 없습니다"
-        description="시스템 설정 기능은 관리자만 접근할 수 있습니다."
+        title={ERROR_CONFIGS.PERMISSION.title}
+        description={ERROR_CONFIGS.PERMISSION.description}
         requiredRole="관리자"
         currentRole="일반 사용자"
       />
@@ -118,8 +120,8 @@ export default function SettingsPage() {
 
   return (
     <ErrorBoundary
-      title="설정 페이지 오류"
-      description="설정을 불러오는 중 문제가 발생했습니다. 페이지를 새로고침하거나 잠시 후 다시 시도해주세요."
+      title={ERROR_CONFIGS.LOADING.title}
+      description={ERROR_CONFIGS.LOADING.description}
     >
       <div className="flex-1 space-y-4 p-4 md:p-6 pt-2 md:pt-4">
         <SettingsHeader
@@ -141,7 +143,7 @@ export default function SettingsPage() {
             >
               <Settings className="h-3.5 w-3.5 flex-shrink-0" />
               <span className="text-[10px] sm:text-xs hidden sm:inline truncate">
-                일반
+                {LABELS.TABS.GENERAL}
               </span>
             </TabsTrigger>
             <TabsTrigger
@@ -150,7 +152,7 @@ export default function SettingsPage() {
             >
               <Shield className="h-3.5 w-3.5 flex-shrink-0" />
               <span className="text-[10px] sm:text-xs hidden sm:inline truncate">
-                보안
+                {LABELS.TABS.SECURITY}
               </span>
             </TabsTrigger>
             <TabsTrigger
@@ -159,7 +161,7 @@ export default function SettingsPage() {
             >
               <UserCheck className="h-3.5 w-3.5 flex-shrink-0" />
               <span className="text-[10px] sm:text-xs hidden sm:inline truncate">
-                방문자
+                {LABELS.TABS.VISITOR}
               </span>
             </TabsTrigger>
             <TabsTrigger
@@ -168,7 +170,7 @@ export default function SettingsPage() {
             >
               <Bell className="h-3.5 w-3.5 flex-shrink-0" />
               <span className="text-[10px] sm:text-xs hidden sm:inline truncate">
-                알림
+                {LABELS.TABS.NOTIFICATIONS}
               </span>
             </TabsTrigger>
             <TabsTrigger
@@ -177,7 +179,7 @@ export default function SettingsPage() {
             >
               <Terminal className="h-3.5 w-3.5 flex-shrink-0" />
               <span className="text-[10px] sm:text-xs hidden sm:inline truncate">
-                시스템
+                {LABELS.TABS.SYSTEM}
               </span>
             </TabsTrigger>
           </TabsList>

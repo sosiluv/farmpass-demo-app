@@ -1,5 +1,6 @@
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
+import { LABELS } from "@/lib/constants/settings";
 import type { CleanupStatus as CleanupStatusType } from "@/lib/types/settings";
 
 interface CleanupStatusProps {
@@ -11,7 +12,9 @@ export function CleanupStatus({ cleanupStatus }: CleanupStatusProps) {
     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
       <div className="space-y-2">
         <div className="flex items-center justify-between">
-          <Label className="text-sm font-medium">만료된 시스템 로그</Label>
+          <Label className="text-sm font-medium">
+            {LABELS.CLEANUP_SYSTEM_LOGS}
+          </Label>
         </div>
         <div className="p-3 bg-muted rounded-lg">
           {/* Badge + 설명 텍스트 한 줄/아래로 */}
@@ -29,17 +32,22 @@ export function CleanupStatus({ cleanupStatus }: CleanupStatusProps) {
             </div>
             <span className="text-xs text-muted-foreground mt-1">
               {cleanupStatus.expiredData.systemLogs.count === 0
-                ? "정리할 만료된 로그가 없습니다"
-                : `${new Date(
-                    cleanupStatus.expiredData.systemLogs.cutoffDate
-                  ).toLocaleDateString("ko-KR")} 이전 로그`}
+                ? LABELS.CLEANUP_NO_EXPIRED_LOGS
+                : LABELS.CLEANUP_BEFORE_DATE.replace(
+                    "{date}",
+                    new Date(
+                      cleanupStatus.expiredData.systemLogs.cutoffDate
+                    ).toLocaleDateString("ko-KR")
+                  )}
             </span>
           </div>
         </div>
       </div>
       <div className="space-y-2">
         <div className="flex items-center justify-between">
-          <Label className="text-sm font-medium">만료된 방문자 데이터</Label>
+          <Label className="text-sm font-medium">
+            {LABELS.CLEANUP_VISITOR_DATA}
+          </Label>
         </div>
         <div className="p-3 bg-muted rounded-lg">
           {/* Badge + 설명 텍스트 한 줄/아래로 */}
@@ -57,10 +65,13 @@ export function CleanupStatus({ cleanupStatus }: CleanupStatusProps) {
             </div>
             <span className="text-xs text-muted-foreground mt-1">
               {cleanupStatus.expiredData.visitorEntries.count === 0
-                ? "정리할 만료된 데이터가 없습니다"
-                : `${new Date(
-                    cleanupStatus.expiredData.visitorEntries.cutoffDate
-                  ).toLocaleDateString("ko-KR")} 이전 데이터`}
+                ? LABELS.CLEANUP_NO_EXPIRED_DATA
+                : LABELS.CLEANUP_BEFORE_DATE_DATA.replace(
+                    "{date}",
+                    new Date(
+                      cleanupStatus.expiredData.visitorEntries.cutoffDate
+                    ).toLocaleDateString("ko-KR")
+                  )}
             </span>
           </div>
         </div>

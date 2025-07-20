@@ -2,6 +2,7 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { Wrench, AlertTriangle } from "lucide-react";
+import { LABELS } from "@/lib/constants/settings";
 
 interface MaintenanceModeToggleProps {
   maintenanceMode: boolean;
@@ -23,21 +24,21 @@ export function MaintenanceModeToggle({
             className="text-sm font-medium flex items-center gap-1"
           >
             <Wrench className="h-4 w-4" />
-            유지보수 모드
+            {LABELS.MAINTENANCE_MODE}
           </Label>
           {maintenanceMode && (
             <Badge variant="destructive" className="text-xs">
-              활성화
+              {LABELS.MAINTENANCE_MODE_ACTIVE}
             </Badge>
           )}
         </div>
         <p className="text-sm text-muted-foreground">
-          시스템 업데이트 시 일반 사용자의 접근을 제한합니다
+          {LABELS.MAINTENANCE_MODE_DESC}
         </p>
         {maintenanceMode && (
           <div className="flex items-center gap-1 text-xs text-red-600 mt-1">
             <AlertTriangle className="h-3 w-3" />
-            <span>일반 사용자는 현재 시스템에 접근할 수 없습니다</span>
+            <span>{LABELS.MAINTENANCE_MODE_WARNING}</span>
           </div>
         )}
       </div>

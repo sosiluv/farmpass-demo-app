@@ -41,6 +41,12 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { AddressSearch } from "@/components/common/address-search";
+import {
+  VISIT_PURPOSE_OPTIONS,
+  LABELS,
+  PLACEHOLDERS,
+  BUTTONS,
+} from "@/lib/constants/visitor";
 
 // ===========================================
 // 타입 및 상수 정의
@@ -57,17 +63,6 @@ interface VisitorFormDialogProps {
   onSuccess: (values: VisitorFormValues) => Promise<void>;
   isLoading?: boolean; // 외부 로딩 상태 (예: 편집 데이터 로드)
 }
-
-const VISIT_PURPOSE_OPTIONS = [
-  "납품",
-  "점검",
-  "미팅",
-  "수의사 진료",
-  "사료 배송",
-  "방역",
-  "견학",
-  "기타",
-] as const;
 
 const DEFAULT_FORM_VALUES: VisitorFormValues = {
   visitor_name: "",
@@ -240,11 +235,11 @@ export function VisitorFormDialog({
                     className="h-10 sm:h-12 text-sm"
                     placeholder={
                       name === "visitor_phone"
-                        ? "숫자만 입력 가능합니다"
+                        ? PLACEHOLDERS.PHONE_NUMBER
                         : name === "visitor_name"
-                        ? "홍길동"
+                        ? PLACEHOLDERS.FULL_NAME
                         : name === "vehicle_number"
-                        ? "12가3456 (선택사항)"
+                        ? PLACEHOLDERS.CAR_PLATE
                         : undefined
                     }
                   />
@@ -259,9 +254,7 @@ export function VisitorFormDialog({
                     rows={4}
                     className="text-sm min-h-[80px]"
                     placeholder={
-                      name === "notes"
-                        ? "추가 사항이 있으면 입력해주세요"
-                        : undefined
+                      name === "notes" ? PLACEHOLDERS.NOTES : undefined
                     }
                   />
                 )}
@@ -288,7 +281,7 @@ export function VisitorFormDialog({
               className="flex items-center gap-2 text-sm"
             >
               <MapPin className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-              주소
+              {LABELS.ADDRESS}
               <span className="text-red-500">*</span>
             </FormLabel>
             <FormControl>
@@ -306,7 +299,7 @@ export function VisitorFormDialog({
                 <Textarea
                   id="dialog-visitor_address"
                   name="visitor_address"
-                  placeholder="주소 검색 버튼을 클릭하여 주소를 입력하세요"
+                  placeholder={PLACEHOLDERS.ADDRESS}
                   value={field.value || ""}
                   readOnly
                   disabled={isFormDisabled}
@@ -336,7 +329,7 @@ export function VisitorFormDialog({
               className="flex items-center gap-2 text-sm"
             >
               <FileText className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-              방문목적
+              {LABELS.VISIT_PURPOSE}
               <span className="text-red-500">*</span>
             </FormLabel>
             <FormControl>
@@ -349,7 +342,7 @@ export function VisitorFormDialog({
                   id="dialog-visitor_purpose"
                   className="h-10 sm:h-12 text-sm"
                 >
-                  <SelectValue placeholder="방문 목적을 선택하세요" />
+                  <SelectValue placeholder={PLACEHOLDERS.VISIT_PURPOSE} />
                 </SelectTrigger>
                 <SelectContent>
                   {VISIT_PURPOSE_OPTIONS.map((option) => (
@@ -390,7 +383,7 @@ export function VisitorFormDialog({
               htmlFor="dialog-disinfection_check"
               className="font-normal text-sm cursor-pointer"
             >
-              소독여부
+              {LABELS.DISINFECTION}
             </FormLabel>
           </FormItem>
         )}
@@ -408,12 +401,14 @@ export function VisitorFormDialog({
       <DialogContent className="w-[95vw] max-w-lg max-h-[90vh] overflow-y-auto p-3 sm:p-6">
         <DialogHeader className="pb-4">
           <DialogTitle className="text-lg sm:text-xl">
-            {mode === "create" ? "방문자 등록" : "방문자 정보 수정"}
+            {mode === "create"
+              ? LABELS.VISITOR_FORM_DIALOG_CREATE_TITLE
+              : LABELS.VISITOR_FORM_DIALOG_EDIT_TITLE}
           </DialogTitle>
           <DialogDescription className="text-sm">
             {mode === "create"
-              ? "새로운 방문자를 등록합니다."
-              : "방문자 정보를 수정합니다."}
+              ? LABELS.VISITOR_FORM_DIALOG_CREATE_DESC
+              : LABELS.VISITOR_FORM_DIALOG_EDIT_DESC}
           </DialogDescription>
         </DialogHeader>
 
@@ -422,7 +417,7 @@ export function VisitorFormDialog({
           <div className="flex flex-col items-center justify-center py-12">
             <div className="animate-spin h-10 w-10 border-4 border-gray-300 border-t-blue-600 rounded-full mb-4"></div>
             <span className="text-gray-600 text-sm">
-              데이터를 불러오는 중...
+              {LABELS.VISITOR_FORM_DIALOG_LOADING}
             </span>
           </div>
         ) : (
@@ -432,12 +427,12 @@ export function VisitorFormDialog({
               className="space-y-3 sm:space-y-6"
             >
               <div className="grid gap-3 sm:gap-6">
-                {renderInputField("visitor_name", "성명", true)}
-                {renderInputField("visitor_phone", "연락처", true)}
+                {renderInputField("visitor_name", LABELS.FULL_NAME, true)}
+                {renderInputField("visitor_phone", LABELS.PHONE_NUMBER, true)}
                 {renderAddressField()}
                 {renderPurposeField()}
-                {renderInputField("vehicle_number", "차량번호")}
-                {renderInputField("notes", "비고", false, "textarea")}
+                {renderInputField("vehicle_number", LABELS.CAR_PLATE)}
+                {renderInputField("notes", LABELS.NOTES, false, "textarea")}
                 {renderDisinfectionField()}
               </div>
 
@@ -449,7 +444,7 @@ export function VisitorFormDialog({
                   disabled={isFormDisabled}
                   className="h-12 px-6 text-base flex-1 sm:flex-none"
                 >
-                  취소
+                  {BUTTONS.VISITOR_FORM_DIALOG_CANCEL}
                 </Button>
                 <Button
                   type="submit"
@@ -459,12 +454,12 @@ export function VisitorFormDialog({
                   {isSubmitting ? (
                     <>
                       <div className="animate-spin mr-2 h-5 w-5 border-2 border-white border-t-transparent rounded-full" />
-                      처리 중...
+                      {BUTTONS.VISITOR_FORM_DIALOG_PROCESSING}
                     </>
                   ) : mode === "create" ? (
-                    "등록"
+                    BUTTONS.VISITOR_FORM_DIALOG_CREATE_BUTTON
                   ) : (
-                    "수정"
+                    BUTTONS.VISITOR_FORM_DIALOG_EDIT_BUTTON
                   )}
                 </Button>
               </DialogFooter>

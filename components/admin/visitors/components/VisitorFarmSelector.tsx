@@ -7,6 +7,7 @@ import {
 import { Building2 } from "lucide-react";
 import { getFarmTypeInfo } from "@/lib/constants/farm-types";
 import type { Farm } from "@/lib/types/visitor";
+import { LABELS } from "@/lib/constants/visitor";
 
 interface VisitorFarmSelectorProps {
   selectedFarm: string;
@@ -24,7 +25,7 @@ export function VisitorFarmSelector({
   const getSelectedFarmInfo = () => {
     if (selectedFarm === "all" || !selectedFarm) {
       return {
-        name: "전체 농장",
+        name: LABELS.VISITOR_FARM_SELECTOR_ALL_FARMS,
         type: null,
         icon: Building2,
       };
@@ -33,7 +34,7 @@ export function VisitorFarmSelector({
     const farm = farms.find((f) => f.id === selectedFarm);
     if (!farm) {
       return {
-        name: "농장을 찾을 수 없음",
+        name: LABELS.VISITOR_FARM_SELECTOR_FARM_NOT_FOUND,
         type: null,
         icon: Building2,
       };
@@ -72,7 +73,9 @@ export function VisitorFarmSelector({
               <div className="p-0.5 sm:p-1 bg-gradient-to-br from-slate-100 to-gray-100 dark:from-slate-800 dark:to-slate-700 rounded-md flex-shrink-0">
                 <Building2 className="h-3 w-3 sm:h-4 sm:w-4 text-slate-600 dark:text-slate-300" />
               </div>
-              <span className="truncate dark:text-slate-100">전체 농장</span>
+              <span className="truncate dark:text-slate-100">
+                {LABELS.VISITOR_FARM_SELECTOR_ALL_FARMS}
+              </span>
             </div>
           </SelectItem>
         )}

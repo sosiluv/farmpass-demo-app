@@ -6,6 +6,8 @@ import { SecuritySection } from "./security-section";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { User2, Building2, Shield } from "lucide-react";
 import { ErrorBoundary } from "@/components/error/error-boundary";
+import { ERROR_CONFIGS } from "@/lib/constants/error";
+import { LABELS } from "@/lib/constants/account";
 import { useAccountActions } from "@/hooks/useAccountActions";
 import { useCommonToast } from "@/lib/utils/notification/toast-messages";
 import { getAuthErrorMessage } from "@/lib/utils/validation/validation";
@@ -96,8 +98,8 @@ export function AccountTabs({ profile, userId }: AccountTabsProps) {
 
   return (
     <ErrorBoundary
-      title="계정 관리 탭 오류"
-      description="계정 정보를 불러오는 중 문제가 발생했습니다. 페이지를 새로고침하거나 잠시 후 다시 시도해주세요."
+      title={ERROR_CONFIGS.LOADING.title}
+      description={ERROR_CONFIGS.LOADING.description}
     >
       <div className="space-y-6">
         <Tabs defaultValue="profile" className="space-y-6">
@@ -108,7 +110,7 @@ export function AccountTabs({ profile, userId }: AccountTabsProps) {
             >
               <User2 className="h-3.5 w-3.5 flex-shrink-0" />
               <span className="text-[10px] sm:text-xs hidden sm:inline truncate">
-                프로필
+                {LABELS.TABS.PROFILE}
               </span>
             </TabsTrigger>
             <TabsTrigger
@@ -117,10 +119,10 @@ export function AccountTabs({ profile, userId }: AccountTabsProps) {
             >
               <Building2 className="h-3.5 w-3.5 flex-shrink-0" />
               <span className="text-[10px] sm:text-xs hidden md:inline truncate">
-                회사 정보
+                {LABELS.TABS.COMPANY}
               </span>
               <span className="text-[10px] sm:text-xs hidden sm:inline md:hidden truncate">
-                회사
+                {LABELS.COMPANY_NAME}
               </span>
             </TabsTrigger>
             <TabsTrigger
@@ -129,7 +131,7 @@ export function AccountTabs({ profile, userId }: AccountTabsProps) {
             >
               <Shield className="h-3.5 w-3.5 flex-shrink-0" />
               <span className="text-[10px] sm:text-xs hidden sm:inline truncate">
-                보안
+                {LABELS.TABS.SECURITY}
               </span>
             </TabsTrigger>
           </TabsList>

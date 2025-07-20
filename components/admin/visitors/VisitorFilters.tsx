@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { useState, useMemo, useCallback, memo } from "react";
 import { cn } from "@/lib/utils";
+import { BUTTONS, LABELS } from "@/lib/constants/visitor";
 import type { Farm } from "@/lib/types/visitor";
 import {
   SearchInput,
@@ -130,7 +131,9 @@ export const VisitorFilters = memo(function VisitorFilters({
                 )}
               />
             </div>
-            <span className="font-medium">고급 필터</span>
+            <span className="font-medium">
+              {BUTTONS.VISITOR_FILTERS_ADVANCED}
+            </span>
             <ChevronDown
               className={cn(
                 "h-3 w-3 sm:h-4 sm:w-4 transition-all duration-300 text-slate-500",
@@ -149,7 +152,7 @@ export const VisitorFilters = memo(function VisitorFilters({
                     <div className="p-0.5 sm:p-1 bg-gradient-to-br from-indigo-100 to-purple-100 dark:from-indigo-900 dark:to-purple-900 rounded-md">
                       <Building2 className="h-3 w-3 sm:h-4 sm:w-4 text-indigo-600 dark:text-indigo-300" />
                     </div>
-                    <span>농장 선택</span>
+                    <span>{LABELS.VISITOR_FILTERS_FARM_SELECT}</span>
                   </label>
                   <div className="min-w-0">
                     <VisitorFarmSelector
@@ -168,7 +171,7 @@ export const VisitorFilters = memo(function VisitorFilters({
                   <div className="p-0.5 sm:p-1 bg-gradient-to-br from-blue-100 to-indigo-100 dark:from-blue-900 dark:to-indigo-900 rounded-md">
                     <CalendarIcon className="h-3 w-3 sm:h-4 sm:w-4 text-blue-600 dark:text-blue-300" />
                   </div>
-                  <span>기간 설정</span>
+                  <span>{LABELS.VISITOR_FILTERS_PERIOD_SETTING}</span>
                 </label>
                 <div className="min-w-0">
                   <CustomDatePicker

@@ -1,6 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Users, Eye, Clock, TrendingUp, AlertCircle } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { LABELS, PAGE_HEADER } from "@/lib/constants/monitoring";
 
 interface AnalyticsCardProps {
   data?: {
@@ -20,26 +21,21 @@ interface AnalyticsCardProps {
 export function AnalyticsCard({ data }: AnalyticsCardProps) {
   // GA 설정이 없거나 에러가 있는 경우
   if (!data?.success && data?.error) {
-    let errorMessage =
-      data.message || "Google Analytics 데이터를 불러올 수 없습니다.";
+    let errorMessage = data.message || LABELS.GA_DATA_ERROR;
 
     // 구체적인 에러 메시지 제공
     switch (data.error) {
       case "GA_CONFIG_NOT_FOUND":
-        errorMessage =
-          "Google Analytics 설정이 완료되지 않았습니다. 환경 변수를 확인해주세요.";
+        errorMessage = LABELS.GA_CONFIG_NOT_FOUND;
         break;
       case "GA_JSON_PARSE_ERROR":
-        errorMessage =
-          "Google Analytics 서비스 계정 키 JSON 형식이 올바르지 않습니다.";
+        errorMessage = LABELS.GA_JSON_PARSE_ERROR;
         break;
       case "GA_CREDENTIALS_INVALID":
-        errorMessage =
-          "Google Analytics 서비스 계정 키에 필수 필드가 누락되었습니다.";
+        errorMessage = LABELS.GA_CREDENTIALS_INVALID;
         break;
       case "GA_API_ERROR":
-        errorMessage =
-          "Google Analytics API 호출에 실패했습니다. 권한을 확인해주세요.";
+        errorMessage = LABELS.GA_API_ERROR;
         break;
     }
 
@@ -48,7 +44,7 @@ export function AnalyticsCard({ data }: AnalyticsCardProps) {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <TrendingUp className="h-5 w-5" />
-            방문자 통계
+            {PAGE_HEADER.ANALYTICS_TITLE}
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -58,7 +54,7 @@ export function AnalyticsCard({ data }: AnalyticsCardProps) {
               {errorMessage}
               {data.details && (
                 <div className="mt-2 text-xs text-muted-foreground">
-                  상세 오류: {data.details}
+                  {LABELS.DETAILED_ERROR} {data.details}
                 </div>
               )}
             </AlertDescription>
@@ -103,7 +99,7 @@ export function AnalyticsCard({ data }: AnalyticsCardProps) {
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <TrendingUp className="h-5 w-5" />
-          방문자 통계
+          {PAGE_HEADER.ANALYTICS_TITLE}
         </CardTitle>
       </CardHeader>
       <CardContent>
@@ -114,8 +110,10 @@ export function AnalyticsCard({ data }: AnalyticsCardProps) {
                 <Users className="h-4 w-4 text-blue-600 dark:text-blue-400" />
               </div>
               <div>
-                <p className="text-sm font-medium">방문자</p>
-                <p className="text-xs text-muted-foreground">고유 방문자 수</p>
+                <p className="text-sm font-medium">{LABELS.VISITORS}</p>
+                <p className="text-xs text-muted-foreground">
+                  {LABELS.VISITORS_DESC}
+                </p>
               </div>
             </div>
             <p className="text-lg font-bold">
@@ -129,8 +127,10 @@ export function AnalyticsCard({ data }: AnalyticsCardProps) {
                 <Eye className="h-4 w-4 text-green-600 dark:text-green-400" />
               </div>
               <div>
-                <p className="text-sm font-medium">페이지뷰</p>
-                <p className="text-xs text-muted-foreground">총 조회 수</p>
+                <p className="text-sm font-medium">{LABELS.PAGEVIEWS}</p>
+                <p className="text-xs text-muted-foreground">
+                  {LABELS.PAGEVIEWS_DESC}
+                </p>
               </div>
             </div>
             <p className="text-lg font-bold">
@@ -144,9 +144,9 @@ export function AnalyticsCard({ data }: AnalyticsCardProps) {
                 <TrendingUp className="h-4 w-4 text-orange-600 dark:text-orange-400" />
               </div>
               <div>
-                <p className="text-sm font-medium">세션 수</p>
+                <p className="text-sm font-medium">{LABELS.SESSIONS}</p>
                 <p className="text-xs text-muted-foreground">
-                  총 세션(방문) 횟수
+                  {LABELS.SESSIONS_DESC}
                 </p>
               </div>
             </div>
@@ -161,9 +161,9 @@ export function AnalyticsCard({ data }: AnalyticsCardProps) {
                 <Users className="h-4 w-4 text-cyan-600 dark:text-cyan-400" />
               </div>
               <div>
-                <p className="text-sm font-medium">신규 방문자</p>
+                <p className="text-sm font-medium">{LABELS.NEW_USERS}</p>
                 <p className="text-xs text-muted-foreground">
-                  7일간 새로 방문한 사용자
+                  {LABELS.NEW_USERS_DESC}
                 </p>
               </div>
             </div>
@@ -178,9 +178,9 @@ export function AnalyticsCard({ data }: AnalyticsCardProps) {
                 <TrendingUp className="h-4 w-4 text-pink-600 dark:text-pink-400" />
               </div>
               <div>
-                <p className="text-sm font-medium">이탈률</p>
+                <p className="text-sm font-medium">{LABELS.BOUNCE_RATE}</p>
                 <p className="text-xs text-muted-foreground">
-                  한 페이지만 보고 떠난 비율
+                  {LABELS.BOUNCE_RATE_DESC}
                 </p>
               </div>
             </div>
@@ -195,9 +195,9 @@ export function AnalyticsCard({ data }: AnalyticsCardProps) {
                 <Clock className="h-4 w-4 text-purple-600 dark:text-purple-400" />
               </div>
               <div>
-                <p className="text-sm font-medium">평균 세션 시간</p>
+                <p className="text-sm font-medium">{LABELS.AVG_SESSION_TIME}</p>
                 <p className="text-xs text-muted-foreground">
-                  세션당 평균 체류시간
+                  {LABELS.AVG_SESSION_TIME_DESC}
                 </p>
               </div>
             </div>

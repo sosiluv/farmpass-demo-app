@@ -20,6 +20,7 @@ import {
   FarmFormManagerFields,
 } from "./components";
 import React from "react";
+import { BUTTONS, LABELS } from "@/lib/constants/farms";
 
 interface FarmFormDialogProps {
   open: boolean;
@@ -94,7 +95,7 @@ export function FarmFormDialog({
       <DialogTrigger asChild>
         <Button onClick={onAddClick} disabled={submitting || isLoading}>
           <Plus className="mr-2 h-4 w-4" />
-          농장 추가
+          {BUTTONS.ADD_FARM_BUTTON}
         </Button>
       </DialogTrigger>
       <DialogContent className="w-[95vw] max-w-lg max-h-[90vh] overflow-y-auto p-3 sm:p-6">
@@ -116,7 +117,7 @@ export function FarmFormDialog({
                 disabled={submitting || isLoading}
                 className="h-12 px-6 text-base flex-1 sm:flex-none"
               >
-                취소
+                {BUTTONS.CANCEL_BUTTON}
               </Button>
               <Button
                 type="submit"
@@ -126,12 +127,14 @@ export function FarmFormDialog({
                 {submitting || isLoading ? (
                   <>
                     <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                    {editingFarm ? "수정 중..." : "등록 중..."}
+                    {editingFarm
+                      ? BUTTONS.EDITING_LOADING
+                      : BUTTONS.REGISTERING_LOADING}
                   </>
                 ) : editingFarm ? (
-                  "수정"
+                  BUTTONS.EDIT_BUTTON
                 ) : (
-                  "등록"
+                  BUTTONS.REGISTER_BUTTON
                 )}
               </Button>
             </DialogFooter>

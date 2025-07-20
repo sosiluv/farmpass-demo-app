@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { useIsMobile, useIsTablet } from "@/hooks/use-mobile";
 import { ChevronLeft, ChevronRight, MoreHorizontal } from "lucide-react";
 import { Loading } from "@/components/ui/loading";
+import { BUTTONS } from "@/lib/constants/common";
 
 interface ResponsivePaginationProps<T> {
   data: T[];
@@ -89,12 +90,16 @@ function MobileInfiniteScroll<T>({
                   minHeight="auto"
                   className="mr-2"
                 />
-                로딩 중...
+                {BUTTONS.PAGINATION_LOADING}
               </>
             ) : (
               <>
-                더보기 ({paginationResult.filteredData.length - displayedItems}
-                개 남음)
+                {BUTTONS.PAGINATION_LOAD_MORE.replace(
+                  "{remaining}",
+                  (
+                    paginationResult.filteredData.length - displayedItems
+                  ).toString()
+                )}
               </>
             )}
           </Button>
@@ -103,8 +108,10 @@ function MobileInfiniteScroll<T>({
 
       {/* 전체 항목 수 표시 */}
       <div className="text-center text-xs text-muted-foreground">
-        {currentDisplayedData.length} / {paginationResult.filteredData.length}개
-        표시
+        {BUTTONS.PAGINATION_DISPLAY_COUNT.replace(
+          "{current}",
+          currentDisplayedData.length.toString()
+        ).replace("{total}", paginationResult.filteredData.length.toString())}
       </div>
     </div>
   );
@@ -172,7 +179,9 @@ function TabletCompactPagination({
   return (
     <div className="flex items-center justify-between">
       <div className="text-sm text-muted-foreground">
-        {startIndex}-{endIndex} / {totalItems}개
+        {BUTTONS.PAGINATION_PAGE_RANGE.replace("{start}", startIndex.toString())
+          .replace("{end}", endIndex.toString())
+          .replace("{total}", totalItems.toString())}
       </div>
 
       <div className="flex items-center gap-1">

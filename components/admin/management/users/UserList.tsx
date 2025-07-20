@@ -16,6 +16,7 @@ import { UserDetailModal } from "./UserDetailModal";
 import { CommonListWrapper } from "../shared/CommonListWrapper";
 import { ImagePreviewDialog } from "@/components/common/ImagePreviewDialog";
 import { generateInitials, getAvatarUrl } from "@/lib/utils/media/avatar";
+import { LABELS } from "@/lib/constants/management";
 
 interface UserListProps {
   users: Profile[];
@@ -106,8 +107,8 @@ export function UserList({ users, onUserClick }: UserListProps) {
             secondary={user.email}
             meta={
               user.last_login_at
-                ? `마지막 접속: ${formatDateTime(user.last_login_at)}`
-                : "로그인 기록 없음"
+                ? `${LABELS.LAST_ACCESS} ${formatDateTime(user.last_login_at)}`
+                : LABELS.NO_LOGIN_RECORD
             }
             badges={
               <div className="flex flex-col gap-1">
@@ -117,15 +118,15 @@ export function UserList({ users, onUserClick }: UserListProps) {
                   )} text-xs px-2 py-1`}
                 >
                   {user.account_type === "admin"
-                    ? "시스템 관리자"
-                    : "일반 사용자"}
+                    ? LABELS.SYSTEM_ADMIN_USER
+                    : LABELS.GENERAL_USER_DETAIL}
                 </Badge>
                 <Badge
                   className={`${getStatusColor(
                     user.is_active
                   )} text-xs px-2 py-1`}
                 >
-                  {user.is_active ? "활성" : "비활성"}
+                  {user.is_active ? LABELS.ACTIVE_CSV : LABELS.INACTIVE_CSV}
                 </Badge>
               </div>
             }
@@ -144,7 +145,7 @@ export function UserList({ users, onUserClick }: UserListProps) {
                       </Button>
                     </TooltipTrigger>
                     <TooltipContent>
-                      <p>상세 정보 보기</p>
+                      <p>{LABELS.VIEW_DETAILS}</p>
                     </TooltipContent>
                   </Tooltip>
                 </TooltipProvider>
@@ -154,7 +155,7 @@ export function UserList({ users, onUserClick }: UserListProps) {
         ))}
         {users.length === 0 && (
           <div className="text-center p-8 text-muted-foreground">
-            사용자가 없습니다.
+            {LABELS.NO_USERS}
           </div>
         )}
       </CommonListWrapper>

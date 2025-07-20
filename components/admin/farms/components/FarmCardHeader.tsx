@@ -11,6 +11,7 @@ import {
   getFarmTypeIcon,
   getFarmTypeColor,
 } from "@/lib/constants/farm-types";
+import { LABELS } from "@/lib/constants/farms";
 import type { Farm } from "@/lib/types/farm";
 
 interface FarmCardHeaderProps {
@@ -58,7 +59,7 @@ export function FarmCardHeader({ farm, isOwner }: FarmCardHeaderProps) {
       {/* 소유자가 아닌 경우 안내 - 모든 화면 크기에서 별도 줄에 표시 */}
       {!isOwner && (
         <div className="text-xs text-muted-foreground px-3 py-2 bg-gray-50 rounded-md text-center border border-gray-200">
-          💡 소유자만 수정/삭제 가능
+          {LABELS.OWNER_ONLY_PERMISSION}
         </div>
       )}
     </div>

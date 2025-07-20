@@ -6,6 +6,8 @@ import { supabase } from "@/lib/supabase/client";
 import { useCommonToast } from "@/lib/utils/notification/toast-messages";
 import { useTimeout } from "@/hooks/useTimeout";
 import { AdminError } from "@/components/error/admin-error";
+import { ERROR_CONFIGS } from "@/lib/constants/error";
+import { LABELS, BUTTONS } from "@/lib/constants/auth";
 import {
   Card,
   CardContent,
@@ -149,8 +151,8 @@ export default function ConfirmPage() {
             <Logo className="mx-auto h-12 w-auto" />
           </div>
           <AdminError
-            title="이메일 인증 시간 초과"
-            description="이메일 인증 처리 시간이 초과되었습니다. 네트워크 상태를 확인하고 다시 시도해주세요."
+            title={ERROR_CONFIGS.TIMEOUT.title}
+            description={ERROR_CONFIGS.TIMEOUT.description}
             error={new Error("Email verification timeout")}
             retry={retry}
           />
@@ -161,8 +163,8 @@ export default function ConfirmPage() {
 
   return (
     <ErrorBoundary
-      title="이메일 인증 페이지 오류"
-      description="이메일 인증 처리 중 문제가 발생했습니다. 페이지를 새로고침하거나 잠시 후 다시 시도해주세요."
+      title={ERROR_CONFIGS.LOADING.title}
+      description={ERROR_CONFIGS.LOADING.description}
     >
       <div className="flex min-h-screen items-center justify-center bg-gradient-farm p-4">
         <motion.div
@@ -193,17 +195,17 @@ export default function ConfirmPage() {
               </div>
               <CardTitle className="text-2xl">
                 {loading
-                  ? "이메일 인증 중..."
+                  ? LABELS.EMAIL_CONFIRMATION_LOADING
                   : confirmed
-                  ? "인증 완료!"
-                  : "인증 실패"}
+                  ? LABELS.EMAIL_CONFIRMATION_SUCCESS
+                  : LABELS.EMAIL_CONFIRMATION_FAILED}
               </CardTitle>
               <CardDescription>
                 {loading
-                  ? "이메일 인증을 처리하고 있습니다."
+                  ? LABELS.EMAIL_CONFIRMATION_PROCESSING
                   : confirmed
-                  ? "이메일 인증이 성공적으로 완료되었습니다."
-                  : "이메일 인증에 실패했습니다."}
+                  ? LABELS.EMAIL_CONFIRMATION_SUCCESS_DESC
+                  : LABELS.EMAIL_CONFIRMATION_FAILED_DESC}
               </CardDescription>
             </CardHeader>
 
@@ -223,7 +225,7 @@ export default function ConfirmPage() {
                 <div className="space-y-4 text-center">
                   <div className="space-y-2">
                     <p className="text-sm text-muted-foreground">
-                      계정이 활성화되었습니다! 🎉
+                      {LABELS.EMAIL_CONFIRMATION_ACTIVATED}
                     </p>
                     <p className="text-sm text-muted-foreground">
                       {countdown > 0 ? (
@@ -231,15 +233,17 @@ export default function ConfirmPage() {
                           <span className="font-medium text-primary">
                             {countdown}초
                           </span>{" "}
-                          후 로그인 페이지로 자동 이동합니다.
+                          {LABELS.EMAIL_CONFIRMATION_REDIRECT}
                         </>
                       ) : (
-                        "로그인 페이지로 이동 중..."
+                        LABELS.EMAIL_CONFIRMATION_REDIRECTING
                       )}
                     </p>
                   </div>
                   <Button onClick={handleGoToLogin} className="w-full">
-                    {countdown > 0 ? "지금 바로 로그인하기" : "로그인하기"}
+                    {countdown > 0
+                      ? BUTTONS.EMAIL_CONFIRMATION_LOGIN_NOW
+                      : BUTTONS.EMAIL_CONFIRMATION_LOGIN}
                   </Button>
                 </div>
               )}
@@ -253,7 +257,7 @@ export default function ConfirmPage() {
                       variant="outline"
                       className="w-full"
                     >
-                      로그인 페이지로 이동
+                      {BUTTONS.EMAIL_CONFIRMATION_GO_LOGIN}
                     </Button>
                     <Button
                       onClick={handleResendConfirmation}
@@ -261,7 +265,7 @@ export default function ConfirmPage() {
                       className="w-full"
                     >
                       <Mail className="mr-2 h-4 w-4" />
-                      다시 회원가입하기
+                      {BUTTONS.EMAIL_CONFIRMATION_RESEND}
                     </Button>
                   </div>
                 </div>

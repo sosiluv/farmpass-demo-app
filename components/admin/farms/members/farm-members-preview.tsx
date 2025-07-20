@@ -5,6 +5,7 @@ import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { type FarmMembers } from "@/lib/hooks/query/use-farm-members-query";
 import { generateInitials, getAvatarUrl } from "@/lib/utils/media/avatar";
 import type { MemberWithProfile } from "@/lib/hooks/query/use-farm-members-query";
+import { LABELS } from "@/lib/constants/farms";
 
 interface FarmMembersPreviewProps {
   farmId: string;
@@ -32,7 +33,9 @@ export function FarmMembersPreview({
       <div className="flex items-center justify-between pt-3 border-t border-border/50">
         <div className="flex items-center space-x-2">
           <Users className="h-4 w-4 text-muted-foreground" />
-          <span className="text-xs text-muted-foreground">멤버 없음</span>
+          <span className="text-xs text-muted-foreground">
+            {LABELS.NO_MEMBERS}
+          </span>
         </div>
       </div>
     );
@@ -58,7 +61,7 @@ export function FarmMembersPreview({
       <div className="flex items-center space-x-2">
         <Users className="h-4 w-4 text-muted-foreground" />
         <span className="text-xs text-muted-foreground">
-          구성원 {memberCount}명
+          {LABELS.MEMBERS_COUNT.replace("{count}", memberCount.toString())}
         </span>
       </div>
 
@@ -104,18 +107,18 @@ export function FarmMembersPreview({
         {memberCount > 0 && (
           <div className="flex space-x-1 ml-2">
             {members.some((m: MemberWithProfile) => m.role === "owner") && (
-              <span className="text-xs" title="소유자">
-                🛡️
+              <span className="text-xs" title={LABELS.OWNER_TITLE}>
+                {LABELS.OWNER_EMOJI}
               </span>
             )}
             {members.some((m: MemberWithProfile) => m.role === "manager") && (
-              <span className="text-xs" title="관리자">
-                👨‍💼
+              <span className="text-xs" title={LABELS.MANAGER_TITLE}>
+                {LABELS.MANAGER_EMOJI}
               </span>
             )}
             {members.some((m: MemberWithProfile) => m.role === "viewer") && (
-              <span className="text-xs" title="조회자">
-                👁️
+              <span className="text-xs" title={LABELS.VIEWER_TITLE}>
+                {LABELS.VIEWER_EMOJI}
               </span>
             )}
           </div>

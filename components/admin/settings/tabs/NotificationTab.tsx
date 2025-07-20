@@ -6,7 +6,14 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Bell, Eye } from "lucide-react";
+import {
+  BUTTONS,
+  LABELS,
+  PLACEHOLDERS,
+  PAGE_HEADER,
+} from "@/lib/constants/settings";
 import { ErrorBoundary } from "@/components/error/error-boundary";
+import { ERROR_CONFIGS } from "@/lib/constants/error";
 import type { SystemSettings } from "@/lib/types/settings";
 import { WebPushConfiguration } from "../notification";
 import SettingsCardHeader from "../SettingsCardHeader";
@@ -64,23 +71,25 @@ const NotificationTab = React.memo(function NotificationTab({
 
   return (
     <ErrorBoundary
-      title="알림 설정 탭 오류"
-      description="알림 설정을 불러오는 중 문제가 발생했습니다. 페이지를 새로고침하거나 잠시 후 다시 시도해주세요."
+      title={ERROR_CONFIGS.LOADING.title}
+      description={ERROR_CONFIGS.LOADING.description}
     >
       <div className="space-y-6">
         {/* 방문 알림 템플릿 설정 */}
         <Card>
           <SettingsCardHeader
             icon={Bell}
-            title="방문 알림 템플릿"
-            description="새로운 방문자 등록 시 발송되는 알림 메시지 템플릿을 설정합니다."
+            title={PAGE_HEADER.VISIT_NOTIFICATION_TEMPLATE_TITLE}
+            description={PAGE_HEADER.VISIT_NOTIFICATION_TEMPLATE_DESC}
           />
           <CardContent className="space-y-4">
             <div className="grid gap-2">
-              <Label htmlFor="visitTemplate">알림 메시지 템플릿</Label>
+              <Label htmlFor="visitTemplate">
+                {LABELS.VISIT_NOTIFICATION_TEMPLATE_LABEL}
+              </Label>
               <Textarea
                 id="visitTemplate"
-                placeholder="새로운 방문자가 등록되었습니다. 방문자: {방문자명}, 농장: {농장명}, 시간: {방문시간}"
+                placeholder={PLACEHOLDERS.VISIT_NOTIFICATION_TEMPLATE}
                 value={settings.visitTemplate}
                 onChange={(e) => onUpdate("visitTemplate", e.target.value)}
                 rows={3}
@@ -88,9 +97,7 @@ const NotificationTab = React.memo(function NotificationTab({
               <div className="flex items-start gap-2">
                 <div className="flex-1">
                   <p className="text-sm text-muted-foreground">
-                    사용 가능한 변수: {"{방문자명}"}, {"{방문날짜}"},{" "}
-                    {"{방문시간}"},{"{농장명}"}, {"{방문목적}"}, {"{연락처}"},{" "}
-                    {"{차량번호}"}, {"{방역상태}"}, {"{등록시간}"}
+                    {LABELS.VISIT_NOTIFICATION_TEMPLATE_VARIABLES}
                   </p>
                 </div>
                 <Button
@@ -100,7 +107,7 @@ const NotificationTab = React.memo(function NotificationTab({
                   className="flex items-center gap-1"
                 >
                   <Eye className="h-3 w-3" />
-                  미리보기
+                  {BUTTONS.TEMPLATE_PREVIEW_BUTTON}
                 </Button>
               </div>
             </div>

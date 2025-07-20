@@ -27,6 +27,16 @@ import type { PasswordFormData } from "@/lib/types/account";
 import { supabase } from "@/lib/supabase/client";
 import { Loader2 } from "lucide-react";
 import AccountCardHeader from "./AccountCardHeader";
+import {
+  LABELS as AUTH_LABELS,
+  PLACEHOLDERS as AUTH_PLACEHOLDERS,
+} from "@/lib/constants/auth";
+import {
+  BUTTONS,
+  LABELS,
+  PLACEHOLDERS,
+  PAGE_HEADER,
+} from "@/lib/constants/account";
 
 interface PasswordSectionProps {
   profile: {
@@ -112,8 +122,8 @@ export function PasswordSection({
     <Card>
       <AccountCardHeader
         icon={Shield}
-        title="비밀번호 변경"
-        description="계정 보안을 위해 정기적으로 비밀번호를 변경하세요. 변경 후 자동으로 로그아웃됩니다."
+        title={PAGE_HEADER.PASSWORD_CHANGE_TITLE}
+        description={PAGE_HEADER.PASSWORD_CHANGE_DESCRIPTION}
       />
       <CardContent>
         <Form {...form}>
@@ -136,7 +146,8 @@ export function PasswordSection({
               render={({ field }) => (
                 <FormItem>
                   <FormLabel className="text-sm text-gray-800">
-                    현재 비밀번호 <span className="text-red-500">*</span>
+                    {LABELS.CURRENT_PASSWORD}{" "}
+                    <span className="text-red-500">*</span>
                   </FormLabel>
                   <div className="relative">
                     <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -144,7 +155,7 @@ export function PasswordSection({
                       <Input
                         {...field}
                         type="password"
-                        placeholder="현재 비밀번호를 입력하세요"
+                        placeholder={PLACEHOLDERS.CURRENT_PASSWORD_PLACEHOLDER}
                         autoComplete="current-password"
                         className="h-10 pl-10"
                         disabled={loading}
@@ -162,7 +173,8 @@ export function PasswordSection({
               render={({ field }) => (
                 <FormItem>
                   <FormLabel className="text-sm text-gray-800">
-                    비밀번호 <span className="text-red-500">*</span>
+                    {AUTH_LABELS.PASSWORD}{" "}
+                    <span className="text-red-500">*</span>
                   </FormLabel>
                   <div className="relative">
                     <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -170,7 +182,7 @@ export function PasswordSection({
                       <Input
                         {...field}
                         type="password"
-                        placeholder="비밀번호를 입력하세요"
+                        placeholder={AUTH_PLACEHOLDERS.PASSWORD}
                         autoComplete="new-password"
                         className="h-10 pl-10"
                         disabled={loading}
@@ -189,7 +201,8 @@ export function PasswordSection({
               render={({ field }) => (
                 <FormItem>
                   <FormLabel className="text-sm text-gray-800">
-                    비밀번호 확인 <span className="text-red-500">*</span>
+                    {AUTH_LABELS.CONFIRM_PASSWORD}{" "}
+                    <span className="text-red-500">*</span>
                   </FormLabel>
                   <div className="relative">
                     <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -197,7 +210,7 @@ export function PasswordSection({
                       <Input
                         {...field}
                         type="password"
-                        placeholder="비밀번호를 다시 입력하세요"
+                        placeholder={AUTH_PLACEHOLDERS.CONFIRM_PASSWORD}
                         autoComplete="new-password"
                         className="h-10 pl-10"
                         disabled={loading}
@@ -217,12 +230,12 @@ export function PasswordSection({
                 {loading ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    변경 중...
+                    {BUTTONS.CHANGING}
                   </>
                 ) : (
                   <>
                     <Save className="mr-2 h-4 w-4" />
-                    비밀번호 변경
+                    {BUTTONS.CHANGE_PASSWORD}
                   </>
                 )}
               </Button>

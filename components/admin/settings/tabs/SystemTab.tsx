@@ -2,6 +2,7 @@
 
 import { motion } from "framer-motion";
 import { ErrorBoundary } from "@/components/error/error-boundary";
+import { ERROR_CONFIGS } from "@/lib/constants/error";
 import type { SystemSettings } from "@/lib/types/settings";
 import { useCleanupManager } from "@/lib/hooks/query/use-cleanup-manager";
 import { useOrphanFilesManager } from "@/lib/hooks/query/use-orphan-files-manager";
@@ -79,8 +80,8 @@ export default function SystemTab({
 
   return (
     <ErrorBoundary
-      title="시스템 설정 탭 오류"
-      description="시스템 설정을 불러오는 중 문제가 발생했습니다. 페이지를 새로고침하거나 잠시 후 다시 시도해주세요."
+      title={ERROR_CONFIGS.LOADING.title}
+      description={ERROR_CONFIGS.LOADING.description}
     >
       <motion.div
         initial={{ opacity: 0, y: 20 }}

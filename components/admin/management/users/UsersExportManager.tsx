@@ -2,6 +2,7 @@ import { downloadAdvancedCSV } from "@/lib/utils/data/csv-unified";
 import { formatDateTime } from "@/lib/utils/datetime/date";
 import type { Profile } from "@/lib/types";
 import type { UsersExportOptions } from "../exports";
+import { LABELS } from "@/lib/constants/management";
 
 interface UsersExportManagerProps {
   users: Profile[];
@@ -40,32 +41,36 @@ export function UsersExportManager({
       const row: Record<string, any> = {};
 
       if (options.includeBasic) {
-        row["이름"] = user.name || "-";
-        row["이메일"] = user.email || "-";
-        row["가입일"] = formatDateTime(user.created_at);
+        row[LABELS.NAME] = user.name || LABELS.NO_DATA_CSV;
+        row[LABELS.EMAIL_CSV] = user.email || LABELS.NO_DATA_CSV;
+        row[LABELS.REGISTRATION_DATE_USER] = formatDateTime(user.created_at);
       }
 
       if (options.includeContact) {
-        row["전화번호"] = user.phone || "-";
-        row["회사주소"] = user.company_address || "-";
+        row[LABELS.PHONE_NUMBER_CSV] = user.phone || LABELS.NO_DATA_CSV;
+        row[LABELS.COMPANY_ADDRESS_CSV] =
+          user.company_address || LABELS.NO_DATA_CSV;
       }
 
       if (options.includeActivity) {
-        row["마지막로그인"] = user.last_login_at
+        row[LABELS.LAST_LOGIN_CSV] = user.last_login_at
           ? formatDateTime(user.last_login_at)
-          : "-";
-        row["상태"] = user.is_active ? "활성" : "비활성";
+          : LABELS.NO_DATA_CSV;
+        row[LABELS.STATUS_CSV] = user.is_active
+          ? LABELS.ACTIVE_CSV
+          : LABELS.INACTIVE_CSV;
       }
 
       if (options.includeFarms) {
-        row["계정유형"] = user.account_type || "-";
+        row[LABELS.ACCOUNT_TYPE_CSV] = user.account_type || LABELS.NO_DATA_CSV;
         // 농장 정보는 추가 쿼리가 필요하므로 기본값으로 설정
-        row["소속농장"] = "-";
+        row[LABELS.AFFILIATED_FARMS] = LABELS.NO_DATA_CSV;
       }
 
       if (options.includePermissions) {
-        row["권한레벨"] = user.account_type || "-";
-        row["관리자여부"] = user.account_type === "admin" ? "예" : "아니오";
+        row[LABELS.PERMISSION_LEVEL] = user.account_type || LABELS.NO_DATA_CSV;
+        row[LABELS.IS_ADMIN] =
+          user.account_type === "admin" ? LABELS.YES_CSV : LABELS.NO_CSV;
       }
 
       return row;

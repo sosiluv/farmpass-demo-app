@@ -20,14 +20,12 @@ import { FormSkeleton } from "@/components/common/skeletons";
 import { FarmInfoCard } from "@/components/visitor/FarmInfoCard";
 import { SuccessCard } from "@/components/visitor/SuccessCard";
 import { ErrorBoundary } from "@/components/error/error-boundary";
+import { ERROR_CONFIGS } from "@/lib/constants/error";
 import { useSystemSettingsContext } from "@/components/providers/system-settings-provider";
 import { useVisitorForm } from "@/hooks/useVisitorForm";
 import { VisitorForm } from "@/components/visitor/VisitorForm";
 import { useCommonToast } from "@/lib/utils/notification/toast-messages";
-import {
-  getAuthErrorMessage,
-  getImageUploadErrorMessage,
-} from "@/lib/utils/validation/validation";
+import { getAuthErrorMessage } from "@/lib/utils/validation/validation";
 import { useEffect, useMemo } from "react";
 import { VisitorFormData } from "@/lib/utils/validation/visitor-validation";
 import type { VisitorSettings } from "@/lib/types/visitor";
@@ -174,8 +172,8 @@ export default function VisitPage() {
 
   return (
     <ErrorBoundary
-      title="방문자 등록 페이지 오류"
-      description="방문자 등록 중 문제가 발생했습니다. 페이지를 새로고침하거나 잠시 후 다시 시도해주세요."
+      title={ERROR_CONFIGS.LOADING.title}
+      description={ERROR_CONFIGS.LOADING.description}
     >
       <div className="min-h-screen bg-gray-50 py-2 sm:py-4">
         <div className="w-full max-w-sm sm:max-w-md md:max-w-2xl mx-auto px-3 sm:px-4">

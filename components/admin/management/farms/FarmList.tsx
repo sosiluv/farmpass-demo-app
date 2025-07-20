@@ -15,6 +15,7 @@ import {
   getFarmTypeColor,
   getFarmTypeIcon,
 } from "@/lib/constants/farm-types";
+import { LABELS } from "@/lib/constants/management";
 import { useState } from "react";
 import { FarmDetailModal } from "./FarmDetailModal";
 import type { Database } from "@/lib/types/supabase";
@@ -55,7 +56,7 @@ export function FarmList({ farms }: FarmListProps) {
             }
             primary={farm.farm_name}
             secondary={farm.farm_address}
-            meta={`${farm.manager_name || "미지정"} / ${formatDateTime(
+            meta={`${farm.manager_name || LABELS.UNASSIGNED} / ${formatDateTime(
               farm.created_at
             )}`}
             badges={
@@ -90,7 +91,7 @@ export function FarmList({ farms }: FarmListProps) {
                       </Button>
                     </TooltipTrigger>
                     <TooltipContent>
-                      <p>상세 정보 보기</p>
+                      <p>{LABELS.DETAIL_INFO_VIEW}</p>
                     </TooltipContent>
                   </Tooltip>
                 </TooltipProvider>

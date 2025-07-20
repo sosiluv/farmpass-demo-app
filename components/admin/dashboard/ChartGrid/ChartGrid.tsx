@@ -5,6 +5,7 @@ import { VisitorTimeChart } from "@/components/charts/visitor-time-chart";
 import { VisitorRegionChart } from "@/components/charts/visitor-region-chart";
 import { WeekdayVisitorChart } from "@/components/charts/weekday-visitor-chart";
 import { TrendingUp, Target, Clock, MapPin, Calendar } from "lucide-react";
+import { LABELS } from "@/lib/constants/dashboard";
 import type {
   ChartDataPoint,
   DistributionData,
@@ -57,8 +58,8 @@ export function ChartGrid({
       {/* 주요 차트들 - 2열 레이아웃, 데스크톱에서 더 큰 크기 */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 lg:gap-8">
         <ChartCard
-          title="방문자 추이"
-          description="기간별 방문자 수 변화 추이를 확인하세요"
+          title={LABELS.VISITOR_TREND_TITLE}
+          description={LABELS.VISITOR_TREND_DESCRIPTION}
           icon={TrendingUp}
           variant="info"
           className="min-h-[400px] flex flex-col"
@@ -67,8 +68,8 @@ export function ChartGrid({
         </ChartCard>
 
         <ChartCard
-          title="방문 목적 분포"
-          description="방문 목적별 비율과 분포 현황"
+          title={LABELS.VISITOR_PURPOSE_TITLE}
+          description={LABELS.VISITOR_PURPOSE_DESCRIPTION}
           icon={Target}
           variant="success"
           className="min-h-[400px] flex flex-col"
@@ -80,8 +81,8 @@ export function ChartGrid({
       {/* 하위 차트들 - 태블릿부터 1열, 대형 데스크톱에서만 3열 */}
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-4 sm:gap-6 lg:gap-8">
         <ChartCard
-          title="시간대별 방문자"
-          description="시간대별 방문자 분포 패턴"
+          title={LABELS.VISITOR_TIME_TITLE}
+          description={LABELS.VISITOR_TIME_DESCRIPTION}
           icon={Clock}
           variant="warning"
           className="min-h-[400px] flex flex-col"
@@ -90,8 +91,8 @@ export function ChartGrid({
         </ChartCard>
 
         <ChartCard
-          title="지역별 방문자"
-          description="방문자 출신 지역별 분포 현황"
+          title={LABELS.VISITOR_REGION_TITLE}
+          description={LABELS.VISITOR_REGION_DESCRIPTION}
           icon={MapPin}
           variant="info"
           className="min-h-[400px] flex flex-col"
@@ -100,8 +101,8 @@ export function ChartGrid({
         </ChartCard>
 
         <ChartCard
-          title="요일별 방문자"
-          description="요일별 방문자 수와 평균 방문 패턴"
+          title={LABELS.WEEKDAY_VISITOR_TITLE}
+          description={LABELS.WEEKDAY_VISITOR_DESCRIPTION}
           icon={Calendar}
           variant="warning"
           className="min-h-[400px] flex flex-col"

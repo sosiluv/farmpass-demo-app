@@ -8,6 +8,7 @@ import {
   useExportDialog,
 } from "./index";
 import { FARM_TYPE_LABELS } from "@/lib/constants/farm-types";
+import { BUTTONS, LABELS, PAGE_HEADER } from "@/lib/constants/management";
 
 interface FarmsExportProps {
   farms: any[];
@@ -92,7 +93,7 @@ export function FarmsExportRefactored({ farms, onExport }: FarmsExportProps) {
 
   // 농장 유형 옵션 생성
   const farmTypeOptions = [
-    { value: "all", label: "모든 유형" },
+    { value: "all", label: LABELS.ALL_TYPES },
     ...Object.entries(FARM_TYPE_LABELS || {}).map(([value, label]) => ({
       value,
       label,
@@ -103,31 +104,31 @@ export function FarmsExportRefactored({ farms, onExport }: FarmsExportProps) {
     <ExportDialogWrapper
       open={isOpen}
       onOpenChange={setIsOpen}
-      title="농장 데이터 내보내기"
-      description="내보낼 농장 정보를 설정하세요"
-      buttonText="농장 내보내기"
+      title={PAGE_HEADER.FARMS_EXPORT_TITLE}
+      description={PAGE_HEADER.FARMS_EXPORT_DESCRIPTION}
+      buttonText={BUTTONS.FARMS_EXPORT_BUTTON}
     >
       <div className="space-y-3 sm:space-y-4 md:space-y-6">
         {/* 필터 설정 */}
         <FilterSection
-          title="필터 설정"
+          title={LABELS.FILTER_SETTINGS}
           color="green"
           filters={[
             {
               key: "farmType",
-              label: "농장 유형",
+              label: LABELS.FARM_TYPE,
               value: farmType,
               options: farmTypeOptions,
               onChange: setFarmType,
             },
             {
               key: "status",
-              label: "상태",
+              label: LABELS.STATUS,
               value: status,
               options: [
-                { value: "all", label: "모든 상태" },
-                { value: "active", label: "활성" },
-                { value: "inactive", label: "비활성" },
+                { value: "all", label: LABELS.ALL_STATUS },
+                { value: "active", label: LABELS.ACTIVE },
+                { value: "inactive", label: LABELS.INACTIVE },
               ],
               onChange: setStatus,
             },
@@ -136,43 +137,43 @@ export function FarmsExportRefactored({ farms, onExport }: FarmsExportProps) {
 
         {/* 내보내기 옵션 */}
         <OptionsSection
-          title="포함할 정보"
+          title={LABELS.INCLUDED_INFO}
           color="purple"
           selectedCount={selectedOptionsCount}
           totalCount={5}
           options={[
             {
               key: "includeBasic",
-              label: "기본 정보",
-              description: "농장명, 유형, 등록일",
+              label: LABELS.BASIC_INFO,
+              description: LABELS.BASIC_INFO_DESC,
               checked: includeBasic,
               onChange: setIncludeBasic,
             },
             {
               key: "includeContact",
-              label: "연락처 정보",
-              description: "소유자, 관리자, 연락처",
+              label: LABELS.CONTACT_INFO,
+              description: LABELS.CONTACT_INFO_DESC,
               checked: includeContact,
               onChange: setIncludeContact,
             },
             {
               key: "includeLocation",
-              label: "위치 정보",
-              description: "주소, 지역",
+              label: LABELS.LOCATION_INFO,
+              description: LABELS.LOCATION_INFO_DESC,
               checked: includeLocation,
               onChange: setIncludeLocation,
             },
             {
               key: "includeMembers",
-              label: "구성원 정보",
-              description: "구성원 수",
+              label: LABELS.MEMBER_INFO,
+              description: LABELS.MEMBER_INFO_DESC,
               checked: includeMembers,
               onChange: setIncludeMembers,
             },
             {
               key: "includeStats",
-              label: "통계 정보",
-              description: "방문자 수, 상태",
+              label: LABELS.STATS_INFO,
+              description: LABELS.STATS_INFO_DESC,
               checked: includeStats,
               onChange: setIncludeStats,
             },
@@ -181,7 +182,12 @@ export function FarmsExportRefactored({ farms, onExport }: FarmsExportProps) {
 
         {/* 요약 정보 */}
         <SummarySection
-          message={`내보내기 요약: 총 ${farms.length}개의 농장 중 ${selectedOptionsCount}개 정보 유형이 포함됩니다.`}
+          message={LABELS.EXPORT_SUMMARY.replace(
+            "{totalCount}",
+            farms.length.toString()
+          )
+            .replace("{itemType}", "농장")
+            .replace("{selectedCount}", selectedOptionsCount.toString())}
           color="orange"
         />
       </div>

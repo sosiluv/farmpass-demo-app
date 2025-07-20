@@ -1,6 +1,7 @@
 import { Users, Building2, UserCheck, FileText } from "lucide-react";
 import { StatCard } from "./StatCard";
 import { CommonStatsGrid } from "../shared/CommonStatsGrid";
+import { LABELS } from "@/lib/constants/management";
 
 interface DashboardStatsProps {
   totalUsers: number;
@@ -25,33 +26,33 @@ export function DashboardStats({
   return (
     <CommonStatsGrid>
       <StatCard
-        title="전체 사용자"
+        title={LABELS.TOTAL_USERS}
         value={totalUsers.toLocaleString()}
-        description="시스템 전체 사용자 수"
+        description={LABELS.TOTAL_USERS_DESC}
         icon={Users}
         variant="info"
         trend={trends?.userGrowth}
       />
       <StatCard
-        title="전체 농장"
+        title={LABELS.TOTAL_FARMS}
         value={totalFarms.toLocaleString()}
-        description="등록된 농장 수"
+        description={LABELS.TOTAL_FARMS_DESC}
         icon={Building2}
         variant="success"
         trend={trends?.farmGrowth}
       />
       <StatCard
-        title="총 방문자"
+        title={LABELS.TOTAL_VISITORS}
         value={totalVisitors.toLocaleString()}
-        description="전체 방문자 수"
+        description={LABELS.TOTAL_VISITORS_DESC}
         icon={UserCheck}
         variant="warning"
         trend={trends?.visitorGrowth}
       />
       <StatCard
-        title="시스템 로그"
+        title={LABELS.SYSTEM_LOGS}
         value={totalLogs.toLocaleString()}
-        description="시스템 활동 로그"
+        description={LABELS.SYSTEM_LOGS_DESC}
         icon={FileText}
         variant="default"
         trend={trends?.logGrowth}

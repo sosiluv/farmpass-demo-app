@@ -1,4 +1,5 @@
 import { Line } from "@/components/ui/chart";
+import { LABELS } from "@/lib/constants/common";
 
 interface VisitorTrendChartProps {
   data: { date: string; visitors: number }[];
@@ -13,7 +14,7 @@ export function VisitorTrendChart({ data }: VisitorTrendChartProps) {
   if (isEmpty) {
     return (
       <div className="flex items-center justify-center h-full text-muted-foreground">
-        <p>방문자 추이 데이터가 없습니다.</p>
+        <p>{LABELS.CHART_NO_TREND_DATA}</p>
       </div>
     );
   }
@@ -24,7 +25,7 @@ export function VisitorTrendChart({ data }: VisitorTrendChartProps) {
         labels: data.map((item) => item.date),
         datasets: [
           {
-            label: "방문자 수",
+            label: LABELS.CHART_VISITOR_COUNT,
             data: data.map((item) => item.visitors),
             borderColor: "rgb(99, 102, 241)",
             backgroundColor: "rgba(99, 102, 241, 0.2)",

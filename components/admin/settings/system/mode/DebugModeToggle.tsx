@@ -2,6 +2,7 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { Bug, AlertTriangle } from "lucide-react";
+import { LABELS } from "@/lib/constants/settings";
 
 interface DebugModeToggleProps {
   debugMode: boolean;
@@ -23,24 +24,24 @@ export function DebugModeToggle({
             className="text-sm font-medium flex items-center gap-1"
           >
             <Bug className="h-4 w-4" />
-            디버그 모드
+            {LABELS.DEBUG_MODE}
           </Label>
           {debugMode && (
             <Badge
               variant="outline"
               className="text-xs border-orange-300 text-orange-700"
             >
-              활성화
+              {LABELS.DEBUG_MODE_ACTIVE}
             </Badge>
           )}
         </div>
         <p className="text-sm text-muted-foreground">
-          개발 및 문제 해결을 위한 상세한 디버그 정보를 표시합니다
+          {LABELS.DEBUG_MODE_DESC}
         </p>
         {debugMode && (
           <div className="flex items-center gap-1 text-xs text-orange-600 mt-1">
             <AlertTriangle className="h-3 w-3" />
-            <span>디버그 패널이 화면 우측 하단에 표시됩니다</span>
+            <span>{LABELS.DEBUG_MODE_PANEL_WARNING}</span>
           </div>
         )}
       </div>

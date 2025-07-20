@@ -6,6 +6,7 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import { X } from "lucide-react";
+import { BUTTONS, LABELS } from "@/lib/constants/common";
 
 interface ImagePreviewDialogProps {
   src: string;
@@ -34,15 +35,15 @@ export function ImagePreviewDialog({
         style={{ maxWidth: "100vw", maxHeight: "100vh" }}
       >
         <DialogTitle className="sr-only">
-          {alt || "이미지 미리보기"}
+          {alt || LABELS.IMAGE_PREVIEW_TITLE}
         </DialogTitle>
         <DialogDescription className="sr-only">
-          이미지를 확대하여 자세히 볼 수 있습니다.
+          {LABELS.IMAGE_PREVIEW_DESCRIPTION}
         </DialogDescription>
         <button
           className="absolute top-3 right-3 z-10 bg-black/60 rounded-full p-2 text-white focus:outline-none"
           onClick={() => onOpenChange(false)}
-          aria-label="닫기"
+          aria-label={BUTTONS.IMAGE_PREVIEW_CLOSE}
         >
           <X className="w-6 h-6" />
         </button>

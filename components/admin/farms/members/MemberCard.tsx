@@ -4,6 +4,7 @@ import { QuickActionButtons } from "@/components/user/quick-action-buttons";
 import { useState } from "react";
 import { ImagePreviewDialog } from "@/components/common/ImagePreviewDialog";
 import { generateInitials, getAvatarUrl } from "@/lib/utils/media/avatar";
+import { LABELS } from "@/lib/constants/farms";
 
 // 역할별 아바타 스타일 설정
 function getRoleStyles(role: string): {
@@ -107,7 +108,7 @@ export function MemberCard({
               {member.representative_name}
               {member.role === "owner" && (
                 <span className="ml-2 text-xs sm:text-sm text-purple-600 font-normal">
-                  (농장 소유자)
+                  {LABELS.FARM_OWNER}
                 </span>
               )}
             </span>

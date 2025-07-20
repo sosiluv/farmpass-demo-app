@@ -1,6 +1,7 @@
 import { Pie } from "@/components/ui/chart";
 import { Users } from "lucide-react";
 import { ChartCard } from "@/components/common/ChartCard";
+import { LABELS, PAGE_HEADER } from "@/lib/constants/management";
 
 interface UserRoleDistributionProps {
   data?: {
@@ -13,13 +14,13 @@ export function UserRoleDistribution({ data = [] }: UserRoleDistributionProps) {
   if (data.length === 0) {
     return (
       <ChartCard
-        title="사용자 역할별 분포"
-        description="시스템 사용자의 역할별 현황"
+        title={PAGE_HEADER.USER_ROLE_DISTRIBUTION_TITLE}
+        description={PAGE_HEADER.USER_ROLE_DISTRIBUTION_DESCRIPTION}
         icon={Users}
         variant="success"
       >
         <div className="flex items-center justify-center h-full text-muted-foreground">
-          데이터가 없습니다
+          {LABELS.NO_DATA}
         </div>
       </ChartCard>
     );
@@ -27,8 +28,8 @@ export function UserRoleDistribution({ data = [] }: UserRoleDistributionProps) {
 
   return (
     <ChartCard
-      title="사용자 역할별 분포"
-      description="시스템 사용자의 역할별 현황"
+      title={PAGE_HEADER.USER_ROLE_DISTRIBUTION_TITLE}
+      description={PAGE_HEADER.USER_ROLE_DISTRIBUTION_DESCRIPTION}
       icon={Users}
       variant="success"
     >

@@ -19,6 +19,8 @@ import { AdminError } from "@/components/error/admin-error";
 import { useDataFetchTimeout } from "@/hooks/useTimeout";
 import { useMonitoringQuery } from "@/lib/hooks/query/use-monitoring-query";
 import { getAuthErrorMessage } from "@/lib/utils/validation/validation";
+import { LABELS, PAGE_HEADER } from "@/lib/constants/monitoring";
+import { ERROR_CONFIGS } from "@/lib/constants/error";
 
 export default function MonitoringDashboard() {
   const { data, isLoading: loading, error, refetch } = useMonitoringQuery();
@@ -53,8 +55,8 @@ export default function MonitoringDashboard() {
   if (!isAdmin) {
     return (
       <AccessDenied
-        title="시스템 관리 접근 권한이 없습니다"
-        description="시스템 관리 기능은 관리자만 접근할 수 있습니다."
+        title={ERROR_CONFIGS.PERMISSION.title}
+        description={ERROR_CONFIGS.PERMISSION.description}
         requiredRole="관리자"
         currentRole="일반 사용자"
       />
@@ -64,8 +66,8 @@ export default function MonitoringDashboard() {
   if (timeoutReached) {
     return (
       <AdminError
-        title="데이터를 불러오지 못했습니다"
-        description="네트워크 상태를 확인하거나 다시 시도해 주세요."
+        title={ERROR_CONFIGS.TIMEOUT.title}
+        description={ERROR_CONFIGS.TIMEOUT.description}
         retry={retry}
         error={new Error("Timeout: 데이터 로딩 10초 초과")}
       />
@@ -76,9 +78,9 @@ export default function MonitoringDashboard() {
     return (
       <div className="flex-1 space-y-6 p-4 md:p-6 pt-2 md:pt-4">
         <PageHeader
-          title="시스템 모니터링"
-          description="서버 상태, 가동시간, 에러 로그를 실시간으로 모니터링하세요"
-          breadcrumbs={[{ label: "시스템 모니터링" }]}
+          title={PAGE_HEADER.PAGE_TITLE}
+          description={PAGE_HEADER.PAGE_DESCRIPTION}
+          breadcrumbs={[{ label: PAGE_HEADER.BREADCRUMB }]}
         />
         <CardSkeleton />
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -95,13 +97,13 @@ export default function MonitoringDashboard() {
     return (
       <div className="flex-1 space-y-6 p-4 md:p-6 pt-2 md:pt-4">
         <PageHeader
-          title="시스템 모니터링"
-          description="서버 상태, 가동시간, 에러 로그를 실시간으로 모니터링하세요"
-          breadcrumbs={[{ label: "시스템 모니터링" }]}
+          title={PAGE_HEADER.PAGE_TITLE}
+          description={PAGE_HEADER.PAGE_DESCRIPTION}
+          breadcrumbs={[{ label: PAGE_HEADER.BREADCRUMB }]}
         />
         <Alert variant="destructive">
           <AlertCircle className="h-4 w-4" />
-          <AlertTitle>Error</AlertTitle>
+          <AlertTitle>{LABELS.ERROR_TITLE}</AlertTitle>
           <AlertDescription>{authError.message}</AlertDescription>
         </Alert>
       </div>
@@ -113,9 +115,9 @@ export default function MonitoringDashboard() {
   return (
     <div className="flex-1 space-y-6 p-4 md:p-6 pt-2 md:pt-4">
       <PageHeader
-        title="시스템 모니터링"
-        description="서버 상태, 가동시간, 에러 로그를 실시간으로 모니터링하세요"
-        breadcrumbs={[{ label: "시스템 모니터링" }]}
+        title={PAGE_HEADER.PAGE_TITLE}
+        description={PAGE_HEADER.PAGE_DESCRIPTION}
+        breadcrumbs={[{ label: PAGE_HEADER.BREADCRUMB }]}
       />
 
       <SystemStatusCard data={data} />

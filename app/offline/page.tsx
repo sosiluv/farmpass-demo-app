@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useRouter } from "next/navigation";
 import { useOnlineStatus } from "@/hooks/useOnlineStatus";
+import { OFFLINE_LABELS } from "@/lib/constants/offline";
 
 export default function OfflinePage() {
   const { isOnline, isChecking, checkConnection } = useOnlineStatus();
@@ -45,7 +46,9 @@ export default function OfflinePage() {
             )}
           </div>
           <CardTitle className="text-xl font-semibold text-gray-800">
-            {isOnline ? "연결 확인 중..." : "오프라인 상태"}
+            {isOnline
+              ? OFFLINE_LABELS.PAGE_TITLE_ONLINE
+              : OFFLINE_LABELS.PAGE_TITLE_OFFLINE}
           </CardTitle>
         </CardHeader>
 
@@ -53,17 +56,19 @@ export default function OfflinePage() {
           <div className="text-center space-y-3">
             <p className="text-gray-600 leading-relaxed">
               {isOnline
-                ? "인터넷 연결이 복구되었습니다. 잠시 후 홈페이지로 이동합니다."
-                : "인터넷 연결을 확인해주세요. 네트워크 상태를 점검한 후 다시 시도해주세요."}
+                ? OFFLINE_LABELS.DESCRIPTION_ONLINE
+                : OFFLINE_LABELS.DESCRIPTION_OFFLINE}
             </p>
 
             {!isOnline && (
               <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-sm text-blue-800">
-                <h4 className="font-semibold mb-2">확인해보세요:</h4>
+                <h4 className="font-semibold mb-2">
+                  {OFFLINE_LABELS.CHECKLIST_TITLE}
+                </h4>
                 <ul className="space-y-1 text-left">
-                  <li>• Wi-Fi 또는 모바일 데이터가 켜져 있는지 확인</li>
-                  <li>• 다른 웹사이트가 정상적으로 작동하는지 확인</li>
-                  <li>• 네트워크 설정을 다시 확인</li>
+                  <li>{OFFLINE_LABELS.CHECKLIST_ITEMS.WIFI}</li>
+                  <li>{OFFLINE_LABELS.CHECKLIST_ITEMS.WEBSITE}</li>
+                  <li>{OFFLINE_LABELS.CHECKLIST_ITEMS.SETTINGS}</li>
                 </ul>
               </div>
             )}
@@ -78,26 +83,26 @@ export default function OfflinePage() {
               {isChecking ? (
                 <>
                   <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
-                  확인 중...
+                  {OFFLINE_LABELS.BUTTONS.RETRY_CHECKING}
                 </>
               ) : (
                 <>
                   <RefreshCw className="w-4 h-4 mr-2" />
-                  다시 시도
+                  {OFFLINE_LABELS.BUTTONS.RETRY}
                 </>
               )}
             </Button>
 
             <Button onClick={handleGoHome} variant="outline" className="flex-1">
               <Home className="w-4 h-4 mr-2" />
-              홈으로
+              {OFFLINE_LABELS.BUTTONS.GO_HOME}
             </Button>
           </div>
 
           {!isOnline && (
             <div className="text-center">
               <p className="text-xs text-gray-500">
-                오프라인 상태에서는 일부 기능이 제한될 수 있습니다.
+                {OFFLINE_LABELS.FOOTER_NOTE}
               </p>
             </div>
           )}

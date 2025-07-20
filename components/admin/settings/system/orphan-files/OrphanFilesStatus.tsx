@@ -1,5 +1,6 @@
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
+import { LABELS } from "@/lib/constants/settings";
 import type { OrphanFilesStatus as OrphanFilesStatusType } from "@/lib/types/settings";
 
 interface OrphanFilesStatusProps {
@@ -13,7 +14,9 @@ export function OrphanFilesStatus({
     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
       <div className="space-y-2">
         <div className="flex items-center justify-between">
-          <Label className="text-sm font-medium">방문자 이미지</Label>
+          <Label className="text-sm font-medium">
+            {LABELS.ORPHAN_FILES_VISITOR_IMAGES}
+          </Label>
         </div>
         <div className="p-3 bg-muted rounded-lg">
           {/* Storage orphan 표시 */}
@@ -26,13 +29,16 @@ export function OrphanFilesStatus({
                     : "default"
                 }
               >
-                Storage orphan {orphanFilesStatus.visitorOrphanCount}개
+                {LABELS.ORPHAN_FILES_STORAGE_ORPHAN.replace(
+                  "{count}",
+                  orphanFilesStatus.visitorOrphanCount.toString()
+                )}
               </Badge>
             </div>
             <span className="text-xs text-muted-foreground mt-1">
               {orphanFilesStatus.visitorOrphanCount === 0
-                ? "정리할 Storage orphan 파일이 없습니다"
-                : "Storage에는 있는데 DB에는 없는 방문자 이미지"}
+                ? LABELS.ORPHAN_FILES_NO_STORAGE_ORPHAN
+                : LABELS.ORPHAN_FILES_STORAGE_ORPHAN_DESC}
             </span>
           </div>
           {/* DB orphan 표시 */}
@@ -45,13 +51,16 @@ export function OrphanFilesStatus({
                     : "default"
                 }
               >
-                DB orphan {orphanFilesStatus.visitorDbOrphanCount}개
+                {LABELS.ORPHAN_FILES_DB_ORPHAN.replace(
+                  "{count}",
+                  orphanFilesStatus.visitorDbOrphanCount.toString()
+                )}
               </Badge>
             </div>
             <span className="text-xs text-muted-foreground mt-1">
               {orphanFilesStatus.visitorDbOrphanCount === 0
-                ? "정리할 DB orphan 파일이 없습니다"
-                : "DB에는 있는데 Storage에는 없는 방문자 이미지"}
+                ? LABELS.ORPHAN_FILES_NO_DB_ORPHAN
+                : LABELS.ORPHAN_FILES_DB_ORPHAN_DESC}
             </span>
           </div>
         </div>
@@ -59,7 +68,9 @@ export function OrphanFilesStatus({
 
       <div className="space-y-2">
         <div className="flex items-center justify-between">
-          <Label className="text-sm font-medium">프로필 이미지</Label>
+          <Label className="text-sm font-medium">
+            {LABELS.ORPHAN_FILES_PROFILE_IMAGES}
+          </Label>
         </div>
         <div className="p-3 bg-muted rounded-lg">
           {/* Storage orphan 표시 */}
@@ -72,13 +83,16 @@ export function OrphanFilesStatus({
                     : "default"
                 }
               >
-                Storage orphan {orphanFilesStatus.profileOrphanCount}개
+                {LABELS.ORPHAN_FILES_STORAGE_ORPHAN.replace(
+                  "{count}",
+                  orphanFilesStatus.profileOrphanCount.toString()
+                )}
               </Badge>
             </div>
             <span className="text-xs text-muted-foreground mt-1">
               {orphanFilesStatus.profileOrphanCount === 0
-                ? "정리할 Storage orphan 파일이 없습니다"
-                : "Storage에는 있는데 DB에는 없는 프로필 이미지"}
+                ? LABELS.ORPHAN_FILES_NO_STORAGE_ORPHAN
+                : LABELS.ORPHAN_FILES_STORAGE_ORPHAN_PROFILE_DESC}
             </span>
           </div>
           {/* DB orphan 표시 */}
@@ -91,13 +105,16 @@ export function OrphanFilesStatus({
                     : "default"
                 }
               >
-                DB orphan {orphanFilesStatus.profileDbOrphanCount}개
+                {LABELS.ORPHAN_FILES_DB_ORPHAN.replace(
+                  "{count}",
+                  orphanFilesStatus.profileDbOrphanCount.toString()
+                )}
               </Badge>
             </div>
             <span className="text-xs text-muted-foreground mt-1">
               {orphanFilesStatus.profileDbOrphanCount === 0
-                ? "정리할 DB orphan 파일이 없습니다"
-                : "DB에는 있는데 Storage에는 없는 프로필 이미지"}
+                ? LABELS.ORPHAN_FILES_NO_DB_ORPHAN
+                : LABELS.ORPHAN_FILES_DB_ORPHAN_PROFILE_DESC}
             </span>
           </div>
         </div>

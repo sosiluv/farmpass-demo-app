@@ -1,6 +1,7 @@
 import { Bar } from "@/components/ui/chart";
 import { BarChart3 } from "lucide-react";
 import { ChartCard } from "@/components/common/ChartCard";
+import { LABELS, PAGE_HEADER } from "@/lib/constants/management";
 
 interface FarmTypeDistributionProps {
   data?: {
@@ -13,13 +14,13 @@ export function FarmTypeDistribution({ data = [] }: FarmTypeDistributionProps) {
   if (data.length === 0) {
     return (
       <ChartCard
-        title="농장 유형별 분포"
-        description="등록된 농장의 유형별 현황"
+        title={PAGE_HEADER.FARM_TYPE_DISTRIBUTION_TITLE}
+        description={PAGE_HEADER.FARM_TYPE_DISTRIBUTION_DESCRIPTION}
         icon={BarChart3}
         variant="info"
       >
         <div className="flex items-center justify-center h-full text-muted-foreground">
-          데이터가 없습니다
+          {LABELS.NO_DATA}
         </div>
       </ChartCard>
     );
@@ -27,8 +28,8 @@ export function FarmTypeDistribution({ data = [] }: FarmTypeDistributionProps) {
 
   return (
     <ChartCard
-      title="농장 유형별 분포"
-      description="등록된 농장의 유형별 현황"
+      title={PAGE_HEADER.FARM_TYPE_DISTRIBUTION_TITLE}
+      description={PAGE_HEADER.FARM_TYPE_DISTRIBUTION_DESCRIPTION}
       icon={BarChart3}
       variant="info"
     >
@@ -38,7 +39,7 @@ export function FarmTypeDistribution({ data = [] }: FarmTypeDistributionProps) {
             labels: (data || []).map((item) => item.type),
             datasets: [
               {
-                label: "농장 수",
+                label: LABELS.FARM_COUNT,
                 data: (data || []).map((item) => item.count),
                 backgroundColor: [
                   "rgba(99, 102, 241, 0.8)", // indigo

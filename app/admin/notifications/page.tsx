@@ -8,6 +8,7 @@ import { useFarmsContext } from "@/components/providers/farms-provider";
 import { useNotificationSettingsQuery } from "@/lib/hooks/query/use-notification-settings-query";
 import { useAuth } from "@/components/providers/auth-provider";
 import { ErrorBoundary } from "@/components/error/error-boundary";
+import { ERROR_CONFIGS } from "@/lib/constants/error";
 import {
   NotificationMethodsCard,
   NotificationTypesCard,
@@ -18,6 +19,7 @@ import { useCommonToast } from "@/lib/utils/notification/toast-messages";
 import { getAuthErrorMessage } from "@/lib/utils/validation/validation";
 import type { NotificationSettings } from "@/lib/types/notification";
 import { FormSkeleton } from "@/components/common/skeletons/form-skeleton";
+import { PAGE_HEADER } from "@/lib/constants/notifications";
 
 export default function NotificationsPage() {
   const { state } = useAuth();
@@ -99,9 +101,9 @@ export default function NotificationsPage() {
     return (
       <div className="flex-1 space-y-4 p-3 md:p-6 pt-2 md:pt-4">
         <PageHeader
-          title="알림 설정"
-          description="농장 관련 알림과 푸시 설정을 관리하세요"
-          breadcrumbs={[{ label: "알림 설정" }]}
+          title={PAGE_HEADER.PAGE_TITLE}
+          description={PAGE_HEADER.PAGE_DESCRIPTION}
+          breadcrumbs={[{ label: PAGE_HEADER.BREADCRUMB }]}
         />
         <FormSkeleton fields={5} />
       </div>
@@ -110,14 +112,14 @@ export default function NotificationsPage() {
 
   return (
     <ErrorBoundary
-      title="알림 설정 오류"
-      description="알림 설정 정보를 불러오는 중 문제가 발생했습니다. 페이지를 새로고침하거나 잠시 후 다시 시도해주세요."
+      title={ERROR_CONFIGS.LOADING.title}
+      description={ERROR_CONFIGS.LOADING.description}
     >
       <div className="flex-1 space-y-4 p-3 md:p-6 pt-2 md:pt-4">
         <PageHeader
-          title="알림 설정"
-          description="농장 관련 알림과 푸시 설정을 관리하세요"
-          breadcrumbs={[{ label: "알림 설정" }]}
+          title={PAGE_HEADER.PAGE_TITLE}
+          description={PAGE_HEADER.PAGE_DESCRIPTION}
+          breadcrumbs={[{ label: PAGE_HEADER.BREADCRUMB }]}
         />
 
         <div className="space-y-4 md:space-y-6">

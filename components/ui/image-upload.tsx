@@ -2,15 +2,25 @@
 
 import { useCallback, useState, useEffect } from "react";
 import { Button } from "./button";
-import { Camera, ImageIcon, Trash2, User, RefreshCw } from "lucide-react";
+import { Camera, Trash2, User, RefreshCw } from "lucide-react";
 import { Loading } from "./loading";
 import {
   IMAGE_UPLOAD_CONFIG,
   IMAGE_ERROR_MESSAGES,
+  UPLOAD_TYPE_CONFIGS,
+  UploadType,
+  AVATAR_SIZE_MAP,
+  CENTER_CIRCLE_SIZE_MAP,
+  WHEEL_SIZE_MAP,
+  UPLOAD_GUIDELINES,
+  IMAGE_UPLOAD_DEFAULT_LABEL,
+  IMAGE_UPLOAD_REQUIRED_MESSAGE,
+  IMAGE_UPLOAD_MAX_SIZE,
+  IMAGE_UPLOAD_FORMAT_SUPPORT,
 } from "@/lib/constants/upload";
-import { UPLOAD_TYPE_CONFIGS, UploadType } from "@/lib/types/upload";
 import { cn } from "@/lib/utils";
 import { getAvatarUrl } from "@/lib/utils/media/avatar";
+import { devLog } from "@/lib/utils/logging";
 
 export interface ImageUploadProps {
   onUpload: (file: File) => void;
@@ -35,7 +45,7 @@ export function ImageUpload({
   required = false,
   className = "",
   avatarSize = "lg",
-  label = "이미지",
+  label = IMAGE_UPLOAD_DEFAULT_LABEL,
   uploadType = "image",
   hideGuidelines = false,
   id = "image-upload", // 기본 id 제공
@@ -50,30 +60,6 @@ export function ImageUpload({
   useEffect(() => {
     setImgError(false);
   }, [currentImage]);
-
-  // 아바타 크기 매핑
-  const avatarSizeMap = {
-    sm: "w-20 h-20",
-    md: "w-24 h-24",
-    lg: "w-32 h-32",
-    xl: "w-40 h-40",
-  };
-
-  // 중앙 원 크기 매핑
-  const centerCircleSizeMap = {
-    sm: "w-16 h-16",
-    md: "w-20 h-20",
-    lg: "w-28 h-28",
-    xl: "w-32 h-32",
-  };
-
-  // 휠 전체 크기 매핑
-  const wheelSizeMap = {
-    sm: "w-32 h-32",
-    md: "w-40 h-40",
-    lg: "w-48 h-48",
-    xl: "w-56 h-56",
-  };
 
   // 설정 기반 업로드 설정 사용
   const getUploadConfig = () => {
@@ -94,20 +80,24 @@ export function ImageUpload({
           allowedTypes: config.allowedTypes,
           allowedExtensions: config.allowedExtensions,
         },
-        errorMessage: `지원하지 않는 파일 형식입니다. ${config.allowedExtensions.join(
-          ", "
-        )} 만 업로드 가능합니다.`,
-        guideline: `권장 크기: ${config.maxWidth}x${config.maxHeight} 픽셀`,
+        errorMessage: UPLOAD_GUIDELINES.ERROR_MESSAGE(config.allowedExtensions),
+        guideline: UPLOAD_GUIDELINES.GUIDELINE(
+          config.maxWidth,
+          config.maxHeight
+        ),
       };
     }
 
     // 기본 설정 사용
     return {
       config: IMAGE_UPLOAD_CONFIG,
-      errorMessage: `지원하지 않는 파일 형식입니다. ${IMAGE_UPLOAD_CONFIG.allowedExtensions.join(
-        ", "
-      )} 만 업로드 가능합니다.`,
-      guideline: `권장 크기: ${IMAGE_UPLOAD_CONFIG.maxWidth}x${IMAGE_UPLOAD_CONFIG.maxHeight} 픽셀`,
+      errorMessage: UPLOAD_GUIDELINES.ERROR_MESSAGE(
+        IMAGE_UPLOAD_CONFIG.allowedExtensions
+      ),
+      guideline: UPLOAD_GUIDELINES.GUIDELINE(
+        IMAGE_UPLOAD_CONFIG.maxWidth,
+        IMAGE_UPLOAD_CONFIG.maxHeight
+      ),
     };
   };
 
@@ -153,7 +143,7 @@ export function ImageUpload({
       await onDelete();
     } catch (err) {
       const errorMessage =
-        err instanceof Error ? err.message : "이미지 삭제에 실패했습니다.";
+        err instanceof Error ? err.message : IMAGE_ERROR_MESSAGES.DELETE_FAILED;
       setError(errorMessage);
     } finally {
       setLoading(false);
@@ -173,7 +163,7 @@ export function ImageUpload({
       // 로컬 상태는 콜백에서 처리된 후 업데이트됨
       setImgError(false);
     } catch (error) {
-      console.error("아바타 변경 실패:", error);
+      devLog.error("아바타 변경 실패:", error);
     }
   }, [profile?.name, onAvatarChange]);
 
@@ -208,17 +198,17 @@ export function ImageUpload({
     <div className={`space-y-4 ${className}`}>
       <div className="flex flex-col items-center gap-4">
         {/* 휠형 업로드 - Apple 스타일 */}
-        <div className={`relative ${wheelSizeMap[avatarSize]}`}>
+        <div className={`relative ${WHEEL_SIZE_MAP[avatarSize]}`}>
           {/* 휠 중앙 */}
           <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
             <div
               className={cn(
-                `${avatarSizeMap[avatarSize]} rounded-full border-4 border-gray-200 flex items-center justify-center transition-all duration-500`,
+                `${AVATAR_SIZE_MAP[avatarSize]} rounded-full border-4 border-gray-200 flex items-center justify-center transition-all duration-500`,
                 isSpinning ? "animate-spin" : ""
               )}
             >
               <div
-                className={`${centerCircleSizeMap[avatarSize]} rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center`}
+                className={`${CENTER_CIRCLE_SIZE_MAP[avatarSize]} rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center`}
               >
                 {currentImage && currentImage !== "" && !imgError ? (
                   <img
@@ -294,7 +284,7 @@ export function ImageUpload({
         {/* 필수 항목 표시 */}
         {required && !currentImage && (
           <p className="text-xs text-muted-foreground">
-            {label}는 필수 항목입니다
+            {IMAGE_UPLOAD_REQUIRED_MESSAGE.replace("{label}", label)}
           </p>
         )}
 
@@ -303,7 +293,12 @@ export function ImageUpload({
           <div className="text-xs text-muted-foreground text-center mt-4 space-y-1">
             <div className="flex items-center justify-center gap-2">
               <div className="w-1 h-1 bg-blue-400 rounded-full"></div>
-              <p>최대 {getUploadConfig().config.maxSize / (1024 * 1024)}MB</p>
+              <p>
+                {IMAGE_UPLOAD_MAX_SIZE.replace(
+                  "{size}",
+                  (getUploadConfig().config.maxSize / (1024 * 1024)).toString()
+                )}
+              </p>
             </div>
             <div className="flex items-center justify-center gap-2">
               <div className="w-1 h-1 bg-green-400 rounded-full"></div>
@@ -312,10 +307,12 @@ export function ImageUpload({
             <div className="flex items-center justify-center gap-2">
               <div className="w-1 h-1 bg-purple-400 rounded-full"></div>
               <p className="font-medium">
-                {getUploadConfig()
-                  .config.allowedExtensions.map((ext) => ext.toUpperCase())
-                  .join(", ")}{" "}
-                형식 지원
+                {IMAGE_UPLOAD_FORMAT_SUPPORT.replace(
+                  "{formats}",
+                  getUploadConfig()
+                    .config.allowedExtensions.map((ext) => ext.toUpperCase())
+                    .join(", ")
+                )}
               </p>
             </div>
           </div>

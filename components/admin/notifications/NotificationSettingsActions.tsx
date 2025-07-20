@@ -6,6 +6,7 @@ import { useNotificationMutations } from "@/lib/hooks/query/use-notification-mut
 import { getNotificationErrorMessage } from "@/lib/utils/validation/validation";
 import { Save, Loader2 } from "lucide-react";
 import type { NotificationSettings } from "@/lib/types/notification";
+import { BUTTONS, LABELS } from "@/lib/constants/notifications";
 
 interface NotificationSettingsActionsProps {
   hasUnsavedChanges?: boolean;
@@ -76,12 +77,12 @@ export function NotificationSettingsActions({
         {saving ? (
           <>
             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            저장 중...
+            {BUTTONS.SAVING}
           </>
         ) : (
           <>
             <Save className="mr-2 h-4 w-4" />
-            설정 저장
+            {BUTTONS.SAVE_SETTINGS}
           </>
         )}
       </Button>

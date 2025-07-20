@@ -15,6 +15,8 @@ import { DeleteConfirmDialog } from "@/components/admin/farms/DeleteConfirmDialo
 import { Input } from "@/components/ui/input";
 import { StatsSkeleton, TableSkeleton } from "@/components/common/skeletons";
 import { ErrorBoundary } from "@/components/error/error-boundary";
+import { ERROR_CONFIGS } from "@/lib/constants/error";
+import { LABELS, PLACEHOLDERS } from "@/lib/constants/farms";
 import { ResponsivePagination } from "@/components/common/responsive-pagination";
 import type { FarmFormValues } from "@/lib/utils/validation";
 
@@ -147,8 +149,8 @@ export default function FarmsPage() {
 
   return (
     <ErrorBoundary
-      title="농장 관리 오류"
-      description="농장 정보를 불러오는 중 문제가 발생했습니다. 페이지를 새로고침하거나 잠시 후 다시 시도해주세요."
+      title={ERROR_CONFIGS.LOADING.title}
+      description={ERROR_CONFIGS.LOADING.description}
     >
       <div className="flex-1 space-y-4 p-1 md:p-6 pt-2 md:pt-4">
         <FarmsPageHeader
@@ -164,7 +166,7 @@ export default function FarmsPage() {
         <div className="mb-6">
           <Input
             id="farm-search"
-            placeholder="농장 검색... (농장명, 주소)"
+            placeholder={PLACEHOLDERS.SEARCH}
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="w-full sm:w-64 h-12 text-base placeholder:text-xs sm:placeholder:text-sm"
@@ -176,9 +178,14 @@ export default function FarmsPage() {
             <div className="w-24 h-24 mx-auto mb-4 bg-gray-100 rounded-full flex items-center justify-center">
               <div className="w-8 h-8 text-gray-400">🔍</div>
             </div>
-            <h3 className="text-lg font-semibold mb-2">검색 결과가 없습니다</h3>
+            <h3 className="text-lg font-semibold mb-2">
+              {LABELS.NO_SEARCH_RESULTS_TITLE}
+            </h3>
             <p className="text-gray-600 mb-4">
-              '{searchTerm}'에 해당하는 농장이 없습니다
+              {LABELS.NO_SEARCH_RESULTS_DESCRIPTION.replace(
+                "{searchTerm}",
+                searchTerm
+              )}
             </p>
           </div>
         ) : farms.length === 0 ? (

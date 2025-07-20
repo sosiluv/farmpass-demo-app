@@ -2,6 +2,7 @@ import React from "react";
 import { ImageUpload } from "@/components/ui/image-upload";
 import type { VisitorSettings } from "@/lib/types/visitor";
 import type { VisitorFormData } from "@/lib/utils/validation/visitor-validation";
+import { LABELS } from "@/lib/constants/visitor";
 
 interface ImageSectionProps {
   settings: VisitorSettings;
@@ -34,7 +35,7 @@ export const ImageSection = ({
         required={settings.requireVisitorPhoto}
         avatarSize="lg"
         hideGuidelines={true}
-        label="방문자 사진"
+        label={LABELS.PROFILE_PHOTO}
       />
     </div>
   );

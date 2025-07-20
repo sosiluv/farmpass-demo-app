@@ -16,6 +16,7 @@ import {
   BarChart3,
   Bell,
 } from "lucide-react";
+import { LABELS, PAGE_HEADER } from "@/lib/constants/monitoring";
 
 interface TechStackCardProps {
   data?: {
@@ -102,9 +103,9 @@ export function TechStackCard({ data }: TechStackCardProps) {
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Code className="h-5 w-5" />
-          개발 스택
+          {PAGE_HEADER.TECH_STACK}
         </CardTitle>
-        <CardDescription>현재 사용 중인 기술 스택 정보</CardDescription>
+        <CardDescription>{LABELS.TECH_STACK_DESC}</CardDescription>
       </CardHeader>
       <CardContent>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

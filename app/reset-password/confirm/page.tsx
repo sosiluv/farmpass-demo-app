@@ -7,6 +7,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "@/components/ui/button";
 import { useTimeout } from "@/hooks/useTimeout";
 import { AdminError } from "@/components/error/admin-error";
+import { ERROR_CONFIGS } from "@/lib/constants/error";
 import {
   Card,
   CardContent,
@@ -40,6 +41,12 @@ import {
 
 import { PasswordStrength } from "@/components/ui/password-strength";
 import { Loading } from "@/components/ui/loading";
+import {
+  BUTTONS,
+  LABELS,
+  PAGE_HEADER,
+  PLACEHOLDERS,
+} from "@/lib/constants/auth";
 
 export default function ResetPasswordConfirmPage() {
   const [loading, setLoading] = useState(false);
@@ -178,8 +185,8 @@ export default function ResetPasswordConfirmPage() {
       <div className="flex min-h-screen items-center justify-center bg-gradient-farm p-4">
         <div className="w-full max-w-md">
           <AdminError
-            title="토큰 검증 시간 초과"
-            description="비밀번호 재설정 토큰 검증 시간이 초과되었습니다. 네트워크 상태를 확인하고 다시 시도해주세요."
+            title={ERROR_CONFIGS.TIMEOUT.title}
+            description={ERROR_CONFIGS.TIMEOUT.description}
             error={new Error("Token verification timeout")}
             retry={retry}
           />
@@ -207,9 +214,9 @@ export default function ResetPasswordConfirmPage() {
                   className="text-primary"
                 />
               </div>
-              <CardTitle className="text-2xl">링크 확인 중...</CardTitle>
+              <CardTitle className="text-2xl">{LABELS.LINK_CHECKING}</CardTitle>
               <CardDescription>
-                비밀번호 재설정 링크를 확인하고 있습니다.
+                {LABELS.LINK_CHECKING_DESCRIPTION}
               </CardDescription>
             </CardHeader>
           </Card>
@@ -232,7 +239,9 @@ export default function ResetPasswordConfirmPage() {
               <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-red-100">
                 <AlertCircle className="h-6 w-6 text-red-600" />
               </div>
-              <CardTitle className="text-2xl">링크 오류</CardTitle>
+              <CardTitle className="text-2xl">
+                {LABELS.LINK_ERROR_TITLE}
+              </CardTitle>
               <CardDescription>{tokenError}</CardDescription>
             </CardHeader>
             <CardContent>
@@ -240,7 +249,7 @@ export default function ResetPasswordConfirmPage() {
                 onClick={() => router.push("/reset-password")}
                 className="w-full"
               >
-                다시 요청하기
+                {BUTTONS.RETRY_REQUEST_BUTTON}
               </Button>
             </CardContent>
           </Card>
@@ -251,8 +260,8 @@ export default function ResetPasswordConfirmPage() {
 
   return (
     <ErrorBoundary
-      title="비밀번호 재설정 페이지 오류"
-      description="비밀번호 재설정 처리 중 문제가 발생했습니다. 페이지를 새로고침하거나 잠시 후 다시 시도해주세요."
+      title={ERROR_CONFIGS.LOADING.title}
+      description={ERROR_CONFIGS.LOADING.description}
     >
       <div className="flex min-h-screen items-center justify-center bg-gradient-farm p-4">
         <motion.div
@@ -266,8 +275,12 @@ export default function ResetPasswordConfirmPage() {
               <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
                 <Leaf className="h-6 w-6 text-primary" />
               </div>
-              <CardTitle className="text-2xl">비밀번호 재설정</CardTitle>
-              <CardDescription>새로운 비밀번호를 입력해주세요</CardDescription>
+              <CardTitle className="text-2xl">
+                {PAGE_HEADER.RESET_PASSWORD_CONFIRM_TITLE}
+              </CardTitle>
+              <CardDescription>
+                {PAGE_HEADER.RESET_PASSWORD_CONFIRM_DESCRIPTION}
+              </CardDescription>
             </CardHeader>
             <CardContent>
               <Form {...form}>
@@ -281,7 +294,8 @@ export default function ResetPasswordConfirmPage() {
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel className="text-sm text-gray-800">
-                          비밀번호 <span className="text-red-500">*</span>
+                          {LABELS.PASSWORD}{" "}
+                          <span className="text-red-500">*</span>
                         </FormLabel>
                         <div className="relative">
                           <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -289,7 +303,7 @@ export default function ResetPasswordConfirmPage() {
                             <Input
                               {...field}
                               type="password"
-                              placeholder="비밀번호를 입력하세요"
+                              placeholder={PLACEHOLDERS.PASSWORD}
                               autoComplete="new-password"
                               className="h-12 pl-10 input-focus"
                               disabled={loading}
@@ -307,7 +321,8 @@ export default function ResetPasswordConfirmPage() {
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel className="text-sm text-gray-800">
-                          비밀번호 확인 <span className="text-red-500">*</span>
+                          {LABELS.CONFIRM_PASSWORD}{" "}
+                          <span className="text-red-500">*</span>
                         </FormLabel>
                         <div className="relative">
                           <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -315,7 +330,7 @@ export default function ResetPasswordConfirmPage() {
                             <Input
                               {...field}
                               type="password"
-                              placeholder="비밀번호를 다시 입력하세요"
+                              placeholder={PLACEHOLDERS.CONFIRM_PASSWORD}
                               autoComplete="new-password"
                               className="h-12 pl-10 input-focus"
                               disabled={loading}
@@ -339,10 +354,10 @@ export default function ResetPasswordConfirmPage() {
                           minHeight="auto"
                           className="mr-2"
                         />
-                        비밀번호 변경 중...
+                        {BUTTONS.RESET_PASSWORD_CONFIRM_LOADING}
                       </>
                     ) : (
-                      "비밀번호 변경하기"
+                      BUTTONS.RESET_PASSWORD_CONFIRM_BUTTON
                     )}
                   </Button>
                 </form>

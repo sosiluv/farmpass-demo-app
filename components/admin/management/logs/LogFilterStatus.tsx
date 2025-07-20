@@ -1,9 +1,9 @@
 import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
 import { Button } from "@/components/ui/button";
-import { X, Calendar, AlertTriangle } from "lucide-react";
+import { X } from "lucide-react";
 import { format } from "date-fns";
 import { ko } from "date-fns/locale";
+import { BUTTONS, LABELS } from "@/lib/constants/management";
 import { cn } from "@/lib/utils";
 import type { LogFilter } from "@/lib/types/system";
 
@@ -33,7 +33,10 @@ export function LogFilterStatus({
       return categoryFilters[0];
     }
 
-    return `${categoryFilters.length}개 카테고리`;
+    return LABELS.CATEGORY_COUNT.replace(
+      "{count}",
+      categoryFilters.length.toString()
+    );
   };
 
   const getActiveFilterTags = () => {
@@ -43,7 +46,7 @@ export function LogFilterStatus({
     if (filters.search?.trim()) {
       tags.push({
         key: "search",
-        label: `검색: "${filters.search}"`,
+        label: LABELS.SEARCH_FILTER.replace("{searchTerm}", filters.search),
         icon: "🔍",
         color: "bg-blue-100 text-blue-800 border-blue-200",
       });
@@ -51,7 +54,7 @@ export function LogFilterStatus({
 
     // 날짜 필터
     if (filters.startDate || filters.endDate) {
-      let dateLabel = "날짜 범위";
+      let dateLabel: string = LABELS.DATE_RANGE;
       if (filters.startDate && filters.endDate) {
         dateLabel = `${format(filters.startDate, "MM/dd", {
           locale: ko,
@@ -74,10 +77,10 @@ export function LogFilterStatus({
     if (!levelFilters.includes("all")) {
       const levelLabels = levelFilters.map((level) => {
         const levelMap: Record<string, string> = {
-          info: "정보",
-          warn: "경고",
-          error: "오류",
-          debug: "디버그",
+          info: LABELS.INFO,
+          warn: LABELS.WARN,
+          error: LABELS.ERROR,
+          debug: LABELS.DEBUG,
         };
         return levelMap[level] || level;
       });
@@ -115,7 +118,7 @@ export function LogFilterStatus({
     <div className="flex flex-wrap items-center gap-2 sm:gap-3 p-3 sm:p-4 bg-gradient-to-r from-slate-50 to-gray-50 rounded-lg border border-slate-200">
       <div className="flex items-center space-x-1 sm:space-x-2">
         <span className="text-xs sm:text-sm font-medium text-gray-700">
-          활성 필터:
+          {LABELS.ACTIVE_FILTERS}
         </span>
       </div>
 
@@ -144,7 +147,7 @@ export function LogFilterStatus({
           className="text-xs sm:text-sm text-gray-500 hover:text-red-600 hover:bg-red-50 px-2 sm:px-3 py-1 sm:py-2 rounded-md transition-all duration-200 font-medium"
         >
           <X className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
-          모든 필터 지우기
+          {BUTTONS.CLEAR_ALL_FILTERS}
         </Button>
       )}
     </div>

@@ -2,6 +2,7 @@
 
 import { motion } from "framer-motion";
 import { ErrorBoundary } from "@/components/error/error-boundary";
+import { ERROR_CONFIGS } from "@/lib/constants/error";
 import type { SecuritySectionProps } from "@/lib/types/account";
 import { PasswordSection } from "./password-section";
 import { LoginActivitySection } from "./login-activity-section";
@@ -13,8 +14,8 @@ export function SecuritySection({
 }: SecuritySectionProps) {
   return (
     <ErrorBoundary
-      title="보안 섹션 오류"
-      description="보안 정보를 불러오는 중 문제가 발생했습니다. 페이지를 새로고침하거나 잠시 후 다시 시도해주세요."
+      title={ERROR_CONFIGS.LOADING.title}
+      description={ERROR_CONFIGS.LOADING.description}
     >
       <motion.div
         initial={{ opacity: 0, y: 20 }}

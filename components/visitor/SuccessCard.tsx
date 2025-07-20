@@ -4,6 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Logo } from "@/components/common";
 import { formatDateTime } from "@/lib/utils/datetime/date";
+import { BUTTONS, LABELS } from "@/lib/constants/visitor";
 
 export const SuccessCard = () => {
   return (
@@ -12,16 +13,16 @@ export const SuccessCard = () => {
         <CardHeader className="pb-3 sm:pb-4 px-4 sm:px-6 pt-4 sm:pt-6">
           <CardTitle className="text-center text-green-600 flex items-center justify-center gap-2 text-lg sm:text-xl">
             <CheckCircle className="h-5 w-5 sm:h-6 sm:w-6" />
-            등록 완료
+            {LABELS.SUCCESS_CARD_TITLE}
           </CardTitle>
         </CardHeader>
         <CardContent className="text-center space-y-3 sm:space-y-4 px-4 sm:px-6 pb-4 sm:pb-6">
           <div className="space-y-2 sm:space-y-3">
             <p className="text-base sm:text-lg font-semibold">
-              방문 등록이 완료되었습니다!
+              {LABELS.SUCCESS_CARD_HEADER}
             </p>
             <p className="text-xs sm:text-sm text-muted-foreground">
-              농장 관리자에게 알림이 전송되었습니다.
+              {LABELS.SUCCESS_CARD_NOTIFICATION}
             </p>
 
             {/* 회사 브랜딩 */}
@@ -29,20 +30,23 @@ export const SuccessCard = () => {
               <div className="text-center space-y-1.5 sm:space-y-2">
                 <Logo showText className="justify-center" size="xl" />
                 <p className="text-xs text-blue-600">
-                  Powered by <span className="font-bold">SAMWON KOREA</span>
+                  {LABELS.SUCCESS_CARD_POWERED_BY}{" "}
+                  <span className="font-bold">
+                    {LABELS.SUCCESS_CARD_SAMWON_KOREA}
+                  </span>
                 </p>
               </div>
             </div>
           </div>
 
           <Badge variant="outline" className="text-xs sm:text-sm">
-            등록 시간: {formatDateTime(new Date())}
+            {LABELS.SUCCESS_CARD_REGISTRATION_TIME} {formatDateTime(new Date())}
           </Badge>
 
           {/* 완료 안내 */}
           <div className="space-y-2 sm:space-y-3 pt-2 sm:pt-4">
             <p className="text-xs sm:text-sm text-gray-600">
-              등록이 완료되었습니다. 브라우저의 X 버튼을 눌러 창을 닫아주세요.
+              {LABELS.SUCCESS_CARD_COMPLETION_GUIDE}
             </p>
             <Button
               onClick={() => {
@@ -50,25 +54,23 @@ export const SuccessCard = () => {
               }}
               className="w-full h-10 sm:h-11 text-sm sm:text-base"
             >
-              회사 소개 보기
+              {BUTTONS.SUCCESS_CARD_VIEW_COMPANY}
             </Button>
           </div>
 
           <div className="text-xs text-muted-foreground mt-3 sm:mt-4 space-y-1 text-center">
             <p>
-              🌐 농장 출입 관리 시스템은{" "}
-              <span className="font-semibold text-blue-600">SAMWON KOREA</span>
-              에서 제공합니다.
+              {LABELS.SUCCESS_CARD_SYSTEM_PROVIDER}{" "}
+              <span className="font-semibold text-blue-600">
+                {LABELS.SUCCESS_CARD_SAMWON_KOREA}
+              </span>
+              {LABELS.SUCCESS_CARD_PROVIDED_BY}
             </p>
+            <p className="text-gray-500">{LABELS.SUCCESS_CARD_RECORD_SENT}</p>
             <p className="text-gray-500">
-              📋 방문 기록은 농장 관리자에게 전송되었습니다.
+              {LABELS.SUCCESS_CARD_PRIVACY_DELETION}
             </p>
-            <p className="text-gray-500">
-              🔒 개인정보는 3년 후 자동으로 삭제됩니다.
-            </p>
-            <p className="text-gray-500">
-              📞 문의사항이 있으시면 농장 관리자에게 연락해주세요.
-            </p>
+            <p className="text-gray-500">{LABELS.SUCCESS_CARD_CONTACT_GUIDE}</p>
           </div>
         </CardContent>
       </Card>

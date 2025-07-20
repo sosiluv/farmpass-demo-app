@@ -10,6 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
+import { LABELS } from "@/lib/constants/visitor";
 
 interface ExportOptionsProps {
   includeBasic: boolean;
@@ -45,10 +46,13 @@ export function ExportOptions({
         <CardTitle className="flex items-center justify-between text-purple-700 text-sm sm:text-base">
           <div className="flex items-center space-x-2">
             <Settings className="h-4 w-4" />
-            <span>포함할 정보</span>
+            <span>{LABELS.EXPORT_OPTIONS_TITLE}</span>
           </div>
           <Badge variant="secondary" className="text-xs">
-            {selectedOptionsCount}개 선택
+            {LABELS.EXPORT_OPTIONS_SELECTED_COUNT.replace(
+              "{count}",
+              selectedOptionsCount.toString()
+            )}
           </Badge>
         </CardTitle>
       </CardHeader>
@@ -66,9 +70,11 @@ export function ExportOptions({
             >
               <div className="flex items-center space-x-1.5">
                 <Users className="h-3 w-3 text-blue-600" />
-                <span>기본 정보</span>
+                <span>{LABELS.EXPORT_OPTIONS_BASIC_INFO}</span>
               </div>
-              <p className="text-xs text-gray-500 mt-0.5">이름, 방문일시</p>
+              <p className="text-xs text-gray-500 mt-0.5">
+                {LABELS.EXPORT_OPTIONS_BASIC_DESC}
+              </p>
             </Label>
           </div>
 
@@ -84,9 +90,11 @@ export function ExportOptions({
             >
               <div className="flex items-center space-x-1.5">
                 <FileText className="h-3 w-3 text-green-600" />
-                <span>연락처 정보</span>
+                <span>{LABELS.EXPORT_OPTIONS_CONTACT_INFO}</span>
               </div>
-              <p className="text-xs text-gray-500 mt-0.5">전화번호, 주소</p>
+              <p className="text-xs text-gray-500 mt-0.5">
+                {LABELS.EXPORT_OPTIONS_CONTACT_DESC}
+              </p>
             </Label>
           </div>
 
@@ -102,10 +110,10 @@ export function ExportOptions({
             >
               <div className="flex items-center space-x-1.5">
                 <Building2 className="h-3 w-3 text-orange-600" />
-                <span>방문 정보</span>
+                <span>{LABELS.EXPORT_OPTIONS_VISIT_INFO}</span>
               </div>
               <p className="text-xs text-gray-500 mt-0.5">
-                목적, 농장, 차량번호
+                {LABELS.EXPORT_OPTIONS_VISIT_DESC}
               </p>
             </Label>
           </div>
@@ -122,9 +130,11 @@ export function ExportOptions({
             >
               <div className="flex items-center space-x-1.5">
                 <Sparkles className="h-3 w-3 text-purple-600" />
-                <span>추가 정보</span>
+                <span>{LABELS.EXPORT_OPTIONS_EXTRA_INFO}</span>
               </div>
-              <p className="text-xs text-gray-500 mt-0.5">방역, 동의, 메모</p>
+              <p className="text-xs text-gray-500 mt-0.5">
+                {LABELS.EXPORT_OPTIONS_EXTRA_DESC}
+              </p>
             </Label>
           </div>
         </div>
@@ -134,7 +144,7 @@ export function ExportOptions({
             <div className="flex items-center space-x-2 text-red-700">
               <AlertCircle className="h-3 w-3" />
               <span className="text-xs">
-                최소 하나의 정보를 선택해야 합니다.
+                {LABELS.EXPORT_OPTIONS_MIN_SELECTION}
               </span>
             </div>
           </div>

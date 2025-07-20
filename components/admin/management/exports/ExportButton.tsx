@@ -1,6 +1,7 @@
 import React from "react";
 import { Button } from "@/components/ui/button";
 import { Download } from "lucide-react";
+import { BUTTONS } from "@/lib/constants/management";
 
 interface ExportButtonProps {
   onClick: () => void;
@@ -16,7 +17,7 @@ export function ExportButton({
   return (
     <Button onClick={onClick} disabled={disabled} variant="outline" size="sm">
       <Download className="w-4 h-4 mr-2" />
-      {children || "내보내기"}
+      {children || BUTTONS.CSV_EXPORT}
     </Button>
   );
 }

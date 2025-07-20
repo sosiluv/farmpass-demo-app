@@ -7,13 +7,8 @@
 import { supabase } from "@/lib/supabase/client";
 import { devLog } from "@/lib/utils/logging/dev-logger";
 import { handleError } from "@/lib/utils/error";
-import {
-  UPLOAD_TYPE_CONFIGS,
-  UploadType,
-  UploadResult,
-  UploadError,
-  UploadState,
-} from "@/lib/types/upload";
+import { UPLOAD_TYPE_CONFIGS, UploadType } from "@/lib/constants/upload";
+import { UploadResult, UploadError, UploadState } from "@/lib/types/upload";
 
 export class UnifiedImageManager {
   private state: UploadState = {

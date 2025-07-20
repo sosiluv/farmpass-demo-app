@@ -4,6 +4,7 @@ import { Loading } from "@/components/ui/loading";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertTriangle } from "lucide-react";
 import type { VisitorFormData } from "@/lib/utils/validation/visitor-validation";
+import { BUTTONS } from "@/lib/constants/visitor";
 
 interface FormFooterProps {
   isSubmitting: boolean;
@@ -50,10 +51,10 @@ export const FormFooter = ({
               minHeight="auto"
               className="mr-2"
             />
-            등록 중...
+            {BUTTONS.FORM_FOOTER_REGISTERING}
           </>
         ) : (
-          "방문 등록"
+          BUTTONS.FORM_FOOTER_REGISTER_VISIT
         )}
       </Button>
     </div>

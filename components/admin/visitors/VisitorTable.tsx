@@ -1,8 +1,5 @@
 import { useState } from "react";
-import {
-  formatDateTime,
-  formatResponsiveDateTime,
-} from "@/lib/utils/datetime/date";
+import { formatResponsiveDateTime } from "@/lib/utils/datetime/date";
 import { Table, TableBody } from "@/components/ui/table";
 import {
   Dialog,
@@ -21,6 +18,7 @@ import {
 import { Car, FileText, Calendar, Sparkles } from "lucide-react";
 import { getFarmTypeInfo } from "@/lib/constants/farm-types";
 import { formatPhoneNumber } from "@/lib/utils/validation";
+import { BUTTONS, LABELS } from "@/lib/constants/visitor";
 import {
   VisitorAvatar,
   StatusBadge,
@@ -43,7 +41,7 @@ interface VisitorTableProps {
   onDelete?: (visitor: VisitorWithFarm) => Promise<void>;
 }
 
-// 모바??카드 �?컴포?�트
+// 모바일 카드 컴포넌트
 function MobileVisitorCard({
   visitor,
   index,
@@ -150,11 +148,11 @@ function MobileVisitorCard({
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <div className="cursor-help">
-                        {/* ?�도/?�짜 - ??�� ??줄로 ?�시 */}
+                        {/* 날짜/시간 - 한 줄로 표시 */}
                         <p className="font-medium text-gray-700 leading-tight">
                           {datePart}
                         </p>
-                        {/* ?�간 - ?�음 줄에 ?�시 */}
+                        {/* 시간 - 다음 줄에 표시 */}
                         <p className="text-[10px] sm:text-xs text-gray-600 leading-tight">
                           {timePart}
                         </p>
@@ -204,7 +202,8 @@ function MobileVisitorCard({
             <Tooltip delayDuration={300}>
               <TooltipTrigger asChild>
                 <span className="font-medium text-gray-700 truncate flex-1 cursor-help touch-manipulation">
-                  {visitor.visitor_purpose || "기�?"}
+                  {visitor.visitor_purpose ||
+                    LABELS.VISITOR_TABLE_DEFAULT_PURPOSE}
                 </span>
               </TooltipTrigger>
               <TooltipContent
@@ -213,7 +212,10 @@ function MobileVisitorCard({
                 className="max-w-[200px] z-[9999]"
                 sideOffset={8}
               >
-                <p>{visitor.visitor_purpose || "기�?"}</p>
+                <p>
+                  {visitor.visitor_purpose ||
+                    LABELS.VISITOR_TABLE_DEFAULT_PURPOSE}
+                </p>
               </TooltipContent>
             </Tooltip>
           </div>
@@ -245,14 +247,17 @@ function MobileVisitorCard({
                 <Sparkles className="w-3 h-3 sm:w-4 sm:h-4 text-green-500 flex-shrink-0" />
               )}
               <span className="text-[10px] sm:text-xs text-gray-500 truncate">
-                방역 {visitor.disinfection_check ? "완료" : "미완료"}
+                {LABELS.VISITOR_TABLE_DISINFECTION_STATUS}{" "}
+                {visitor.disinfection_check
+                  ? LABELS.VISITOR_TABLE_DISINFECTION_COMPLETE
+                  : LABELS.VISITOR_TABLE_DISINFECTION_INCOMPLETE}
               </span>
             </div>
             <button
               onClick={() => onViewDetails(visitor)}
               className="text-[10px] sm:text-xs text-blue-600 hover:text-blue-800 font-medium flex-shrink-0 ml-2"
             >
-              상세보기
+              {BUTTONS.VISITOR_TABLE_DETAILS_BUTTON}
             </button>
           </div>
         </div>
@@ -283,19 +288,19 @@ export function VisitorTable({
     setSelectedVisitor(null);
   };
 
-  // 로딩 ?�태
+  // 로딩 상태
   if (loading) {
     return <VisitorTableLoading />;
   }
 
-  // �??�태
+  // 데이터가 없는 경우
   if (!visitors || visitors.length === 0) {
     return <VisitorTableEmpty />;
   }
 
   return (
     <>
-      {/* ?�스?�톱 ?�이�?�?*/}
+      {/* 데스크탑 테이블 */}
       <div className="hidden xl:block">
         <div className="w-full overflow-x-auto rounded-lg border border-gray-200 bg-white shadow-sm">
           <Table className="table-fixed min-w-[900px]">
@@ -321,7 +326,7 @@ export function VisitorTable({
         </div>
       </div>
 
-      {/* 모바??카드 �?*/}
+      {/* 모바일 카드 목록 */}
       <div className="xl:hidden space-y-3 sm:space-y-4 w-full max-w-full overflow-x-hidden">
         {(visitors || []).map((visitor, index) => (
           <MobileVisitorCard
@@ -337,17 +342,17 @@ export function VisitorTable({
         ))}
       </div>
 
-      {/* 방문???�세 모달 */}
+      {/* 방문 상세 모달 */}
       <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
         <DialogContent className="w-[92vw] max-w-[360px] sm:max-w-[480px] md:max-w-[580px] lg:max-w-[680px] h-[92vh] max-h-[92vh] sm:h-[85vh] sm:max-h-[85vh] overflow-hidden p-3 sm:p-4 md:p-5 flex flex-col gap-0">
           <DialogHeader className="sr-only">
             <DialogTitle>
               {selectedVisitor
-                ? `${selectedVisitor.visitor_name} 방문???�세 ?�보`
-                : "방문???�세 ?�보"}
+                ? `${selectedVisitor.visitor_name} ${LABELS.VISITOR_TABLE_DETAILS_TITLE}`
+                : LABELS.VISITOR_TABLE_DETAILS_TITLE}
             </DialogTitle>
             <DialogDescription>
-              방문?�의 기본 ?�보, 방문 ?�보, 방역 ?�태 ?�을 ?�인?????�습?�다.
+              {LABELS.VISITOR_TABLE_DETAILS_DESC}
             </DialogDescription>
           </DialogHeader>
           <VisitorDetailModal

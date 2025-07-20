@@ -1,6 +1,7 @@
 import { Line } from "@/components/ui/chart";
 import { TrendingUp } from "lucide-react";
 import { ChartCard } from "@/components/common/ChartCard";
+import { LABELS, PAGE_HEADER } from "@/lib/constants/management";
 
 interface MonthlyTrendsProps {
   data?: {
@@ -14,13 +15,13 @@ export function MonthlyTrends({ data = [] }: MonthlyTrendsProps) {
   if (data.length === 0) {
     return (
       <ChartCard
-        title="월별 현황"
-        description="최근 4개월간 사용자 및 농장 현황"
+        title={PAGE_HEADER.MONTHLY_TRENDS_TITLE}
+        description={PAGE_HEADER.MONTHLY_TRENDS_DESCRIPTION}
         icon={TrendingUp}
         variant="success"
       >
         <div className="flex items-center justify-center h-full text-muted-foreground">
-          데이터를 불러오는 중...
+          {LABELS.LOADING_DATA}
         </div>
       </ChartCard>
     );
@@ -32,13 +33,13 @@ export function MonthlyTrends({ data = [] }: MonthlyTrendsProps) {
   if (!hasAnyData) {
     return (
       <ChartCard
-        title="월별 현황"
-        description="최근 4개월간 사용자 및 농장 현황"
+        title={PAGE_HEADER.MONTHLY_TRENDS_TITLE}
+        description={PAGE_HEADER.MONTHLY_TRENDS_DESCRIPTION}
         icon={TrendingUp}
         variant="success"
       >
         <div className="flex items-center justify-center h-full text-muted-foreground">
-          등록된 데이터가 없습니다
+          {LABELS.NO_REGISTERED_DATA}
         </div>
       </ChartCard>
     );
@@ -46,8 +47,8 @@ export function MonthlyTrends({ data = [] }: MonthlyTrendsProps) {
 
   return (
     <ChartCard
-      title="월별 현황"
-      description="최근 4개월간 사용자 및 농장 현황"
+      title={PAGE_HEADER.MONTHLY_TRENDS_TITLE}
+      description={PAGE_HEADER.MONTHLY_TRENDS_DESCRIPTION}
       icon={TrendingUp}
       variant="success"
     >
@@ -57,7 +58,7 @@ export function MonthlyTrends({ data = [] }: MonthlyTrendsProps) {
             labels: (data || []).map((item) => item.month),
             datasets: [
               {
-                label: "사용자",
+                label: LABELS.USER_COUNT,
                 data: (data || []).map((item) => item.users),
                 borderColor: "rgb(99, 102, 241)", // indigo
                 backgroundColor: "rgba(99, 102, 241, 0.2)",
@@ -71,7 +72,7 @@ export function MonthlyTrends({ data = [] }: MonthlyTrendsProps) {
                 fill: true,
               },
               {
-                label: "농장",
+                label: LABELS.FARM_COUNT_LABEL,
                 data: (data || []).map((item) => item.farms),
                 borderColor: "rgb(14, 165, 233)", // sky
                 backgroundColor: "rgba(14, 165, 233, 0.2)",

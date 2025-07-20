@@ -11,6 +11,7 @@ import { AddressSearch } from "@/components/common/address-search";
 import type { UseFormReturn } from "react-hook-form";
 import type { FarmFormValues } from "@/lib/utils/validation";
 import { MapPin, FileText } from "lucide-react";
+import { LABELS, PLACEHOLDERS } from "@/lib/constants/farms";
 
 interface FarmFormAddressFieldProps {
   form: UseFormReturn<FarmFormValues>;
@@ -28,7 +29,7 @@ export function FarmFormAddressField({ form }: FarmFormAddressFieldProps) {
             className="flex items-center gap-2 text-sm"
           >
             <MapPin className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-            농장 주소
+            {LABELS.FARM_ADDRESS}
             <span className="text-red-500">*</span>
           </FormLabel>
           <FormControl>
@@ -42,10 +43,11 @@ export function FarmFormAddressField({ form }: FarmFormAddressFieldProps) {
                   form.getValues("farm_detailed_address") || ""
                 }
               />
+
               <div className="space-y-3">
                 <Textarea
                   id="farm-address"
-                  placeholder="주소 검색 버튼을 클릭하여 주소를 입력하세요"
+                  placeholder={PLACEHOLDERS.FARM_ADDRESS}
                   {...field}
                   readOnly
                   className="text-sm min-h-[80px]"
@@ -60,12 +62,12 @@ export function FarmFormAddressField({ form }: FarmFormAddressFieldProps) {
                         className="flex items-center gap-2 text-sm"
                       >
                         <FileText className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-                        상세 주소
+                        {LABELS.FARM_DETAILED_ADDRESS}
                       </FormLabel>
                       <FormControl>
                         <Input
                           id="farm-detailed-address"
-                          placeholder="상세 주소를 입력하세요 (예: 101동 1234호)"
+                          placeholder={PLACEHOLDERS.FARM_DETAILED_ADDRESS}
                           {...detailField}
                           value={detailField.value || ""}
                           className="h-10 sm:h-12 text-sm"

@@ -10,7 +10,7 @@ import {
 import type { UseFormReturn } from "react-hook-form";
 import type { VisitorFormData } from "@/lib/utils/validation/visitor-validation";
 import { formatPhone } from "@/lib/utils/validation/validation";
-import { LABELS, PLACEHOLDERS } from "@/constants/visitor-form";
+import { LABELS, PLACEHOLDERS } from "@/lib/constants/visitor";
 import { Phone } from "lucide-react";
 
 interface PhoneFieldProps {
@@ -36,7 +36,9 @@ export const PhoneField = ({
           >
             <Phone className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
             {LABELS.PHONE_NUMBER}
-            {required && <span className="text-red-500">*</span>}
+            {required && (
+              <span className="text-red-500">{LABELS.REQUIRED_MARK}</span>
+            )}
           </FormLabel>
           <FormControl>
             <Input

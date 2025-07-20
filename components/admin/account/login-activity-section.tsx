@@ -6,6 +6,7 @@ import { supabase } from "@/lib/supabase/client";
 import { formatTimeAgo } from "@/lib/utils/datetime/date";
 import { getDeviceInfo } from "@/lib/utils/browser/device-detection";
 import AccountCardHeader from "./AccountCardHeader";
+import { LABELS, PAGE_HEADER } from "@/lib/constants/account";
 
 interface LoginActivity {
   id: string;
@@ -54,8 +55,8 @@ export function LoginActivitySection({ profile }: LoginActivitySectionProps) {
       activities.push({
         id: "current",
         device: currentDevice.type,
-        location: "현재 위치",
-        time: "지금",
+        location: LABELS.CURRENT_LOCATION,
+        time: LABELS.NOW,
         isCurrent: true,
         icon: currentDevice.icon,
         user_agent: currentDevice.userAgent,
@@ -82,7 +83,7 @@ export function LoginActivitySection({ profile }: LoginActivitySectionProps) {
         activities.push({
           id: log.id,
           device: deviceInfo.type,
-          location: metadata?.location || "알 수 없음",
+          location: metadata?.location || LABELS.UNKNOWN_LOCATION,
           time: formatTimeAgo(new Date(log.created_at)),
           isCurrent: false,
           icon: deviceInfo.icon,
@@ -106,8 +107,8 @@ export function LoginActivitySection({ profile }: LoginActivitySectionProps) {
     <Card>
       <AccountCardHeader
         icon={Activity}
-        title="로그인 활동"
-        description="최근 로그인 기록과 계정 활동을 확인합니다."
+        title={PAGE_HEADER.LOGIN_ACTIVITY_TITLE}
+        description={PAGE_HEADER.LOGIN_ACTIVITY_DESCRIPTION}
       />
       <CardContent className="space-y-6">
         <div className="space-y-4">
@@ -127,7 +128,7 @@ export function LoginActivitySection({ profile }: LoginActivitySectionProps) {
                     {activity.device}
                     {activity.isCurrent && (
                       <span className="ml-2 text-xs bg-primary/20 text-primary px-2 py-1 rounded-full whitespace-nowrap">
-                        현재 세션
+                        {LABELS.CURRENT_SESSION}
                       </span>
                     )}
                   </div>
@@ -152,12 +153,12 @@ export function LoginActivitySection({ profile }: LoginActivitySectionProps) {
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-2 sm:space-y-0">
             <div className="space-y-1">
               <div className="font-medium text-sm sm:text-base">
-                마지막 로그인
+                {LABELS.LAST_LOGIN}
               </div>
               <div className="text-xs sm:text-sm text-muted-foreground break-words">
                 {profile?.last_login_at
                   ? new Date(profile.last_login_at).toLocaleString()
-                  : "기록 없음"}
+                  : LABELS.NO_RECORD}
               </div>
             </div>
             <Clock className="h-5 w-5 text-muted-foreground flex-shrink-0" />
@@ -166,12 +167,12 @@ export function LoginActivitySection({ profile }: LoginActivitySectionProps) {
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-2 sm:space-y-0">
             <div className="space-y-1">
               <div className="font-medium text-sm sm:text-base">
-                비밀번호 변경
+                {LABELS.PASSWORD_CHANGE}
               </div>
               <div className="text-xs sm:text-sm text-muted-foreground break-words">
                 {profile?.password_changed_at
                   ? new Date(profile.password_changed_at).toLocaleString()
-                  : "기록 없음"}
+                  : LABELS.NO_RECORD}
               </div>
             </div>
             <History className="h-5 w-5 text-muted-foreground flex-shrink-0" />
@@ -180,7 +181,7 @@ export function LoginActivitySection({ profile }: LoginActivitySectionProps) {
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-2 sm:space-y-0">
             <div className="space-y-1">
               <div className="font-medium text-sm sm:text-base">
-                로그인 횟수
+                {LABELS.LOGIN_COUNT}
               </div>
               <div className="text-xs sm:text-sm text-muted-foreground">
                 {profile?.login_count || 0}회
@@ -191,9 +192,11 @@ export function LoginActivitySection({ profile }: LoginActivitySectionProps) {
 
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-2 sm:space-y-0">
             <div className="space-y-1">
-              <div className="font-medium text-sm sm:text-base">계정 상태</div>
+              <div className="font-medium text-sm sm:text-base">
+                {LABELS.ACCOUNT_STATUS}
+              </div>
               <div className="text-xs sm:text-sm text-muted-foreground">
-                {profile?.is_active ? "활성화" : "비활성화"}
+                {profile?.is_active ? LABELS.ACTIVE : LABELS.INACTIVE}
               </div>
             </div>
             <Shield className="h-5 w-5 text-muted-foreground flex-shrink-0" />

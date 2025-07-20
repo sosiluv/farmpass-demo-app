@@ -1,6 +1,7 @@
 import React from "react";
 import { CardDescription, CardTitle } from "@/components/ui/card";
 import { Logo } from "@/components/common";
+import { LABELS, PAGE_HEADER } from "@/lib/constants/visitor";
 
 interface FormHeaderProps {
   title?: string;
@@ -9,8 +10,8 @@ interface FormHeaderProps {
 }
 
 export const FormHeader = ({
-  title = "방문자 등록",
-  description = "방문 정보를 정확히 입력해주세요. 모든 정보는 방역 관리 목적으로만 사용됩니다.",
+  title = PAGE_HEADER.FORM_HEADER_DEFAULT_TITLE,
+  description = PAGE_HEADER.FORM_HEADER_DEFAULT_DESCRIPTION,
   logoUrl = "/default-logo1.png",
 }: FormHeaderProps) => {
   const [logoError, setLogoError] = React.useState(false);
@@ -24,7 +25,7 @@ export const FormHeader = ({
         {!logoError ? (
           <img
             src={logoUrl}
-            alt="회사 로고"
+            alt={LABELS.FORM_HEADER_COMPANY_LOGO_ALT}
             className="w-[60%] sm:w-80 h-auto max-w-[140px] sm:max-w-md mb-1.5 sm:mb-4 drop-shadow"
             style={{ objectFit: "contain" }}
             onError={() => setLogoError(true)}

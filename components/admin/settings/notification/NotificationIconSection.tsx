@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
-import { Label } from "@/components/ui/label";
-
 import { Bell, BadgeCheck } from "lucide-react";
+import { LABELS, PAGE_HEADER } from "@/lib/constants/settings";
 import type { SystemSettings } from "@/lib/types/settings";
 import SettingsCardHeader from "../SettingsCardHeader";
 
@@ -89,8 +88,8 @@ const NotificationIconSection = React.memo(function NotificationIconSection({
     <Card>
       <SettingsCardHeader
         icon={Bell}
-        title="알림/배지 아이콘"
-        description="푸시 알림에 표시될 아이콘과 배지를 설정합니다. (로고/파비콘과 동일한 방식)"
+        title={PAGE_HEADER.NOTIFICATION_ICON_TITLE}
+        description={PAGE_HEADER.NOTIFICATION_ICON_DESCRIPTION}
       />
       <CardContent className="space-y-6">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
@@ -99,7 +98,9 @@ const NotificationIconSection = React.memo(function NotificationIconSection({
             <div className="border-2 border-dashed border-blue-200 bg-blue-50/50 rounded-lg p-4 sm:p-6 space-y-3 sm:space-y-4">
               <div className="flex items-center gap-2 text-blue-700">
                 <Bell className="h-5 w-5" />
-                <span className="font-medium">알림 아이콘</span>
+                <span className="font-medium">
+                  {LABELS.NOTIFICATION_ICON_LABEL}
+                </span>
               </div>
               <div className="flex flex-col items-center sm:block">
                 <ImageUpload
@@ -109,12 +110,12 @@ const NotificationIconSection = React.memo(function NotificationIconSection({
                   onDelete={notificationIconUpload.deleteImage}
                   currentImage={iconPreview}
                   avatarSize="md"
-                  label="알림 아이콘"
+                  label={LABELS.NOTIFICATION_ICON_LABEL}
                   hideGuidelines={false}
                 />
               </div>
               <div className="text-sm text-blue-600/80 space-y-1 text-center">
-                <p>푸시 알림에 표시됩니다</p>
+                <p>{LABELS.NOTIFICATION_ICON_DESC}</p>
               </div>
             </div>
           </div>
@@ -123,7 +124,9 @@ const NotificationIconSection = React.memo(function NotificationIconSection({
             <div className="border-2 border-dashed border-orange-200 bg-orange-50/50 rounded-lg p-4 sm:p-6 space-y-3 sm:space-y-4">
               <div className="flex items-center gap-2 text-orange-700">
                 <BadgeCheck className="h-5 w-5" />
-                <span className="font-medium">배지 아이콘</span>
+                <span className="font-medium">
+                  {LABELS.NOTIFICATION_BADGE_LABEL}
+                </span>
               </div>
               <div className="flex flex-col items-center sm:block">
                 <ImageUpload
@@ -133,12 +136,12 @@ const NotificationIconSection = React.memo(function NotificationIconSection({
                   onDelete={notificationBadgeUpload.deleteImage}
                   currentImage={badgePreview}
                   avatarSize="md"
-                  label="배지 아이콘"
+                  label={LABELS.NOTIFICATION_BADGE_LABEL}
                   hideGuidelines={false}
                 />
               </div>
               <div className="text-sm text-orange-600/80 space-y-1 text-center">
-                <p>푸시 알림 배지에 표시됩니다</p>
+                <p>{LABELS.NOTIFICATION_BADGE_DESC}</p>
               </div>
             </div>
           </div>

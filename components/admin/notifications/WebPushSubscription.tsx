@@ -19,6 +19,7 @@ import { Zap } from "lucide-react";
 import { useCommonToast } from "@/lib/utils/notification/toast-messages";
 import { safeNotificationAccess } from "@/lib/utils/browser/safari-compat";
 import { getNotificationErrorMessage } from "@/lib/utils/validation/validation";
+import { PAGE_HEADER } from "@/lib/constants/notifications";
 
 interface WebPushSubscriptionProps {
   farms?: Farm[];
@@ -184,8 +185,8 @@ export function WebPushSubscription({
     <Card>
       <NotificationCardHeader
         icon={Zap}
-        title="푸시 알림 설정"
-        description="실시간 알림을 받아보세요"
+        title={PAGE_HEADER.PUSH_NOTIFICATION_SETTINGS}
+        description={PAGE_HEADER.PUSH_DESCRIPTION}
       />
       <CardContent className="pt-0">
         {renderNotificationStatus(status, {

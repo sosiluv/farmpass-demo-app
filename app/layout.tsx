@@ -14,6 +14,7 @@ import { PWAUpdater } from "@/components/common/pwa-updater";
 
 import { getMetadataSettings } from "@/lib/server/metadata";
 import { ErrorBoundary } from "@/components/error/error-boundary";
+import { ERROR_CONFIGS } from "@/lib/constants/error";
 import { Analytics } from "@vercel/analytics/react";
 import { PWAProvider } from "@/components/providers/pwa-provider";
 import { SystemSettingsProvider } from "@/components/providers/system-settings-provider";
@@ -99,8 +100,8 @@ export default async function RootLayout({
       </head>
       <body className={cn(inter.className, "min-h-screen bg-background")}>
         <ErrorBoundary
-          title="앱 오류"
-          description="앱에서 예상치 못한 오류가 발생했습니다. 페이지를 새로고침하거나 잠시 후 다시 시도해주세요."
+          title={ERROR_CONFIGS.GENERAL.title}
+          description={ERROR_CONFIGS.GENERAL.description}
         >
           <PWAUpdater />
           <QueryProvider>

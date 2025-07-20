@@ -1,6 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Check, Loader2 } from "lucide-react";
 import { PageHeader } from "@/components/layout";
+import { LABELS, PAGE_HEADER, BUTTONS } from "@/lib/constants/settings";
 
 interface SettingsHeaderProps {
   saving: boolean;
@@ -22,12 +23,12 @@ export function SettingsHeader({
       {saving ? (
         <>
           <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-          저장 중...
+          {BUTTONS.SAVING}
         </>
       ) : (
         <>
           <Check className="w-4 h-4 mr-2" />
-          설정 저장
+          {BUTTONS.SAVE_SETTINGS}
         </>
       )}
     </Button>
@@ -35,9 +36,9 @@ export function SettingsHeader({
 
   return (
     <PageHeader
-      title="시스템 설정"
-      description="시스템의 전반적인 설정을 관리하세요"
-      breadcrumbs={[{ label: "시스템 설정" }]}
+      title={PAGE_HEADER.PAGE_TITLE}
+      description={PAGE_HEADER.PAGE_DESCRIPTION}
+      breadcrumbs={[{ label: PAGE_HEADER.BREADCRUMB }]}
       actions={saveButton}
     />
   );

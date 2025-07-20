@@ -1,4 +1,5 @@
 import { Pie } from "@/components/ui/chart";
+import { LABELS } from "@/lib/constants/common";
 
 export function VisitorPurposeChart({ data }: { data: any[] }) {
   // 데이터가 없거나 모든 count 값이 0일 때 안내 메시지
@@ -9,7 +10,7 @@ export function VisitorPurposeChart({ data }: { data: any[] }) {
   if (isEmpty) {
     return (
       <div className="flex items-center justify-center h-full text-muted-foreground">
-        <p>방문 목적별 데이터가 없습니다.</p>
+        <p>{LABELS.CHART_NO_PURPOSE_DATA}</p>
       </div>
     );
   }

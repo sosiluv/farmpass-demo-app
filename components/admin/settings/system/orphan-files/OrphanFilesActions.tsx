@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { FileX, Loader2 } from "lucide-react";
 import type { OrphanFilesStatus } from "@/lib/types/settings";
+import { BUTTONS, LABELS, PAGE_HEADER } from "@/lib/constants/settings";
 
 interface OrphanFilesActionsProps {
   orphanFilesStatus: OrphanFilesStatus;
@@ -41,7 +42,7 @@ export function OrphanFilesActions({
             disabled={orphanFilesLoading || totalOrphanCount === 0}
           >
             <FileX className="h-4 w-4 mr-2" />
-            Orphan 파일 정리
+            {BUTTONS.ORPHAN_FILES_CLEANUP_BUTTON}
             {totalOrphanCount > 0 && (
               <Badge variant="secondary" className="ml-2">
                 {totalOrphanCount}개
@@ -51,33 +52,48 @@ export function OrphanFilesActions({
         </AlertDialogTrigger>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Orphan 파일 정리 확인</AlertDialogTitle>
+            <AlertDialogTitle>
+              {PAGE_HEADER.ORPHAN_FILES_CLEANUP_CONFIRM_TITLE}
+            </AlertDialogTitle>
             <AlertDialogDescription asChild>
               <div>
                 <div className="text-sm mb-3">
-                  사용되지 않는{" "}
-                  <strong className="text-red-600">{totalOrphanCount}개</strong>
-                  의 이미지 파일이 삭제됩니다.
+                  {PAGE_HEADER.ORPHAN_FILES_CLEANUP_CONFIRM_DESC.replace(
+                    "{count}",
+                    totalOrphanCount.toString()
+                  )}
                 </div>
                 <div className="bg-red-50 border border-red-200 rounded-lg p-3">
                   <div className="text-sm text-red-700">
-                    <div className="font-medium mb-1">삭제될 파일:</div>
+                    <div className="font-medium mb-1">
+                      {LABELS.ORPHAN_FILES_DELETE_FILES_TITLE}
+                    </div>
                     <ul className="list-disc list-inside space-y-1 text-xs">
                       <li>
-                        방문자 이미지: {orphanFilesStatus.visitorOrphanCount}개
+                        {LABELS.ORPHAN_FILES_VISITOR_IMAGES_DELETE.replace(
+                          "{count}",
+                          orphanFilesStatus.visitorOrphanCount.toString()
+                        )}
                       </li>
                       <li>
-                        방문자 DB orphan:{" "}
-                        {orphanFilesStatus.visitorDbOrphanCount}개
+                        {LABELS.ORPHAN_FILES_VISITOR_DB_ORPHAN_DELETE.replace(
+                          "{count}",
+                          orphanFilesStatus.visitorDbOrphanCount.toString()
+                        )}
                       </li>
                       <li>
-                        프로필 이미지: {orphanFilesStatus.profileOrphanCount}개
+                        {LABELS.ORPHAN_FILES_PROFILE_IMAGES_DELETE.replace(
+                          "{count}",
+                          orphanFilesStatus.profileOrphanCount.toString()
+                        )}
                       </li>
                       <li>
-                        프로필 DB orphan:{" "}
-                        {orphanFilesStatus.profileDbOrphanCount}개
+                        {LABELS.ORPHAN_FILES_PROFILE_DB_ORPHAN_DELETE.replace(
+                          "{count}",
+                          orphanFilesStatus.profileDbOrphanCount.toString()
+                        )}
                       </li>
-                      <li>삭제된 파일은 복구할 수 없습니다</li>
+                      <li>{LABELS.ORPHAN_FILES_IRRECOVERABLE}</li>
                     </ul>
                   </div>
                 </div>
@@ -86,7 +102,7 @@ export function OrphanFilesActions({
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel disabled={orphanFilesLoading}>
-              취소
+              {BUTTONS.CLEANUP_CANCEL}
             </AlertDialogCancel>
             <AlertDialogAction
               onClick={onCleanupRequest}
@@ -96,10 +112,10 @@ export function OrphanFilesActions({
               {orphanFilesLoading ? (
                 <>
                   <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  삭제 중...
+                  {BUTTONS.CLEANUP_CLEANING}
                 </>
               ) : (
-                "삭제"
+                BUTTONS.CLEANUP_DELETE
               )}
             </AlertDialogAction>
           </AlertDialogFooter>

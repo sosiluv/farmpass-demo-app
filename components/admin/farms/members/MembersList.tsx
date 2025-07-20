@@ -1,4 +1,5 @@
 import { MemberCard } from "./MemberCard";
+import { LABELS } from "@/lib/constants/farms";
 
 interface Member {
   id: string;
@@ -41,11 +42,11 @@ export function MembersList({
             </svg>
           </div>
           <h3 className="text-base sm:text-lg font-medium text-gray-900 mb-2">
-            등록된 구성원이 없습니다
+            {LABELS.NO_REGISTERED_MEMBERS}
           </h3>
           {canManageMembers && (
             <p className="text-sm sm:text-base text-gray-500">
-              위의 구성원 추가 버튼을 클릭하여 새로운 구성원을 추가하세요.
+              {LABELS.NO_MEMBERS_DESCRIPTION}
             </p>
           )}
         </div>

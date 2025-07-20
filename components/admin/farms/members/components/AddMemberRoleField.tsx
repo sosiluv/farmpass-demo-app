@@ -6,6 +6,11 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
+import {
+  LABELS,
+  PLACEHOLDERS,
+  MEMBER_ROLE_OPTIONS,
+} from "@/lib/constants/farms";
 
 interface AddMemberRoleFieldProps {
   role: "manager" | "viewer";
@@ -19,22 +24,25 @@ export function AddMemberRoleField({
   return (
     <div className="space-y-1 sm:space-y-2">
       <Label htmlFor="member-role-select" className="text-xs sm:text-sm">
-        권한
+        {LABELS.MEMBER_ROLE}
       </Label>
       <Select value={role} onValueChange={(value: any) => onRoleChange(value)}>
         <SelectTrigger
           id="member-role-select"
           className="h-8 sm:h-9 md:h-10 text-xs sm:text-sm"
         >
-          <SelectValue placeholder="권한 선택" />
+          <SelectValue placeholder={PLACEHOLDERS.MEMBER_ROLE_PLACEHOLDER} />
         </SelectTrigger>
         <SelectContent>
-          <SelectItem value="manager" className="text-xs sm:text-sm">
-            관리자
-          </SelectItem>
-          <SelectItem value="viewer" className="text-xs sm:text-sm">
-            조회자
-          </SelectItem>
+          {MEMBER_ROLE_OPTIONS.map((option) => (
+            <SelectItem
+              key={option.value}
+              value={option.value}
+              className="text-xs sm:text-sm"
+            >
+              {option.label}
+            </SelectItem>
+          ))}
         </SelectContent>
       </Select>
     </div>

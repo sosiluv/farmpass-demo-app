@@ -3,6 +3,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Calendar } from "lucide-react";
+import { LABELS } from "@/lib/constants/management";
 
 interface DateRangeSectionProps {
   startDate: string;
@@ -18,7 +19,7 @@ export function DateRangeSection({
   endDate,
   onStartDateChange,
   onEndDateChange,
-  title = "날짜 범위",
+  title = LABELS.DATE_RANGE,
   color = "blue",
 }: DateRangeSectionProps) {
   const colorClasses = {
@@ -40,7 +41,7 @@ export function DateRangeSection({
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3">
           <div className="space-y-1 sm:space-y-1.5">
             <Label className="text-[10px] sm:text-xs md:text-sm font-medium">
-              시작 날짜
+              {LABELS.START_DATE}
             </Label>
             <Input
               type="date"
@@ -51,7 +52,7 @@ export function DateRangeSection({
           </div>
           <div className="space-y-1 sm:space-y-1.5">
             <Label className="text-[10px] sm:text-xs md:text-sm font-medium">
-              종료 날짜
+              {LABELS.END_DATE}
             </Label>
             <Input
               type="date"

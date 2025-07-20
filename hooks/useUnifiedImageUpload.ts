@@ -12,8 +12,8 @@ import {
   createImageManager,
   UnifiedImageManager,
 } from "@/lib/utils/media/unified-image-manager";
+import { UploadType } from "@/lib/constants/upload";
 import {
-  UploadType,
   UploadResult,
   UploadError,
   UploadState,

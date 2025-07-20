@@ -9,6 +9,7 @@ import {
   SubscriptionCleanupSuccessMessage,
 } from "./subscription-cleanup";
 import { useSubscriptionCleanupManager } from "@/lib/hooks/query/use-subscription-cleanup-manager";
+import { PAGE_HEADER } from "@/lib/constants/settings";
 
 interface SubscriptionCleanupSectionProps {
   settings: SystemSettings;
@@ -18,22 +19,6 @@ interface SubscriptionCleanupSectionProps {
   ) => void;
   isLoading: boolean;
 }
-
-const CLEANUP_DAYS_OPTIONS = [
-  { label: "자동 삭제 안함", value: 0 },
-  { label: "7일 후 삭제", value: 7 },
-  { label: "15일 후 삭제", value: 15 },
-  { label: "30일 후 삭제", value: 30 },
-  { label: "60일 후 삭제", value: 60 },
-  { label: "90일 후 삭제", value: 90 },
-];
-
-const FAIL_COUNT_OPTIONS = [
-  { label: "3회 실패", value: 3 },
-  { label: "5회 실패", value: 5 },
-  { label: "10회 실패", value: 10 },
-  { label: "15회 실패", value: 15 },
-];
 
 export function SubscriptionCleanupSection({
   settings,
@@ -63,8 +48,8 @@ export function SubscriptionCleanupSection({
     <Card>
       <SettingsCardHeader
         icon={Settings}
-        title="구독 정리 설정"
-        description="푸시 구독 정리 정책을 관리합니다. 만료되거나 실패한 구독을 자동으로 정리합니다."
+        title={PAGE_HEADER.SUBSCRIPTION_CLEANUP_SECTION_TITLE}
+        description={PAGE_HEADER.SUBSCRIPTION_CLEANUP_SECTION_DESC}
       />
       <CardContent className="space-y-6">
         <SubscriptionCleanupForm

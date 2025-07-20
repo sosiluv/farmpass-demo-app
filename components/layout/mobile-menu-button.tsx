@@ -9,6 +9,7 @@ import {
   useIsTablet,
 } from "@/hooks/use-mobile";
 import { cn } from "@/lib/utils";
+import { BUTTONS } from "@/lib/constants/common";
 
 interface MobileMenuButtonProps {
   className?: string;
@@ -143,7 +144,9 @@ export function MobileMenuButton({ className }: MobileMenuButtonProps) {
             : "bg-primary text-primary-foreground border-white/20",
           hasShownIntro && "animate-bounce"
         )}
-        aria-label={openMobile ? "메뉴 닫기" : "메뉴 열기"}
+        aria-label={
+          openMobile ? BUTTONS.MOBILE_MENU_CLOSE : BUTTONS.MOBILE_MENU_OPEN
+        }
         onClick={handleClick}
       >
         {getIcon()}

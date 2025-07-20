@@ -2,6 +2,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { X } from "lucide-react";
+import { LABELS, PLACEHOLDERS } from "@/lib/constants/farms";
 
 interface AddMemberEmailFieldProps {
   searchTerm: string;
@@ -19,13 +20,13 @@ export function AddMemberEmailField({
   return (
     <div className="space-y-1 sm:space-y-2">
       <Label htmlFor="member-email-search" className="text-xs sm:text-sm">
-        이메일
+        {LABELS.MEMBER_EMAIL}
       </Label>
       <div className="relative">
         <Input
           id="member-email-search"
           name="member-email-search"
-          placeholder="이메일 주소 입력 (최소 2글자)"
+          placeholder={PLACEHOLDERS.MEMBER_EMAIL_PLACEHOLDER}
           value={searchTerm}
           onChange={(e) => onSearchTermChange(e.target.value)}
           className="h-8 sm:h-9 md:h-10 text-xs sm:text-sm"

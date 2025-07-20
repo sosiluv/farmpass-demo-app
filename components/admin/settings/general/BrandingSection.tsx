@@ -5,6 +5,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { ImageUpload } from "@/components/ui/image-upload";
 import { Image, Monitor, Bookmark } from "lucide-react";
+import { LABELS, PLACEHOLDERS, PAGE_HEADER } from "@/lib/constants/settings";
 import type { SystemSettings } from "@/lib/types/settings";
 import SettingsCardHeader from "../SettingsCardHeader";
 import { useUnifiedImageUpload } from "@/hooks/useUnifiedImageUpload";
@@ -90,8 +91,8 @@ export function BrandingSection({
     <Card>
       <SettingsCardHeader
         icon={Image}
-        title="사이트 브랜딩"
-        description="사이트의 로고, 파비콘 및 기본 정보를 설정합니다"
+        title={PAGE_HEADER.BRANDING_TITLE}
+        description={PAGE_HEADER.BRANDING_DESCRIPTION}
       />
       <CardContent className="space-y-6">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
@@ -100,7 +101,7 @@ export function BrandingSection({
             <div className="border-2 border-dashed border-blue-200 bg-blue-50/50 rounded-lg p-4 sm:p-6 space-y-3 sm:space-y-4">
               <div className="flex items-center gap-2 text-blue-700">
                 <Monitor className="h-5 w-5" />
-                <span className="font-medium">사이트 로고</span>
+                <span className="font-medium">{LABELS.SITE_LOGO}</span>
               </div>
               <div className="flex flex-col items-center sm:block">
                 <ImageUpload
@@ -110,12 +111,12 @@ export function BrandingSection({
                   onDelete={logoUpload.deleteImage}
                   currentImage={logoPreview}
                   avatarSize="md"
-                  label="로고"
+                  label={LABELS.SITE_LOGO}
                   hideGuidelines={false}
                 />
               </div>
               <div className="text-sm text-blue-600/80 space-y-1 text-center">
-                <p>헤더 및 대시보드에 표시됩니다</p>
+                <p>{LABELS.SITE_LOGO_DESCRIPTION}</p>
               </div>
             </div>
           </div>
@@ -125,7 +126,7 @@ export function BrandingSection({
             <div className="border-2 border-dashed border-orange-200 bg-orange-50/50 rounded-lg p-4 sm:p-6 space-y-3 sm:space-y-4">
               <div className="flex items-center gap-2 text-orange-700">
                 <Bookmark className="h-5 w-5" />
-                <span className="font-medium">파비콘</span>
+                <span className="font-medium">{LABELS.FAVICON}</span>
               </div>
               <div className="flex flex-col items-center sm:block">
                 <ImageUpload
@@ -135,12 +136,12 @@ export function BrandingSection({
                   onDelete={faviconUpload.deleteImage}
                   currentImage={faviconPreview}
                   avatarSize="md"
-                  label="파비콘"
+                  label={LABELS.FAVICON}
                   hideGuidelines={false}
                 />
               </div>
               <div className="text-sm text-orange-600/80 space-y-1 text-center">
-                <p>브라우저 탭에 표시됩니다</p>
+                <p>{LABELS.FAVICON_DESCRIPTION}</p>
               </div>
             </div>
           </div>
@@ -148,32 +149,32 @@ export function BrandingSection({
 
         {/* 사이트명 */}
         <div className="space-y-2">
-          <Label htmlFor="siteName">사이트명</Label>
+          <Label htmlFor="siteName">{LABELS.SITE_NAME}</Label>
           <Input
             id="siteName"
             value={settings.siteName}
             onChange={(e) => onSettingChange("siteName", e.target.value)}
             disabled={loading}
-            placeholder="농장 출입 관리 시스템(FarmPass)"
+            placeholder={PLACEHOLDERS.SITE_NAME}
           />
           <p className="text-sm text-muted-foreground">
-            브라우저 탭과 헤더에 표시되는 사이트 이름입니다
+            {LABELS.SITE_NAME_DESCRIPTION}
           </p>
         </div>
 
         {/* 사이트 설명 */}
         <div className="space-y-2">
-          <Label htmlFor="siteDescription">사이트 설명</Label>
+          <Label htmlFor="siteDescription">{LABELS.SITE_DESCRIPTION}</Label>
           <Textarea
             id="siteDescription"
             value={settings.siteDescription}
             onChange={(e) => onSettingChange("siteDescription", e.target.value)}
             disabled={loading}
-            placeholder="방역은 출입자 관리부터 시작됩니다. QR기록으로 축산 질병 예방의 첫걸음을 함께하세요."
+            placeholder={PLACEHOLDERS.SITE_DESCRIPTION}
             rows={3}
           />
           <p className="text-sm text-muted-foreground">
-            SEO 및 소셜 미디어 공유 시 사용되는 설명입니다
+            {LABELS.SITE_DESCRIPTION_HELP}
           </p>
         </div>
       </CardContent>

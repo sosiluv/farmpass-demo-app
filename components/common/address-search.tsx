@@ -14,6 +14,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { MapPin } from "lucide-react";
+import { BUTTONS, LABELS, PLACEHOLDERS } from "@/lib/constants/common";
 
 interface AddressSearchProps {
   onSelect: (address: string, detailedAddress: string) => void;
@@ -79,14 +80,16 @@ export function AddressSearch({
           className="w-full justify-start text-left font-normal"
         >
           <MapPin className="mr-2 h-4 w-4" />
-          주소 검색
+          {BUTTONS.ADDRESS_SEARCH_BUTTON}
         </Button>
       </DialogTrigger>
       <DialogContent className="w-[95vw] max-w-[600px] max-h-[90vh] sm:max-h-[80vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="text-base sm:text-lg">주소 검색</DialogTitle>
+          <DialogTitle className="text-base sm:text-lg">
+            {LABELS.ADDRESS_SEARCH_TITLE}
+          </DialogTitle>
           <DialogDescription className="text-sm">
-            도로명 주소나 지번 주소로 검색하여 정확한 주소를 입력해주세요.
+            {LABELS.ADDRESS_SEARCH_DESCRIPTION}
           </DialogDescription>
         </DialogHeader>
         {!isAddressSelected && isPostcodeLoaded ? (
@@ -105,14 +108,16 @@ export function AddressSearch({
             <div className="text-center">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto mb-4"></div>
               <p className="text-sm text-gray-600">
-                주소 검색 서비스를 불러오는 중...
+                {LABELS.ADDRESS_SEARCH_LOADING}
               </p>
             </div>
           </div>
         ) : (
           <div className="space-y-4 py-4">
             <div className="space-y-2">
-              <Label className="text-sm">기본 주소</Label>
+              <Label className="text-sm">
+                {LABELS.ADDRESS_SEARCH_BASIC_ADDRESS}
+              </Label>
               <Input
                 value={selectedAddress}
                 readOnly
@@ -120,9 +125,11 @@ export function AddressSearch({
               />
             </div>
             <div className="space-y-2">
-              <Label className="text-sm">상세 주소</Label>
+              <Label className="text-sm">
+                {LABELS.ADDRESS_SEARCH_DETAILED_ADDRESS}
+              </Label>
               <Input
-                placeholder="상세 주소를 입력하세요 (예: 101동 1234호)"
+                placeholder={PLACEHOLDERS.ADDRESS_SEARCH_DETAILED_PLACEHOLDER}
                 value={detailedAddress}
                 onChange={(e) => setDetailedAddress(e.target.value)}
                 className="h-10 sm:h-11 text-sm"
@@ -135,14 +142,14 @@ export function AddressSearch({
                 onClick={() => setIsAddressSelected(false)}
                 className="h-10 sm:h-11 text-sm flex-1 sm:flex-none"
               >
-                주소 다시 검색
+                {BUTTONS.ADDRESS_SEARCH_RESEARCH}
               </Button>
               <Button
                 type="button"
                 onClick={handleConfirm}
                 className="h-10 sm:h-11 text-sm flex-1 sm:flex-none"
               >
-                확인
+                {BUTTONS.ADDRESS_SEARCH_CONFIRM}
               </Button>
             </div>
           </div>

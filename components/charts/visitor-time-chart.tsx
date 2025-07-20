@@ -1,4 +1,5 @@
 import { Bar } from "@/components/ui/chart";
+import { LABELS } from "@/lib/constants/common";
 
 interface VisitorTimeChartProps {
   data: { hour: string; count: number }[];
@@ -13,7 +14,7 @@ export function VisitorTimeChart({ data }: VisitorTimeChartProps) {
   if (isEmpty) {
     return (
       <div className="flex items-center justify-center h-full text-muted-foreground">
-        <p>시간대별 방문자 데이터가 없습니다.</p>
+        <p>{LABELS.CHART_NO_TIME_DATA}</p>
       </div>
     );
   }
@@ -24,7 +25,7 @@ export function VisitorTimeChart({ data }: VisitorTimeChartProps) {
         labels: data.map((item) => item.hour),
         datasets: [
           {
-            label: "방문자 수",
+            label: LABELS.CHART_VISITOR_COUNT,
             data: data.map((item) => item.count),
             backgroundColor: "rgba(99, 102, 241, 0.8)",
             borderColor: "rgb(79, 82, 221)",

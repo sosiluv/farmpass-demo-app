@@ -2,6 +2,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { LOG_CATEGORIES } from "@/lib/constants/log-categories";
+import { BUTTONS, LABELS } from "@/lib/constants/management";
 import { cn } from "@/lib/utils";
 
 interface LogCategoryFiltersProps {
@@ -47,10 +48,15 @@ export function LogCategoryFilters({
       {/* 헤더 */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <h4 className="text-sm font-medium text-foreground">카테고리 필터</h4>
+          <h4 className="text-sm font-medium text-foreground">
+            {LABELS.CATEGORY_FILTER}
+          </h4>
           {selectedCount > 0 && (
             <Badge variant="secondary" className="text-xs">
-              {selectedCount}개 선택
+              {LABELS.SELECTED_COUNT_SIMPLE.replace(
+                "{count}",
+                selectedCount.toString()
+              )}
             </Badge>
           )}
         </div>
@@ -61,7 +67,7 @@ export function LogCategoryFilters({
             onClick={() => onCategoryFiltersChange(["all"])}
             className="h-6 px-2 text-xs text-muted-foreground hover:text-foreground"
           >
-            전체 선택
+            {BUTTONS.SELECT_ALL}
           </Button>
         )}
       </div>
@@ -99,7 +105,7 @@ export function LogCategoryFilters({
                   <span className="text-sm leading-none">{category.icon}</span>
                 )}
                 <span className="leading-none">
-                  {isAll ? "전체" : category.label}
+                  {isAll ? BUTTONS.ALL_CATEGORIES : category.label}
                 </span>
               </div>
             </Button>
@@ -111,7 +117,12 @@ export function LogCategoryFilters({
       {selectedCount > 0 && (
         <div className="flex items-center gap-2 text-xs text-muted-foreground">
           <Separator orientation="vertical" className="h-3" />
-          <span>선택된 카테고리: {categoryFilters.join(", ")}</span>
+          <span>
+            {LABELS.SELECTED_CATEGORIES.replace(
+              "{categories}",
+              categoryFilters.join(", ")
+            )}
+          </span>
         </div>
       )}
     </div>

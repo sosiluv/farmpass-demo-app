@@ -6,6 +6,7 @@ import {
 } from "@/components/ui/tooltip";
 import { MapPin, Phone, Users } from "lucide-react";
 import type { Farm } from "@/lib/types/farm";
+import { LABELS } from "@/lib/constants/farms";
 
 interface FarmCardDetailsProps {
   farm: Farm;
@@ -46,7 +47,7 @@ export function FarmCardDetails({ farm }: FarmCardDetailsProps) {
         <div className="flex items-center space-x-2">
           <Users className="h-4 w-4 text-muted-foreground flex-shrink-0" />
           <span className="text-muted-foreground">
-            관리자: {farm.manager_name}
+            {LABELS.MANAGER_LABEL} {farm.manager_name}
           </span>
         </div>
       )}

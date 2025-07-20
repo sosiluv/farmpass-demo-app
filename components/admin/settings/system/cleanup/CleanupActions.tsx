@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Trash2, AlertTriangle, Loader2 } from "lucide-react";
 import type { CleanupStatus } from "@/lib/types/settings";
+import { BUTTONS, LABELS, PAGE_HEADER } from "@/lib/constants/settings";
 
 interface CleanupActionsProps {
   cleanupStatus: CleanupStatus;
@@ -41,23 +42,30 @@ export function CleanupActions({
             }
           >
             <Trash2 className="h-4 w-4 mr-2" />
-            시스템 로그 정리
+            {BUTTONS.CLEANUP_SYSTEM_LOGS_BUTTON}
             {cleanupStatus.expiredData.systemLogs.count > 0 && (
               <Badge variant="secondary" className="ml-2">
-                {cleanupStatus.expiredData.systemLogs.count}개
+                {LABELS.COUNT_UNIT.replace(
+                  "{count}",
+                  cleanupStatus.expiredData.systemLogs.count.toString()
+                )}
               </Badge>
             )}
           </Button>
         </AlertDialogTrigger>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>시스템 로그 정리 확인</AlertDialogTitle>
+            <AlertDialogTitle>
+              {PAGE_HEADER.CLEANUP_SYSTEM_LOGS_CONFIRM_TITLE}
+            </AlertDialogTitle>
             <AlertDialogDescription asChild>
               <div>
                 <div className="text-sm mb-3">
                   <strong className="text-orange-600">
-                    {cleanupStatus.expiredData.systemLogs.count.toLocaleString()}
-                    건
+                    {LABELS.COUNT_UNIT.replace(
+                      "{count}",
+                      cleanupStatus.expiredData.systemLogs.count.toLocaleString()
+                    )}
                   </strong>
                   의 만료된 시스템 로그가 삭제됩니다.
                 </div>
@@ -65,15 +73,19 @@ export function CleanupActions({
                   <div className="flex items-start gap-2">
                     <AlertTriangle className="h-4 w-4 text-orange-500 mt-0.5 flex-shrink-0" />
                     <div className="text-sm text-orange-700">
-                      <div className="font-medium mb-1">삭제될 데이터:</div>
+                      <div className="font-medium mb-1">
+                        {LABELS.CLEANUP_DELETE_DATA_TITLE}
+                      </div>
                       <ul className="list-disc list-inside space-y-1 text-xs">
                         <li>
-                          {new Date(
-                            cleanupStatus.expiredData.systemLogs.cutoffDate
-                          ).toLocaleDateString("ko-KR")}{" "}
-                          이전의 모든 시스템 로그
+                          {LABELS.CLEANUP_SYSTEM_LOGS_DELETE.replace(
+                            "{date}",
+                            new Date(
+                              cleanupStatus.expiredData.systemLogs.cutoffDate
+                            ).toLocaleDateString("ko-KR")
+                          )}
                         </li>
-                        <li>삭제된 로그는 복구할 수 없습니다</li>
+                        <li>{LABELS.CLEANUP_IRRECOVERABLE}</li>
                       </ul>
                     </div>
                   </div>
@@ -83,7 +95,7 @@ export function CleanupActions({
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel disabled={cleanupLoading}>
-              취소
+              {BUTTONS.CLEANUP_CANCEL}
             </AlertDialogCancel>
             <AlertDialogAction
               onClick={() => onCleanupRequest("system_logs")}
@@ -93,10 +105,10 @@ export function CleanupActions({
               {cleanupLoading ? (
                 <>
                   <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  정리 중...
+                  {BUTTONS.CLEANUP_CLEANING}
                 </>
               ) : (
-                "삭제"
+                BUTTONS.CLEANUP_DELETE
               )}
             </AlertDialogAction>
           </AlertDialogFooter>
@@ -115,46 +127,50 @@ export function CleanupActions({
             }
           >
             <Trash2 className="h-4 w-4 mr-2" />
-            모든 만료 데이터 정리
+            {BUTTONS.CLEANUP_ALL_DATA_BUTTON}
             {totalExpiredCount > 0 && (
               <Badge variant="secondary" className="ml-2">
-                {totalExpiredCount}개
+                {LABELS.COUNT_UNIT.replace(
+                  "{count}",
+                  totalExpiredCount.toString()
+                )}
               </Badge>
             )}
           </Button>
         </AlertDialogTrigger>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>전체 데이터 정리 확인</AlertDialogTitle>
+            <AlertDialogTitle>
+              {PAGE_HEADER.CLEANUP_ALL_DATA_CONFIRM_TITLE}
+            </AlertDialogTitle>
             <AlertDialogDescription asChild>
               <div>
                 <div className="text-sm mb-3">
-                  만료된 <strong className="text-red-600">모든 데이터</strong>가
-                  삭제됩니다.
+                  {PAGE_HEADER.CLEANUP_ALL_DATA_CONFIRM_DESC}
                 </div>
                 <div className="bg-red-50 border border-red-200 rounded-lg p-3">
                   <div className="flex items-start gap-2">
                     <AlertTriangle className="h-4 w-4 text-red-500 mt-0.5 flex-shrink-0" />
                     <div className="text-sm text-red-700">
-                      <div className="font-medium mb-1">삭제될 데이터:</div>
+                      <div className="font-medium mb-1">
+                        {LABELS.CLEANUP_DELETE_DATA_TITLE}
+                      </div>
                       <ul className="list-disc list-inside space-y-1 text-xs">
                         <li>
-                          시스템 로그:{" "}
-                          {cleanupStatus.expiredData.systemLogs.count.toLocaleString()}
-                          건
+                          {LABELS.CLEANUP_VISITOR_DATA_DELETE.replace(
+                            "{count}",
+                            cleanupStatus.expiredData.visitorEntries.count.toLocaleString()
+                          )}
                         </li>
                         <li>
-                          방문자 데이터:{" "}
-                          {cleanupStatus.expiredData.visitorEntries.count.toLocaleString()}
-                          건
+                          {LABELS.CLEANUP_ALL_DATA_DELETE.replace(
+                            "{date}",
+                            new Date(
+                              cleanupStatus.expiredData.systemLogs.cutoffDate
+                            ).toLocaleDateString("ko-KR")
+                          )}
                         </li>
-                        <li>
-                          {new Date(
-                            cleanupStatus.expiredData.systemLogs.cutoffDate
-                          ).toLocaleDateString("ko-KR")}{" "}
-                          이전의 모든 데이터
-                        </li>
-                        <li>삭제된 데이터는 복구할 수 없습니다</li>
+                        <li>{LABELS.CLEANUP_IRRECOVERABLE}</li>
                       </ul>
                     </div>
                   </div>
@@ -164,7 +180,7 @@ export function CleanupActions({
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel disabled={cleanupLoading}>
-              취소
+              {BUTTONS.CLEANUP_CANCEL}
             </AlertDialogCancel>
             <AlertDialogAction
               onClick={() => onCleanupRequest("all")}
@@ -174,10 +190,10 @@ export function CleanupActions({
               {cleanupLoading ? (
                 <>
                   <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  정리 중...
+                  {BUTTONS.CLEANUP_CLEANING}
                 </>
               ) : (
-                "삭제"
+                BUTTONS.CLEANUP_DELETE
               )}
             </AlertDialogAction>
           </AlertDialogFooter>

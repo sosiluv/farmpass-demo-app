@@ -18,7 +18,8 @@ import { devLog } from "@/lib/utils/logging/dev-logger";
 import { AdminError } from "@/components/error/admin-error";
 import { useMultipleLoadingTimeout } from "@/hooks/useTimeout";
 import { InstallGuide } from "@/components/common/InstallGuide";
-import { usePWAInstall } from "@/components/providers/pwa-provider";
+import { LABELS, PAGE_HEADER } from "@/lib/constants/dashboard";
+import { ERROR_CONFIGS } from "@/lib/constants/error";
 
 // React Query Hooks (100% 마이그레이션 완료)
 import { useFarmsQuery } from "@/lib/hooks/query/use-farms-query";
@@ -35,8 +36,6 @@ export default function DashboardPage() {
     error: farmsErrorDetails,
     refetch: refetchFarms,
   } = useFarmsQuery();
-
-  const installInfo = usePWAInstall();
 
   // state에서 profile 추출 및 admin 여부 확인 - useMemo로 최적화
   const profile = state.status === "authenticated" ? state.profile : null;
@@ -163,8 +162,8 @@ export default function DashboardPage() {
   if (timeoutReached) {
     return (
       <AdminError
-        title="데이터를 불러오지 못했습니다"
-        description="네트워크 상태를 확인하거나 다시 시도해 주세요."
+        title={ERROR_CONFIGS.TIMEOUT.title}
+        description={ERROR_CONFIGS.TIMEOUT.description}
         retry={retry}
         error={new Error("Timeout: 데이터 로딩 10초 초과")}
       />
@@ -175,9 +174,9 @@ export default function DashboardPage() {
     return (
       <div className="flex-1 space-y-6 sm:space-y-8 lg:space-y-10 p-1 sm:p-6 lg:p-8">
         <PageHeader
-          title="대시보드"
-          description="농장 방문자 현황과 통계를 한눈에 확인하세요"
-          breadcrumbs={[{ label: "대시보드" }]}
+          title={PAGE_HEADER.PAGE_TITLE}
+          description={PAGE_HEADER.PAGE_DESCRIPTION}
+          breadcrumbs={[{ label: PAGE_HEADER.BREADCRUMB }]}
           actions={<InstallGuide />}
         />
         <DashboardSkeleton />
@@ -187,17 +186,17 @@ export default function DashboardPage() {
 
   return (
     <ErrorBoundary
-      title="대시보드 오류"
-      description="대시보드 정보를 불러오는 중 문제가 발생했습니다. 페이지를 새로고침하거나 잠시 후 다시 시도해주세요."
+      title={ERROR_CONFIGS.LOADING.title}
+      description={ERROR_CONFIGS.LOADING.description}
     >
       <>
         <div className="flex-1 space-y-6 sm:space-y-8 lg:space-y-10 p-1 sm:p-6 lg:p-8">
           {/* 헤더 섹션 */}
           <div className="space-y-4">
             <PageHeader
-              title="대시보드"
-              description="농장 방문자 현황과 통계를 한눈에 확인하세요"
-              breadcrumbs={[{ label: "대시보드" }]}
+              title={PAGE_HEADER.PAGE_TITLE}
+              description={PAGE_HEADER.PAGE_DESCRIPTION}
+              breadcrumbs={[{ label: PAGE_HEADER.BREADCRUMB }]}
               actions={<InstallGuide />}
             />
           </div>
@@ -207,7 +206,7 @@ export default function DashboardPage() {
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2 text-lg font-semibold text-slate-900 dark:text-slate-100">
                 <BarChart3 className="w-5 h-5 text-blue-600 dark:text-blue-400" />
-                <span>핵심 통계</span>
+                <span>{LABELS.CORE_STATS}</span>
               </div>
 
               {/* 농장 선택기를 핵심통계 제목과 같은 행에 배치 */}
@@ -226,7 +225,7 @@ export default function DashboardPage() {
           <section className="space-y-4 lg:space-y-6">
             <div className="flex items-center gap-2 text-lg font-semibold text-slate-900 dark:text-slate-100">
               <TrendingUp className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
-              <span>상세 분석</span>
+              <span>{LABELS.DETAILED_ANALYSIS}</span>
             </div>
             <ChartGrid
               visitorTrend={visitorTrend}

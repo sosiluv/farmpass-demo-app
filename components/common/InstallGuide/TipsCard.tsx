@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { motion } from "framer-motion";
 import { CheckCircle } from "lucide-react";
 import { PlatformGuide } from "./data";
+import { LABELS } from "@/lib/constants/common";
 
 interface TipsCardProps {
   currentGuide: PlatformGuide;
@@ -12,7 +13,9 @@ export function TipsCard({ currentGuide }: TipsCardProps) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-lg">유용한 팁</CardTitle>
+        <CardTitle className="text-lg">
+          {LABELS.INSTALL_GUIDE_TIPS_TITLE}
+        </CardTitle>
       </CardHeader>
       <CardContent>
         <ul className="space-y-2">

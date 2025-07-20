@@ -2,6 +2,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { CheckCircle, AlertTriangle } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { LABELS } from "@/lib/constants/settings";
 
 interface BroadcastResultProps {
   lastSendResult: {
@@ -30,17 +31,28 @@ export function BroadcastResult({ lastSendResult }: BroadcastResultProps) {
       )}
       <AlertDescription>
         <div className="flex items-center gap-2">
-          <span>{lastSendResult.success ? "발송 완료" : "발송 실패"}</span>
+          <span>
+            {lastSendResult.success
+              ? LABELS.BROADCAST_RESULT_SUCCESS
+              : LABELS.BROADCAST_RESULT_FAILURE}
+          </span>
           <Badge variant="outline">
             {lastSendResult.timestamp.toLocaleString()}
           </Badge>
         </div>
         {lastSendResult.success && (
           <div className="mt-1 text-sm">
-            성공: {lastSendResult.sentCount}명
+            {LABELS.BROADCAST_RESULT_SUCCESS_COUNT.replace(
+              "{count}",
+              lastSendResult.sentCount.toString()
+            )}
             {lastSendResult.failureCount > 0 && (
               <span className="text-yellow-600">
-                , 실패: {lastSendResult.failureCount}명
+                ,{" "}
+                {LABELS.BROADCAST_RESULT_FAILURE_COUNT.replace(
+                  "{count}",
+                  lastSendResult.failureCount.toString()
+                )}
               </span>
             )}
           </div>

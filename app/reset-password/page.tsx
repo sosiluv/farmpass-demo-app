@@ -33,6 +33,12 @@ import { resetPasswordRequestFormSchema } from "@/lib/utils/validation/auth-vali
 import type { ResetPasswordRequestFormData } from "@/lib/utils/validation/auth-validation";
 import { getAuthErrorMessage } from "@/lib/utils/validation";
 import { handleError } from "@/lib/utils/error";
+import {
+  BUTTONS,
+  LABELS,
+  PAGE_HEADER,
+  PLACEHOLDERS,
+} from "@/lib/constants/auth";
 
 export default function ResetPasswordPage() {
   const [loading, setLoading] = useState(false);
@@ -88,9 +94,11 @@ export default function ResetPasswordPage() {
             <div className="mx-auto mb-4 flex justify-center">
               <Logo size="xl" />
             </div>
-            <CardTitle className="text-2xl">비밀번호 재설정</CardTitle>
+            <CardTitle className="text-2xl">
+              {PAGE_HEADER.RESET_PASSWORD_TITLE}
+            </CardTitle>
             <CardDescription>
-              가입하신 이메일로 비밀번호 재설정 링크를 보내드립니다
+              {PAGE_HEADER.RESET_PASSWORD_DESCRIPTION}
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -105,7 +113,7 @@ export default function ResetPasswordPage() {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel className="text-sm text-gray-800">
-                        이메일 <span className="text-red-500">*</span>
+                        {LABELS.EMAIL} <span className="text-red-500">*</span>
                       </FormLabel>
                       <div className="relative">
                         <Mail className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -113,7 +121,7 @@ export default function ResetPasswordPage() {
                           <Input
                             {...field}
                             type="email"
-                            placeholder="name@example.com"
+                            placeholder={PLACEHOLDERS.EMAIL}
                             autoComplete="username"
                             className="h-12 pl-10 input-focus"
                             disabled={loading}
@@ -138,10 +146,10 @@ export default function ResetPasswordPage() {
                         minHeight="auto"
                         className="mr-2"
                       />
-                      처리 중...
+                      {BUTTONS.RESET_PASSWORD_LOADING}
                     </>
                   ) : (
-                    "비밀번호 재설정 링크 받기"
+                    BUTTONS.RESET_PASSWORD_BUTTON
                   )}
                 </Button>
               </form>
@@ -150,7 +158,7 @@ export default function ResetPasswordPage() {
           <CardFooter className="flex flex-col">
             <div className="mt-2 text-center text-sm">
               <Link href="/login" className="text-primary hover:underline">
-                로그인으로 돌아가기
+                {BUTTONS.BACK_TO_LOGIN}
               </Link>
             </div>
           </CardFooter>

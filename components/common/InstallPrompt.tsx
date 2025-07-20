@@ -6,6 +6,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { X, Download, Smartphone, Monitor, Tablet } from "lucide-react";
 import { usePWAInstall } from "@/components/providers/pwa-provider";
 import { motion, AnimatePresence } from "framer-motion";
+import { BUTTONS, LABELS } from "@/lib/constants/common";
 
 interface InstallPromptProps {
   delay?: number; // 표시 지연 시간 (ms)
@@ -149,31 +150,29 @@ export function InstallPrompt({
   const getInstallText = () => {
     switch (installInfo.platform) {
       case "iOS":
-        return "홈 화면에 추가";
+        return LABELS.INSTALL_PROMPT_IOS_TEXT;
       case "Android":
-        return "앱으로 설치";
+        return LABELS.INSTALL_PROMPT_ANDROID_TEXT;
       case "Desktop":
-        return "앱으로 설치";
+        return LABELS.INSTALL_PROMPT_DESKTOP_TEXT;
       default:
-        return "설치하기";
+        return LABELS.INSTALL_PROMPT_DEFAULT_TEXT;
     }
   };
 
   const getGuideText = () => {
     if (installInfo.method === "banner") {
       // 네이티브 설치 지원 브라우저(Chrome, Edge 등)
-      return "더 빠르고 편리한 경험을 위해 홈화면에 추가하세요";
+      return LABELS.INSTALL_PROMPT_BANNER_GUIDE;
     }
     // manual 또는 none: 홈화면 추가 안내만
     if (installInfo.platform === "iOS") {
-      return 'iOS에서는 사파리 하단의 공유 버튼을 누른 후 "홈 화면에 추가"를 선택하세요.';
+      return LABELS.INSTALL_PROMPT_IOS_GUIDE;
     }
     if (installInfo.platform === "Android") {
-      return (
-        installInfo.reason || '브라우저 메뉴에서 "홈 화면에 추가"를 선택하세요.'
-      );
+      return installInfo.reason || LABELS.INSTALL_PROMPT_ANDROID_GUIDE;
     }
-    return "이 브라우저에서는 메뉴에서 홈 화면에 추가를 선택하세요.";
+    return LABELS.INSTALL_PROMPT_DEFAULT_GUIDE;
   };
 
   if (!installInfo.canInstall || isDismissed) {
@@ -199,7 +198,10 @@ export function InstallPrompt({
                   </div>
                   <div className="flex-1">
                     <h3 className="font-semibold text-sm">
-                      {getInstallText()}하세요!
+                      {LABELS.INSTALL_PROMPT_ADD_TO_HOME.replace(
+                        "{action}",
+                        getInstallText()
+                      )}
                     </h3>
                     <p className="text-xs opacity-90 mt-1">{getGuideText()}</p>
                   </div>
@@ -222,7 +224,9 @@ export function InstallPrompt({
                       className="bg-white text-blue-600 hover:bg-gray-100 font-medium h-8 px-3"
                     >
                       <Download className="w-4 h-4 mr-1" />
-                      {isInstalling ? "설치 중..." : "설치"}
+                      {isInstalling
+                        ? BUTTONS.INSTALL_PROMPT_INSTALLING
+                        : BUTTONS.INSTALL_PROMPT_INSTALL}
                     </Button>
                   )}
                 </div>

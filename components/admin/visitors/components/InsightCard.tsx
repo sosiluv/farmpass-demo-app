@@ -5,6 +5,7 @@ import {
   calculateDailyAverage,
   calculateActivityIndex,
 } from "@/lib/utils/data/common-stats";
+import { LABELS } from "@/lib/constants/visitor";
 
 interface InsightCardProps {
   totalVisitors: number;
@@ -35,15 +36,27 @@ export function InsightCard({
     const baseInsights: InsightItem[] = [
       {
         icon: Target,
-        label: "평균 일일 방문자",
-        value: totalVisitors === 0 ? "0명" : `${dailyAverage}명`,
+        label: LABELS.INSIGHT_CARD_DAILY_AVERAGE,
+        value:
+          totalVisitors === 0
+            ? LABELS.INSIGHT_CARD_UNIT_PERSON.replace("{value}", "0")
+            : LABELS.INSIGHT_CARD_UNIT_PERSON.replace(
+                "{value}",
+                dailyAverage.toString()
+              ),
         bgColor: "bg-blue-100",
         textColor: "text-blue-600",
       },
       {
         icon: Zap,
-        label: "활성도 지수",
-        value: totalVisitors === 0 ? "0%" : `${activityIndex}%`,
+        label: LABELS.INSIGHT_CARD_ACTIVITY_INDEX,
+        value:
+          totalVisitors === 0
+            ? LABELS.INSIGHT_CARD_UNIT_PERCENT.replace("{value}", "0")
+            : LABELS.INSIGHT_CARD_UNIT_PERCENT.replace(
+                "{value}",
+                activityIndex.toString()
+              ),
         bgColor: "bg-emerald-100",
         textColor: "text-emerald-600",
       },
@@ -53,8 +66,11 @@ export function InsightCard({
       const avgPerFarm = Math.round(totalVisitors / totalFarms);
       baseInsights.push({
         icon: Clock,
-        label: "농장당 평균 방문자",
-        value: `${avgPerFarm}명`,
+        label: LABELS.INSIGHT_CARD_AVG_PER_FARM,
+        value: LABELS.INSIGHT_CARD_UNIT_PERSON.replace(
+          "{value}",
+          avgPerFarm.toString()
+        ),
         bgColor: "bg-purple-100",
         textColor: "text-purple-600",
       });
@@ -74,10 +90,10 @@ export function InsightCard({
           </div>
           <div>
             <h3 className="text-sm sm:text-base font-semibold text-amber-800">
-              인사이트
+              {LABELS.INSIGHT_CARD_TITLE}
             </h3>
             <p className="text-[10px] sm:text-xs text-amber-600">
-              방문자 데이터 분석
+              {LABELS.INSIGHT_CARD_SUBTITLE}
             </p>
           </div>
         </div>

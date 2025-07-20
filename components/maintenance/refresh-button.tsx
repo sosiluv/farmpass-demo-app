@@ -1,6 +1,7 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
+import { BUTTONS } from "@/lib/constants/common";
 import { RefreshCw } from "lucide-react";
 
 export function RefreshButton() {
@@ -12,7 +13,7 @@ export function RefreshButton() {
       onClick={() => window.location.reload()}
     >
       <RefreshCw className="h-4 w-4 mr-2" />
-      상태 새로고침
+      {BUTTONS.REFRESH_BUTTON}
     </Button>
   );
 }

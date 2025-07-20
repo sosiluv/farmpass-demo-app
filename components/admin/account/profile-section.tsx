@@ -18,12 +18,20 @@ import {
 } from "@/components/ui/select";
 import { ImageUpload } from "@/components/ui/image-upload";
 import { ErrorBoundary } from "@/components/error/error-boundary";
+import { ERROR_CONFIGS } from "@/lib/constants/error";
 import { formatPhone } from "@/lib/utils/validation/validation";
 import { useAccountForm } from "@/hooks/useAccountForm";
 import { useAvatarSeedManager } from "@/hooks/useAvatarSeedManager";
 import type { ProfileSectionProps, ProfileFormData } from "@/lib/types/account";
 import AccountCardHeader from "./AccountCardHeader";
 import { devLog } from "@/lib/utils/logging/dev-logger";
+import {
+  BUTTONS,
+  LABELS,
+  PLACEHOLDERS,
+  PAGE_HEADER,
+} from "@/lib/constants/account";
+import { POSITION_OPTIONS } from "@/lib/constants/account";
 
 export function ProfileSection({
   profile,
@@ -111,8 +119,8 @@ export function ProfileSection({
 
   return (
     <ErrorBoundary
-      title="프로필 섹션 오류"
-      description="프로필 정보를 불러오는 중 문제가 발생했습니다. 페이지를 새로고침하거나 잠시 후 다시 시도해주세요."
+      title={ERROR_CONFIGS.LOADING.title}
+      description={ERROR_CONFIGS.LOADING.description}
     >
       <motion.div
         initial={{ opacity: 0, y: 20 }}
@@ -122,8 +130,8 @@ export function ProfileSection({
         <Card>
           <AccountCardHeader
             icon={User}
-            title="개인 정보"
-            description="개인 프로필 정보를 관리합니다"
+            title={PAGE_HEADER.PROFILE_INFO_TITLE}
+            description={PAGE_HEADER.PROFILE_INFO_DESCRIPTION}
           />
           <CardContent className="space-y-6">
             {/* 프로필 사진 */}
@@ -152,7 +160,7 @@ export function ProfileSection({
                 }}
                 currentImage={profileImagePreview}
                 avatarSize="lg"
-                label="프로필 사진"
+                label={LABELS.PROFILE_PHOTO}
                 profile={profile}
               />
             </div>
@@ -162,7 +170,7 @@ export function ProfileSection({
             {/* 기본 정보 */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-2">
-                <Label htmlFor="name">이름</Label>
+                <Label htmlFor="name">{LABELS.NAME}</Label>
                 <Input
                   id="name"
                   name="name"
@@ -174,7 +182,7 @@ export function ProfileSection({
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="email">이메일</Label>
+                <Label htmlFor="email">{LABELS.EMAIL}</Label>
                 <Input
                   id="email"
                   name="email"
@@ -189,7 +197,7 @@ export function ProfileSection({
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-2">
-                <Label htmlFor="phoneNumber">전화번호</Label>
+                <Label htmlFor="phoneNumber">{LABELS.PHONE_NUMBER}</Label>
                 <Input
                   id="phoneNumber"
                   name="phoneNumber"
@@ -198,24 +206,27 @@ export function ProfileSection({
                   onChange={handleInputChange}
                   disabled={loading}
                   maxLength={13}
-                  placeholder="숫자만 입력 가능합니다"
+                  placeholder={PLACEHOLDERS.PHONE_NUMBER_PLACEHOLDER}
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="position">직책</Label>
+                <Label htmlFor="position">{LABELS.POSITION}</Label>
                 <Select
                   value={formData.position}
                   onValueChange={(value) => handleChange("position", value)}
                   disabled={loading}
                 >
                   <SelectTrigger id="position">
-                    <SelectValue placeholder="직책을 선택하세요" />
+                    <SelectValue
+                      placeholder={PLACEHOLDERS.POSITION_PLACEHOLDER}
+                    />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="대표">대표</SelectItem>
-                    <SelectItem value="관리자">관리자</SelectItem>
-                    <SelectItem value="직원">직원</SelectItem>
-                    <SelectItem value="방역담당자">방역담당자</SelectItem>
+                    {POSITION_OPTIONS.map((option) => (
+                      <SelectItem key={option.value} value={option.value}>
+                        {option.label}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
@@ -223,7 +234,7 @@ export function ProfileSection({
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-2">
-                <Label htmlFor="department">부서</Label>
+                <Label htmlFor="department">{LABELS.DEPARTMENT}</Label>
                 <Input
                   id="department"
                   name="department"
@@ -231,20 +242,20 @@ export function ProfileSection({
                   value={formData.department}
                   onChange={handleInputChange}
                   disabled={loading}
-                  placeholder="부서명을 입력하세요"
+                  placeholder={PLACEHOLDERS.DEPARTMENT_PLACEHOLDER}
                 />
               </div>
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="bio">자기소개</Label>
+              <Label htmlFor="bio">{LABELS.BIO}</Label>
               <Textarea
                 id="bio"
                 name="bio"
                 value={formData.bio}
                 onChange={handleInputChange}
                 disabled={loading}
-                placeholder="자기소개를 입력하세요"
+                placeholder={PLACEHOLDERS.BIO_PLACEHOLDER}
                 rows={4}
               />
             </div>
@@ -258,12 +269,12 @@ export function ProfileSection({
                 {loading ? (
                   <>
                     <Loader2 className="h-4 w-4 animate-spin" />
-                    저장 중...
+                    {BUTTONS.SAVING}
                   </>
                 ) : (
                   <>
                     <Save className="h-4 w-4" />
-                    프로필 정보 저장
+                    {BUTTONS.SAVE_PROFILE_INFO}
                   </>
                 )}
               </Button>

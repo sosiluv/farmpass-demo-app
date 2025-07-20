@@ -1,4 +1,5 @@
 import { CommonFilters } from "../shared/CommonFilters";
+import { LABELS, PLACEHOLDERS } from "@/lib/constants/management";
 
 export interface UserFilters {
   search: string;
@@ -14,7 +15,7 @@ interface UserFiltersProps {
 export function UserFilters({ filters, onFiltersChange }: UserFiltersProps) {
   return (
     <CommonFilters
-      searchPlaceholder="이름 또는 이메일로 검색"
+      searchPlaceholder={PLACEHOLDERS.USER_SEARCH_PLACEHOLDER}
       searchValue={filters.search}
       onSearchChange={(e) =>
         onFiltersChange({ ...filters, search: e.target.value })
@@ -24,21 +25,21 @@ export function UserFilters({ filters, onFiltersChange }: UserFiltersProps) {
           value: filters.role,
           onChange: (value) => onFiltersChange({ ...filters, role: value }),
           options: [
-            { value: "all", label: "전체" },
-            { value: "admin", label: "관리자" },
-            { value: "user", label: "일반" },
+            { value: "all", label: LABELS.ALL_USERS },
+            { value: "admin", label: LABELS.ADMIN },
+            { value: "user", label: LABELS.GENERAL_USER },
           ],
-          placeholder: "권한",
+          placeholder: PLACEHOLDERS.ROLE_PLACEHOLDER,
         },
         {
           value: filters.status,
           onChange: (value) => onFiltersChange({ ...filters, status: value }),
           options: [
-            { value: "all", label: "전체" },
-            { value: "active", label: "활성" },
-            { value: "inactive", label: "비활성" },
+            { value: "all", label: LABELS.ALL_USERS },
+            { value: "active", label: LABELS.ACTIVE },
+            { value: "inactive", label: LABELS.INACTIVE },
           ],
-          placeholder: "상태",
+          placeholder: PLACEHOLDERS.USER_STATUS_PLACEHOLDER,
         },
       ]}
     />

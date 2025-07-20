@@ -8,6 +8,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Loader2 } from "lucide-react";
+import { BUTTONS, LABELS } from "@/lib/constants/farms";
 
 interface DeleteMemberDialogProps {
   open: boolean;
@@ -27,10 +28,10 @@ export function DeleteMemberDialog({
       <DialogContent className="w-[95vw] max-w-[350px] sm:max-w-[400px] md:max-w-[500px] p-3 sm:p-4 md:p-6">
         <DialogHeader className="space-y-2">
           <DialogTitle className="text-base sm:text-lg">
-            구성원 제거
+            {LABELS.REMOVE_MEMBER_TITLE}
           </DialogTitle>
           <DialogDescription className="text-xs sm:text-sm text-muted-foreground">
-            정말로 이 구성원을 제거하시겠습니까? 이 작업은 되돌릴 수 없습니다.
+            {LABELS.REMOVE_MEMBER_DESCRIPTION}
           </DialogDescription>
         </DialogHeader>
         <DialogFooter className="flex flex-col-reverse sm:flex-row gap-2 sm:gap-3 pt-3 sm:pt-4">
@@ -40,7 +41,7 @@ export function DeleteMemberDialog({
             className="h-8 sm:h-9 text-xs sm:text-sm px-3 sm:px-4"
             disabled={isLoading}
           >
-            취소
+            {BUTTONS.CANCEL_BUTTON}
           </Button>
           <Button
             variant="destructive"
@@ -51,10 +52,10 @@ export function DeleteMemberDialog({
             {isLoading ? (
               <>
                 <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                제거 중...
+                {BUTTONS.DELETE_FARM_LOADING}
               </>
             ) : (
-              "제거"
+              BUTTONS.DELETE_BUTTON
             )}
           </Button>
         </DialogFooter>

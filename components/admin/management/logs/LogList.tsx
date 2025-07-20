@@ -9,6 +9,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { formatDateTime } from "@/lib/utils/datetime/date";
+import { LABELS } from "@/lib/constants/management";
 import { SystemLog } from "@/lib/types/system";
 import { CommonListWrapper } from "../shared/CommonListWrapper";
 
@@ -48,10 +49,10 @@ export function LogList({ logs, onShowDetails, onDeleteLog }: LogListProps) {
 
   const getLogLevelText = (level: string) => {
     const labels = {
-      info: "정보",
-      warn: "경고",
-      error: "오류",
-      debug: "디버그",
+      info: LABELS.INFO,
+      warn: LABELS.WARN,
+      error: LABELS.ERROR,
+      debug: LABELS.DEBUG,
     };
     return labels[level as keyof typeof labels] || level;
   };
@@ -75,7 +76,7 @@ export function LogList({ logs, onShowDetails, onDeleteLog }: LogListProps) {
             }
             meta={
               <span className="min-w-0 max-w-[80px] sm:max-w-[200px] lg:max-w-[1000px] xl:max-w-[1200px] 2xl:max-w-[1400px] block">
-                {`${log.user_email || "시스템"} / ${formatDateTime(
+                {`${log.user_email || LABELS.SYSTEM_LABEL} / ${formatDateTime(
                   log.created_at
                 )} / ${log.user_ip || "-"}`}
               </span>
@@ -104,7 +105,7 @@ export function LogList({ logs, onShowDetails, onDeleteLog }: LogListProps) {
                       </Button>
                     </TooltipTrigger>
                     <TooltipContent>
-                      <p>상세 정보 보기</p>
+                      <p>{LABELS.DETAIL_INFO_VIEW}</p>
                     </TooltipContent>
                   </Tooltip>
                 </TooltipProvider>
@@ -122,7 +123,7 @@ export function LogList({ logs, onShowDetails, onDeleteLog }: LogListProps) {
                         </Button>
                       </TooltipTrigger>
                       <TooltipContent>
-                        <p>로그 삭제</p>
+                        <p>{LABELS.DELETE_LOG}</p>
                       </TooltipContent>
                     </Tooltip>
                   </TooltipProvider>
@@ -134,7 +135,7 @@ export function LogList({ logs, onShowDetails, onDeleteLog }: LogListProps) {
       ) : (
         <div className="text-center py-8 text-muted-foreground">
           <Activity className="h-12 w-12 mx-auto mb-4 opacity-50" />
-          <p>로그가 없습니다.</p>
+          <p>{LABELS.NO_LOGS}</p>
         </div>
       )}
     </CommonListWrapper>

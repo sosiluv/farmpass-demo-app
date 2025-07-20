@@ -4,20 +4,20 @@ import NotificationCardHeader from "./NotificationCardHeader";
 import { BellRing, MessageSquare } from "lucide-react";
 import NotificationTypeCard from "@/components/admin/notifications/NotificationTypeCard";
 import type { NotificationSettings } from "@/lib/types/notification";
+import { LABELS, PAGE_HEADER } from "@/lib/constants/notifications";
 
 // 알림 방식 옵션
 const notificationTypeOptions = [
   {
-    title: "웹 푸시",
-    description:
-      "브라우저를 통해 실시간 알림을 받을 수 있습니다. 데스크톱과 모바일 모두 지원됩니다.",
+    title: LABELS.PUSH_NOTIFICATION,
+    description: LABELS.PUSH_NOTIFICATION_DESC,
     icon: <BellRing className="h-5 w-5 text-primary" />,
     value: "push" as const,
     badge: "권장",
   },
   {
-    title: "카카오톡",
-    description: "카카오톡 메시지를 통해 알림을 받을 수 있습니다. (미구현)",
+    title: LABELS.SMS_NOTIFICATION,
+    description: LABELS.SMS_NOTIFICATION_DESC,
     icon: <MessageSquare className="h-5 w-5 text-muted-foreground" />,
     value: "kakao" as const,
     disabled: true,
@@ -44,8 +44,8 @@ export function NotificationMethodsCard({
     <Card>
       <NotificationCardHeader
         icon={Bell}
-        title="알림 방식 설정"
-        description="알림을 받을 방식을 선택하세요. 웹 푸시 알림 또는 카카오톡 알림 중 하나를 선택할 수 있습니다."
+        title={PAGE_HEADER.NOTIFICATION_SETTINGS}
+        description={PAGE_HEADER.NOTIFICATION_SETTINGS_DESC}
       />
       <CardContent>
         <div className="space-y-4">
@@ -68,11 +68,10 @@ export function NotificationMethodsCard({
           </div>
           <div className="text-sm text-muted-foreground">
             <p>
-              • 웹 푸시: 브라우저에서 실시간 알림을 받으려면 알림 권한을
-              허용해야 합니다.
+              • {LABELS.PUSH_NOTIFICATION}: {LABELS.PUSH_NOTIFICATION_DESC}
             </p>
             <p>
-              • 카카오톡: 카카오톡 비즈니스 API를 통한 알림입니다. (추후 지원)
+              • {LABELS.SMS_NOTIFICATION}: {LABELS.SMS_NOTIFICATION_DESC}
             </p>
           </div>
         </div>

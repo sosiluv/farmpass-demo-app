@@ -8,13 +8,13 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { CalendarIcon, Download, X } from "lucide-react";
+import { CalendarIcon } from "lucide-react";
 import { format } from "date-fns";
 import { ko } from "date-fns/locale";
+import { BUTTONS, LABELS, PLACEHOLDERS } from "@/lib/constants/management";
 import type { LogFilter } from "@/lib/types/system";
 import React, { useState } from "react";
 import { cn } from "@/lib/utils";
-import type { LogLevel } from "@/lib/types/common";
 
 interface LogFiltersProps {
   filters: LogFilter;
@@ -83,13 +83,7 @@ export function LogFilters({
     filters.endDate ||
     !levelFilters.includes("all");
 
-  const levelOptions = [
-    { value: "all", label: "모든 레벨", icon: "📊" },
-    { value: "info", label: "정보", icon: "ℹ️" },
-    { value: "warn", label: "경고", icon: "⚠️" },
-    { value: "error", label: "오류", icon: "❌" },
-    { value: "debug", label: "디버그", icon: "🐛" },
-  ];
+  const levelOptions = LABELS.LOG_LEVEL_OPTIONS;
 
   const selectedLevelCount = levelFilters.includes("all")
     ? 0
@@ -111,7 +105,7 @@ export function LogFilters({
             {filters.startDate ? (
               format(filters.startDate, "PPP", { locale: ko })
             ) : (
-              <span>시작 날짜</span>
+              <span>{LABELS.START_DATE}</span>
             )}
           </Button>
         </PopoverTrigger>
@@ -139,7 +133,7 @@ export function LogFilters({
             {filters.endDate ? (
               format(filters.endDate, "PPP", { locale: ko })
             ) : (
-              <span>종료 날짜</span>
+              <span>{LABELS.END_DATE}</span>
             )}
           </Button>
         </PopoverTrigger>
@@ -158,7 +152,7 @@ export function LogFilters({
   return (
     <div className="space-y-4">
       <CommonFilters
-        searchPlaceholder="로그 검색..."
+        searchPlaceholder={PLACEHOLDERS.LOG_SEARCH_PLACEHOLDER}
         searchValue={filters.search || ""}
         onSearchChange={handleSearchChange}
       />
@@ -170,10 +164,15 @@ export function LogFilters({
         {/* 헤더 */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <h4 className="text-sm font-medium text-foreground">로그 레벨</h4>
+            <h4 className="text-sm font-medium text-foreground">
+              {LABELS.LOG_LEVEL}
+            </h4>
             {selectedLevelCount > 0 && (
               <Badge variant="secondary" className="text-xs">
-                {selectedLevelCount}개 선택
+                {LABELS.SELECTED_COUNT_SIMPLE.replace(
+                  "{count}",
+                  selectedLevelCount.toString()
+                )}
               </Badge>
             )}
           </div>
@@ -184,7 +183,7 @@ export function LogFilters({
               onClick={() => onLevelFiltersChange(["all"])}
               className="h-6 px-2 text-xs text-muted-foreground hover:text-foreground"
             >
-              전체 선택
+              {BUTTONS.SELECT_ALL}
             </Button>
           )}
         </div>
@@ -222,7 +221,7 @@ export function LogFilters({
                     <span className="text-sm leading-none">{option.icon}</span>
                   )}
                   <span className="leading-none">
-                    {isAll ? "전체" : option.label}
+                    {isAll ? BUTTONS.ALL_CATEGORIES : option.label}
                   </span>
                 </div>
               </Button>
@@ -234,7 +233,12 @@ export function LogFilters({
         {selectedLevelCount > 0 && (
           <div className="flex items-center gap-2 text-xs text-muted-foreground">
             <Separator orientation="vertical" className="h-3" />
-            <span>선택된 레벨: {levelFilters.join(", ")}</span>
+            <span>
+              {LABELS.SELECTED_LEVELS.replace(
+                "{levels}",
+                levelFilters.join(", ")
+              )}
+            </span>
           </div>
         )}
       </div>

@@ -10,6 +10,7 @@ import {
   OrphanFilesActions,
 } from "./orphan-files";
 import { Loading } from "@/components/ui/loading";
+import { BUTTONS, LABELS, PAGE_HEADER } from "@/lib/constants/settings";
 
 interface OrphanFilesSectionProps {
   orphanFilesStatus: OrphanFilesStatus | null;
@@ -32,8 +33,8 @@ export function OrphanFilesSection({
     <Card>
       <SettingsCardHeader
         icon={FileX}
-        title="Orphan 파일 정리"
-        description="사용되지 않는 이미지 파일을 정리하여 저장공간을 확보합니다"
+        title={PAGE_HEADER.ORPHAN_FILES_SECTION_TITLE}
+        description={PAGE_HEADER.ORPHAN_FILES_SECTION_DESC}
         actions={
           <Button
             variant="outline"
@@ -44,14 +45,14 @@ export function OrphanFilesSection({
             <RotateCcw
               className={`h-4 w-4 mr-2 ${statusLoading ? "animate-spin" : ""}`}
             />
-            새로고침
+            {BUTTONS.CLEANUP_REFRESH_BUTTON}
           </Button>
         }
       />
       <CardContent className="space-y-6">
         {statusLoading ? (
           <Loading
-            text="Orphan 파일 상태를 확인하는 중..."
+            text={LABELS.ORPHAN_FILES_STATUS_CHECKING}
             minHeight={180}
             spinnerSize={32}
             spinnerColor="text-primary"

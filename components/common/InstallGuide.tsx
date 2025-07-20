@@ -17,6 +17,7 @@ import { PlatformGuideCard } from "./InstallGuide/PlatformGuideCard";
 import { InstallStepsCard } from "./InstallGuide/InstallStepsCard";
 import { TipsCard } from "./InstallGuide/TipsCard";
 import { OtherPlatformsCard } from "./InstallGuide/OtherPlatformsCard";
+import { BUTTONS, LABELS } from "@/lib/constants/common";
 
 export function InstallGuide() {
   const installInfo = usePWAInstall();
@@ -33,17 +34,18 @@ export function InstallGuide() {
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
         <Button variant="outline" size="sm" className="gap-2">
-          <Download className="w-4 h-4" />앱 설치 가이드
+          <Download className="w-4 h-4" />
+          {BUTTONS.INSTALL_GUIDE_BUTTON_TEXT}
         </Button>
       </DialogTrigger>
       <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Download className="w-5 h-5" />
-            PWA 설치 가이드
+            {LABELS.INSTALL_GUIDE_DIALOG_TITLE}
           </DialogTitle>
           <DialogDescription>
-            현재 플랫폼에 맞는 PWA 설치 방법을 안내합니다.
+            {LABELS.INSTALL_GUIDE_DIALOG_DESCRIPTION}
           </DialogDescription>
         </DialogHeader>
 

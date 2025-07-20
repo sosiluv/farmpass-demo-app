@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Loader2, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { BUTTONS } from "@/lib/constants/common";
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -80,7 +81,7 @@ export function ProtectedRoute({
                 className="flex items-center gap-2"
               >
                 <RefreshCw className="h-4 w-4" />
-                새로고침
+                {BUTTONS.REFRESH_BUTTON}
               </Button>
             </div>
           )}
@@ -105,7 +106,7 @@ export function ProtectedRoute({
             className="flex items-center gap-2"
           >
             <RefreshCw className="h-4 w-4" />
-            새로고침
+            {BUTTONS.REFRESH_BUTTON}
           </Button>
         </div>
       </div>

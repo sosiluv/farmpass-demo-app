@@ -9,6 +9,7 @@ import { useBroadcastMutation } from "@/lib/hooks/query/use-broadcast-mutations"
 import { getAuthErrorMessage } from "@/lib/utils/validation/validation";
 import SettingsCardHeader from "../SettingsCardHeader";
 import { BroadcastForm, BroadcastAlert, BroadcastResult } from "./broadcast";
+import { PAGE_HEADER } from "@/lib/constants/settings";
 
 interface BroadcastSectionProps {
   isLoading?: boolean;
@@ -129,8 +130,8 @@ export default function BroadcastSection({ isLoading }: BroadcastSectionProps) {
       <Card>
         <SettingsCardHeader
           icon={Send}
-          title="푸시 알림 브로드캐스트"
-          description="모든 푸시 알림 구독자에게 메시지를 전송합니다."
+          title={PAGE_HEADER.BROADCAST_SECTION_TITLE}
+          description={PAGE_HEADER.BROADCAST_SECTION_DESC}
         />
         <CardContent className="space-y-6">
           <BroadcastAlert />

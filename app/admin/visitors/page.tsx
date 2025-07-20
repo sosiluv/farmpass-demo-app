@@ -3,7 +3,6 @@
 import { useAuth } from "@/components/providers/auth-provider";
 import { StatsSkeleton, TableSkeleton } from "@/components/common/skeletons";
 import { useVisitorFiltersStore } from "@/lib/hooks/query/use-visitor-filters";
-import type { Farm } from "@/lib/types/visitor";
 import {
   VisitorTable,
   VisitorFilters,
@@ -15,13 +14,14 @@ import { useMemo, useEffect } from "react";
 import { useVisitorActions } from "@/hooks/useVisitorActions";
 import { generateVisitorPageStats } from "@/lib/utils/data/common-stats";
 import { ErrorBoundary } from "@/components/error/error-boundary";
+import { ERROR_CONFIGS } from "@/lib/constants/error";
 import { ResponsivePagination } from "@/components/common/responsive-pagination";
 import { useCommonToast } from "@/lib/utils/notification/toast-messages";
 import { getAuthErrorMessage } from "@/lib/utils/validation/validation";
+import { LABELS, PAGE_HEADER } from "@/lib/constants/visitor";
 
 // React Query Hooks
 import { useFarmsContext } from "@/components/providers/farms-provider";
-import { useFarmsQuery } from "@/lib/hooks/query/use-farms-query";
 import { useFarmVisitorsWithFiltersQuery } from "@/lib/hooks/query/use-farm-visitors-filtered-query";
 
 /**
@@ -121,14 +121,22 @@ export default function VisitorsPage() {
     return (
       <div className="flex-1 space-y-3 sm:space-y-4 md:space-y-6 p-1 sm:p-4 md:p-6 lg:p-8 pt-3 sm:pt-4 md:pt-6">
         <PageHeader
-          title={isAdmin ? "전체 방문자 기록" : "방문자 기록"}
+          title={
+            isAdmin
+              ? PAGE_HEADER.ALL_VISITORS_PAGE_TITLE
+              : PAGE_HEADER.VISITORS_PAGE_TITLE
+          }
           description={
             isAdmin
-              ? "모든 농장의 방문자 기록을 조회하고 관리합니다."
-              : "내 농장의 방문자 기록을 조회하고 관리합니다."
+              ? PAGE_HEADER.ALL_VISITORS_PAGE_DESCRIPTION
+              : PAGE_HEADER.VISITORS_PAGE_DESCRIPTION
           }
           breadcrumbs={[
-            { label: isAdmin ? "전체 방문자 기록" : "방문자 기록" },
+            {
+              label: isAdmin
+                ? PAGE_HEADER.ALL_VISITORS_PAGE_BREADCRUMB
+                : PAGE_HEADER.VISITORS_PAGE_BREADCRUMB,
+            },
           ]}
         />
         <StatsSkeleton columns={4} />
@@ -139,19 +147,27 @@ export default function VisitorsPage() {
 
   return (
     <ErrorBoundary
-      title="방문자 기록 오류"
-      description="방문자 정보를 불러오는 중 문제가 발생했습니다. 페이지를 새로고침하거나 잠시 후 다시 시도해주세요."
+      title={ERROR_CONFIGS.LOADING.title}
+      description={ERROR_CONFIGS.LOADING.description}
     >
       <div className="flex-1 space-y-3 sm:space-y-4 md:space-y-6 p-1 sm:p-4 md:p-6 lg:p-8 pt-3 sm:pt-4 md:pt-6">
         <PageHeader
-          title={isAdmin ? "전체 방문자 기록" : "방문자 기록"}
+          title={
+            isAdmin
+              ? PAGE_HEADER.ALL_VISITORS_PAGE_TITLE
+              : PAGE_HEADER.VISITORS_PAGE_TITLE
+          }
           description={
             isAdmin
-              ? "모든 농장의 방문자 기록을 조회하고 관리합니다."
-              : "내 농장의 방문자 기록을 조회하고 관리합니다."
+              ? PAGE_HEADER.ALL_VISITORS_PAGE_DESCRIPTION
+              : PAGE_HEADER.VISITORS_PAGE_DESCRIPTION
           }
           breadcrumbs={[
-            { label: isAdmin ? "전체 방문자 기록" : "방문자 기록" },
+            {
+              label: isAdmin
+                ? PAGE_HEADER.ALL_VISITORS_PAGE_BREADCRUMB
+                : PAGE_HEADER.VISITORS_PAGE_BREADCRUMB,
+            },
           ]}
           actions={
             <VisitorExportRefactored

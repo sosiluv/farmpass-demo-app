@@ -1,6 +1,3 @@
-import { format } from "date-fns";
-import { ko } from "date-fns/locale";
-import { useEffect, useCallback } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -21,6 +18,7 @@ import { VisitorAvatar } from "./VisitorAvatar";
 import { StatusBadge } from "./StatusBadge";
 import { useAuth } from "@/components/providers/auth-provider";
 import type { VisitorWithFarm } from "@/lib/types/visitor";
+import { LABELS } from "@/lib/constants/visitor";
 
 interface VisitorDetailModalProps {
   visitor: VisitorWithFarm | null;
@@ -51,7 +49,7 @@ export function VisitorDetailModal({
             {visitor.visitor_name}
           </h3>
           <p className="text-xs sm:text-sm text-gray-500 font-medium">
-            방문자 상세 정보
+            {LABELS.VISITOR_DETAIL_TITLE}
           </p>
         </div>
       </div>
@@ -64,7 +62,7 @@ export function VisitorDetailModal({
             <CardHeader className="pb-2 sm:pb-3">
               <CardTitle className="text-xs sm:text-sm font-semibold flex items-center space-x-2 text-gray-700">
                 <User className="w-3 h-3 sm:w-4 sm:h-4 text-blue-500" />
-                <span>기본 정보</span>
+                <span>{LABELS.VISITOR_DETAIL_BASIC_INFO}</span>
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-2 sm:space-y-3 pt-0">
@@ -72,7 +70,7 @@ export function VisitorDetailModal({
                 <Phone className="w-3 h-3 sm:w-4 sm:h-4 text-emerald-500 flex-shrink-0" />
                 <div className="min-w-0 flex-1">
                   <p className="text-[10px] sm:text-xs text-gray-500 font-medium">
-                    연락처
+                    {LABELS.VISITOR_DETAIL_CONTACT}
                   </p>
                   <p className="text-xs sm:text-sm font-semibold text-gray-800 break-all">
                     {formatPhoneNumber(visitor.visitor_phone)}
@@ -83,7 +81,7 @@ export function VisitorDetailModal({
                 <MapPin className="w-3 h-3 sm:w-4 sm:h-4 text-red-500 mt-0.5 flex-shrink-0" />
                 <div className="min-w-0 flex-1">
                   <p className="text-[10px] sm:text-xs text-gray-500 font-medium">
-                    주소
+                    {LABELS.VISITOR_DETAIL_ADDRESS}
                   </p>
                   <p className="text-xs sm:text-sm font-semibold text-gray-800 leading-relaxed break-all">
                     {visitor.visitor_address}
@@ -98,7 +96,7 @@ export function VisitorDetailModal({
             <CardHeader className="pb-2 sm:pb-3">
               <CardTitle className="text-xs sm:text-sm font-semibold flex items-center space-x-2 text-blue-700">
                 <Calendar className="w-3 h-3 sm:w-4 sm:h-4 text-blue-500" />
-                <span>방문 정보</span>
+                <span>{LABELS.VISITOR_DETAIL_VISIT_INFO}</span>
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-2 sm:space-y-3 pt-0">
@@ -140,7 +138,7 @@ export function VisitorDetailModal({
                     방문 농장
                   </p>
                   <p className="text-xs sm:text-sm font-bold text-blue-800 break-all">
-                    {visitor.farms?.farm_name || "Unknown"}
+                    {visitor.farms?.farm_name || LABELS.VISITOR_DETAIL_UNKNOWN}
                   </p>
                   {visitor.farms?.farm_type && (
                     <Badge
@@ -156,10 +154,10 @@ export function VisitorDetailModal({
                 <FileText className="w-3 h-3 sm:w-4 sm:h-4 text-emerald-500 mt-0.5 flex-shrink-0" />
                 <div className="min-w-0 flex-1">
                   <p className="text-[10px] sm:text-xs text-blue-600 font-medium">
-                    방문 목적
+                    {LABELS.VISITOR_DETAIL_VISIT_PURPOSE}
                   </p>
                   <p className="text-xs sm:text-sm font-bold text-blue-800 leading-relaxed break-all">
-                    {visitor.visitor_purpose || "기타"}
+                    {visitor.visitor_purpose || LABELS.VISITOR_DETAIL_OTHER}
                   </p>
                 </div>
               </div>
@@ -168,7 +166,7 @@ export function VisitorDetailModal({
                   <Car className="w-3 h-3 sm:w-4 sm:h-4 text-amber-500 flex-shrink-0" />
                   <div className="min-w-0 flex-1">
                     <p className="text-[10px] sm:text-xs text-blue-600 font-medium">
-                      차량번호
+                      {LABELS.VISITOR_DETAIL_VEHICLE_NUMBER}
                     </p>
                     <p className="text-xs sm:text-sm font-bold text-blue-800 break-all">
                       {visitor.vehicle_number}
@@ -184,7 +182,7 @@ export function VisitorDetailModal({
             <CardHeader className="pb-2 sm:pb-3">
               <CardTitle className="text-xs sm:text-sm font-semibold flex items-center space-x-2 text-green-700">
                 <Shield className="w-3 h-3 sm:w-4 sm:h-4 text-green-500" />
-                <span>방역 및 동의 정보</span>
+                <span>{LABELS.VISITOR_DETAIL_DISINFECTION_INFO}</span>
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-2 sm:space-y-3 pt-0">
@@ -192,10 +190,12 @@ export function VisitorDetailModal({
                 <StatusBadge isCompleted={visitor.disinfection_check} />
                 <div className="min-w-0 flex-1">
                   <p className="text-[10px] sm:text-xs text-green-600 font-medium">
-                    방역 완료 상태
+                    {LABELS.VISITOR_DETAIL_DISINFECTION_STATUS}
                   </p>
                   <p className="text-xs sm:text-sm font-bold text-green-800">
-                    {visitor.disinfection_check ? "완료" : "미완료"}
+                    {visitor.disinfection_check
+                      ? LABELS.VISITOR_DETAIL_DISINFECTION_COMPLETED
+                      : LABELS.VISITOR_DETAIL_DISINFECTION_INCOMPLETED}
                   </p>
                 </div>
               </div>
@@ -208,14 +208,18 @@ export function VisitorDetailModal({
                       : "bg-gray-100 text-gray-700 border-gray-200"
                   }`}
                 >
-                  {visitor.consent_given ? "동의 완료" : "동의 미완료"}
+                  {visitor.consent_given
+                    ? LABELS.VISITOR_DETAIL_CONSENT_COMPLETED
+                    : LABELS.VISITOR_DETAIL_CONSENT_INCOMPLETED}
                 </Badge>
                 <div className="min-w-0 flex-1">
                   <p className="text-[10px] sm:text-xs text-green-600 font-medium">
-                    개인정보 수집 동의
+                    {LABELS.VISITOR_DETAIL_CONSENT}
                   </p>
                   <p className="text-xs sm:text-sm font-bold text-green-800">
-                    {visitor.consent_given ? "동의함" : "동의하지 않음"}
+                    {visitor.consent_given
+                      ? LABELS.VISITOR_DETAIL_CONSENT_AGREED
+                      : LABELS.VISITOR_DETAIL_CONSENT_DISAGREED}
                   </p>
                 </div>
               </div>
@@ -228,7 +232,7 @@ export function VisitorDetailModal({
               <CardHeader className="pb-2 sm:pb-3">
                 <CardTitle className="text-xs sm:text-sm font-semibold flex items-center space-x-2 text-amber-700">
                   <FileText className="w-3 h-3 sm:w-4 sm:h-4 text-amber-500" />
-                  <span>추가 정보</span>
+                  <span>{LABELS.VISITOR_DETAIL_EXTRA_INFO}</span>
                 </CardTitle>
               </CardHeader>
               <CardContent className="pt-0">

@@ -9,7 +9,7 @@ import {
 } from "@/components/ui/form";
 import type { UseFormReturn } from "react-hook-form";
 import type { VisitorFormData } from "@/lib/utils/validation/visitor-validation";
-import { LABELS } from "@/constants/visitor-form";
+import { LABELS } from "@/lib/constants/visitor";
 import { Shield } from "lucide-react";
 
 interface DisinfectionFieldProps {

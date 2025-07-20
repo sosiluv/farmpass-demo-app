@@ -2,6 +2,7 @@ import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { motion } from "framer-motion";
 import { PlatformGuide } from "./data";
+import { LABELS } from "@/lib/constants/common";
 
 interface InstallStepsCardProps {
   currentGuide: PlatformGuide;
@@ -11,7 +12,9 @@ export function InstallStepsCard({ currentGuide }: InstallStepsCardProps) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-lg">설치 단계</CardTitle>
+        <CardTitle className="text-lg">
+          {LABELS.INSTALL_GUIDE_STEPS_TITLE}
+        </CardTitle>
       </CardHeader>
       <CardContent>
         <div className="space-y-4">

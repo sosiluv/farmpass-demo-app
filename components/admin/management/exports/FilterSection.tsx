@@ -9,6 +9,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Filter } from "lucide-react";
+import { LABELS } from "@/lib/constants/management";
 
 interface FilterOption {
   value: string;
@@ -28,7 +29,7 @@ interface FilterSectionProps {
 }
 
 export function FilterSection({
-  title = "필터 설정",
+  title = LABELS.FILTER_SETTINGS,
   color = "green",
   filters,
 }: FilterSectionProps) {

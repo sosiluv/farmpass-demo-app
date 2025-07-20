@@ -9,7 +9,7 @@ import {
 } from "@/components/ui/form";
 import type { UseFormReturn } from "react-hook-form";
 import type { VisitorFormData } from "@/lib/utils/validation/visitor-validation";
-import { LABELS, PLACEHOLDERS } from "@/constants/visitor-form";
+import { LABELS, PLACEHOLDERS } from "@/lib/constants/visitor";
 import { FileText } from "lucide-react";
 
 interface NotesFieldProps {
@@ -37,7 +37,9 @@ export const NotesField = ({
           >
             <FileText className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
             {LABELS.NOTES}
-            {required && <span className="text-red-500">*</span>}
+            {required && (
+              <span className="text-red-500">{LABELS.REQUIRED_MARK}</span>
+            )}
           </FormLabel>
           <FormControl>
             <Textarea

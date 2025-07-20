@@ -17,6 +17,7 @@ import { VisitorAvatar, StatusBadge, VisitorActionMenu } from "./index";
 import type { VisitorWithFarm } from "@/lib/types/visitor";
 import { useState } from "react";
 import { ImagePreviewDialog } from "@/components/common/ImagePreviewDialog";
+import { LABELS } from "@/lib/constants/visitor";
 
 interface VisitorTableRowProps {
   visitor: VisitorWithFarm;
@@ -176,11 +177,15 @@ export function VisitorTableRow({
           <Tooltip>
             <TooltipTrigger asChild>
               <span className="text-xs sm:text-sm font-medium text-gray-700 truncate max-w-[120px] sm:max-w-[150px] cursor-help">
-                {visitor.visitor_purpose || "기타"}
+                {visitor.visitor_purpose ||
+                  LABELS.VISITOR_TABLE_ROW_DEFAULT_PURPOSE}
               </span>
             </TooltipTrigger>
             <TooltipContent>
-              <p>{visitor.visitor_purpose || "기타"}</p>
+              <p>
+                {visitor.visitor_purpose ||
+                  LABELS.VISITOR_TABLE_ROW_DEFAULT_PURPOSE}
+              </p>
             </TooltipContent>
           </Tooltip>
         </div>
@@ -203,7 +208,9 @@ export function VisitorTableRow({
             </Tooltip>
           </div>
         ) : (
-          <span className="text-xs sm:text-sm text-gray-400">-</span>
+          <span className="text-xs sm:text-sm text-gray-400">
+            {LABELS.VISITOR_TABLE_ROW_NO_VEHICLE}
+          </span>
         )}
       </TableCell>
 
@@ -231,7 +238,7 @@ export function VisitorTableRow({
                 </button>
               </TooltipTrigger>
               <TooltipContent>
-                <p>상세 보기</p>
+                <p>{LABELS.VISITOR_TABLE_ROW_DETAILS_TOOLTIP}</p>
               </TooltipContent>
             </Tooltip>
           </TooltipProvider>

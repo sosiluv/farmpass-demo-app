@@ -4,6 +4,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import type { Farm } from "@/lib/types/farm";
+import { PAGE_HEADER } from "@/lib/constants/farms";
 
 interface FarmFormDialogHeaderProps {
   editingFarm: Farm | null;
@@ -14,9 +15,13 @@ export function FarmFormDialogHeader({
 }: FarmFormDialogHeaderProps) {
   return (
     <DialogHeader>
-      <DialogTitle>{editingFarm ? "농장 수정" : "새 농장 등록"}</DialogTitle>
+      <DialogTitle>
+        {editingFarm ? PAGE_HEADER.EDIT_FARM_TITLE : PAGE_HEADER.ADD_FARM_TITLE}
+      </DialogTitle>
       <DialogDescription>
-        {editingFarm ? "농장 정보를 수정하세요" : "새로운 농장을 등록하세요"}
+        {editingFarm
+          ? PAGE_HEADER.EDIT_FARM_DESCRIPTION
+          : PAGE_HEADER.ADD_FARM_DESCRIPTION}
       </DialogDescription>
     </DialogHeader>
   );

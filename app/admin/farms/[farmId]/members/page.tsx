@@ -11,6 +11,7 @@ import {
 import { ErrorBoundary } from "@/components/error/error-boundary";
 import { StatsSkeleton, TableSkeleton } from "@/components/common/skeletons";
 import { AdminError } from "@/components/error/admin-error";
+import { ERROR_CONFIGS } from "@/lib/constants/error";
 import { useDataFetchTimeout } from "@/hooks/useTimeout";
 import { getAuthErrorMessage } from "@/lib/utils/validation/validation";
 
@@ -165,8 +166,8 @@ export default function MembersPage({ params }: PageProps) {
   if (timeoutReached) {
     return (
       <AdminError
-        title="데이터를 불러오지 못했습니다"
-        description="네트워크 상태를 확인하거나 다시 시도해 주세요."
+        title={ERROR_CONFIGS.TIMEOUT.title}
+        description={ERROR_CONFIGS.TIMEOUT.description}
         retry={retry}
         error={new Error("Timeout: 데이터 로딩 10초 초과")}
       />
@@ -194,8 +195,8 @@ export default function MembersPage({ params }: PageProps) {
     if (!farmExists) {
       return (
         <AdminError
-          title="농장을 찾을 수 없습니다"
-          description="요청하신 농장이 존재하지 않거나 접근 권한이 없습니다."
+          title={ERROR_CONFIGS.NOT_FOUND.title}
+          description={ERROR_CONFIGS.NOT_FOUND.description}
           error={new Error("Farm not found or access denied")}
           retry={retry}
         />
@@ -205,8 +206,8 @@ export default function MembersPage({ params }: PageProps) {
 
   return (
     <ErrorBoundary
-      title="농장 구성원 관리 오류"
-      description="농장 구성원 정보를 불러오는 중 문제가 발생했습니다. 페이지를 새로고침하거나 잠시 후 다시 시도해주세요."
+      title={ERROR_CONFIGS.LOADING.title}
+      description={ERROR_CONFIGS.LOADING.description}
     >
       <div className="flex-1 space-y-3 sm:space-y-4 md:space-y-6 p-2 sm:p-4 md:p-6 lg:p-8 pt-3 sm:pt-4 md:pt-6">
         <MembersPageHeader
