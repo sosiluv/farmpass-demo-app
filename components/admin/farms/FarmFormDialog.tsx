@@ -4,9 +4,14 @@ import { useEffect } from "react";
 import { farmFormSchema, type FarmFormValues } from "@/lib/utils/validation";
 import { Button } from "@/components/ui/button";
 import { Form } from "@/components/ui/form";
-import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
-import { Plus } from "lucide-react";
-import type { Farm } from "@/lib/hooks/use-farms";
+import {
+  Dialog,
+  DialogContent,
+  DialogTrigger,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { Plus, Loader2 } from "lucide-react";
+import type { Farm } from "@/lib/types/farm";
 import type { FarmType } from "@/lib/constants/farm-types";
 import {
   FarmFormDialogHeader,
@@ -15,6 +20,7 @@ import {
   FarmFormManagerFields,
 } from "./components";
 import React from "react";
+import { BUTTONS, LABELS } from "@/lib/constants/farms";
 
 interface FarmFormDialogProps {
   open: boolean;
@@ -89,56 +95,49 @@ export function FarmFormDialog({
       <DialogTrigger asChild>
         <Button onClick={onAddClick} disabled={submitting || isLoading}>
           <Plus className="mr-2 h-4 w-4" />
-          농장 추가
+          {BUTTONS.ADD_FARM_BUTTON}
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[600px]">
+      <DialogContent className="w-[95vw] max-w-lg max-h-[90vh] overflow-y-auto p-3 sm:p-6">
         <FarmFormDialogHeader editingFarm={editingFarm} />
         <Form {...form}>
           <form
             onSubmit={form.handleSubmit(handleSubmit)}
-            className="space-y-4"
+            className="space-y-3 sm:space-y-6"
           >
             <FarmFormBasicFields form={form} />
             <FarmFormAddressField form={form} />
             <FarmFormManagerFields form={form} />
 
-            <div className="flex justify-end space-x-2">
+            <DialogFooter className="gap-3 pt-4">
               <Button
                 type="button"
                 variant="outline"
                 onClick={() => onOpenChange(false)}
                 disabled={submitting || isLoading}
+                className="h-12 px-6 text-base flex-1 sm:flex-none"
               >
-                취소
+                {BUTTONS.CANCEL_BUTTON}
               </Button>
-              <Button type="submit" disabled={submitting || isLoading}>
-                {(submitting || isLoading) && (
-                  <svg
-                    className="animate-spin mr-2 h-4 w-4"
-                    viewBox="0 0 16 16"
-                    fill="none"
-                    xmlns="http://www.w3.org/2000/svg"
-                  >
-                    <circle
-                      cx="8"
-                      cy="8"
-                      r="7"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      className="opacity-25"
-                    />
-                    <path
-                      d="M15 8a7 7 0 11-7-7"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      className="opacity-75"
-                    />
-                  </svg>
+              <Button
+                type="submit"
+                disabled={submitting || isLoading}
+                className="h-12 px-6 text-base flex-1 sm:flex-none min-w-[100px]"
+              >
+                {submitting || isLoading ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    {editingFarm
+                      ? BUTTONS.EDITING_LOADING
+                      : BUTTONS.REGISTERING_LOADING}
+                  </>
+                ) : editingFarm ? (
+                  BUTTONS.EDIT_BUTTON
+                ) : (
+                  BUTTONS.REGISTER_BUTTON
                 )}
-                {editingFarm ? "수정" : "등록"}
               </Button>
-            </div>
+            </DialogFooter>
           </form>
         </Form>
       </DialogContent>

@@ -1,0 +1,248 @@
+export const BUTTONS = {
+  ADDRESS_SEARCH_RESEARCH: "주소 다시 검색",
+  ADDRESS_SEARCH_CONFIRM: "확인",
+  IMAGE_PREVIEW_CLOSE: "닫기",
+
+  INSTALL_GUIDE_BUTTON_TEXT: "앱 설치 가이드",
+  INSTALL_PROMPT_INSTALLING: "설치 중...",
+  INSTALL_PROMPT_INSTALL: "설치",
+
+  LAYOUT_ADD_NEW_FARM: "새 농장 추가",
+  LAYOUT_GO_TO_DASHBOARD: "대시보드로 이동",
+  LAYOUT_LOGOUT: "로그아웃",
+
+  LAYOUT_ALL_VISITORS_STATUS: "전체 방문자 현황",
+  LAYOUT_VISITORS_STATUS: "방문자 현황",
+  LAYOUT_FARM_REGISTRATION_NEEDED: "농장 등록 필요",
+
+  MOBILE_MENU_CLOSE: "메뉴 닫기",
+  MOBILE_MENU_OPEN: "메뉴 열기",
+
+  // quick-action-buttons.tsx
+  QUICK_ACTION_CHANGE_PERMISSION: "권한 변경",
+  QUICK_ACTION_CHANGE_TO_MANAGER: "관리자로 변경",
+  QUICK_ACTION_CHANGE_TO_VIEWER: "조회자로 변경",
+  QUICK_ACTION_DELETE: "삭제",
+
+  PAGINATION_LOADING: "로딩 중...",
+  PAGINATION_LOAD_MORE: "더보기 ({remaining}개 남음)",
+  PAGINATION_DISPLAY_COUNT: "{current} / {total}개 표시",
+  PAGINATION_PAGE_RANGE: "{start}-{end} / {total}개",
+
+  THEME_TOGGLE_SCREEN_READER: "테마 전환",
+
+  ADDRESS_SEARCH_BUTTON: "주소 검색",
+
+  REFRESH_BUTTON: "새로고침",
+} as const;
+
+// 공통 컴포넌트 라벨
+export const LABELS = {
+  // 주소 검색 라벨
+  ADDRESS_SEARCH_TITLE: "주소 검색",
+  ADDRESS_SEARCH_DESCRIPTION:
+    "도로명 주소나 지번 주소로 검색하여 정확한 주소를 입력해주세요.",
+
+  ADDRESS_SEARCH_BASIC_ADDRESS: "기본 주소",
+  ADDRESS_SEARCH_DETAILED_ADDRESS: "상세 주소",
+
+  ADDRESS_SEARCH_LOADING: "주소 검색 서비스를 불러오는 중...",
+  // 이미지 미리보기 라벨
+  IMAGE_PREVIEW_TITLE: "이미지 미리보기",
+  IMAGE_PREVIEW_DESCRIPTION: "이미지를 확대하여 자세히 볼 수 있습니다.",
+  // 차트 라벨
+  CHART_VISITOR_COUNT: "방문자 수",
+  CHART_DAILY_AVERAGE: "일평균",
+  CHART_OTHER: "기타",
+  // 차트 빈 데이터 메시지
+  CHART_NO_PURPOSE_DATA: "방문 목적별 데이터가 없습니다.",
+  CHART_NO_REGION_DATA: "지역별 방문자 데이터가 없습니다.",
+  CHART_NO_TIME_DATA: "시간대별 방문자 데이터가 없습니다.",
+  CHART_NO_TREND_DATA: "방문자 추이 데이터가 없습니다.",
+
+  // 레이아웃 라벨
+  LAYOUT_ADMIN_SIDEBAR: "시스템 관리자",
+  LAYOUT_FARM_MANAGER: "{count}개 농장 관리",
+  LAYOUT_REGISTER_FARM: "농장을 등록해주세요",
+
+  LAYOUT_MOBILE_GUIDE: "💡 닫기: 외부 터치 · 왼쪽 스와이프 · 우하단 버튼",
+  LAYOUT_MANAGEMENT_MENU: "관리 메뉴",
+  LAYOUT_FARM_QUICK_ACCESS: "농장별 바로가기",
+  LAYOUT_QUICK_ACTIONS: "빠른 액션",
+
+  LAYOUT_FARM_NEEDED: "농장 필요",
+  LAYOUT_CURRENT_LOGIN: "현재 로그인",
+  LAYOUT_LOGIN_REQUIRED: "로그인 필요",
+  LAYOUT_LOGIN_NEEDED: "로그인이 필요합니다",
+
+  // 모바일 메뉴 버튼 라벨
+
+  // 페이지 헤더 라벨
+  PAGE_HEADER_DASHBOARD: "대시보드",
+
+  // 비밀번호 강도
+  PASSWORD_STRENGTH_VERY_WEAK: "매우 취약",
+  PASSWORD_STRENGTH_WEAK: "취약",
+  PASSWORD_STRENGTH_NORMAL: "보통",
+  PASSWORD_STRENGTH_STRONG: "강력",
+  PASSWORD_STRENGTH_VERY_STRONG: "매우 강력",
+  PASSWORD_STRENGTH_LENGTH_LABEL: "{minLength}자 이상",
+  PASSWORD_STRENGTH_LENGTH_SHORT: "{minLength}+",
+  PASSWORD_STRENGTH_NUMBER_LABEL: "숫자 포함",
+  PASSWORD_STRENGTH_NUMBER_SHORT: "123",
+  PASSWORD_STRENGTH_UPPERCASE_LABEL: "대문자 포함",
+  PASSWORD_STRENGTH_UPPERCASE_SHORT: "ABC",
+  PASSWORD_STRENGTH_LOWERCASE_LABEL: "소문자 포함",
+  PASSWORD_STRENGTH_LOWERCASE_SHORT: "abc",
+  PASSWORD_STRENGTH_SPECIAL_LABEL: "특수문자 포함",
+  PASSWORD_STRENGTH_SPECIAL_SHORT: "#@!",
+  PASSWORD_STRENGTH_OPTIONAL: " (선택)",
+
+  // 역할 배지
+  ROLE_BADGE_OWNER_LABEL: "농장 소유자",
+  ROLE_BADGE_OWNER_SHORT: "소유자",
+  ROLE_BADGE_OWNER_MOBILE: "소유자",
+  ROLE_BADGE_MANAGER_LABEL: "농장 관리자",
+  ROLE_BADGE_MANAGER_SHORT: "관리자",
+  ROLE_BADGE_MANAGER_MOBILE: "관리자",
+  ROLE_BADGE_VIEWER_LABEL: "조회 전용",
+  ROLE_BADGE_VIEWER_SHORT: "조회자",
+  ROLE_BADGE_VIEWER_MOBILE: "조회",
+
+  // InstallGuide - OtherPlatformsCard
+  INSTALL_GUIDE_OTHER_PLATFORMS_TITLE: "다른 플랫폼 가이드",
+  INSTALL_GUIDE_TAB_IOS: "iOS",
+  INSTALL_GUIDE_TAB_ANDROID: "Android",
+  INSTALL_GUIDE_TAB_SAMSUNG: "Samsung",
+  INSTALL_GUIDE_TAB_DESKTOP: "Desktop",
+
+  // InstallGuide - PlatformGuideCard
+  INSTALL_GUIDE_AUTO_BANNER: "자동 배너",
+  INSTALL_GUIDE_MANUAL_INSTALL: "수동 설치",
+
+  // InstallGuide - TipsCard
+  INSTALL_GUIDE_TIPS_TITLE: "유용한 팁",
+
+  // InstallGuide - InstallStepsCard
+  INSTALL_GUIDE_STEPS_TITLE: "설치 단계",
+
+  // InstallGuide - Platform Data
+  INSTALL_GUIDE_PLATFORM_IOS_SAFARI: "iOS Safari",
+  INSTALL_GUIDE_PLATFORM_ANDROID_CHROME: "Android Chrome",
+  INSTALL_GUIDE_PLATFORM_SAMSUNG_INTERNET: "Android Samsung Internet",
+  INSTALL_GUIDE_PLATFORM_DESKTOP_CHROME: "Desktop Chrome",
+
+  // InstallGuide - iOS Safari Steps
+  INSTALL_GUIDE_IOS_STEP1_TITLE: "공유 버튼 탭",
+  INSTALL_GUIDE_IOS_STEP1_DESC: "Safari 하단의 공유 버튼(□↑)을 탭하세요",
+  INSTALL_GUIDE_IOS_STEP2_TITLE: "홈 화면에 추가 선택",
+  INSTALL_GUIDE_IOS_STEP2_DESC: "공유 메뉴에서 '홈 화면에 추가'를 선택하세요",
+  INSTALL_GUIDE_IOS_STEP3_TITLE: "추가 완료",
+  INSTALL_GUIDE_IOS_STEP3_DESC: "이름을 확인하고 '추가'를 탭하면 완료됩니다",
+
+  // InstallGuide - Android Chrome Steps
+  INSTALL_GUIDE_ANDROID_STEP1_TITLE: "설치 배너 확인",
+  INSTALL_GUIDE_ANDROID_STEP1_DESC:
+    "주소창 아래에 나타나는 설치 배너를 확인하세요",
+  INSTALL_GUIDE_ANDROID_STEP2_TITLE: "설치 버튼 탭",
+  INSTALL_GUIDE_ANDROID_STEP2_DESC: "배너의 '설치' 버튼을 탭하세요",
+  INSTALL_GUIDE_ANDROID_STEP3_TITLE: "설치 완료",
+  INSTALL_GUIDE_ANDROID_STEP3_DESC:
+    "설치가 완료되면 홈 화면에서 앱을 실행할 수 있습니다",
+
+  // InstallGuide - Samsung Internet Steps
+  INSTALL_GUIDE_SAMSUNG_STEP1_TITLE: "메뉴 버튼 탭",
+  INSTALL_GUIDE_SAMSUNG_STEP1_DESC:
+    "Samsung Internet 하단의 메뉴 버튼을 탭하세요",
+  INSTALL_GUIDE_SAMSUNG_STEP2_TITLE: "홈 화면에 추가 선택",
+  INSTALL_GUIDE_SAMSUNG_STEP2_DESC: "메뉴에서 '홈 화면에 추가'를 선택하세요",
+  INSTALL_GUIDE_SAMSUNG_STEP3_TITLE: "추가 완료",
+  INSTALL_GUIDE_SAMSUNG_STEP3_DESC: "확인 후 홈 화면에 아이콘이 추가됩니다",
+
+  // InstallGuide - Desktop Chrome Steps
+  INSTALL_GUIDE_DESKTOP_STEP1_TITLE: "설치 아이콘 확인",
+  INSTALL_GUIDE_DESKTOP_STEP1_DESC:
+    "주소창 오른쪽에 나타나는 설치 아이콘(⬇)을 확인하세요",
+  INSTALL_GUIDE_DESKTOP_STEP2_TITLE: "설치 버튼 클릭",
+  INSTALL_GUIDE_DESKTOP_STEP2_DESC:
+    "설치 아이콘을 클릭하고 '설치'를 선택하세요",
+  INSTALL_GUIDE_DESKTOP_STEP3_TITLE: "설치 완료",
+  INSTALL_GUIDE_DESKTOP_STEP3_DESC:
+    "데스크톱에 앱이 설치되고 시작 메뉴에 추가됩니다",
+
+  // InstallGuide - Platform Tips
+  INSTALL_GUIDE_IOS_TIP1: "iOS 16.4 이상에서 PWA 알림이 지원됩니다",
+  INSTALL_GUIDE_IOS_TIP2: "홈 화면에서 앱처럼 실행됩니다",
+  INSTALL_GUIDE_IOS_TIP3: "오프라인에서도 사용할 수 있습니다",
+
+  INSTALL_GUIDE_ANDROID_TIP1: "Chrome 67 이상에서 지원됩니다",
+  INSTALL_GUIDE_ANDROID_TIP2: "푸시 알림을 받을 수 있습니다",
+  INSTALL_GUIDE_ANDROID_TIP3: "백그라운드 동기화가 가능합니다",
+
+  INSTALL_GUIDE_SAMSUNG_TIP1: "Samsung Internet 7.2 이상에서 지원됩니다",
+  INSTALL_GUIDE_SAMSUNG_TIP2: "Samsung 기기에서 최적화된 경험을 제공합니다",
+  INSTALL_GUIDE_SAMSUNG_TIP3: "다크 모드를 지원합니다",
+
+  INSTALL_GUIDE_DESKTOP_TIP1: "Chrome 67 이상에서 지원됩니다",
+  INSTALL_GUIDE_DESKTOP_TIP2: "독립적인 창으로 실행됩니다",
+  INSTALL_GUIDE_DESKTOP_TIP3: "시스템 알림을 받을 수 있습니다",
+
+  // InstallGuide.tsx
+
+  INSTALL_GUIDE_DIALOG_TITLE: "PWA 설치 가이드",
+  INSTALL_GUIDE_DIALOG_DESCRIPTION:
+    "현재 플랫폼에 맞는 PWA 설치 방법을 안내합니다.",
+
+  // InstallPrompt.tsx
+  INSTALL_PROMPT_IOS_TEXT: "홈 화면에 추가",
+  INSTALL_PROMPT_ANDROID_TEXT: "앱으로 설치",
+  INSTALL_PROMPT_DESKTOP_TEXT: "앱으로 설치",
+  INSTALL_PROMPT_DEFAULT_TEXT: "설치하기",
+  INSTALL_PROMPT_BANNER_GUIDE:
+    "더 빠르고 편리한 경험을 위해 홈화면에 추가하세요",
+  INSTALL_PROMPT_IOS_GUIDE:
+    'iOS에서는 사파리 하단의 공유 버튼을 누른 후 "홈 화면에 추가"를 선택하세요.',
+  INSTALL_PROMPT_ANDROID_GUIDE:
+    '브라우저 메뉴에서 "홈 화면에 추가"를 선택하세요.',
+  INSTALL_PROMPT_DEFAULT_GUIDE:
+    "이 브라우저에서는 메뉴에서 홈 화면에 추가를 선택하세요.",
+
+  INSTALL_PROMPT_ADD_TO_HOME: "{action}하세요!",
+
+  // turnstile.tsx
+  TURNSTILE_LOADING: "캡차 로딩 중...",
+  TURNSTILE_ERROR_MESSAGE: "캡차 인증에 실패했습니다.",
+  TURNSTILE_LOAD_ERROR: "캡차 로드에 실패했습니다.",
+
+  // admin-sidebar.tsx
+  ADMIN_SIDEBAR_DASHBOARD: "대시보드",
+  ADMIN_SIDEBAR_FARM_MANAGEMENT: "농장 관리",
+  ADMIN_SIDEBAR_ALL_VISITORS_RECORD: "전체 방문자 기록",
+  ADMIN_SIDEBAR_VISITORS_RECORD: "방문자 기록",
+  ADMIN_SIDEBAR_NOTIFICATION_SETTINGS: "알림 설정",
+  ADMIN_SIDEBAR_ACCOUNT_MANAGEMENT: "계정 관리",
+  ADMIN_SIDEBAR_SYSTEM_MANAGEMENT: "시스템 관리",
+  ADMIN_SIDEBAR_SYSTEM_SETTINGS: "시스템 설정",
+  ADMIN_SIDEBAR_MONITORING: "모니터링",
+
+  // mobile-header.tsx
+  MOBILE_HEADER_DASHBOARD: "대시보드",
+  MOBILE_HEADER_FARM_MANAGEMENT: "농장 관리",
+  MOBILE_HEADER_VISITOR_MANAGEMENT: "방문자 관리",
+  MOBILE_HEADER_SYSTEM_MANAGEMENT: "시스템 관리",
+  MOBILE_HEADER_MONITORING: "모니터링",
+  MOBILE_HEADER_NOTIFICATION_SETTINGS: "알림 설정",
+  MOBILE_HEADER_SETTINGS: "설정",
+  MOBILE_HEADER_ACCOUNT_MANAGEMENT: "계정 관리",
+  MOBILE_HEADER_ADMIN: "관리자",
+  MOBILE_HEADER_SYSTEM_ADMIN: "시스템 관리자",
+  MOBILE_HEADER_FARM_COUNT: "{count}개 농장",
+  MOBILE_HEADER_FARM_REGISTRATION_NEEDED: "농장 등록 필요",
+} as const;
+
+// 공통 컴포넌트 플레이스홀더
+export const PLACEHOLDERS = {
+  // 주소 검색 플레이스홀더
+  ADDRESS_SEARCH_DETAILED_PLACEHOLDER:
+    "상세 주소를 입력하세요 (예: 101동 1234호)",
+} as const;

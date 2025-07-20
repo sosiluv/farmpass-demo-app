@@ -9,6 +9,7 @@ import {
   Sparkles,
   Eye,
 } from "lucide-react";
+import { LABELS } from "@/lib/constants/visitor";
 
 interface VisitorTableHeaderProps {
   showFarmColumn?: boolean;
@@ -29,7 +30,7 @@ export function VisitorTableHeader({
         <TableHead className="w-16 sm:w-20 text-center">
           <div className="flex items-center justify-center space-x-1">
             <Badge className="text-[10px] sm:text-xs px-1 sm:px-1.5 py-0.5">
-              번호
+              {LABELS.VISITOR_TABLE_HEADER_NUMBER}
             </Badge>
           </div>
         </TableHead>
@@ -39,7 +40,7 @@ export function VisitorTableHeader({
           <div className="flex items-center space-x-1 sm:space-x-2">
             <User className="w-3 h-3 sm:w-4 sm:h-4 text-blue-500" />
             <span className="text-xs sm:text-sm font-semibold text-gray-700">
-              방문자
+              {LABELS.VISITOR_TABLE_HEADER_VISITOR}
             </span>
           </div>
         </TableHead>
@@ -50,7 +51,7 @@ export function VisitorTableHeader({
             <div className="flex items-center space-x-1 sm:space-x-2">
               <Building2 className="w-3 h-3 sm:w-4 sm:h-4 text-purple-500" />
               <span className="text-xs sm:text-sm font-semibold text-gray-700">
-                농장
+                {LABELS.VISITOR_TABLE_HEADER_FARM}
               </span>
             </div>
           </TableHead>
@@ -61,7 +62,7 @@ export function VisitorTableHeader({
           <div className="flex items-center space-x-1 sm:space-x-2">
             <Calendar className="w-3 h-3 sm:w-4 sm:h-4 text-blue-500" />
             <span className="text-xs sm:text-sm font-semibold text-gray-700">
-              방문일시
+              {LABELS.VISITOR_TABLE_HEADER_VISIT_DATETIME}
             </span>
           </div>
         </TableHead>
@@ -71,7 +72,7 @@ export function VisitorTableHeader({
           <div className="flex items-center space-x-1 sm:space-x-2">
             <FileText className="w-3 h-3 sm:w-4 sm:h-4 text-emerald-500" />
             <span className="text-xs sm:text-sm font-semibold text-gray-700">
-              방문목적
+              {LABELS.VISITOR_TABLE_HEADER_VISIT_PURPOSE}
             </span>
           </div>
         </TableHead>
@@ -81,7 +82,7 @@ export function VisitorTableHeader({
           <div className="flex items-center space-x-1 sm:space-x-2">
             <Car className="w-3 h-3 sm:w-4 sm:h-4 text-amber-500" />
             <span className="text-xs sm:text-sm font-semibold text-gray-700">
-              차량번호
+              {LABELS.VISITOR_TABLE_HEADER_VEHICLE_NUMBER}
             </span>
           </div>
         </TableHead>
@@ -91,7 +92,7 @@ export function VisitorTableHeader({
           <div className="flex items-center space-x-1 sm:space-x-2">
             <Sparkles className="w-3 h-3 sm:w-4 sm:h-4 text-green-500" />
             <span className="text-xs sm:text-sm font-semibold text-gray-700">
-              방역
+              {LABELS.VISITOR_TABLE_HEADER_DISINFECTION}
             </span>
           </div>
         </TableHead>
@@ -101,7 +102,7 @@ export function VisitorTableHeader({
           <div className="flex items-center justify-center space-x-1">
             <Eye className="w-3 h-3 sm:w-4 sm:h-4 text-gray-500" />
             <span className="text-xs sm:text-sm font-semibold text-gray-700">
-              액션
+              {LABELS.VISITOR_TABLE_HEADER_ACTION}
             </span>
           </div>
         </TableHead>

@@ -1,14 +1,16 @@
 import { useState } from "react";
+import type { SystemLog } from "@/lib/types/system";
+import { LOG_CATEGORIES_NO_ICON } from "@/lib/constants/log-categories";
+import { BUTTONS, LABELS, PAGE_HEADER } from "@/lib/constants/management";
 import {
   ExportDialogWrapper,
-  ExportActions,
   DateRangeSection,
   FilterSection,
   OptionsSection,
   SummarySection,
+  ExportActions,
   useExportDialog,
 } from "./index";
-import type { SystemLog } from "@/lib/types/system";
 
 interface LogsExportProps {
   logs: SystemLog[];
@@ -20,7 +22,6 @@ export interface LogsExportOptions {
   endDate: string;
   levelFilter: string;
   categoryFilter: string;
-  auditFilter: string;
   includeBasic: boolean;
   includeUser: boolean;
   includeSystem: boolean;
@@ -33,7 +34,7 @@ export function LogsExportRefactored({ logs, onExport }: LogsExportProps) {
   const [endDate, setEndDate] = useState("");
   const [levelFilter, setLevelFilter] = useState("all");
   const [categoryFilter, setCategoryFilter] = useState("all");
-  const [auditFilter, setAuditFilter] = useState("all");
+
   const [includeBasic, setIncludeBasic] = useState(true);
   const [includeUser, setIncludeUser] = useState(true);
   const [includeSystem, setIncludeSystem] = useState(false);
@@ -81,7 +82,6 @@ export function LogsExportRefactored({ logs, onExport }: LogsExportProps) {
     setEndDate("");
     setLevelFilter("all");
     setCategoryFilter("all");
-    setAuditFilter("all");
     setIncludeBasic(true);
     setIncludeUser(true);
     setIncludeSystem(false);
@@ -101,7 +101,6 @@ export function LogsExportRefactored({ logs, onExport }: LogsExportProps) {
     endDate,
     levelFilter,
     categoryFilter,
-    auditFilter,
     includeBasic,
     includeUser,
     includeSystem,
@@ -112,9 +111,9 @@ export function LogsExportRefactored({ logs, onExport }: LogsExportProps) {
     <ExportDialogWrapper
       open={isOpen}
       onOpenChange={setIsOpen}
-      title="시스템 로그 내보내기"
-      description="내보낼 로그 범위와 정보를 설정하세요"
-      buttonText="로그 내보내기"
+      title={PAGE_HEADER.LOGS_EXPORT_TITLE}
+      description={PAGE_HEADER.LOGS_EXPORT_DESCRIPTION}
+      buttonText={BUTTONS.LOGS_EXPORT_BUTTON}
     >
       <div className="space-y-3 sm:space-y-4 md:space-y-6">
         {/* 날짜 범위 설정 */}
@@ -123,97 +122,70 @@ export function LogsExportRefactored({ logs, onExport }: LogsExportProps) {
           endDate={endDate}
           onStartDateChange={setStartDate}
           onEndDateChange={setEndDate}
-          title="날짜 범위"
+          title={LABELS.DATE_RANGE}
           color="blue"
         />
 
         {/* 필터 설정 */}
         <FilterSection
-          title="필터 설정"
+          title={LABELS.FILTER_SETTINGS}
           color="green"
           filters={[
             {
               key: "levelFilter",
-              label: "로그 레벨",
+              label: LABELS.LOG_LEVEL,
               value: levelFilter,
               options: [
-                { value: "all", label: "모든 레벨" },
-                { value: "info", label: "정보" },
-                { value: "warn", label: "경고" },
-                { value: "error", label: "오류" },
-                { value: "debug", label: "디버그" },
+                { value: "all", label: LABELS.ALL_LEVELS },
+                { value: "info", label: LABELS.INFO },
+                { value: "warn", label: LABELS.WARN },
+                { value: "error", label: LABELS.ERROR },
+                { value: "debug", label: LABELS.DEBUG },
               ],
               onChange: setLevelFilter,
             },
             {
               key: "categoryFilter",
-              label: "카테고리",
+              label: LABELS.CATEGORY,
               value: categoryFilter,
-              options: [
-                { value: "all", label: "모든 카테고리" },
-                { value: "auth", label: "인증" },
-                { value: "farm", label: "농장" },
-                { value: "visitor", label: "방문자" },
-                { value: "member", label: "멤버" },
-                { value: "settings", label: "설정" },
-                { value: "security", label: "보안" },
-                { value: "file", label: "파일" },
-                { value: "notification", label: "알림" },
-                { value: "data", label: "데이터" },
-                { value: "log", label: "로그관리" },
-                { value: "application", label: "앱" },
-                { value: "performance", label: "성능" },
-                { value: "error", label: "에러" },
-                { value: "system", label: "기타" },
-              ],
+              options: LOG_CATEGORIES_NO_ICON,
               onChange: setCategoryFilter,
-            },
-            {
-              key: "auditFilter",
-              label: "감사 로그",
-              value: auditFilter,
-              options: [
-                { value: "all", label: "모든 로그" },
-                { value: "audit", label: "감사 로그만" },
-                { value: "system", label: "시스템 로그만" },
-              ],
-              onChange: setAuditFilter,
             },
           ]}
         />
 
         {/* 내보내기 옵션 */}
         <OptionsSection
-          title="포함할 정보"
+          title={LABELS.INCLUDED_INFO}
           color="purple"
           selectedCount={selectedOptionsCount}
           totalCount={4}
           options={[
             {
               key: "includeBasic",
-              label: "기본 정보",
+              label: LABELS.BASIC_INFO,
               description: "액션, 메시지, 시간",
               checked: includeBasic,
               onChange: setIncludeBasic,
             },
             {
               key: "includeUser",
-              label: "사용자 정보",
-              description: "이메일, IP 주소",
+              label: LABELS.USER_INFO,
+              description: LABELS.USER_INFO_DESC,
               checked: includeUser,
               onChange: setIncludeUser,
             },
             {
               key: "includeSystem",
-              label: "시스템 정보",
-              description: "레벨, 카테고리",
+              label: LABELS.SYSTEM_INFO,
+              description: LABELS.SYSTEM_INFO_DESC,
               checked: includeSystem,
               onChange: setIncludeSystem,
             },
             {
               key: "includeMetadata",
-              label: "메타데이터",
-              description: "상세 정보, 컨텍스트",
+              label: LABELS.METADATA,
+              description: LABELS.METADATA_DESC,
               checked: includeMetadata,
               onChange: setIncludeMetadata,
             },
@@ -222,7 +194,12 @@ export function LogsExportRefactored({ logs, onExport }: LogsExportProps) {
 
         {/* 요약 정보 */}
         <SummarySection
-          message={`내보내기 요약: 총 ${logs.length}개의 로그 중 ${selectedOptionsCount}개 정보 유형이 포함됩니다.`}
+          message={LABELS.EXPORT_SUMMARY.replace(
+            "{totalCount}",
+            logs.length.toString()
+          )
+            .replace("{itemType}", "로그")
+            .replace("{selectedCount}", selectedOptionsCount.toString())}
           color="orange"
         />
       </div>

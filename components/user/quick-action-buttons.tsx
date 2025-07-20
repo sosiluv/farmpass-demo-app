@@ -1,7 +1,7 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { UserMinus, Shield, ArrowUp, ArrowDown } from "lucide-react";
+import { UserMinus, Shield } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -9,6 +9,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { UserRole } from "./role-badge";
+import { BUTTONS } from "@/lib/constants/common";
 
 interface QuickActionButtonsProps {
   memberRole: UserRole;
@@ -44,7 +45,7 @@ export function QuickActionButtons({
         <DropdownMenuTrigger asChild>
           <Button variant="outline" size="sm" className="h-8 px-2">
             <Shield className="h-4 w-4 mr-2" />
-            권한 변경
+            {BUTTONS.QUICK_ACTION_CHANGE_PERMISSION}
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">
@@ -52,13 +53,13 @@ export function QuickActionButtons({
             onClick={() => onRoleChange?.(memberId, "manager")}
             disabled={memberRole === "manager"}
           >
-            관리자로 변경
+            {BUTTONS.QUICK_ACTION_CHANGE_TO_MANAGER}
           </DropdownMenuItem>
           <DropdownMenuItem
             onClick={() => onRoleChange?.(memberId, "viewer")}
             disabled={memberRole === "viewer"}
           >
-            조회자로 변경
+            {BUTTONS.QUICK_ACTION_CHANGE_TO_VIEWER}
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
@@ -71,7 +72,7 @@ export function QuickActionButtons({
         className="h-8 px-2"
       >
         <UserMinus className="h-4 w-4 mr-2" />
-        삭제
+        {BUTTONS.QUICK_ACTION_DELETE}
       </Button>
     </div>
   );

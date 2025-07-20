@@ -1,7 +1,7 @@
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { motion } from "framer-motion";
-import type { Farm } from "@/lib/hooks/use-farms";
-import type { MemberWithProfile } from "@/lib/hooks/use-farm-members-preview-safe";
+import type { Farm } from "@/lib/types/farm";
+import type { FarmMembers } from "@/lib/hooks/query/use-farm-members-query";
 import {
   FarmCardHeader,
   FarmCardActions,
@@ -9,19 +9,13 @@ import {
   FarmCardPreview,
 } from "./components";
 
-interface FarmMembersData {
-  count: number;
-  members: MemberWithProfile[];
-  loading: boolean;
-}
-
 interface FarmCardProps {
   farm: Farm;
   index: number;
   isOwner: boolean;
   onEdit: (farm: Farm) => void;
   onDelete: (farmId: string) => void;
-  membersData: FarmMembersData;
+  membersData?: FarmMembers;
 }
 
 export function FarmCard({

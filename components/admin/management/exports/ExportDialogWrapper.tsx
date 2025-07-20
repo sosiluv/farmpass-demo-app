@@ -9,6 +9,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Download, Database } from "lucide-react";
+import { BUTTONS } from "@/lib/constants/management";
 
 interface ExportDialogWrapperProps {
   open: boolean;
@@ -40,7 +41,7 @@ export function ExportDialogWrapper({
           >
             <Download className="h-3 w-3 sm:h-4 sm:w-4" />
             <span className="hidden sm:inline">{buttonText}</span>
-            <span className="sm:hidden">내보내기</span>
+            <span className="sm:hidden">{BUTTONS.CSV_EXPORT}</span>
           </Button>
         )}
       </DialogTrigger>

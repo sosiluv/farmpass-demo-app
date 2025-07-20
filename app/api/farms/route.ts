@@ -1,12 +1,14 @@
-import { createClient } from "@/lib/supabase/server";
 import { NextRequest, NextResponse } from "next/server";
-import { logDataChange } from "@/lib/utils/logging/system-log";
+import { createSystemLog } from "@/lib/utils/logging/system-log";
 import { devLog } from "@/lib/utils/logging/dev-logger";
 import {
   PerformanceMonitor,
   logApiPerformance,
 } from "@/lib/utils/logging/system-log";
 import { getClientIP, getUserAgent } from "@/lib/server/ip-helpers";
+import { requireAuth } from "@/lib/server/auth-utils";
+import { prisma } from "@/lib/prisma";
+import { sendSupabaseBroadcast } from "@/lib/supabase/broadcast";
 
 export async function POST(request: NextRequest) {
   // 성능 모니터링 시작
@@ -24,18 +26,13 @@ export async function POST(request: NextRequest) {
   let statusCode = 200;
 
   try {
-    const supabase = await createClient();
-    const {
-      data: { user: authUser },
-      error: authError,
-    } = await supabase.auth.getUser();
-
-    if (authError || !authUser) {
-      devLog.error("❌ Authentication failed:", authError);
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    // 인증 확인
+    const authResult = await requireAuth(false);
+    if (!authResult.success || !authResult.user) {
+      return authResult.response!;
     }
 
-    user = authUser;
+    user = authResult.user;
     devLog.log("👤 Creating farm for user:", user.id);
 
     const {
@@ -58,53 +55,72 @@ export async function POST(request: NextRequest) {
     devLog.log("📝 Farm data:", { farm_name, farm_type, manager_name });
 
     // Start a transaction
-    const { data: farm, error: farmError } = await supabase
-      .from("farms")
-      .insert({
-        farm_name,
-        farm_address,
-        farm_detailed_address,
-        farm_type,
-        description,
-        manager_name,
-        manager_phone,
-        owner_id: user.id,
-      })
-      .select()
-      .single();
+    let farm;
 
-    if (farmError) {
-      devLog.error("❌ Failed to create farm:", farmError);
-      throw farmError;
+    try {
+      farm = await prisma.farms.create({
+        data: {
+          farm_name,
+          farm_address,
+          farm_detailed_address,
+          farm_type,
+          description,
+          manager_name,
+          manager_phone,
+          owner_id: user.id,
+        },
+      });
+
+      devLog.log("✅ Farm created successfully:", farm.id);
+
+      // 농장주를 farm_members 테이블에 추가
+      devLog.log("🔄 Adding farm owner to farm_members...");
+      await prisma.farm_members.create({
+        data: {
+          farm_id: farm.id,
+          user_id: user.id,
+          role: "owner",
+        },
+      });
+    } catch (error) {
+      // 트랜잭션 실패 시 farm이 생성되었다면 삭제
+      if (farm?.id) {
+        try {
+          await prisma.farms.delete({
+            where: { id: farm.id },
+          });
+        } catch (deleteError) {
+          devLog.error(
+            "Failed to delete farm after member creation error:",
+            deleteError
+          );
+        }
+      }
+      statusCode = 500;
+      throw error;
     }
 
-    devLog.log("✅ Farm created successfully:", farm.id);
-
-    // 농장주를 farm_members 테이블에 추가
-    devLog.log("🔄 Adding farm owner to farm_members...");
-    const { error: memberError } = await supabase.from("farm_members").insert({
-      farm_id: farm.id,
-      user_id: user.id,
-      role: "owner",
+    // 🔥 농장 등록 실시간 브로드캐스트
+    await sendSupabaseBroadcast({
+      channel: "farm_updates",
+      event: "farm_created",
+      payload: {
+        eventType: "INSERT",
+        new: farm,
+        old: null,
+        table: "farms",
+        schema: "public",
+      },
     });
 
-    if (memberError) {
-      devLog.error("❌ Failed to add farm owner to farm_members:", memberError);
-      // farm_members 추가 실패 시 farms 테이블에서도 삭제
-      await supabase.from("farms").delete().eq("id", farm.id);
-      statusCode = 500;
-      throw memberError;
-    }
-
-    devLog.log(
-      `✅ Successfully added farm owner to farm_members: ${user.id} -> ${farm.id}`
-    );
-
     // 농장 생성 로그
-    await logDataChange(
+    await createSystemLog(
       "FARM_CREATE",
-      "FARM",
+      `농장 생성: ${farm_name} (${farm.id})`,
+      "info",
       user.id,
+      "farm",
+      farm.id,
       {
         farm_id: farm.id,
         farm_name,
@@ -114,11 +130,9 @@ export async function POST(request: NextRequest) {
         manager_phone,
         action_type: "farm_management",
       },
-      {
-        ip: clientIP,
-        email: user.email,
-        userAgent: userAgent,
-      }
+      user.email,
+      clientIP,
+      userAgent
     );
 
     // 새로운 권한 시스템에서는 profiles.account_type은 시스템 레벨 권한만 관리
@@ -127,35 +141,45 @@ export async function POST(request: NextRequest) {
 
     statusCode = 201;
     return NextResponse.json(
-      { farm },
+      {
+        farm,
+        success: true,
+        message: `${farm_name}이 등록되었습니다.`,
+      },
       { status: 201, headers: { "Cache-Control": "no-store" } }
     );
   } catch (error) {
-    devLog.error("❌ Error creating farm:", error);
     statusCode = 500;
 
     // 농장 생성 실패 로그 기록
-    await logDataChange(
+    await createSystemLog(
       "FARM_CREATE_FAILED",
-      "FARM",
+      `농장 생성 실패: ${farmData.farm_name || "Unknown"} - ${
+        error instanceof Error ? error.message : "Unknown error"
+      }`,
+      "error",
       user?.id,
+      "farm",
+      undefined,
       {
         error_message: error instanceof Error ? error.message : "Unknown error",
         farm_data: farmData,
         action_type: "farm_management",
         status: "failed",
       },
-      {
-        ip: clientIP,
-        email: user?.email,
-        userAgent: userAgent,
-      }
-    ).catch((logError) =>
+      user?.email,
+      clientIP,
+      userAgent
+    ).catch((logError: any) =>
       devLog.error("Failed to log farm creation error:", logError)
     );
 
     return NextResponse.json(
-      { error: "Failed to create farm" },
+      {
+        success: false,
+        error: "FARM_CREATE_ERROR",
+        message: "농장 생성 중 오류가 발생했습니다.",
+      },
       { status: 500, headers: { "Cache-Control": "no-store" } }
     );
   } finally {
@@ -195,64 +219,94 @@ export async function GET(request: NextRequest) {
   let statusCode = 200;
 
   try {
-    const supabase = await createClient();
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser();
-
-    if (authError || !user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    // 인증 확인
+    const authResult = await requireAuth(false);
+    if (!authResult.success || !authResult.user) {
+      return authResult.response!;
     }
 
-    // 사용자의 권한 확인
-    const { data: profile, error: profileError } = await supabase
-      .from("profiles")
-      .select("account_type, email")
-      .eq("id", user.id)
-      .single();
+    const user = authResult.user;
+    const isAdmin = authResult.isAdmin || false;
 
-    if (profileError) {
-      throw profileError;
-    }
+    let farms;
 
-    let query = supabase.from("farms").select(`
-      *,
-      owner:profiles!farms_owner_id_fkey(
-        id,
-        name,
-        email
-      )
-    `);
-
-    // admin인 경우 모든 농장을 조회, 아닌 경우 자신의 농장만 조회
-    const isAdmin = profile.account_type === "admin";
-    if (!isAdmin) {
-      query = query.eq("owner_id", user.id);
-    }
-
-    const { data: farms, error } = await query;
-
-    if (error) {
-      throw error;
+    // admin인 경우 모든 농장을 조회, 아닌 경우 접근 가능한 농장 조회
+    if (isAdmin) {
+      // 관리자는 모든 농장 조회
+      try {
+        farms = await prisma.farms.findMany({
+          include: {
+            profiles: {
+              select: {
+                id: true,
+                name: true,
+                email: true,
+              },
+            },
+          },
+          orderBy: {
+            created_at: "desc",
+          },
+        });
+      } catch (adminFarmsError) {
+        throw adminFarmsError;
+      }
+    } else {
+      // 일반 사용자는 접근 가능한 농장만 조회 - 한 번의 쿼리로 최적화
+      try {
+        farms = await prisma.farms.findMany({
+          where: {
+            OR: [
+              // 소유한 농장
+              { owner_id: user.id },
+              // 구성원으로 속한 농장
+              {
+                farm_members: {
+                  some: {
+                    user_id: user.id,
+                    is_active: true,
+                  },
+                },
+              },
+            ],
+          },
+          include: {
+            profiles: {
+              select: {
+                id: true,
+                name: true,
+                email: true,
+              },
+            },
+          },
+          orderBy: {
+            created_at: "desc",
+          },
+        });
+      } catch (userFarmsError) {
+        throw userFarmsError;
+      }
     }
 
     // 농장 목록 조회 로그 기록
-    await logDataChange(
+    await createSystemLog(
       "FARM_READ",
-      "FARM",
+      `농장 목록 조회: ${farms?.length || 0}개 (${
+        isAdmin ? "관리자 전체 조회" : "접근 가능한 농장 조회"
+      })`,
+      "info",
       user.id,
+      "farm",
+      undefined,
       {
-        access_type: isAdmin ? "admin_all_farms" : "owner_farms",
+        access_type: isAdmin ? "admin_all_farms" : "accessible_farms",
         farm_count: farms?.length || 0,
-        user_email: profile.email,
+        user_email: user.email,
         action_type: "farm_management",
       },
-      {
-        ip: clientIP,
-        email: user.email,
-        userAgent: userAgent,
-      }
+      user.email,
+      clientIP,
+      userAgent
     );
 
     return NextResponse.json(
@@ -260,29 +314,36 @@ export async function GET(request: NextRequest) {
       { headers: { "Cache-Control": "no-store" } }
     );
   } catch (error) {
-    devLog.error("Error fetching farms:", error);
     statusCode = 500;
 
     // 농장 목록 조회 실패 로그 기록
-    await logDataChange(
+    await createSystemLog(
       "FARM_READ_FAILED",
-      "FARM",
+      `농장 목록 조회 실패: ${
+        error instanceof Error ? error.message : "Unknown error"
+      }`,
+      "error",
+      undefined,
+      "farm",
       undefined,
       {
         error_message: error instanceof Error ? error.message : "Unknown error",
         action_type: "farm_management",
         status: "failed",
       },
-      {
-        ip: clientIP,
-        userAgent: userAgent,
-      }
-    ).catch((logError) =>
+      undefined,
+      clientIP,
+      userAgent
+    ).catch((logError: any) =>
       devLog.error("Failed to log farm fetch error:", logError)
     );
 
     return NextResponse.json(
-      { error: "Failed to fetch farms" },
+      {
+        success: false,
+        error: "FARM_LIST_FETCH_ERROR",
+        message: "농장 목록 조회 중 오류가 발생했습니다.",
+      },
       { status: 500, headers: { "Cache-Control": "no-store" } }
     );
   } finally {

@@ -1,4 +1,5 @@
 import { Bar } from "@/components/ui/chart";
+import { LABELS } from "@/lib/constants/common";
 
 interface WeekdayStats {
   day: string;
@@ -10,8 +11,6 @@ interface WeekdayVisitorChartProps {
   data: WeekdayStats[];
 }
 
-const DAYS = ["일", "월", "화", "수", "목", "금", "토"];
-
 export function WeekdayVisitorChart({ data }: WeekdayVisitorChartProps) {
   return (
     <Bar
@@ -19,7 +18,7 @@ export function WeekdayVisitorChart({ data }: WeekdayVisitorChartProps) {
         labels: data.map((item) => item.day),
         datasets: [
           {
-            label: "방문자 수",
+            label: LABELS.CHART_VISITOR_COUNT,
             data: data.map((item) => item.count),
             backgroundColor: "rgba(99, 102, 241, 0.8)",
             borderColor: "rgb(79, 82, 221)",
@@ -29,7 +28,7 @@ export function WeekdayVisitorChart({ data }: WeekdayVisitorChartProps) {
             hoverBackgroundColor: "rgba(99, 102, 241, 0.9)",
           },
           {
-            label: "일평균",
+            label: LABELS.CHART_DAILY_AVERAGE,
             data: data.map((item) => item.average),
             backgroundColor: "rgba(16, 185, 129, 0.8)",
             borderColor: "rgb(5, 150, 105)",

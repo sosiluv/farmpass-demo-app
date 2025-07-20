@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useMemo } from "react";
 import { motion } from "framer-motion";
-import { Building2, Save } from "lucide-react";
+import { Building2, Save, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -17,60 +17,67 @@ import {
 } from "@/components/ui/select";
 import { AddressSearch } from "@/components/common/address-search";
 import { ErrorBoundary } from "@/components/error/error-boundary";
+import { ERROR_CONFIGS } from "@/lib/constants/error";
+import { useAccountForm } from "@/hooks/useAccountForm";
 import type { CompanySectionProps, CompanyFormData } from "@/lib/types/account";
 import AccountCardHeader from "./AccountCardHeader";
-
-// 상수 정의
-const EMPLOYEE_COUNT_OPTIONS = [
-  { value: "10", label: "1-10명" },
-  { value: "50", label: "10-50명" },
-  { value: "100", label: "50-100명" },
-  { value: "500", label: "100명 이상" },
-] as const;
-
-const BUSINESS_TYPE_OPTIONS = [
-  { value: "축산업", label: "축산업" },
-  { value: "농업", label: "농업" },
-  { value: "원예업", label: "원예업" },
-  { value: "수산업", label: "수산업" },
-  { value: "기타", label: "기타" },
-] as const;
+import {
+  EMPLOYEE_COUNT_OPTIONS,
+  BUSINESS_TYPE_OPTIONS,
+  LABELS,
+  PLACEHOLDERS,
+  BUTTONS,
+  PAGE_HEADER,
+} from "@/lib/constants/account";
 
 export function CompanySection({
   profile,
   loading,
   onSave,
 }: CompanySectionProps) {
-  const [companyData, setCompanyData] = useState<CompanyFormData>({
-    companyName: "",
-    companyAddress: "",
-    businessType: "",
-    company_description: "",
-    establishment_date: "",
-    employee_count: "",
-    company_website: "",
+  // 폼 데이터 관리 - 안정화된 initialData
+  const initialData = useMemo<CompanyFormData>(
+    () => ({
+      companyName: profile?.company_name || "",
+      companyAddress: profile?.company_address || "",
+      businessType: profile?.business_type || "",
+      company_description: profile?.company_description || "",
+      establishment_date: profile?.establishment_date || "",
+      employee_count: profile?.employee_count
+        ? profile.employee_count.toString()
+        : "",
+      company_website: profile?.company_website || "",
+    }),
+    [
+      profile?.company_name,
+      profile?.company_address,
+      profile?.business_type,
+      profile?.company_description,
+      profile?.establishment_date,
+      profile?.employee_count,
+      profile?.company_website,
+    ]
+  );
+
+  const { formData, hasChanges, handleChange, resetChanges } = useAccountForm({
+    initialData,
   });
 
-  useEffect(() => {
-    if (profile) {
-      setCompanyData({
-        companyName: profile.company_name || "",
-        companyAddress: profile.company_address || "",
-        businessType: profile.business_type || "",
-        company_description: profile.company_description || "",
-        establishment_date: profile.establishment_date || "",
-        employee_count: profile.employee_count
-          ? profile.employee_count.toString()
-          : "",
-        company_website: profile.company_website || "",
-      });
+  const handleSave = async () => {
+    if (!hasChanges || loading) return;
+
+    try {
+      await onSave(formData);
+      resetChanges();
+    } catch (error) {
+      console.error("[COMPANY_SECTION] Failed to save company data:", error);
     }
-  }, [profile]);
+  };
 
   return (
     <ErrorBoundary
-      title="회사 정보 섹션 오류"
-      description="회사 정보를 불러오는 중 문제가 발생했습니다. 페이지를 새로고침하거나 잠시 후 다시 시도해주세요."
+      title={ERROR_CONFIGS.LOADING.title}
+      description={ERROR_CONFIGS.LOADING.description}
     >
       <motion.div
         initial={{ opacity: 0, y: 20 }}
@@ -80,39 +87,31 @@ export function CompanySection({
         <Card>
           <AccountCardHeader
             icon={Building2}
-            title="회사 정보"
-            description="회사 및 농장 정보를 관리합니다"
+            title={PAGE_HEADER.COMPANY_INFO_TITLE}
+            description={PAGE_HEADER.COMPANY_INFO_DESCRIPTION}
           />
           <CardContent className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-2">
-                <Label htmlFor="companyName">회사명</Label>
+                <Label htmlFor="companyName">{LABELS.COMPANY_NAME}</Label>
                 <Input
                   id="companyName"
-                  value={companyData.companyName}
-                  onChange={(e) =>
-                    setCompanyData((prev) => ({
-                      ...prev,
-                      companyName: e.target.value,
-                    }))
-                  }
+                  value={formData.companyName}
+                  onChange={(e) => handleChange("companyName", e.target.value)}
                   disabled={loading}
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="businessType">업종</Label>
+                <Label htmlFor="businessType">{LABELS.BUSINESS_TYPE}</Label>
                 <Select
-                  value={companyData.businessType}
-                  onValueChange={(value) =>
-                    setCompanyData((prev) => ({
-                      ...prev,
-                      businessType: value,
-                    }))
-                  }
+                  value={formData.businessType}
+                  onValueChange={(value) => handleChange("businessType", value)}
                   disabled={loading}
                 >
-                  <SelectTrigger>
-                    <SelectValue placeholder="업종 선택" />
+                  <SelectTrigger id="businessType">
+                    <SelectValue
+                      placeholder={PLACEHOLDERS.BUSINESS_TYPE_SELECT}
+                    />
                   </SelectTrigger>
                   <SelectContent>
                     {(BUSINESS_TYPE_OPTIONS || []).map((option) => (
@@ -126,21 +125,20 @@ export function CompanySection({
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="companyAddress">회사 주소</Label>
+              <Label htmlFor="companyAddress">{LABELS.COMPANY_ADDRESS}</Label>
               <AddressSearch
                 onSelect={(address, detailedAddress) =>
-                  setCompanyData((prev) => ({
-                    ...prev,
-                    companyAddress:
-                      address + (detailedAddress ? ` ${detailedAddress}` : ""),
-                  }))
+                  handleChange(
+                    "companyAddress",
+                    address + (detailedAddress ? ` ${detailedAddress}` : "")
+                  )
                 }
                 defaultDetailedAddress=""
               />
               <Input
                 id="companyAddress"
-                value={companyData.companyAddress}
-                placeholder="주소 검색을 통해 주소를 입력해주세요"
+                value={formData.companyAddress}
+                placeholder={PLACEHOLDERS.COMPANY_ADDRESS}
                 readOnly
                 disabled={loading}
               />
@@ -148,34 +146,32 @@ export function CompanySection({
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-2">
-                <Label htmlFor="establishment_date">설립일</Label>
+                <Label htmlFor="establishment_date">
+                  {LABELS.ESTABLISHMENT_DATE}
+                </Label>
                 <Input
                   id="establishment_date"
                   type="date"
-                  value={companyData.establishment_date}
+                  value={formData.establishment_date}
                   onChange={(e) =>
-                    setCompanyData((prev) => ({
-                      ...prev,
-                      establishment_date: e.target.value,
-                    }))
+                    handleChange("establishment_date", e.target.value)
                   }
                   disabled={loading}
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="employee_count">직원 수</Label>
+                <Label htmlFor="employee_count">{LABELS.EMPLOYEE_COUNT}</Label>
                 <Select
-                  value={companyData.employee_count}
+                  value={formData.employee_count}
                   onValueChange={(value) =>
-                    setCompanyData((prev) => ({
-                      ...prev,
-                      employee_count: value,
-                    }))
+                    handleChange("employee_count", value)
                   }
                   disabled={loading}
                 >
-                  <SelectTrigger>
-                    <SelectValue placeholder="직원 수 선택" />
+                  <SelectTrigger id="employee_count">
+                    <SelectValue
+                      placeholder={PLACEHOLDERS.EMPLOYEE_COUNT_SELECT}
+                    />
                   </SelectTrigger>
                   <SelectContent>
                     {(EMPLOYEE_COUNT_OPTIONS || []).map((option) => (
@@ -189,34 +185,30 @@ export function CompanySection({
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="company_website">웹사이트</Label>
+              <Label htmlFor="company_website">{LABELS.COMPANY_WEBSITE}</Label>
               <Input
                 id="company_website"
                 type="url"
-                value={companyData.company_website}
+                value={formData.company_website}
                 onChange={(e) =>
-                  setCompanyData((prev) => ({
-                    ...prev,
-                    company_website: e.target.value,
-                  }))
+                  handleChange("company_website", e.target.value)
                 }
-                placeholder="https://example.com"
+                placeholder={PLACEHOLDERS.COMPANY_WEBSITE}
                 disabled={loading}
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="company_description">회사 소개</Label>
+              <Label htmlFor="company_description">
+                {LABELS.COMPANY_DESCRIPTION}
+              </Label>
               <Textarea
                 id="company_description"
-                value={companyData.company_description}
+                value={formData.company_description}
                 onChange={(e) =>
-                  setCompanyData((prev) => ({
-                    ...prev,
-                    company_description: e.target.value,
-                  }))
+                  handleChange("company_description", e.target.value)
                 }
-                placeholder="회사 및 농장에 대한 간단한 소개를 입력하세요"
+                placeholder={PLACEHOLDERS.COMPANY_DESCRIPTION}
                 rows={4}
                 disabled={loading}
               />
@@ -224,12 +216,21 @@ export function CompanySection({
 
             <div className="flex justify-end">
               <Button
-                onClick={() => onSave(companyData)}
-                disabled={loading}
+                onClick={handleSave}
+                disabled={loading || !hasChanges}
                 className="btn-hover"
               >
-                <Save className="mr-2 h-4 w-4" />
-                저장
+                {loading ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    {BUTTONS.SAVING}
+                  </>
+                ) : (
+                  <>
+                    <Save className="mr-2 h-4 w-4" />
+                    {BUTTONS.SAVE_COMPANY_INFO}
+                  </>
+                )}
               </Button>
             </div>
           </CardContent>

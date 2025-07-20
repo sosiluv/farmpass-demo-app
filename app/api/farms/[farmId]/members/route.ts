@@ -1,121 +1,123 @@
-import { createClient } from "@/lib/supabase/server";
-import { NextResponse } from "next/server";
-import { logDataChange } from "@/lib/utils/logging/system-log";
+import { NextRequest, NextResponse } from "next/server";
+import { createSystemLog } from "@/lib/utils/logging/system-log";
 import { devLog } from "@/lib/utils/logging/dev-logger";
-
-// 구성원 추가 후 사용자 role 업데이트 함수
-async function updateUserRoleAfterMemberAdd(
-  supabase: any,
-  userId: string,
-  newMemberRole: string
-) {
-  try {
-    // 1. 현재 사용자의 role 조회
-    const { data: currentUser, error: userError } = await supabase
-      .from("profiles")
-      .select("role")
-      .eq("id", userId)
-      .single();
-
-    if (userError) {
-      devLog.error("사용자 정보 조회 오류:", userError);
-      return;
-    }
-
-    // 2. 사용자가 소유한 농장 확인
-    const { data: ownedFarms, error: ownedError } = await supabase
-      .from("farms")
-      .select("id")
-      .eq("owner_id", userId);
-
-    if (ownedError) {
-      devLog.error("소유 농장 조회 오류:", ownedError);
-      return;
-    }
-
-    // 3. 농장 구성원 추가 시 profiles.role 업데이트는 더 이상 필요하지 않음
-    // 새로운 권한 시스템에서는 profiles.account_type은 시스템 레벨 권한만 관리
-    // 농장별 권한은 farm_members 테이블에서 관리됨
-  } catch (error) {
-    devLog.error("구성원 추가 후 role 업데이트 오류:", error);
-  }
-}
+import { requireAuth } from "@/lib/server/auth-utils";
+import { getClientIP, getUserAgent } from "@/lib/server/ip-helpers";
+import { prisma } from "@/lib/prisma";
+import { sendSupabaseBroadcast } from "@/lib/supabase/broadcast";
 
 // GET - 농장 멤버 목록 조회
 export async function GET(
-  request: Request,
+  request: NextRequest,
   { params }: { params: { farmId: string } }
 ) {
-  try {
-    const supabase = await createClient();
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser();
+  const clientIP = getClientIP(request);
+  const userAgent = getUserAgent(request);
 
-    if (authError || !user) {
-      return NextResponse.json({ error: "권한이 없습니다." }, { status: 401 });
+  try {
+    // 인증된 사용자 확인
+    // 인증 확인
+    const authResult = await requireAuth(false);
+    if (!authResult.success || !authResult.user) {
+      return authResult.response!;
     }
 
-    // 시스템 관리자 체크
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("account_type")
-      .eq("id", user.id)
-      .single();
+    const user = authResult.user;
+    const isAdmin = authResult.isAdmin || false;
 
-    // 시스템 관리자가 아니고 농장 소유자도 아닌 경우 권한 체크
-    if (profile?.account_type !== "admin") {
-      const { data: access } = await supabase
-        .from("farms")
-        .select("owner_id")
-        .eq("id", params.farmId)
-        .single();
-
-      if (
-        !access ||
-        (access.owner_id !== user.id &&
-          !(await isFarmMember(supabase, params.farmId, user.id)))
-      ) {
+    // 시스템 관리자가 아닌 경우 농장별 권한 체크
+    if (!isAdmin) {
+      let access;
+      try {
+        access = await prisma.farms.findUnique({
+          where: { id: params.farmId },
+          select: { owner_id: true },
+        });
+      } catch (accessError) {
+        devLog.error("Error checking farm access:", accessError);
         return NextResponse.json(
-          { error: "접근이 거절되었습니다." },
+          {
+            success: false,
+            error: "FARM_ACCESS_CHECK_ERROR",
+            message: "농장 접근 권한 확인 중 오류가 발생했습니다.",
+          },
+          { status: 500 }
+        );
+      }
+
+      if (!access) {
+        return NextResponse.json(
+          {
+            success: false,
+            error: "FARM_NOT_FOUND",
+            message: "농장을 찾을 수 없습니다.",
+          },
+          { status: 404 }
+        );
+      }
+
+      // 농장 소유자이거나 구성원인지 확인
+      const isOwner = access.owner_id === user.id;
+      const isMember = await isFarmMember(params.farmId, user.id);
+
+      if (!isOwner && !isMember) {
+        return NextResponse.json(
+          {
+            success: false,
+            error: "ACCESS_DENIED",
+            message: "농장 접근 권한이 없습니다.",
+          },
           { status: 403 }
         );
       }
     }
 
     // 멤버 목록 조회
-    const { data: members, error: membersError } = await supabase
-      .from("farm_members")
-      .select(
-        `
-        id,
-        farm_id,
-        user_id,
-        role,
-        is_active,
-        created_at,
-        updated_at,
-        position,
-        responsibilities,
-        profiles (
-          id,
-          name,
-          email,
-          profile_image_url
-        )
-      `
-      )
-      .eq("farm_id", params.farmId);
-
-    if (membersError) throw membersError;
+    let members;
+    try {
+      members = await prisma.farm_members.findMany({
+        where: { farm_id: params.farmId },
+        include: {
+          profiles: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+              profile_image_url: true,
+            },
+          },
+        },
+        orderBy: { created_at: "desc" },
+      });
+    } catch (membersError) {
+      devLog.error("Error fetching farm members:", membersError);
+      return NextResponse.json(
+        {
+          success: false,
+          error: "MEMBER_FETCH_ERROR",
+          message: "농장 멤버 조회 중 오류가 발생했습니다.",
+        },
+        { status: 500 }
+      );
+    }
 
     // 농장 멤버 조회 로그 기록
-    await logDataChange("MEMBER_READ", "MEMBER", user.id, {
-      farm_id: params.farmId,
-      member_count: members?.length || 0,
-      action_type: "member_management",
-    });
+    await createSystemLog(
+      "MEMBER_READ",
+      `농장 멤버 조회: ${members?.length || 0}명 (농장 ID: ${params.farmId})`,
+      "info",
+      user.id,
+      "member",
+      undefined,
+      {
+        farm_id: params.farmId,
+        member_count: members?.length || 0,
+        action_type: "member_management",
+      },
+      user.email,
+      clientIP,
+      userAgent
+    );
 
     return NextResponse.json(
       { members },
@@ -129,148 +131,272 @@ export async function GET(
     devLog.error("Error fetching farm members:", error);
 
     // 농장 멤버 조회 실패 로그 기록
-    await logDataChange("MEMBER_READ_FAILED", "MEMBER", undefined, {
-      error_message: error instanceof Error ? error.message : "Unknown error",
-      farm_id: params.farmId,
-      action_type: "member_management",
-      status: "failed",
-    }).catch((logError) =>
+    await createSystemLog(
+      "MEMBER_READ_FAILED",
+      `농장 멤버 조회 실패: ${
+        error instanceof Error ? error.message : "Unknown error"
+      } (농장 ID: ${params.farmId})`,
+      "error",
+      undefined,
+      "member",
+      undefined,
+      {
+        error_message: error instanceof Error ? error.message : "Unknown error",
+        farm_id: params.farmId,
+        action_type: "member_management",
+        status: "failed",
+      },
+      undefined,
+      clientIP,
+      userAgent
+    ).catch((logError: any) =>
       devLog.error("Failed to log member fetch error:", logError)
     );
 
     return NextResponse.json(
-      { error: "멤버 조회에 실패했습니다." },
+      {
+        success: false,
+        error: "MEMBER_FETCH_ERROR",
+        message: "농장 멤버 조회 중 오류가 발생했습니다.",
+      },
       { status: 500, headers: { "Cache-Control": "no-store" } }
     );
   }
 }
 
 // 농장 구성원 여부 확인 헬퍼 함수
-async function isFarmMember(supabase: any, farmId: string, userId: string) {
-  const { data } = await supabase
-    .from("farm_members")
-    .select("id")
-    .eq("farm_id", farmId)
-    .eq("user_id", userId)
-    .single();
-
+async function isFarmMember(farmId: string, userId: string) {
+  const data = await prisma.farm_members.findFirst({
+    where: {
+      farm_id: farmId,
+      user_id: userId,
+      is_active: true,
+    },
+    select: { id: true },
+  });
   return !!data;
 }
 
 // POST - 농장 멤버 추가
 export async function POST(
-  request: Request,
+  request: NextRequest,
   { params }: { params: { farmId: string } }
 ) {
+  const clientIP = getClientIP(request);
+  const userAgent = getUserAgent(request);
   let user: any = null;
 
   try {
-    const supabase = await createClient();
-    const {
-      data: { user: authUser },
-      error: authError,
-    } = await supabase.auth.getUser();
-
-    if (authError || !authUser) {
-      return NextResponse.json({ error: "권한이 없습니다." }, { status: 401 });
+    // 인증된 사용자 확인
+    // 인증 확인
+    const authResult = await requireAuth(false);
+    if (!authResult.success || !authResult.user) {
+      return authResult.response!;
     }
 
-    user = authUser;
+    user = authResult.user;
+    const isAdmin = authResult.isAdmin || false;
     const { email, role } = await request.json();
 
-    // 농장 소유권 또는 관리자 권한 확인
-    const { data: farm, error: farmError } = await supabase
-      .from("farms")
-      .select("owner_id, farm_name")
-      .eq("id", params.farmId)
-      .single();
-
-    if (farmError || !farm) {
+    // 농장 소유권, 농장 관리자 권한, 또는 시스템 관리자 권한 확인
+    let farm;
+    try {
+      farm = await prisma.farms.findUnique({
+        where: { id: params.farmId },
+        select: { owner_id: true, farm_name: true },
+      });
+    } catch (farmError) {
+      devLog.error("Error fetching farm:", farmError);
       return NextResponse.json(
-        { error: "농장을 찾을 수 없습니다." },
+        {
+          success: false,
+          error: "FARM_FETCH_ERROR",
+          message: "농장 정보 조회 중 오류가 발생했습니다.",
+        },
+        { status: 500 }
+      );
+    }
+
+    if (!farm) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: "FARM_NOT_FOUND",
+          message: "농장을 찾을 수 없습니다.",
+        },
         { status: 404 }
       );
     }
 
-    // 소유자가 아닌 경우 관리자 권한 확인
-    if (farm.owner_id !== user.id) {
-      const { data: memberRole } = await supabase
-        .from("farm_members")
-        .select("role")
-        .eq("farm_id", params.farmId)
-        .eq("user_id", user.id)
-        .single();
+    // 권한 확인
+    if (!isAdmin && farm.owner_id !== user.id) {
+      let memberRole;
+      try {
+        memberRole = await prisma.farm_members.findFirst({
+          where: {
+            farm_id: params.farmId,
+            user_id: user.id,
+          },
+          select: { role: true },
+        });
+      } catch (memberError) {
+        devLog.error("Error checking member role:", memberError);
+        return NextResponse.json(
+          {
+            success: false,
+            error: "PERMISSION_CHECK_ERROR",
+            message: "권한 확인 중 오류가 발생했습니다.",
+          },
+          { status: 500 }
+        );
+      }
 
       if (!memberRole || memberRole.role !== "manager") {
         return NextResponse.json(
-          { error: "농장 소유자 또는 관리자만 구성원을 추가할 수 있습니다." },
+          {
+            success: false,
+            error: "INSUFFICIENT_PERMISSIONS",
+            message:
+              "멤버 추가 권한이 없습니다. 농장 소유자 또는 관리자만 멤버를 추가할 수 있습니다.",
+          },
           { status: 403 }
         );
       }
     }
 
     // 사용자 프로필 조회
-    const { data: profileData, error: profileError } = await supabase
-      .from("profiles")
-      .select("id, email, name, profile_image_url")
-      .eq("email", email.toLowerCase())
-      .single();
-
-    if (profileError || !profileData) {
+    let userToAdd;
+    try {
+      userToAdd = await prisma.profiles.findFirst({
+        where: { email: email.toLowerCase() },
+        select: {
+          id: true,
+          email: true,
+          name: true,
+          profile_image_url: true,
+        },
+      });
+    } catch (profileError) {
+      devLog.error("Error fetching profile:", profileError);
       return NextResponse.json(
-        { error: "이메일을 찾을 수 없습니다." },
+        {
+          success: false,
+          error: "PROFILE_FETCH_ERROR",
+          message: "사용자 정보 조회 중 오류가 발생했습니다.",
+        },
+        { status: 500 }
+      );
+    }
+
+    if (!userToAdd) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: "USER_NOT_FOUND",
+          message: "추가할 사용자를 찾을 수 없습니다.",
+        },
         { status: 404 }
       );
     }
 
     // 중복 멤버 확인
-    const { data: existingMember } = await supabase
-      .from("farm_members")
-      .select("id")
-      .eq("farm_id", params.farmId)
-      .eq("user_id", profileData.id)
-      .single();
+    let existingMember;
+    try {
+      existingMember = await prisma.farm_members.findFirst({
+        where: {
+          farm_id: params.farmId,
+          user_id: userToAdd.id,
+        },
+        select: { id: true },
+      });
+    } catch (existingError) {
+      devLog.error("Error checking existing member:", existingError);
+      return NextResponse.json(
+        {
+          success: false,
+          error: "MEMBER_CHECK_ERROR",
+          message: "멤버 확인 중 오류가 발생했습니다.",
+        },
+        { status: 500 }
+      );
+    }
 
     if (existingMember) {
       return NextResponse.json(
-        { error: "이미 농장의 구성원입니다." },
+        {
+          success: false,
+          error: "MEMBER_ALREADY_EXISTS",
+          message: "이미 농장 멤버로 등록된 사용자입니다.",
+        },
         { status: 409 }
       );
     }
 
     // 새 멤버 추가
-    const { data: newMember, error: insertError } = await supabase
-      .from("farm_members")
-      .insert({
-        farm_id: params.farmId,
-        user_id: profileData.id,
-        role: role,
-        is_active: true,
-      })
-      .select("id, created_at")
-      .single();
-
-    if (insertError) {
+    let newMember;
+    try {
+      newMember = await prisma.farm_members.create({
+        data: {
+          farm_id: params.farmId,
+          user_id: userToAdd.id,
+          role: role,
+          is_active: true,
+        },
+        select: { id: true, created_at: true },
+      });
+    } catch (insertError) {
+      devLog.error("Error creating farm member:", insertError);
       throw insertError;
     }
 
-    // 농장 멤버 추가 로그 기록
-    await logDataChange("MEMBER_CREATE", "MEMBER", user.id, {
-      member_id: newMember.id,
-      farm_id: params.farmId,
-      farm_name: farm.farm_name,
-      member_email: profileData.email,
-      member_name: profileData.name,
-      member_role: role,
-      target_user_id: profileData.id,
-      action_type: "member_management",
+    // 🔥 농장 멤버 추가 실시간 브로드캐스트
+    await sendSupabaseBroadcast({
+      channel: "member_updates",
+      event: "member_created",
+      payload: {
+        eventType: "INSERT",
+        new: {
+          id: newMember.id,
+          farm_id: params.farmId,
+          user_id: userToAdd.id,
+          role: role,
+          name: userToAdd.name,
+          email: userToAdd.email,
+        },
+        old: null,
+        table: "farm_members",
+        schema: "public",
+      },
     });
+
+    // 농장 멤버 추가 로그 기록
+    await createSystemLog(
+      "MEMBER_CREATE",
+      `농장 멤버 추가: ${userToAdd.name} (${userToAdd.email}) - ${role} 역할 (농장: ${farm.farm_name})`,
+      "info",
+      user.id,
+      "member",
+      newMember.id,
+      {
+        member_id: newMember.id,
+        farm_id: params.farmId,
+        farm_name: farm.farm_name,
+        member_email: userToAdd.email,
+        member_name: userToAdd.name,
+        member_role: role,
+        target_user_id: userToAdd.id,
+        action_type: "member_management",
+      },
+      user.email,
+      clientIP,
+      userAgent
+    );
 
     // 응답용 멤버 데이터 구성
     const memberWithProfile = {
       id: newMember.id,
       farm_id: params.farmId,
-      user_id: profileData.id,
+      user_id: userToAdd.id,
       role: role,
       position: null,
       responsibilities: null,
@@ -278,15 +404,21 @@ export async function POST(
       created_at: newMember.created_at,
       updated_at: newMember.created_at,
       profiles: {
-        id: profileData.id,
-        name: profileData.name,
-        email: profileData.email,
-        profile_image_url: profileData.profile_image_url,
+        id: userToAdd.id,
+        name: userToAdd.name,
+        email: userToAdd.email,
+        profile_image_url: userToAdd.profile_image_url,
       },
     };
 
     return NextResponse.json(
-      { member: memberWithProfile },
+      {
+        success: true,
+        member: memberWithProfile,
+        message: `${userToAdd.name}이 ${
+          role === "manager" ? "관리자" : "조회자"
+        }로 추가되었습니다.`,
+      },
       {
         status: 201,
         headers: {
@@ -298,17 +430,34 @@ export async function POST(
     devLog.error("Error adding farm member:", error);
 
     // 농장 멤버 추가 실패 로그 기록
-    await logDataChange("MEMBER_CREATE_FAILED", "MEMBER", user?.id, {
-      error_message: error instanceof Error ? error.message : "Unknown error",
-      farm_id: params.farmId,
-      action_type: "member_management",
-      status: "failed",
-    }).catch((logError) =>
+    await createSystemLog(
+      "MEMBER_CREATE_FAILED",
+      `농장 멤버 추가 실패: ${
+        error instanceof Error ? error.message : "Unknown error"
+      } (농장 ID: ${params.farmId})`,
+      "error",
+      user?.id,
+      "member",
+      undefined,
+      {
+        error_message: error instanceof Error ? error.message : "Unknown error",
+        farm_id: params.farmId,
+        action_type: "member_management",
+        status: "failed",
+      },
+      user?.email,
+      clientIP,
+      userAgent
+    ).catch((logError: any) =>
       devLog.error("Failed to log member addition error:", logError)
     );
 
     return NextResponse.json(
-      { error: "멤버 추가에 실패했습니다." },
+      {
+        success: false,
+        error: "MEMBER_CREATE_ERROR",
+        message: "멤버 추가 중 오류가 발생했습니다.",
+      },
       { status: 500, headers: { "Cache-Control": "no-store" } }
     );
   }

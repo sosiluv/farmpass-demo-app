@@ -14,6 +14,9 @@ import { Profile } from "@/lib/types";
 import { useState } from "react";
 import { UserDetailModal } from "./UserDetailModal";
 import { CommonListWrapper } from "../shared/CommonListWrapper";
+import { ImagePreviewDialog } from "@/components/common/ImagePreviewDialog";
+import { generateInitials, getAvatarUrl } from "@/lib/utils/media/avatar";
+import { LABELS } from "@/lib/constants/management";
 
 interface UserListProps {
   users: Profile[];
@@ -22,6 +25,17 @@ interface UserListProps {
 
 export function UserList({ users, onUserClick }: UserListProps) {
   const [selectedUser, setSelectedUser] = useState<Profile | null>(null);
+  const [previewOpen, setPreviewOpen] = useState(false);
+  const [previewUrl, setPreviewUrl] = useState<string>("");
+  const [previewAlt, setPreviewAlt] = useState<string>("");
+
+  const handleAvatarClick = (user: Profile) => {
+    if (user.profile_image_url) {
+      setPreviewUrl(user.profile_image_url);
+      setPreviewAlt(user.name || "User");
+      setPreviewOpen(true);
+    }
+  };
 
   const getRoleColor = (accountType: string) => {
     switch (accountType) {
@@ -38,15 +52,6 @@ export function UserList({ users, onUserClick }: UserListProps) {
     return isActive
       ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200"
       : "bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200";
-  };
-
-  const getInitials = (name: string) => {
-    if (!name) return "U";
-    return name
-      .split(" ")
-      .map((n) => n[0])
-      .join("")
-      .toUpperCase();
   };
 
   const getAvatarColor = (name: string) => {
@@ -80,29 +85,30 @@ export function UserList({ users, onUserClick }: UserListProps) {
           <CommonListItem
             key={user.id}
             avatar={
-              <Avatar className="h-6 w-6 sm:h-10 sm:w-10 lg:h-12 lg:w-12 flex-shrink-0 mr-8 sm:mr-10 lg:mr-12 xl:mr-16 2xl:mr-20">
-                {user.profile_image_url ? (
-                  <AvatarImage
-                    src={user.profile_image_url}
-                    alt={user.name || "User"}
-                  />
-                ) : (
-                  <AvatarFallback
-                    className={`${getAvatarColor(
-                      user.name
-                    )} text-white text-sm`}
-                  >
-                    {getInitials(user.name)}
-                  </AvatarFallback>
-                )}
+              <Avatar
+                className="h-6 w-6 sm:h-10 sm:w-10 lg:h-12 lg:w-12 flex-shrink-0 mr-8 sm:mr-10 lg:mr-12 xl:mr-16 2xl:mr-20"
+                onClick={() => handleAvatarClick(user)}
+                style={{
+                  cursor: user.profile_image_url ? "pointer" : undefined,
+                }}
+              >
+                <AvatarImage
+                  src={getAvatarUrl(user, { size: 128 })}
+                  alt={user.name || "User"}
+                />
+                <AvatarFallback
+                  className={`${getAvatarColor(user.name)} text-white text-sm`}
+                >
+                  {generateInitials(user.name)}
+                </AvatarFallback>
               </Avatar>
             }
             primary={user.name}
             secondary={user.email}
             meta={
               user.last_login_at
-                ? `마지막 접속: ${formatDateTime(user.last_login_at)}`
-                : "로그인 기록 없음"
+                ? `${LABELS.LAST_ACCESS} ${formatDateTime(user.last_login_at)}`
+                : LABELS.NO_LOGIN_RECORD
             }
             badges={
               <div className="flex flex-col gap-1">
@@ -112,15 +118,15 @@ export function UserList({ users, onUserClick }: UserListProps) {
                   )} text-xs px-2 py-1`}
                 >
                   {user.account_type === "admin"
-                    ? "시스템 관리자"
-                    : "일반 사용자"}
+                    ? LABELS.SYSTEM_ADMIN_USER
+                    : LABELS.GENERAL_USER_DETAIL}
                 </Badge>
                 <Badge
                   className={`${getStatusColor(
                     user.is_active
                   )} text-xs px-2 py-1`}
                 >
-                  {user.is_active ? "활성" : "비활성"}
+                  {user.is_active ? LABELS.ACTIVE_CSV : LABELS.INACTIVE_CSV}
                 </Badge>
               </div>
             }
@@ -139,7 +145,7 @@ export function UserList({ users, onUserClick }: UserListProps) {
                       </Button>
                     </TooltipTrigger>
                     <TooltipContent>
-                      <p>상세 정보 보기</p>
+                      <p>{LABELS.VIEW_DETAILS}</p>
                     </TooltipContent>
                   </Tooltip>
                 </TooltipProvider>
@@ -149,7 +155,7 @@ export function UserList({ users, onUserClick }: UserListProps) {
         ))}
         {users.length === 0 && (
           <div className="text-center p-8 text-muted-foreground">
-            사용자가 없습니다.
+            {LABELS.NO_USERS}
           </div>
         )}
       </CommonListWrapper>
@@ -158,6 +164,13 @@ export function UserList({ users, onUserClick }: UserListProps) {
         user={selectedUser}
         open={selectedUser !== null}
         onClose={() => setSelectedUser(null)}
+      />
+      <ImagePreviewDialog
+        src={previewUrl}
+        alt={previewAlt}
+        open={previewOpen}
+        onOpenChange={setPreviewOpen}
+        caption={previewAlt}
       />
     </>
   );

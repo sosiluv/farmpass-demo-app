@@ -1,6 +1,7 @@
 import { Bell } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { memo } from "react";
+import { LABELS } from "@/lib/constants/notifications";
 
 function SubscriptionGuideCard() {
   return (
@@ -12,11 +13,10 @@ function SubscriptionGuideCard() {
           </div>
           <div className="space-y-2">
             <h3 className="text-lg font-medium text-muted-foreground">
-              알림 설정을 위해 구독이 필요합니다
+              {LABELS.SUBSCRIPTION_REQUIRED}
             </h3>
             <p className="text-sm text-muted-foreground max-w-md mx-auto">
-              위의 푸시 알림을 구독하시면 알림 방식과 종류를 세부적으로 설정할
-              수 있습니다.
+              {LABELS.SUBSCRIPTION_DESCRIPTION}
             </p>
           </div>
         </div>

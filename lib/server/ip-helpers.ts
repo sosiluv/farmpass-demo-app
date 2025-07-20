@@ -98,12 +98,68 @@ export function getUserAgent(request: NextRequest): string {
 }
 
 /**
- * Request에서 로그 컨텍스트에 필요한 정보를 모두 추출
+ * IP 기반 위치 정보 가져오기
  */
-export function extractRequestContext(request: NextRequest) {
+export async function getLocationFromIP(ip: string): Promise<string> {
+  // localhost나 private IP는 건너뛰기
+  if (
+    ip === "127.0.0.1" ||
+    ip === "localhost" ||
+    ip === "unknown" ||
+    ip.startsWith("192.168.") ||
+    ip.startsWith("10.") ||
+    ip.startsWith("172.")
+  ) {
+    return "로컬 네트워크";
+  }
+
+  try {
+    // 무료 IP 위치 API 사용 (ipapi.co)
+    const response = await fetch(`https://ipapi.co/${ip}/json/`, {
+      headers: {
+        "User-Agent": "FarmApp/1.0",
+      },
+      // 타임아웃 설정
+      signal: AbortSignal.timeout(3000),
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}`);
+    }
+
+    const data = await response.json();
+
+    if (data.error) {
+      throw new Error(data.reason || "Unknown error");
+    }
+
+    // 한국어로 위치 정보 구성
+    const location = [];
+    if (data.city) location.push(data.city);
+    if (data.region) location.push(data.region);
+    if (data.country_name) location.push(data.country_name);
+
+    return location.length > 0 ? location.join(", ") : "알 수 없음";
+  } catch (error) {
+    // 에러 발생 시 기본값 반환
+    return "알 수 없음";
+  }
+}
+
+/**
+ * Request에서 로그 컨텍스트에 필요한 정보를 모두 추출 (위치 정보 포함)
+ */
+export async function extractRequestContextWithLocation(request: NextRequest) {
+  const ip = getClientIP(request);
+  const userAgent = getUserAgent(request);
+
+  // 위치 정보는 비동기로 가져오기
+  const location = await getLocationFromIP(ip);
+
   return {
-    ip: getClientIP(request),
-    userAgent: getUserAgent(request),
+    ip,
+    userAgent,
+    location,
     method: request.method,
     url: request.url,
     timestamp: new Date().toISOString(),

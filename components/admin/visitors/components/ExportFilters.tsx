@@ -9,6 +9,11 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Farm } from "@/lib/types";
+import {
+  LABELS,
+  PLACEHOLDERS,
+  VISITOR_TYPE_OPTIONS,
+} from "@/lib/constants/visitor";
 
 interface ExportFiltersProps {
   farms: Farm[];
@@ -30,21 +35,27 @@ export function ExportFilters({
       <CardHeader className="pb-2 sm:pb-3">
         <CardTitle className="flex items-center space-x-2 text-green-700 dark:text-green-200 text-sm sm:text-base">
           <Filter className="h-4 w-4" />
-          <span>필터 설정</span>
+          <span>{LABELS.EXPORT_FILTERS_TITLE}</span>
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-3 pt-0">
         {farms.length > 0 && (
           <div className="space-y-1.5">
             <Label className="text-xs sm:text-sm font-medium text-slate-700 dark:text-slate-100">
-              농장 선택
+              {LABELS.EXPORT_FILTERS_FARM_SELECT}
             </Label>
             <Select value={farmFilter} onValueChange={onFarmFilterChange}>
               <SelectTrigger className="h-8 sm:h-9 text-xs sm:text-sm bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100">
-                <SelectValue placeholder="농장을 선택하세요" />
+                <SelectValue
+                  placeholder={
+                    PLACEHOLDERS.DATE_RANGE_SELECTOR_FARM_PLACEHOLDER
+                  }
+                />
               </SelectTrigger>
               <SelectContent className="bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100">
-                <SelectItem value="all">모든 농장</SelectItem>
+                <SelectItem value="all">
+                  {LABELS.EXPORT_FILTERS_ALL_FARMS}
+                </SelectItem>
                 {(farms || []).map((farm) => (
                   <SelectItem key={farm.id} value={farm.id}>
                     <div className="flex items-center space-x-2">
@@ -60,16 +71,22 @@ export function ExportFilters({
 
         <div className="space-y-1.5">
           <Label className="text-xs sm:text-sm font-medium text-slate-700 dark:text-slate-100">
-            방문자 유형
+            {LABELS.EXPORT_FILTERS_VISITOR_TYPE}
           </Label>
           <Select value={visitorType} onValueChange={onVisitorTypeChange}>
             <SelectTrigger className="h-8 sm:h-9 text-xs sm:text-sm bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100">
-              <SelectValue placeholder="방문자 유형을 선택하세요" />
+              <SelectValue
+                placeholder={
+                  PLACEHOLDERS.DATE_RANGE_SELECTOR_VISITOR_TYPE_PLACEHOLDER
+                }
+              />
             </SelectTrigger>
             <SelectContent className="bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100">
-              <SelectItem value="all">모든 방문자</SelectItem>
-              <SelectItem value="consented">개인정보 동의자</SelectItem>
-              <SelectItem value="disinfected">방역 완료자</SelectItem>
+              {VISITOR_TYPE_OPTIONS.map((option) => (
+                <SelectItem key={option.value} value={option.value}>
+                  {option.label}
+                </SelectItem>
+              ))}
             </SelectContent>
           </Select>
         </div>

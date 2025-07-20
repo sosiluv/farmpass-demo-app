@@ -1,9 +1,10 @@
 "use client";
 
 import { useAuth } from "@/components/providers/auth-provider";
-import { useFarms } from "@/lib/hooks/use-farms";
-import { useSystemSettings } from "@/lib/hooks/use-system-settings";
+import { useFarmsContext } from "@/components/providers/farms-provider";
+import { useSystemSettings } from "@/components/providers/system-settings-provider";
 import { getFarmTypeLabel, getFarmTypeIcon } from "@/lib/constants/farm-types";
+import type { Farm } from "@/lib/types/farm";
 import {
   Sidebar,
   SidebarContent,
@@ -34,20 +35,23 @@ import {
   LogOut,
   Home,
   Shield,
-  TestTube,
   Activity,
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useMemo } from "react";
 import { Logo, ThemeToggle } from "@/components/common";
-import { DEFAULT_SYSTEM_SETTINGS } from "@/lib/constants/defaults";
+import { useLogo } from "@/hooks/use-logo";
+import { BUTTONS, LABELS } from "@/lib/constants/common";
 
 export function AdminSidebar() {
   const { state, signOut } = useAuth();
-  const { farms } = useFarms();
-  const { settings } = useSystemSettings();
+  const { farms } = useFarmsContext();
+  const settings = useSystemSettings();
   const { isMobile, setOpenMobile } = useSidebar();
+
+  // useLogo에 settings 전달하여 중복 query 방지
+  const { logoUrl, siteName } = useLogo(settings || null);
 
   const profile = state.status === "authenticated" ? state.profile : null;
 
@@ -99,18 +103,20 @@ export function AdminSidebar() {
 
     // 모든 사용자가 동일한 visitors 페이지 사용
     const visitorsUrl = "/admin/visitors";
-    const visitorsTitle = isAdmin ? "전체 방문자 기록" : "방문자 기록";
-    const visitorsBadge = farms.length === 0 ? "농장 필요" : null;
+    const visitorsTitle = isAdmin
+      ? LABELS.ADMIN_SIDEBAR_ALL_VISITORS_RECORD
+      : LABELS.ADMIN_SIDEBAR_VISITORS_RECORD;
+    const visitorsBadge = farms.length === 0 ? LABELS.LAYOUT_FARM_NEEDED : null;
 
     const baseMenuItems = [
       {
-        title: "대시보드",
+        title: LABELS.ADMIN_SIDEBAR_DASHBOARD,
         url: "/admin/dashboard",
         icon: BarChart3,
         badge: null,
       },
       {
-        title: "농장 관리",
+        title: LABELS.ADMIN_SIDEBAR_FARM_MANAGEMENT,
         url: "/admin/farms",
         icon: Building2,
         badge: null,
@@ -122,13 +128,13 @@ export function AdminSidebar() {
         badge: visitorsBadge,
       },
       {
-        title: "알림 설정",
+        title: LABELS.ADMIN_SIDEBAR_NOTIFICATION_SETTINGS,
         url: "/admin/notifications",
         icon: Bell,
         badge: null,
       },
       {
-        title: "계정 관리",
+        title: LABELS.ADMIN_SIDEBAR_ACCOUNT_MANAGEMENT,
         url: "/admin/account",
         icon: User,
         badge: null,
@@ -138,19 +144,19 @@ export function AdminSidebar() {
     // admin만 볼 수 있는 메뉴 아이템
     const adminMenuItems = [
       {
-        title: "시스템 관리",
+        title: LABELS.ADMIN_SIDEBAR_SYSTEM_MANAGEMENT,
         url: "/admin/management",
         icon: Shield,
         badge: null,
       },
       {
-        title: "시스템 설정",
+        title: LABELS.ADMIN_SIDEBAR_SYSTEM_SETTINGS,
         url: "/admin/settings",
         icon: Settings,
         badge: null,
       },
       {
-        title: "모니터링",
+        title: LABELS.ADMIN_SIDEBAR_MONITORING,
         url: "/admin/monitoring",
         icon: Activity,
         badge: null,
@@ -169,25 +175,28 @@ export function AdminSidebar() {
     >
       <SidebarHeader className="bg-background border-b">
         <div className="flex flex-col items-center gap-2 px-2 py-4">
-          <Logo size="lg" />
+          <Logo size="lg" settings={settings || null} />
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
                 <span className="text-sm font-semibold truncate cursor-help text-center block w-full">
-                  {settings.siteName || DEFAULT_SYSTEM_SETTINGS.siteName}
+                  {siteName}
                 </span>
               </TooltipTrigger>
               <TooltipContent>
-                <p>{settings.siteName || DEFAULT_SYSTEM_SETTINGS.siteName}</p>
+                <p>{siteName}</p>
               </TooltipContent>
             </Tooltip>
           </TooltipProvider>
           <span className="text-xs text-muted-foreground truncate text-center block w-full">
             {profile?.account_type === "admin"
-              ? "시스템 관리자"
+              ? LABELS.LAYOUT_ADMIN_SIDEBAR
               : farms.length > 0
-              ? `${farms.length}개 농장 관리`
-              : "농장을 등록해주세요"}
+              ? LABELS.LAYOUT_FARM_MANAGER.replace(
+                  "{count}",
+                  farms.length.toString()
+                )
+              : LABELS.LAYOUT_REGISTER_FARM}
           </span>
         </div>
 
@@ -201,7 +210,7 @@ export function AdminSidebar() {
               onClick={handleMenuClick}
             >
               <Home className="mr-2 h-4 w-4" />
-              대시보드로 이동
+              {BUTTONS.LAYOUT_GO_TO_DASHBOARD}
             </Button>
           </Link>
         </div>
@@ -210,7 +219,7 @@ export function AdminSidebar() {
         {isMobile && (
           <div className="px-2 pb-2 md:hidden">
             <div className="text-xs text-muted-foreground text-center py-2 px-3 bg-muted/30 rounded-lg">
-              💡 닫기: 외부 터치 · 왼쪽 스와이프 · 우하단 버튼
+              {LABELS.LAYOUT_MOBILE_GUIDE}
             </div>
           </div>
         )}
@@ -219,7 +228,7 @@ export function AdminSidebar() {
       <SidebarContent className="bg-background">
         <SidebarGroup>
           <SidebarGroupLabel className="text-xs font-medium text-muted-foreground px-2 py-2">
-            관리 메뉴
+            {LABELS.LAYOUT_MANAGEMENT_MENU}
           </SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
@@ -257,11 +266,11 @@ export function AdminSidebar() {
         {farms.length > 1 && (
           <SidebarGroup>
             <SidebarGroupLabel className="text-xs font-medium text-muted-foreground px-2 py-2">
-              농장별 바로가기
+              {LABELS.LAYOUT_FARM_QUICK_ACCESS}
             </SidebarGroupLabel>
             <SidebarGroupContent>
               <SidebarMenu>
-                {(farms || []).map((farm) => (
+                {(farms || []).map((farm: Farm) => (
                   <SidebarMenuItem key={farm.id}>
                     <Link
                       href={`/admin/farms/${farm.id}/visitors`}
@@ -306,7 +315,7 @@ export function AdminSidebar() {
         {/* 빠른 액션 - 모바일에서만 표시 */}
         <SidebarGroup className="md:hidden">
           <SidebarGroupLabel className="text-xs font-medium text-muted-foreground px-2 py-2">
-            빠른 액션
+            {LABELS.LAYOUT_QUICK_ACTIONS}
           </SidebarGroupLabel>
           <SidebarGroupContent>
             <div className="px-2 space-y-2">
@@ -317,7 +326,8 @@ export function AdminSidebar() {
                   className="w-full justify-start"
                   onClick={handleMenuClick}
                 >
-                  <Building2 className="mr-2 h-4 w-4" />새 농장 추가
+                  <Building2 className="mr-2 h-4 w-4" />
+                  {BUTTONS.LAYOUT_ADD_NEW_FARM}
                 </Button>
               </Link>
               <Link
@@ -341,10 +351,10 @@ export function AdminSidebar() {
                 >
                   <Users className="mr-2 h-4 w-4" />
                   {profile?.account_type === "admin"
-                    ? "전체 방문자 현황"
+                    ? BUTTONS.LAYOUT_ALL_VISITORS_STATUS
                     : farms.length > 0
-                    ? "방문자 현황"
-                    : "농장 등록 필요"}
+                    ? BUTTONS.LAYOUT_VISITORS_STATUS
+                    : BUTTONS.LAYOUT_FARM_REGISTRATION_NEEDED}
                 </Button>
               </Link>
             </div>
@@ -357,13 +367,13 @@ export function AdminSidebar() {
           <SidebarMenuItem>
             <div className="px-3 py-2 bg-muted/50 rounded-lg mx-2 mb-2">
               <div className="text-xs text-muted-foreground mb-1">
-                현재 로그인
+                {LABELS.LAYOUT_CURRENT_LOGIN}
               </div>
               <div className="text-sm font-medium truncate">
-                {profile?.name || "로그인 필요"}
+                {profile?.name || LABELS.LAYOUT_LOGIN_REQUIRED}
               </div>
               <div className="text-xs text-muted-foreground truncate">
-                {profile?.email || "로그인이 필요합니다"}
+                {profile?.email || LABELS.LAYOUT_LOGIN_NEEDED}
               </div>
             </div>
           </SidebarMenuItem>
@@ -379,7 +389,7 @@ export function AdminSidebar() {
                 }}
               >
                 <LogOut className="mr-2 h-4 w-4" />
-                로그아웃
+                {BUTTONS.LAYOUT_LOGOUT}
               </Button>
               <ThemeToggle />
             </div>

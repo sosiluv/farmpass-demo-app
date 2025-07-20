@@ -7,25 +7,29 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { Loader2 } from "lucide-react";
+import { BUTTONS, LABELS } from "@/lib/constants/farms";
 
 interface DeleteConfirmDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onConfirm: () => void;
+  isLoading?: boolean;
 }
 
 export function DeleteConfirmDialog({
   open,
   onOpenChange,
   onConfirm,
+  isLoading = false,
 }: DeleteConfirmDialogProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>농장 삭제 확인</DialogTitle>
+          <DialogTitle>{LABELS.DELETE_FARM_CONFIRM_TITLE}</DialogTitle>
           <DialogDescription>
-            정말로 이 농장을 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.
+            {LABELS.DELETE_FARM_CONFIRM_DESCRIPTION}
           </DialogDescription>
         </DialogHeader>
         <DialogFooter className="flex space-x-2 justify-end">
@@ -33,11 +37,24 @@ export function DeleteConfirmDialog({
             type="button"
             variant="outline"
             onClick={() => onOpenChange(false)}
+            disabled={isLoading}
           >
-            취소
+            {BUTTONS.CANCEL_BUTTON}
           </Button>
-          <Button type="button" variant="destructive" onClick={onConfirm}>
-            삭제
+          <Button
+            type="button"
+            variant="destructive"
+            onClick={onConfirm}
+            disabled={isLoading}
+          >
+            {isLoading ? (
+              <>
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                {BUTTONS.DELETE_FARM_LOADING}
+              </>
+            ) : (
+              BUTTONS.DELETE_BUTTON
+            )}
           </Button>
         </DialogFooter>
       </DialogContent>

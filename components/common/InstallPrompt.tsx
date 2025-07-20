@@ -6,6 +6,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { X, Download, Smartphone, Monitor, Tablet } from "lucide-react";
 import { usePWAInstall } from "@/components/providers/pwa-provider";
 import { motion, AnimatePresence } from "framer-motion";
+import { BUTTONS, LABELS } from "@/lib/constants/common";
 
 interface InstallPromptProps {
   delay?: number; // 표시 지연 시간 (ms)
@@ -21,6 +22,7 @@ export function InstallPrompt({
   const installInfo = usePWAInstall();
   const [showPrompt, setShowPrompt] = useState(false);
   const [isDismissed, setIsDismissed] = useState(false);
+  const [isInstalling, setIsInstalling] = useState(false);
 
   useEffect(() => {
     // 설치 가능하고 아직 표시되지 않았을 때만 타이머 시작
@@ -93,12 +95,43 @@ export function InstallPrompt({
     onDismiss?.();
   };
 
-  const handleInstall = () => {
-    setShowPrompt(false);
-    setIsDismissed(true);
-    // 설치 버튼 클릭 시에도 localStorage에 저장 (설치 완료 상태로)
-    localStorage.setItem("pwa_install_completed", Date.now().toString());
-    onInstall?.();
+  const handleInstall = async () => {
+    try {
+      setIsInstalling(true);
+      console.log("🔧 설치 버튼 클릭됨 - 네이티브 프롬프트 트리거 시도");
+
+      // 브라우저 네이티브 설치 프롬프트 트리거
+      const result = await installInfo.triggerInstall?.();
+      console.log("📱 설치 프롬프트 결과:", result);
+
+      if (result?.outcome === "accepted") {
+        // 사용자가 설치를 수락한 경우
+        console.log("✅ 설치 수락됨");
+        setShowPrompt(false);
+        setIsDismissed(true);
+        localStorage.setItem("pwa_install_completed", Date.now().toString());
+        onInstall?.();
+      } else if (result?.outcome === "dismissed") {
+        // 사용자가 설치를 거부한 경우
+        console.log("❌ 설치 거부됨");
+        setShowPrompt(false);
+        setIsDismissed(true);
+        localStorage.setItem("pwa_install_dismissed", Date.now().toString());
+        onDismiss?.();
+      } else {
+        // outcome이 없거나 다른 경우는 프롬프트 유지
+        console.log("⚠️ 설치 프롬프트 결과 없음 - 프롬프트 유지");
+      }
+    } catch (error) {
+      console.error("❌ 설치 프롬프트 실행 실패:", error);
+      // 에러 발생 시에도 커스텀 프롬프트는 닫기
+      setShowPrompt(false);
+      setIsDismissed(true);
+      localStorage.setItem("pwa_install_completed", Date.now().toString());
+      onInstall?.();
+    } finally {
+      setIsInstalling(false);
+    }
   };
 
   const getPlatformIcon = () => {
@@ -117,14 +150,29 @@ export function InstallPrompt({
   const getInstallText = () => {
     switch (installInfo.platform) {
       case "iOS":
-        return "홈 화면에 추가";
+        return LABELS.INSTALL_PROMPT_IOS_TEXT;
       case "Android":
-        return "앱으로 설치";
+        return LABELS.INSTALL_PROMPT_ANDROID_TEXT;
       case "Desktop":
-        return "앱으로 설치";
+        return LABELS.INSTALL_PROMPT_DESKTOP_TEXT;
       default:
-        return "설치하기";
+        return LABELS.INSTALL_PROMPT_DEFAULT_TEXT;
     }
+  };
+
+  const getGuideText = () => {
+    if (installInfo.method === "banner") {
+      // 네이티브 설치 지원 브라우저(Chrome, Edge 등)
+      return LABELS.INSTALL_PROMPT_BANNER_GUIDE;
+    }
+    // manual 또는 none: 홈화면 추가 안내만
+    if (installInfo.platform === "iOS") {
+      return LABELS.INSTALL_PROMPT_IOS_GUIDE;
+    }
+    if (installInfo.platform === "Android") {
+      return installInfo.reason || LABELS.INSTALL_PROMPT_ANDROID_GUIDE;
+    }
+    return LABELS.INSTALL_PROMPT_DEFAULT_GUIDE;
   };
 
   if (!installInfo.canInstall || isDismissed) {
@@ -150,11 +198,12 @@ export function InstallPrompt({
                   </div>
                   <div className="flex-1">
                     <h3 className="font-semibold text-sm">
-                      {getInstallText()}하세요!
+                      {LABELS.INSTALL_PROMPT_ADD_TO_HOME.replace(
+                        "{action}",
+                        getInstallText()
+                      )}
                     </h3>
-                    <p className="text-xs opacity-90 mt-1">
-                      더 빠르고 편리한 경험을 위해 홈화면에 추가하세요
-                    </p>
+                    <p className="text-xs opacity-90 mt-1">{getGuideText()}</p>
                   </div>
                 </div>
 
@@ -167,14 +216,19 @@ export function InstallPrompt({
                   >
                     <X className="w-4 h-4" />
                   </Button>
-                  <Button
-                    onClick={handleInstall}
-                    size="sm"
-                    className="bg-white text-blue-600 hover:bg-gray-100 font-medium h-8 px-3"
-                  >
-                    <Download className="w-4 h-4 mr-1" />
-                    설치
-                  </Button>
+                  {installInfo.method === "banner" && (
+                    <Button
+                      onClick={handleInstall}
+                      size="sm"
+                      disabled={isInstalling}
+                      className="bg-white text-blue-600 hover:bg-gray-100 font-medium h-8 px-3"
+                    >
+                      <Download className="w-4 h-4 mr-1" />
+                      {isInstalling
+                        ? BUTTONS.INSTALL_PROMPT_INSTALLING
+                        : BUTTONS.INSTALL_PROMPT_INSTALL}
+                    </Button>
+                  )}
                 </div>
               </div>
             </CardContent>

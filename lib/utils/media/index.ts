@@ -1,5 +1,6 @@
 ﻿/**
- * 미디??관???�틸리티??
+ * 미디어 관련 유틸리티
  */
 
-export * from "./image-upload";
+export * from "./unified-image-manager";
+export * from "./avatar";

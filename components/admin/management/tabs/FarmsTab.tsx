@@ -2,7 +2,7 @@
 
 import React from "react";
 import { Building2 } from "lucide-react";
-import { useAdminFarms } from "@/hooks/admin/useAdminFarms";
+import { useAdminFarmsQuery } from "@/lib/hooks/query/use-admin-farms-query";
 import { StatsSkeleton, TableSkeleton } from "@/components/common/skeletons";
 import { formatDateTime } from "@/lib/utils/datetime/date";
 import {
@@ -18,21 +18,29 @@ import { CommonPageWrapper } from "../shared/CommonPageWrapper";
 import { ResponsivePagination } from "@/components/common/responsive-pagination";
 import { ErrorBoundary } from "@/components/error/error-boundary";
 import { AdminError } from "@/components/error/admin-error";
+import { ERROR_CONFIGS } from "@/lib/constants/error";
 import { useDataFetchTimeout } from "@/hooks/useTimeout";
+import { LABELS } from "@/lib/constants/management";
 
 export function FarmsTab() {
-  const { stats, loading, refetch } = useAdminFarms();
+  const { data: stats, isLoading: loading, refetch } = useAdminFarmsQuery();
 
   // 타임아웃 관리
-  const { timeoutReached, retry } = useDataFetchTimeout(loading, refetch, {
-    timeout: 10000,
-  });
+  const { timeoutReached, retry } = useDataFetchTimeout(
+    loading,
+    async () => {
+      await refetch();
+    },
+    {
+      timeout: 10000,
+    }
+  );
 
   if (timeoutReached) {
     return (
       <AdminError
-        title="데이터를 불러오지 못했습니다"
-        description="네트워크 상태를 확인하거나 다시 시도해 주세요."
+        title={ERROR_CONFIGS.TIMEOUT.title}
+        description={ERROR_CONFIGS.TIMEOUT.description}
         retry={retry}
         error={new Error("Timeout: 데이터 로딩 10초 초과")}
       />
@@ -41,10 +49,12 @@ export function FarmsTab() {
 
   if (loading) {
     return (
-      <div className="space-y-6">
-        <StatsSkeleton columns={4} />
-        <TableSkeleton rows={5} columns={6} />
-      </div>
+      <CommonPageWrapper>
+        <div className="space-y-6">
+          <StatsSkeleton columns={4} />
+          <TableSkeleton rows={5} columns={6} />
+        </div>
+      </CommonPageWrapper>
     );
   }
 
@@ -52,8 +62,8 @@ export function FarmsTab() {
 
   return (
     <ErrorBoundary
-      title="농장 관리 오류"
-      description="농장 정보를 불러오는 중 문제가 발생했습니다. 페이지를 새로고침하거나 잠시 후 다시 시도해주세요."
+      title={ERROR_CONFIGS.LOADING.title}
+      description={ERROR_CONFIGS.LOADING.description}
     >
       <FarmsDataManager>
         {({ farms, lastUpdate, isFetching }) => (
@@ -83,15 +93,18 @@ export function FarmsTab() {
                           <div>
                             <h3 className="flex items-center gap-2 text-lg font-semibold">
                               <Building2 className="h-5 w-5" />
-                              농장 관리
+                              {LABELS.FARM_MANAGEMENT}
                             </h3>
                             <p className="text-sm text-muted-foreground mt-1">
-                              시스템에 등록된 모든 농장을 관리합니다
+                              {LABELS.FARM_MANAGEMENT_DESC}
                             </p>
                           </div>
                           <div className="flex flex-col lg:flex-row lg:items-center gap-2 lg:gap-4">
                             <div className="text-sm text-muted-foreground">
-                              마지막 업데이트: {formatDateTime(lastUpdate)}
+                              {LABELS.LAST_UPDATE_TAB.replace(
+                                "{datetime}",
+                                formatDateTime(lastUpdate)
+                              )}
                             </div>
                             <FarmsExportRefactored
                               farms={farms.filter(filterFn)}
@@ -122,7 +135,10 @@ export function FarmsTab() {
                             <>
                               {/* 농장 수 표시 */}
                               <div className="text-sm text-muted-foreground">
-                                총 {totalItems}개의 농장
+                                {LABELS.TOTAL_FARMS_COUNT_TAB.replace(
+                                  "{count}",
+                                  totalItems.toString()
+                                )}
                               </div>
 
                               {/* 농장 목록 */}

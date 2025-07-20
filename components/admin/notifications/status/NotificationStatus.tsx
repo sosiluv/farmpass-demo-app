@@ -1,42 +1,46 @@
 import {
   Bell,
   BellOff,
-  TestTube,
   CheckCircle,
-  Clock,
   AlertTriangle,
   Shield,
   Zap,
   Activity,
   Building,
   RefreshCw,
+  Loader2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import type { SubscriptionStatus, Farm } from "@/lib/types/notification";
+import { Loading } from "@/components/ui/loading";
+import type { SubscriptionStatus } from "@/lib/types/notification";
+import type { Farm } from "@/lib/types";
+import { BUTTONS, LABELS } from "@/lib/constants/notifications";
+
+// 알림 상태 표시용 Farm 타입 (최소한의 정보만 포함)
+interface NotificationFarm extends Pick<Farm, "id" | "farm_name"> {
+  address?: string;
+  isSubscribed?: boolean;
+}
 
 interface StatusProps {
   isLoading?: boolean;
   onAllow?: () => void;
   onDeny?: () => void;
-  onTest?: () => void;
   onCleanup?: () => void;
   onUnsubscribe?: () => void;
-  farms?: Farm[];
+  farms?: NotificationFarm[];
 }
 
 export const CheckingStatus = () => (
   <div className="flex items-center justify-center py-12">
-    <div className="flex flex-col items-center gap-3 text-muted-foreground">
-      <div className="relative">
-        <Clock className="h-6 w-6 animate-spin" />
-        <div className="absolute inset-0 rounded-full border-2 border-primary/20 animate-ping" />
-      </div>
-      <div className="text-center">
-        <p className="text-sm font-medium">푸시 알림 상태 확인 중</p>
-        <p className="text-xs text-muted-foreground">잠시만 기다려주세요...</p>
-      </div>
-    </div>
+    <Loading
+      text={LABELS.CHECKING_STATUS}
+      minHeight={120}
+      spinnerSize={28}
+      spinnerColor="text-primary"
+      className="py-6 w-full"
+    />
   </div>
 );
 
@@ -48,15 +52,23 @@ export const UnsupportedStatus = () => (
         <span className="text-xs text-destructive-foreground">!</span>
       </div>
     </div>
-    <h3 className="text-lg font-semibold mb-2">푸시 알림 미지원</h3>
+    <h3 className="text-lg font-semibold mb-2">{LABELS.UNSUPPORTED_TITLE}</h3>
     <p className="text-sm text-muted-foreground mb-4 max-w-sm mx-auto">
-      현재 브라우저에서는 푸시 알림을 지원하지 않습니다.
+      {LABELS.UNSUPPORTED_DESCRIPTION}
       <br />
-      Chrome, Firefox, Safari 최신 버전을 사용해주세요.
+      <b>{LABELS.SUPPORTED_BROWSERS}</b>
+      <br />• <b>{LABELS.CHROME}</b> (PC, Android)
+      <br />• <b>{LABELS.EDGE}</b> (PC)
+      <br />• <b>{LABELS.FIREFOX}</b> (PC, Android)
+      <br />• <b>{LABELS.SAFARI}</b> ({LABELS.SAFARI_NOTE})
+      <br />
+      <span className="text-xs text-muted-foreground">
+        {LABELS.SAFARI_WARNING}
+      </span>
     </p>
     <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-muted rounded-full text-xs text-muted-foreground">
       <Shield className="h-3 w-3" />
-      보안상 HTTPS 환경에서만 지원됩니다
+      {LABELS.SECURITY_NOTE}
     </div>
   </div>
 );
@@ -69,15 +81,15 @@ export const DeniedStatus = ({ onAllow }: StatusProps) => (
         <span className="text-xs text-destructive-foreground">×</span>
       </div>
     </div>
-    <h3 className="text-lg font-semibold mb-2">알림 권한 필요</h3>
+    <h3 className="text-lg font-semibold mb-2">{LABELS.PERMISSION_NEEDED}</h3>
     <p className="text-sm text-muted-foreground mb-6 max-w-sm mx-auto">
-      브라우저에서 알림 권한이 차단되었습니다.
+      {LABELS.PERMISSION_DENIED}
       <br />
-      주소창 옆의 🔒 아이콘을 클릭하여 권한을 허용해주세요.
+      {LABELS.PERMISSION_INSTRUCTION}
     </p>
     <Button onClick={onAllow} variant="outline" className="min-w-40">
       <Shield className="mr-2 h-4 w-4" />
-      권한 다시 확인하기
+      {BUTTONS.CHECK_PERMISSION_AGAIN}
     </Button>
   </div>
 );
@@ -91,11 +103,11 @@ export const GrantedStatus = ({ isLoading, onAllow }: StatusProps) => (
           <CheckCircle className="h-3 w-3 text-white" />
         </div>
       </div>
-      <h3 className="text-lg font-semibold mb-2">푸시 알림 준비 완료</h3>
+      <h3 className="text-lg font-semibold mb-2">{LABELS.PUSH_READY}</h3>
       <p className="text-sm text-muted-foreground mb-6 max-w-sm mx-auto">
-        브라우저 알림 권한이 허용되었습니다.
+        {LABELS.PUSH_READY_DESC}
         <br />
-        구독하시면 농장 관련 실시간 알림을 받을 수 있습니다.
+        {LABELS.PUSH_SUBSCRIBE_DESC}
       </p>
 
       <div className="space-y-3">
@@ -106,13 +118,13 @@ export const GrantedStatus = ({ isLoading, onAllow }: StatusProps) => (
         >
           {isLoading ? (
             <>
-              <Clock className="mr-2 h-4 w-4 animate-spin" />
-              구독 진행 중...
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              {BUTTONS.SUBSCRIBING}
             </>
           ) : (
             <>
               <Zap className="mr-2 h-4 w-4" />
-              푸시 알림 구독하기
+              {BUTTONS.SUBSCRIBE_PUSH}
             </>
           )}
         </Button>
@@ -123,7 +135,6 @@ export const GrantedStatus = ({ isLoading, onAllow }: StatusProps) => (
 
 export const SubscribedStatus = ({
   farms,
-  onTest,
   onCleanup,
   onUnsubscribe,
   isLoading,
@@ -138,37 +149,25 @@ export const SubscribedStatus = ({
         </div>
         <div className="flex-1">
           <p className="text-base font-semibold text-primary">
-            푸시 알림 활성화됨
+            {LABELS.PUSH_ACTIVE}
           </p>
           <p className="text-sm text-muted-foreground">
-            모든 농장의 실시간 알림을 수신하고 있습니다
+            {LABELS.PUSH_ACTIVE_DESC}
           </p>
         </div>
       </div>
       {/* 버튼 그룹 - PC에서 오른쪽 정렬 및 여백 조정 */}
       <div className="flex gap-2 w-full lg:w-auto lg:ml-auto">
-        {process.env.NODE_ENV === "development" && (
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={onTest}
-            className="flex-1 lg:flex-initial h-10 px-4 hover:bg-primary/10"
-            title="테스트 알림 발송"
-          >
-            <TestTube className="h-4 w-4 lg:mr-2" />
-            <span className="hidden lg:inline">테스트</span>
-          </Button>
-        )}
         <Button
           variant="ghost"
           size="sm"
           onClick={onCleanup}
           disabled={isLoading}
           className="flex-1 lg:flex-initial h-10 px-4 text-muted-foreground hover:bg-blue/10 hover:text-blue-600"
-          title="만료된 구독 정리"
+          title={BUTTONS.CLEANUP_TITLE}
         >
           <RefreshCw className="h-4 w-4 lg:mr-2" />
-          <span className="hidden lg:inline">정리</span>
+          <span className="hidden lg:inline">{BUTTONS.CLEANUP}</span>
         </Button>
         <Button
           variant="ghost"
@@ -176,10 +175,10 @@ export const SubscribedStatus = ({
           onClick={onUnsubscribe}
           disabled={isLoading}
           className="flex-1 lg:flex-initial h-10 px-4 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
-          title="구독 해제"
+          title={BUTTONS.UNSUBSCRIBE_TITLE}
         >
           <BellOff className="h-4 w-4 lg:mr-2" />
-          <span className="hidden lg:inline">해제</span>
+          <span className="hidden lg:inline">{BUTTONS.UNSUBSCRIBE}</span>
         </Button>
       </div>
     </div>
@@ -191,19 +190,19 @@ export const SubscribedStatus = ({
           <Bell className="h-3.5 w-3.5 text-primary" />
         </div>
         <div className="space-y-2 min-w-0">
-          <h4 className="text-sm font-medium">알림 수신 범위</h4>
+          <h4 className="text-sm font-medium">{LABELS.NOTIFICATION_SCOPE}</h4>
           <ul className="text-xs text-muted-foreground space-y-1.5">
             <li className="flex items-center gap-2">
               <div className="w-1 h-1 bg-primary rounded-full shrink-0" />
-              <span className="truncate">모든 농장의 방문자 등록 알림</span>
+              <span className="truncate">{LABELS.VISITOR_REGISTRATION}</span>
             </li>
             <li className="flex items-center gap-2">
               <div className="w-1 h-1 bg-primary rounded-full shrink-0" />
-              <span className="truncate">농장 관리 관련 중요 알림</span>
+              <span className="truncate">{LABELS.FARM_MANAGEMENT}</span>
             </li>
             <li className="flex items-center gap-2">
               <div className="w-1 h-1 bg-primary rounded-full shrink-0" />
-              <span className="truncate">시스템 공지사항 및 업데이트</span>
+              <span className="truncate">{LABELS.SYSTEM_NOTICE}</span>
             </li>
           </ul>
         </div>
@@ -216,10 +215,10 @@ export const SubscribedStatus = ({
         <div className="flex items-center justify-between">
           <h4 className="text-base font-semibold flex items-center gap-2">
             <Building className="h-4 w-4" />
-            관리 중인 농장
+            {LABELS.MANAGED_FARMS}
           </h4>
           <div className="text-xs text-muted-foreground bg-muted px-2.5 py-1.5 rounded-full">
-            {farms.length}개 농장
+            {LABELS.FARM_COUNT.replace("{count}", farms.length.toString())}
           </div>
         </div>
 
@@ -249,7 +248,7 @@ export const SubscribedStatus = ({
                 variant="secondary"
                 className="text-xs bg-primary/10 text-primary border-primary/30 whitespace-nowrap shrink-0"
               >
-                알림 수신 중
+                {LABELS.NOTIFICATION_RECEIVING}
               </Badge>
             </div>
           ))}

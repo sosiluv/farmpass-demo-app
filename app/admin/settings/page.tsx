@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Settings, Shield, UserCheck, Bell, Terminal } from "lucide-react";
 import { CardSkeleton } from "@/components/common/skeletons";
@@ -13,43 +13,35 @@ import {
   NotificationTab,
   SystemTab,
 } from "@/components/admin/settings/tabs";
-import { useSystemSettings } from "@/lib/hooks/use-system-settings";
+import { useSystemSettingsContext } from "@/components/providers/system-settings-provider";
 import { useDynamicFavicon } from "@/hooks/use-dynamic-favicon";
 import { useSystemMode } from "@/components/providers/debug-provider";
 import { useAuth } from "@/components/providers/auth-provider";
 import type { SystemSettings } from "@/lib/types/settings";
 import {
-  useSettingsImageManager,
   useSettingsValidator,
   useSettingsSaver,
   SettingsHeader,
 } from "@/components/admin/settings";
+import { ERROR_CONFIGS } from "@/lib/constants/error";
+import { LABELS } from "@/lib/constants/settings";
 
 export default function SettingsPage() {
-  const { settings, loading, refetch } = useSystemSettings();
+  const { settings, isLoading: loading, refetch } = useSystemSettingsContext();
 
   // 설정 페이지에서만 동적 파비콘 업데이트 (기본 파비콘 포함)
-  useDynamicFavicon(settings.favicon || "/favicon.ico");
+  useDynamicFavicon(settings?.favicon || "/favicon.ico");
 
   const { refreshSystemModes } = useSystemMode();
-  const [unsavedChanges, setUnsavedChanges] = useState(false);
-  const [activeTab, setActiveTab] = useState("general");
-  const [localSettings, setLocalSettings] = useState<SystemSettings>(settings);
   const { state } = useAuth();
   const user = state.status === "authenticated" ? state.user : null;
   const profile = state.status === "authenticated" ? state.profile : null;
 
-  // admin 권한 체크
-  if (profile && profile.account_type !== "admin") {
-    return (
-      <AccessDenied
-        title="시스템 설정 접근 권한이 없습니다"
-        description="시스템 설정 기능은 관리자만 접근할 수 있습니다."
-        requiredRole="관리자"
-        currentRole="일반 사용자"
-      />
-    );
-  }
+  const [unsavedChanges, setUnsavedChanges] = useState(false);
+  const [activeTab, setActiveTab] = useState("general");
+  const [localSettings, setLocalSettings] = useState<SystemSettings | null>(
+    null
+  );
 
   // settings가 로드되면 localSettings 업데이트
   useEffect(() => {
@@ -58,37 +50,62 @@ export default function SettingsPage() {
     }
   }, [settings]);
 
-  // 분리된 훅들 사용
-  const { handleImageUpload, handleImageDelete } = useSettingsImageManager({
-    settings: localSettings,
-    onSettingsUpdate: (updatedSettings) => {
-      setLocalSettings((prev) => ({ ...prev, ...updatedSettings }));
-    },
-  });
-
   const { validateSetting, inputValidations } = useSettingsValidator({ user });
 
   const { saving, handleSaveAll } = useSettingsSaver({
     onSettingsUpdate: setLocalSettings,
     onUnsavedChangesChange: setUnsavedChanges,
     refreshSystemModes,
-    refetch,
+    refetch: async () => {
+      refetch();
+      return settings;
+    },
   });
+
+  // 설정이 로딩 중이거나 localSettings가 없으면 로딩 표시
+  if (loading || !localSettings) {
+    return (
+      <div className="flex-1 space-y-4 p-4 md:p-6 pt-2 md:pt-4">
+        <SettingsHeader
+          saving={false}
+          unsavedChanges={false}
+          onSave={() => {}}
+        />
+        <CardSkeleton count={5} />
+      </div>
+    );
+  }
+
+  // admin 권한 체크
+  if (profile && profile.account_type !== "admin") {
+    return (
+      <AccessDenied
+        title={ERROR_CONFIGS.PERMISSION.title}
+        description={ERROR_CONFIGS.PERMISSION.description}
+        requiredRole="관리자"
+        currentRole="일반 사용자"
+      />
+    );
+  }
 
   const handleSettingChange = <K extends keyof SystemSettings>(
     key: K,
     value: SystemSettings[K]
   ) => {
+    if (!localSettings) return;
+
     // 로컬 상태 즉시 업데이트
-    setLocalSettings((prev) => ({ ...prev, [key]: value }));
+    setLocalSettings((prev) => (prev ? { ...prev, [key]: value } : prev));
     setUnsavedChanges(true);
 
     // 숫자 입력 필드에 대해서만 비동기 유효성 검사 수행
     if (key in inputValidations) {
       validateSetting(key, value).then((isValid) => {
-        if (!isValid) {
+        if (!isValid && settings) {
           // 유효하지 않은 경우 이전 값으로 복원
-          setLocalSettings((prev) => ({ ...prev, [key]: settings[key] }));
+          setLocalSettings((prev) =>
+            prev ? { ...prev, [key]: settings[key] } : prev
+          );
           setUnsavedChanges(false);
         }
       });
@@ -96,21 +113,15 @@ export default function SettingsPage() {
   };
 
   const handleSave = () => {
-    handleSaveAll(localSettings);
+    if (localSettings) {
+      handleSaveAll(localSettings);
+    }
   };
-
-  if (loading) {
-    return (
-      <div className="flex-1 space-y-4 p-4 md:p-6 pt-2 md:pt-4">
-        <CardSkeleton count={5} />
-      </div>
-    );
-  }
 
   return (
     <ErrorBoundary
-      title="설정 페이지 오류"
-      description="설정을 불러오는 중 문제가 발생했습니다. 페이지를 새로고침하거나 잠시 후 다시 시도해주세요."
+      title={ERROR_CONFIGS.LOADING.title}
+      description={ERROR_CONFIGS.LOADING.description}
     >
       <div className="flex-1 space-y-4 p-4 md:p-6 pt-2 md:pt-4">
         <SettingsHeader
@@ -132,7 +143,7 @@ export default function SettingsPage() {
             >
               <Settings className="h-3.5 w-3.5 flex-shrink-0" />
               <span className="text-[10px] sm:text-xs hidden sm:inline truncate">
-                일반
+                {LABELS.TABS.GENERAL}
               </span>
             </TabsTrigger>
             <TabsTrigger
@@ -141,7 +152,7 @@ export default function SettingsPage() {
             >
               <Shield className="h-3.5 w-3.5 flex-shrink-0" />
               <span className="text-[10px] sm:text-xs hidden sm:inline truncate">
-                보안
+                {LABELS.TABS.SECURITY}
               </span>
             </TabsTrigger>
             <TabsTrigger
@@ -150,7 +161,7 @@ export default function SettingsPage() {
             >
               <UserCheck className="h-3.5 w-3.5 flex-shrink-0" />
               <span className="text-[10px] sm:text-xs hidden sm:inline truncate">
-                방문자
+                {LABELS.TABS.VISITOR}
               </span>
             </TabsTrigger>
             <TabsTrigger
@@ -159,7 +170,7 @@ export default function SettingsPage() {
             >
               <Bell className="h-3.5 w-3.5 flex-shrink-0" />
               <span className="text-[10px] sm:text-xs hidden sm:inline truncate">
-                알림
+                {LABELS.TABS.NOTIFICATIONS}
               </span>
             </TabsTrigger>
             <TabsTrigger
@@ -168,7 +179,7 @@ export default function SettingsPage() {
             >
               <Terminal className="h-3.5 w-3.5 flex-shrink-0" />
               <span className="text-[10px] sm:text-xs hidden sm:inline truncate">
-                시스템
+                {LABELS.TABS.SYSTEM}
               </span>
             </TabsTrigger>
           </TabsList>
@@ -176,7 +187,6 @@ export default function SettingsPage() {
             <GeneralTab
               settings={localSettings}
               onSettingChange={handleSettingChange}
-              onImageUpload={handleImageUpload}
               loading={saving}
             />
           </TabsContent>
@@ -202,12 +212,6 @@ export default function SettingsPage() {
               settings={localSettings}
               onUpdate={handleSettingChange}
               isLoading={loading}
-              handleImageUpload={async (file, type) => {
-                await handleImageUpload(file, type as any);
-              }}
-              handleImageDelete={async (type) => {
-                await handleImageDelete(type as any);
-              }}
             />
           </TabsContent>
 

@@ -14,6 +14,7 @@ import {
   getFarmTypeIcon,
   getFarmTypeColor,
 } from "@/lib/constants/farm-types";
+import { LABELS, PAGE_HEADER } from "@/lib/constants/management";
 import type { Database } from "@/lib/types/supabase";
 
 type Farm = Database["public"]["Tables"]["farms"]["Row"];
@@ -42,10 +43,10 @@ export function FarmDetailModal({
       <DialogContent className="w-[95vw] max-w-[350px] sm:max-w-[500px] md:max-w-[600px] lg:max-w-[700px] xl:max-w-[800px] max-h-[90vh] sm:max-h-[85vh] overflow-hidden p-3 sm:p-4 md:p-6">
         <DialogHeader className="space-y-2">
           <DialogTitle className="text-base sm:text-lg">
-            농장 상세 정보
+            {PAGE_HEADER.FARM_DETAIL_TITLE}
           </DialogTitle>
           <DialogDescription className="text-xs sm:text-sm text-muted-foreground">
-            선택된 농장의 상세 정보를 확인할 수 있습니다.
+            {PAGE_HEADER.FARM_DETAIL_DESCRIPTION}
           </DialogDescription>
         </DialogHeader>
         <ScrollArea className="h-full max-h-[calc(90vh-8rem)] sm:max-h-[calc(85vh-10rem)]">
@@ -79,7 +80,7 @@ export function FarmDetailModal({
                         : "text-red-600 border-red-600"
                     }`}
                   >
-                    {farm.is_active ? "활성" : "비활성"}
+                    {farm.is_active ? LABELS.ACTIVE : LABELS.INACTIVE}
                   </Badge>
                 </div>
               </div>
@@ -101,12 +102,12 @@ export function FarmDetailModal({
             <div className="grid gap-3 sm:gap-4 sm:grid-cols-2">
               <div className="p-2 sm:p-3 bg-muted rounded-lg">
                 <h4 className="font-medium text-xs sm:text-sm mb-2">
-                  소유자 정보
+                  {LABELS.OWNER_INFO}
                 </h4>
                 <div className="flex items-center gap-2 text-xs sm:text-sm text-muted-foreground">
                   <Users className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
                   <span className="break-all">
-                    {farm.owner_name || "정보 없음"}
+                    {farm.owner_name || LABELS.NO_INFO}
                   </span>
                 </div>
               </div>
@@ -114,7 +115,7 @@ export function FarmDetailModal({
               {farm.manager_name && (
                 <div className="p-2 sm:p-3 bg-muted rounded-lg">
                   <h4 className="font-medium text-xs sm:text-sm mb-2">
-                    관리자 정보
+                    {LABELS.MANAGER_INFO}
                   </h4>
                   <div className="flex items-center gap-2 text-xs sm:text-sm text-muted-foreground">
                     <UserCheck className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
@@ -134,7 +135,9 @@ export function FarmDetailModal({
             {/* 통계 정보 */}
             <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-3">
               <div className="p-2 sm:p-3 bg-muted rounded-lg">
-                <h4 className="font-medium text-xs sm:text-sm mb-2">등록일</h4>
+                <h4 className="font-medium text-xs sm:text-sm mb-2">
+                  {LABELS.REGISTRATION_DATE}
+                </h4>
                 <div className="flex items-center gap-2 text-xs sm:text-sm text-muted-foreground">
                   <Calendar className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
                   <span className="break-all">
@@ -143,7 +146,9 @@ export function FarmDetailModal({
                 </div>
               </div>
               <div className="p-2 sm:p-3 bg-muted rounded-lg">
-                <h4 className="font-medium text-xs sm:text-sm mb-2">구성원</h4>
+                <h4 className="font-medium text-xs sm:text-sm mb-2">
+                  {LABELS.MEMBERS}
+                </h4>
                 <div className="flex items-center gap-2 text-xs sm:text-sm text-muted-foreground">
                   <Users className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
                   <span>{farm.member_count}명</span>
@@ -151,7 +156,7 @@ export function FarmDetailModal({
               </div>
               <div className="p-2 sm:p-3 bg-muted rounded-lg">
                 <h4 className="font-medium text-xs sm:text-sm mb-2">
-                  총 방문자
+                  {LABELS.TOTAL_VISITORS}
                 </h4>
                 <div className="flex items-center gap-2 text-xs sm:text-sm text-muted-foreground">
                   <Building2 className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
@@ -164,7 +169,7 @@ export function FarmDetailModal({
             {farm.description && (
               <div className="p-2 sm:p-3 bg-muted rounded-lg">
                 <h4 className="font-medium text-xs sm:text-sm mb-2">
-                  농장 설명
+                  {LABELS.FARM_DESCRIPTION}
                 </h4>
                 <p className="text-xs sm:text-sm text-muted-foreground whitespace-pre-line break-words">
                   {farm.description}

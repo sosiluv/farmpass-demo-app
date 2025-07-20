@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Activity, Server, HardDrive, Cpu, Clock } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { LABELS, PAGE_HEADER } from "@/lib/constants/monitoring";
 
 interface SystemStatusCardProps {
   data: {
@@ -67,13 +68,13 @@ export function SystemStatusCard({ data }: SystemStatusCardProps) {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Activity className="h-5 w-5" />
-            시스템 상태
+            {PAGE_HEADER.SYSTEM_STATUS}
           </CardTitle>
-          <CardDescription>데이터를 불러오는 중...</CardDescription>
+          <CardDescription>{LABELS.LOADING_SYSTEM_STATUS}</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="text-sm text-muted-foreground">
-            시스템 상태 정보를 불러오고 있습니다.
+            {LABELS.SYSTEM_STATUS_LOADING}
           </div>
         </CardContent>
       </Card>
@@ -98,13 +99,13 @@ export function SystemStatusCard({ data }: SystemStatusCardProps) {
   const getStatusText = (status: string) => {
     switch (status) {
       case "healthy":
-        return "정상";
+        return LABELS.STATUS_NORMAL;
       case "unhealthy":
-        return "비정상";
+        return LABELS.STATUS_UNHEALTHY;
       case "warning":
-        return "주의";
+        return LABELS.STATUS_WARNING;
       default:
-        return "알 수 없음";
+        return LABELS.STATUS_UNKNOWN;
     }
   };
 
@@ -134,10 +135,13 @@ export function SystemStatusCard({ data }: SystemStatusCardProps) {
           <div>
             <CardTitle className="flex items-center gap-2">
               <Activity className="h-5 w-5 flex-shrink-0" />
-              <span>시스템 상태</span>
+              <span>{PAGE_HEADER.SYSTEM_STATUS}</span>
             </CardTitle>
             <CardDescription className="mt-1">
-              마지막 업데이트: {new Date(data.timestamp).toLocaleString()}
+              {LABELS.LAST_UPDATE.replace(
+                "{datetime}",
+                new Date(data.timestamp).toLocaleString()
+              )}
             </CardDescription>
           </div>
           <Badge
@@ -159,7 +163,7 @@ export function SystemStatusCard({ data }: SystemStatusCardProps) {
                   getStatusColor(cpuStatus)
                 )}
               />
-              <span className="font-medium">CPU</span>
+              <span className="font-medium">{LABELS.CPU}</span>
             </div>
             <div className="space-y-2">
               <Progress
@@ -167,9 +171,15 @@ export function SystemStatusCard({ data }: SystemStatusCardProps) {
                 className={cn("h-2", getProgressColor(cpuTotal))}
               />
               <div className="flex justify-between text-xs text-muted-foreground">
-                <span>사용량: {cpuTotal}%</span>
-                <span>User: {cpuUser}%</span>
-                <span>System: {cpuSystem}%</span>
+                <span>
+                  {LABELS.CPU_USAGE.replace("{percent}", cpuTotal.toString())}
+                </span>
+                <span>
+                  {LABELS.CPU_USER.replace("{percent}", cpuUser.toString())}
+                </span>
+                <span>
+                  {LABELS.CPU_SYSTEM.replace("{percent}", cpuSystem.toString())}
+                </span>
               </div>
             </div>
           </div>
@@ -183,7 +193,7 @@ export function SystemStatusCard({ data }: SystemStatusCardProps) {
                   getStatusColor(memoryStatus)
                 )}
               />
-              <span className="font-medium">메모리</span>
+              <span className="font-medium">{LABELS.MEMORY}</span>
             </div>
             <div className="space-y-2">
               <Progress
@@ -191,9 +201,21 @@ export function SystemStatusCard({ data }: SystemStatusCardProps) {
                 className={cn("h-2", getProgressColor(memoryUsagePercent))}
               />
               <div className="flex justify-between text-xs text-muted-foreground">
-                <span>사용: {memoryUsed}MB</span>
-                <span>전체: {memoryTotal}MB</span>
-                <span>External: {memoryExternal}MB</span>
+                <span>
+                  {LABELS.MEMORY_USED.replace("{used}", memoryUsed.toString())}
+                </span>
+                <span>
+                  {LABELS.MEMORY_TOTAL.replace(
+                    "{total}",
+                    memoryTotal.toString()
+                  )}
+                </span>
+                <span>
+                  {LABELS.MEMORY_EXTERNAL.replace(
+                    "{external}",
+                    memoryExternal.toString()
+                  )}
+                </span>
               </div>
             </div>
           </div>
@@ -202,14 +224,15 @@ export function SystemStatusCard({ data }: SystemStatusCardProps) {
           <div className="space-y-3">
             <div className="flex items-center gap-2">
               <Clock className="h-5 w-5 flex-shrink-0 text-blue-500" />
-              <span className="font-medium">응답 시간</span>
+              <span className="font-medium">{LABELS.RESPONSE_TIME}</span>
             </div>
             <div className="space-y-2">
               <div className="text-2xl font-bold">
                 {health.performance?.totalResponseTime ?? "N/A"}
               </div>
               <div className="text-xs text-muted-foreground">
-                서버 상태: {getStatusText(health.status ?? "unknown")}
+                {LABELS.SERVER_STATUS}{" "}
+                {getStatusText(health.status ?? "unknown")}
               </div>
             </div>
           </div>
@@ -218,15 +241,20 @@ export function SystemStatusCard({ data }: SystemStatusCardProps) {
           <div className="space-y-3">
             <div className="flex items-center gap-2">
               <Server className="h-5 w-5 flex-shrink-0 text-purple-500" />
-              <span className="font-medium">시스템 정보</span>
+              <span className="font-medium">{LABELS.SYSTEM_INFO}</span>
             </div>
             <div className="space-y-2">
               <div className="text-sm">
-                Node: {health.system?.nodeVersion ?? "N/A"}
+                {LABELS.NODE_VERSION.replace(
+                  "{version}",
+                  health.system?.nodeVersion ?? "N/A"
+                )}
               </div>
               <div className="text-sm text-muted-foreground">
-                OS: {health.system?.platform ?? "N/A"} (
-                {health.system?.arch ?? "N/A"})
+                {LABELS.OS_INFO.replace(
+                  "{platform}",
+                  health.system?.platform ?? "N/A"
+                ).replace("{arch}", health.system?.arch ?? "N/A")}
               </div>
             </div>
           </div>

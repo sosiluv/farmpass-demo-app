@@ -37,6 +37,7 @@ export function CommonFilters({
     <div className="flex flex-wrap items-center gap-1 sm:gap-2 lg:gap-3 xl:gap-4 w-full">
       <div className="relative">
         <Input
+          id="user-search"
           placeholder={searchPlaceholder}
           value={searchValue}
           onChange={onSearchChange}

@@ -15,8 +15,9 @@ import {
 } from "@/components/ui/select";
 import { Building2, Users } from "lucide-react";
 import { getFarmTypeIcon, getFarmTypeLabel } from "@/lib/constants/farm-types";
-import type { Farm } from "@/store/use-farms-store";
+import type { Farm } from "@/lib/types/farm";
 import { getFarmTypeInfo } from "@/lib/constants/farm-types";
+import { LABELS } from "@/lib/constants/visitor";
 
 interface FarmSelectorProps {
   farms: Farm[];
@@ -40,7 +41,7 @@ export function FarmSelector({
   const getSelectedFarmInfo = () => {
     if (selectedFarmId === "all" || !selectedFarmId) {
       return {
-        name: "전체 농장",
+        name: LABELS.FARM_SELECTOR_ALL_FARMS,
         type: null,
         icon: Building2,
       };
@@ -49,7 +50,7 @@ export function FarmSelector({
     const farm = farms.find((f) => f.id === selectedFarmId);
     if (!farm) {
       return {
-        name: "농장을 찾을 수 없음",
+        name: LABELS.FARM_SELECTOR_FARM_NOT_FOUND,
         type: null,
         icon: Building2,
       };
@@ -76,14 +77,19 @@ export function FarmSelector({
               <Building2 className="h-4 w-4 sm:h-5 sm:w-5 text-slate-600" />
             </div>
             <div>
-              <span className="text-base sm:text-lg font-bold">농장 선택</span>
+              <span className="text-base sm:text-lg font-bold">
+                {LABELS.FARM_SELECTOR_TITLE}
+              </span>
               <div className="text-xs sm:text-sm font-normal text-slate-600 mt-0.5">
-                {farms.length}개 농장 중 선택
+                {LABELS.FARM_SELECTOR_SUBTITLE.replace(
+                  "{count}",
+                  farms.length.toString()
+                )}
               </div>
             </div>
           </CardTitle>
           <CardDescription className="text-slate-700/70 ml-8 sm:ml-11 text-xs sm:text-sm">
-            방문자 기록을 조회할 농장을 선택하세요
+            {LABELS.FARM_SELECTOR_DESCRIPTION}
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-3 sm:space-y-4">
@@ -107,7 +113,7 @@ export function FarmSelector({
                         <div className="p-1 bg-gradient-to-br from-slate-100 to-gray-100 rounded-md">
                           <Building2 className="h-3 w-3 sm:h-4 sm:w-4 text-slate-600" />
                         </div>
-                        <span>전체 농장</span>
+                        <span>{LABELS.FARM_SELECTOR_ALL_FARMS}</span>
                       </div>
                     </SelectItem>
                   )}
@@ -157,7 +163,10 @@ export function FarmSelector({
                     <Users className="h-3 w-3 sm:h-4 sm:w-4 text-gray-600" />
                   </div>
                   <span className="font-medium text-xs sm:text-sm">
-                    총 {visitorsCount}건의 방문 기록
+                    {LABELS.FARM_SELECTOR_TOTAL_RECORDS.replace(
+                      "{count}",
+                      visitorsCount.toString()
+                    )}
                   </span>
                 </div>
               </div>
@@ -200,7 +209,10 @@ export function FarmSelector({
                       <Users className="h-3 w-3 sm:h-4 sm:w-4 text-teal-600" />
                     </div>
                     <span className="font-semibold text-xs sm:text-sm">
-                      총 {visitorsCount}건의 방문 기록
+                      {LABELS.FARM_SELECTOR_TOTAL_RECORDS.replace(
+                        "{count}",
+                        visitorsCount.toString()
+                      )}
                     </span>
                   </div>
                 </div>
@@ -214,7 +226,7 @@ export function FarmSelector({
                     {todayVisitorsCount}
                   </div>
                   <div className="text-[10px] sm:text-xs text-teal-600 font-medium">
-                    오늘 방문자
+                    {LABELS.FARM_SELECTOR_TODAY_VISITORS}
                   </div>
                 </div>
               </div>

@@ -2,6 +2,11 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { slackNotifier } from "@/lib/slack";
 import { devLog } from "@/lib/utils/logging/dev-logger";
+import {
+  logMemoryUsage,
+  logSystemWarning,
+  logApiError,
+} from "@/lib/utils/logging/system-log";
 
 // package.json에서 버전 정보 가져오기
 const packageJson = require("../../../package.json");
@@ -99,13 +104,21 @@ export async function GET() {
     // 4. CPU 사용량 확인
     // =================================
     const cpuStartTime = process.cpuUsage();
-    // CPU 사용량을 측정하기 위해 잠시 대기
-    await new Promise((resolve) => setTimeout(resolve, 100));
+
+    // CPU 사용량을 측정하기 위해 더 긴 시간 대기
+    await new Promise((resolve) => setTimeout(resolve, 500));
+
     const cpuEndTime = process.cpuUsage(cpuStartTime);
+
+    // CPU 사용량 계산 (마이크로초를 초로 변환 후 퍼센트 계산)
     const cpuUsagePercent = {
       user: Math.round((cpuEndTime.user / 1000000) * 100) / 100,
       system: Math.round((cpuEndTime.system / 1000000) * 100) / 100,
     };
+
+    // 최소값 설정으로 0% 방지
+    if (cpuUsagePercent.user < 0.01) cpuUsagePercent.user = 0.01;
+    if (cpuUsagePercent.system < 0.01) cpuUsagePercent.system = 0.01;
 
     // =================================
     // 5. 응답 시간 계산
@@ -116,10 +129,40 @@ export async function GET() {
     // 6. 시스템 리소스 경고 알림 (비동기 처리)
     // =================================
     const totalCpuUsage = cpuUsagePercent.user + cpuUsagePercent.system;
+
+    // 메모리 사용량 로깅
+    await logMemoryUsage({
+      heap_used: memoryUsage.heapUsed / 1024 / 1024, // MB로 변환
+      heap_total: memoryUsage.heapTotal / 1024 / 1024, // MB로 변환
+      warning_threshold: Math.round(MEMORY_THRESHOLD / 1024 / 1024), // MB로 변환
+    });
+
     if (
       memoryUsage.heapUsed > MEMORY_THRESHOLD ||
       totalCpuUsage > CPU_THRESHOLD
     ) {
+      // 시스템 리소스 경고 로깅
+      await logSystemWarning(
+        "SYSTEM_RESOURCE_WARNING",
+        `시스템 리소스 사용량이 높습니다. 메모리: ${Math.round(
+          memoryUsage.heapUsed / 1024 / 1024
+        )}MB/${Math.round(
+          memoryUsage.heapTotal / 1024 / 1024
+        )}MB, CPU: ${totalCpuUsage}%`,
+        {
+          ip: "health-check",
+          userAgent: "health-check",
+        },
+        {
+          memory_used_mb: Math.round(memoryUsage.heapUsed / 1024 / 1024),
+          memory_total_mb: Math.round(memoryUsage.heapTotal / 1024 / 1024),
+          memory_threshold_mb: Math.round(MEMORY_THRESHOLD / 1024 / 1024),
+          cpu_usage_percent: totalCpuUsage,
+          cpu_threshold_percent: CPU_THRESHOLD,
+          response_time_ms: totalResponseTime,
+        }
+      );
+
       slackNotifier
         .sendSystemAlert(
           "warning",
@@ -192,6 +235,38 @@ export async function GET() {
           nodeVersion: process.version,
           platform: process.platform,
           arch: process.arch,
+          // 개발 스택 버전 정보 추가
+          techStack: {
+            framework: `Next.js ${
+              packageJson.dependencies["next"] || "unknown"
+            }`,
+            runtime: `Node.js ${process.version}`,
+            react: `React ${
+              packageJson.dependencies["react"] || "unknown"
+            } + React DOM ${
+              packageJson.dependencies["react-dom"] || "unknown"
+            }`,
+            typescript: `TypeScript ${
+              packageJson.devDependencies["typescript"] || "unknown"
+            }`,
+            database: `Supabase ${
+              packageJson.dependencies["@supabase/supabase-js"] || "unknown"
+            } + Prisma ${
+              packageJson.dependencies["@prisma/client"] || "unknown"
+            }`,
+            authentication: `Supabase Auth (Client: ${
+              packageJson.dependencies["@supabase/supabase-js"] || "unknown"
+            }, SSR: ${packageJson.dependencies["@supabase/ssr"] || "unknown"})`,
+            deployment: process.env.VERCEL ? "Vercel" : "Local",
+            ui: `ShadCN UI + Tailwind CSS ${
+              packageJson.devDependencies["tailwindcss"] || "unknown"
+            }`,
+            state: `React Query ${
+              packageJson.dependencies["@tanstack/react-query"] || "unknown"
+            } + Zustand ${packageJson.dependencies["zustand"] || "unknown"}`,
+            monitoring: "UptimeRobot",
+            analytics: "Google Analytics 4",
+          },
         },
 
         // 서비스 상태
@@ -242,6 +317,18 @@ export async function GET() {
     // 데이터베이스 연결 실패 등 문제 발생 시
     devLog.error("Health check failed:", error);
 
+    // API 에러 로깅
+    await logApiError(
+      "/api/health",
+      "GET",
+      error instanceof Error ? error : String(error),
+      undefined,
+      {
+        ip: "health-check",
+        userAgent: "health-check",
+      }
+    );
+
     // =================================
     // 9. 시스템 오류 시 Slack 알림 (비동기 처리)
     // =================================
@@ -267,23 +354,22 @@ export async function GET() {
 
     return NextResponse.json(
       {
-        // 오류 상태 정보
-        status: "unhealthy", // 서버 상태: 비정상
-        timestamp: new Date().toISOString(), // 오류 발생 시간
-        error: errorMessage, // 오류 유형
-        responseTime: `${responseTime}ms`, // 응답 시간
-
-        // 서비스 상태 (오류)
+        success: false,
+        error: "HEALTH_CHECK_FAILED",
+        message: "서버 상태 점검에 실패했습니다.",
+        errorDetails: errorMessage,
+        responseTime: `${responseTime}ms`,
         services: {
-          database: "disconnected", // 데이터베이스 연결 실패
-          api: "error", // API 서비스 오류
-          memory: "unknown", // 메모리 사용량 정보 미확인
+          database: "disconnected",
+          api: "error",
+          memory: "unknown",
         },
+        status: "unhealthy",
+        timestamp: new Date().toISOString(),
       },
       {
-        status: 503, // Service Unavailable 상태 코드
+        status: 503,
         headers: {
-          // 캐시 방지 헤더
           "Cache-Control": "no-cache, no-store, must-revalidate",
           Pragma: "no-cache",
           Expires: "0",

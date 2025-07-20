@@ -14,6 +14,7 @@ import {
   Database,
 } from "lucide-react";
 import { ChartCard } from "@/components/common/ChartCard";
+import { LABELS } from "@/lib/constants/management";
 
 interface Activity {
   id: string;
@@ -108,8 +109,8 @@ export function RecentActivities({ activities = [] }: RecentActivitiesProps) {
 
   return (
     <ChartCard
-      title="최근 활동"
-      description="최근 시스템 활동 내역"
+      title={LABELS.RECENT_ACTIVITIES}
+      description={LABELS.RECENT_ACTIVITIES_DESC}
       icon={Clock}
       variant="info"
     >
@@ -144,7 +145,7 @@ export function RecentActivities({ activities = [] }: RecentActivitiesProps) {
         ))}
         {activities.length === 0 && (
           <div className="text-center text-xs sm:text-sm lg:text-base text-muted-foreground py-3 sm:py-4 lg:py-6">
-            최근 활동이 없습니다.
+            {LABELS.NO_RECENT_ACTIVITIES}
           </div>
         )}
       </div>

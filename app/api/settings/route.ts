@@ -3,14 +3,10 @@ import { prisma } from "@/lib/prisma";
 import crypto from "crypto";
 import { DEFAULT_SYSTEM_SETTINGS } from "@/lib/constants/defaults";
 import { invalidateSystemSettingsCache } from "@/lib/cache/system-settings-cache";
-import {
-  createSystemLog,
-  logApiError,
-  logSystemWarning,
-} from "@/lib/utils/logging/system-log";
+import { createSystemLog, logApiError } from "@/lib/utils/logging/system-log";
 import { devLog } from "@/lib/utils/logging/dev-logger";
-import { createClient } from "@/lib/supabase/server";
 import { getClientIP, getUserAgent } from "@/lib/server/ip-helpers";
+import { requireAuth } from "@/lib/server/auth-utils";
 
 // 5분마다 재검증
 export const revalidate = 300;
@@ -28,8 +24,8 @@ export async function GET(request: NextRequest) {
         data: {
           ...DEFAULT_SYSTEM_SETTINGS,
           id: crypto.randomUUID(),
-          createdAt: new Date(),
-          updatedAt: new Date(),
+          created_at: new Date(),
+          updated_at: new Date(),
         },
       });
 
@@ -81,7 +77,11 @@ export async function GET(request: NextRequest) {
     );
 
     return NextResponse.json(
-      { error: "Failed to fetch system settings" },
+      {
+        success: false,
+        error: "SYSTEM_SETTINGS_FETCH_FAILED",
+        message: "시스템 설정 조회에 실패했습니다.",
+      },
       {
         status: 500,
         headers: {
@@ -97,63 +97,13 @@ export async function PATCH(request: NextRequest) {
   const clientIP = getClientIP(request);
   const userAgent = getUserAgent(request);
   try {
-    // 인증 체크
-    const supabase = await createClient();
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser();
-
-    if (authError || !user) {
-      // 설정 수정 권한 없음 로그 (문서에 명시된 WARN 레벨)
-      await logSystemWarning(
-        "settings_unauthorized_access",
-        "인증되지 않은 사용자의 설정 변경 시도",
-        {
-          ip: clientIP,
-          userAgent,
-        },
-        {
-          auth_error: authError?.message,
-          endpoint: "PATCH /api/settings",
-        }
-      );
-
-      return NextResponse.json(
-        { error: "인증이 필요합니다." },
-        { status: 401 }
-      );
+    // 관리자 권한 인증 확인
+    const authResult = await requireAuth(true);
+    if (!authResult.success || !authResult.user) {
+      return authResult.response!;
     }
 
-    // 관리자 권한 체크
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("account_type")
-      .eq("id", user.id)
-      .single();
-
-    if (!profile || profile.account_type !== "admin") {
-      // 설정 수정 권한 부족 로그 (문서에 명시된 WARN 레벨)
-      await logSystemWarning(
-        "settings_insufficient_permission",
-        "관리자가 아닌 사용자의 설정 변경 시도",
-        {
-          userId: user.id,
-          email: user.email,
-          ip: clientIP,
-          userAgent,
-        },
-        {
-          account_type: profile?.account_type || "unknown",
-          endpoint: "PATCH /api/settings",
-        }
-      );
-
-      return NextResponse.json(
-        { error: "관리자 권한이 필요합니다." },
-        { status: 403 }
-      );
-    }
+    const user = authResult.user;
 
     const data = await request.json();
     const settings = await prisma.systemSettings.findFirst();
@@ -172,7 +122,11 @@ export async function PATCH(request: NextRequest) {
       );
 
       return NextResponse.json(
-        { error: "설정을 찾을 수 없습니다." },
+        {
+          error: "SYSTEM_SETTINGS_NOT_FOUND",
+          success: false,
+          message: "시스템 설정을 찾을 수 없습니다.",
+        },
         {
           status: 404,
           headers: {
@@ -186,7 +140,7 @@ export async function PATCH(request: NextRequest) {
     // 변경된 필드 추적 (날짜 필드 제외)
     const changedFields = Object.keys(data).filter(
       (key) =>
-        !["createdAt", "updatedAt"].includes(key) &&
+        !["created_at", "updated_at"].includes(key) &&
         settings[key as keyof typeof settings] !== data[key]
     );
 
@@ -241,12 +195,26 @@ export async function PATCH(request: NextRequest) {
     // 캐시 무효화
     invalidateSystemSettingsCache();
 
-    return NextResponse.json(updatedSettings, {
-      headers: {
-        "Content-Type": "application/json",
-        "Cache-Control": "no-store",
+    // 성공 메시지 생성
+    const message =
+      changedFields.length > 0
+        ? `${changedFields.length}개의 설정이 성공적으로 업데이트되었습니다.`
+        : "설정이 성공적으로 저장되었습니다.";
+
+    return NextResponse.json(
+      {
+        ...updatedSettings,
+        success: true,
+        message,
+        changedFields: changedFields.length > 0 ? changedFields : undefined,
       },
-    });
+      {
+        headers: {
+          "Content-Type": "application/json",
+          "Cache-Control": "no-store",
+        },
+      }
+    );
   } catch (error) {
     // 설정 PATCH 에러 (일반) 로그
     await logApiError(
@@ -278,7 +246,11 @@ export async function PATCH(request: NextRequest) {
     );
 
     return NextResponse.json(
-      { error: "Failed to update system settings" },
+      {
+        success: false,
+        error: "SYSTEM_SETTINGS_UPDATE_FAILED",
+        message: "시스템 설정 업데이트에 실패했습니다.",
+      },
       {
         status: 500,
         headers: {

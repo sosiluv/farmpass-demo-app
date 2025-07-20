@@ -4,67 +4,122 @@ import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { PageHeader } from "@/components/layout";
 import { WebPushSubscription } from "@/components/admin/notifications/WebPushSubscription";
-import { useFarmsStore } from "@/store/use-farms-store";
+import { useFarmsContext } from "@/components/providers/farms-provider";
+import { useNotificationSettingsQuery } from "@/lib/hooks/query/use-notification-settings-query";
 import { useAuth } from "@/components/providers/auth-provider";
-import { Farm } from "@/lib/types/notification";
 import { ErrorBoundary } from "@/components/error/error-boundary";
+import { ERROR_CONFIGS } from "@/lib/constants/error";
 import {
   NotificationMethodsCard,
   NotificationTypesCard,
   NotificationSettingsActions,
   SubscriptionGuideCard,
 } from "@/components/admin/notifications";
-import { useNotificationSettingsStore } from "@/store/use-notification-settings-store";
-import { useNotificationSettings } from "@/hooks/useNotificationSettings";
 import { useCommonToast } from "@/lib/utils/notification/toast-messages";
+import { getAuthErrorMessage } from "@/lib/utils/validation/validation";
+import type { NotificationSettings } from "@/lib/types/notification";
+import { FormSkeleton } from "@/components/common/skeletons/form-skeleton";
+import { PAGE_HEADER } from "@/lib/constants/notifications";
 
 export default function NotificationsPage() {
   const { state } = useAuth();
   const user = state.status === "authenticated" ? state.user : null;
-  const { farms, fetchFarms, fetchState } = useFarmsStore();
+  const {
+    farms,
+    isLoading: farmsLoading,
+    error: farmsError,
+    refetch: refetchFarms,
+  } = useFarmsContext();
   const [isSubscribed, setIsSubscribed] = useState(false);
-  const { setSettings } = useNotificationSettingsStore();
-  const { data: settings, error: settingsError } = useNotificationSettings();
+  const {
+    data: settings,
+    error: settingsError,
+    isLoading: settingsLoading,
+  } = useNotificationSettingsQuery();
   const { showInfo, showError } = useCommonToast();
+
+  // 시스템 설정 페이지처럼 로컬 상태 관리
+  const [unsavedChanges, setUnsavedChanges] = useState(false);
+  const [localSettings, setLocalSettings] =
+    useState<NotificationSettings | null>(null);
+
+  // settings가 로드되면 localSettings 업데이트
+  useEffect(() => {
+    if (settings) {
+      setLocalSettings(settings);
+      setUnsavedChanges(false);
+    }
+  }, [settings]);
+
+  // 설정 변경 핸들러
+  const handleSettingChange = <K extends keyof NotificationSettings>(
+    key: K,
+    value: NotificationSettings[K]
+  ) => {
+    if (!localSettings) return;
+
+    // 로컬 상태 즉시 업데이트
+    setLocalSettings((prev) => (prev ? { ...prev, [key]: value } : prev));
+    setUnsavedChanges(true);
+  };
+
+  // 저장 완료 후 상태 초기화
+  const handleSaveComplete = () => {
+    setUnsavedChanges(false);
+  };
 
   // 농장 데이터 로드
   useEffect(() => {
-    if (user?.id && !fetchState.loading && farms.length === 0) {
+    if (user?.id && !farmsLoading && farms.length === 0) {
       showInfo("농장 정보 로딩 시작", "농장 정보를 불러오는 중입니다...");
-      fetchFarms(user.id);
+      refetchFarms();
     }
-  }, [user?.id, fetchFarms, fetchState.loading, farms.length, showInfo]);
+  }, [user?.id, refetchFarms, farmsLoading, farms.length, showInfo]);
 
   // 알림 설정 에러 처리
   useEffect(() => {
     if (settingsError) {
-      showError("알림 설정 로드 실패", "알림 설정을 불러오는데 실패했습니다.");
+      const authError = getAuthErrorMessage(settingsError);
+      showError("알림 설정 로드 실패", authError.message);
     }
   }, [settingsError, showError]);
 
-  // 농장 데이터를 WebPushSubscription 컴포넌트 형식으로 변환
-  const farmData: Farm[] = (farms || []).map((farm) => ({
-    id: farm.id,
-    farm_name: farm.farm_name,
-    address: farm.farm_address,
-  }));
-
+  // 농장 에러에 따른 토스트 처리
   useEffect(() => {
-    if (settings) {
-      setSettings(settings);
+    if (farmsError) {
+      const authError = getAuthErrorMessage(farmsError);
+      showError("농장 정보 로드 실패", authError.message);
     }
-  }, [settings, setSettings]);
+  }, [farmsError, showError]);
+
+  // 농장 데이터를 WebPushSubscription 컴포넌트에 직접 전달
+  const farmData = farms || [];
+
+  const isLoading = farmsLoading || settingsLoading;
+
+  if (isLoading) {
+    return (
+      <div className="flex-1 space-y-4 p-3 md:p-6 pt-2 md:pt-4">
+        <PageHeader
+          title={PAGE_HEADER.PAGE_TITLE}
+          description={PAGE_HEADER.PAGE_DESCRIPTION}
+          breadcrumbs={[{ label: PAGE_HEADER.BREADCRUMB }]}
+        />
+        <FormSkeleton fields={5} />
+      </div>
+    );
+  }
 
   return (
     <ErrorBoundary
-      title="알림 설정 오류"
-      description="알림 설정 정보를 불러오는 중 문제가 발생했습니다. 페이지를 새로고침하거나 잠시 후 다시 시도해주세요."
+      title={ERROR_CONFIGS.LOADING.title}
+      description={ERROR_CONFIGS.LOADING.description}
     >
       <div className="flex-1 space-y-4 p-3 md:p-6 pt-2 md:pt-4">
         <PageHeader
-          title="알림 설정"
-          description="농장 관련 알림과 푸시 설정을 관리하세요"
-          breadcrumbs={[{ label: "알림 설정" }]}
+          title={PAGE_HEADER.PAGE_TITLE}
+          description={PAGE_HEADER.PAGE_DESCRIPTION}
+          breadcrumbs={[{ label: PAGE_HEADER.BREADCRUMB }]}
         />
 
         <div className="space-y-4 md:space-y-6">
@@ -96,7 +151,6 @@ export default function NotificationsPage() {
 
             {isSubscribed && (
               <>
-                {/* TODO: 임시 비활성화 카카오톡 알림 미구현으로인해 주석처리 */}
                 <motion.div
                   key="methods"
                   initial={{ opacity: 0, y: 20 }}
@@ -104,7 +158,10 @@ export default function NotificationsPage() {
                   exit={{ opacity: 0, y: -20 }}
                   transition={{ duration: 0.3 }}
                 >
-                  <NotificationMethodsCard />
+                  <NotificationMethodsCard
+                    settings={localSettings}
+                    onSettingChange={handleSettingChange}
+                  />
                 </motion.div>
 
                 <motion.div
@@ -114,13 +171,20 @@ export default function NotificationsPage() {
                   exit={{ opacity: 0, y: -20 }}
                   transition={{ duration: 0.3 }}
                 >
-                  <NotificationTypesCard />
+                  <NotificationTypesCard
+                    settings={localSettings}
+                    onSettingChange={handleSettingChange}
+                  />
                 </motion.div>
               </>
             )}
           </AnimatePresence>
         </div>
-        <NotificationSettingsActions />
+        <NotificationSettingsActions
+          hasUnsavedChanges={unsavedChanges}
+          onSaveComplete={handleSaveComplete}
+          currentSettings={localSettings}
+        />
       </div>
     </ErrorBoundary>
   );

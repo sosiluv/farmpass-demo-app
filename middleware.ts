@@ -3,7 +3,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { isMaintenanceMode, isAdminUser } from "@/lib/utils/system/system-mode";
 import {
   logSecurityError,
-  logPermissionError,
+  createSystemLog,
 } from "@/lib/utils/logging/system-log";
 import { devLog } from "@/lib/utils/logging/dev-logger";
 import { getClientIP, getUserAgent } from "@/lib/server/ip-helpers";
@@ -12,7 +12,8 @@ import {
   createRateLimitHeaders,
   maliciousBotRateLimiter,
 } from "@/lib/utils/system/rate-limit";
-import { clearServerCookies } from "@/lib/utils/auth";
+import { clearServerAuthCookies } from "@/lib/utils/auth";
+import { MALICIOUS_PATTERNS } from "@/lib/constants/security-patterns";
 
 const MIDDLEWARE_CONFIG = {
   // 🌐 공개 접근 가능한 경로들 (인증 불필요)
@@ -33,13 +34,21 @@ const MIDDLEWARE_CONFIG = {
     "/api/health", // 헬스체크 API (모니터링용)
     "/api/monitoring", // 모니터링 API (모니터링용)
     "/api/push/subscription", // 구독 정리 API (세션 만료 시 필요)
+    "/api/404-handler", // 404 핸들러 API
+    "/manifest.json", // PWA 매니페스트
+    "/sw.js", // Service Worker
+    "/workbox-", // Workbox 관련
+    "/push-sw.js", // 푸시 Service Worker
   ] as string[],
 
   // 🔒 정규식 패턴으로 매칭되는 공개 경로들
   // 동적 경로 매개변수가 포함된 API들을 처리합니다.
   PUBLIC_PATTERNS: [
+    /^\/visit\/[^/]+$/, // 특정 농장 방문 페이지 (QR코드로 접근)
     /^\/api\/farms\/[^/]+\/visitors\/check-session$/, // 방문자 세션 체크 API (특정 농장)
     /^\/api\/farms\/[^/]+\/visitors\/count-today$/, // 오늘 방문자 수 API (특정 농장)
+    /^\/api\/farms\/[^/]+\/visitors$/, // 농장별 방문자 등록 API (특정 농장)
+    /^\/api\/404-handler\/.+$/, // 404 핸들러 API (동적)
   ],
 } as const;
 
@@ -70,7 +79,16 @@ const PathMatcher = {
 /**
  * 🔐 토큰 검증 및 갱신 함수 (서버 사이드 전용)
  */
-async function validateAndRefreshToken(supabase: any) {
+async function validateAndRefreshToken(supabase: any, request: NextRequest) {
+  // 쿠키에서 토큰 정보 확인 (세션 만료 감지용)
+  // Supabase 쿠키명: sb-{projectId}-auth-token
+  const projectId =
+    process.env.NEXT_PUBLIC_SUPABASE_URL?.split("//")[1]?.split(".")[0];
+  const authCookieName = projectId ? `sb-${projectId}-auth-token` : null;
+  const authCookie = authCookieName
+    ? request.cookies.get(authCookieName)?.value
+    : null;
+  const hasTokens = !!authCookie;
   try {
     // 사용자 정보 조회 (보안 강화)
     const {
@@ -80,34 +98,37 @@ async function validateAndRefreshToken(supabase: any) {
 
     if (error) {
       devLog.warn(`[MIDDLEWARE] User validation error: ${error.message}`);
-      return { isValid: false, user: null };
+
+      // 토큰이 있었지만 유효하지 않음 = 세션 만료
+      if (hasTokens) {
+        devLog.warn(`[MIDDLEWARE] Session expired - tokens exist but invalid`);
+        return { isValid: false, user: null, sessionExpired: true };
+      }
+
+      return { isValid: false, user: null, sessionExpired: false };
     }
 
     if (!user) {
       devLog.warn(`[MIDDLEWARE] No authenticated user found`);
-      return { isValid: false, user: null };
+
+      // 토큰이 있었지만 사용자 없음 = 세션 만료
+      if (hasTokens) {
+        devLog.warn(`[MIDDLEWARE] Session expired - tokens exist but no user`);
+        return { isValid: false, user: null, sessionExpired: true };
+      }
+
+      return { isValid: false, user: null, sessionExpired: false };
     }
 
     // getUser()가 성공하면 이미 유효한 사용자임
     // 토큰 갱신은 Supabase가 자동으로 처리
     devLog.log(`[MIDDLEWARE] User authenticated: ${user.id}`);
 
-    return { isValid: true, user: user };
+    return { isValid: true, user: user, sessionExpired: false };
   } catch (error) {
     devLog.error(`[MIDDLEWARE] Token validation error: ${error}`);
-    return { isValid: false, user: null };
-  }
-}
 
-// 구독 정리 함수 (별도로 분리)
-async function cleanupUserSubscriptions(userId: string) {
-  try {
-    const supabase = await createClient();
-    await supabase.from("push_subscriptions").delete().eq("user_id", userId);
-
-    devLog.log(`[MIDDLEWARE] Server subscriptions cleaned for user: ${userId}`);
-  } catch (error) {
-    devLog.warn(`[MIDDLEWARE] Failed to clean server subscriptions: ${error}`);
+    return { isValid: false, user: null, sessionExpired: hasTokens };
   }
 }
 
@@ -138,18 +159,9 @@ export async function middleware(request: NextRequest) {
   // 📍 요청 정보 추출
   const pathname = request.nextUrl.pathname; // 현재 요청 경로
 
-  // 🚫 악성 봇 및 WordPress 관련 요청 차단
+  // 🚫 악성 봇 및 보안 위협 요청 차단
   // 실제 프로젝트에서 사용하지 않는 경로들만 차단
-  const maliciousPatterns = [
-    /\/wordpress/i, // WordPress 관련
-    /\/wp-/i, // WordPress 관련 (wp-admin, wp-content 등)
-    /\.php$/i, // PHP 파일
-    /\/config\//i, // 설정 디렉토리 (실제 사용 안함)
-    /\/backup\//i, // 백업 디렉토리 (실제 사용 안함)
-    /\/database\//i, // 데이터베이스 디렉토리 (실제 사용 안함)
-    /\/install\//i, // 설치 디렉토리 (실제 사용 안함)
-    /\/setup\//i, // 설정 디렉토리 (실제 사용 안함)
-  ];
+  const maliciousPatterns = MALICIOUS_PATTERNS;
 
   if (maliciousPatterns.some((pattern) => pattern.test(pathname))) {
     // 악성 봇 Rate Limiting 적용
@@ -202,21 +214,27 @@ export async function middleware(request: NextRequest) {
 
   try {
     // 토큰 검증 및 갱신 시도 (authService 사용)
-    const { isValid, user: authUser } = await validateAndRefreshToken(supabase);
+    const {
+      isValid,
+      user: authUser,
+      sessionExpired,
+    } = await validateAndRefreshToken(supabase, request);
     user = authUser;
     isAuthenticated = isValid;
     devLog.log(
       `[MIDDLEWARE] User: ${
         user?.id ? "authenticated" : "anonymous"
-      }, Token valid: ${isAuthenticated}`
+      }, Token valid: ${isAuthenticated}, Session expired: ${sessionExpired}`
     );
 
-    // 인증 실패 시 세션 정리 (user가 있지만 인증이 실패한 경우)
-    if (!isAuthenticated && user) {
-      devLog.warn(`[MIDDLEWARE] Authentication failed for user: ${user.id}`);
+    // 세션 만료 감지 시 처리 (토큰은 있었지만 유효하지 않은 경우)
+    if (!isAuthenticated && sessionExpired) {
+      devLog.warn(
+        `[MIDDLEWARE] Session expired detected - redirecting to login`
+      );
 
-      // 서버 측 구독 정리 (백그라운드에서 처리)
-      await cleanupUserSubscriptions(user.id);
+      // 세션 만료 시에는 userId를 알 수 없으므로 구독 정리는 클라이언트에서 처리
+      // (로그인 페이지에서 session_expired=true 파라미터로 구독 정리 수행)
 
       // 세션 쿠키 정리 (미들웨어에서는 NextResponse cookies API 사용)
       const loginUrl = new URL("/login", request.url);
@@ -224,7 +242,7 @@ export async function middleware(request: NextRequest) {
       const response = NextResponse.redirect(loginUrl);
 
       // 공통 쿠키 정리 함수 사용
-      clearServerCookies(response);
+      clearServerAuthCookies(response);
 
       return response;
     }
@@ -245,22 +263,35 @@ export async function middleware(request: NextRequest) {
   if (!isMaintenancePath && !isPublicPath) {
     try {
       // 유지보수 모드 상태 확인 (캐시 활용으로 성능 최적화)
-      const maintenanceMode = await isMaintenanceMode(false);
+      const maintenanceMode = await isMaintenanceMode();
 
       if (maintenanceMode) {
         // 관리자는 유지보수 모드에서도 접근 가능 (캐시 활용)
-        const isAdmin = user ? await isAdminUser(user.id, false) : false;
+        const isAdmin = user ? await isAdminUser(user.id) : false;
 
         if (!isAdmin) {
           devLog.log(`[MIDDLEWARE] Redirecting to maintenance page`);
 
           // 권한 없는 접근 시도 로그 (보안 감사용)
-          await logPermissionError(
-            "maintenance_mode",
-            "access",
+          await createSystemLog(
+            "PERMISSION_ERROR",
+            `유지보수 모드 접근 권한 없음: 사용자 ${
+              user?.id || "anonymous"
+            }가 관리자 권한 없이 접근 시도`,
+            "warn",
             user?.id,
-            "admin"
-          ).catch((error) => {
+            "system",
+            undefined,
+            {
+              resource: "maintenance_mode",
+              action: "access",
+              required_role: "admin",
+              pathname,
+            },
+            undefined,
+            clientIP,
+            userAgent
+          ).catch((error: any) => {
             devLog.error(`[MIDDLEWARE] Permission logging error: ${error}`);
           });
 
@@ -301,7 +332,8 @@ export async function middleware(request: NextRequest) {
 
   // 🚦 Rate Limiting 체크 - API 요청 제한
   // IP당 90초에 100회 요청 제한을 적용합니다.
-  if (pathname.startsWith("/api/")) {
+  // 헬스체크는 Rate Limiting에서 제외
+  if (pathname.startsWith("/api/") && !pathname.startsWith("/api/health")) {
     const rateLimitResult = apiRateLimiter.checkLimit(clientIP);
 
     if (!rateLimitResult.allowed) {
@@ -355,6 +387,6 @@ export async function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
-    "/((?!_next/static|_next/image|favicon\\.(?:ico|png)|api/auth|api/admin|api/settings|api/health|api/monitoring|api/push|api/visitor|api/farms/[^/]+/visitors/check-session|manifest\\.json|sw\\.js|workbox-|push-sw\\.js|docs/|.*\\.(?:svg|png|jpg|jpeg|gif|webp|css|js|woff|woff2|html|json)$).*)",
+    "/((?!_next/static|_next/image|favicon\\.(?:ico|png)|api/auth|api/admin|api/settings|api/health|api/monitoring|api/push|api/visitor|api/farms/[^/]+/visitors/check-session|api/farms/[^/]+/visitors/count-today|manifest\\.json|sw\\.js|workbox-|push-sw\\.js|docs/|.*\\.(?:svg|png|jpg|jpeg|gif|webp|css|js|woff|woff2|html|json)$).*)",
   ],
 };

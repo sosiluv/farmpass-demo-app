@@ -1,6 +1,7 @@
 "use client";
 
 import { AdminError } from "@/components/error/admin-error";
+import { ERROR_CONFIGS } from "@/lib/constants/error";
 
 interface AdminErrorPageProps {
   error: Error & { digest?: string };
@@ -12,8 +13,8 @@ export default function AdminErrorPage({ error, reset }: AdminErrorPageProps) {
     <AdminError
       error={error}
       reset={reset}
-      title="페이지 오류"
-      description="페이지를 불러오는 중 문제가 발생했습니다."
+      title={ERROR_CONFIGS.GENERAL.title}
+      description={ERROR_CONFIGS.GENERAL.description}
       showNavigation={true}
     />
   );

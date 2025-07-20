@@ -3,7 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { prisma } from "@/lib/prisma";
 import { getSystemSettings } from "@/lib/cache/system-settings-cache";
 import {
-  createAuthLog,
+  createSystemLog,
   logSecurityError,
   logApiError,
 } from "@/lib/utils/logging/system-log";
@@ -13,7 +13,12 @@ import {
   logApiPerformance,
   logDatabasePerformance,
 } from "@/lib/utils/logging/system-log";
-import { getClientIP, getUserAgent } from "@/lib/server/ip-helpers";
+import {
+  getClientIP,
+  getUserAgent,
+  getLocationFromIP,
+} from "@/lib/server/ip-helpers";
+import { sendSupabaseBroadcast } from "@/lib/supabase/broadcast";
 
 // 동적 렌더링 강제
 export const dynamic = "force-dynamic";
@@ -70,18 +75,24 @@ async function checkLoginAttempts(email: string): Promise<LoginAttempts> {
   ) {
     // 계정 잠금 해제 로그 기록 (이전에 잠겨있었던 경우만)
     if (user.login_attempts >= maxAttempts) {
-      await createAuthLog(
+      await createSystemLog(
         "ACCOUNT_UNLOCKED",
         `계정 잠금 해제: ${email} (${settings.accountLockoutDurationMinutes}분 타임아웃 후 자동 해제)`,
-        email,
+        "info",
         user.id,
+        "auth",
+        undefined,
         {
           previous_attempts: user.login_attempts,
           max_attempts: maxAttempts,
           locked_duration_minutes: settings.accountLockoutDurationMinutes,
           action_type: "security_event",
           unlocked_at: new Date().toISOString(),
-        }
+          unlock_type: "automatic_timeout",
+        },
+        email,
+        "system-auto", // 자동 해제이므로 system-auto로 표시
+        "System Auto Unlock"
       ).catch((logError) =>
         devLog.error("Failed to log account unlock:", logError)
       );
@@ -140,7 +151,8 @@ async function checkLoginAttempts(email: string): Promise<LoginAttempts> {
 async function incrementLoginAttempts(
   email: string,
   clientIP: string,
-  userAgent: string
+  userAgent: string,
+  location: any // 타입은 getLocationFromIP 반환값에 맞게 지정
 ): Promise<void> {
   const settings = await getSystemSettings();
   const suspiciousThreshold = Math.floor(settings.maxLoginAttempts / 2);
@@ -156,18 +168,24 @@ async function incrementLoginAttempts(
     },
   });
 
-  // 로그인 실패 로그 생성
-  await createAuthLog(
+  // 로그인 실패 로그 생성 (error 레벨로 변경)
+  await createSystemLog(
     "LOGIN_FAILED",
     `로그인 실패: ${email}, 로그인 시도 횟수: ${profile.login_attempts || 0}`,
-    email,
+    "error",
     profile.id,
+    "auth",
+    undefined,
     {
       attempts: profile.login_attempts || 0,
       ip: clientIP,
       user_agent: userAgent,
+      location: location,
       timestamp: new Date().toISOString(),
-    }
+    },
+    email,
+    clientIP,
+    userAgent
   );
 
   // 의심스러운 로그인 시도 감지
@@ -183,11 +201,13 @@ async function incrementLoginAttempts(
 
   // 계정 잠금 시 로그 기록
   if ((profile.login_attempts || 0) >= settings.maxLoginAttempts) {
-    await createAuthLog(
+    await createSystemLog(
       "ACCOUNT_LOCKED",
       `계정 잠금: ${email} (로그인 시도 횟수 초과: ${profile.login_attempts}/${settings.maxLoginAttempts})`,
-      email,
+      "warn",
       profile.id,
+      "auth",
+      undefined,
       {
         login_attempts: profile.login_attempts,
         max_attempts: settings.maxLoginAttempts,
@@ -195,7 +215,10 @@ async function incrementLoginAttempts(
         time_left_minutes: Math.ceil(settings.accountLockoutDurationMinutes),
         action_type: "security_event",
         blocked_at: new Date().toISOString(),
-      }
+      },
+      email,
+      clientIP,
+      userAgent
     );
   }
 }
@@ -206,6 +229,7 @@ export async function POST(request: NextRequest) {
   // 요청 컨텍스트 정보 추출
   const clientIP = getClientIP(request);
   const userAgent = getUserAgent(request);
+  const location = await getLocationFromIP(clientIP);
 
   try {
     const { email, password } = await request.json();
@@ -223,22 +247,20 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         {
           success: false,
-          error: "이메일과 비밀번호가 필요합니다.",
+          error: "MISSING_CREDENTIALS",
+          message: "이메일과 비밀번호가 필요합니다.",
         },
         { status: 400 }
       );
     }
 
     // 1. 로그인 시도 횟수 확인과 Supabase 인증을 병렬로 처리
-    const dbMonitor = new PerformanceMonitor("auth_login_attempts_check");
     const supabase = await createClient();
 
     const [authResult, attempts] = await Promise.all([
       supabase.auth.signInWithPassword({ email, password }),
       checkLoginAttempts(email),
     ]);
-
-    const dbDuration = await dbMonitor.finish();
 
     // 계정이 잠겨있는 경우 (인증 성공 여부와 관계없이 체크)
     if (attempts.isBlocked) {
@@ -254,8 +276,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         {
           success: false,
-          error: "계정이 잠겼습니다.",
-          message: `너무 많은 로그인 시도가 있었습니다. ${Math.ceil(
+          error: "ACCOUNT_LOCKED",
+          message: `로그인 시도 횟수가 초과되었습니다. ${Math.ceil(
             attempts.timeLeft / (60 * 1000)
           )}분 후에 다시 시도해주세요.`,
           timeLeft: attempts.timeLeft,
@@ -276,7 +298,7 @@ export async function POST(request: NextRequest) {
       const incrementMonitor = new PerformanceMonitor(
         "auth_increment_attempts"
       );
-      await incrementLoginAttempts(email, clientIP, userAgent);
+      await incrementLoginAttempts(email, clientIP, userAgent, location);
       const incrementDuration = await incrementMonitor.finish();
 
       await logDatabasePerformance(
@@ -306,7 +328,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         {
           success: false,
-          error: "로그인에 실패했습니다.",
+          error: "LOGIN_FAILED",
           message: "이메일 또는 비밀번호가 올바르지 않습니다.",
           remainingAttempts: attempts.remainingAttempts - 1,
           accountLocked: attempts.remainingAttempts - 1 <= 0,
@@ -328,25 +350,53 @@ export async function POST(request: NextRequest) {
         last_failed_login: null,
         last_login_attempt: null,
         last_login_at: new Date(),
+        login_count: {
+          increment: 1, // 로그인 카운트 증가
+        },
       },
     });
+
+    // ✅ 로그인 성공 시 프로필 실시간 브로드캐스트 추가
+    const updatedProfile = await prisma.profiles.findUnique({
+      where: { email },
+    });
+    if (updatedProfile) {
+      await sendSupabaseBroadcast({
+        channel: "profile_updates",
+        event: "profile_updated",
+        payload: {
+          eventType: "UPDATE",
+          new: updatedProfile,
+          old: null,
+          table: "profiles",
+          schema: "public",
+        },
+      });
+    }
 
     // 로그인 성공 로그 기록 (백그라운드에서 처리)
     setTimeout(async () => {
       try {
-        await createAuthLog(
+        await createSystemLog(
           "LOGIN_SUCCESS",
           `로그인 성공: ${email}`,
-          email,
+          "info",
           user!.id,
+          "auth",
+          undefined,
           {
             previous_attempts:
               attempts.maxAttempts - attempts.remainingAttempts,
             reset_reason: "successful_login",
             action_type: "security_event",
             reset_at: new Date().toISOString(),
+            ip: clientIP,
+            user_agent: userAgent,
+            location: location, // IP 기반 위치 정보
           },
-          { ip: clientIP, userAgent }
+          email,
+          clientIP,
+          userAgent
         );
       } catch (logError) {
         devLog.warn("Login success log failed:", logError);
@@ -360,6 +410,7 @@ export async function POST(request: NextRequest) {
     // Supabase 기본 쿠키 사용 (중복 쿠키 설정 제거)
     const response = NextResponse.json({
       success: true,
+      message: "로그인에 성공했습니다. 대시보드로 이동합니다.",
       user: {
         id: user?.id,
         email: user?.email,
@@ -426,7 +477,8 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(
       {
         success: false,
-        error: "로그인 중 오류가 발생했습니다.",
+        error: "LOGIN_SYSTEM_ERROR",
+        message: "로그인 처리 중 시스템 오류가 발생했습니다.",
       },
       { status: 500 }
     );

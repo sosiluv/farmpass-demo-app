@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { MoreHorizontal, Pencil, Trash } from "lucide-react";
+import { MoreHorizontal, Pencil, Trash, Loader2 } from "lucide-react";
 import { devLog } from "@/lib/utils/logging/dev-logger";
 import {
   DropdownMenu,
@@ -19,12 +19,13 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { VisitorFormDialog, VisitorFormValues } from "../VisitorFormDialog";
-import { VisitorEntryWithFarm } from "@/store/use-visitor-store";
+import { VisitorWithFarm } from "@/lib/types/visitor";
+import { BUTTONS, PAGE_HEADER } from "@/lib/constants/visitor";
 
 interface VisitorActionMenuProps {
-  visitor: VisitorEntryWithFarm;
-  onEdit?: (visitor: VisitorEntryWithFarm) => Promise<void>;
-  onDelete?: (visitor: VisitorEntryWithFarm) => Promise<void>;
+  visitor: VisitorWithFarm;
+  onEdit?: (visitor: VisitorWithFarm) => Promise<void>;
+  onDelete?: (visitor: VisitorWithFarm) => Promise<void>;
   onSuccess?: () => void;
 }
 
@@ -49,7 +50,6 @@ export function VisitorActionMenu({
       onSuccess?.();
     } catch (error) {
       devLog.error("Error in handleDelete:", error);
-      // 토스트는 hook에서 처리됨
     } finally {
       setIsProcessing(false);
     }
@@ -69,7 +69,6 @@ export function VisitorActionMenu({
       onSuccess?.();
     } catch (error) {
       devLog.error("방문자 수정 실패:", error);
-      // 토스트는 hook에서 처리됨
     } finally {
       setIsProcessing(false);
     }
@@ -104,21 +103,17 @@ export function VisitorActionMenu({
         <DropdownMenuTrigger asChild>
           <Button
             variant="ghost"
-            className="h-8 w-8 p-0 dark:text-white !important dark:disabled:text-slate-600"
-            style={{ color: "#fff" }}
+            className="h-8 w-8 p-0 text-gray-600 hover:text-gray-900 hover:bg-gray-100 dark:text-gray-500 dark:hover:text-white dark:hover:bg-gray-600"
             disabled={isProcessing}
           >
-            <span className="sr-only">메뉴 열기</span>
-            <MoreHorizontal
-              className="h-4 w-4 dark:text-white !important dark:disabled:text-slate-600"
-              style={{ color: "#fff" }}
-            />
+            <span className="sr-only">{BUTTONS.VISITOR_ACTION_MENU_OPEN}</span>
+            <MoreHorizontal className="h-4 w-4" />
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">
           <DropdownMenuItem onClick={handleEditClick} disabled={isProcessing}>
             <Pencil className="mr-2 h-4 w-4" />
-            수정
+            {BUTTONS.VISITOR_ACTION_MENU_EDIT}
           </DropdownMenuItem>
           <DropdownMenuItem
             onClick={handleDeleteClick}
@@ -126,7 +121,7 @@ export function VisitorActionMenu({
             disabled={isProcessing}
           >
             <Trash className="mr-2 h-4 w-4" />
-            삭제
+            {BUTTONS.VISITOR_ACTION_MENU_DELETE}
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
@@ -134,20 +129,33 @@ export function VisitorActionMenu({
       <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>방문자 삭제</AlertDialogTitle>
+            <AlertDialogTitle>
+              {PAGE_HEADER.VISITOR_ACTION_MENU_DELETE_TITLE}
+            </AlertDialogTitle>
             <AlertDialogDescription>
-              {visitor.visitor_name} 방문자의 정보를 삭제하시겠습니까?
-              <br />이 작업은 되돌릴 수 없습니다.
+              {PAGE_HEADER.VISITOR_ACTION_MENU_DELETE_DESC.replace(
+                "{name}",
+                visitor.visitor_name
+              )}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={isProcessing}>취소</AlertDialogCancel>
+            <AlertDialogCancel disabled={isProcessing}>
+              {BUTTONS.VISITOR_FORM_DIALOG_CANCEL}
+            </AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDelete}
               className="bg-destructive hover:bg-destructive/90"
               disabled={isProcessing}
             >
-              {isProcessing ? "삭제 중..." : "삭제"}
+              {isProcessing ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  {BUTTONS.VISITOR_ACTION_MENU_DELETING}
+                </>
+              ) : (
+                BUTTONS.VISITOR_ACTION_MENU_DELETE
+              )}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -160,6 +168,7 @@ export function VisitorActionMenu({
         initialData={visitor}
         farmId={visitor.farm_id}
         onSuccess={handleUpdate}
+        isLoading={false} // 이미 로드된 데이터를 사용하므로 false
       />
     </>
   );

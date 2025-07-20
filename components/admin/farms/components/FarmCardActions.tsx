@@ -1,8 +1,9 @@
 import { Button } from "@/components/ui/button";
 import { FarmQRCode } from "../farm-qr-code";
 import { Edit, Trash2, Users } from "lucide-react";
-import type { Farm } from "@/lib/hooks/use-farms";
+import type { Farm } from "@/lib/types/farm";
 import Link from "next/link";
+import { BUTTONS, LABELS } from "@/lib/constants/farms";
 
 interface FarmCardActionsProps {
   farm: Farm;
@@ -28,7 +29,7 @@ export function FarmCardActions({
             className="flex items-center justify-center gap-2"
           >
             <Users className="h-4 w-4" />
-            <span className="hidden sm:inline">구성원</span>
+            <span className="hidden sm:inline">{LABELS.MEMBERS}</span>
           </Link>
         </Button>
       </div>
@@ -41,20 +42,20 @@ export function FarmCardActions({
             size="sm"
             onClick={() => onEdit(farm)}
             className="flex-1 min-w-0"
-            title="농장 정보 수정"
+            title={LABELS.EDIT_FARM_TOOLTIP}
           >
             <Edit className="h-4 w-4 sm:mr-2" />
-            <span className="hidden sm:inline">수정</span>
+            <span className="hidden sm:inline">{BUTTONS.EDIT_BUTTON}</span>
           </Button>
           <Button
             variant="outline"
             size="sm"
             onClick={() => onDelete(farm.id)}
             className="flex-1 min-w-0 text-red-600 hover:text-red-700"
-            title="농장 삭제"
+            title={LABELS.DELETE_FARM_TOOLTIP}
           >
             <Trash2 className="h-4 w-4 sm:mr-2" />
-            <span className="hidden sm:inline">삭제</span>
+            <span className="hidden sm:inline">{BUTTONS.DELETE_BUTTON}</span>
           </Button>
         </div>
       )}

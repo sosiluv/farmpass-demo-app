@@ -3,15 +3,8 @@ import { X, Search, Calendar, MapPin } from "lucide-react";
 import { format } from "date-fns";
 import { ko } from "date-fns/locale";
 import { getFarmTypeInfo } from "@/lib/constants/farm-types";
+import { BUTTONS, LABELS, DATE_RANGE_OPTIONS } from "@/lib/constants/visitor";
 import type { Farm } from "@/lib/types/visitor";
-
-const DATE_RANGE_LABELS: Record<string, string> = {
-  today: "오늘",
-  week: "최근 7일",
-  month: "최근 30일",
-  custom: "사용자 지정",
-  all: "전체",
-};
 
 interface ActiveFilterTagsProps {
   searchTerm: string;
@@ -53,7 +46,7 @@ export function ActiveFilterTags({
     if (searchTerm.trim()) {
       tags.push({
         key: "search",
-        label: `검색: "${searchTerm}"`,
+        label: LABELS.ACTIVE_FILTERS_SEARCH.replace("{searchTerm}", searchTerm),
         icon: Search,
         color: "bg-blue-100 text-blue-800 border-blue-200",
         onRemove: () => onSearchChange(""),
@@ -79,7 +72,10 @@ export function ActiveFilterTags({
 
     // 날짜 범위 필터
     if (dateRange && dateRange !== "all") {
-      const dateLabel = DATE_RANGE_LABELS[dateRange] || dateRange;
+      const dateOption = DATE_RANGE_OPTIONS.find(
+        (option) => option.value === dateRange
+      );
+      const dateLabel = dateOption?.label || dateRange;
       tags.push({
         key: "dateRange",
         label: dateLabel,
@@ -91,7 +87,7 @@ export function ActiveFilterTags({
 
     // 커스텀 날짜 필터
     if (customStartDate || customEndDate) {
-      let dateLabel = "커스텀 날짜";
+      let dateLabel: string = LABELS.ACTIVE_FILTERS_CUSTOM_DATE;
       if (customStartDate && customEndDate) {
         dateLabel = `${format(customStartDate, "MM/dd", {
           locale: ko,
@@ -128,7 +124,7 @@ export function ActiveFilterTags({
     <div className="flex flex-wrap items-center gap-2 sm:gap-3 p-3 sm:p-4 bg-gradient-to-r from-slate-50 to-gray-50 rounded-lg border border-slate-200">
       <div className="flex items-center space-x-1 sm:space-x-2">
         <span className="text-xs sm:text-sm font-medium text-gray-700">
-          활성 필터:
+          {LABELS.ACTIVE_FILTERS_LABEL}
         </span>
       </div>
 
@@ -162,7 +158,7 @@ export function ActiveFilterTags({
         onClick={onClearFilters}
         className="text-xs sm:text-sm text-gray-500 hover:text-red-600 hover:bg-red-50 px-2 sm:px-3 py-1 sm:py-2 rounded-md transition-all duration-200 font-medium"
       >
-        모든 필터 지우기
+        {BUTTONS.ACTIVE_FILTERS_CLEAR_ALL}
       </button>
     </div>
   );

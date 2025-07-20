@@ -9,6 +9,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { QrCode, Download } from "lucide-react";
+import { BUTTONS, LABELS } from "@/lib/constants/farms";
 
 interface FarmQRCodeProps {
   farmId: string;
@@ -52,25 +53,26 @@ export function FarmQRCode({ farmId, farmName, size = 256 }: FarmQRCodeProps) {
       </DialogTrigger>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>{farmName} QR 코드</DialogTitle>
-          <DialogDescription>
-            방문자 등록을 위한 QR 코드입니다.
-          </DialogDescription>
+          <DialogTitle>
+            {LABELS.QR_CODE_TITLE.replace("{farmName}", farmName)}
+          </DialogTitle>
+          <DialogDescription>{LABELS.QR_CODE_DESCRIPTION}</DialogDescription>
         </DialogHeader>
         <div className="flex flex-col items-center gap-4 p-4">
-          <QRCodeSVG
-            id={`qr-code-${farmId}`}
-            value={qrUrl}
-            size={size}
-            includeMargin
-            level="H"
-          />
+          <div className="p-4 bg-white rounded-lg">
+            <QRCodeSVG
+              id={`qr-code-${farmId}`}
+              value={qrUrl}
+              size={size}
+              level="H"
+            />
+          </div>
           <Button onClick={handleDownload} className="w-full">
             <Download className="h-4 w-4 mr-2" />
-            QR 코드 다운로드
+            {BUTTONS.QR_CODE_DOWNLOAD}
           </Button>
           <p className="text-xs text-muted-foreground text-center">
-            QR 코드를 스캔하면 방문자 등록 페이지로 이동합니다.
+            {LABELS.QR_CODE_SCAN_INFO}
             <br />
             {qrUrl}
           </p>

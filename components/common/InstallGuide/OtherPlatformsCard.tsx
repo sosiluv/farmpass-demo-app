@@ -2,20 +2,31 @@ import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { platformGuides } from "./data";
+import { LABELS } from "@/lib/constants/common";
 
 export function OtherPlatformsCard() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-lg">다른 플랫폼 가이드</CardTitle>
+        <CardTitle className="text-lg">
+          {LABELS.INSTALL_GUIDE_OTHER_PLATFORMS_TITLE}
+        </CardTitle>
       </CardHeader>
       <CardContent>
         <Tabs defaultValue="ios" className="w-full">
           <TabsList className="grid w-full grid-cols-4">
-            <TabsTrigger value="ios">iOS</TabsTrigger>
-            <TabsTrigger value="android">Android</TabsTrigger>
-            <TabsTrigger value="samsung">Samsung</TabsTrigger>
-            <TabsTrigger value="desktop">Desktop</TabsTrigger>
+            <TabsTrigger value="ios">
+              {LABELS.INSTALL_GUIDE_TAB_IOS}
+            </TabsTrigger>
+            <TabsTrigger value="android">
+              {LABELS.INSTALL_GUIDE_TAB_ANDROID}
+            </TabsTrigger>
+            <TabsTrigger value="samsung">
+              {LABELS.INSTALL_GUIDE_TAB_SAMSUNG}
+            </TabsTrigger>
+            <TabsTrigger value="desktop">
+              {LABELS.INSTALL_GUIDE_TAB_DESKTOP}
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="ios">

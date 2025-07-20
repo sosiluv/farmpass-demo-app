@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Loader2, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { BUTTONS } from "@/lib/constants/common";
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -54,17 +55,23 @@ export function ProtectedRoute({
 
   // 앱 초기화 중이거나 로딩 중일 때
   if (state.status === "initializing" || state.status === "loading") {
+    let loadingText = "페이지를 불러오는 중...";
+
+    if (loadingTimeout) {
+      loadingText = "로딩이 지연되고 있습니다. 네트워크 상태를 확인해주세요.";
+    } else if (state.status === "initializing") {
+      loadingText = "시스템을 초기화하는 중...";
+    } else if (state.status === "loading") {
+      loadingText = "인증 정보를 확인하는 중...";
+    }
+
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="flex flex-col items-center gap-4">
           <div className="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center">
             <Loader2 className="h-6 w-6 text-blue-600 animate-spin" />
           </div>
-          <p className="text-sm text-gray-600">
-            {loadingTimeout
-              ? "로딩이 지연되고 있습니다. 네트워크 상태를 확인해주세요."
-              : "인증 정보를 확인하는 중..."}
-          </p>
+          <p className="text-sm text-gray-600">{loadingText}</p>
           {loadingTimeout && (
             <div className="flex gap-2">
               <Button
@@ -74,7 +81,7 @@ export function ProtectedRoute({
                 className="flex items-center gap-2"
               >
                 <RefreshCw className="h-4 w-4" />
-                새로고침
+                {BUTTONS.REFRESH_BUTTON}
               </Button>
             </div>
           )}
@@ -99,7 +106,7 @@ export function ProtectedRoute({
             className="flex items-center gap-2"
           >
             <RefreshCw className="h-4 w-4" />
-            새로고침
+            {BUTTONS.REFRESH_BUTTON}
           </Button>
         </div>
       </div>

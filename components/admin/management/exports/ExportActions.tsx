@@ -2,6 +2,7 @@ import React from "react";
 import { Button } from "@/components/ui/button";
 import { DialogFooter } from "@/components/ui/dialog";
 import { Download } from "lucide-react";
+import { BUTTONS } from "@/lib/constants/management";
 
 interface ExportActionsProps {
   isExporting: boolean;
@@ -17,8 +18,8 @@ export function ExportActions({
   canExport,
   onExport,
   onReset,
-  exportButtonText = "CSV 내보내기",
-  resetButtonText = "초기화",
+  exportButtonText = BUTTONS.CSV_EXPORT,
+  resetButtonText = BUTTONS.RESET,
 }: ExportActionsProps) {
   return (
     <DialogFooter className="flex-col sm:flex-row gap-2 sm:gap-3 pt-3 sm:pt-4 md:pt-6">
@@ -36,7 +37,7 @@ export function ExportActions({
         className="w-full sm:w-auto h-8 sm:h-9 text-xs sm:text-sm"
       >
         {isExporting ? (
-          "내보내는 중..."
+          BUTTONS.EXPORTING
         ) : (
           <>
             <Download className="h-3 w-3 mr-2" />

@@ -1,8 +1,8 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { AlertCircle, AlertTriangle, Info } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { LABELS, PAGE_HEADER } from "@/lib/constants/monitoring";
 
 interface ErrorLogsCardProps {
   errors: Array<{
@@ -20,12 +20,12 @@ export function ErrorLogsCard({ errors }: ErrorLogsCardProps) {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <AlertCircle className="h-5 w-5" />
-            최근 에러
+            {PAGE_HEADER.RECENT_ERRORS}
           </CardTitle>
         </CardHeader>
         <CardContent>
           <div className="text-sm text-muted-foreground">
-            에러 로그를 불러오는 중입니다.
+            {LABELS.LOADING_ERRORS}
           </div>
         </CardContent>
       </Card>
@@ -60,11 +60,11 @@ export function ErrorLogsCard({ errors }: ErrorLogsCardProps) {
         <div className="flex items-center justify-between">
           <CardTitle className="flex items-center gap-2">
             <AlertCircle className="h-5 w-5" />
-            최근 에러
+            {PAGE_HEADER.RECENT_ERRORS}
           </CardTitle>
           {errors.length > 0 && (
             <div className="text-sm text-muted-foreground">
-              총 {errors.length}건
+              {LABELS.TOTAL_ERRORS.replace("{count}", errors.length.toString())}
             </div>
           )}
         </div>
@@ -76,10 +76,10 @@ export function ErrorLogsCard({ errors }: ErrorLogsCardProps) {
               <div className="flex flex-col items-center justify-center py-8 text-center">
                 <Info className="h-12 w-12 text-muted-foreground/50 mb-4" />
                 <p className="text-sm text-muted-foreground">
-                  최근 발생한 에러가 없습니다.
+                  {LABELS.NO_RECENT_ERRORS}
                 </p>
                 <p className="text-xs text-muted-foreground/70 mt-1">
-                  모든 시스템이 정상적으로 작동 중입니다.
+                  {LABELS.ALL_SYSTEMS_NORMAL}
                 </p>
               </div>
             ) : (

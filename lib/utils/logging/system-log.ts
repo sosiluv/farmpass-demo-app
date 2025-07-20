@@ -6,6 +6,8 @@ import {
   createServiceRoleClient,
   validateServiceRoleConfig,
 } from "@/lib/supabase/service-role";
+import type { LogLevel } from "@/lib/types/common";
+import { ACTIONS_BY_CATEGORY } from "@/lib/constants/log-actions";
 
 /**
  * 통합 로깅 시스템 - 단순화된 인터페이스
@@ -16,12 +18,12 @@ import {
  * - 간단한 사용법
  */
 
-export type LogLevel = "info" | "warn" | "error" | "debug";
-
 export type ResourceType =
   | "user"
   | "farm"
+  | "member"
   | "visitor"
+  | "notification"
   | "system"
   | "auth"
   | "api";
@@ -63,11 +65,6 @@ const LOG_LEVEL_PRIORITY: Record<LogLevel, number> = {
 async function validateConfig() {
   if (!isConfigValidated) {
     isConfigValidated = validateServiceRoleConfig();
-    if (!isConfigValidated) {
-      devLog.warn(
-        "Service Role 환경 변수가 설정되지 않아 로깅이 비활성화됩니다."
-      );
-    }
   }
   return isConfigValidated;
 }
@@ -180,11 +177,33 @@ async function createLog(
     // 서버 환경: 서비스 롤 키로 직접 insert
 
     const supabase = createServiceRoleClient();
-    const { error } = await supabase.from("system_logs").insert(logData);
+    const { data: insertedLog, error } = await supabase
+      .from("system_logs")
+      .insert(logData)
+      .select()
+      .single();
     if (error) {
       devLog.error("[DEBUG] Supabase direct insert error", error);
     } else {
       devLog.log("[DEBUG] Supabase direct insert success", logData);
+
+      // 🔥 시스템 로그 생성 실시간 브로드캐스트
+      try {
+        await supabase.channel("log_updates").send({
+          type: "broadcast",
+          event: "log_created",
+          payload: {
+            eventType: "INSERT",
+            new: insertedLog,
+            old: null,
+            table: "system_logs",
+            schema: "public",
+          },
+        });
+        devLog.log("📡 [SYSTEM-LOG] Supabase Broadcast 발송 완료");
+      } catch (broadcastError) {
+        devLog.error("⚠️ [SYSTEM-LOG] Broadcast 발송 실패:", broadcastError);
+      }
     }
     return;
   } catch (error) {
@@ -368,49 +387,14 @@ export const logApiError = (
   method: string,
   error: Error | string,
   userId?: string,
-  context?: Partial<LogContext>
+  context?: Partial<LogContext>,
+  resourceType: ResourceType = "api"
 ) => {
-  return logger.api(endpoint, method, { error }, { userId, ...context });
-};
-
-export const logDataChange = (
-  action: string,
-  resource: string,
-  userId?: string,
-  metadata?: LogMetadata,
-  context?: Partial<LogContext>
-) => {
-  return logger.business(action, resource, { userId, ...context }, metadata);
-};
-
-export const logPermissionError = async (
-  resource: string,
-  action: string,
-  userId?: string,
-  requiredRole?: string,
-  context?: Partial<LogContext>
-) => {
-  await logger.log(
-    "warn",
-    "PERMISSION_ERROR",
-    `권한 에러: ${resource}에 대한 ${action} 권한 없음`,
-    { userId, ...context },
-    { resource, action, requiredRole }
-  );
-};
-
-export const logUserActivity = async (
-  action: string,
-  message: string,
-  userId?: string,
-  metadata?: Record<string, any>,
-  context?: Partial<LogContext>
-) => {
-  await logger.business(
-    action,
-    "user_activity",
-    { userId, ...context },
-    metadata
+  return logger.api(
+    endpoint,
+    method,
+    { error },
+    { userId, resource: resourceType, ...context }
   );
 };
 
@@ -418,12 +402,13 @@ export const logPageView = async (
   fromPath: string,
   toPath: string,
   userId?: string,
-  context?: Partial<LogContext>
+  context?: Partial<LogContext>,
+  resourceType: ResourceType = "system"
 ) => {
   await logger.business(
     "PAGE_VIEW",
     "navigation",
-    { userId, ...context },
+    { userId, resource: resourceType, ...context },
     { fromPath, toPath }
   );
 };
@@ -433,66 +418,13 @@ export const logSecurityError = async (
   description: string,
   userId?: string,
   ip?: string,
-  userAgent?: string
+  userAgent?: string,
+  resourceType: ResourceType = "system"
 ) => {
   await logger.error(
     `보안 위협: ${threat}`,
-    { userId, ip },
+    { userId, ip, resource: resourceType },
     { threat, description, userAgent }
-  );
-};
-
-export const logPerformanceError = async (
-  endpoint: string,
-  actualDuration: number,
-  threshold: number,
-  userId?: string
-) => {
-  await logger.performance(endpoint, actualDuration, threshold, { userId });
-};
-
-export const createAuthLog = async (
-  action: string,
-  message: string,
-  email?: string,
-  userId?: string,
-  metadata?: Record<string, any>,
-  context?: Partial<LogContext>
-) => {
-  await logger.log(
-    "info",
-    action,
-    message,
-    { userId, email, ...context },
-    { email, ...metadata }
-  );
-};
-
-export const logVisitorDataAccess = async (
-  accessType: string,
-  userId?: string,
-  email?: string,
-  details?: Record<string, any>,
-  context?: Partial<LogContext>
-) => {
-  await logger.business(
-    `VISITOR_DATA_${accessType}`,
-    "visitor_data",
-    { userId, email, ...context },
-    details
-  );
-};
-
-export const logVisitorDataExport = async (
-  exportCount: number,
-  userId?: string,
-  details?: Record<string, any>
-) => {
-  await logger.business(
-    "VISITOR_DATA_EXPORT",
-    "visitor_data",
-    { userId },
-    { exportCount, ...details }
   );
 };
 
@@ -501,13 +433,14 @@ export const logSystemWarning = async (
   message: string,
   logContext?: Partial<LogContext>,
   metadata?: Record<string, any>,
-  userId?: string
+  userId?: string,
+  resourceType: ResourceType = "system"
 ) => {
   await logger.log(
     "warn",
     "SYSTEM_WARNING",
     `${operation}: ${message}`,
-    { userId, ...logContext },
+    { userId, resource: resourceType, ...logContext },
     metadata
   );
 };
@@ -652,492 +585,28 @@ export const logSystemResources = async (): Promise<void> => {
   }
 };
 
-// ============================================
-// Validation Logger 통합 (기존 호환성 유지)
-// ============================================
-
 /**
- * 감사 로그 여부 판단 함수
- * 사용자의 중요한 행동이나 시스템 변경 사항을 기록하는 로그인지 확인
- *
- * @param log 로그 객체
- * @returns 감사 로그 여부
- */
-export const isAuditLog = (log: any): boolean => {
-  const auditActions = [
-    // 사용자 인증 관련
-    "USER_LOGIN",
-    "USER_LOGOUT",
-    "LOGIN_FAILED",
-    "LOGIN_ATTEMPT_FAILED",
-    "LOGIN_SUCCESS",
-    "LOGOUT_SUCCESS",
-    "LOGOUT_ERROR",
-    "SESSION_EXPIRED",
-    "PASSWORD_RESET_REQUESTED",
-    "PASSWORD_RESET_REQUEST_FAILED",
-    "PASSWORD_RESET_SYSTEM_ERROR",
-    "LOGIN_ATTEMPTS_RESET",
-    "ACCOUNT_LOCKED",
-    "ACCOUNT_UNLOCKED",
-
-    // 사용자 계정 관리
-    "USER_CREATED",
-    "USER_CREATION_FAILED",
-    "USER_UPDATED",
-    "USER_UPDATE_FAILED",
-    "USER_DELETED",
-    "USER_DELETE_FAILED",
-    "PASSWORD_CHANGED",
-    "PASSWORD_CHANGE_FAILED",
-    "PASSWORD_RESET",
-    "PASSWORD_RESET_FAILED",
-
-    // 농장 관리
-    "FARM_CREATED",
-    "FARM_CREATE",
-    "FARM_CREATE_FAILED",
-    "FARM_UPDATED",
-    "FARM_UPDATE",
-    "FARM_UPDATE_FAILED",
-    "FARM_DELETED",
-    "FARM_DELETE",
-    "FARM_DELETE_FAILED",
-    "FARM_READ",
-    "FARM_READ_FAILED",
-    "FARM_ACCESS",
-    "FARM_STATUS_CHANGED",
-    "FARM_FETCH_FAILED",
-
-    // 농장 구성원 관리
-    "MEMBER_ADDED",
-    "MEMBER_REMOVED",
-    "MEMBER_CREATE",
-    "MEMBER_CREATE_FAILED",
-    "MEMBER_UPDATE",
-    "MEMBER_UPDATE_FAILED",
-    "MEMBER_DELETE",
-    "MEMBER_DELETE_FAILED",
-    "MEMBER_READ",
-    "MEMBER_READ_FAILED",
-    "MEMBER_BULK_READ",
-    "MEMBER_BULK_READ_FAILED",
-    "MEMBER_ROLE_CHANGED",
-
-    // 방문자 관리
-    "VISITOR_CREATED",
-    "VISITOR_UPDATED",
-    "VISITOR_DELETED",
-    "VISITOR_CHECKED_IN",
-    "VISITOR_CHECKED_OUT",
-    "VISITOR_LIST_VIEW",
-    "VISITOR_DETAIL_VIEW",
-    "VISITOR_EXPORT",
-    "LIST_VIEW",
-    "LIST_VIEW_FAILED",
-    "DETAIL_VIEW",
-    "DETAIL_VIEW_FAILED",
-    "CREATED",
-    "UPDATED",
-    "DELETED",
-    "CREATION_FAILED",
-    "UPDATE_FAILED",
-    "DELETE_FAILED",
-    "SESSION_VALID",
-    "SESSION_NOT_FOUND",
-    "RECORD_NOT_FOUND",
-
-    // 시스템 설정
-    "SETTINGS_READ",
-    "SETTINGS_UPDATED",
-    "SETTINGS_CHANGE",
-    "SETTINGS_BULK_UPDATE",
-    "SETTINGS_ACCESS_DENIED",
-    "CONFIGURATION_ERROR",
-    "settings_unauthorized_access",
-
-    // 푸시 알림
-    "VAPID_KEY_CREATED",
-    "VAPID_KEY_CREATE_FAILED",
-    "VAPID_KEY_RETRIEVED",
-    "VAPID_KEY_RETRIEVE_FAILED",
-    "PUSH_SUBSCRIPTION_CREATED",
-    "PUSH_SUBSCRIPTION_DELETED",
-    "PUSH_SUBSCRIPTION_CLEANUP_STARTED",
-    "PUSH_SUBSCRIPTION_CLEANUP_COMPLETED",
-    "PUSH_NOTIFICATION_SENT",
-    "PUSH_NOTIFICATION_NO_SUBSCRIBERS",
-    "PUSH_NOTIFICATION_FILTERED_OUT",
-    "PUSH_NOTIFICATION_SEND_FAILED",
-    "PUSH_SUBSCRIPTION_CLEANUP",
-    "BROADCAST_NOTIFICATION_SENT",
-    "BROADCAST_NOTIFICATION_FAILED",
-    "NOTIFICATION_SETTINGS_CREATION_FAILED",
-    "NOTIFICATION_VAPID_KEY_RETRIEVED",
-    "NOTIFICATION_SUBSCRIPTION_SUCCESS",
-
-    // 프로필 관리
-    "PROFILE_READ",
-    "PROFILE_READ_FAILED",
-    "PROFILE_UPDATE",
-    "PROFILE_UPDATE_FAILED",
-
-    // 관리 기능
-    "BROADCAST_SENT",
-    "BROADCAST_FAILED",
-    "LOG_DELETE",
-    "LOG_EXPORT",
-    "LOG_EXPORT_ERROR",
-    "LOG_CLEANUP_ERROR",
-    "DATA_EXPORT",
-    "DATA_IMPORT",
-    "SYSTEM_BACKUP",
-    "SYSTEM_RESTORE",
-
-    // 관리자 통계
-    "ADMIN_STATS_GENERATION_STARTED",
-    "ADMIN_STATS_GENERATION_COMPLETED",
-    "ADMIN_STATS_GENERATION_FAILED",
-
-    // 스케줄 작업
-    "SCHEDULED_JOB",
-
-    // 애플리케이션 라이프사이클
-    "PAGE_VIEW",
-    "APP_START",
-    "APP_END",
-    "BUSINESS_EVENT",
-    "USER_ACTIVITY",
-    "ADMIN_ACTION",
-
-    // 보안 관련
-    "UNAUTHORIZED_ACCESS",
-    "SECURITY_THREAT_DETECTED",
-    "SUSPICIOUS_ACTIVITY",
-    "ACCESS_DENIED",
-    "PERMISSION_DENIED",
-    "IP_BLOCKED",
-    "RATE_LIMIT_EXCEEDED",
-
-    // 데이터 접근
-    "DATA_ACCESS",
-    "DATA_CHANGE",
-    "BULK_OPERATION",
-    "EXPORT_OPERATION",
-    "IMPORT_OPERATION",
-
-    // 모니터링
-    "monitoring_data_unavailable",
-  ];
-
-  const upperAction = log.action?.toUpperCase();
-  return (
-    auditActions.some((action) => upperAction?.includes(action)) ||
-    log.user_id !== null
-  );
-};
-
-/**
- * 에러 로그 여부 판단 함수
- * 시스템 오류, 실패한 작업, 경고 상황을 기록하는 로그인지 확인
- *
- * @param log 로그 객체
- * @returns 에러 로그 여부
- */
-export const isErrorLog = (log: any): boolean => {
-  const errorActions = [
-    // 사용자 관련 오류
-    "USER_CREATION_FAILED",
-    "USER_UPDATE_FAILED",
-    "USER_DELETE_FAILED",
-    "PASSWORD_CHANGE_FAILED",
-    "PASSWORD_RESET_FAILED",
-    "PASSWORD_RESET_REQUEST_FAILED",
-    "PASSWORD_RESET_SYSTEM_ERROR",
-    "LOGIN_FAILED",
-    "LOGIN_ATTEMPT_FAILED",
-    "LOGIN_VALIDATION_ERROR",
-    "LOGOUT_ERROR",
-
-    // 농장 관련 오류
-    "FARM_CREATE_FAILED",
-    "FARM_UPDATE_FAILED",
-    "FARM_DELETE_FAILED",
-    "FARM_READ_FAILED",
-    "FARM_ACCESS_DENIED",
-    "FARM_FETCH_FAILED",
-
-    // 구성원 관련 오류
-    "MEMBER_CREATE_FAILED",
-    "MEMBER_UPDATE_FAILED",
-    "MEMBER_DELETE_FAILED",
-    "MEMBER_READ_FAILED",
-    "MEMBER_BULK_READ_FAILED",
-
-    // 방문자 관련 오류
-    "VISITOR_CREATION_FAILED",
-    "VISITOR_UPDATE_FAILED",
-    "VISITOR_DELETE_FAILED",
-    "LIST_VIEW_FAILED",
-    "DETAIL_VIEW_FAILED",
-    "CREATION_FAILED",
-    "UPDATE_FAILED",
-    "DELETE_FAILED",
-    "SESSION_NOT_FOUND",
-    "RECORD_NOT_FOUND",
-
-    // API 및 데이터베이스 오류
-    "API_ERROR",
-    "DATABASE_ERROR",
-    "CONNECTION_ERROR",
-    "TIMEOUT_ERROR",
-    "DATA_INTEGRITY_ERROR",
-    "QUERY_ERROR",
-    "TRANSACTION_ERROR",
-
-    // 파일 및 업로드 오류
-    "FILE_UPLOAD_ERROR",
-    "IMAGE_DELETE_ERROR",
-    "IMAGE_UPLOAD_ERROR",
-    "FILE_DELETE_ERROR",
-    "UPLOAD_PROCESS_ERROR",
-    "DELETE_PROCESS_ERROR",
-    "STORAGE_ERROR",
-
-    // 유효성 검사 오류
-    "VALIDATION_ERROR",
-    "VALIDATION_WARNING",
-    "FORM_VALIDATION_ERROR",
-    "INPUT_VALIDATION_FAILED",
-    "DATA_VALIDATION_FAILED",
-
-    // 시스템 성능 오류
-    "PERFORMANCE_ERROR",
-    "PERFORMANCE_WARNING",
-    "SLOW_QUERY",
-    "MEMORY_WARNING",
-    "CPU_WARNING",
-    "DISK_SPACE_WARNING",
-    "SYSTEM_RESOURCE_ERROR",
-
-    // 보안 오류
-    "SECURITY_ERROR",
-    "UNAUTHORIZED_ACCESS",
-    "ACCESS_DENIED",
-    "PERMISSION_DENIED",
-    "SECURITY_THREAT_DETECTED",
-    "SUSPICIOUS_ACTIVITY",
-    "RATE_LIMIT_EXCEEDED",
-    "IP_BLOCKED",
-
-    // 설정 관련 오류
-    "SETTINGS_UPDATE_ERROR",
-    "CONFIGURATION_ERROR",
-    "SETTINGS_ACCESS_DENIED",
-
-    // 알림 관련 오류
-    "VAPID_KEY_CREATE_FAILED",
-    "VAPID_KEY_RETRIEVE_FAILED",
-    "PUSH_NOTIFICATION_ERROR",
-    "PUSH_NOTIFICATION_SEND_FAILED",
-    "PUSH_NOTIFICATION_NO_SUBSCRIBERS",
-    "PUSH_NOTIFICATION_FILTERED_OUT",
-    "BROADCAST_NOTIFICATION_FAILED",
-    "BROADCAST_FAILED",
-    "NOTIFICATION_SETTINGS_CREATION_FAILED",
-    "SUBSCRIPTION_ERROR",
-
-    // 로그 및 관리 오류
-    "LOG_CLEANUP_ERROR",
-    "LOG_EXPORT_ERROR",
-    "LOG_CREATION_FAILED",
-    "EXPORT_ERROR",
-    "IMPORT_ERROR",
-    "BACKUP_ERROR",
-    "RESTORE_ERROR",
-
-    // 관리자 통계 오류
-    "ADMIN_STATS_GENERATION_FAILED",
-
-    // 일반 시스템 오류
-    "SYSTEM_ERROR",
-    "INTERNAL_ERROR",
-    "UNEXPECTED_ERROR",
-    "CRITICAL_ERROR",
-    "FATAL_ERROR",
-    "SERVICE_UNAVAILABLE",
-    "MAINTENANCE_MODE_ERROR",
-
-    // 프로필 관리 오류
-    "PROFILE_READ_FAILED",
-    "PROFILE_UPDATE_FAILED",
-  ];
-
-  const upperAction = log.action?.toUpperCase();
-  return (
-    errorActions.some((action) => upperAction?.includes(action)) ||
-    log.level === "error" ||
-    log.level === "warn"
-  );
-};
-
-/**
- * 로그 카테고리 분류 함수
- * 로그의 액션과 내용을 기반으로 적절한 카테고리를 반환
- *
- * 카테고리 목록:
- * - auth: 인증 관련 (로그인, 로그아웃, 계정 관리)
- * - farm: 농장 관리 관련
- * - member: 농장 구성원 관리 관련
- * - visitor: 방문자 관리 관련
- * - settings: 시스템 설정 관련
- * - file: 파일 업로드/다운로드 관련
- * - performance: 성능 모니터링 관련
- * - notification: 푸시 알림 관련
- * - security: 보안 관련
- * - data: 데이터 관리 (내보내기/가져오기) 관련
- * - log: 로그 관리 관련
- * - application: 애플리케이션 라이프사이클 관련
- * - error: 분류되지 않은 에러
- * - system: 기타 시스템 관련
+ * 로그 카테고리 분류 함수 (ACTIONS_BY_CATEGORY 기반)
+ * 로그의 액션을 기반으로 적절한 카테고리를 반환
  *
  * @param log 로그 객체
  * @returns 로그 카테고리
  */
 export const getLogCategory = (log: any): string => {
-  const upperAction = log.action?.toUpperCase();
+  const action = log.action;
 
-  // 인증 관련
-  if (
-    upperAction?.includes("USER_") ||
-    upperAction?.includes("LOGIN") ||
-    upperAction?.includes("LOGOUT") ||
-    upperAction?.includes("PASSWORD") ||
-    upperAction?.includes("AUTH") ||
-    upperAction?.includes("SESSION") ||
-    upperAction?.includes("TOKEN") ||
-    upperAction?.includes("ACCOUNT")
-  ) {
-    return "auth";
-  }
-
-  // 농장 관련
-  if (upperAction?.includes("FARM_") || upperAction?.includes("FARM")) {
-    return "farm";
-  }
-
-  // 구성원 관련
-  if (
-    upperAction?.includes("MEMBER_") ||
-    upperAction?.includes("MEMBER") ||
-    upperAction?.includes("ROLE")
-  ) {
-    return "member";
-  }
-
-  // 방문자 관련
-  if (
-    upperAction?.includes("VISITOR_") ||
-    upperAction?.includes("VISITOR") ||
-    upperAction?.includes("LIST_VIEW") ||
-    upperAction?.includes("DETAIL_VIEW")
-  ) {
-    return "visitor";
-  }
-
-  // 설정 관련
-  if (
-    upperAction?.includes("SETTINGS_") ||
-    upperAction?.includes("SETTINGS") ||
-    upperAction?.includes("CONFIGURATION") ||
-    upperAction?.includes("CONFIG")
-  ) {
-    return "settings";
-  }
-
-  // 파일 업로드 관련
-  if (
-    upperAction?.includes("FILE_UPLOAD") ||
-    upperAction?.includes("IMAGE_") ||
-    upperAction?.includes("UPLOAD") ||
-    upperAction?.includes("STORAGE")
-  ) {
-    return "file";
-  }
-
-  // 성능 관련
-  if (
-    upperAction?.includes("PERFORMANCE_") ||
-    upperAction?.includes("SLOW_") ||
-    upperAction?.includes("MEMORY") ||
-    upperAction?.includes("CPU") ||
-    upperAction?.includes("DISK")
-  ) {
-    return "performance";
-  }
-
-  // 푸시 알림 관련
-  if (
-    upperAction?.includes("PUSH_") ||
-    upperAction?.includes("NOTIFICATION") ||
-    upperAction?.includes("SUBSCRIPTION")
-  ) {
-    return "notification";
-  }
-
-  // 보안 관련
-  if (
-    upperAction?.includes("SECURITY") ||
-    upperAction?.includes("UNAUTHORIZED") ||
-    upperAction?.includes("ACCESS_DENIED") ||
-    upperAction?.includes("PERMISSION") ||
-    upperAction?.includes("SUSPICIOUS") ||
-    upperAction?.includes("BLOCKED") ||
-    upperAction?.includes("THREAT")
-  ) {
-    return "security";
-  }
-
-  // 데이터 관리 관련
-  if (
-    upperAction?.includes("EXPORT") ||
-    upperAction?.includes("IMPORT") ||
-    upperAction?.includes("BACKUP") ||
-    upperAction?.includes("RESTORE") ||
-    upperAction?.includes("BULK") ||
-    upperAction?.includes("DATA_") ||
-    upperAction?.includes("STATS") ||
-    upperAction?.includes("GENERATION")
-  ) {
-    return "data";
-  }
-
-  // 로그 관리 관련
-  if (upperAction?.includes("LOG_") || upperAction?.includes("AUDIT")) {
-    return "log";
-  }
-
-  // 애플리케이션 관련
-  if (
-    upperAction?.includes("APP_") ||
-    upperAction?.includes("PAGE_VIEW") ||
-    upperAction?.includes("BUSINESS_EVENT") ||
-    upperAction?.includes("USER_ACTIVITY") ||
-    upperAction?.includes("ADMIN_ACTION")
-  ) {
-    return "application";
-  }
-
-  // 스케줄 작업 관련
-  if (upperAction?.includes("SCHEDULED_JOB")) {
+  if (!action) {
     return "system";
   }
 
-  // 에러 관련 (다른 카테고리에 속하지 않는 경우)
-  if (isErrorLog(log)) {
-    return "error";
+  // ACTIONS_BY_CATEGORY를 사용하여 정확한 매칭
+  for (const [category, actions] of Object.entries(ACTIONS_BY_CATEGORY)) {
+    if ((actions as readonly string[]).includes(action)) {
+      return category;
+    }
   }
 
+  // 매칭되지 않는 액션은 기본값: system
   return "system";
 };
 

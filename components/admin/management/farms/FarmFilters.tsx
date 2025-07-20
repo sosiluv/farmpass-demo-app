@@ -5,6 +5,7 @@ import {
   type FarmType,
   FARM_TYPE_TO_CATEGORY,
 } from "@/lib/constants/farm-types";
+import { LABELS, PLACEHOLDERS } from "@/lib/constants/management";
 
 export interface FarmFilters {
   search: string;
@@ -60,26 +61,29 @@ export function FarmFilters({ filters, onFiltersChange }: FarmFiltersProps) {
 
   return (
     <CommonFilters
-      searchPlaceholder="농장명 또는 주소 검색..."
+      searchPlaceholder={PLACEHOLDERS.FARM_SEARCH_PLACEHOLDER}
       searchValue={filters.search || ""}
       onSearchChange={handleSearchChange}
       selects={[
         {
           value: filters.type || "all",
           onChange: handleTypeChange,
-          options: [{ value: "all", label: "모든 유형" }, ...farmTypeOptions],
-          placeholder: "농장 유형",
+          options: [
+            { value: "all", label: LABELS.ALL_TYPES },
+            ...farmTypeOptions,
+          ],
+          placeholder: PLACEHOLDERS.FARM_TYPE_PLACEHOLDER,
         },
         {
           value: filters.status || "all",
           onChange: handleStatusChange,
           options: [
-            { value: "all", label: "모든 상태" },
-            { value: "active", label: "활성" },
-            { value: "inactive", label: "비활성" },
-            { value: "suspended", label: "정지" },
+            { value: "all", label: LABELS.ALL_STATUS },
+            { value: "active", label: LABELS.ACTIVE },
+            { value: "inactive", label: LABELS.INACTIVE },
+            { value: "suspended", label: LABELS.SUSPENDED },
           ],
-          placeholder: "상태",
+          placeholder: PLACEHOLDERS.STATUS_PLACEHOLDER,
         },
       ]}
       extra={extraButtons}

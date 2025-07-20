@@ -1,6 +1,7 @@
 "use client";
 
 import { Bar } from "@/components/ui/chart";
+import { LABELS } from "@/lib/constants/common";
 
 interface VisitorRegionData {
   region: string;
@@ -16,7 +17,7 @@ export function VisitorRegionChart({ data }: VisitorRegionChartProps) {
   if (!data || data.length === 0) {
     return (
       <div className="flex items-center justify-center h-full text-muted-foreground">
-        <p>지역별 방문자 데이터가 없습니다.</p>
+        <p>{LABELS.CHART_NO_REGION_DATA}</p>
       </div>
     );
   }
@@ -30,7 +31,9 @@ export function VisitorRegionChart({ data }: VisitorRegionChartProps) {
 
   const chartData = [
     ...topRegions,
-    ...(otherCount > 0 ? [{ region: "기타", count: otherCount }] : []),
+    ...(otherCount > 0
+      ? [{ region: LABELS.CHART_OTHER, count: otherCount }]
+      : []),
   ];
 
   return (
@@ -39,7 +42,7 @@ export function VisitorRegionChart({ data }: VisitorRegionChartProps) {
         labels: chartData.map((item) => item.region),
         datasets: [
           {
-            label: "방문자 수",
+            label: LABELS.CHART_VISITOR_COUNT,
             data: chartData.map((item) => item.count),
             backgroundColor: "rgba(168, 85, 247, 0.8)",
             borderColor: "rgb(147, 51, 234)",

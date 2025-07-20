@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
-import { logUserActivity } from "@/lib/utils/logging/system-log";
+import { createSystemLog } from "@/lib/utils/logging/system-log";
 import { devLog } from "@/lib/utils/logging/dev-logger";
 import {
   PerformanceMonitor,
   logApiPerformance,
+  logApiError,
 } from "@/lib/utils/logging/system-log";
 import { getClientIP, getUserAgent } from "@/lib/server/ip-helpers";
 
@@ -25,17 +26,22 @@ export async function GET(request: NextRequest) {
     const userAgent = getUserAgent(request);
 
     // IP 주소 조회 로그 기록 (보안 추적용)
-    await logUserActivity(
+    await createSystemLog(
       "IP_ADDRESS_QUERY",
       `클라이언트 정보 조회: IP ${ip}`,
+      "info",
       undefined, // 인증되지 않은 요청일 수 있음
+      "system",
+      undefined,
       {
         client_ip: ip,
         user_agent: userAgent,
         request_source: "user-info-api",
         headers_checked: ["x-forwarded-for", "x-real-ip", "cf-connecting-ip"],
       },
-      { ip, userAgent } // context 추가
+      undefined,
+      ip,
+      userAgent
     );
 
     return NextResponse.json(
@@ -53,25 +59,46 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     devLog.error("Error getting user info:", error);
 
+    // API 에러 로깅
+    await logApiError(
+      "/api/user-info",
+      "GET",
+      error instanceof Error ? error : String(error),
+      undefined,
+      {
+        ip: getClientIP(request),
+        userAgent: getUserAgent(request),
+      }
+    );
+
     // IP 조회 실패 로그 기록
-    await logUserActivity(
+    await createSystemLog(
       "IP_ADDRESS_QUERY_FAILED",
       `클라이언트 정보 조회 실패: ${
         error instanceof Error ? error.message : String(error)
       }`,
+      "error",
+      undefined,
+      "system",
       undefined,
       {
         error_message: error instanceof Error ? error.message : String(error),
         request_source: "user-info-api",
       },
-      { ip: getClientIP(request), userAgent: getUserAgent(request) } // context 추가
+      undefined,
+      getClientIP(request),
+      getUserAgent(request)
     );
 
     statusCode = 500;
 
     return NextResponse.json(
-      { error: "Failed to get user info" },
-      { status: statusCode, headers: { "Cache-Control": "no-store" } }
+      {
+        success: false,
+        error: "USER_INFO_FETCH_FAILED",
+        message: "사용자 정보 조회에 실패했습니다.",
+      },
+      { status: 500 }
     );
   } finally {
     // 성능 모니터링 종료 및 로깅

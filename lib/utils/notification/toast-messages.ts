@@ -12,29 +12,38 @@ import { useToast } from "@/hooks/use-toast";
 export function useCommonToast() {
   const { toast } = useToast();
 
-  const showSuccess = useCallback((title: string, description?: string) => {
-    toast({
-      title,
-      description,
-      variant: "success",
-    });
-  }, []);
+  const showSuccess = useCallback(
+    (title: string, description?: string) => {
+      toast({
+        title,
+        description,
+        variant: "success",
+      });
+    },
+    [toast]
+  );
 
-  const showError = useCallback((title: string, description?: string) => {
-    toast({
-      title,
-      description,
-      variant: "destructive",
-    });
-  }, []);
+  const showError = useCallback(
+    (title: string, description?: string) => {
+      toast({
+        title,
+        description,
+        variant: "destructive",
+      });
+    },
+    [toast]
+  );
 
-  const showWarning = useCallback((title: string, description?: string) => {
-    toast({
-      title,
-      description,
-      variant: "warning",
-    });
-  }, []);
+  const showWarning = useCallback(
+    (title: string, description?: string) => {
+      toast({
+        title,
+        description,
+        variant: "warning",
+      });
+    },
+    [toast]
+  );
 
   const showInfo = useCallback(
     (title: string, description?: string) => {
@@ -44,7 +53,7 @@ export function useCommonToast() {
         variant: "info",
       });
     },
-    [] // toast 의존성 제거
+    [toast]
   );
 
   return {

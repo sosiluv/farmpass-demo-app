@@ -3,50 +3,88 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "@/components/providers/auth-provider";
 import { devLog } from "@/lib/utils/logging/dev-logger";
-import { apiClient } from "@/lib/utils/data";
-import { handleError } from "@/lib/utils/error";
+import { getNotificationErrorMessage } from "@/lib/utils/validation/validation";
 import {
   safeLocalStorageAccess,
   safeNotificationAccess,
 } from "@/lib/utils/browser/safari-compat";
+import {
+  useVapidKeyQuery,
+  useCreateSubscriptionMutation,
+} from "@/lib/hooks/query/use-push-mutations";
+import { requestNotificationPermissionAndSubscribe } from "@/lib/utils/notification/push-subscription";
 
 interface NotificationPermissionState {
   hasAsked: boolean;
   permission: NotificationPermission | "unsupported";
   showDialog: boolean;
+  isResubscribe: boolean; // 재구독 여부 구분
 }
 
 export function useNotificationPermission() {
   const { state: authState } = useAuth();
-  // 토스트 대신 메시지 상태만 반환
-  const [lastMessage, setLastMessage] = useState<{
-    type: "success" | "error";
-    title: string;
-    message: string;
-  } | null>(null);
 
+  // 사용자 정보 추출
   const user = authState.status === "authenticated" ? authState.user : null;
   const profile =
     authState.status === "authenticated" ? authState.profile : null;
+
+  // React Query hooks - 필요할 때만 로드 (Lazy Loading)
+  const { data: vapidData, refetch: refetchVapidKey } = useVapidKeyQuery({
+    enabled: false, // 처음엔 로드하지 않음
+  });
+  const createSubscriptionMutation = useCreateSubscriptionMutation();
+
+  // 토스트 대신 메시지 상태만 반환
+  const [lastMessage, setLastMessage] = useState<{
+    type: "success" | "error" | "info";
+    title: string;
+    message: string;
+  } | null>(null);
   const [state, setState] = useState<NotificationPermissionState>({
     hasAsked: false,
     permission: "default" as NotificationPermission | "unsupported",
     showDialog: false,
+    isResubscribe: false,
   });
 
-  // 로컬스토리지 키
-  const getStorageKey = (userId: string) => `notification_permission_${userId}`;
+  // 로컬스토리지 키 (통합)
+  const getPromptStorageKey = (userId: string) =>
+    `notification_prompt_${userId}`;
+
+  // 브라우저 구독 상태 확인
+  const checkBrowserSubscription = async (): Promise<boolean> => {
+    try {
+      if (!("serviceWorker" in navigator) || !("PushManager" in window)) {
+        return false;
+      }
+
+      const registration = await navigator.serviceWorker.ready;
+      const subscription = await registration.pushManager.getSubscription();
+      return !!subscription;
+    } catch (error) {
+      devLog.error("브라우저 구독 상태 확인 실패:", error);
+      return false;
+    }
+  };
 
   // 로그인 후 알림 권한 상태 확인
   useEffect(() => {
-    if (!user || !profile) return;
+    if (!user || !profile) {
+      return;
+    }
 
-    const checkNotificationPermission = () => {
-      const storageKey = getStorageKey(user.id);
+    let timeoutId: NodeJS.Timeout | null = null;
+
+    const checkNotificationPermission = async () => {
+      const promptStorageKey = getPromptStorageKey(user.id);
       const safeLocalStorage = safeLocalStorageAccess();
       const safeNotification = safeNotificationAccess();
-      const lastAsked = safeLocalStorage.getItem(storageKey);
+      const lastPrompted = safeLocalStorage.getItem(promptStorageKey);
       const currentPermission = safeNotification.permission;
+      const FOURTEEN_DAYS = 14 * 24 * 60 * 60 * 1000;
+      const canReAsk =
+        !lastPrompted || parseInt(lastPrompted) < Date.now() - FOURTEEN_DAYS;
 
       // 브라우저에서 알림을 지원하지 않는 경우
       if (!safeNotification.isSupported) {
@@ -54,99 +92,197 @@ export function useNotificationPermission() {
           hasAsked: true,
           permission: "denied",
           showDialog: false,
+          isResubscribe: false,
         });
         return;
       }
 
-      // 권한이 이미 허용된 경우 - 더 이상 요청하지 않음
+      // 권한이 이미 허용된 경우
       if (currentPermission === "granted") {
-        setState({
-          hasAsked: true,
-          permission: currentPermission,
-          showDialog: false,
-        });
-        return;
-      }
+        // 브라우저 구독 상태 확인
+        const hasSubscription = await checkBrowserSubscription();
 
-      // 권한이 거부되었거나 default인 경우 - 7일 간격으로 재요청
-      if (currentPermission === "denied" || currentPermission === "default") {
-        const sevenDaysAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
-        const canReAsk = !lastAsked || parseInt(lastAsked) < sevenDaysAgo;
-
-        if (canReAsk) {
-          // 로그인 후 2초 후에 표시 (사용자 경험 개선)
-          const timer = setTimeout(() => {
-            setState({
-              hasAsked: false,
-              permission: currentPermission,
-              showDialog: true,
-            });
-          }, 2000);
-
-          return () => clearTimeout(timer);
-        } else {
-          // 아직 재요청 기간이 되지 않은 경우
+        if (hasSubscription) {
+          // 구독도 있고 권한도 있음 - 정상 상태
           setState({
             hasAsked: true,
             permission: currentPermission,
             showDialog: false,
+            isResubscribe: false,
+          });
+          return;
+        } else {
+          // 권한은 있지만 구독이 없음 - 재구독 필요
+          if (canReAsk) {
+            timeoutId = setTimeout(async () => {
+              const hasSubscriptionNow = await checkBrowserSubscription();
+              if (hasSubscriptionNow) {
+                setState({
+                  hasAsked: true,
+                  permission: currentPermission,
+                  showDialog: false,
+                  isResubscribe: false,
+                });
+                return;
+              }
+              setState((prev) => {
+                if (prev.showDialog) {
+                  return prev;
+                }
+                return {
+                  ...prev,
+                  hasAsked: false,
+                  permission: currentPermission as
+                    | NotificationPermission
+                    | "unsupported",
+                  showDialog: true,
+                  isResubscribe: true,
+                };
+              });
+            }, 6000);
+          } else {
+            setState({
+              hasAsked: true,
+              permission: currentPermission,
+              showDialog: false,
+              isResubscribe: false,
+            });
+          }
+          return;
+        }
+      }
+
+      // 권한이 거부된 경우 - 더 이상 요청하지 않음 (브라우저에서 재설정 필요)
+      if (currentPermission === "denied") {
+        setState({
+          hasAsked: true,
+          permission: currentPermission,
+          showDialog: false,
+          isResubscribe: false,
+        });
+        return;
+      }
+
+      // 권한이 default인 경우 - 14일 간격으로 재요청
+      if (currentPermission === "default") {
+        if (canReAsk) {
+          timeoutId = setTimeout(() => {
+            setState((prev) => {
+              if (prev.showDialog) {
+                return prev;
+              }
+              return {
+                ...prev,
+                hasAsked: false,
+                permission: currentPermission as
+                  | NotificationPermission
+                  | "unsupported",
+                showDialog: true,
+                isResubscribe: false,
+              };
+            });
+          }, 2000);
+        } else {
+          setState({
+            hasAsked: true,
+            permission: currentPermission,
+            showDialog: false,
+            isResubscribe: false,
           });
         }
       }
     };
 
     checkNotificationPermission();
-  }, [user, profile]);
 
-  // 알림 허용 처리
+    return () => {
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+      }
+    };
+  }, [user?.id, profile?.id]);
+
+  // 알림 허용 처리 - 공통 로직 사용
   const handleAllow = async () => {
     if (!user) return;
 
-    try {
-      // 브라우저 알림 권한 요청 (Safari 호환성 고려)
-      const safeNotification = safeNotificationAccess();
-      const permission = await safeNotification.requestPermission();
+    if (state.hasAsked && !state.isResubscribe) {
+      console.log("🚫 알림 권한 이미 처리됨 - 중복 실행 방지");
+      return;
+    }
 
-      if (permission === "granted") {
-        // 웹푸시 구독 시작
-        await initializePushSubscription();
+    try {
+      let key = vapidData;
+      if (!key) {
+        const { data: newKey } = await refetchVapidKey();
+        key = newKey;
+      }
+
+      if (!key) {
+        setLastMessage({
+          type: "error",
+          title: "VAPID 키 오류",
+          message: "VAPID 키를 가져올 수 없습니다. 잠시 후 다시 시도해 주세요.",
+        });
+        return;
+      }
+
+      const result = await requestNotificationPermissionAndSubscribe(
+        async () => key,
+        async (subscription, deviceId, options) => {
+          return await createSubscriptionMutation.mutateAsync({
+            subscription,
+            deviceId,
+            options: {
+              ...options,
+              isResubscribe: state.isResubscribe,
+              updateSettings: true,
+            },
+          });
+        }
+      );
+
+      if (result.success) {
+        const messageText = state.isResubscribe
+          ? "알림 구독이 다시 설정되었습니다."
+          : "중요한 농장 관리 알림을 받으실 수 있습니다.";
 
         setLastMessage({
           type: "success",
-          title: "알림 허용됨",
-          message: "중요한 농장 관리 알림을 받으실 수 있습니다.",
-        });
-      } else if (permission === "unsupported") {
-        setLastMessage({
-          type: "error",
-          title: "알림 미지원",
-          message: "현재 브라우저에서는 알림 기능을 지원하지 않습니다.",
+          title: state.isResubscribe ? "알림 재구독 완료" : "알림 허용됨",
+          message: result.message || messageText,
         });
       } else {
+        const messageType =
+          result.error === "PERMISSION_DENIED" ? "info" : "error";
         setLastMessage({
-          type: "error",
-          title: "알림 거부됨",
-          message: "언제든지 설정에서 알림을 활성화할 수 있습니다.",
+          type: messageType as "success" | "error" | "info",
+          title:
+            result.error === "PERMISSION_DENIED"
+              ? "브라우저 설정 필요"
+              : "오류 발생",
+          message: result.message || "알림 설정 중 오류가 발생했습니다.",
         });
       }
 
-      // 상태 업데이트 및 로컬스토리지에 타임스탬프 기록
-      const storageKey = getStorageKey(user.id);
+      // 상태 업데이트 및 로컬스토리지에 타임스탬프 기록 (통합)
+      const promptStorageKey = getPromptStorageKey(user.id);
       const safeLocalStorage = safeLocalStorageAccess();
-      safeLocalStorage.setItem(storageKey, Date.now().toString());
+      safeLocalStorage.setItem(promptStorageKey, Date.now().toString());
 
       setState((prev) => ({
         ...prev,
         hasAsked: true,
-        permission,
+        permission: result.success ? "granted" : "denied",
         showDialog: false,
+        isResubscribe: false,
       }));
     } catch (error) {
-      handleError(error, "알림 권한 요청");
+      const notificationError = getNotificationErrorMessage(error);
       setLastMessage({
         type: "error",
         title: "오류 발생",
-        message: "알림 설정 중 오류가 발생했습니다.",
+        message: notificationError.message,
       });
     }
   };
@@ -155,97 +291,32 @@ export function useNotificationPermission() {
   const handleDeny = () => {
     if (!user) return;
 
-    const storageKey = getStorageKey(user.id);
+    if (state.hasAsked && !state.isResubscribe) {
+      console.log("🚫 알림 권한 이미 처리됨 - 중복 실행 방지");
+      return;
+    }
+
+    console.log("✅ 알림 권한 거부 처리 시작");
+    const promptStorageKey = getPromptStorageKey(user.id);
     const safeLocalStorage = safeLocalStorageAccess();
-    safeLocalStorage.setItem(storageKey, Date.now().toString());
+    safeLocalStorage.setItem(promptStorageKey, Date.now().toString());
 
     setState((prev) => ({
       ...prev,
       hasAsked: true,
       showDialog: false,
+      isResubscribe: false,
     }));
+
+    const messageText = state.isResubscribe
+      ? "알림 재구독을 건너뛰었습니다. 설정 페이지에서 언제든지 다시 구독할 수 있습니다."
+      : "언제든지 설정 페이지에서 알림을 활성화할 수 있습니다.";
 
     setLastMessage({
       type: "success",
       title: "알림 설정 건너뜀",
-      message: "언제든지 설정 페이지에서 알림을 활성화할 수 있습니다.",
+      message: messageText,
     });
-  };
-
-  // 웹푸시 구독 초기화
-  const initializePushSubscription = async () => {
-    try {
-      // 강화된 브라우저 지원 확인
-      const supportCheck = checkPushSupport();
-      if (!supportCheck.supported) {
-        devLog.warn(
-          "웹푸시를 지원하지 않는 브라우저입니다.",
-          supportCheck.details
-        );
-        return;
-      }
-
-      // VAPID 키 가져오기
-      const { publicKey } = await apiClient("/api/push/vapid", {
-        method: "GET",
-        context: "VAPID 키 조회",
-        onError: (error, context) => {
-          handleError(error, context);
-        },
-      });
-      if (!publicKey) {
-        devLog.warn("VAPID 공개 키가 설정되지 않았습니다.");
-        return;
-      }
-
-      // Service Worker 등록
-      const registration = await navigator.serviceWorker.register(
-        "/push-sw.js"
-      );
-      await navigator.serviceWorker.ready;
-
-      // 푸시 구독 생성
-      const subscription = await registration.pushManager.subscribe({
-        userVisibleOnly: true,
-        applicationServerKey: urlBase64ToUint8Array(publicKey),
-      });
-
-      // 서버에 구독 정보 전송 (전체 구독)
-      await apiClient("/api/push/subscription", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          subscription: subscription.toJSON(),
-          // farmId 없음 = 전체 구독
-        }),
-        context: "푸시 구독 등록",
-        onError: (error, context) => {
-          handleError(error, context);
-        },
-      });
-
-      devLog.log("웹푸시 구독이 성공적으로 등록되었습니다.");
-    } catch (error) {
-      handleError(error, "웹푸시 구독 초기화");
-    }
-  };
-
-  // VAPID 키 변환 유틸리티
-  const urlBase64ToUint8Array = (base64String: string) => {
-    const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
-    const base64 = (base64String + padding)
-      .replace(/-/g, "+")
-      .replace(/_/g, "/");
-
-    const rawData = window.atob(base64);
-    const outputArray = new Uint8Array(rawData.length);
-
-    for (let i = 0; i < rawData.length; ++i) {
-      outputArray[i] = rawData.charCodeAt(i);
-    }
-    return outputArray;
   };
 
   // 다이얼로그 닫기
@@ -256,152 +327,15 @@ export function useNotificationPermission() {
     }));
   };
 
-  // 강제로 다이얼로그 표시 (디버깅/테스트용)
-  const showDialogForce = () => {
-    setState((prev) => ({
-      ...prev,
-      showDialog: true,
-    }));
-  };
-
-  // 로컬스토리지 초기화 (테스트용)
-  const resetPermissionState = () => {
-    if (!user) return;
-
-    const storageKey = getStorageKey(user.id);
-    const safeLocalStorage = safeLocalStorageAccess();
-    const safeNotification = safeNotificationAccess();
-    safeLocalStorage.removeItem(storageKey);
-
-    setState({
-      hasAsked: false,
-      permission: safeNotification.permission as
-        | NotificationPermission
-        | "unsupported",
-      showDialog: true,
-    });
-
-    devLog.log("알림 권한 상태가 초기화되었습니다.");
-  };
-
-  // 디버깅 정보 출력
-  const getDebugInfo = () => {
-    if (!user) return null;
-
-    const storageKey = getStorageKey(user.id);
-    const safeLocalStorage = safeLocalStorageAccess();
-    const safeNotification = safeNotificationAccess();
-    const lastAsked = safeLocalStorage.getItem(storageKey);
-    const sevenDaysAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
-    const canReAsk = !lastAsked || parseInt(lastAsked) < sevenDaysAgo;
-
-    const supportCheck = checkPushSupport();
-
-    return {
-      userId: user.id,
-      storageKey,
-      lastAsked: lastAsked
-        ? new Date(parseInt(lastAsked)).toLocaleString()
-        : "없음",
-      canReAsk,
-      daysUntilReAsk: lastAsked
-        ? Math.ceil(
-            (parseInt(lastAsked) + 7 * 24 * 60 * 60 * 1000 - Date.now()) /
-              (24 * 60 * 60 * 1000)
-          )
-        : 0,
-      currentPermission: safeNotification.permission,
-      notificationSupported: safeNotification.isSupported,
-      serviceWorkerSupported: "serviceWorker" in navigator,
-      pushManagerSupported: "PushManager" in window,
-      // PWA 관련 정보 추가
-      isPWA: supportCheck.details.isPWA,
-      displayMode: supportCheck.details.displayMode,
-      iosVersion: supportCheck.details.iosVersion,
-      pushSupported: supportCheck.supported,
-      state: state,
-    };
-  };
-
-  /**
-   * 브라우저 푸시 알림 지원 여부를 엄격하게 검사 (PWA 포함)
-   * @returns 지원 여부와 상세 정보
-   */
-  function checkPushSupport(): {
-    supported: boolean;
-    details: {
-      serviceWorker: boolean;
-      pushManager: boolean;
-      notification: boolean;
-      permissions: boolean;
-      userAgent: string;
-      isPWA: boolean;
-      displayMode: string;
-      iosVersion?: number;
-    };
-  } {
-    const userAgent = navigator.userAgent;
-    const isIOS = /iPad|iPhone|iPod/.test(userAgent);
-    const isSafari = /Safari/.test(userAgent) && !/Chrome/.test(userAgent);
-
-    // iOS Safari 버전 체크
-    let iosVersion: number | undefined;
-    if (isIOS && isSafari) {
-      const match = userAgent.match(/OS (\d+)_(\d+)_?(\d+)?/);
-      if (match) {
-        iosVersion = parseInt(match[1]) + parseInt(match[2]) / 10;
-      }
-    }
-
-    // PWA 모드 체크
-    const isPWA =
-      window.matchMedia("(display-mode: standalone)").matches ||
-      (window.navigator as any).standalone === true;
-
-    const displayMode = isPWA ? "standalone" : "browser";
-
-    const details = {
-      serviceWorker: "serviceWorker" in navigator,
-      pushManager: "PushManager" in window,
-      notification: "Notification" in window,
-      permissions: "permissions" in navigator,
-      userAgent: userAgent,
-      isPWA: isPWA,
-      displayMode: displayMode,
-      iosVersion: iosVersion,
-    };
-
-    // iOS Safari 16.4 미만은 웹푸시 미지원
-    if (isIOS && isSafari && iosVersion && iosVersion < 16.4) {
-      return {
-        supported: false,
-        details: {
-          ...details,
-        },
-      };
-    }
-
-    const supported =
-      details.serviceWorker &&
-      details.pushManager &&
-      details.notification &&
-      details.permissions;
-
-    return { supported, details };
-  }
-
   return {
     showDialog: state.showDialog,
     permission: state.permission,
     hasAsked: state.hasAsked,
+    isResubscribe: state.isResubscribe,
     handleAllow,
     handleDeny,
     closeDialog,
     lastMessage,
     clearLastMessage: () => setLastMessage(null),
-    // 디버깅/테스트용 함수들
-    showDialogForce,
-    resetPermissionState,
-    getDebugInfo,
   };
 }

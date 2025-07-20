@@ -20,12 +20,12 @@ import { useCommonToast } from "@/lib/utils/notification/toast-messages";
 import { devLog } from "@/lib/utils/logging/dev-logger";
 import { useAuth } from "@/components/providers/auth-provider";
 import { ErrorBoundary } from "@/components/error/error-boundary";
+import { ERROR_CONFIGS } from "@/lib/constants/error";
 import { Logo } from "@/components/common";
 import { getAuthErrorMessage } from "@/lib/utils/validation/validation";
 import { PageLoading } from "@/components/ui/loading";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { safariLoginRetry } from "@/lib/utils/browser/safari-debug";
 
 import {
   loginFormSchema,
@@ -39,6 +39,12 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
+import {
+  LABELS,
+  PLACEHOLDERS,
+  PAGE_HEADER,
+  BUTTONS,
+} from "@/lib/constants/auth";
 
 export default function LoginPage() {
   const [loading, setLoading] = useState(false);
@@ -64,56 +70,41 @@ export default function LoginPage() {
     },
   });
 
-  // 세션 만료로 인한 로그인 페이지 진입 시 브라우저 구독 정리
+  // 세션 만료 시 URL 파라미터 정리 (일반 웹서비스 방식: 구독은 유지)
   useEffect(() => {
-    const cleanupBrowserSubscriptions = async () => {
-      try {
-        // Service Worker 등록 확인
-        if ("serviceWorker" in navigator && "PushManager" in window) {
-          const registration = await navigator.serviceWorker.getRegistration();
-          if (registration) {
-            // 기존 구독 해제
-            const subscription =
-              await registration.pushManager.getSubscription();
-            if (subscription) {
-              await subscription.unsubscribe();
-              devLog.log("[LOGIN] Browser push subscription cleaned");
-            }
-          }
-        }
-      } catch (error) {
-        devLog.warn("[LOGIN] Failed to clean browser subscriptions:", error);
-      }
-    };
-
     // URL 파라미터로 세션 만료 여부 확인
     const urlParams = new URLSearchParams(window.location.search);
     const sessionExpired = urlParams.get("session_expired");
 
     if (sessionExpired === "true") {
-      cleanupBrowserSubscriptions();
-      // URL에서 파라미터 제거
+      devLog.log("[LOGIN] 세션 만료로 인한 로그인 페이지 진입 - 구독은 유지");
+
+      // URL에서 파라미터 제거 (구독 관련 처리는 하지 않음)
       const newUrl = new URL(window.location.href);
       newUrl.searchParams.delete("session_expired");
       window.history.replaceState({}, "", newUrl.toString());
     }
   }, []);
 
-  // 로딩 상태를 먼저 체크 (페이지 렌더링 전에)
+  // 로딩 상태별 적절한 텍스트 표시
   if (
     state.status === "loading" ||
     state.status === "initializing" ||
     redirecting
   ) {
+    let loadingText = "페이지를 불러오는 중...";
+
+    if (redirecting) {
+      loadingText = "대시보드로 이동 중...";
+    } else if (state.status === "initializing") {
+      loadingText = "시스템을 초기화하는 중...";
+    } else if (state.status === "loading") {
+      loadingText = "로그인 상태를 확인하는 중...";
+    }
+
     return (
       <PageLoading
-        text={
-          redirecting
-            ? "대시보드로 이동 중..."
-            : state.status === "initializing"
-            ? "인증 확인 중..."
-            : "자동 로그인 중..."
-        }
+        text={loadingText}
         subText="잠시만 기다려주세요"
         variant="gradient"
         fullScreen={true}
@@ -127,16 +118,14 @@ export default function LoginPage() {
     showInfo("로그인 시도 중", "잠시만 기다려주세요.");
 
     try {
-      // Safari에서 재시도 로직을 포함한 로그인 수행
-      const result = await safariLoginRetry(async () => {
-        return await signIn({
-          email: data.email,
-          password: data.password,
-        });
+      // Safari 재시도 로직 제거, signIn 직접 호출
+      const result = await signIn({
+        email: data.email,
+        password: data.password,
       });
 
       if (result.success) {
-        showSuccess("로그인 성공", "대시보드로 이동합니다.");
+        showSuccess("로그인 성공", result.message || "대시보드로 이동합니다.");
         // 리다이렉트는 useEffect에서 처리하므로 여기서는 제거
         // setRedirecting(true);
         // router.replace("/admin/dashboard");
@@ -155,8 +144,8 @@ export default function LoginPage() {
 
   return (
     <ErrorBoundary
-      title="로그인 페이지 오류"
-      description="로그인 처리 중 문제가 발생했습니다. 페이지를 새로고침하거나 잠시 후 다시 시도해주세요."
+      title={ERROR_CONFIGS.LOADING.title}
+      description={ERROR_CONFIGS.LOADING.description}
     >
       <div className="flex min-h-screen items-center justify-center bg-gradient-farm p-4">
         <motion.div
@@ -170,10 +159,10 @@ export default function LoginPage() {
               <div className="mx-auto mb-4 flex justify-center">
                 <Logo size="xl" />
               </div>
-              <CardTitle className="text-3xl">로그인</CardTitle>
-              <CardDescription>
-                농장 출입 관리 시스템에 로그인하세요
-              </CardDescription>
+              <CardTitle className="text-3xl">
+                {PAGE_HEADER.LOGIN_TITLE}
+              </CardTitle>
+              <CardDescription>{PAGE_HEADER.LOGIN_DESCRIPTION}</CardDescription>
             </CardHeader>
             <CardContent>
               <Form {...form}>
@@ -187,7 +176,7 @@ export default function LoginPage() {
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel className="text-sm text-gray-800">
-                          아이디(이메일) <span className="text-red-500">*</span>
+                          {LABELS.EMAIL} <span className="text-red-500">*</span>
                         </FormLabel>
                         <div className="relative">
                           <Mail className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -195,7 +184,7 @@ export default function LoginPage() {
                             <Input
                               {...field}
                               type="email"
-                              placeholder="name@example.com"
+                              placeholder={PLACEHOLDERS.EMAIL}
                               autoComplete="username"
                               className="h-12 pl-10 input-focus"
                               disabled={loading || redirecting}
@@ -212,7 +201,8 @@ export default function LoginPage() {
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel className="text-sm text-gray-800">
-                          비밀번호 <span className="text-red-500">*</span>
+                          {LABELS.PASSWORD}{" "}
+                          <span className="text-red-500">*</span>
                         </FormLabel>
                         <div className="relative">
                           <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -220,7 +210,7 @@ export default function LoginPage() {
                             <Input
                               {...field}
                               type="password"
-                              placeholder="비밀번호를 입력하세요"
+                              placeholder={PLACEHOLDERS.PASSWORD}
                               autoComplete="current-password"
                               className="h-12 pl-10 input-focus"
                               disabled={loading || redirecting}
@@ -242,10 +232,12 @@ export default function LoginPage() {
                     {loading || redirecting ? (
                       <>
                         <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        {redirecting ? "이동 중..." : "로그인 중..."}
+                        {redirecting
+                          ? BUTTONS.REDIRECTING
+                          : BUTTONS.LOGIN_LOADING}
                       </>
                     ) : (
-                      "로그인"
+                      BUTTONS.LOGIN_BUTTON
                     )}
                   </Button>
                 </form>
@@ -257,13 +249,13 @@ export default function LoginPage() {
                   href="/reset-password"
                   className="text-primary hover:underline"
                 >
-                  비밀번호를 잊으셨나요?
+                  {BUTTONS.FORGOT_PASSWORD}
                 </Link>
               </div>
               <div className="text-center text-sm">
-                계정이 없으신가요?{" "}
+                {BUTTONS.NO_ACCOUNT}{" "}
                 <Link href="/register" className="text-primary hover:underline">
-                  회원가입
+                  {BUTTONS.REGISTER_BUTTON}
                 </Link>
               </div>
             </CardFooter>

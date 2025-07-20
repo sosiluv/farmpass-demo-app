@@ -1,15 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
-import {
-  logVisitorDataAccess,
-  logApiError,
-} from "@/lib/utils/logging/system-log";
-import { debugLog } from "@/lib/utils/system/system-mode";
+import { createSystemLog } from "@/lib/utils/logging/system-log";
 import { devLog } from "@/lib/utils/logging/dev-logger";
 import {
   PerformanceMonitor,
   logApiPerformance,
   logDatabasePerformance,
+  logApiError,
 } from "@/lib/utils/logging/system-log";
 import { getClientIP, getUserAgent } from "@/lib/server/ip-helpers";
 import {
@@ -17,6 +13,8 @@ import {
   createRateLimitHeaders,
 } from "@/lib/utils/system/rate-limit";
 import { logSecurityError } from "@/lib/utils/logging/system-log";
+import { requireAuth } from "@/lib/server/auth-utils";
+import { prisma } from "@/lib/prisma";
 
 // 동적 렌더링 강제
 export const dynamic = "force-dynamic";
@@ -31,13 +29,6 @@ export async function GET(request: NextRequest) {
   const userAgent = getUserAgent(request);
 
   try {
-    devLog.log("🔍 [API] 전체 방문자 조회 요청 시작", {
-      includeAllFarms,
-      url: request.url,
-    });
-
-    await debugLog("전체 방문자 조회 요청", { includeAllFarms });
-
     // 🚦 방문자 조회 전용 Rate Limiting 체크
     // IP당 1분에 10회 방문자 조회 제한
     const rateLimitResult = visitorRegistrationRateLimiter.checkLimit(clientIP);
@@ -57,7 +48,10 @@ export async function GET(request: NextRequest) {
       // 429 Too Many Requests 응답 반환
       const response = NextResponse.json(
         {
-          error: "방문자 조회 요청이 너무 많습니다. 1분 후 다시 시도해주세요.",
+          success: false,
+          error: "RATE_LIMIT_EXCEEDED",
+          message:
+            "방문자 조회 요청이 너무 많습니다. 1분 후 다시 시도해주세요.",
           retryAfter: rateLimitResult.retryAfter,
         },
         { status: 429 }
@@ -72,29 +66,11 @@ export async function GET(request: NextRequest) {
       return response;
     }
 
-    // Supabase 클라이언트 생성
-    const supabase = await createClient();
-    devLog.log("🔍 [API] Supabase 클라이언트 생성 완료");
+    devLog.log("🔍 [API] Prisma 클라이언트 준비 완료");
 
-    // 사용자 인증 확인
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser();
-
-    devLog.log("🔍 [API] 인증 결과", {
-      hasUser: !!user,
-      userId: user?.id,
-      userEmail: user?.email,
-      authError: authError?.message,
-    });
-
-    if (authError || !user) {
-      devLog.error("❌ Authentication failed:", authError);
-      await debugLog("인증 실패", {
-        error: authError?.message || "No user found",
-      });
-
+    // 인증 확인
+    const authResult = await requireAuth(false);
+    if (!authResult.success || !authResult.user) {
       const duration = await monitor.finish();
       await logApiPerformance({
         endpoint: "/api/visitors",
@@ -104,90 +80,104 @@ export async function GET(request: NextRequest) {
         response_size: 0,
       });
 
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      return authResult.response!;
     }
 
-    // 사용자 프로필 조회하여 권한 확인
-    const { data: profile, error: profileError } = await supabase
-      .from("profiles")
-      .select("account_type")
-      .eq("id", user.id)
-      .single();
-
-    devLog.log("🔍 [API] 프로필 조회 결과", {
-      profileExists: !!profile,
-      accountType: profile?.account_type,
-      profileError: profileError?.message,
-    });
-
-    const isAdmin = profile?.account_type === "admin";
-
-    // 방문자 데이터 조회 쿼리
-    let visitorQuery = supabase
-      .from("visitor_entries")
-      .select(
-        `
-        *,
-        farms(
-          id,
-          farm_name,
-          farm_type,
-          farm_address,
-          owner_id
-        )
-      `
-      )
-      .order("visit_datetime", { ascending: false });
-
-    devLog.log("🔍 [API] 기본 쿼리 생성 완료");
+    const user = authResult.user;
+    const isAdmin = authResult.isAdmin || false;
 
     // 관리자가 아니거나 includeAllFarms가 false인 경우 권한 제한
+    let whereCondition: any = {};
     if (!isAdmin || !includeAllFarms) {
-      devLog.log("🔍 [API] 접근 권한 제한 적용", {
-        isAdmin,
-        includeAllFarms,
-        needsRestriction: !isAdmin || !includeAllFarms,
-      });
-
       // 사용자가 소유하거나 관리하는 농장의 방문자만 조회
-      const { data: userFarms } = await supabase
-        .from("farms")
-        .select("id")
-        .or(`owner_id.eq.${user.id},farm_members.user_id.eq.${user.id}`);
-
-      devLog.log("🔍 [API] 사용자 농장 조회 결과", {
-        farmCount: userFarms?.length || 0,
-        farms: userFarms?.map((f) => f.id) || [],
+      const userFarms = await prisma.farms.findMany({
+        where: {
+          OR: [
+            { owner_id: user.id },
+            {
+              farm_members: {
+                some: {
+                  user_id: user.id,
+                },
+              },
+            },
+          ],
+        },
+        select: {
+          id: true,
+        },
       });
 
       if (!userFarms || userFarms.length === 0) {
-        await debugLog("접근 가능한 농장이 없음", { userId: user.id });
-        devLog.log("🔍 [API] 접근 가능한 농장이 없음 - 빈 배열 반환");
-
         const duration = await monitor.finish();
         await logApiPerformance(
           {
             endpoint: "/api/visitors",
             method: "GET",
             duration_ms: duration,
-            status_code: 200,
-            response_size: JSON.stringify({ visitors: [] }).length,
+            status_code: 403,
+            response_size: 0,
           },
           user.id
         );
 
-        return NextResponse.json({ visitors: [] });
+        // 🔒 농장 소속이 없는 사용자는 완전 차단 (403 에러)
+        await createSystemLog(
+          "VISITOR_ACCESS_DENIED",
+          `방문자 데이터 접근 거부: 농장 소속이 없는 사용자 ${user.email}`,
+          "warn",
+          user.id,
+          "visitor",
+          undefined,
+          {
+            user_id: user.id,
+            user_email: user.email,
+            reason: "no_farm_access",
+            action: "visitor_list_access_denied",
+          },
+          user.email,
+          clientIP,
+          userAgent
+        );
+
+        return NextResponse.json(
+          {
+            success: false,
+            error: "NO_FARM_ACCESS",
+            message:
+              "방문자 기록에 접근할 권한이 없습니다. 농장을 등록하거나 농장 구성원으로 추가되어야 합니다.",
+          },
+          { status: 403 }
+        );
       }
 
-      const farmIds = userFarms.map((farm: any) => farm.id);
-      visitorQuery = visitorQuery.in("farm_id", farmIds);
+      const farmIds = userFarms.map((farm) => farm.id);
+      whereCondition.farm_id = {
+        in: farmIds,
+      };
       devLog.log("🔍 [API] 농장 ID 필터 적용", { farmIds });
     } else {
       devLog.log("🔍 [API] 관리자 전체 조회 모드");
     }
 
     const dbMonitor = new PerformanceMonitor("visitors_database_query");
-    const { data: visitorData, error: visitorError } = await visitorQuery;
+    const visitorData = await prisma.visitor_entries.findMany({
+      where: whereCondition,
+      include: {
+        farms: {
+          select: {
+            id: true,
+            farm_name: true,
+            farm_type: true,
+            farm_address: true,
+            owner_id: true,
+          },
+        },
+      },
+      orderBy: {
+        visit_datetime: "desc",
+      },
+    });
     const dbDuration = await dbMonitor.finish();
 
     await logDatabasePerformance(
@@ -202,55 +192,19 @@ export async function GET(request: NextRequest) {
 
     devLog.log("🔍 [API] 방문자 쿼리 실행 결과", {
       visitorCount: visitorData?.length || 0,
-      hasError: !!visitorError,
-      errorMessage: visitorError?.message,
       firstVisitor: visitorData?.[0] || null,
     });
 
-    if (visitorError) {
-      devLog.error("방문자 조회 오류:", visitorError);
-
-      const duration = await monitor.finish();
-      await logApiError(
-        "/api/visitors",
-        "GET",
-        visitorError instanceof Error
-          ? visitorError.message
-          : String(visitorError),
-        undefined,
-        {
-          ip: clientIP,
-          userAgent,
-        }
-      );
-      await logApiPerformance(
-        {
-          endpoint: "/api/visitors",
-          method: "GET",
-          duration_ms: duration,
-          status_code: 500,
-          response_size: 0,
-        },
-        user.id
-      );
-
-      return NextResponse.json(
-        { error: `쿼리 오류: ${visitorError.message}` },
-        { status: 500 }
-      );
-    }
-
-    await debugLog("방문자 데이터 조회 완료", {
-      count: visitorData?.length || 0,
-      userId: user.id,
-      isAdmin,
-    });
-
     // 시스템 로그 기록
-    await logVisitorDataAccess(
-      "LIST_VIEW",
+    await createSystemLog(
+      "VISITOR_DATA_ACCESS",
+      `방문자 데이터 접근: ${visitorData?.length || 0}건 조회 (${
+        includeAllFarms ? "전체 농장" : "소유 농장"
+      })`,
+      "info",
       user.id,
-      user.email,
+      "visitor",
+      undefined,
       {
         visitor_count: visitorData?.length || 0,
         access_scope: includeAllFarms ? "all_farms" : "own_farms",
@@ -259,11 +213,9 @@ export async function GET(request: NextRequest) {
           userAgent: userAgent,
         },
       },
-      {
-        ip: clientIP,
-        email: user.email,
-        userAgent: userAgent,
-      }
+      user.email,
+      clientIP,
+      userAgent
     );
 
     const duration = await monitor.finish();
@@ -289,10 +241,6 @@ export async function GET(request: NextRequest) {
     const duration = await monitor.finish();
     devLog.error("전체 방문자 조회 실패:", error);
 
-    await debugLog("전체 방문자 조회 실패", {
-      error: error instanceof Error ? error.message : "알 수 없는 오류",
-    });
-
     await logApiError(
       "/api/visitors",
       "GET",
@@ -312,7 +260,11 @@ export async function GET(request: NextRequest) {
     });
 
     return NextResponse.json(
-      { error: "방문자 데이터 조회에 실패했습니다" },
+      {
+        success: false,
+        error: "VISITOR_DATA_FETCH_FAILED",
+        message: "방문자 데이터 조회에 실패했습니다.",
+      },
       { status: 500 }
     );
   }
@@ -341,7 +293,9 @@ export async function POST(request: NextRequest) {
     // 429 Too Many Requests 응답 반환
     const response = NextResponse.json(
       {
-        error: "방문자 등록 요청이 너무 많습니다. 1분 후 다시 시도해주세요.",
+        success: false,
+        error: "RATE_LIMIT_EXCEEDED",
+        message: "방문자 등록 요청이 너무 많습니다. 1분 후 다시 시도해주세요.",
         retryAfter: rateLimitResult.retryAfter,
       },
       { status: 429 }
@@ -358,22 +312,29 @@ export async function POST(request: NextRequest) {
 
   // 기존 방문자 등록 로직...
   try {
-    const supabase = await createClient();
     const body = await request.json();
 
     // 방문자 데이터 검증 및 저장 로직
-    const { data, error } = await supabase
-      .from("visitors")
-      .insert([body])
-      .select()
-      .single();
+    const data = await prisma.visitor_entries.create({
+      data: body,
+    });
 
-    if (error) {
-      return NextResponse.json(
-        { error: "방문자 등록에 실패했습니다." },
-        { status: 400 }
-      );
-    }
+    // 방문자 등록 성공 로그 기록
+    await createSystemLog(
+      "VISITOR_REGISTRATION_SUCCESS",
+      "새로운 방문자가 등록되었습니다.",
+      "info",
+      undefined,
+      "visitor",
+      data.id,
+      {
+        visitor_id: data.id,
+        visitor_data: body,
+      },
+      undefined,
+      clientIP,
+      userAgent
+    );
 
     // 성공 응답에 Rate limit 헤더 추가
     const response = NextResponse.json(
@@ -392,8 +353,46 @@ export async function POST(request: NextRequest) {
     return response;
   } catch (error) {
     devLog.error("방문자 등록 API 오류:", error);
+
+    // 방문자 등록 실패 로그 기록
+    await createSystemLog(
+      "VISITOR_REGISTRATION_FAILED",
+      "방문자 등록에 실패했습니다.",
+      "error",
+      undefined,
+      "visitor",
+      undefined,
+      {
+        error: error instanceof Error ? error.message : String(error),
+        visitor_data: "request body parsing failed",
+      },
+      undefined,
+      clientIP,
+      userAgent
+    );
+
+    // 방문자 등록 예외 로그 기록
+    await createSystemLog(
+      "VISITOR_REGISTRATION_EXCEPTION",
+      "방문자 등록 중 예외가 발생했습니다.",
+      "error",
+      undefined,
+      "visitor",
+      undefined,
+      {
+        error: error instanceof Error ? error.message : String(error),
+      },
+      undefined,
+      clientIP,
+      userAgent
+    );
+
     return NextResponse.json(
-      { error: "서버 오류가 발생했습니다." },
+      {
+        success: false,
+        error: "VISITOR_REGISTRATION_SYSTEM_ERROR",
+        message: "방문자 등록 중 시스템 오류가 발생했습니다.",
+      },
       { status: 500 }
     );
   }

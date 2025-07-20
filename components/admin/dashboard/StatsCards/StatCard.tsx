@@ -9,6 +9,7 @@ import {
   ArrowUpRight,
   ArrowDownRight,
 } from "lucide-react";
+import { LABELS } from "@/lib/constants/dashboard";
 
 interface StatCardProps {
   title: string;
@@ -19,10 +20,10 @@ interface StatCardProps {
 }
 
 const iconMap = {
-  "총 방문자": Users,
-  "오늘 방문자": Calendar,
-  "이번 주 방문자": TrendingUp,
-  "소독 실시율": Shield,
+  [LABELS.TOTAL_VISITORS]: Users,
+  [LABELS.TODAY_VISITORS]: Calendar,
+  [LABELS.WEEKLY_VISITORS]: TrendingUp,
+  [LABELS.DISINFECTION_RATE]: Shield,
 };
 
 const variantStyles = {
@@ -93,7 +94,7 @@ export function StatCard({
 
           {/* 오른쪽: 트렌드 표시 */}
           {trend !== undefined && (
-            <div className="flex items-center gap-1 text-xs font-medium">
+            <div className="flex items-center gap-1 text-[10px] sm:text-xs font-medium">
               {typeof trend === "number" ? (
                 <>
                   {trend > 0 ? (
@@ -125,7 +126,7 @@ export function StatCard({
         <div className="mt-4">
           <div
             className={cn(
-              "text-2xl sm:text-3xl font-bold tracking-tight transition-colors duration-300",
+              "text-sm sm:text-lg md:text-xl lg:text-2xl font-bold tracking-tight transition-colors duration-300",
               valueColors[variant]
             )}
           >
@@ -135,10 +136,10 @@ export function StatCard({
 
         {/* 제목과 설명 */}
         <div className="mt-2">
-          <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100 transition-colors duration-300">
+          <h3 className="text-xs sm:text-sm md:text-base font-semibold text-slate-900 dark:text-slate-100 transition-colors duration-300">
             {title}
           </h3>
-          <p className="text-xs text-slate-600 dark:text-slate-400 mt-1 transition-colors duration-300">
+          <p className="text-[10px] sm:text-xs text-slate-600 dark:text-slate-400 mt-1 transition-colors duration-300">
             {description}
           </p>
         </div>

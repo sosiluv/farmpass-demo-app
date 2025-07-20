@@ -35,8 +35,8 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       success: true,
       message: force
-        ? "Cache cleared completely"
-        : "Cache invalidated successfully",
+        ? "캐시가 완전히 초기화되었습니다."
+        : "캐시가 성공적으로 무효화되었습니다.",
       cacheInfo,
     });
   } catch (error) {
@@ -55,7 +55,11 @@ export async function POST(request: NextRequest) {
     );
 
     return NextResponse.json(
-      { success: false, error: "Failed to invalidate cache" },
+      {
+        success: false,
+        error: "CACHE_INVALIDATE_FAILED",
+        message: "캐시 무효화에 실패했습니다.",
+      },
       { status: 500 }
     );
   }
@@ -88,7 +92,11 @@ export async function GET(request: NextRequest) {
     );
 
     return NextResponse.json(
-      { success: false, error: "Failed to get cache info" },
+      {
+        success: false,
+        error: "CACHE_INFO_FETCH_FAILED",
+        message: "캐시 정보 조회에 실패했습니다.",
+      },
       { status: 500 }
     );
   }

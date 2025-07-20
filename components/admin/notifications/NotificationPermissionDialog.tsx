@@ -14,6 +14,7 @@ import { Badge } from "@/components/ui/badge";
 import { Bell, Shield, Users, Activity, CheckCircle, X } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { devLog } from "@/lib/utils/logging/dev-logger";
+import { BUTTONS, LABELS } from "@/lib/constants/notifications";
 
 interface NotificationPermissionDialogProps {
   open: boolean;
@@ -21,6 +22,7 @@ interface NotificationPermissionDialogProps {
   onAllow: () => Promise<void>;
   onDeny: () => void;
   farmCount?: number;
+  isResubscribe?: boolean; // 재구독 여부
 }
 
 export default function NotificationPermissionDialog({
@@ -29,6 +31,7 @@ export default function NotificationPermissionDialog({
   onAllow,
   onDeny,
   farmCount = 0,
+  isResubscribe = false, // 기본값 false
 }: NotificationPermissionDialogProps) {
   const [isAllowing, setIsAllowing] = useState(false);
 
@@ -37,27 +40,33 @@ export default function NotificationPermissionDialog({
     () => [
       {
         icon: Users,
-        title: "방문자 알림",
-        description: "새로운 방문자 등록 시 즉시 알림",
+        title: LABELS.VISITOR_NOTIFICATION,
+        description: isResubscribe
+          ? LABELS.VISITOR_NOTIFICATION_RESUBSCRIBE
+          : LABELS.VISITOR_NOTIFICATION_DESC,
         color: "text-blue-600",
         bgColor: "bg-blue-50",
       },
       {
         icon: Activity,
-        title: "실시간 현황",
-        description: "농장 활동 및 중요 이벤트 알림",
+        title: LABELS.REAL_TIME_STATUS,
+        description: isResubscribe
+          ? LABELS.REAL_TIME_STATUS_RESUBSCRIBE
+          : LABELS.REAL_TIME_STATUS_DESC,
         color: "text-green-600",
         bgColor: "bg-green-50",
       },
       {
         icon: Shield,
-        title: "보안 알림",
-        description: "계정 보안 및 시스템 알림",
+        title: LABELS.SECURITY_NOTIFICATION,
+        description: isResubscribe
+          ? LABELS.SECURITY_NOTIFICATION_RESUBSCRIBE
+          : LABELS.SECURITY_NOTIFICATION_DESC,
         color: "text-orange-600",
         bgColor: "bg-orange-50",
       },
     ],
-    []
+    [isResubscribe] // isResubscribe 의존성 추가
   );
 
   const handleAllow = async () => {
@@ -97,15 +106,22 @@ export default function NotificationPermissionDialog({
             </motion.div>
 
             <DialogTitle className="text-xl sm:text-2xl font-bold text-gray-900">
-              알림을 허용하시겠어요?
+              {isResubscribe
+                ? LABELS.RESUBSCRIBE_NOTIFICATIONS
+                : LABELS.ALLOW_NOTIFICATIONS}
             </DialogTitle>
 
             <DialogDescription className="text-sm sm:text-base text-gray-600 mt-1.5 sm:mt-2">
-              농장 관리에 필요한 중요한 알림을 놓치지 마세요
+              {isResubscribe
+                ? LABELS.RESUBSCRIBE_DESCRIPTION
+                : LABELS.ALLOW_DESCRIPTION}
               {farmCount > 0 && (
                 <span className="flex items-center justify-center gap-2 mt-1.5 sm:mt-2">
                   <Badge variant="secondary" className="text-xs">
-                    {farmCount}개 농장 관리 중
+                    {LABELS.FARM_COUNT_MANAGING.replace(
+                      "{count}",
+                      farmCount.toString()
+                    )}
                   </Badge>
                 </span>
               )}
@@ -151,8 +167,9 @@ export default function NotificationPermissionDialog({
             >
               <Shield className="h-4 w-4 text-gray-500 shrink-0" />
               <p className="text-xs text-gray-600">
-                알림은 중요한 농장 관리 정보만 발송되며, 언제든지 설정에서
-                변경할 수 있습니다.
+                {isResubscribe
+                  ? LABELS.SECURITY_INFO_RESUBSCRIBE
+                  : LABELS.SECURITY_INFO}
               </p>
             </motion.div>
 
@@ -176,12 +193,14 @@ export default function NotificationPermissionDialog({
                     >
                       <Bell className="h-4 w-4" />
                     </motion.div>
-                    알림 설정 중...
+                    {BUTTONS.SETTING_NOTIFICATIONS}
                   </>
                 ) : (
                   <>
                     <CheckCircle className="mr-2 h-4 w-4" />
-                    알림 허용하기
+                    {isResubscribe
+                      ? BUTTONS.RESUBSCRIBE_BUTTON
+                      : BUTTONS.ALLOW_NOTIFICATIONS_BUTTON}
                   </>
                 )}
               </Button>
@@ -193,7 +212,9 @@ export default function NotificationPermissionDialog({
                 className="w-full h-9 sm:h-10 text-sm text-gray-600 hover:text-gray-800 hover:bg-gray-100"
               >
                 <X className="mr-2 h-4 w-4" />
-                나중에 설정하기
+                {isResubscribe
+                  ? BUTTONS.LATER_SUBSCRIBE
+                  : BUTTONS.LATER_SETTINGS}
               </Button>
             </DialogFooter>
           </div>

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { LABELS } from "@/lib/constants/common";
 
 interface TurnstileProps {
   siteKey: string;
@@ -121,7 +122,7 @@ export function Turnstile({
             onExpire?.();
           },
           "error-callback": () => {
-            const errorMsg = "캡차 인증에 실패했습니다.";
+            const errorMsg = LABELS.TURNSTILE_ERROR_MESSAGE;
             if (isDev) console.error("Turnstile error callback triggered");
 
             onError?.(errorMsg);
@@ -130,7 +131,7 @@ export function Turnstile({
         widgetIdRef.current = widgetId;
         setIsLoading(false);
       } catch (error) {
-        const errorMsg = "캡차 로드에 실패했습니다.";
+        const errorMsg = LABELS.TURNSTILE_LOAD_ERROR;
         if (isDev) console.error("Turnstile render error:", error);
         setIsLoading(false);
         onError?.(errorMsg);
@@ -145,7 +146,9 @@ export function Turnstile({
       <div ref={containerRef} />
       {isLoading && (
         <div className="flex justify-center items-center py-4">
-          <div className="text-sm text-gray-500">캡차 로딩 중...</div>
+          <div className="text-sm text-gray-500">
+            {LABELS.TURNSTILE_LOADING}
+          </div>
         </div>
       )}
     </div>

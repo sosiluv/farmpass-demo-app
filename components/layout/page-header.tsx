@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/breadcrumb";
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
+import { LABELS } from "@/lib/constants/common";
 
 interface BreadcrumbItem {
   label: string;
@@ -114,7 +115,7 @@ export function PageHeader({
                   >
                     <Home className="h-3 w-3 sm:h-4 sm:w-4 transition-all duration-300 group-hover:scale-110 group-hover:text-primary" />
                     <span className="hidden sm:inline font-medium">
-                      대시보드
+                      {LABELS.PAGE_HEADER_DASHBOARD}
                     </span>
                   </Link>
                 </BreadcrumbLink>

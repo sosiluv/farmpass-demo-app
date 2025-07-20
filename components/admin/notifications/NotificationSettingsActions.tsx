@@ -1,75 +1,88 @@
-import { useState, useEffect } from "react";
+import { useState, useCallback, useMemo } from "react";
 import { Button } from "@/components/ui/button";
-import { useNotificationSettingsStore } from "@/store/use-notification-settings-store";
+import { useNotificationSettingsQuery } from "@/lib/hooks/query/use-notification-settings-query";
 import { useCommonToast } from "@/lib/utils/notification/toast-messages";
-import { apiClient } from "@/lib/utils/data";
-import { handleError } from "@/lib/utils/error";
+import { useNotificationMutations } from "@/lib/hooks/query/use-notification-mutations";
+import { getNotificationErrorMessage } from "@/lib/utils/validation/validation";
 import { Save, Loader2 } from "lucide-react";
+import type { NotificationSettings } from "@/lib/types/notification";
+import { BUTTONS, LABELS } from "@/lib/constants/notifications";
 
-export function NotificationSettingsActions() {
-  const [loading, setLoading] = useState(false);
-  const [justSaved, setJustSaved] = useState(false);
+interface NotificationSettingsActionsProps {
+  hasUnsavedChanges?: boolean;
+  onSaveComplete?: () => void;
+  currentSettings?: NotificationSettings | null;
+}
 
-  const { unsavedSettings, hasUnsavedChanges, setSettings } =
-    useNotificationSettingsStore();
+export function NotificationSettingsActions({
+  hasUnsavedChanges = false,
+  onSaveComplete,
+  currentSettings,
+}: NotificationSettingsActionsProps) {
+  const [saving, setSaving] = useState(false);
+  const { data: settings } = useNotificationSettingsQuery();
   const { showInfo, showError, showSuccess } = useCommonToast();
+  const { saveSettings } = useNotificationMutations();
 
-  useEffect(() => {
-    if (hasUnsavedChanges() && justSaved) {
-      setJustSaved(false);
-    }
-  }, [unsavedSettings, hasUnsavedChanges, justSaved]);
+  // 저장할 설정 결정 (currentSettings가 있으면 사용, 없으면 settings 사용)
+  const settingsToSave = currentSettings || settings;
 
-  const handleSave = async () => {
+  // 저장 핸들러
+  const handleSave = useCallback(async () => {
+    if (!settingsToSave || saving) return;
+
+    setSaving(true);
     showInfo("알림 설정 저장 시작", "알림 설정을 저장하는 중입니다...");
-    setLoading(true);
-    try {
-      const savedSettings = await apiClient("/api/notifications/settings", {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(unsavedSettings),
-        context: "알림 설정 저장",
-        onError: (error, context) => {
-          handleError(error, context);
-          showError(
-            "알림 설정 저장 실패",
-            "알림 설정을 저장하는 중 오류가 발생했습니다"
-          );
-        },
-      });
 
-      setSettings(savedSettings);
-      setJustSaved(true);
+    try {
+      const result = await saveSettings.mutateAsync(settingsToSave);
       showSuccess(
         "알림 설정 저장 완료",
-        "알림 설정이 성공적으로 저장되었습니다."
+        result.message || "알림 설정이 성공적으로 저장되었습니다."
       );
-      // 필요하다면 캐시 무효화 로직 추가
-    } catch (error) {
-      // 에러는 이미 onError에서 처리됨
-    } finally {
-      setLoading(false);
-    }
-  };
 
-  const isDisabled = !hasUnsavedChanges() || loading || justSaved;
+      // 저장 완료 후 상태 초기화
+      if (onSaveComplete) {
+        onSaveComplete();
+      }
+    } catch (error) {
+      console.error("알림 설정 저장 오류:", error);
+      const notificationError = getNotificationErrorMessage(error);
+      showError("알림 설정 저장 실패", notificationError.message);
+    } finally {
+      setSaving(false);
+    }
+  }, [
+    settingsToSave,
+    saving,
+    saveSettings,
+    showInfo,
+    showSuccess,
+    showError,
+    onSaveComplete,
+  ]);
+
+  // 버튼 비활성화 상태
+  const isDisabled = useMemo(() => {
+    return !settingsToSave || saving || !hasUnsavedChanges;
+  }, [settingsToSave, saving, hasUnsavedChanges]);
 
   return (
-    <div className="flex justify-end mt-6">
+    <div className="flex justify-end space-x-2">
       <Button
         onClick={handleSave}
         disabled={isDisabled}
-        className="flex items-center"
+        className="min-w-[100px]"
       >
-        {loading ? (
+        {saving ? (
           <>
-            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-            저장 중...
+            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            {BUTTONS.SAVING}
           </>
         ) : (
           <>
-            <Save className="w-4 h-4 mr-2" />
-            설정 저장
+            <Save className="mr-2 h-4 w-4" />
+            {BUTTONS.SAVE_SETTINGS}
           </>
         )}
       </Button>

@@ -1,11 +1,9 @@
 import { downloadAdvancedCSV } from "@/lib/utils/data/csv-unified";
 import { getRegionFromAddress } from "@/lib/utils/system/region";
-import {
-  formatDateTime,
-  getKSTDateTimeForFileName,
-} from "@/lib/utils/datetime/date";
+import { formatDateTime } from "@/lib/utils/datetime/date";
 import type { FarmsExportOptions } from "../exports";
 import type { ExtendedFarm } from "./types";
+import { LABELS } from "@/lib/constants/management";
 
 interface FarmsExportManagerProps {
   farms: ExtendedFarm[];
@@ -44,28 +42,30 @@ export function FarmsExportManager({
       const row: Record<string, any> = {};
 
       if (options.includeBasic) {
-        row["농장명"] = farm.farm_name || "-";
-        row["농장유형"] = farm.farm_type || "-";
-        row["등록일"] = formatDateTime(farm.created_at);
+        row[LABELS.FARM_NAME_CSV] = farm.farm_name || LABELS.NO_DATA_CSV;
+        row[LABELS.FARM_TYPE_CSV] = farm.farm_type || LABELS.NO_DATA_CSV;
+        row[LABELS.REGISTRATION_DATE_CSV] = formatDateTime(farm.created_at);
       }
 
       if (options.includeContact) {
-        row["농장주소"] = farm.farm_address || "-";
-        row["담당자"] = farm.owner_name || "-";
+        row[LABELS.FARM_ADDRESS_CSV] = farm.farm_address || LABELS.NO_DATA_CSV;
+        row[LABELS.MANAGER_CSV] = farm.owner_name || LABELS.NO_DATA_CSV;
       }
 
       if (options.includeMembers) {
-        row["구성원수"] = farm.member_count || 0;
+        row[LABELS.MEMBER_COUNT] = farm.member_count || 0;
       }
 
       if (options.includeStats) {
-        row["방문자수"] = farm.visitor_count || 0;
-        row["상태"] = farm.is_active ? "활성" : "비활성";
+        row[LABELS.VISITOR_COUNT] = farm.visitor_count || 0;
+        row[LABELS.STATUS_CSV] = farm.is_active
+          ? LABELS.ACTIVE_CSV
+          : LABELS.INACTIVE_CSV;
       }
 
       if (options.includeLocation) {
-        row["지역"] = getRegionFromAddress(farm.farm_address || "");
-        row["상세주소"] = farm.farm_address || "-";
+        row[LABELS.REGION] = getRegionFromAddress(farm.farm_address || "");
+        row[LABELS.DETAILED_ADDRESS] = farm.farm_address || LABELS.NO_DATA_CSV;
       }
 
       return row;

@@ -1,16 +1,19 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { logVisitorDataAccess } from "@/lib/utils/logging/system-log";
-import { debugLog } from "@/lib/utils/system/system-mode";
+import { createSystemLog } from "@/lib/utils/logging/system-log";
 import { v4 as uuidv4 } from "uuid";
 import { cookies } from "next/headers";
-import { getSystemSettings } from "@/lib/cache/system-settings-cache";
+import {
+  getSystemSettings,
+  invalidateSystemSettingsCache,
+} from "@/lib/cache/system-settings-cache";
 import {
   processVisitTemplate,
   createVisitTemplateData,
 } from "@/lib/utils/notification/notification-template";
 import { devLog } from "@/lib/utils/logging/dev-logger";
 import { getClientIP, getUserAgent } from "@/lib/server/ip-helpers";
+import { sendSupabaseBroadcast } from "@/lib/supabase/broadcast";
 
 interface VisitorData {
   fullName: string;
@@ -40,7 +43,8 @@ async function sendVisitorNotificationToFarmMembers(
   visitDateTime: Date = new Date()
 ) {
   try {
-    // 시스템 설정에서 방문 알림 템플릿 가져오기
+    // 시스템 설정에서 방문 알림 템플릿 가져오기 (캐시 무효화 후 조회)
+    invalidateSystemSettingsCache();
     const settings = await getSystemSettings();
 
     // 템플릿 데이터 생성
@@ -135,21 +139,21 @@ export async function POST(
   try {
     const requestData = await request.json();
     if (!requestData || typeof requestData !== "object") {
-      throw new Error("Invalid request data");
+      return NextResponse.json(
+        {
+          success: false,
+          error: "INVALID_REQUEST_DATA",
+          message: "방문자 정보가 올바르지 않습니다.",
+        },
+        { status: 400 }
+      );
     }
     visitorData = requestData as VisitorData;
     const cookieStore = cookies();
 
-    await debugLog("방문자 등록 요청 시작", {
-      farmId,
-      visitorName: visitorData.fullName,
-    });
-
-    // 시스템 설정 조회 (캐시 사용)
+    // 시스템 설정 조회 (캐시 무효화 후 조회)
+    invalidateSystemSettingsCache();
     const settings = await getSystemSettings();
-    await debugLog("시스템 설정 로드 완료", {
-      reVisitAllowInterval: settings.reVisitAllowInterval,
-    });
 
     // 기존 세션 토큰 확인
     const sessionToken = cookieStore.get("visitor_session")?.value;
@@ -190,16 +194,20 @@ export async function POST(
     }
 
     // 재방문 허용 간격(시간)을 밀리초로 변환
-    const sessionDuration = settings.reVisitAllowInterval * 60 * 60 * 1000;
+    // const sessionDuration = settings.reVisitAllowInterval * 60 * 60 * 1000;
 
     // 새로운 세션 토큰 생성
     const newSessionToken = uuidv4();
-    // 세션 토큰을 쿠키에 저장 (재방문 허용 간격만큼 유효)
-    cookies().set("visitor_session", newSessionToken, {
-      expires: new Date(Date.now() + sessionDuration),
+
+    // 세션 토큰을 쿠키에 저장
+    // 폼 자동완성을 위해 30일 고정으로 설정
+    const cookieExpiresMs = 30 * 24 * 60 * 60 * 1000; // 30일
+
+    cookieStore.set("visitor_session", newSessionToken, {
+      expires: new Date(Date.now() + cookieExpiresMs),
       path: "/",
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
+      httpOnly: false,
+      secure: false,
       sameSite: "lax",
     });
 
@@ -247,9 +255,12 @@ export async function POST(
     });
     if (todayCount >= settings.maxVisitorsPerDay) {
       // 일일 방문자 수 초과 로그
-      await logVisitorDataAccess(
-        "DAILY_LIMIT_EXCEEDED",
+      await createSystemLog(
+        "VISITOR_DAILY_LIMIT_EXCEEDED",
+        `일일 방문자 수 초과: ${todayCount}/${settings.maxVisitorsPerDay}명 (농장: ${farm.farm_name}, 방문자: ${visitorData.fullName})`,
+        "warn",
         undefined,
+        "visitor",
         undefined,
         {
           farm_id: farmId,
@@ -260,10 +271,9 @@ export async function POST(
           access_scope: "single_farm",
           status: "failed",
         },
-        {
-          ip: clientIP,
-          userAgent: userAgent,
-        }
+        undefined,
+        clientIP,
+        userAgent
       );
       return NextResponse.json(
         {
@@ -274,7 +284,7 @@ export async function POST(
       );
     }
 
-    // 방문자 데이터 저장
+    // 방문자 데이터 저장 (Prisma 사용하되 실시간 위해 BroadcastChannel 활용)
     const visitor = await prisma.visitor_entries.create({
       data: {
         farm_id: farmId,
@@ -296,60 +306,100 @@ export async function POST(
       },
     });
 
+    console.log("🎉 [VISITOR-API] 방문자 등록 완료:", visitor);
+    devLog.log("🎉 [VISITOR-API] 방문자 등록 완료:", visitor);
+
+    // 🔥 실시간 업데이트를 위한 Supabase Broadcast 강제 발송
+    await sendSupabaseBroadcast({
+      channel: "visitor_updates",
+      event: "visitor_inserted",
+      payload: {
+        eventType: "INSERT",
+        new: visitor,
+        old: null,
+        table: "visitor_entries",
+        schema: "public",
+      },
+    });
+
     // 방문자 등록 성공 로그 생성
-    await logVisitorDataAccess(
-      "CREATED",
+    await createSystemLog(
+      "VISITOR_CREATED",
+      `방문자 등록: ${String(visitor.visitor_name)} (농장: ${
+        farm.farm_name
+      }, 방문자 ID: ${String(visitor.id)})`,
+      "info",
       undefined,
-      visitor.registered_by || undefined,
+      "visitor",
+      String(visitor.id),
       {
         farm_id: farmId,
         farm_name: farm.farm_name,
-        visitor_id: visitor.id,
-        visitor_name: visitor.visitor_name,
+        visitor_id: String(visitor.id),
+        visitor_name: String(visitor.visitor_name),
         access_scope: "single_farm",
         status: "success",
         metadata: {
-          visitor_phone: visitor.visitor_phone,
-          visit_purpose: visitor.visitor_purpose,
+          visitor_phone: String(visitor.visitor_phone || ""),
+          visit_purpose: String(visitor.visitor_purpose || ""),
           has_photo: !!visitor.profile_photo_url,
           has_vehicle: !!visitor.vehicle_number,
-          disinfection_check: visitor.disinfection_check,
-          consent_given: visitor.consent_given,
+          disinfection_check: Boolean(visitor.disinfection_check) || false,
+          consent_given: Boolean(visitor.consent_given) || false,
           is_new_registration: true,
         },
       },
-      {
-        ip: clientIP,
-        userAgent: userAgent,
-      }
+      undefined,
+      clientIP,
+      userAgent
     );
 
     // 농장 멤버들에게 푸시 알림 발송 (비동기로 처리하여 응답 속도에 영향 주지 않음)
     sendVisitorNotificationToFarmMembers(
       farmId,
       {
-        visitor_name: visitor.visitor_name,
-        visitor_phone: visitor.visitor_phone || undefined,
-        visitor_purpose: visitor.visitor_purpose || undefined,
-        vehicle_number: visitor.vehicle_number || undefined,
-        disinfection_check: visitor.disinfection_check || false,
+        visitor_name: String(visitor.visitor_name),
+        visitor_phone: visitor.visitor_phone
+          ? String(visitor.visitor_phone)
+          : undefined,
+        visitor_purpose: visitor.visitor_purpose
+          ? String(visitor.visitor_purpose)
+          : undefined,
+        vehicle_number: visitor.vehicle_number
+          ? String(visitor.vehicle_number)
+          : undefined,
+        disinfection_check: Boolean(visitor.disinfection_check) || false,
       },
       farm.farm_name,
-      visitor.visit_datetime
+      new Date(String(visitor.visit_datetime))
     );
 
-    return NextResponse.json(visitor, {
-      headers: {
-        "Cache-Control": "no-store",
+    // 응답 생성 및 쿠키 설정
+    return NextResponse.json(
+      {
+        success: true,
+        message: "방문자 등록이 완료되었습니다.",
+        visitor,
       },
-    });
+      {
+        status: 201,
+        headers: {
+          "Cache-Control": "no-store",
+        },
+      }
+    );
   } catch (error) {
     devLog.error("Error creating visitor:", error);
 
     // 방문자 등록 실패 로그 생성
-    await logVisitorDataAccess(
-      "CREATION_FAILED",
+    await createSystemLog(
+      "VISITOR_CREATION_FAILED",
+      `방문자 등록 실패: ${visitorData?.fullName || "알 수 없음"} - ${
+        error instanceof Error ? error.message : String(error)
+      } (농장 ID: ${farmId})`,
+      "error",
       undefined,
+      "visitor",
       undefined,
       {
         farm_id: farmId,
@@ -362,16 +412,16 @@ export async function POST(
           is_new_registration: true,
         },
       },
-      {
-        ip: clientIP,
-        userAgent: userAgent,
-      }
+      undefined,
+      clientIP,
+      userAgent
     );
 
     return NextResponse.json(
       {
+        success: false,
+        error: "VISITOR_CREATE_ERROR",
         message: "방문자 등록에 실패했습니다. 잠시 후 다시 시도해주세요.",
-        error: error instanceof Error ? error.message : "Unknown error",
       },
       { status: 500 }
     );
@@ -411,8 +461,33 @@ export async function GET(
     });
   } catch (error) {
     devLog.error("Error fetching visitors:", error);
+
+    // 방문자 조회 실패 로그 기록
+    await createSystemLog(
+      "VISITOR_FETCH_FAILED",
+      `방문자 조회 실패: ${
+        error instanceof Error ? error.message : String(error)
+      } (농장 ID: ${params.farmId})`,
+      "error",
+      undefined,
+      "visitor",
+      undefined,
+      {
+        farm_id: params.farmId,
+        error: error instanceof Error ? error.message : String(error),
+        action: "visitor_list_fetch",
+      },
+      undefined,
+      clientIP,
+      userAgent
+    );
+
     return NextResponse.json(
-      { error: "Failed to fetch visitors" },
+      {
+        success: false,
+        error: "VISITOR_FETCH_ERROR",
+        message: "방문자 정보 조회 중 오류가 발생했습니다.",
+      },
       { status: 500 }
     );
   }

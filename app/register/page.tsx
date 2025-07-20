@@ -1,7 +1,7 @@
 "use client";
 
 import type React from "react";
-import { useState, useEffect, useCallback, useMemo, memo } from "react";
+import { useState, useCallback, useMemo, memo } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useForm } from "react-hook-form";
@@ -26,15 +26,16 @@ import {
 } from "@/components/ui/form";
 import { Mail, User, Lock, Phone } from "lucide-react";
 import { motion } from "framer-motion";
-import { supabase } from "@/lib/supabase/client";
 import { useCommonToast } from "@/lib/utils/notification/toast-messages";
+import { formatPhone } from "@/lib/utils/validation/validation";
 import { devLog } from "@/lib/utils/logging/dev-logger";
 import { ErrorBoundary } from "@/components/error/error-boundary";
-import { apiClient } from "@/lib/utils/data";
+import { ERROR_CONFIGS } from "@/lib/constants/error";
+import { usePasswordRules } from "@/lib/utils/validation/usePasswordRules";
+import { apiClient } from "@/lib/utils/data/api-client";
 import {
   checkEmailDuplicate,
-  getRegistrationErrorMessage,
-  getPasswordRules,
+  getAuthErrorMessage,
 } from "@/lib/utils/validation";
 import {
   createRegistrationFormSchema,
@@ -44,6 +45,12 @@ import {
 import { PasswordStrength } from "@/components/ui/password-strength";
 import { Logo, Turnstile } from "@/components/common";
 import { Loading } from "@/components/ui/loading";
+import {
+  BUTTONS,
+  LABELS,
+  PLACEHOLDERS,
+  PAGE_HEADER,
+} from "@/lib/constants/auth";
 
 // 메모이제이션된 Turnstile 섹션 컴포넌트
 const TurnstileSection = memo(
@@ -60,7 +67,7 @@ const TurnstileSection = memo(
   }) => (
     <div className="space-y-2">
       <label className="text-sm text-gray-800">
-        캡차 인증 <span className="text-red-500">*</span>
+        {LABELS.CAPTCHA_LABEL} <span className="text-red-500">*</span>
       </label>
       <Turnstile
         siteKey={process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY || ""}
@@ -95,7 +102,7 @@ const EmailField = memo(
   }) => (
     <FormItem>
       <FormLabel className="text-sm text-gray-800">
-        이메일 <span className="text-red-500">*</span>
+        {LABELS.EMAIL} <span className="text-red-500">*</span>
       </FormLabel>
       <div className="relative">
         <Mail className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -103,7 +110,7 @@ const EmailField = memo(
           <Input
             {...field}
             type="email"
-            placeholder="name@example.com"
+            placeholder={PLACEHOLDERS.EMAIL}
             onBlur={(e) => {
               field.onBlur();
               onBlur();
@@ -136,7 +143,7 @@ const NameField = memo(
   ({ field, loading }: { field: any; loading: boolean }) => (
     <FormItem>
       <FormLabel className="text-sm text-gray-800">
-        이름 <span className="text-red-500">*</span>
+        {LABELS.NAME} <span className="text-red-500">*</span>
       </FormLabel>
       <div className="relative">
         <User className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -144,7 +151,7 @@ const NameField = memo(
           <Input
             {...field}
             type="text"
-            placeholder="홍길동"
+            placeholder={PLACEHOLDERS.NAME}
             autoComplete="name"
             className="h-12 pl-10 input-focus"
             disabled={loading}
@@ -163,7 +170,7 @@ const PasswordField = memo(
   ({ field, loading }: { field: any; loading: boolean }) => (
     <FormItem>
       <FormLabel className="text-sm text-gray-800">
-        비밀번호 <span className="text-red-500">*</span>
+        {LABELS.PASSWORD} <span className="text-red-500">*</span>
       </FormLabel>
       <div className="relative">
         <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -171,7 +178,7 @@ const PasswordField = memo(
           <Input
             {...field}
             type="password"
-            placeholder="비밀번호를 입력하세요"
+            placeholder={PLACEHOLDERS.PASSWORD}
             autoComplete="new-password"
             className="h-12 pl-10 input-focus"
             disabled={loading}
@@ -191,7 +198,7 @@ const ConfirmPasswordField = memo(
   ({ field, loading }: { field: any; loading: boolean }) => (
     <FormItem>
       <FormLabel className="text-sm text-gray-800">
-        비밀번호 확인 <span className="text-red-500">*</span>
+        {LABELS.CONFIRM_PASSWORD} <span className="text-red-500">*</span>
       </FormLabel>
       <div className="relative">
         <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -199,7 +206,7 @@ const ConfirmPasswordField = memo(
           <Input
             {...field}
             type="password"
-            placeholder="비밀번호를 다시 입력하세요"
+            placeholder={PLACEHOLDERS.CONFIRM_PASSWORD}
             autoComplete="new-password"
             className="h-12 pl-10 input-focus"
             disabled={loading}
@@ -218,7 +225,7 @@ const PhoneField = memo(
   ({ field, loading }: { field: any; loading: boolean }) => (
     <FormItem>
       <FormLabel className="text-sm text-gray-800">
-        휴대폰 번호 <span className="text-red-500">*</span>
+        {LABELS.PHONE} <span className="text-red-500">*</span>
       </FormLabel>
       <div className="relative">
         <Phone className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -226,9 +233,14 @@ const PhoneField = memo(
           <Input
             {...field}
             type="tel"
-            placeholder="010-0000-0000"
+            placeholder={PLACEHOLDERS.PHONE}
             className="h-12 pl-10 input-focus"
             disabled={loading}
+            onChange={(e) => {
+              const formattedPhone = formatPhone(e.target.value);
+              field.onChange(formattedPhone);
+            }}
+            maxLength={13}
           />
         </FormControl>
       </div>
@@ -242,19 +254,24 @@ PhoneField.displayName = "PhoneField";
 // 메모이제이션된 회원가입 버튼 컴포넌트
 const RegisterButton = memo(
   ({ loading, disabled }: { loading: boolean; disabled: boolean }) => (
-    <Button type="submit" className="h-12 w-full" disabled={disabled}>
+    <Button
+      type="submit"
+      className="h-12 w-full flex items-center justify-center"
+      disabled={disabled}
+    >
       {loading ? (
         <>
           <Loading
-            spinnerSize={16}
+            spinnerSize={20}
             showText={false}
             minHeight="auto"
+            spinnerColor="text-white"
             className="mr-2"
           />
-          가입 중...
+          {BUTTONS.REGISTER_LOADING}
         </>
       ) : (
-        "회원가입"
+        BUTTONS.REGISTER_BUTTON
       )}
     </Button>
   )
@@ -266,32 +283,26 @@ export default function RegisterPage() {
   const [loading, setLoading] = useState(false);
   const [isCheckingEmail, setIsCheckingEmail] = useState(false);
   const [emailError, setEmailError] = useState<string>("");
-  const [schema, setSchema] = useState<any>(null);
-  const [isSchemaLoading, setIsSchemaLoading] = useState(true);
   const [turnstileToken, setTurnstileToken] = useState<string>("");
   const [turnstileError, setTurnstileError] = useState<string>("");
   const router = useRouter();
   const { showInfo, showSuccess, showError } = useCommonToast();
 
-  // 시스템 설정에 따른 동적 스키마 생성 - 최적화됨
-  useEffect(() => {
-    const initSchema = async () => {
-      if (schema) return; // 이미 로드된 경우 스킵
+  // 시스템 설정에서 비밀번호 규칙 가져오기 (React Query 기반)
+  const { rules: passwordRules, isLoading: isPasswordRulesLoading } =
+    usePasswordRules();
 
-      try {
-        setIsSchemaLoading(true);
-        const passwordRules = await getPasswordRules();
-        const dynamicSchema = createRegistrationFormSchema(passwordRules);
-        setSchema(dynamicSchema);
-      } catch (error) {
-        devLog.error("Failed to load password rules:", error);
-        // 에러 시 기본 스키마 사용
-      } finally {
-        setIsSchemaLoading(false);
-      }
-    };
-    initSchema();
-  }, [schema]);
+  // 동적 스키마 생성 - React Query 기반으로 최적화
+  const schema = useMemo(() => {
+    if (isPasswordRulesLoading) return null;
+
+    try {
+      return createRegistrationFormSchema(passwordRules);
+    } catch (error) {
+      devLog.error("Failed to create registration schema:", error);
+      return createDefaultRegistrationFormSchema();
+    }
+  }, [passwordRules, isPasswordRulesLoading]);
 
   // 메모이제이션된 폼 설정
   const formConfig = useMemo(
@@ -361,63 +372,38 @@ export default function RegisterPage() {
         return;
       }
 
-      // 이메일 중복 검사
-      const emailValidation = await checkEmailDuplicate(data.email);
-      if (!emailValidation.isValid) {
-        setEmailError(emailValidation.message);
-        return;
-      }
-
       setLoading(true);
 
       try {
-        // Turnstile 토큰 검증
-        const verificationResult = await fetch("/api/auth/verify-turnstile", {
+        // 새로운 회원가입 API 호출
+        const response = await apiClient("/api/auth/register", {
           method: "POST",
-          body: JSON.stringify({ token: turnstileToken }),
-          headers: {
-            "Content-Type": "application/json",
-          },
-        });
-
-        if (!verificationResult.ok) {
-          const errorData = await verificationResult.json();
-          setTurnstileError(errorData.error || "캡차 인증에 실패했습니다.");
-          return;
-        }
-
-        // Supabase auth를 통한 사용자 생성
-        const { data: authData, error: authError } = await supabase.auth.signUp(
-          {
+          body: JSON.stringify({
             email: data.email,
             password: data.password,
-            options: {
-              data: {
-                name: data.name,
-                phone: data.phone,
-              },
-            },
-          }
-        );
+            name: data.name,
+            phone: data.phone,
+            turnstileToken: turnstileToken,
+          }),
+          context: "회원가입",
+        });
 
-        if (authError) throw authError;
-        if (!authData.user) throw new Error("회원가입에 실패했습니다.");
-
-        // 회원가입 후 자동 로그아웃 (Supabase signUp이 자동 로그인을 하기 때문)
-        //await supabase.auth.signOut();
-
-        showSuccess(
-          "회원가입이 완료되었습니다.",
-          "이메일 인증 후 로그인해주세요."
-        );
-
-        router.push("/login");
+        if (response.success) {
+          // 서버에서 반환된 메시지 그대로 사용
+          showSuccess(
+            "회원가입 완료",
+            response.message || "회원가입이 완료되었습니다."
+          );
+          router.push("/login");
+        } else {
+          throw new Error(response.message || "회원가입에 실패했습니다.");
+        }
       } catch (error: any) {
         devLog.error("Registration failed:", error);
-        const errorMessage = getRegistrationErrorMessage(error);
-        setEmailError(errorMessage);
+        const authError = getAuthErrorMessage(error);
+        setEmailError(authError.message);
 
-        showError("회원가입 실패", errorMessage);
+        showError("회원가입 실패", authError.message);
       } finally {
         setLoading(false);
       }
@@ -431,7 +417,7 @@ export default function RegisterPage() {
   }, [loading, emailError, turnstileToken]);
 
   // 스키마 로딩 중이면 스켈레톤 표시
-  if (isSchemaLoading) {
+  if (isPasswordRulesLoading) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-gradient-farm p-4">
         <div className="w-full max-w-md">
@@ -445,8 +431,8 @@ export default function RegisterPage() {
 
   return (
     <ErrorBoundary
-      title="회원가입 페이지 오류"
-      description="회원가입 처리 중 문제가 발생했습니다. 페이지를 새로고침하거나 잠시 후 다시 시도해주세요."
+      title={ERROR_CONFIGS.LOADING.title}
+      description={ERROR_CONFIGS.LOADING.description}
     >
       <div className="flex min-h-screen items-center justify-center bg-gradient-farm p-4">
         <motion.div
@@ -460,9 +446,11 @@ export default function RegisterPage() {
               <div className="mx-auto mb-4 flex justify-center">
                 <Logo size="xl" />
               </div>
-              <CardTitle className="text-3xl">회원가입</CardTitle>
+              <CardTitle className="text-3xl">
+                {PAGE_HEADER.REGISTER_TITLE}
+              </CardTitle>
               <CardDescription>
-                농장 출입 관리 시스템에 가입하세요
+                {PAGE_HEADER.REGISTER_DESCRIPTION}
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -535,12 +523,12 @@ export default function RegisterPage() {
             </CardContent>
             <CardFooter className="flex justify-center">
               <p className="text-sm text-muted-foreground">
-                이미 계정이 있으신가요?{" "}
+                {BUTTONS.HAS_ACCOUNT}{" "}
                 <Link
                   href="/login"
                   className="font-medium text-primary hover:underline"
                 >
-                  로그인
+                  {BUTTONS.LOGIN_BUTTON}
                 </Link>
               </p>
             </CardFooter>

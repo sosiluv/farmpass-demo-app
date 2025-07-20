@@ -2,6 +2,7 @@ import { Calendar } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { LABELS } from "@/lib/constants/visitor";
 
 interface DateRangeSelectorProps {
   startDate: string;
@@ -21,7 +22,7 @@ export function DateRangeSelector({
       <CardHeader className="pb-2 sm:pb-3">
         <CardTitle className="flex items-center space-x-2 text-blue-700 text-sm sm:text-base">
           <Calendar className="h-4 w-4" />
-          <span>날짜 범위</span>
+          <span>{LABELS.DATE_RANGE_SELECTOR_TITLE}</span>
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-3 pt-0">
@@ -31,7 +32,7 @@ export function DateRangeSelector({
               htmlFor="export-start-date"
               className="text-[10px] sm:text-xs md:text-sm font-medium"
             >
-              시작 날짜
+              {LABELS.DATE_RANGE_START_DATE}
             </Label>
             <Input
               id="export-start-date"
@@ -46,7 +47,7 @@ export function DateRangeSelector({
               htmlFor="export-end-date"
               className="text-[10px] sm:text-xs md:text-sm font-medium"
             >
-              종료 날짜
+              {LABELS.DATE_RANGE_END_DATE}
             </Label>
             <Input
               id="export-end-date"
@@ -59,7 +60,10 @@ export function DateRangeSelector({
         </div>
         {startDate && endDate && (
           <div className="text-xs text-blue-600 bg-blue-100 p-2 rounded-md">
-            📅 {startDate} ~ {endDate}
+            {LABELS.DATE_RANGE_SUMMARY.replace(
+              "{startDate}",
+              startDate
+            ).replace("{endDate}", endDate)}
           </div>
         )}
       </CardContent>

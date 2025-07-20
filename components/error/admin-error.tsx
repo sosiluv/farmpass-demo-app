@@ -4,6 +4,7 @@ import { useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { RefreshCw, AlertCircle, Wifi } from "lucide-react";
 import { devLog } from "@/lib/utils/logging/dev-logger";
+import { ERROR_LABELS } from "@/lib/constants/error";
 
 interface AdminErrorProps {
   error: Error & { digest?: string };
@@ -18,8 +19,8 @@ export function AdminError({
   error,
   reset,
   retry,
-  title = "정보를 불러오는 중 문제가 발생했어요",
-  description = "잠시 후 다시 시도해주세요.",
+  title = ERROR_LABELS.GENERAL_ERROR_TITLE,
+  description = ERROR_LABELS.GENERAL_ERROR_DESCRIPTION,
   showNavigation = true,
 }: AdminErrorProps) {
   useEffect(() => {
@@ -61,7 +62,7 @@ export function AdminError({
           className="px-8 py-3 bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-700 hover:to-orange-700 text-white font-medium rounded-lg transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
         >
           <RefreshCw className="w-4 h-4 mr-2" />
-          다시 시도하기
+          {ERROR_LABELS.GLOBAL_ERROR_RETRY}
         </Button>
 
         <div className="mt-12 flex justify-center space-x-1">
@@ -74,16 +75,20 @@ export function AdminError({
           <details className="mt-8 text-left bg-slate-50 border border-slate-200 p-4 rounded-xl shadow-sm">
             <summary className="cursor-pointer text-sm font-medium text-slate-700 mb-3 flex items-center">
               <div className="w-2 h-2 bg-amber-500 rounded-full mr-2"></div>
-              개발자 정보
+              {ERROR_LABELS.GLOBAL_ERROR_DEVELOPER_INFO}
             </summary>
             <div className="text-xs text-red-600 font-mono break-all bg-white p-3 rounded-lg border">
               <p className="mb-2">
-                <strong className="text-slate-700">Error:</strong>{" "}
+                <strong className="text-slate-700">
+                  {ERROR_LABELS.GLOBAL_ERROR_ERROR_LABEL}
+                </strong>{" "}
                 {error.message}
               </p>
               {error.digest && (
                 <p>
-                  <strong className="text-slate-700">Digest:</strong>{" "}
+                  <strong className="text-slate-700">
+                    {ERROR_LABELS.GLOBAL_ERROR_DIGEST_LABEL}
+                  </strong>{" "}
                   {error.digest}
                 </p>
               )}

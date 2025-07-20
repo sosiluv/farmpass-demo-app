@@ -1,5 +1,10 @@
 import { Label } from "@/components/ui/label";
 import {
+  LABELS,
+  PLACEHOLDERS,
+  LOGGING_RETENTION_OPTIONS,
+} from "@/lib/constants/settings";
+import {
   Select,
   SelectContent,
   SelectItem,
@@ -20,27 +25,27 @@ export function LoggingRetentionSelect({
 }: LoggingRetentionSelectProps) {
   return (
     <div className="space-y-2">
-      <Label className="text-sm font-medium">로그 보관 기간</Label>
+      <Label htmlFor="logging-retention" className="text-sm font-medium">
+        {LABELS.LOGGING_RETENTION}
+      </Label>
       <Select
         value={value.toString()}
         onValueChange={(val) => onChange(parseInt(val))}
         disabled={isLoading}
       >
-        <SelectTrigger>
-          <SelectValue placeholder="보관 기간을 선택하세요" />
+        <SelectTrigger id="logging-retention">
+          <SelectValue placeholder={PLACEHOLDERS.LOGGING_RETENTION} />
         </SelectTrigger>
         <SelectContent>
-          <SelectItem value="7">7일</SelectItem>
-          <SelectItem value="14">14일</SelectItem>
-          <SelectItem value="30">30일</SelectItem>
-          <SelectItem value="60">60일</SelectItem>
-          <SelectItem value="90">90일</SelectItem>
-          <SelectItem value="180">180일</SelectItem>
-          <SelectItem value="365">365일</SelectItem>
+          {LOGGING_RETENTION_OPTIONS.map((option) => (
+            <SelectItem key={option.value} value={option.value}>
+              {option.label}
+            </SelectItem>
+          ))}
         </SelectContent>
       </Select>
       <p className="text-xs text-muted-foreground">
-        {value}일이 지난 로그는 자동으로 삭제됩니다
+        {LABELS.LOGGING_RETENTION_DESC.replace("{days}", value.toString())}
       </p>
     </div>
   );

@@ -5,18 +5,12 @@
  */
 
 // AuthService exports
-export {
-  refreshToken,
-  handleSessionExpired,
-  logout,
-  isTokenExpired,
-  validateSession,
-} from "./authService";
+export { refreshToken, handleSessionExpired, logout } from "./authService";
 
 // Cookie utilities exports
 export {
-  clearClientCookies,
-  clearServerCookies,
+  clearAuthCookies,
+  clearServerAuthCookies,
   getSupabaseProjectId,
   getSupabaseAuthCookies,
 } from "./cookie-utils";

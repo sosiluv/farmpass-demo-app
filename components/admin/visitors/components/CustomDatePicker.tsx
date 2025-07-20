@@ -9,6 +9,7 @@ import { Calendar as CalendarIcon, X } from "lucide-react";
 import { format } from "date-fns";
 import { ko } from "date-fns/locale";
 import { cn } from "@/lib/utils";
+import { LABELS } from "@/lib/constants/visitor";
 
 interface CustomDatePickerProps {
   customStartDate: Date | null;
@@ -41,7 +42,9 @@ export function CustomDatePicker({
             {customStartDate ? (
               format(customStartDate, "yyyy년 MM월 dd일", { locale: ko })
             ) : (
-              <span className="dark:text-slate-400">시작일 선택</span>
+              <span className="dark:text-slate-400">
+                {LABELS.CUSTOM_DATE_PICKER_START_DATE}
+              </span>
             )}
           </Button>
         </PopoverTrigger>
@@ -72,7 +75,9 @@ export function CustomDatePicker({
             {customEndDate ? (
               format(customEndDate, "yyyy년 MM월 dd일", { locale: ko })
             ) : (
-              <span className="dark:text-slate-400">종료일 선택</span>
+              <span className="dark:text-slate-400">
+                {LABELS.CUSTOM_DATE_PICKER_END_DATE}
+              </span>
             )}
           </Button>
         </PopoverTrigger>

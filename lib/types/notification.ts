@@ -1,9 +1,19 @@
-export type NotificationMethod = "push" | "kakao";
+/**
+ * 알림 관련 타입 정의
+ */
+
+import type { NotificationMethod } from "./common";
+
+// Re-export common types
+export type { NotificationMethod } from "./common";
+
+// ===========================================
+// 알림 기본 타입
+// ===========================================
 
 export interface Notification {
   id: string;
   user_id: string;
-  farm_id?: string;
   title: string;
   message: string;
   is_read: boolean;
@@ -39,7 +49,6 @@ export interface UpdateNotificationSettingsDTO {
 export interface NotificationPreference {
   id: string;
   user_id: string;
-  farm_id?: string;
   visitor_notifications: boolean;
   disinfection_notifications: boolean;
   member_notifications: boolean;
@@ -63,11 +72,18 @@ export type SubscriptionStatus =
 export interface PushSubscriptionData {
   id: string;
   user_id: string;
-  farm_id: string | null;
   endpoint: string;
   p256dh: string | null;
   auth: string | null;
   created_at: string;
+  updated_at: string | null;
+  deleted_at: string | null;
+  device_id: string | null;
+  fail_count: number | null;
+  is_active: boolean | null;
+  last_fail_at: string | null;
+  last_used_at: string | null;
+  user_agent: string | null;
 }
 
 export interface NotificationPayload {
@@ -76,7 +92,6 @@ export interface NotificationPayload {
   notificationType?: "visitor" | "emergency" | "maintenance" | "notice";
   metadata?: Record<string, unknown>;
   target_user_ids?: string[];
-  farm_id?: string;
   icon?: string;
   badge?: string;
   tag?: string;
@@ -84,17 +99,31 @@ export interface NotificationPayload {
   test?: boolean;
 }
 
-export interface NotificationFilter {
-  userId?: string;
-  farmId?: string;
-  isRead?: boolean;
-  startDate?: string;
-  endDate?: string;
+// ===========================================
+// 푸시 구독 관련 타입
+// ===========================================
+
+export interface SubscriptionCleanupOptions {
+  realTimeCheck?: boolean;
+  forceDelete?: boolean;
+  failCountThreshold?: number;
+  cleanupInactive?: boolean;
+  deleteAfterDays?: number;
 }
 
-export interface Farm {
-  id: string;
-  farm_name: string;
-  address?: string;
-  isSubscribed?: boolean;
+export interface SubscriptionCleanupResult {
+  message: string;
+  cleanedCount: number;
+  validCount: number;
+  totalChecked: number;
+  checkType: "realtime" | "basic";
+  forceDelete: boolean;
+  deleteAfterDays: number;
+  stats: {
+    failCountCleaned: number;
+    inactiveCleaned: number;
+    expiredCleaned: number;
+    forceDeleted: number;
+    oldSoftDeletedCleaned: number;
+  };
 }

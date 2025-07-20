@@ -6,7 +6,9 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { UserCheck } from "lucide-react";
+import { LABELS, PAGE_HEADER } from "@/lib/constants/settings";
 import { ErrorBoundary } from "@/components/error/error-boundary";
+import { ERROR_CONFIGS } from "@/lib/constants/error";
 import type { SystemSettings } from "@/lib/types/settings";
 import { useNumberInput } from "@/hooks/use-number-input";
 import SettingsCardHeader from "../SettingsCardHeader";
@@ -29,51 +31,53 @@ export default function VisitorTab({
   const maxVisitorsPerDay = useNumberInput("maxVisitorsPerDay");
   const visitorDataRetentionDays = useNumberInput("visitorDataRetentionDays");
 
-  // 디스플레이용 상태
+  // 디스플레이용 상태 (안전한 처리)
   const [reVisitAllowIntervalDisplay, setReVisitAllowIntervalDisplay] =
-    useState(settings.reVisitAllowInterval.toString());
+    useState((settings.reVisitAllowInterval ?? 0).toString());
   const [maxVisitorsPerDayDisplay, setMaxVisitorsPerDayDisplay] = useState(
-    settings.maxVisitorsPerDay.toString()
+    (settings.maxVisitorsPerDay ?? 0).toString()
   );
   const [visitorDataRetentionDaysDisplay, setVisitorDataRetentionDaysDisplay] =
-    useState(settings.visitorDataRetentionDays.toString());
+    useState((settings.visitorDataRetentionDays ?? 0).toString());
 
-  // settings가 변경될 때 디스플레이 값 업데이트
+  // settings가 변경될 때 디스플레이 값 업데이트 (안전한 처리)
   useEffect(() => {
     if (!reVisitAllowInterval.isEditing) {
-      setReVisitAllowIntervalDisplay(settings.reVisitAllowInterval.toString());
+      setReVisitAllowIntervalDisplay(
+        (settings.reVisitAllowInterval ?? 0).toString()
+      );
     }
   }, [settings.reVisitAllowInterval, reVisitAllowInterval.isEditing]);
 
   useEffect(() => {
     if (!maxVisitorsPerDay.isEditing) {
-      setMaxVisitorsPerDayDisplay(settings.maxVisitorsPerDay.toString());
+      setMaxVisitorsPerDayDisplay((settings.maxVisitorsPerDay ?? 0).toString());
     }
   }, [settings.maxVisitorsPerDay, maxVisitorsPerDay.isEditing]);
 
   useEffect(() => {
     if (!visitorDataRetentionDays.isEditing) {
       setVisitorDataRetentionDaysDisplay(
-        settings.visitorDataRetentionDays.toString()
+        (settings.visitorDataRetentionDays ?? 0).toString()
       );
     }
   }, [settings.visitorDataRetentionDays, visitorDataRetentionDays.isEditing]);
 
   return (
     <ErrorBoundary
-      title="방문자 설정 탭 오류"
-      description="방문자 설정을 불러오는 중 문제가 발생했습니다. 페이지를 새로고침하거나 잠시 후 다시 시도해주세요."
+      title={ERROR_CONFIGS.LOADING.title}
+      description={ERROR_CONFIGS.LOADING.description}
     >
       <Card>
         <SettingsCardHeader
           icon={UserCheck}
-          title="방문자 정책"
-          description="방문자 관련 정책을 설정합니다."
+          title={PAGE_HEADER.VISITOR_POLICY_TITLE}
+          description={PAGE_HEADER.VISITOR_POLICY_DESC}
         />
         <CardContent className="space-y-4">
           <div className="grid gap-2">
             <Label htmlFor="reVisitAllowInterval">
-              재방문 허용 간격 (시간)
+              {LABELS.VISITOR_REVISIT_INTERVAL}
             </Label>
             <Input
               id="reVisitAllowInterval"
@@ -101,7 +105,9 @@ export default function VisitorTab({
           </div>
 
           <div className="grid gap-2">
-            <Label htmlFor="maxVisitorsPerDay">일일 최대 방문자 수</Label>
+            <Label htmlFor="maxVisitorsPerDay">
+              {LABELS.VISITOR_MAX_PER_DAY}
+            </Label>
             <Input
               id="maxVisitorsPerDay"
               type="number"
@@ -129,7 +135,7 @@ export default function VisitorTab({
 
           <div className="grid gap-2">
             <Label htmlFor="visitorDataRetentionDays">
-              방문자 데이터 보존 기간 (일)
+              {LABELS.VISITOR_DATA_RETENTION}
             </Label>
             <Input
               id="visitorDataRetentionDays"
@@ -157,7 +163,9 @@ export default function VisitorTab({
           </div>
 
           <div className="flex items-center justify-between">
-            <Label htmlFor="requireVisitorPhoto">방문자 사진 필수</Label>
+            <Label htmlFor="requireVisitorPhoto">
+              {LABELS.VISITOR_PHOTO_REQUIRED}
+            </Label>
             <Switch
               id="requireVisitorPhoto"
               checked={settings.requireVisitorPhoto}
@@ -168,7 +176,9 @@ export default function VisitorTab({
           </div>
 
           <div className="flex items-center justify-between">
-            <Label htmlFor="requireVisitorContact">연락처 필수</Label>
+            <Label htmlFor="requireVisitorContact">
+              {LABELS.VISITOR_CONTACT_REQUIRED}
+            </Label>
             <Switch
               id="requireVisitorContact"
               checked={settings.requireVisitorContact}
@@ -179,7 +189,9 @@ export default function VisitorTab({
           </div>
 
           <div className="flex items-center justify-between">
-            <Label htmlFor="requireVisitPurpose">방문 목적 필수</Label>
+            <Label htmlFor="requireVisitPurpose">
+              {LABELS.VISITOR_PURPOSE_REQUIRED}
+            </Label>
             <Switch
               id="requireVisitPurpose"
               checked={settings.requireVisitPurpose}

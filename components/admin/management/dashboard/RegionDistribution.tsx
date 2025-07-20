@@ -1,6 +1,7 @@
 import { Bar } from "@/components/ui/chart";
 import { MapPin } from "lucide-react";
 import { ChartCard } from "@/components/common/ChartCard";
+import { LABELS, PAGE_HEADER } from "@/lib/constants/management";
 
 interface RegionDistributionProps {
   data?: {
@@ -13,13 +14,13 @@ export function RegionDistribution({ data = [] }: RegionDistributionProps) {
   if (data.length === 0) {
     return (
       <ChartCard
-        title="지역별 농장 분포"
-        description="농장 주소 기반 지역별 현황"
+        title={PAGE_HEADER.REGION_DISTRIBUTION_TITLE}
+        description={PAGE_HEADER.REGION_DISTRIBUTION_DESCRIPTION}
         icon={MapPin}
         variant="info"
       >
         <div className="flex items-center justify-center h-full text-muted-foreground">
-          데이터가 없습니다
+          {LABELS.NO_DATA}
         </div>
       </ChartCard>
     );
@@ -27,8 +28,8 @@ export function RegionDistribution({ data = [] }: RegionDistributionProps) {
 
   return (
     <ChartCard
-      title="지역별 농장 분포"
-      description="농장 주소 기반 지역별 현황"
+      title={PAGE_HEADER.REGION_DISTRIBUTION_TITLE}
+      description={PAGE_HEADER.REGION_DISTRIBUTION_DESCRIPTION}
       icon={MapPin}
       variant="info"
     >
@@ -38,7 +39,7 @@ export function RegionDistribution({ data = [] }: RegionDistributionProps) {
             labels: (data || []).map((item) => item.region),
             datasets: [
               {
-                label: "농장 수",
+                label: LABELS.FARM_COUNT,
                 data: (data || []).map((item) => item.count),
                 backgroundColor: "rgba(168, 85, 247, 0.8)", // purple
                 borderColor: "rgb(147, 51, 234)",

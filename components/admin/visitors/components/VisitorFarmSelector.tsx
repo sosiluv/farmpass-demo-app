@@ -7,6 +7,7 @@ import {
 import { Building2 } from "lucide-react";
 import { getFarmTypeInfo } from "@/lib/constants/farm-types";
 import type { Farm } from "@/lib/types/visitor";
+import { LABELS } from "@/lib/constants/visitor";
 
 interface VisitorFarmSelectorProps {
   selectedFarm: string;
@@ -24,7 +25,7 @@ export function VisitorFarmSelector({
   const getSelectedFarmInfo = () => {
     if (selectedFarm === "all" || !selectedFarm) {
       return {
-        name: "전체 농장",
+        name: LABELS.VISITOR_FARM_SELECTOR_ALL_FARMS,
         type: null,
         icon: Building2,
       };
@@ -33,7 +34,7 @@ export function VisitorFarmSelector({
     const farm = farms.find((f) => f.id === selectedFarm);
     if (!farm) {
       return {
-        name: "농장을 찾을 수 없음",
+        name: LABELS.VISITOR_FARM_SELECTOR_FARM_NOT_FOUND,
         type: null,
         icon: Building2,
       };
@@ -52,7 +53,10 @@ export function VisitorFarmSelector({
 
   return (
     <Select value={selectedFarm} onValueChange={onFarmChange}>
-      <SelectTrigger className="h-8 sm:h-10 md:h-11 border-slate-200 dark:border-slate-600 focus:border-indigo-400 dark:focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 dark:focus:ring-indigo-900 transition-all duration-300 bg-white/90 dark:bg-slate-800 backdrop-blur-sm text-xs sm:text-sm md:text-base shadow-sm hover:shadow-md min-w-0 dark:text-slate-100 dark:placeholder:text-slate-400 dark:disabled:text-slate-500">
+      <SelectTrigger
+        id="visitor-farm-selector"
+        className="h-8 sm:h-10 md:h-11 border-slate-200 dark:border-slate-600 focus:border-indigo-400 dark:focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 dark:focus:ring-indigo-900 transition-all duration-300 bg-white/90 dark:bg-slate-800 backdrop-blur-sm text-xs sm:text-sm md:text-base shadow-sm hover:shadow-md min-w-0 dark:text-slate-100 dark:placeholder:text-slate-400 dark:disabled:text-slate-500"
+      >
         <div className="flex items-center space-x-1.5 sm:space-x-3 min-w-0">
           <div className="p-0.5 sm:p-1 bg-gradient-to-br from-indigo-100 to-purple-100 dark:from-indigo-900 dark:to-purple-900 rounded-md flex-shrink-0">
             <Icon className="h-3 w-3 sm:h-4 sm:w-4 text-indigo-600 dark:text-indigo-300 flex-shrink-0" />
@@ -69,7 +73,9 @@ export function VisitorFarmSelector({
               <div className="p-0.5 sm:p-1 bg-gradient-to-br from-slate-100 to-gray-100 dark:from-slate-800 dark:to-slate-700 rounded-md flex-shrink-0">
                 <Building2 className="h-3 w-3 sm:h-4 sm:w-4 text-slate-600 dark:text-slate-300" />
               </div>
-              <span className="truncate dark:text-slate-100">전체 농장</span>
+              <span className="truncate dark:text-slate-100">
+                {LABELS.VISITOR_FARM_SELECTOR_ALL_FARMS}
+              </span>
             </div>
           </SelectItem>
         )}

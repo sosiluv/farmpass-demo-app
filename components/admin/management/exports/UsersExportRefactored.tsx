@@ -8,6 +8,7 @@ import {
   useExportDialog,
 } from "./index";
 import type { UsersExportOptions } from "./types";
+import { BUTTONS, LABELS, PAGE_HEADER } from "@/lib/constants/management";
 
 interface UsersExportProps {
   users: any[];
@@ -78,84 +79,89 @@ export function UsersExportRefactored({ users, onExport }: UsersExportProps) {
     <ExportDialogWrapper
       open={isOpen}
       onOpenChange={setIsOpen}
-      title="사용자 데이터 내보내기"
-      description="내보낼 사용자 정보를 설정하세요"
-      buttonText="사용자 내보내기"
+      title={PAGE_HEADER.USERS_EXPORT_TITLE}
+      description={PAGE_HEADER.USERS_EXPORT_DESCRIPTION}
+      buttonText={BUTTONS.USERS_EXPORT_BUTTON}
     >
       <div className="space-y-3 sm:space-y-4 md:space-y-6">
         <FilterSection
-          title="필터 설정"
+          title={LABELS.FILTER_SETTINGS}
           color="green"
           filters={[
             {
               key: "roleFilter",
-              label: "계정 유형",
+              label: LABELS.ACCOUNT_TYPE,
               value: roleFilter,
               options: [
-                { value: "all", label: "모든 계정" },
-                { value: "admin", label: "관리자" },
-                { value: "user", label: "일반 사용자" },
+                { value: "all", label: LABELS.ALL_ACCOUNTS },
+                { value: "admin", label: LABELS.ADMIN },
+                { value: "user", label: LABELS.GENERAL_USER },
               ],
               onChange: setRoleFilter,
             },
             {
               key: "statusFilter",
-              label: "상태",
+              label: LABELS.STATUS,
               value: statusFilter,
               options: [
-                { value: "all", label: "모든 상태" },
-                { value: "active", label: "활성" },
-                { value: "inactive", label: "비활성" },
+                { value: "all", label: LABELS.ALL_STATUS },
+                { value: "active", label: LABELS.ACTIVE },
+                { value: "inactive", label: LABELS.INACTIVE },
               ],
               onChange: setStatusFilter,
             },
           ]}
         />
         <OptionsSection
-          title="포함할 정보"
+          title={LABELS.INCLUDED_INFO}
           color="purple"
           selectedCount={selectedOptionsCount}
           totalCount={5}
           options={[
             {
               key: "includeBasic",
-              label: "기본 정보",
-              description: "이름, 이메일, 계정 타입",
+              label: LABELS.BASIC_INFO,
+              description: LABELS.BASIC_INFO_DESCRIPTION,
               checked: includeBasic,
               onChange: setIncludeBasic,
             },
             {
               key: "includeContact",
-              label: "연락처 정보",
-              description: "전화번호, 주소",
+              label: LABELS.CONTACT_INFO,
+              description: LABELS.CONTACT_INFO_DESCRIPTION,
               checked: includeContact,
               onChange: setIncludeContact,
             },
             {
               key: "includeActivity",
-              label: "활동 정보",
-              description: "마지막 로그인, 활동 기록",
+              label: LABELS.ACTIVITY_INFO,
+              description: LABELS.ACTIVITY_INFO_DESCRIPTION,
               checked: includeActivity,
               onChange: setIncludeActivity,
             },
             {
               key: "includeFarms",
-              label: "농장 정보",
-              description: "소속 농장, 권한",
+              label: LABELS.FARM_INFO,
+              description: LABELS.FARM_INFO_DESCRIPTION,
               checked: includeFarms,
               onChange: setIncludeFarms,
             },
             {
               key: "includePermissions",
-              label: "권한 정보",
-              description: "세부 권한 설정",
+              label: LABELS.PERMISSIONS_INFO,
+              description: LABELS.PERMISSIONS_INFO_DESCRIPTION,
               checked: includePermissions,
               onChange: setIncludePermissions,
             },
           ]}
         />
         <SummarySection
-          message={`내보내기 요약: 총 ${users.length}명의 사용자 중 ${selectedOptionsCount}개 정보 유형이 포함됩니다.`}
+          message={LABELS.EXPORT_SUMMARY.replace(
+            "{totalCount}",
+            users.length.toString()
+          )
+            .replace("{itemType}", "사용자")
+            .replace("{selectedCount}", selectedOptionsCount.toString())}
           color="orange"
         />
       </div>

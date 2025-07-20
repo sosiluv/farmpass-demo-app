@@ -14,20 +14,23 @@ import { Car, FileText, Eye, Calendar, Sparkles } from "lucide-react";
 import { getFarmTypeInfo } from "@/lib/constants/farm-types";
 import { formatPhoneNumber } from "@/lib/utils/validation";
 import { VisitorAvatar, StatusBadge, VisitorActionMenu } from "./index";
-import type { VisitorEntryWithFarm } from "@/store/use-visitor-store";
+import type { VisitorWithFarm } from "@/lib/types/visitor";
+import { useState } from "react";
+import { ImagePreviewDialog } from "@/components/common/ImagePreviewDialog";
+import { LABELS } from "@/lib/constants/visitor";
 
 interface VisitorTableRowProps {
-  visitor: VisitorEntryWithFarm;
+  visitor: VisitorWithFarm;
   index: number;
   showFarmColumn: boolean;
-  onViewDetails: (visitor: VisitorEntryWithFarm) => void;
+  onViewDetails: (visitor: VisitorWithFarm) => void;
   isAdmin?: boolean;
-  onEdit?: (visitor: VisitorEntryWithFarm) => Promise<void>;
-  onDelete?: (visitor: VisitorEntryWithFarm) => Promise<void>;
+  onEdit?: (visitor: VisitorWithFarm) => Promise<void>;
+  onDelete?: (visitor: VisitorWithFarm) => Promise<void>;
 }
 
 /**
- * 방문자 테이블 데스크톱 행 컴포넌트
+ * 방문자 테이블 로우 컴포넌트
  */
 export function VisitorTableRow({
   visitor,
@@ -38,6 +41,7 @@ export function VisitorTableRow({
   onEdit,
   onDelete,
 }: VisitorTableRowProps) {
+  const [previewOpen, setPreviewOpen] = useState(false);
   return (
     <TableRow className="hover:bg-gray-50/80 transition-colors duration-200 group">
       {/* 번호 */}
@@ -60,6 +64,15 @@ export function VisitorTableRow({
             imageUrl={visitor.profile_photo_url}
             disinfectionCheck={visitor.disinfection_check}
             size="md"
+            onClick={() => visitor.profile_photo_url && setPreviewOpen(true)}
+            className={visitor.profile_photo_url ? "cursor-pointer" : ""}
+          />
+          <ImagePreviewDialog
+            src={visitor.profile_photo_url || ""}
+            alt={visitor.visitor_name}
+            open={previewOpen}
+            onOpenChange={setPreviewOpen}
+            caption={visitor.visitor_name}
           />
           <div className="min-w-0 flex-1">
             <div className="flex items-center space-x-1 sm:space-x-2 mb-1">
@@ -136,7 +149,7 @@ export function VisitorTableRow({
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <div className="cursor-help">
-                        {/* 년도/날짜 - 항상 한 줄로 표시 */}
+                        {/* 연도/월일 - 첫번째 줄로 표시 */}
                         <p className="text-xs sm:text-sm font-medium text-gray-900 leading-tight">
                           {datePart}
                         </p>
@@ -164,11 +177,15 @@ export function VisitorTableRow({
           <Tooltip>
             <TooltipTrigger asChild>
               <span className="text-xs sm:text-sm font-medium text-gray-700 truncate max-w-[120px] sm:max-w-[150px] cursor-help">
-                {visitor.visitor_purpose || "기타"}
+                {visitor.visitor_purpose ||
+                  LABELS.VISITOR_TABLE_ROW_DEFAULT_PURPOSE}
               </span>
             </TooltipTrigger>
             <TooltipContent>
-              <p>{visitor.visitor_purpose || "기타"}</p>
+              <p>
+                {visitor.visitor_purpose ||
+                  LABELS.VISITOR_TABLE_ROW_DEFAULT_PURPOSE}
+              </p>
             </TooltipContent>
           </Tooltip>
         </div>
@@ -191,11 +208,13 @@ export function VisitorTableRow({
             </Tooltip>
           </div>
         ) : (
-          <span className="text-xs sm:text-sm text-gray-400">-</span>
+          <span className="text-xs sm:text-sm text-gray-400">
+            {LABELS.VISITOR_TABLE_ROW_NO_VEHICLE}
+          </span>
         )}
       </TableCell>
 
-      {/* 방역 완료 상태 */}
+      {/* 방역 처리 상태 */}
       <TableCell className="w-20 sm:w-24">
         <div className="flex items-center space-x-2">
           <StatusBadge isCompleted={visitor.disinfection_check} />
@@ -219,11 +238,10 @@ export function VisitorTableRow({
                 </button>
               </TooltipTrigger>
               <TooltipContent>
-                <p>상세 보기</p>
+                <p>{LABELS.VISITOR_TABLE_ROW_DETAILS_TOOLTIP}</p>
               </TooltipContent>
             </Tooltip>
           </TooltipProvider>
-
           {isAdmin && (
             <VisitorActionMenu
               visitor={visitor}

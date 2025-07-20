@@ -1,6 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Search, X } from "lucide-react";
+import { PLACEHOLDERS } from "@/lib/constants/visitor";
 
 interface SearchInputProps {
   searchTerm: string;
@@ -11,12 +12,13 @@ interface SearchInputProps {
 export function SearchInput({
   searchTerm,
   onSearchChange,
-  placeholder = "방문자 이름, 연락처, 차량번호로 검색...",
+  placeholder = PLACEHOLDERS.SEARCH_INPUT_PLACEHOLDER,
 }: SearchInputProps) {
   return (
     <div className="relative flex-1 group min-w-0">
       <Search className="absolute left-2 sm:left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-3 w-3 sm:h-4 sm:w-4 group-focus-within:text-blue-500 transition-colors duration-200" />
       <Input
+        id="visitor-search"
         placeholder={placeholder}
         value={searchTerm}
         onChange={(e) => onSearchChange(e.target.value)}

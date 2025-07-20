@@ -18,13 +18,13 @@ import { DEFAULT_SYSTEM_SETTINGS } from "@/lib/constants/defaults";
 import { Logo } from "@/components/common";
 import { useAuth } from "@/components/providers/auth-provider";
 import { PageLoading } from "@/components/ui/loading";
-import { useSystemSettings } from "@/lib/hooks/use-system-settings";
+import { useSystemSettingsContext } from "@/components/providers/system-settings-provider";
 
 // 클라이언트 컴포넌트로 변경
 export default function HomePage() {
   const router = useRouter();
   const { state } = useAuth();
-  const { settings, loading: settingsLoading } = useSystemSettings();
+  const { settings, isLoading: settingsLoading } = useSystemSettingsContext();
 
   // 인증된 사용자 리다이렉트를 useEffect로 처리
   useEffect(() => {
@@ -33,21 +33,25 @@ export default function HomePage() {
     }
   }, [state.status, router]);
 
-  // 로딩 상태를 먼저 체크 (페이지 렌더링 전에)
+  // 로딩 상태별 적절한 텍스트 표시
   if (
-    state.status === "loading" ||
     state.status === "initializing" ||
+    state.status === "loading" ||
     settingsLoading
   ) {
+    let loadingText = "페이지를 불러오는 중...";
+
+    if (state.status === "initializing") {
+      loadingText = "시스템을 초기화하는 중...";
+    } else if (state.status === "loading") {
+      loadingText = "로그인 상태를 확인하는 중...";
+    } else if (settingsLoading) {
+      loadingText = "사이트 설정을 불러오는 중...";
+    }
+
     return (
       <PageLoading
-        text={
-          state.status === "initializing"
-            ? "인증 확인 중..."
-            : settingsLoading
-            ? "설정을 불러오는 중..."
-            : "자동 로그인 중..."
-        }
+        text={loadingText}
         subText="잠시만 기다려주세요"
         variant="gradient"
         fullScreen={true}
@@ -69,10 +73,10 @@ export default function HomePage() {
 
   // 시스템 설정 사용
   const displaySettings = {
-    siteName: settings.siteName || DEFAULT_SYSTEM_SETTINGS.siteName,
+    siteName: settings?.siteName || DEFAULT_SYSTEM_SETTINGS.siteName,
     siteDescription:
-      settings.siteDescription || DEFAULT_SYSTEM_SETTINGS.siteDescription,
-    logo: settings.logo || null,
+      settings?.siteDescription || DEFAULT_SYSTEM_SETTINGS.siteDescription,
+    logo: settings?.logo || null,
   };
 
   return (
@@ -224,7 +228,7 @@ export default function HomePage() {
       <footer className="border-t bg-card py-12">
         <div className="container mx-auto px-4">
           <div className="flex flex-col items-center justify-between gap-4 md:flex-row">
-            <Logo size="xl" showText />
+            <Logo size="xl" />
             <div className="flex gap-2">
               <Badge variant="outline">모바일 최적화</Badge>
               <Badge variant="outline">QR 코드 지원</Badge>

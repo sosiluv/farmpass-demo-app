@@ -5,8 +5,15 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Key, AlertTriangle, Copy, Check } from "lucide-react";
+import {
+  BUTTONS,
+  LABELS,
+  PLACEHOLDERS,
+  PAGE_HEADER,
+} from "@/lib/constants/settings";
 import type { SystemSettings } from "@/lib/types/settings";
 import { useCommonToast } from "@/lib/utils/notification/toast-messages";
+import { getNotificationErrorMessage } from "@/lib/utils/validation/validation";
 import SettingsCardHeader from "../SettingsCardHeader";
 
 interface VapidKeySectionProps {
@@ -15,7 +22,12 @@ interface VapidKeySectionProps {
     key: K,
     value: SystemSettings[K]
   ) => void;
-  onGenerateKeys: () => void;
+  onGenerateKeys: () => Promise<{
+    publicKey: string;
+    privateKey: string;
+    message?: string;
+    warning?: string;
+  }>;
   isLoading: boolean;
 }
 
@@ -34,13 +46,19 @@ const VapidKeySection = React.memo(function VapidKeySection({
   const handleGenerateKeys = async () => {
     showInfo("VAPID 키 생성 시작", "VAPID 키를 생성하는 중입니다...");
     try {
-      await onGenerateKeys();
+      const result = await onGenerateKeys();
       showSuccess(
         "VAPID 키 생성 완료",
-        "VAPID 키가 성공적으로 생성되었습니다."
+        result?.message || "VAPID 키가 성공적으로 생성되었습니다."
       );
+
+      // 경고 메시지가 있으면 표시
+      if (result?.warning) {
+        showWarning("VAPID 키 생성 완료", result.warning);
+      }
     } catch (error) {
-      showError("VAPID 키 생성 실패", "VAPID 키 생성 중 오류가 발생했습니다.");
+      const notificationError = getNotificationErrorMessage(error);
+      showError("VAPID 키 생성 실패", notificationError.message);
     }
   };
 
@@ -67,7 +85,11 @@ const VapidKeySection = React.memo(function VapidKeySection({
       // 2초 후 복사 상태 초기화
       setTimeout(() => setCopiedKey(null), 2000);
     } catch (error) {
-      showError("키 복사 실패", "키 복사에 실패했습니다. 다시 시도해주세요.");
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : "키 복사에 실패했습니다. 다시 시도해주세요.";
+      showError("키 복사 실패", errorMessage);
     }
   };
 
@@ -75,17 +97,19 @@ const VapidKeySection = React.memo(function VapidKeySection({
     <Card>
       <SettingsCardHeader
         icon={Key}
-        title="VAPID 키 설정"
-        description="웹푸시 알림을 위한 VAPID (Voluntary Application Server Identification) 키를 설정합니다."
+        title={PAGE_HEADER.VAPID_SECTION_TITLE}
+        description={PAGE_HEADER.VAPID_SECTION_DESCRIPTION}
       />
       <CardContent className="space-y-4">
         <div className="grid gap-2">
-          <Label htmlFor="vapidPublicKey">공개 키 (Public Key)</Label>
+          <Label htmlFor="vapidPublicKey">
+            {LABELS.VAPID_PUBLIC_KEY_LABEL}
+          </Label>
           <div className="flex gap-2">
             <div className="relative flex-1">
               <Input
                 id="vapidPublicKey"
-                placeholder="VAPID 키를 생성해주세요"
+                placeholder={PLACEHOLDERS.VAPID_PUBLIC_KEY}
                 value={settings.vapidPublicKey || ""}
                 readOnly
                 disabled
@@ -111,18 +135,20 @@ const VapidKeySection = React.memo(function VapidKeySection({
               onClick={handleGenerateKeys}
               disabled={isLoading}
             >
-              생성
+              {BUTTONS.VAPID_GENERATE_BUTTON}
             </Button>
           </div>
         </div>
 
         <div className="grid gap-2">
-          <Label htmlFor="vapidPrivateKey">비공개 키 (Private Key)</Label>
+          <Label htmlFor="vapidPrivateKey">
+            {LABELS.VAPID_PRIVATE_KEY_LABEL}
+          </Label>
           <div className="relative">
             <Input
               id="vapidPrivateKey"
               type="text"
-              placeholder="VAPID 키를 생성해주세요"
+              placeholder={PLACEHOLDERS.VAPID_PRIVATE_KEY}
               value={settings.vapidPrivateKey || ""}
               readOnly
               disabled
@@ -147,11 +173,9 @@ const VapidKeySection = React.memo(function VapidKeySection({
 
         <Alert>
           <AlertTriangle className="h-4 w-4" />
-          <AlertTitle>보안 주의사항</AlertTitle>
+          <AlertTitle>{LABELS.VAPID_SECURITY_TITLE}</AlertTitle>
           <AlertDescription>
-            비공개 키는 안전하게 보관하세요. 외부에 노출되면 보안상 위험할 수
-            있습니다. 생성된 키는 복사 버튼을 통해 클립보드에 복사할 수
-            있습니다.
+            {LABELS.VAPID_SECURITY_DESCRIPTION}
           </AlertDescription>
         </Alert>
       </CardContent>

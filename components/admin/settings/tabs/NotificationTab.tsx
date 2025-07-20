@@ -6,7 +6,14 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Bell, Eye } from "lucide-react";
+import {
+  BUTTONS,
+  LABELS,
+  PLACEHOLDERS,
+  PAGE_HEADER,
+} from "@/lib/constants/settings";
 import { ErrorBoundary } from "@/components/error/error-boundary";
+import { ERROR_CONFIGS } from "@/lib/constants/error";
 import type { SystemSettings } from "@/lib/types/settings";
 import { WebPushConfiguration } from "../notification";
 import SettingsCardHeader from "../SettingsCardHeader";
@@ -15,6 +22,7 @@ import {
   validateVisitTemplate,
 } from "@/lib/utils/notification/notification-template";
 import { useCommonToast } from "@/lib/utils/notification/toast-messages";
+import { handleError } from "@/lib/utils/error";
 
 interface NotificationTabProps {
   settings: SystemSettings;
@@ -23,76 +31,14 @@ interface NotificationTabProps {
     value: SystemSettings[K]
   ) => void;
   isLoading: boolean;
-  handleImageUpload: (
-    file: File,
-    type: "notificationIcon" | "notificationBadge"
-  ) => Promise<void>;
-  handleImageDelete: (
-    type: "notificationIcon" | "notificationBadge"
-  ) => Promise<void>;
 }
 
 const NotificationTab = React.memo(function NotificationTab({
   settings,
   onUpdate,
   isLoading,
-  handleImageUpload,
-  handleImageDelete,
 }: NotificationTabProps) {
-  const { showInfo, showWarning, showSuccess, showError } = useCommonToast();
-
-  // 이미지 업로드 핸들러 (토스트 처리 포함)
-  const handleImageUploadWithToast = useCallback(
-    async (file: File, type: "notificationIcon" | "notificationBadge") => {
-      showInfo("이미지 업로드 시작", "이미지를 업로드하는 중입니다...");
-      if (!file) {
-        showWarning("입력 오류", "파일이 선택되지 않았습니다.");
-        return;
-      }
-      try {
-        await handleImageUpload(file, type);
-        const typeName =
-          type === "notificationIcon" ? "알림 아이콘" : "알림 배지";
-        showSuccess(
-          "이미지 업로드 완료",
-          `${typeName}이 성공적으로 업로드되었습니다.`
-        );
-      } catch (error) {
-        const typeName =
-          type === "notificationIcon" ? "알림 아이콘" : "알림 배지";
-        showError(
-          "이미지 업로드 실패",
-          `${typeName} 업로드 중 오류가 발생했습니다.`
-        );
-        throw error; // 에러를 다시 던져서 원래 핸들러에서도 처리할 수 있도록
-      }
-    },
-    [handleImageUpload] // 토스트 함수들을 의존성에서 제거
-  );
-
-  // 이미지 삭제 핸들러 (토스트 처리 포함)
-  const handleImageDeleteWithToast = useCallback(
-    async (type: "notificationIcon" | "notificationBadge") => {
-      try {
-        await handleImageDelete(type);
-        const typeName =
-          type === "notificationIcon" ? "알림 아이콘" : "알림 배지";
-        showSuccess(
-          "이미지 삭제 완료",
-          `${typeName}이 성공적으로 삭제되었습니다.`
-        );
-      } catch (error) {
-        const typeName =
-          type === "notificationIcon" ? "알림 아이콘" : "알림 배지";
-        showError(
-          "이미지 삭제 실패",
-          `${typeName} 삭제 중 오류가 발생했습니다.`
-        );
-        throw error; // 에러를 다시 던져서 원래 핸들러에서도 처리할 수 있도록
-      }
-    },
-    [handleImageDelete] // 토스트 함수들을 의존성에서 제거
-  );
+  const { showError, showSuccess } = useCommonToast();
 
   // 템플릿 미리보기 함수
   const handlePreviewTemplate = useCallback(() => {
@@ -115,32 +61,35 @@ const NotificationTab = React.memo(function NotificationTab({
 
       showSuccess("템플릿 미리보기 완료", previewText);
     } catch (error) {
+      handleError(error, "템플릿 미리보기");
       showError(
         "템플릿 미리보기 실패",
         "템플릿 미리보기를 생성하는 중 오류가 발생했습니다."
       );
     }
-  }, [settings.visitTemplate]); // 토스트 함수들을 의존성에서 제거
+  }, [settings.visitTemplate, showError, showSuccess]);
 
   return (
     <ErrorBoundary
-      title="알림 설정 탭 오류"
-      description="알림 설정을 불러오는 중 문제가 발생했습니다. 페이지를 새로고침하거나 잠시 후 다시 시도해주세요."
+      title={ERROR_CONFIGS.LOADING.title}
+      description={ERROR_CONFIGS.LOADING.description}
     >
       <div className="space-y-6">
         {/* 방문 알림 템플릿 설정 */}
         <Card>
           <SettingsCardHeader
             icon={Bell}
-            title="방문 알림 템플릿"
-            description="새로운 방문자 등록 시 발송되는 알림 메시지 템플릿을 설정합니다."
+            title={PAGE_HEADER.VISIT_NOTIFICATION_TEMPLATE_TITLE}
+            description={PAGE_HEADER.VISIT_NOTIFICATION_TEMPLATE_DESC}
           />
           <CardContent className="space-y-4">
             <div className="grid gap-2">
-              <Label htmlFor="visitTemplate">알림 메시지 템플릿</Label>
+              <Label htmlFor="visitTemplate">
+                {LABELS.VISIT_NOTIFICATION_TEMPLATE_LABEL}
+              </Label>
               <Textarea
                 id="visitTemplate"
-                placeholder="새로운 방문자가 등록되었습니다. 방문자: {방문자명}, 농장: {농장명}, 시간: {방문시간}"
+                placeholder={PLACEHOLDERS.VISIT_NOTIFICATION_TEMPLATE}
                 value={settings.visitTemplate}
                 onChange={(e) => onUpdate("visitTemplate", e.target.value)}
                 rows={3}
@@ -148,9 +97,7 @@ const NotificationTab = React.memo(function NotificationTab({
               <div className="flex items-start gap-2">
                 <div className="flex-1">
                   <p className="text-sm text-muted-foreground">
-                    사용 가능한 변수: {"{방문자명}"}, {"{방문날짜}"},{" "}
-                    {"{방문시간}"},{"{농장명}"}, {"{방문목적}"}, {"{연락처}"},{" "}
-                    {"{차량번호}"}, {"{방역상태}"}, {"{등록시간}"}
+                    {LABELS.VISIT_NOTIFICATION_TEMPLATE_VARIABLES}
                   </p>
                 </div>
                 <Button
@@ -160,7 +107,7 @@ const NotificationTab = React.memo(function NotificationTab({
                   className="flex items-center gap-1"
                 >
                   <Eye className="h-3 w-3" />
-                  미리보기
+                  {BUTTONS.TEMPLATE_PREVIEW_BUTTON}
                 </Button>
               </div>
             </div>
@@ -172,8 +119,6 @@ const NotificationTab = React.memo(function NotificationTab({
           settings={settings}
           onUpdate={onUpdate}
           isLoading={isLoading}
-          handleImageUpload={handleImageUploadWithToast}
-          handleImageDelete={handleImageDeleteWithToast}
         />
       </div>
     </ErrorBoundary>

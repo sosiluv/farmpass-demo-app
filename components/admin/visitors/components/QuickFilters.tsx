@@ -2,12 +2,13 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { Clock, TrendingUp, Target, RotateCcw, Filter } from "lucide-react";
+import { LABELS } from "@/lib/constants/visitor";
 
 // 빠른 필터 설정
 const QUICK_FILTERS = [
   {
     value: "today",
-    label: "오늘",
+    label: LABELS.QUICK_FILTERS_TODAY,
     icon: Clock,
     color: "from-emerald-500 to-emerald-600",
     bgColor: "bg-emerald-50 hover:bg-emerald-100",
@@ -16,7 +17,7 @@ const QUICK_FILTERS = [
   },
   {
     value: "week",
-    label: "7일",
+    label: LABELS.QUICK_FILTERS_WEEK,
     icon: TrendingUp,
     color: "from-blue-500 to-blue-600",
     bgColor: "bg-blue-50 hover:bg-blue-100",
@@ -25,7 +26,7 @@ const QUICK_FILTERS = [
   },
   {
     value: "month",
-    label: "30일",
+    label: LABELS.QUICK_FILTERS_MONTH,
     icon: Target,
     color: "from-purple-500 to-purple-600",
     bgColor: "bg-purple-50 hover:bg-purple-100",
@@ -64,9 +65,7 @@ export function QuickFilters({
             )}
           >
             <Icon className="h-3 w-3 sm:h-4 sm:w-4 md:h-4 md:w-4 dark:text-slate-100" />
-            <span className="dark:text-slate-100">
-              {filter.label}
-            </span>
+            <span className="dark:text-slate-100">{filter.label}</span>
           </Button>
         );
       })}
@@ -83,7 +82,7 @@ export function QuickFilters({
         )}
       >
         <RotateCcw className="h-3 w-3 sm:h-4 sm:w-4 dark:text-slate-100" />
-        <span className="dark:text-slate-100">전체</span>
+        <span className="dark:text-slate-100">{LABELS.QUICK_FILTERS_ALL}</span>
       </Button>
 
       {activeFiltersCount > 0 && (

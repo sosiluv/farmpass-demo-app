@@ -1,8 +1,10 @@
-import { createClient } from "@/lib/supabase/server";
 import { NextRequest, NextResponse } from "next/server";
-import { logDataChange } from "@/lib/utils/logging/system-log";
+import { createSystemLog } from "@/lib/utils/logging/system-log";
 import { devLog } from "@/lib/utils/logging/dev-logger";
 import { getClientIP, getUserAgent } from "@/lib/server/ip-helpers";
+import { requireAuth } from "@/lib/server/auth-utils";
+import { prisma } from "@/lib/prisma";
+import { sendSupabaseBroadcast } from "@/lib/supabase/broadcast";
 
 // PUT - 농장 멤버 역할 변경
 export async function PUT(
@@ -16,75 +18,126 @@ export async function PUT(
   let user: any = null;
 
   try {
-    const supabase = await createClient();
-    const {
-      data: { user: authUser },
-      error: authError,
-    } = await supabase.auth.getUser();
-
-    if (authError || !authUser) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    // 인증 확인
+    const authResult = await requireAuth(false);
+    if (!authResult.success || !authResult.user) {
+      return authResult.response!;
     }
 
-    user = authUser;
+    const user = authResult.user;
     const { role } = await request.json();
 
     // 농장 소유권 또는 관리자 권한 확인
-    const { data: farm, error: farmError } = await supabase
-      .from("farms")
-      .select("owner_id, farm_name")
-      .eq("id", params.farmId)
-      .single();
-
-    if (farmError || !farm) {
-      return NextResponse.json({ error: "Farm not found" }, { status: 404 });
+    let farm;
+    try {
+      farm = await prisma.farms.findUnique({
+        where: { id: params.farmId },
+        select: { owner_id: true, farm_name: true },
+      });
+    } catch (farmError) {
+      devLog.error("Error fetching farm:", farmError);
+      return NextResponse.json(
+        {
+          success: false,
+          error: "FARM_FETCH_ERROR",
+          message: "농장 정보 조회 중 오류가 발생했습니다.",
+        },
+        { status: 500 }
+      );
     }
 
-    // 소유자가 아닌 경우 관리자 권한 확인
-    if (farm.owner_id !== user.id) {
-      const { data: memberRole } = await supabase
-        .from("farm_members")
-        .select("role")
-        .eq("farm_id", params.farmId)
-        .eq("user_id", user.id)
-        .single();
+    if (!farm) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: "FARM_NOT_FOUND",
+          message: "농장을 찾을 수 없습니다.",
+        },
+        { status: 404 }
+      );
+    }
+
+    // 시스템 관리자가 아닌 경우에만 농장별 권한 확인
+    if (!authResult.isAdmin && farm.owner_id !== user.id) {
+      let memberRole;
+      try {
+        memberRole = await prisma.farm_members.findFirst({
+          where: {
+            farm_id: params.farmId,
+            user_id: user.id,
+          },
+          select: { role: true },
+        });
+      } catch (memberError) {
+        devLog.error("Error checking member role:", memberError);
+        return NextResponse.json(
+          {
+            success: false,
+            error: "PERMISSION_CHECK_ERROR",
+            message: "권한 확인 중 오류가 발생했습니다.",
+          },
+          { status: 500 }
+        );
+      }
 
       if (!memberRole || memberRole.role !== "manager") {
         return NextResponse.json(
-          { error: "Only farm owners and managers can change member roles" },
+          {
+            success: false,
+            error: "INSUFFICIENT_PERMISSIONS",
+            message: "멤버 역할 변경 권한이 없습니다.",
+          },
           { status: 403 }
         );
       }
     }
 
     // 변경할 멤버 정보 조회
-    const { data: memberToUpdate, error: memberError } = await supabase
-      .from("farm_members")
-      .select(
-        `
-        id,
-        farm_id,
-        user_id,
-        role,
-        profiles!farm_members_user_id_fkey (
-          id,
-          name,
-          email
-        )
-      `
-      )
-      .eq("id", params.memberId)
-      .eq("farm_id", params.farmId)
-      .single();
+    let memberToUpdate;
+    try {
+      memberToUpdate = await prisma.farm_members.findUnique({
+        where: { id: params.memberId },
+        include: {
+          profiles: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+            },
+          },
+        },
+      });
+    } catch (memberError) {
+      devLog.error("Error fetching member:", memberError);
+      return NextResponse.json(
+        {
+          success: false,
+          error: "MEMBER_FETCH_ERROR",
+          message: "멤버 정보 조회 중 오류가 발생했습니다.",
+        },
+        { status: 500 }
+      );
+    }
 
-    if (memberError || !memberToUpdate) {
-      return NextResponse.json({ error: "Member not found" }, { status: 404 });
+    if (!memberToUpdate || memberToUpdate.farm_id !== params.farmId) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: "MEMBER_NOT_FOUND",
+          message: "멤버를 찾을 수 없습니다.",
+        },
+        { status: 404 }
+      );
     }
 
     // 농장 소유자의 역할은 변경할 수 없음
     if (memberToUpdate.user_id === farm.owner_id) {
       return NextResponse.json(
-        { error: "Cannot change farm owner's role" },
+        {
+          success: false,
+          error: "CANNOT_CHANGE_OWNER_ROLE",
+          message: "농장 소유자의 역할은 변경할 수 없습니다.",
+        },
         { status: 400 }
       );
     }
@@ -92,20 +145,54 @@ export async function PUT(
     const oldRole = memberToUpdate.role;
 
     // 멤버 역할 업데이트
-    const { error: updateError } = await supabase
-      .from("farm_members")
-      .update({ role })
-      .eq("id", params.memberId);
-
-    if (updateError) {
+    try {
+      await prisma.farm_members.update({
+        where: { id: params.memberId },
+        data: { role },
+      });
+    } catch (updateError) {
+      devLog.error("Error updating member role:", updateError);
       throw updateError;
     }
 
+    // 🔥 농장 멤버 수정 실시간 브로드캐스트
+    await sendSupabaseBroadcast({
+      channel: "member_updates",
+      event: "member_updated",
+      payload: {
+        eventType: "UPDATE",
+        new: {
+          id: params.memberId,
+          farm_id: params.farmId,
+          user_id: memberToUpdate.user_id,
+          role: role,
+          old_role: oldRole,
+          name: (memberToUpdate.profiles as any)?.name,
+          email: (memberToUpdate.profiles as any)?.email,
+        },
+        old: {
+          id: params.memberId,
+          farm_id: params.farmId,
+          user_id: memberToUpdate.user_id,
+          role: oldRole,
+          name: (memberToUpdate.profiles as any)?.name,
+          email: (memberToUpdate.profiles as any)?.email,
+        },
+        table: "farm_members",
+        schema: "public",
+      },
+    });
+
     // 농장 멤버 역할 변경 로그 기록
-    await logDataChange(
+    await createSystemLog(
       "MEMBER_UPDATE",
-      "MEMBER",
+      `농장 멤버 역할 변경: ${(memberToUpdate.profiles as any)?.name} (${
+        (memberToUpdate.profiles as any)?.email
+      }) - ${oldRole} → ${role} (농장: ${farm.farm_name})`,
+      "info",
       user.id,
+      "member",
+      params.memberId,
       {
         member_id: params.memberId,
         farm_id: params.farmId,
@@ -117,16 +204,16 @@ export async function PUT(
         target_user_id: memberToUpdate.user_id,
         action_type: "member_management",
       },
-      {
-        ip: clientIP,
-        email: user.email,
-        userAgent: userAgent,
-      }
+      user.email,
+      clientIP,
+      userAgent
     );
 
     return NextResponse.json(
       {
-        message: "Member role updated successfully",
+        message: `${(memberToUpdate.profiles as any)?.name}의 역할이 ${
+          oldRole === "manager" ? "관리자" : "조회자"
+        }에서 ${role === "manager" ? "관리자" : "조회자"}로 변경되었습니다.`,
         member: {
           ...memberToUpdate,
           role: role,
@@ -142,10 +229,15 @@ export async function PUT(
     devLog.error("Error updating member role:", error);
 
     // 농장 멤버 역할 변경 실패 로그 기록
-    await logDataChange(
+    await createSystemLog(
       "MEMBER_UPDATE_FAILED",
-      "MEMBER",
+      `농장 멤버 역할 변경 실패: ${
+        error instanceof Error ? error.message : "Unknown error"
+      } (멤버 ID: ${params.memberId}, 농장 ID: ${params.farmId})`,
+      "error",
       user?.id,
+      "member",
+      params.memberId,
       {
         error_message: error instanceof Error ? error.message : "Unknown error",
         farm_id: params.farmId,
@@ -153,16 +245,19 @@ export async function PUT(
         action_type: "member_management",
         status: "failed",
       },
-      {
-        ip: clientIP,
-        userAgent: userAgent,
-      }
-    ).catch((logError) =>
+      user?.email,
+      clientIP,
+      userAgent
+    ).catch((logError: any) =>
       devLog.error("Failed to log member role update error:", logError)
     );
 
     return NextResponse.json(
-      { error: "Failed to update member role" },
+      {
+        success: false,
+        error: "MEMBER_UPDATE_ERROR",
+        message: "멤버 정보 수정 중 오류가 발생했습니다.",
+      },
       { status: 500 }
     );
   }
@@ -180,103 +275,189 @@ export async function DELETE(
   let user: any = null;
 
   try {
-    const supabase = await createClient();
-    const {
-      data: { user: authUser },
-      error: authError,
-    } = await supabase.auth.getUser();
-
-    if (authError || !authUser) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    // 인증 확인
+    const authResult = await requireAuth(false);
+    if (!authResult.success || !authResult.user) {
+      return authResult.response!;
     }
 
-    user = authUser;
+    const user = authResult.user;
 
     // 농장 소유권 또는 관리자 권한 확인
-    const { data: farm, error: farmError } = await supabase
-      .from("farms")
-      .select("owner_id, farm_name")
-      .eq("id", params.farmId)
-      .single();
-
-    if (farmError || !farm) {
-      return NextResponse.json({ error: "Farm not found" }, { status: 404 });
+    let farm;
+    try {
+      farm = await prisma.farms.findUnique({
+        where: { id: params.farmId },
+        select: { owner_id: true, farm_name: true },
+      });
+    } catch (farmError) {
+      devLog.error("Error fetching farm:", farmError);
+      return NextResponse.json(
+        {
+          success: false,
+          error: "FARM_FETCH_ERROR",
+          message: "농장 정보 조회 중 오류가 발생했습니다.",
+        },
+        { status: 500 }
+      );
     }
 
-    // 소유자가 아닌 경우 관리자 권한 확인
-    if (farm.owner_id !== user.id) {
-      const { data: memberRole } = await supabase
-        .from("farm_members")
-        .select("role")
-        .eq("farm_id", params.farmId)
-        .eq("user_id", user.id)
-        .single();
+    if (!farm) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: "FARM_NOT_FOUND",
+          message: "농장을 찾을 수 없습니다.",
+        },
+        { status: 404 }
+      );
+    }
+
+    // 시스템 관리자가 아닌 경우에만 농장별 권한 확인
+    if (!authResult.isAdmin && farm.owner_id !== user.id) {
+      let memberRole;
+      try {
+        memberRole = await prisma.farm_members.findFirst({
+          where: {
+            farm_id: params.farmId,
+            user_id: user.id,
+          },
+          select: { role: true },
+        });
+      } catch (memberError) {
+        devLog.error("Error checking member role:", memberError);
+        return NextResponse.json(
+          {
+            success: false,
+            error: "PERMISSION_CHECK_ERROR",
+            message: "권한 확인 중 오류가 발생했습니다.",
+          },
+          { status: 500 }
+        );
+      }
 
       if (!memberRole || memberRole.role !== "manager") {
         return NextResponse.json(
-          { error: "Only farm owners and managers can remove members" },
+          {
+            success: false,
+            error: "INSUFFICIENT_PERMISSIONS",
+            message: "멤버 역할 변경 권한이 없습니다.",
+          },
           { status: 403 }
         );
       }
     }
 
     // 삭제할 멤버 정보 조회
-    const { data: memberToRemove, error: memberError } = await supabase
-      .from("farm_members")
-      .select(
-        `
-        id,
-        farm_id,
-        user_id,
-        role,
-        profiles!farm_members_user_id_fkey (
-          id,
-          name,
-          email
-        )
-      `
-      )
-      .eq("id", params.memberId)
-      .eq("farm_id", params.farmId)
-      .single();
+    let memberToRemove;
+    try {
+      memberToRemove = await prisma.farm_members.findUnique({
+        where: { id: params.memberId },
+        include: {
+          profiles: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+            },
+          },
+        },
+      });
+    } catch (memberError) {
+      devLog.error("Error fetching member:", memberError);
+      return NextResponse.json(
+        {
+          success: false,
+          error: "MEMBER_FETCH_ERROR",
+          message: "멤버 정보 조회 중 오류가 발생했습니다.",
+        },
+        { status: 500 }
+      );
+    }
 
-    if (memberError || !memberToRemove) {
-      return NextResponse.json({ error: "Member not found" }, { status: 404 });
+    if (!memberToRemove || memberToRemove.farm_id !== params.farmId) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: "MEMBER_NOT_FOUND",
+          message: "멤버를 찾을 수 없습니다.",
+        },
+        { status: 404 }
+      );
     }
 
     // 농장 소유자는 제거할 수 없음
     if (memberToRemove.user_id === farm.owner_id) {
       return NextResponse.json(
-        { error: "Cannot remove farm owner" },
+        {
+          success: false,
+          error: "CANNOT_REMOVE_OWNER",
+          message: "농장 소유자는 제거할 수 없습니다.",
+        },
         { status: 400 }
       );
     }
 
     // 멤버 삭제
-    const { error: deleteError } = await supabase
-      .from("farm_members")
-      .delete()
-      .eq("id", params.memberId);
-
-    if (deleteError) {
+    try {
+      await prisma.farm_members.delete({
+        where: { id: params.memberId },
+      });
+    } catch (deleteError) {
+      devLog.error("Error deleting member:", deleteError);
       throw deleteError;
     }
 
-    // 농장 멤버 제거 로그 기록
-    await logDataChange("MEMBER_DELETE", "MEMBER", user.id, {
-      member_id: params.memberId,
-      farm_id: params.farmId,
-      farm_name: farm.farm_name,
-      member_email: (memberToRemove.profiles as any)?.email,
-      member_name: (memberToRemove.profiles as any)?.name,
-      member_role: memberToRemove.role,
-      target_user_id: memberToRemove.user_id,
-      action_type: "member_management",
+    // 🔥 농장 멤버 삭제 실시간 브로드캐스트
+    await sendSupabaseBroadcast({
+      channel: "member_updates",
+      event: "member_deleted",
+      payload: {
+        eventType: "DELETE",
+        new: null,
+        old: {
+          id: params.memberId,
+          farm_id: params.farmId,
+          user_id: memberToRemove.user_id,
+          role: memberToRemove.role,
+          name: (memberToRemove.profiles as any)?.name,
+          email: (memberToRemove.profiles as any)?.email,
+        },
+        table: "farm_members",
+        schema: "public",
+      },
     });
+
+    // 농장 멤버 제거 로그 기록
+    await createSystemLog(
+      "MEMBER_DELETE",
+      `농장 멤버 제거: ${(memberToRemove.profiles as any)?.name} (${
+        (memberToRemove.profiles as any)?.email
+      }) - ${memberToRemove.role} 역할 (농장: ${farm.farm_name})`,
+      "info",
+      user.id,
+      "member",
+      params.memberId,
+      {
+        member_id: params.memberId,
+        farm_id: params.farmId,
+        farm_name: farm.farm_name,
+        member_email: (memberToRemove.profiles as any)?.email,
+        member_name: (memberToRemove.profiles as any)?.name,
+        member_role: memberToRemove.role,
+        target_user_id: memberToRemove.user_id,
+        action_type: "member_management",
+      },
+      user.email,
+      clientIP,
+      userAgent
+    );
 
     return NextResponse.json(
       {
-        message: "Member removed successfully",
+        message: `${(memberToRemove.profiles as any)?.name || "구성원"}이(가) ${
+          memberToRemove.role === "manager" ? "관리자" : "조회자"
+        } 역할에서 제거되었습니다.`,
         removedMember: memberToRemove,
       },
       {
@@ -289,18 +470,35 @@ export async function DELETE(
     devLog.error("Error removing member:", error);
 
     // 농장 멤버 제거 실패 로그 기록
-    await logDataChange("MEMBER_DELETE_FAILED", "MEMBER", user?.id, {
-      error_message: error instanceof Error ? error.message : "Unknown error",
-      farm_id: params.farmId,
-      member_id: params.memberId,
-      action_type: "member_management",
-      status: "failed",
-    }).catch((logError) =>
+    await createSystemLog(
+      "MEMBER_DELETE_FAILED",
+      `농장 멤버 제거 실패: ${
+        error instanceof Error ? error.message : "Unknown error"
+      } (멤버 ID: ${params.memberId}, 농장 ID: ${params.farmId})`,
+      "error",
+      user?.id,
+      "member",
+      params.memberId,
+      {
+        error_message: error instanceof Error ? error.message : "Unknown error",
+        farm_id: params.farmId,
+        member_id: params.memberId,
+        action_type: "member_management",
+        status: "failed",
+      },
+      user?.email,
+      clientIP,
+      userAgent
+    ).catch((logError: any) =>
       devLog.error("Failed to log member removal error:", logError)
     );
 
     return NextResponse.json(
-      { error: "Failed to remove member" },
+      {
+        success: false,
+        error: "MEMBER_DELETE_ERROR",
+        message: "멤버 삭제 중 오류가 발생했습니다.",
+      },
       { status: 500 }
     );
   }

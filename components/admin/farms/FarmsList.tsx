@@ -1,19 +1,12 @@
 import { FarmCard } from "./FarmCard";
-import type { Farm } from "@/lib/hooks/use-farms";
-import type { MemberWithProfile } from "@/lib/hooks/use-farm-members-preview-safe";
-
-interface FarmMembersData {
-  count: number;
-  members: MemberWithProfile[];
-  loading: boolean;
-}
+import { useFarmMembersPreviewQuery } from "@/lib/hooks/query/use-farm-members-query";
+import type { Farm } from "@/lib/types/farm";
 
 interface FarmsListProps {
   farms: Farm[];
   isOwner: (farm: Farm) => boolean;
   onEdit: (farm: Farm) => void;
   onDelete: (farmId: string) => void;
-  farmMembersData: Record<string, FarmMembersData>;
 }
 
 export function FarmsList({
@@ -21,8 +14,11 @@ export function FarmsList({
   isOwner,
   onEdit,
   onDelete,
-  farmMembersData,
 }: FarmsListProps) {
+  // 모든 농장의 멤버를 한 번에 조회 (API 호출 최적화)
+  const farmIds = farms.map((farm) => farm.id);
+  const { farmMembers } = useFarmMembersPreviewQuery(farmIds);
+
   return (
     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
       {(farms || []).map((farm, index) => (
@@ -33,13 +29,7 @@ export function FarmsList({
           isOwner={isOwner(farm)}
           onEdit={onEdit}
           onDelete={onDelete}
-          membersData={
-            farmMembersData[farm.id] || {
-              count: 0,
-              members: [],
-              loading: false,
-            }
-          }
+          membersData={farmMembers?.[farm.id]}
         />
       ))}
     </div>

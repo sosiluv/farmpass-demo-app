@@ -1,8 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
-import { logVisitorDataAccess } from "@/lib/utils/logging/system-log";
+import { prisma } from "@/lib/prisma";
+import { createSystemLog } from "@/lib/utils/logging/system-log";
 import { devLog } from "@/lib/utils/logging/dev-logger";
 import { getClientIP, getUserAgent } from "@/lib/server/ip-helpers";
+import { requireAuth } from "@/lib/server/auth-utils";
+import { sendSupabaseBroadcast } from "@/lib/supabase/broadcast";
 
 export async function PUT(
   request: NextRequest,
@@ -10,26 +12,18 @@ export async function PUT(
 ) {
   const clientIP = getClientIP(request);
   const userAgent = getUserAgent(request);
+  const { farmId, visitorId } = params;
+
+  // 인증 확인
+  const authResult = await requireAuth(false);
+  if (!authResult.success || !authResult.user) {
+    return authResult.response!;
+  }
+
+  const user = authResult.user;
 
   try {
     devLog.log("방문자 수정 API 요청 시작:", params);
-
-    const supabase = await createClient();
-
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser();
-
-    if (authError || !user) {
-      devLog.log("인증 실패:", authError);
-      return NextResponse.json(
-        { message: "인증이 필요합니다. 다시 로그인해주세요." },
-        { status: 401 }
-      );
-    }
-
-    const { farmId, visitorId } = params;
     const updateData = await request.json();
 
     devLog.log("수정할 데이터:", {
@@ -51,17 +45,24 @@ export async function PUT(
       });
 
       return NextResponse.json(
-        { message: "이름, 연락처, 주소는 필수 입력 항목입니다." },
+        {
+          success: false,
+          error: "MISSING_REQUIRED_FIELDS",
+          message: "이름, 연락처, 주소는 필수 입력 항목입니다.",
+        },
         { status: 400 }
       );
     }
 
     // 방문자 정보 업데이트
-    devLog.log("Supabase 업데이트 시작");
+    devLog.log("Prisma 업데이트 시작");
 
-    const { data, error } = await supabase
-      .from("visitor_entries")
-      .update({
+    const data = await prisma.visitor_entries.update({
+      where: {
+        id: visitorId,
+        farm_id: farmId,
+      },
+      data: {
         visitor_name: updateData.visitor_name.trim(),
         visitor_phone: updateData.visitor_phone.trim(),
         visitor_address: updateData.visitor_address.trim(),
@@ -69,60 +70,41 @@ export async function PUT(
         vehicle_number: updateData.vehicle_number?.trim() || null,
         notes: updateData.notes?.trim() || null,
         disinfection_check: updateData.disinfection_check || false,
-        updated_at: new Date().toISOString(),
-      })
-      .eq("id", visitorId)
-      .eq("farm_id", farmId)
-      .select("*, farms(farm_name, farm_type)")
-      .single();
-
-    if (error) {
-      devLog.error("Supabase 업데이트 실패:", error);
-
-      // 실패 로그 기록
-      await logVisitorDataAccess(
-        "UPDATE_FAILED",
-        user.id,
-        user.email,
-        {
-          farm_id: farmId,
-          visitor_id: visitorId,
-          error: error.message,
-          status: "failed",
-          metadata: {
-            message: "방문자 정보 수정 실패",
-            error_details: error.details,
-            error_code: error.code,
-            error_hint: error.hint,
+        updated_at: new Date(),
+      },
+      include: {
+        farms: {
+          select: {
+            farm_name: true,
+            farm_type: true,
           },
         },
-        {
-          ip: clientIP,
-          email: user.email,
-          userAgent,
-        }
-      );
-
-      if (error.code === "23505") {
-        return NextResponse.json(
-          { message: "중복된 방문자 정보가 있습니다." },
-          { status: 400 }
-        );
-      }
-
-      return NextResponse.json(
-        { message: "방문자 정보 수정에 실패했습니다." },
-        { status: 500 }
-      );
-    }
+      },
+    });
 
     devLog.log("방문자 정보 업데이트 성공:", data);
 
+    // 🔥 방문자 수정 실시간 브로드캐스트
+    await sendSupabaseBroadcast({
+      channel: "visitor_updates",
+      event: "visitor_updated",
+      payload: {
+        eventType: "UPDATE",
+        new: data,
+        old: null,
+        table: "visitor_entries",
+        schema: "public",
+      },
+    });
+
     // 성공 로그 기록
-    await logVisitorDataAccess(
-      "UPDATED",
+    await createSystemLog(
+      "VISITOR_UPDATED",
+      `방문자 정보 수정: ${data.visitor_name} (방문자 ID: ${visitorId}, 농장 ID: ${farmId})`,
+      "info",
       user.id,
-      user.email,
+      "visitor",
+      visitorId,
       {
         farm_id: farmId,
         visitor_id: visitorId,
@@ -130,18 +112,71 @@ export async function PUT(
         status: "success",
         changes: updateData,
       },
-      {
-        ip: clientIP,
-        email: user.email,
-        userAgent,
-      }
+      user.email,
+      clientIP,
+      userAgent
     );
 
-    return NextResponse.json(data);
-  } catch (error) {
+    return NextResponse.json({
+      ...data,
+      success: true,
+      message: "방문자 정보가 성공적으로 수정되었습니다.",
+    });
+  } catch (error: any) {
     devLog.error("방문자 수정 중 예외 발생:", error);
+
+    // Prisma 에러 처리
+    if (error.code === "P2002") {
+      return NextResponse.json(
+        {
+          success: false,
+          error: "DUPLICATE_VISITOR_INFO",
+          message: "중복된 방문자 정보가 있습니다.",
+        },
+        { status: 400 }
+      );
+    }
+
+    if (error.code === "P2025") {
+      return NextResponse.json(
+        {
+          success: false,
+          error: "VISITOR_NOT_FOUND",
+          message: "방문자 정보를 찾을 수 없습니다.",
+        },
+        { status: 404 }
+      );
+    }
+
+    // 실패 로그 기록
+    await createSystemLog(
+      "VISITOR_UPDATE_FAILED",
+      `방문자 정보 수정 실패: ${error.message} (방문자 ID: ${visitorId}, 농장 ID: ${farmId})`,
+      "error",
+      user.id,
+      "visitor",
+      visitorId,
+      {
+        farm_id: farmId,
+        visitor_id: visitorId,
+        error: error.message,
+        status: "failed",
+        metadata: {
+          message: "방문자 정보 수정 실패",
+          error_code: error.code,
+        },
+      },
+      user.email,
+      clientIP,
+      userAgent
+    );
+
     return NextResponse.json(
-      { message: "서버 오류가 발생했습니다." },
+      {
+        success: false,
+        error: "VISITOR_UPDATE_FAILED",
+        message: "방문자 정보 수정에 실패했습니다.",
+      },
       { status: 500 }
     );
   }
@@ -153,93 +188,130 @@ export async function DELETE(
 ) {
   const clientIP = getClientIP(request);
   const userAgent = getUserAgent(request);
+  const { farmId, visitorId } = params;
+
+  // 인증 확인
+  const authResult = await requireAuth(false);
+  if (!authResult.success || !authResult.user) {
+    return authResult.response!;
+  }
+
+  const user = authResult.user;
 
   try {
-    const supabase = await createClient();
+    // 방문자 정보 조회 (로그용)
+    const visitor = await prisma.visitor_entries.findUnique({
+      where: {
+        id: visitorId,
+        farm_id: farmId,
+      },
+      select: {
+        visitor_name: true,
+      },
+    });
 
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser();
-
-    if (authError || !user) {
+    if (!visitor) {
       return NextResponse.json(
-        { message: "인증이 필요합니다. 다시 로그인해주세요." },
-        { status: 401 }
+        {
+          success: false,
+          error: "VISITOR_NOT_FOUND",
+          message: "방문자 정보를 찾을 수 없습니다.",
+        },
+        { status: 404 }
       );
     }
-
-    const { farmId, visitorId } = params;
-
-    // 방문자 정보 조회 (로그용)
-    const { data: visitor } = await supabase
-      .from("visitor_entries")
-      .select("visitor_name")
-      .eq("id", visitorId)
-      .eq("farm_id", farmId)
-      .single();
 
     // 방문자 삭제
-    const { error } = await supabase
-      .from("visitor_entries")
-      .delete()
-      .eq("id", visitorId)
-      .eq("farm_id", farmId);
+    await prisma.visitor_entries.delete({
+      where: {
+        id: visitorId,
+        farm_id: farmId,
+      },
+    });
 
-    if (error) {
-      // 실패 로그 기록
-      await logVisitorDataAccess(
-        "DELETE_FAILED",
-        user.id,
-        user.email,
-        {
+    // 🔥 방문자 삭제 실시간 브로드캐스트
+    await sendSupabaseBroadcast({
+      channel: "visitor_updates",
+      event: "visitor_deleted",
+      payload: {
+        eventType: "DELETE",
+        new: null,
+        old: {
+          id: visitorId,
           farm_id: farmId,
-          visitor_id: visitorId,
-          visitor_name: visitor?.visitor_name,
-          error: error.message,
-          status: "failed",
-          metadata: {
-            message: "방문자 삭제 실패",
-          },
+          visitor_name: visitor.visitor_name,
         },
-        {
-          ip: clientIP,
-          email: user.email,
-          userAgent,
-        }
-      );
-
-      return NextResponse.json(
-        { message: "방문자 삭제에 실패했습니다." },
-        { status: 500 }
-      );
-    }
+        table: "visitor_entries",
+        schema: "public",
+      },
+    });
 
     // 성공 로그 기록
-    if (visitor) {
-      await logVisitorDataAccess(
-        "DELETED",
-        user.id,
-        user.email,
+    await createSystemLog(
+      "VISITOR_DELETED",
+      `방문자 삭제: ${visitor.visitor_name} (방문자 ID: ${visitorId}, 농장 ID: ${farmId})`,
+      "info",
+      user.id,
+      "visitor",
+      visitorId,
+      {
+        farm_id: farmId,
+        visitor_id: visitorId,
+        visitor_name: visitor.visitor_name,
+        status: "success",
+      },
+      user.email,
+      clientIP,
+      userAgent
+    );
+
+    return NextResponse.json({
+      success: true,
+      message: "방문자가 성공적으로 삭제되었습니다.",
+    });
+  } catch (error: any) {
+    devLog.error("방문자 삭제 중 예외 발생:", error);
+
+    if (error.code === "P2025") {
+      return NextResponse.json(
         {
-          farm_id: farmId,
-          visitor_id: visitorId,
-          visitor_name: visitor.visitor_name,
-          status: "success",
+          success: false,
+          error: "VISITOR_NOT_FOUND",
+          message: "방문자 정보를 찾을 수 없습니다.",
         },
-        {
-          ip: clientIP,
-          email: user.email,
-          userAgent,
-        }
+        { status: 404 }
       );
     }
 
-    return NextResponse.json({ success: true });
-  } catch (error) {
-    devLog.error("방문자 삭제 중 예외 발생:", error);
+    // 실패 로그 기록
+    await createSystemLog(
+      "VISITOR_DELETE_FAILED",
+      `방문자 삭제 실패: ${error.message} (방문자 ID: ${visitorId}, 농장 ID: ${farmId})`,
+      "error",
+      user.id,
+      "visitor",
+      visitorId,
+      {
+        farm_id: farmId,
+        visitor_id: visitorId,
+        error: error.message,
+        status: "failed",
+        metadata: {
+          message: "방문자 삭제 실패",
+          error_code: error.code,
+        },
+      },
+      user.email,
+      clientIP,
+      userAgent
+    );
+
     return NextResponse.json(
-      { message: "서버 오류가 발생했습니다." },
+      {
+        success: false,
+        error: "VISITOR_DELETE_FAILED",
+        message: "방문자 삭제에 실패했습니다.",
+      },
       { status: 500 }
     );
   }

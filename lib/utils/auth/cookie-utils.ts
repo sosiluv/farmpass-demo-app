@@ -28,28 +28,43 @@ export function getSupabaseAuthCookies(): string[] {
 }
 
 /**
- * 클라이언트 사이드에서 쿠키 삭제 (AuthService용)
+ * 클라이언트 사이드에서 인증/세션 쿠키 삭제 (AuthService용)
  */
-export function clearClientCookies(): void {
+export function clearAuthCookies(): void {
   if (typeof document === "undefined") return;
 
-  const cookiesToClear = getSupabaseAuthCookies();
+  // Supabase + Vercel 인증/세션 쿠키 삭제
+  const cookiesToClear = [
+    ...getSupabaseAuthCookies(),
+    "_vercel_jwt",
+    "_vercel_session",
+  ];
 
   cookiesToClear.forEach((cookieName) => {
     if (cookieName) {
       // 다양한 도메인과 경로에서 쿠키 삭제 (브라우저 호환성)
-      document.cookie = `${cookieName}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; domain=${window.location.hostname};`;
-      document.cookie = `${cookieName}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;`;
-      document.cookie = `${cookieName}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; domain=.${window.location.hostname};`;
+      document.cookie = `${cookieName}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; domain=${
+        window.location.hostname
+      };${location.protocol === "https:" ? " Secure;" : ""}`;
+      document.cookie = `${cookieName}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;${
+        location.protocol === "https:" ? " Secure;" : ""
+      }`;
+      document.cookie = `${cookieName}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; domain=.${
+        window.location.hostname
+      };${location.protocol === "https:" ? " Secure;" : ""}`;
     }
   });
 }
 
 /**
- * 서버 사이드에서 쿠키 삭제 (Middleware용)
+ * 서버 사이드에서 인증/세션 쿠키 삭제 (Middleware용)
  */
-export function clearServerCookies(response: any): void {
-  const cookiesToDelete = getSupabaseAuthCookies();
+export function clearServerAuthCookies(response: any): void {
+  const cookiesToDelete = [
+    ...getSupabaseAuthCookies(),
+    "_vercel_jwt",
+    "_vercel_session",
+  ];
 
   cookiesToDelete.forEach((cookieName) => {
     if (cookieName) {

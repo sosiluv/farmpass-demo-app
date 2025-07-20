@@ -2,6 +2,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { X } from "lucide-react";
+import { LABELS, PLACEHOLDERS } from "@/lib/constants/farms";
 
 interface AddMemberEmailFieldProps {
   searchTerm: string;
@@ -18,10 +19,14 @@ export function AddMemberEmailField({
 }: AddMemberEmailFieldProps) {
   return (
     <div className="space-y-1 sm:space-y-2">
-      <Label className="text-xs sm:text-sm">이메일</Label>
+      <Label htmlFor="member-email-search" className="text-xs sm:text-sm">
+        {LABELS.MEMBER_EMAIL}
+      </Label>
       <div className="relative">
         <Input
-          placeholder="이메일 주소 입력"
+          id="member-email-search"
+          name="member-email-search"
+          placeholder={PLACEHOLDERS.MEMBER_EMAIL_PLACEHOLDER}
           value={searchTerm}
           onChange={(e) => onSearchTermChange(e.target.value)}
           className="h-8 sm:h-9 md:h-10 text-xs sm:text-sm"
@@ -41,8 +46,12 @@ export function AddMemberEmailField({
             {(availableUsers || []).map((user) => (
               <div
                 key={user.id}
-                className="p-2 sm:p-3 hover:bg-gray-100 cursor-pointer border-b last:border-b-0"
-                onClick={() => onUserSelect(user)}
+                className="p-2 sm:p-3 hover:bg-gray-100 cursor-pointer border-b last:border-b-0 transition-colors duration-150"
+                onClick={() => {
+                  onUserSelect(user);
+                  // input에서 포커스 제거
+                  (document.activeElement as HTMLElement)?.blur();
+                }}
               >
                 <div className="font-medium text-xs sm:text-sm text-gray-500 truncate">
                   {user.name}

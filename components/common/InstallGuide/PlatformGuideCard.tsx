@@ -2,6 +2,7 @@ import React from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { PlatformGuide } from "./data";
+import { LABELS } from "@/lib/constants/common";
 
 interface PlatformGuideCardProps {
   currentGuide: PlatformGuide;
@@ -22,7 +23,9 @@ export function PlatformGuideCard({
             <p className="text-sm text-gray-600">{installInfo.reason}</p>
           </div>
           <Badge variant="secondary" className="ml-auto">
-            {installInfo.method === "banner" ? "자동 배너" : "수동 설치"}
+            {installInfo.method === "banner"
+              ? LABELS.INSTALL_GUIDE_AUTO_BANNER
+              : LABELS.INSTALL_GUIDE_MANUAL_INSTALL}
           </Badge>
         </div>
       </CardContent>

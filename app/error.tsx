@@ -4,6 +4,7 @@ import { useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { RefreshCw, Zap } from "lucide-react";
 import { devLog } from "@/lib/utils/logging/dev-logger";
+import { GLOBAL_ERROR_LABELS } from "@/lib/constants/error";
 
 interface ErrorProps {
   error: Error & { digest?: string };
@@ -21,10 +22,10 @@ export default function Error({ error, reset }: ErrorProps) {
         {/* 에러 아이콘과 500 숫자 조합 */}
         <div className="relative mb-8">
           <div className="text-[12rem] font-black text-transparent bg-clip-text bg-gradient-to-r from-red-200 to-orange-300 leading-none select-none">
-            500
+            {GLOBAL_ERROR_LABELS.ERROR_CODE}
           </div>
           <div className="absolute inset-0 text-[12rem] font-black text-red-100 leading-none -z-10 blur-sm">
-            500
+            {GLOBAL_ERROR_LABELS.ERROR_CODE}
           </div>
           {/* 번개 아이콘 */}
           <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
@@ -36,14 +37,20 @@ export default function Error({ error, reset }: ErrorProps) {
 
         {/* 메인 메시지 */}
         <h1 className="text-3xl font-bold text-slate-800 mb-4 tracking-tight">
-          서비스에 문제가 발생했어요
+          {GLOBAL_ERROR_LABELS.PAGE_TITLE}
         </h1>
 
         {/* 설명 */}
         <p className="text-lg text-slate-500 mb-10 leading-relaxed">
-          일시적인 오류입니다
-          <br />
-          잠시 후 다시 시도해주세요
+          {GLOBAL_ERROR_LABELS.DESCRIPTION.split("\n").map((line, index) => (
+            <span key={index}>
+              {line}
+              {index <
+                GLOBAL_ERROR_LABELS.DESCRIPTION.split("\n").length - 1 && (
+                <br />
+              )}
+            </span>
+          ))}
         </p>
 
         {/* 세련된 액션 버튼 */}
@@ -53,7 +60,7 @@ export default function Error({ error, reset }: ErrorProps) {
           onClick={reset}
         >
           <RefreshCw className="w-4 h-4 mr-2" />
-          다시 시도하기
+          {GLOBAL_ERROR_LABELS.BUTTONS.RETRY}
         </Button>
 
         {/* 로딩 애니메이션 */}
@@ -68,16 +75,20 @@ export default function Error({ error, reset }: ErrorProps) {
           <details className="mt-12 text-left bg-slate-50 border border-slate-200 p-4 rounded-xl shadow-sm">
             <summary className="cursor-pointer text-sm font-medium text-slate-700 mb-3 flex items-center">
               <div className="w-2 h-2 bg-red-500 rounded-full mr-2"></div>
-              개발자 정보
+              {GLOBAL_ERROR_LABELS.DEVELOPER_INFO.TITLE}
             </summary>
             <div className="text-xs text-red-600 font-mono break-all bg-white p-3 rounded-lg border">
               <p className="mb-2">
-                <strong className="text-slate-700">Error:</strong>{" "}
+                <strong className="text-slate-700">
+                  {GLOBAL_ERROR_LABELS.DEVELOPER_INFO.ERROR_LABEL}
+                </strong>{" "}
                 {error.message}
               </p>
               {error.digest && (
                 <p>
-                  <strong className="text-slate-700">Digest:</strong>{" "}
+                  <strong className="text-slate-700">
+                    {GLOBAL_ERROR_LABELS.DEVELOPER_INFO.DIGEST_LABEL}
+                  </strong>{" "}
                   {error.digest}
                 </p>
               )}

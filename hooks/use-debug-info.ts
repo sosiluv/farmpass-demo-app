@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useCallback } from "react";
 import { usePathname } from "next/navigation";
 import type { DebugInfo } from "@/lib/types/debug";
 
@@ -29,13 +29,6 @@ export function useDebugInfo(enabled: boolean) {
           nav.loadEventEnd - nav.fetchStart
         );
       }
-    } else if ("timing" in (performance as any)) {
-      // 구식 API 폴백
-      const timing = (performance as any).timing;
-      performanceInfo.domContentLoaded =
-        timing.domContentLoadedEventEnd - timing.navigationStart;
-      performanceInfo.loadComplete =
-        timing.loadEventEnd - timing.navigationStart;
     }
 
     // Paint Timing API

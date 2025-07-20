@@ -1,7 +1,4 @@
-import { useState, useEffect } from "react";
-import { useCommonToast } from "@/lib/utils/notification/toast-messages";
-import { devLog } from "@/lib/utils/logging/dev-logger";
-import { supabase } from "@/lib/supabase/client";
+import { useAdminUsersListQuery } from "@/lib/hooks/query/use-admin-users-query";
 import type { Profile } from "@/lib/types";
 
 interface UsersDataManagerProps {
@@ -10,41 +7,31 @@ interface UsersDataManagerProps {
     lastUpdate: Date;
     setUsers: React.Dispatch<React.SetStateAction<Profile[]>>;
     setLastUpdate: (date: Date) => void;
+    isLoading: boolean;
+    error: Error | null;
+    refetch: () => void;
   }) => React.ReactNode;
 }
 
 export function UsersDataManager({ children }: UsersDataManagerProps) {
-  const { showInfo, showError } = useCommonToast();
-  const [users, setUsers] = useState<Profile[]>([]);
-  const [lastUpdate, setLastUpdate] = useState<Date>(new Date());
-
-  useEffect(() => {
-    fetchUsers();
-  }, []);
-
-  const fetchUsers = async () => {
-    showInfo("사용자 정보 로딩 시작", "사용자 정보를 불러오는 중입니다...");
-    try {
-      const { data, error } = await supabase.from("profiles").select("*");
-      if (error) throw error;
-      setUsers(data || []);
-      setLastUpdate(new Date());
-    } catch (error: any) {
-      devLog.error("Error fetching users:", error);
-      showError(
-        "사용자 정보 불러오기 실패",
-        "사용자 정보를 불러오는데 실패했습니다."
-      );
-    }
-  };
+  const {
+    data: users = [],
+    isLoading,
+    error,
+    refetch,
+    dataUpdatedAt,
+  } = useAdminUsersListQuery();
 
   return (
     <>
       {children({
         users,
-        lastUpdate,
-        setUsers,
-        setLastUpdate,
+        lastUpdate: new Date(dataUpdatedAt),
+        setUsers: () => {}, // React Query를 사용하므로 직접 state 변경 불필요
+        setLastUpdate: () => {}, // React Query를 사용하므로 직접 state 변경 불필요
+        isLoading,
+        error,
+        refetch,
       })}
     </>
   );

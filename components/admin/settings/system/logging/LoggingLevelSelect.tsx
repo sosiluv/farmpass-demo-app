@@ -7,8 +7,12 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { AlertTriangle } from "lucide-react";
-
-type LogLevel = "error" | "warn" | "info" | "debug";
+import {
+  LABELS,
+  PLACEHOLDERS,
+  LOGGING_LEVEL_OPTIONS,
+} from "@/lib/constants/settings";
+import type { LogLevel } from "@/lib/types/common";
 
 interface LoggingLevelSelectProps {
   value: LogLevel;
@@ -21,40 +25,22 @@ export function LoggingLevelSelect({
   onChange,
   isLoading,
 }: LoggingLevelSelectProps) {
-  const options: { value: LogLevel; label: string; description: string }[] = [
-    {
-      value: "error",
-      label: "Error",
-      description: "오류만 기록",
-    },
-    {
-      value: "warn",
-      label: "Warning",
-      description: "경고 이상 기록",
-    },
-    {
-      value: "info",
-      label: "Info",
-      description: "정보 이상 기록 (기본값)",
-    },
-    {
-      value: "debug",
-      label: "Debug",
-      description: "모든 로그 기록",
-    },
-  ];
-
   return (
     <div className="space-y-2">
-      <Label className="text-sm font-medium">로깅 레벨</Label>
+      <Label htmlFor="logging-level" className="text-sm font-medium">
+        {LABELS.LOGGING_LEVEL}
+      </Label>
       <Select value={value} onValueChange={onChange} disabled={isLoading}>
-        <SelectTrigger className="w-full text-center">
-          <SelectValue placeholder="로그 레벨 선택">
-            {options.find((option) => option.value === value)?.label}
+        <SelectTrigger id="logging-level" className="w-full text-center">
+          <SelectValue placeholder={PLACEHOLDERS.LOGGING_LEVEL}>
+            {
+              LOGGING_LEVEL_OPTIONS.find((option) => option.value === value)
+                ?.label
+            }
           </SelectValue>
         </SelectTrigger>
         <SelectContent>
-          {(options || []).map((option) => (
+          {LOGGING_LEVEL_OPTIONS.map((option) => (
             <SelectItem
               key={option.value}
               value={option.value}
@@ -75,7 +61,7 @@ export function LoggingLevelSelect({
       {value === "debug" && (
         <div className="flex items-center gap-1 text-xs text-orange-600">
           <AlertTriangle className="h-3 w-3" />
-          <span>디버그 모드는 성능에 영향을 줄 수 있습니다.</span>
+          <span>{LABELS.LOGGING_DEBUG_WARNING}</span>
         </div>
       )}
     </div>

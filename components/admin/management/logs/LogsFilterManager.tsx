@@ -1,16 +1,21 @@
 import { useState, useMemo } from "react";
 import type { SystemLog, LogFilter } from "@/lib/types/system";
-import { isAuditLog, getLogCategory } from "@/lib/utils/logging/system-log";
+import { getLogCategory } from "@/lib/utils/logging/system-log";
+import {
+  createKSTDateRange,
+  toDateString,
+  toKSTDate,
+} from "@/lib/utils/datetime/date";
 
 interface LogsFilterManagerProps {
   logs: SystemLog[];
   children: (data: {
     filters: LogFilter;
     setFilters: (filters: LogFilter) => void;
-    auditFilter: string;
-    setAuditFilter: (filter: string) => void;
-    categoryFilter: string;
-    setCategoryFilter: (filter: string) => void;
+    categoryFilters: string[];
+    setCategoryFilters: (filters: string[]) => void;
+    levelFilters: string[];
+    setLevelFilters: (filters: string[]) => void;
     filteredLogs: SystemLog[];
   }) => React.ReactNode;
 }
@@ -22,13 +27,15 @@ export function LogsFilterManager({ logs, children }: LogsFilterManagerProps) {
     startDate: undefined,
     endDate: undefined,
   });
-  const [auditFilter, setAuditFilter] = useState("all");
-  const [categoryFilter, setCategoryFilter] = useState("all");
+
+  // OR 조건을 위한 다중 선택 필터
+  const [categoryFilters, setCategoryFilters] = useState<string[]>(["all"]);
+  const [levelFilters, setLevelFilters] = useState<string[]>(["all"]);
 
   // 필터링된 로그 계산
   const filteredLogs = useMemo(() => {
     return logs.filter((log) => {
-      // 기존 필터
+      // 검색 필터 (AND 조건)
       if (
         filters.search &&
         !(
@@ -38,42 +45,60 @@ export function LogsFilterManager({ logs, children }: LogsFilterManagerProps) {
       ) {
         return false;
       }
-      if (filters.level && log.level !== filters.level) {
-        return false;
-      }
-      if (filters.startDate && new Date(log.created_at) < filters.startDate) {
-        return false;
-      }
-      if (filters.endDate && new Date(log.created_at) > filters.endDate) {
-        return false;
+
+      // 날짜 필터 (AND 조건) - KST 기준
+      if (filters.startDate || filters.endDate) {
+        // 로그의 created_at을 KST로 변환
+        const logDate = new Date(log.created_at);
+        const kstLogDate = toKSTDate(logDate);
+
+        if (filters.startDate) {
+          // 시작 날짜를 KST 기준 00:00:00으로 설정
+          const startDateStr = toDateString(filters.startDate);
+          const startDateKST = createKSTDateRange(startDateStr, false);
+          if (kstLogDate < startDateKST) {
+            return false;
+          }
+        }
+
+        if (filters.endDate) {
+          // 종료 날짜를 KST 기준 23:59:59로 설정
+          const endDateStr = toDateString(filters.endDate);
+          const endDateKST = createKSTDateRange(endDateStr, true);
+          if (kstLogDate > endDateKST) {
+            return false;
+          }
+        }
       }
 
-      // 감사 로그 필터
-      if (auditFilter === "audit" && !isAuditLog(log)) {
-        return false;
-      }
-      if (auditFilter === "system" && isAuditLog(log)) {
-        return false;
+      // 카테고리 필터 (OR 조건)
+      if (!categoryFilters.includes("all")) {
+        const logCategory = getLogCategory(log);
+        if (!categoryFilters.includes(logCategory)) {
+          return false;
+        }
       }
 
-      // 카테고리 필터
-      if (categoryFilter !== "all" && getLogCategory(log) !== categoryFilter) {
-        return false;
+      // 레벨 필터 (OR 조건)
+      if (!levelFilters.includes("all")) {
+        if (!levelFilters.includes(log.level)) {
+          return false;
+        }
       }
 
       return true;
     });
-  }, [logs, filters, auditFilter, categoryFilter]);
+  }, [logs, filters, categoryFilters, levelFilters]);
 
   return (
     <>
       {children({
         filters,
         setFilters,
-        auditFilter,
-        setAuditFilter,
-        categoryFilter,
-        setCategoryFilter,
+        categoryFilters,
+        setCategoryFilters,
+        levelFilters,
+        setLevelFilters,
         filteredLogs,
       })}
     </>

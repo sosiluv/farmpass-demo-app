@@ -3,6 +3,7 @@
 import { Badge } from "@/components/ui/badge";
 import { Shield, UserCheck, Eye } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { LABELS } from "@/lib/constants/common";
 
 export type UserRole = "owner" | "manager" | "viewer";
 
@@ -15,9 +16,9 @@ interface RoleBadgeProps {
 
 const roleConfig = {
   owner: {
-    label: "농장 소유자",
-    shortLabel: "소유자",
-    mobileLabel: "소유자",
+    label: LABELS.ROLE_BADGE_OWNER_LABEL,
+    shortLabel: LABELS.ROLE_BADGE_OWNER_SHORT,
+    mobileLabel: LABELS.ROLE_BADGE_OWNER_MOBILE,
     icon: Shield,
     colors: {
       default: "bg-purple-100 text-purple-800 border-purple-200",
@@ -26,9 +27,9 @@ const roleConfig = {
     },
   },
   manager: {
-    label: "농장 관리자",
-    shortLabel: "관리자",
-    mobileLabel: "관리자",
+    label: LABELS.ROLE_BADGE_MANAGER_LABEL,
+    shortLabel: LABELS.ROLE_BADGE_MANAGER_SHORT,
+    mobileLabel: LABELS.ROLE_BADGE_MANAGER_MOBILE,
     icon: UserCheck,
     colors: {
       default: "bg-blue-100 text-blue-800 border-blue-200",
@@ -37,9 +38,9 @@ const roleConfig = {
     },
   },
   viewer: {
-    label: "조회 전용",
-    shortLabel: "조회자",
-    mobileLabel: "조회",
+    label: LABELS.ROLE_BADGE_VIEWER_LABEL,
+    shortLabel: LABELS.ROLE_BADGE_VIEWER_SHORT,
+    mobileLabel: LABELS.ROLE_BADGE_VIEWER_MOBILE,
     icon: Eye,
     colors: {
       default: "bg-green-100 text-green-800 border-green-200",

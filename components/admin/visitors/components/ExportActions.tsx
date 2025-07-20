@@ -1,6 +1,7 @@
 import { Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { DialogFooter } from "@/components/ui/dialog";
+import { BUTTONS, LABELS } from "@/lib/constants/visitor";
 
 interface ExportActionsProps {
   isExporting: boolean;
@@ -23,7 +24,7 @@ export function ExportActions({
         disabled={isExporting}
         className="w-full sm:w-auto h-8 sm:h-9 text-xs sm:text-sm"
       >
-        초기화
+        {BUTTONS.EXPORT_ACTIONS_RESET}
       </Button>
       <Button
         onClick={onExport}
@@ -33,12 +34,12 @@ export function ExportActions({
         {isExporting ? (
           <>
             <div className="animate-spin rounded-full h-3 w-3 border-2 border-white border-t-transparent mr-2" />
-            내보내는 중...
+            {BUTTONS.EXPORT_ACTIONS_EXPORTING}
           </>
         ) : (
           <>
             <Download className="h-3 w-3 mr-2" />
-            CSV 다운로드
+            {BUTTONS.EXPORT_ACTIONS_CSV_DOWNLOAD}
           </>
         )}
       </Button>

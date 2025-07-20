@@ -1,15 +1,9 @@
 import { FarmMembersPreview } from "../members/farm-members-preview";
-import type { MemberWithProfile } from "@/lib/hooks/use-farm-members-preview-safe";
-
-interface FarmMembersData {
-  count: number;
-  members: MemberWithProfile[];
-  loading: boolean;
-}
+import type { FarmMembers } from "@/lib/hooks/query/use-farm-members-query";
 
 interface FarmCardPreviewProps {
   farmId: string;
-  membersData: FarmMembersData;
+  membersData?: FarmMembers;
 }
 
 export function FarmCardPreview({ farmId, membersData }: FarmCardPreviewProps) {

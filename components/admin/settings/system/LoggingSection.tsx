@@ -3,6 +3,7 @@ import { FileText } from "lucide-react";
 import type { SystemSettings } from "@/lib/types/settings";
 import SettingsCardHeader from "../SettingsCardHeader";
 import { LoggingLevelSelect, LoggingRetentionSelect } from "./logging";
+import { PAGE_HEADER } from "@/lib/constants/settings";
 
 interface LoggingSectionProps {
   settings: SystemSettings;
@@ -22,8 +23,8 @@ export function LoggingSection({
     <Card>
       <SettingsCardHeader
         icon={FileText}
-        title="로깅 설정"
-        description="시스템 로그 수준과 보관 기간을 설정합니다"
+        title={PAGE_HEADER.LOGGING_SECTION_TITLE}
+        description={PAGE_HEADER.LOGGING_SECTION_DESC}
       />
       <CardContent className="space-y-6">
         <LoggingLevelSelect

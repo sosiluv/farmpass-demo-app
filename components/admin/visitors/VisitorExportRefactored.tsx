@@ -9,6 +9,11 @@ import {
   useExportDialog,
 } from "@/components/admin/management/exports";
 import { Farm } from "@/lib/types";
+import {
+  LABELS,
+  PLACEHOLDERS,
+  VISITOR_TYPE_OPTIONS,
+} from "@/lib/constants/visitor";
 import type { VisitorsExportOptions } from "@/components/admin/management/exports/types";
 
 interface VisitorExportProps {
@@ -88,9 +93,9 @@ export function VisitorExportRefactored({
     <ExportDialogWrapper
       open={isOpen}
       onOpenChange={setIsOpen}
-      title="방문자 데이터 내보내기"
-      description="내보낼 방문자 범위와 정보를 설정하세요"
-      buttonText="방문자 내보내기"
+      title={LABELS.VISITOR_EXPORT_TITLE}
+      description={LABELS.VISITOR_EXPORT_DESC}
+      buttonText={LABELS.VISITOR_EXPORT_BUTTON}
     >
       <div className="space-y-3 sm:space-y-4 md:space-y-6">
         <DateRangeSection
@@ -98,11 +103,11 @@ export function VisitorExportRefactored({
           endDate={endDate}
           onStartDateChange={setStartDate}
           onEndDateChange={setEndDate}
-          title="방문일 범위"
+          title={LABELS.VISITOR_EXPORT_DATE_RANGE}
           color="blue"
         />
         <FilterSection
-          title="필터 설정"
+          title={LABELS.VISITOR_EXPORT_FILTERS}
           color="green"
           filters={[
             ...(hideFarmFilter
@@ -110,10 +115,13 @@ export function VisitorExportRefactored({
               : [
                   {
                     key: "farmFilter",
-                    label: "농장",
+                    label: LABELS.FILTER_FARM,
                     value: farmFilter,
                     options: [
-                      { value: "all", label: "전체 농장" },
+                      {
+                        value: "all",
+                        label: PLACEHOLDERS.VISITOR_FILTERS_FARM_ALL,
+                      },
                       ...(farms || []).map((farm) => ({
                         value: farm.id,
                         label: farm.farm_name,
@@ -124,55 +132,54 @@ export function VisitorExportRefactored({
                 ]),
             {
               key: "visitorType",
-              label: "방문자 유형",
+              label: LABELS.FILTER_VISITOR_TYPE,
               value: visitorType,
-              options: [
-                { value: "all", label: "전체" },
-                { value: "consented", label: "개인정보 동의자" },
-                { value: "disinfected", label: "방역 완료자" },
-              ],
+              options: [...VISITOR_TYPE_OPTIONS],
               onChange: setVisitorType,
             },
           ]}
         />
         <OptionsSection
-          title="포함할 정보"
+          title={LABELS.VISITOR_EXPORT_OPTIONS}
           color="purple"
           selectedCount={selectedOptionsCount}
           totalCount={4}
           options={[
             {
               key: "includeBasic",
-              label: "기본 정보",
-              description: "이름, 연락처 등",
+              label: LABELS.INFO_TYPE_BASIC,
+              description: LABELS.INFO_TYPE_BASIC_DESC,
               checked: includeBasic,
               onChange: setIncludeBasic,
             },
             {
               key: "includeContact",
-              label: "연락처 정보",
-              description: "전화번호, 주소 등",
+              label: LABELS.INFO_TYPE_CONTACT,
+              description: LABELS.INFO_TYPE_CONTACT_DESC,
               checked: includeContact,
               onChange: setIncludeContact,
             },
             {
               key: "includeVisit",
-              label: "방문 정보",
-              description: "방문일, 방문 목적 등",
+              label: LABELS.INFO_TYPE_VISIT,
+              description: LABELS.INFO_TYPE_VISIT_DESC,
               checked: includeVisit,
               onChange: setIncludeVisit,
             },
             {
               key: "includeExtra",
-              label: "추가 정보",
-              description: "비고, 차량번호 등",
+              label: LABELS.INFO_TYPE_EXTRA,
+              description: LABELS.INFO_TYPE_EXTRA_DESC,
               checked: includeExtra,
               onChange: setIncludeExtra,
             },
           ]}
         />
         <SummarySection
-          message={`내보내기 요약: 선택된 옵션 ${selectedOptionsCount}개`}
+          message={LABELS.VISITOR_EXPORT_SUMMARY.replace(
+            "{count}",
+            selectedOptionsCount.toString()
+          )}
           color="orange"
         />
       </div>

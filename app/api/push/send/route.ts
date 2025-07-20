@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
 import { createSystemLog, logApiError } from "@/lib/utils/logging/system-log";
 import { devLog } from "@/lib/utils/logging/dev-logger";
 import webpush from "web-push";
 import { getSystemSettings } from "@/lib/cache/system-settings-cache";
 import { getClientIP, getUserAgent } from "@/lib/server/ip-helpers";
+import { requireAuth } from "@/lib/server/auth-utils";
+import { prisma } from "@/lib/prisma";
 
 // VAPID 키 설정 초기화
 async function initializeVapidKeys() {
@@ -15,11 +16,7 @@ async function initializeVapidKeys() {
       settings?.vapidPrivateKey || process.env.VAPID_PRIVATE_KEY;
 
     if (publicKey && privateKey) {
-      webpush.setVapidDetails(
-        "mailto:admin@farm-system.com",
-        publicKey,
-        privateKey
-      );
+      webpush.setVapidDetails("mailto:k331502@nate.com", publicKey, privateKey);
       return true;
     }
     return false;
@@ -84,42 +81,19 @@ export async function POST(request: NextRequest) {
   const userAgent = getUserAgent(request);
 
   try {
-    const supabase = await createClient();
-
     // 서버 사이드 호출인지 확인
     const isServerSideCall = !userAgent || userAgent.includes("node-fetch");
 
     let user = null;
 
     if (!isServerSideCall) {
-      // 클라이언트 호출인 경우 인증 확인
-      const {
-        data: { user: authUser },
-        error: authError,
-      } = await supabase.auth.getUser();
-
-      if (authError || !authUser) {
-        return NextResponse.json(
-          { error: "인증이 필요합니다." },
-          { status: 401 }
-        );
+      // 클라이언트 호출인 경우 관리자 권한 인증 확인
+      const authResult = await requireAuth(true);
+      if (!authResult.success || !authResult.user) {
+        return authResult.response!;
       }
 
-      // 관리자 권한 확인
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("account_type")
-        .eq("id", authUser.id)
-        .single();
-
-      if (!profile || profile.account_type !== "admin") {
-        return NextResponse.json(
-          { error: "관리자 권한이 필요합니다." },
-          { status: 403 }
-        );
-      }
-
-      user = authUser;
+      user = authResult.user;
     } else {
       // 서버 사이드 호출인 경우 시스템 사용자로 처리
       user = {
@@ -133,7 +107,6 @@ export async function POST(request: NextRequest) {
     const {
       title,
       message,
-      farmId,
       targetUserIds,
       url = "/admin/dashboard",
       icon,
@@ -150,20 +123,23 @@ export async function POST(request: NextRequest) {
         "warn",
         user?.id,
         "system",
-        farmId || "all",
+        "all",
         {
           title,
           message,
           notificationType,
           targetUserIds,
-          farmId,
         },
         user?.email,
         clientIP,
         userAgent
       );
       return NextResponse.json(
-        { error: "제목, 메시지, 알림 유형은 필수입니다." },
+        {
+          success: false,
+          error: "MISSING_REQUIRED_FIELDS",
+          message: "필수 입력 항목이 누락되었습니다.",
+        },
         { status: 400 }
       );
     }
@@ -179,20 +155,23 @@ export async function POST(request: NextRequest) {
         "warn",
         user?.id,
         "system",
-        farmId || "all",
+        "all",
         {
           title,
           message,
           notificationType,
           targetUserIds,
-          farmId,
         },
         user?.email,
         clientIP,
         userAgent
       );
       return NextResponse.json(
-        { error: "유효하지 않은 알림 유형입니다." },
+        {
+          success: false,
+          error: "INVALID_NOTIFICATION_TYPE",
+          message: "유효하지 않은 알림 유형입니다.",
+        },
         { status: 400 }
       );
     }
@@ -218,76 +197,92 @@ export async function POST(request: NextRequest) {
         "error",
         user?.id,
         "system",
-        farmId || "all",
+        "all",
         {
           title,
           message,
           notificationType,
           targetUserIds,
-          farmId,
         },
         user?.email,
         clientIP,
         userAgent
       );
       return NextResponse.json(
-        { error: "VAPID 키가 설정되지 않았습니다." },
+        {
+          success: false,
+          error: "VAPID_KEYS_NOT_SET",
+          message: "VAPID 키가 설정되지 않았습니다.",
+        },
         { status: 500 }
       );
     }
 
     // 구독자 조회
-    let subscriptionQuery = supabase.from("push_subscriptions").select("*");
+    let subscriptions;
 
     // 디버깅: 쿼리 조건 확인
     devLog.log("구독자 조회 조건:", {
       hasTargetUserIds: !!targetUserIds?.length,
       targetUserIdsCount: targetUserIds?.length || 0,
-      hasFarmId: !!farmId,
-      farmId,
       notificationType,
     });
 
-    if (targetUserIds?.length > 0) {
-      // 특정 사용자들에게만 발송
-      subscriptionQuery = subscriptionQuery.in("user_id", targetUserIds);
-      devLog.log("특정 사용자 대상 쿼리 실행:", { targetUserIds });
-    } else if (farmId) {
-      // 특정 농장에 속한 사용자들에게만 발송
-      subscriptionQuery = subscriptionQuery.eq("farm_id", farmId);
-      devLog.log("농장별 대상 쿼리 실행:", farmId);
-    } else {
-      // 브로드캐스트: 전체 구독자에게 발송
-      subscriptionQuery = subscriptionQuery.is("farm_id", null);
-      devLog.log("브로드캐스트 쿼리 실행");
-    }
-
-    const { data: subscriptions, error: subscriptionError } =
-      await subscriptionQuery;
-
-    if (subscriptionError) {
+    try {
+      if (targetUserIds?.length > 0) {
+        // 특정 사용자들에게만 발송 (활성 구독만)
+        subscriptions = await prisma.push_subscriptions.findMany({
+          where: {
+            user_id: {
+              in: targetUserIds,
+            },
+            is_active: true, // 활성 구독만
+            deleted_at: null, // 삭제되지 않은 구독만
+          },
+        });
+        devLog.log("특정 사용자 대상 쿼리 실행:", {
+          targetUserIds,
+          foundSubscriptions: subscriptions.length,
+        });
+      } else {
+        // 브로드캐스트: 모든 활성 구독자에게 발송
+        subscriptions = await prisma.push_subscriptions.findMany({
+          where: {
+            is_active: true, // 활성 구독만
+            deleted_at: null, // 삭제되지 않은 구독만
+          },
+        });
+        devLog.log("브로드캐스트 쿼리 실행", {
+          foundSubscriptions: subscriptions.length,
+        });
+      }
+    } catch (error) {
       await createSystemLog(
         "PUSH_NOTIFICATION_SUBSCRIBER_FETCH_FAILED",
         `푸시 구독자 조회 실패.`,
         "error",
         user?.id,
         "system",
-        farmId || "all",
+        "all",
         {
           title,
           message,
           notificationType,
           targetUserIds,
-          farmId,
-          subscriptionError: subscriptionError.message,
+          subscriptionError:
+            error instanceof Error ? error.message : String(error),
         },
         user?.email,
         clientIP,
         userAgent
       );
-      devLog.error("구독자 조회 오류:", subscriptionError);
+      devLog.error("구독자 조회 오류:", error);
       return NextResponse.json(
-        { error: "구독자 조회에 실패했습니다." },
+        {
+          success: false,
+          error: "SUBSCRIBER_FETCH_FAILED",
+          message: "구독자 조회에 실패했습니다.",
+        },
         { status: 500 }
       );
     }
@@ -302,11 +297,10 @@ export async function POST(request: NextRequest) {
         "warn",
         user.id,
         "system",
-        farmId || "all",
+        "all",
         {
           notification_type: notificationType,
           target_user_ids: targetUserIds,
-          farm_id: farmId,
           title,
           message,
         },
@@ -316,7 +310,11 @@ export async function POST(request: NextRequest) {
       );
 
       return NextResponse.json(
-        { message: "발송할 구독자가 없습니다.", sentCount: 0 },
+        {
+          message:
+            "발송할 구독자가 없습니다. (푸시 알림을 구독한 사용자가 없음)",
+          sentCount: 0,
+        },
         { status: 200 }
       );
     }
@@ -327,35 +325,42 @@ export async function POST(request: NextRequest) {
     );
 
     // 알림 설정 조회
-    const { data: notificationSettings, error: settingsError } = await supabase
-      .from("user_notification_settings")
-      .select("*")
-      .in("user_id", userIds)
-      .eq("is_active", true);
-
-    if (settingsError) {
+    let notificationSettings;
+    try {
+      notificationSettings = await prisma.userNotificationSettings.findMany({
+        where: {
+          user_id: {
+            in: userIds,
+          },
+          is_active: true,
+        },
+      });
+    } catch (error) {
       await createSystemLog(
         "PUSH_NOTIFICATION_SETTINGS_FETCH_FAILED",
         `알림 설정 조회 실패.`,
         "error",
         user?.id,
         "system",
-        farmId || "all",
+        "all",
         {
           title,
           message,
           notificationType,
           targetUserIds,
-          farmId,
-          settingsError: settingsError.message,
+          settingsError: error instanceof Error ? error.message : String(error),
         },
         user?.email,
         clientIP,
         userAgent
       );
-      devLog.error("알림 설정 조회 오류:", settingsError);
+      devLog.error("알림 설정 조회 오류:", error);
       return NextResponse.json(
-        { error: "알림 설정 조회에 실패했습니다." },
+        {
+          success: false,
+          error: "NOTIFICATION_SETTINGS_FETCH_FAILED",
+          message: "알림 설정을 불러올 수 없습니다.",
+        },
         { status: 500 }
       );
     }
@@ -400,13 +405,12 @@ export async function POST(request: NextRequest) {
         "warn",
         user.id,
         "system",
-        farmId || "all",
+        "all",
         {
           notification_type: notificationType,
           total_subscribers: subscriptions.length,
           filtered_subscribers: 0,
           target_user_ids: targetUserIds,
-          farm_id: farmId,
           title,
           message,
           settings_summary: {
@@ -420,7 +424,11 @@ export async function POST(request: NextRequest) {
       );
 
       return NextResponse.json(
-        { message: "발송할 구독자가 없습니다.", sentCount: 0 },
+        {
+          message:
+            "발송할 구독자가 없습니다. (알림 설정으로 인해 모든 구독자가 필터링됨)",
+          sentCount: 0,
+        },
         { status: 200 }
       );
     }
@@ -449,7 +457,6 @@ export async function POST(request: NextRequest) {
       ],
       data: {
         url,
-        farmId,
         timestamp: Date.now(),
         type: notificationType,
       },
@@ -461,13 +468,27 @@ export async function POST(request: NextRequest) {
         devLog.log("푸시 알림 발송 시도:", {
           subscriptionId: subscription.id,
           user_id: subscription.user_id,
-          farm_id: subscription.farm_id,
           endpoint: subscription.endpoint,
+          currentFailCount: subscription.fail_count || 0,
         });
+
         const result = await sendPushWithRetry(
           subscription,
           JSON.stringify(notificationPayload)
         );
+
+        // 성공 시 fail_count 초기화 및 last_used_at 업데이트
+        if (result.success) {
+          await prisma.push_subscriptions.update({
+            where: { id: subscription.id },
+            data: {
+              fail_count: 0,
+              last_used_at: new Date(),
+              updated_at: new Date(),
+            },
+          });
+        }
+
         return {
           success: result.success,
           subscriptionId: subscription.id,
@@ -477,18 +498,48 @@ export async function POST(request: NextRequest) {
       } catch (error: any) {
         devLog.error(`푸시 발송 실패 (구독 ID: ${subscription.id}):`, error);
 
-        // 410 Gone 에러인 경우 구독 삭제
-        if (error.statusCode === 410) {
-          await supabase
-            .from("push_subscriptions")
-            .delete()
-            .eq("id", subscription.id);
+        // 실패 시 fail_count 증가 및 last_fail_at 업데이트
+        const newFailCount = (subscription.fail_count || 0) + 1;
+
+        try {
+          await prisma.push_subscriptions.update({
+            where: { id: subscription.id },
+            data: {
+              fail_count: newFailCount,
+              last_fail_at: new Date(),
+              updated_at: new Date(),
+            },
+          });
+        } catch (updateError) {
+          devLog.error("fail_count 업데이트 실패:", updateError);
+        }
+
+        // 410 Gone 에러이거나 fail_count가 5회 이상인 경우 구독 비활성화
+        if (error.statusCode === 410 || newFailCount >= 5) {
+          try {
+            await prisma.push_subscriptions.update({
+              where: { id: subscription.id },
+              data: {
+                is_active: false,
+                deleted_at: new Date(),
+                updated_at: new Date(),
+              },
+            });
+
+            devLog.log(
+              `구독 비활성화됨 (ID: ${subscription.id}, 이유: ${
+                error.statusCode === 410 ? "410_GONE" : "FAIL_COUNT_EXCEEDED"
+              })`
+            );
+          } catch (deactivateError) {
+            devLog.error("구독 비활성화 실패:", deactivateError);
+          }
         }
 
         return {
           success: false,
           subscriptionId: subscription.id,
-          error: error.message || "알 수 없는 오류",
+          error: "PUSH_SEND_FAILED",
           statusCode: error.statusCode,
           userId: subscription.user_id,
         };
@@ -528,7 +579,7 @@ export async function POST(request: NextRequest) {
         "warn",
         user.id,
         "system",
-        farmId || "all",
+        "all",
         {
           notification_type: notificationType,
           title,
@@ -538,7 +589,6 @@ export async function POST(request: NextRequest) {
           failure_count: failureCount,
           failure_stats: failureStats,
           target_user_ids: targetUserIds,
-          farm_id: farmId,
           // 첫 번째 실패 사례만 상세 정보 포함
           first_failure_example: results.find((r) => !r.success)
             ? {
@@ -563,7 +613,7 @@ export async function POST(request: NextRequest) {
       "info",
       user.id,
       "system",
-      farmId || "all",
+      "all",
       {
         notification_type: notificationType,
         title,
@@ -573,7 +623,6 @@ export async function POST(request: NextRequest) {
         success_count: successCount,
         failure_count: failureCount,
         target_user_ids: targetUserIds,
-        farm_id: farmId,
         settings_summary: {
           total_settings: userIds.length,
           active_settings: notificationSettings?.length || 0,
@@ -594,9 +643,19 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json(
       {
-        message: "푸시 알림 발송이 완료되었습니다.",
+        message: `푸시 알림이 성공적으로 발송되었습니다. (성공: ${successCount}명, 실패: ${failureCount}명)`,
         sentCount: successCount,
         failureCount,
+        totalAttempts: filteredSubscriptions.length,
+        stats: {
+          success: successCount,
+          failure: failureCount,
+          total: filteredSubscriptions.length,
+          successRate:
+            filteredSubscriptions.length > 0
+              ? Math.round((successCount / filteredSubscriptions.length) * 100)
+              : 0,
+        },
         results,
       },
       {
@@ -622,7 +681,11 @@ export async function POST(request: NextRequest) {
     );
 
     return NextResponse.json(
-      { error: "서버 오류가 발생했습니다." },
+      {
+        success: false,
+        error: "INTERNAL_SERVER_ERROR",
+        message: "서버 오류가 발생했습니다.",
+      },
       { status: 500 }
     );
   }

@@ -10,6 +10,8 @@ import { PageHeader } from "@/components/layout";
 import { ErrorBoundary } from "@/components/error/error-boundary";
 import { AccessDenied } from "@/components/error/access-denied";
 import { useAuth } from "@/components/providers/auth-provider";
+import { LABELS, PAGE_HEADER } from "@/lib/constants/management";
+import { ERROR_CONFIGS } from "@/lib/constants/error";
 
 export default function SystemManagementPage() {
   const { state } = useAuth();
@@ -19,8 +21,8 @@ export default function SystemManagementPage() {
   if (profile && profile.account_type !== "admin") {
     return (
       <AccessDenied
-        title="시스템 관리 접근 권한이 없습니다"
-        description="시스템 관리 기능은 관리자만 접근할 수 있습니다."
+        title={ERROR_CONFIGS.PERMISSION.title}
+        description={ERROR_CONFIGS.PERMISSION.description}
         requiredRole="관리자"
         currentRole="일반 사용자"
       />
@@ -29,14 +31,14 @@ export default function SystemManagementPage() {
 
   return (
     <ErrorBoundary
-      title="시스템 관리 오류"
-      description="시스템 관리 정보를 불러오는 중 문제가 발생했습니다. 페이지를 새로고침하거나 잠시 후 다시 시도해주세요."
+      title={ERROR_CONFIGS.LOADING.title}
+      description={ERROR_CONFIGS.LOADING.description}
     >
       <div className="flex-1 space-y-6 sm:space-y-8 lg:space-y-10 p-4 sm:p-6 lg:p-8">
         <PageHeader
-          title="시스템 관리"
-          description="사용자, 농장, 시스템 로그 등을 관리합니다"
-          breadcrumbs={[{ label: "시스템 관리" }]}
+          title={PAGE_HEADER.PAGE_TITLE}
+          description={PAGE_HEADER.PAGE_DESCRIPTION}
+          breadcrumbs={[{ label: PAGE_HEADER.BREADCRUMB }]}
         />
 
         <div className="space-y-6">
@@ -48,7 +50,7 @@ export default function SystemManagementPage() {
               >
                 <BarChart3 className="h-3.5 w-3.5 flex-shrink-0" />
                 <span className="text-[10px] sm:text-xs hidden sm:inline truncate">
-                  대시보드
+                  {LABELS.TABS.DASHBOARD}
                 </span>
               </TabsTrigger>
               <TabsTrigger
@@ -57,7 +59,7 @@ export default function SystemManagementPage() {
               >
                 <Users className="h-3.5 w-3.5 flex-shrink-0" />
                 <span className="text-[10px] sm:text-xs hidden sm:inline truncate">
-                  사용자
+                  {LABELS.TABS.USERS}
                 </span>
               </TabsTrigger>
               <TabsTrigger
@@ -66,7 +68,7 @@ export default function SystemManagementPage() {
               >
                 <Building2 className="h-3.5 w-3.5 flex-shrink-0" />
                 <span className="text-[10px] sm:text-xs hidden sm:inline truncate">
-                  농장
+                  {LABELS.TABS.FARMS}
                 </span>
               </TabsTrigger>
               <TabsTrigger
@@ -75,7 +77,7 @@ export default function SystemManagementPage() {
               >
                 <FileText className="h-3.5 w-3.5 flex-shrink-0" />
                 <span className="text-[10px] sm:text-xs hidden sm:inline truncate">
-                  로그
+                  {LABELS.TABS.LOGS}
                 </span>
               </TabsTrigger>
             </TabsList>

@@ -1,9 +1,9 @@
-import type { Database } from "./supabase";
+import type { LogLevel } from "./common";
 
 export interface SystemSettings {
   id: string;
-  createdAt: Date;
-  updatedAt: Date;
+  created_at: Date;
+  updated_at: Date;
 
   // 일반 설정
   siteName: string;
@@ -45,8 +45,14 @@ export interface SystemSettings {
   pushVibrateEnabled: boolean;
   pushRequireInteraction: boolean;
 
+  // 구독 정리 설정
+  subscriptionCleanupDays: number;
+  subscriptionFailCountThreshold: number;
+  subscriptionCleanupInactive: boolean;
+  subscriptionForceDelete: boolean;
+
   // 시스템 설정
-  logLevel: Database["public"]["Enums"]["LogLevel"];
+  logLevel: LogLevel;
   logRetentionDays: number;
   maintenanceMode: boolean;
   debugMode: boolean;
@@ -71,6 +77,31 @@ export interface CleanupStatus {
     visitorEntries: {
       count: number;
       cutoffDate: string;
+    };
+  };
+}
+
+export interface OrphanFilesStatus {
+  visitorOrphans: string[];
+  profileOrphans: string[];
+  visitorOrphanCount: number;
+  profileOrphanCount: number;
+  visitorDbOrphanCount: number;
+  profileDbOrphanCount: number;
+  debug?: {
+    visitor: {
+      usedUrls: string[];
+      usedUrlCount: number;
+      storageFiles: string[];
+      storageFileCount: number;
+      dbError?: any;
+    };
+    profile: {
+      usedUrls: string[];
+      usedUrlCount: number;
+      storageFiles: string[];
+      storageFileCount: number;
+      dbError?: any;
     };
   };
 }

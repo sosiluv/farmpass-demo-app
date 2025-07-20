@@ -12,10 +12,11 @@ import { formatDateTime } from "@/lib/utils/datetime/date";
 import { Profile } from "@/lib/types";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { useAuth } from "@/components/providers/auth-provider";
 import { useCommonToast } from "@/lib/utils/notification/toast-messages";
-import { apiClient } from "@/lib/utils/data";
-import { handleError } from "@/lib/utils/error";
+import { useResetLoginAttemptsMutation } from "@/lib/hooks/query/use-auth-mutations";
+import { getAuthErrorMessage } from "@/lib/utils/validation/validation";
+import { generateInitials, getAvatarUrl } from "@/lib/utils/media/avatar";
+import { BUTTONS, LABELS, PAGE_HEADER } from "@/lib/constants/management";
 
 interface UserDetailModalProps {
   user: Profile | null;
@@ -25,7 +26,7 @@ interface UserDetailModalProps {
 
 export function UserDetailModal({ user, open, onClose }: UserDetailModalProps) {
   const [loading, setLoading] = useState(false);
-  const { showSuccess, showError, showInfo } = useCommonToast();
+  const { showSuccess, showError, showInfo, showWarning } = useCommonToast();
 
   const getRoleColor = (accountType: string) => {
     switch (accountType) {
@@ -42,15 +43,6 @@ export function UserDetailModal({ user, open, onClose }: UserDetailModalProps) {
     return isActive
       ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200"
       : "bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200";
-  };
-
-  const getInitials = (name: string) => {
-    if (!name) return "U";
-    return name
-      .split(" ")
-      .map((n) => n[0])
-      .join("")
-      .toUpperCase();
   };
 
   const getAvatarColor = (name: string) => {
@@ -77,33 +69,27 @@ export function UserDetailModal({ user, open, onClose }: UserDetailModalProps) {
     return colors[index];
   };
 
+  const resetAttemptsMutation = useResetLoginAttemptsMutation();
+
   const handleUnlock = async () => {
     showInfo("계정 잠금 해제 시작", "계정 잠금을 해제하는 중입니다...");
     setLoading(true);
     try {
-      const data = await apiClient("/api/auth/reset-attempts", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          email: user?.email,
-          reason: "관리자 수동 잠금 해제",
-        }),
-        context: "계정 잠금 해제",
-        onError: (error, context) => {
-          handleError(error, context);
-          showError("잠금 해제 실패", error.message || "잠금 해제 실패");
-        },
+      const result = await resetAttemptsMutation.mutateAsync({
+        email: user?.email || "",
+        reason: "관리자 수동 잠금 해제",
       });
 
-      showSuccess(
-        "계정 잠금 해제",
-        data.message || "계정 잠금이 해제되었습니다!"
-      );
+      // API 응답 메시지에 따라 토스트 타입 결정
+      if (result.message.includes("이미 잠금 해제되어 있습니다")) {
+        showWarning("계정 상태 확인", result.message);
+      } else {
+        showSuccess("계정 잠금 해제 완료", result.message);
+      }
       onClose();
-    } catch {
-      // onError에서 이미 처리함
+    } catch (error) {
+      const authError = getAuthErrorMessage(error);
+      showError("계정 잠금 해제 실패", authError.message);
     } finally {
       setLoading(false);
     }
@@ -114,10 +100,10 @@ export function UserDetailModal({ user, open, onClose }: UserDetailModalProps) {
       <DialogContent className="w-[95vw] max-w-[350px] sm:max-w-[500px] md:max-w-[600px] lg:max-w-[700px] max-h-[90vh] sm:max-h-[85vh] overflow-hidden p-3 sm:p-4 md:p-6">
         <DialogHeader className="space-y-2">
           <DialogTitle className="text-base sm:text-lg">
-            사용자 상세 정보
+            {PAGE_HEADER.USER_DETAIL_TITLE}
           </DialogTitle>
           <DialogDescription className="text-xs sm:text-sm text-muted-foreground">
-            선택된 사용자의 상세 정보를 확인할 수 있습니다.
+            {PAGE_HEADER.USER_DETAIL_DESC}
           </DialogDescription>
         </DialogHeader>
         {user ? (
@@ -126,20 +112,17 @@ export function UserDetailModal({ user, open, onClose }: UserDetailModalProps) {
               {/* 기본 정보 */}
               <div className="flex flex-col sm:flex-row items-center sm:items-start gap-3 sm:gap-4">
                 <Avatar className="h-12 w-12 sm:h-16 sm:w-16 flex-shrink-0">
-                  {user.profile_image_url ? (
-                    <AvatarImage
-                      src={user.profile_image_url}
-                      alt={user.name || "User"}
-                    />
-                  ) : (
-                    <AvatarFallback
-                      className={`${getAvatarColor(
-                        user.name
-                      )} text-white text-sm sm:text-base`}
-                    >
-                      {getInitials(user.name)}
-                    </AvatarFallback>
-                  )}
+                  <AvatarImage
+                    src={getAvatarUrl(user, { size: 128 })}
+                    alt={user.name || "User"}
+                  />
+                  <AvatarFallback
+                    className={`${getAvatarColor(
+                      user.name
+                    )} text-white text-sm sm:text-base`}
+                  >
+                    {generateInitials(user.name)}
+                  </AvatarFallback>
                 </Avatar>
                 <div className="text-center sm:text-left flex-1">
                   <div className="text-lg sm:text-xl font-semibold">
@@ -153,13 +136,13 @@ export function UserDetailModal({ user, open, onClose }: UserDetailModalProps) {
                       className={`${getRoleColor(user.account_type)} text-xs`}
                     >
                       {user.account_type === "admin"
-                        ? "시스템 관리자"
-                        : "일반 사용자"}
+                        ? LABELS.SYSTEM_ADMIN_USER
+                        : LABELS.GENERAL_USER_DETAIL}
                     </Badge>
                     <Badge
                       className={`${getStatusColor(user.is_active)} text-xs`}
                     >
-                      {user.is_active ? "활성" : "비활성"}
+                      {user.is_active ? LABELS.ACTIVE_CSV : LABELS.INACTIVE_CSV}
                     </Badge>
                   </div>
                 </div>
@@ -169,29 +152,35 @@ export function UserDetailModal({ user, open, onClose }: UserDetailModalProps) {
               <div className="space-y-3 sm:space-y-4">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 text-xs sm:text-sm">
                   <div className="p-2 sm:p-3 bg-muted rounded-lg">
-                    <div className="font-medium text-foreground">전화번호</div>
-                    <div className="text-muted-foreground mt-1">
-                      {user.phone || "미등록"}
+                    <div className="font-medium text-foreground">
+                      {LABELS.PHONE_NUMBER_USER}
                     </div>
-                  </div>
-                  <div className="p-2 sm:p-3 bg-muted rounded-lg">
-                    <div className="font-medium text-foreground">회사/기관</div>
-                    <div className="text-muted-foreground mt-1 break-all">
-                      {user.company_name || "미등록"}
+                    <div className="text-muted-foreground mt-1">
+                      {user.phone || LABELS.NO_INFO}
                     </div>
                   </div>
                   <div className="p-2 sm:p-3 bg-muted rounded-lg">
                     <div className="font-medium text-foreground">
-                      사업자 유형
+                      {LABELS.COMPANY_INSTITUTION}
                     </div>
-                    <div className="text-muted-foreground mt-1">
-                      {user.business_type || "미등록"}
+                    <div className="text-muted-foreground mt-1 break-all">
+                      {user.company_name || LABELS.NO_INFO}
                     </div>
                   </div>
                   <div className="p-2 sm:p-3 bg-muted rounded-lg">
-                    <div className="font-medium text-foreground">회사 주소</div>
+                    <div className="font-medium text-foreground">
+                      {LABELS.BUSINESS_TYPE}
+                    </div>
+                    <div className="text-muted-foreground mt-1">
+                      {user.business_type || LABELS.NO_INFO}
+                    </div>
+                  </div>
+                  <div className="p-2 sm:p-3 bg-muted rounded-lg">
+                    <div className="font-medium text-foreground">
+                      {LABELS.COMPANY_ADDRESS_USER}
+                    </div>
                     <div className="text-muted-foreground mt-1 break-all">
-                      {user.company_address || "미등록"}
+                      {user.company_address || LABELS.NO_INFO}
                     </div>
                   </div>
                 </div>
@@ -200,23 +189,25 @@ export function UserDetailModal({ user, open, onClose }: UserDetailModalProps) {
                 <div className="pt-2 sm:pt-4 border-t space-y-2 sm:space-y-3">
                   <div className="p-2 sm:p-3 bg-muted rounded-lg text-xs sm:text-sm">
                     <span className="font-medium text-foreground">
-                      마지막 로그인:
+                      {LABELS.LAST_LOGIN}
                     </span>
                     <div className="text-muted-foreground mt-1">
                       {user.last_login_at
                         ? formatDateTime(user.last_login_at)
-                        : "로그인 기록 없음"}
+                        : LABELS.NO_LOGIN_RECORD}
                     </div>
                   </div>
                   <div className="p-2 sm:p-3 bg-muted rounded-lg text-xs sm:text-sm">
-                    <span className="font-medium text-foreground">가입일:</span>
+                    <span className="font-medium text-foreground">
+                      {LABELS.REGISTRATION_DATE}:
+                    </span>
                     <div className="text-muted-foreground mt-1">
                       {formatDateTime(user.created_at)}
                     </div>
                   </div>
                   <div className="p-2 sm:p-3 bg-muted rounded-lg text-xs sm:text-sm">
                     <span className="font-medium text-foreground">
-                      정보 수정일:
+                      {LABELS.INFO_UPDATE_DATE}
                     </span>
                     <div className="text-muted-foreground mt-1">
                       {formatDateTime(user.updated_at)}
@@ -228,7 +219,7 @@ export function UserDetailModal({ user, open, onClose }: UserDetailModalProps) {
           </ScrollArea>
         ) : (
           <div className="p-8 text-center text-muted-foreground">
-            사용자 정보가 없습니다.
+            {LABELS.NO_USER_INFO}
           </div>
         )}
         <div className="mt-4 flex justify-end">
@@ -237,7 +228,7 @@ export function UserDetailModal({ user, open, onClose }: UserDetailModalProps) {
             onClick={handleUnlock}
             disabled={loading || !user}
           >
-            {loading ? "해제 중..." : "계정 잠금 해제"}
+            {loading ? BUTTONS.UNLOCKING : BUTTONS.UNLOCK_ACCOUNT}
           </Button>
         </div>
       </DialogContent>

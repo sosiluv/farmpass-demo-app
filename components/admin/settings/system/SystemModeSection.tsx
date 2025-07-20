@@ -15,6 +15,7 @@ import {
   MaintenanceModeToggle,
   MaintenanceSettings,
 } from "./mode";
+import { BUTTONS, PAGE_HEADER } from "@/lib/constants/settings";
 
 interface SystemModeSectionProps {
   settings: SystemSettings;
@@ -49,8 +50,8 @@ export function SystemModeSection({
     <Card>
       <SettingsCardHeader
         icon={Settings}
-        title="시스템 모드"
-        description="시스템 운영 모드 및 디버깅 설정을 관리합니다"
+        title={PAGE_HEADER.SYSTEM_MODE_SECTION_TITLE}
+        description={PAGE_HEADER.SYSTEM_MODE_SECTION_DESC}
       />
       <CardContent className="space-y-4">
         <DebugModeToggle
@@ -76,7 +77,7 @@ export function SystemModeSection({
                 className="w-full justify-start text-sm"
               >
                 <Settings className="h-4 w-4 mr-2" />
-                유지보수 상세 설정
+                {BUTTONS.SYSTEM_MODE_MAINTENANCE_DETAILS}
               </Button>
             </CollapsibleTrigger>
             <CollapsibleContent className="space-y-4 pt-2">

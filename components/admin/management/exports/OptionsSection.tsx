@@ -4,6 +4,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Settings } from "lucide-react";
+import { LABELS } from "@/lib/constants/management";
 
 interface ExportOption {
   key: string;
@@ -22,7 +23,7 @@ interface OptionsSectionProps {
 }
 
 export function OptionsSection({
-  title = "내보내기 옵션",
+  title = LABELS.EXPORT_OPTIONS,
   color = "orange",
   options,
   selectedCount,
@@ -44,7 +45,10 @@ export function OptionsSection({
             <span>{title}</span>
           </div>
           <Badge variant="secondary" className="text-[10px] sm:text-xs">
-            {selectedCount}/{totalCount} 선택됨
+            {LABELS.SELECTED_COUNT.replace(
+              "{selectedCount}",
+              selectedCount.toString()
+            ).replace("{totalCount}", totalCount.toString())}
           </Badge>
         </CardTitle>
       </CardHeader>
