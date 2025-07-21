@@ -109,8 +109,6 @@ export async function logout(isForceLogout = false): Promise<void> {
           // 쿠키 정리 (인증 토큰 등)
           clearSessionCookies();
           devLog.log("authService에서 쿠키 정리 수행");
-        } else {
-          devLog.log("미들웨어에서 이미 정리됨 - 쿠키 정리 스킵");
         }
       } catch (error) {
         devLog.warn("클라이언트 상태 정리 실패:", error);

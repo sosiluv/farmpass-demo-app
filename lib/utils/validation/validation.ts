@@ -263,44 +263,14 @@ export function getAuthErrorMessage(
       redirectTo?: string;
     };
   } = {
-    // 인증/세션/토큰 관련
-    "token has expired": {
+    // 인증/세션/토큰 관련 (중복 통합)
+    token_invalid_or_expired: {
       message:
-        "비밀번호 재설정 링크가 만료되었거나 유효하지 않습니다. 새로운 링크를 요청해주세요.",
+        "인증 링크가 만료되었거나 유효하지 않습니다. 새로운 링크를 요청해주세요.",
       shouldRedirect: true,
-      redirectTo: "/reset-password",
+      redirectTo: "/login",
     },
-    "invalid reset password token": {
-      message:
-        "비밀번호 재설정 링크가 만료되었거나 유효하지 않습니다. 새로운 링크를 요청해주세요.",
-      shouldRedirect: true,
-      redirectTo: "/reset-password",
-    },
-    "password reset token has expired": {
-      message:
-        "비밀번호 재설정 링크가 만료되었거나 유효하지 않습니다. 새로운 링크를 요청해주세요.",
-      shouldRedirect: true,
-      redirectTo: "/reset-password",
-    },
-    "email link is invalid or has expired": {
-      message:
-        "비밀번호 재설정 링크가 만료되었거나 유효하지 않습니다. 새로운 링크를 요청해주세요.",
-      shouldRedirect: true,
-      redirectTo: "/reset-password",
-    },
-    "invalid password reset token": {
-      message:
-        "비밀번호 재설정 링크가 만료되었거나 유효하지 않습니다. 새로운 링크를 요청해주세요.",
-      shouldRedirect: true,
-      redirectTo: "/reset-password",
-    },
-    "invalid token": {
-      message:
-        "비밀번호 재설정 링크가 만료되었거나 유효하지 않습니다. 새로운 링크를 요청해주세요.",
-      shouldRedirect: true,
-      redirectTo: "/reset-password",
-    },
-    "token has already been used": {
+    token_already_used: {
       message:
         "이미 사용된 비밀번호 재설정 링크입니다. 새로운 링크를 요청해주세요.",
       shouldRedirect: true,
@@ -611,6 +581,35 @@ export function getAuthErrorMessage(
   };
 
   const lowerMsg = errorMessage.toLowerCase();
+
+  // 인증 토큰 관련 에러 통합 매핑
+  const tokenInvalidOrExpiredKeywords = [
+    "token has expired",
+    "invalid reset password token",
+    "password reset token has expired",
+    "email link is invalid or has expired",
+    "invalid password reset token",
+    "invalid token",
+  ];
+  const tokenAlreadyUsedKeywords = ["token has already been used"];
+
+  if (
+    tokenInvalidOrExpiredKeywords.some((keyword) => lowerMsg.includes(keyword))
+  ) {
+    return {
+      message: errorMap["token_invalid_or_expired"].message,
+      shouldRedirect: errorMap["token_invalid_or_expired"].shouldRedirect,
+      redirectTo: errorMap["token_invalid_or_expired"].redirectTo,
+    };
+  }
+  if (tokenAlreadyUsedKeywords.some((keyword) => lowerMsg.includes(keyword))) {
+    return {
+      message: errorMap["token_already_used"].message,
+      shouldRedirect: errorMap["token_already_used"].shouldRedirect,
+      redirectTo: errorMap["token_already_used"].redirectTo,
+    };
+  }
+
   for (const [key, value] of Object.entries(errorMap)) {
     if (lowerMsg.includes(key)) {
       return {
@@ -677,13 +676,6 @@ export const createChangePasswordFormSchema = (rules: PasswordRules) => {
       message: "새 비밀번호와 확인 비밀번호가 일치하지 않습니다.",
       path: ["confirmPassword"],
     });
-};
-
-/**
- * 기본 비밀번호 변경 폼 스키마 (설정을 불러올 수 없을 때 사용)
- */
-export const createDefaultChangePasswordFormSchema = () => {
-  return createChangePasswordFormSchema(DEFAULT_PASSWORD_RULES);
 };
 
 /**

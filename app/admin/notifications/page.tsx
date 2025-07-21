@@ -71,7 +71,6 @@ export default function NotificationsPage() {
   // 농장 데이터 로드
   useEffect(() => {
     if (user?.id && !farmsLoading && farms.length === 0) {
-      showInfo("농장 정보 로딩 시작", "농장 정보를 불러오는 중입니다...");
       refetchFarms();
     }
   }, [user?.id, refetchFarms, farmsLoading, farms.length, showInfo]);

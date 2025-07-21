@@ -168,9 +168,6 @@ export async function POST(request: NextRequest) {
       userAgent
     );
 
-    // 서버 사이드에서는 자동 로그인이 되지 않으므로 signOut 불필요
-    // await supabase.auth.signOut();
-
     return NextResponse.json(
       {
         success: true,

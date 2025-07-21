@@ -24,7 +24,7 @@ import {
   FormControl,
   FormMessage,
 } from "@/components/ui/form";
-import { Leaf, Loader2, Lock, AlertCircle } from "lucide-react";
+import { Leaf, Lock, AlertCircle } from "lucide-react";
 import { motion } from "framer-motion";
 import { useCommonToast } from "@/lib/utils/notification/toast-messages";
 import { devLog } from "@/lib/utils/logging/dev-logger";
@@ -343,15 +343,16 @@ export default function ResetPasswordConfirmPage() {
                   />
                   <Button
                     type="submit"
-                    className="h-12 w-full"
+                    className="h-12 w-full flex items-center justify-center"
                     disabled={loading}
                   >
                     {loading ? (
                       <>
                         <Loading
-                          spinnerSize={16}
+                          spinnerSize={20}
                           showText={false}
                           minHeight="auto"
+                          spinnerColor="text-white"
                           className="mr-2"
                         />
                         {BUTTONS.RESET_PASSWORD_CONFIRM_LOADING}

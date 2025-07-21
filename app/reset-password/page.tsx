@@ -135,15 +135,16 @@ export default function ResetPasswordPage() {
 
                 <Button
                   type="submit"
-                  className="h-12 w-full"
+                  className="h-12 w-full flex items-center justify-center"
                   disabled={loading}
                 >
                   {loading ? (
                     <>
                       <Loading
-                        spinnerSize={16}
+                        spinnerSize={20}
                         showText={false}
                         minHeight="auto"
+                        spinnerColor="text-white"
                         className="mr-2"
                       />
                       {BUTTONS.RESET_PASSWORD_LOADING}

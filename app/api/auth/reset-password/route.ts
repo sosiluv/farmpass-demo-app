@@ -83,9 +83,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 세션 클리어
-    await supabase.auth.signOut();
-
     // 성공 로그 기록
     await createSystemLog(
       "PASSWORD_RESET_REQUESTED",
