@@ -22,6 +22,7 @@ import { ErrorBoundary } from "@/components/error/error-boundary";
 import { Logo } from "@/components/common";
 import { Loading } from "@/components/ui/loading";
 import { getAuthErrorMessage } from "@/lib/utils/validation";
+import { useAuth } from "@/components/providers/auth-provider";
 
 export default function ConfirmPage() {
   const [loading, setLoading] = useState(true);
@@ -31,6 +32,7 @@ export default function ConfirmPage() {
   const [tokenProcessed, setTokenProcessed] = useState(false);
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { signOut } = useAuth();
   const { showSuccess, showError } = useCommonToast();
   const processingRef = useRef(false);
 
@@ -68,6 +70,7 @@ export default function ConfirmPage() {
       }
 
       if (data.user && data.session) {
+        await signOut();
         setConfirmed(true);
         showSuccess(
           "이메일 인증 완료",
@@ -85,7 +88,7 @@ export default function ConfirmPage() {
       if (authError.shouldRedirect && authError.redirectTo) {
         setTimeout(() => {
           router.push(authError.redirectTo!);
-        }, 2000);
+        }, 4000);
       }
     } finally {
       setLoading(false);
@@ -148,7 +151,7 @@ export default function ConfirmPage() {
       <div className="flex min-h-screen items-center justify-center bg-gradient-farm p-4">
         <div className="w-full max-w-md">
           <div className="mb-8 text-center">
-            <Logo className="mx-auto h-12 w-auto" />
+            <Logo className="mx-auto" size="xl" />
           </div>
           <AdminError
             title={ERROR_CONFIGS.TIMEOUT.title}
@@ -174,7 +177,7 @@ export default function ConfirmPage() {
           className="w-full max-w-md"
         >
           <div className="mb-8 text-center">
-            <Logo className="mx-auto h-12 w-auto" />
+            <Logo className="mx-auto" size="xl" />
           </div>
 
           <Card className="border-none shadow-soft-lg">
@@ -212,12 +215,9 @@ export default function ConfirmPage() {
             <CardContent className="space-y-4">
               {loading && (
                 <div className="flex items-center justify-center py-8">
-                  <Loading
-                    spinnerSize={24}
-                    showText={false}
-                    minHeight="auto"
-                    className="text-primary"
-                  />
+                  <p className="text-sm text-muted-foreground w-full text-center">
+                    이메일 인증을 확인 중입니다. 잠시만 기다려주세요...
+                  </p>
                 </div>
               )}
 
@@ -261,7 +261,7 @@ export default function ConfirmPage() {
                     </Button>
                     <Button
                       onClick={handleResendConfirmation}
-                      variant="ghost"
+                      variant="outline"
                       className="w-full"
                     >
                       <Mail className="mr-2 h-4 w-4" />
