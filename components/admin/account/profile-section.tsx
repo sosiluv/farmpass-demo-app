@@ -202,7 +202,7 @@ export function ProfileSection({
                   id="phoneNumber"
                   name="phoneNumber"
                   type="tel"
-                  value={formData.phoneNumber}
+                  value={formData.phoneNumber || ""}
                   onChange={handleInputChange}
                   disabled={loading}
                   maxLength={13}
@@ -212,7 +212,7 @@ export function ProfileSection({
               <div className="space-y-2">
                 <Label htmlFor="position">{LABELS.POSITION}</Label>
                 <Select
-                  value={formData.position}
+                  value={formData.position || ""}
                   onValueChange={(value) => handleChange("position", value)}
                   disabled={loading}
                 >
@@ -239,7 +239,7 @@ export function ProfileSection({
                   id="department"
                   name="department"
                   type="text"
-                  value={formData.department}
+                  value={formData.department || ""}
                   onChange={handleInputChange}
                   disabled={loading}
                   placeholder={PLACEHOLDERS.DEPARTMENT_PLACEHOLDER}
@@ -252,7 +252,7 @@ export function ProfileSection({
               <Textarea
                 id="bio"
                 name="bio"
-                value={formData.bio}
+                value={formData.bio || ""}
                 onChange={handleInputChange}
                 disabled={loading}
                 placeholder={PLACEHOLDERS.BIO_PLACEHOLDER}

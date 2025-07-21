@@ -3,23 +3,10 @@
 import { useAuthenticatedQuery } from "@/lib/hooks/query-utils";
 import { farmsKeys } from "@/lib/hooks/query/query-keys";
 import { useAuth } from "@/components/providers/auth-provider";
-import type { FarmMember } from "@/lib/types";
+import type { FarmMembers } from "@/lib/types";
 import { apiClient } from "@/lib/utils/data/api-client";
 import { useSupabaseRealtime } from "@/hooks/useSupabaseRealtime";
 import { useCallback } from "react";
-
-export interface MemberWithProfile extends FarmMember {
-  representative_name: string;
-  email: string;
-  profile_image_url: string | null;
-}
-
-export interface FarmMembers {
-  count: number;
-  members: MemberWithProfile[];
-  loading: boolean;
-  error?: Error;
-}
 
 /**
  * React Query 기반 Farm Members Hook
@@ -61,6 +48,7 @@ export function useFarmMembersQuery(farmId: string | null) {
                 member.profiles?.profile_image_url ||
                 member.profile_image_url ||
                 null,
+              avatar_seed: member.profiles?.avatar_seed || null,
             };
           })
           .sort((a: any, b: any) => {
@@ -204,6 +192,7 @@ export function useFarmMembersPreviewQuery(farmIds: string[]) {
               representative_name: member.profiles?.name || "알 수 없음",
               email: member.profiles?.email || "",
               profile_image_url: member.profiles?.profile_image_url || null,
+              avatar_seed: member.profiles?.avatar_seed || null,
             };
             result[farmId].members.push(processedMember);
             result[farmId].count = result[farmId].members.length;

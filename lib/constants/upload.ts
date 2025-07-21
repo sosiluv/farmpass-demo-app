@@ -101,7 +101,6 @@ export const UPLOAD_TYPE_CONFIGS: Record<
     },
     dbTable: "profiles",
     dbField: "profile_image_url",
-    cacheBusterField: "profileImageCacheBuster",
     preUploadCleanup: undefined,
   },
 
@@ -121,7 +120,6 @@ export const UPLOAD_TYPE_CONFIGS: Record<
     },
     dbTable: "system_settings",
     dbField: "logo",
-    cacheBusterField: "logoCacheBuster",
     preUploadCleanup: async () => {
       // 로고 파일 정리 로직
     },
@@ -144,7 +142,6 @@ export const UPLOAD_TYPE_CONFIGS: Record<
     },
     dbTable: "system_settings",
     dbField: "favicon",
-    cacheBusterField: "faviconCacheBuster",
     preUploadCleanup: undefined,
   },
 
@@ -183,7 +180,6 @@ export const UPLOAD_TYPE_CONFIGS: Record<
     },
     dbTable: "system_settings",
     dbField: "notification_icon",
-    cacheBusterField: "notificationIconCacheBuster",
     preUploadCleanup: undefined,
   },
 
@@ -203,7 +199,6 @@ export const UPLOAD_TYPE_CONFIGS: Record<
     },
     dbTable: "system_settings",
     dbField: "notification_badge",
-    cacheBusterField: "notificationBadgeCacheBuster",
     preUploadCleanup: undefined,
   },
 } as const;

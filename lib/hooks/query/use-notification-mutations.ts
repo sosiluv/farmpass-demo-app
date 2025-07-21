@@ -2,10 +2,7 @@
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiClient } from "@/lib/utils/data/api-client";
-import type {
-  NotificationSettings,
-  UpdateNotificationSettingsDTO,
-} from "@/lib/types/notification";
+import type { NotificationSettings } from "@/lib/types/notification";
 
 /**
  * 알림 설정 저장 Mutation Hook
@@ -15,7 +12,7 @@ export function useSaveNotificationSettingsMutation() {
 
   return useMutation({
     mutationFn: async (
-      settings: UpdateNotificationSettingsDTO
+      settings: Partial<NotificationSettings>
     ): Promise<
       { success: boolean; message?: string } & NotificationSettings
     > => {

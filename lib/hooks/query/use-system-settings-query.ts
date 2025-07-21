@@ -30,8 +30,8 @@ export function useSystemSettingsQuery() {
       // API는 설정 데이터를 직접 반환함 (data.settings가 아님)
       return {
         id: settings.id,
-        created_at: new Date(settings.created_at),
-        updated_at: new Date(settings.updated_at),
+        created_at: settings.created_at,
+        updated_at: settings.updated_at,
 
         // 일반 설정
         siteName: settings.siteName,
@@ -85,9 +85,7 @@ export function useSystemSettingsQuery() {
         maintenanceContactInfo: settings.maintenanceContactInfo,
         maintenanceEstimatedTime: settings.maintenanceEstimatedTime,
         maintenanceMessage: settings.maintenanceMessage,
-        maintenanceStartTime: settings.maintenanceStartTime
-          ? new Date(settings.maintenanceStartTime)
-          : null,
+        maintenanceStartTime: settings.maintenanceStartTime,
       };
     },
     // 시스템 설정은 인증 없이도 조회 가능해야 함 (회원가입, 메인페이지 등에서 사용)

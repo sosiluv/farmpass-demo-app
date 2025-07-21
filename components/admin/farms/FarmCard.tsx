@@ -1,7 +1,7 @@
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { motion } from "framer-motion";
 import type { Farm } from "@/lib/types/farm";
-import type { FarmMembers } from "@/lib/hooks/query/use-farm-members-query";
+import type { FarmMembers } from "@/lib/types";
 import {
   FarmCardHeader,
   FarmCardActions,

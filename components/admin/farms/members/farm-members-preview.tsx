@@ -2,9 +2,8 @@
 
 import { Users } from "lucide-react";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
-import { type FarmMembers } from "@/lib/hooks/query/use-farm-members-query";
+import { type FarmMembers, MemberWithProfile } from "@/lib/types";
 import { generateInitials, getAvatarUrl } from "@/lib/utils/media/avatar";
-import type { MemberWithProfile } from "@/lib/hooks/query/use-farm-members-query";
 import { LABELS } from "@/lib/constants/farms";
 
 interface FarmMembersPreviewProps {

@@ -1,14 +1,13 @@
 "use client";
 
 import { useAuthenticatedQuery } from "@/lib/hooks/query-utils";
+import { farmsKeys } from "@/lib/hooks/query/query-keys";
 import { useAuth } from "@/components/providers/auth-provider";
+import type { FarmStats } from "@/lib/types";
 import { supabase } from "@/lib/supabase/client";
-import { farmsKeys } from "./query-keys";
-import type { ExtendedFarm } from "@/components/admin/management/farms/types";
-import { useSupabaseRealtime } from "@/hooks/useSupabaseRealtime";
-
 // 클라이언트 전용 가드
 const isClient = typeof window !== "undefined";
+import { useSupabaseRealtime } from "@/hooks/useSupabaseRealtime";
 
 // 트렌드 계산 헬퍼 함수 - 첫 달 시작 시 0% 표시
 const calculateTrend = (current: number, previous: number): number => {
@@ -17,21 +16,6 @@ const calculateTrend = (current: number, previous: number): number => {
   }
   return Math.round(((current - previous) / previous) * 100);
 };
-
-export interface FarmStats {
-  totalFarms: number;
-  totalOwners: number;
-  farmOwners: number; // 농장 소유자 수 (UsersTab과 호환성)
-  totalRegions: number;
-  monthlyRegistrations: number;
-  monthlyFarmRegistrations: number; // 호환성
-  trends: {
-    farmGrowth: number;
-    farmOwnersTrend: number;
-    regionsTrend: number;
-    registrationTrend: number;
-  };
-}
 
 /**
  * React Query 기반 Admin Farms Hook
@@ -177,7 +161,8 @@ export function useAdminFarmsListQuery() {
 
   const farmsListQuery = useAuthenticatedQuery(
     farmsKeys.list({ type: "admin-list" }),
-    async (): Promise<ExtendedFarm[]> => {
+    async (): Promise<any[]> => {
+      // ExtendedFarm[] 대신 any[]로 변경
       if (!isClient) {
         throw new Error("이 함수는 클라이언트에서만 실행할 수 있습니다.");
       }
@@ -227,7 +212,8 @@ export function useAdminFarmsListQuery() {
       }
 
       // 농장 데이터에 구성원 수와 방문자 수 추가
-      const farmsWithCounts: ExtendedFarm[] = (data || []).map((farm) => ({
+      const farmsWithCounts: any[] = (data || []).map((farm) => ({
+        // ExtendedFarm[] 대신 any[]로 변경
         ...farm,
         owner_name: (farm as any).profiles?.name || "알 수 없음",
         member_count: memberCounts[farm.id] || 0,

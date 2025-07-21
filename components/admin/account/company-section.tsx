@@ -96,7 +96,7 @@ export function CompanySection({
                 <Label htmlFor="companyName">{LABELS.COMPANY_NAME}</Label>
                 <Input
                   id="companyName"
-                  value={formData.companyName}
+                  value={formData.companyName || ""}
                   onChange={(e) => handleChange("companyName", e.target.value)}
                   disabled={loading}
                 />
@@ -104,7 +104,7 @@ export function CompanySection({
               <div className="space-y-2">
                 <Label htmlFor="businessType">{LABELS.BUSINESS_TYPE}</Label>
                 <Select
-                  value={formData.businessType}
+                  value={formData.businessType || ""}
                   onValueChange={(value) => handleChange("businessType", value)}
                   disabled={loading}
                 >
@@ -137,7 +137,7 @@ export function CompanySection({
               />
               <Input
                 id="companyAddress"
-                value={formData.companyAddress}
+                value={formData.companyAddress || ""}
                 placeholder={PLACEHOLDERS.COMPANY_ADDRESS}
                 readOnly
                 disabled={loading}
@@ -152,7 +152,7 @@ export function CompanySection({
                 <Input
                   id="establishment_date"
                   type="date"
-                  value={formData.establishment_date}
+                  value={formData.establishment_date || ""}
                   onChange={(e) =>
                     handleChange("establishment_date", e.target.value)
                   }
@@ -162,7 +162,7 @@ export function CompanySection({
               <div className="space-y-2">
                 <Label htmlFor="employee_count">{LABELS.EMPLOYEE_COUNT}</Label>
                 <Select
-                  value={formData.employee_count}
+                  value={formData.employee_count || ""}
                   onValueChange={(value) =>
                     handleChange("employee_count", value)
                   }
@@ -189,7 +189,7 @@ export function CompanySection({
               <Input
                 id="company_website"
                 type="url"
-                value={formData.company_website}
+                value={formData.company_website || ""}
                 onChange={(e) =>
                   handleChange("company_website", e.target.value)
                 }
@@ -204,7 +204,7 @@ export function CompanySection({
               </Label>
               <Textarea
                 id="company_description"
-                value={formData.company_description}
+                value={formData.company_description || ""}
                 onChange={(e) =>
                   handleChange("company_description", e.target.value)
                 }

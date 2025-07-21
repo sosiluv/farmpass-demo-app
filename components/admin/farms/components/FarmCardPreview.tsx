@@ -1,5 +1,5 @@
 import { FarmMembersPreview } from "../members/farm-members-preview";
-import type { FarmMembers } from "@/lib/hooks/query/use-farm-members-query";
+import type { FarmMembers } from "@/lib/types";
 
 interface FarmCardPreviewProps {
   farmId: string;

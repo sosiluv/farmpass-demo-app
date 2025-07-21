@@ -2,33 +2,20 @@
  * 농장 관련 타입 정의
  */
 
-import type { Farm, FarmMember } from "./common";
+import type { FarmMember } from "./common";
 
 // Re-export common types
 export type { Farm, FarmMember } from "./common";
-
-// ===========================================
-// 농장 폼 데이터 타입
-// ===========================================
-
-export interface FarmFormValues {
-  farm_name: string;
-  description?: string;
-  farm_address: string;
-  farm_detailed_address?: string;
-  farm_type?: string;
-  manager_phone?: string;
-  manager_name?: string;
-}
 
 // ===========================================
 // 농장 멤버 확장 타입
 // ===========================================
 
 export interface MemberWithProfile extends FarmMember {
-  name: string;
+  representative_name: string; // 실제 사용되는 필드명
   email: string;
   profile_image_url: string | null;
+  avatar_seed: string | null;
 }
 
 export interface FarmMembers {
@@ -42,9 +29,20 @@ export interface FarmMembers {
 // 농장 통계 타입
 // ===========================================
 
+/**
+ * 관리자 농장 통계 타입
+ */
 export interface FarmStats {
-  total_farms: number;
-  active_farms: number;
-  total_members: number;
-  recent_activity: number;
+  totalFarms: number;
+  totalOwners: number;
+  farmOwners: number; // 농장 소유자 수 (UsersTab과 호환성)
+  totalRegions: number;
+  monthlyRegistrations: number;
+  monthlyFarmRegistrations: number; // 호환성
+  trends: {
+    farmGrowth: number;
+    farmOwnersTrend: number;
+    regionsTrend: number;
+    registrationTrend: number;
+  };
 }

@@ -87,8 +87,17 @@ function shouldSkipDuplicate(key: string): boolean {
 /**
  * 기존 시스템 설정의 로그 레벨 필터링 함수 재사용
  */
-async function shouldLogMessage(messageLevel: LogLevel): Promise<boolean> {
+async function shouldLogMessage(
+  messageLevel: LogLevel,
+  action?: string
+): Promise<boolean> {
   try {
+    // 로그인 관련 액션은 레벨과 무관하게 항상 기록
+    const loginActions = ["LOGIN_SUCCESS", "PASSWORD_CHANGED", "USER_CREATED"];
+    if (action && loginActions.includes(action)) {
+      return true;
+    }
+
     // 서버 환경에서만 동작
     const systemLogLevel = await getSystemSetting("logLevel");
     const effectiveLogLevel = (systemLogLevel as LogLevel) || "info"; // 기본값은 info
@@ -119,7 +128,7 @@ async function createLog(
       return;
     }
 
-    const shouldLog = await shouldLogMessage(level);
+    const shouldLog = await shouldLogMessage(level, action);
     devLog.log("[DEBUG] shouldLogMessage", { level, action, shouldLog });
     if (!shouldLog) {
       devLog.log(

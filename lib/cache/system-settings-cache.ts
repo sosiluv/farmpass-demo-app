@@ -51,7 +51,13 @@ export class SystemSettingsCache {
           if (process.env.NODE_ENV === "development") {
             devLog.log("[CACHE] Settings fetched from database directly");
           }
-          return settings as SystemSettings;
+          return {
+            ...settings,
+            created_at: settings.created_at.toISOString(),
+            updated_at: settings.updated_at.toISOString(),
+            maintenanceStartTime:
+              settings.maintenanceStartTime?.toISOString() || null,
+          } as SystemSettings;
         } else {
           // 설정이 없으면 기본값으로 생성
           const newSettings = await prisma.systemSettings.create({
@@ -62,7 +68,13 @@ export class SystemSettingsCache {
               updated_at: new Date(),
             },
           });
-          return newSettings as SystemSettings;
+          return {
+            ...newSettings,
+            created_at: newSettings.created_at.toISOString(),
+            updated_at: newSettings.updated_at.toISOString(),
+            maintenanceStartTime:
+              newSettings.maintenanceStartTime?.toISOString() || null,
+          } as SystemSettings;
         }
       } else {
         // 클라이언트 사이드에서는 API 호출
@@ -87,8 +99,8 @@ export class SystemSettingsCache {
       return {
         ...DEFAULT_SYSTEM_SETTINGS,
         id: "temp-default",
-        created_at: new Date(),
-        updated_at: new Date(),
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
       };
     }
   }

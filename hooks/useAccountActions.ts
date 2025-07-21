@@ -79,6 +79,7 @@ export function useAccountActions({ profile, userId }: UseAccountActionsProps) {
   // 프로필 정보 저장 (React Query mutation 사용)
   const handleProfileSave = async (data: {
     name: string;
+    email: string;
     phoneNumber: string;
     position: string;
     department: string;

@@ -1,6 +1,6 @@
 export const PAGE_HEADER = {
-  LOGIN_TITLE: "이메일 인증",
-  LOGIN_DESCRIPTION: "이메일 인증을 완료하세요",
+  LOGIN_TITLE: "로그인",
+  LOGIN_DESCRIPTION: "농장 출입 관리 시스템에 로그인하세요",
   REGISTER_TITLE: "회원가입",
   REGISTER_DESCRIPTION: "농장 출입 관리 시스템에 가입하세요",
   RESET_PASSWORD_TITLE: "비밀번호 재설정",

@@ -34,7 +34,7 @@ function formatEstimatedTime(minutes: number): string {
   }
 }
 
-function getMaintenanceDuration(startTime: Date | null): string {
+function getMaintenanceDuration(startTime: string | null): string {
   if (!startTime) return "";
 
   const now = new Date();
