@@ -108,7 +108,7 @@ export function TechStackCard({ data }: TechStackCardProps) {
         <CardDescription>{LABELS.TECH_STACK_DESC}</CardDescription>
       </CardHeader>
       <CardContent>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           {Object.entries(techStack).map(([category, value]) => (
             <div
               key={category}

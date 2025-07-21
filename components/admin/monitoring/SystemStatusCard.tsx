@@ -14,47 +14,45 @@ import { LABELS, PAGE_HEADER } from "@/lib/constants/monitoring";
 interface SystemStatusCardProps {
   data: {
     timestamp: string;
-    services: {
-      health: {
-        status: string;
-        timestamp: string;
-        uptime: number;
-        responseTime: string;
-        version: string;
-        performance: {
-          totalResponseTime: string;
-          databaseResponseTime: string;
-          cpu: {
-            user: string;
-            system: string;
-            total: string;
-          };
+    health: {
+      status: string;
+      timestamp: string;
+      uptime: number;
+      responseTime: string;
+      version: string;
+      performance: {
+        totalResponseTime: string;
+        databaseResponseTime: string;
+        cpu: {
+          user: string;
+          system: string;
+          total: string;
         };
-        system: {
-          farmCount: number;
-          visitorCount: number;
-          memory: {
-            used: number;
-            total: number;
-            external: number;
-            status: string;
-          };
-          cpu: {
-            user: number;
-            system: number;
-            total: number;
-            threshold: number;
-            status: string;
-          };
-          nodeVersion: string;
-          platform: string;
-          arch: string;
+      };
+      system: {
+        farmCount: number;
+        visitorCount: number;
+        memory: {
+          used: number;
+          total: number;
+          external: number;
+          status: string;
         };
-        services: {
-          database: string;
-          api: string;
-          memory: string;
+        cpu: {
+          user: number;
+          system: number;
+          total: number;
+          threshold: number;
+          status: string;
         };
+        nodeVersion: string;
+        platform: string;
+        arch: string;
+      };
+      services: {
+        database: string;
+        api: string;
+        memory: string;
       };
     };
   };
@@ -62,7 +60,7 @@ interface SystemStatusCardProps {
 
 export function SystemStatusCard({ data }: SystemStatusCardProps) {
   // 데이터 유효성 검사
-  if (!data?.services?.health) {
+  if (!data?.health) {
     return (
       <Card className="bg-gradient-to-br from-background to-muted/20">
         <CardHeader>
@@ -81,7 +79,7 @@ export function SystemStatusCard({ data }: SystemStatusCardProps) {
     );
   }
 
-  const { health } = data.services;
+  const health = data.health;
 
   // CPU와 메모리 상태 데이터 유효성 검사
   const cpuStatus = health.system?.cpu?.status ?? "unknown";

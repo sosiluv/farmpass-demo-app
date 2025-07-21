@@ -167,9 +167,9 @@ export function UptimeCard({
             return (
               <div
                 key={monitor.friendly_name}
-                className="relative flex items-center gap-4 rounded-lg bg-muted/50 p-4"
+                className="relative flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-4 rounded-lg bg-muted/50 p-3 sm:p-4 min-w-0"
               >
-                <div className="relative h-16 w-16">
+                <div className="flex-shrink-0 w-16 h-16 flex items-center justify-center">
                   <svg className="h-full w-full" viewBox="0 0 36 36">
                     <path
                       d="M18 2.0845
@@ -202,73 +202,64 @@ export function UptimeCard({
                     </text>
                   </svg>
                 </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center justify-between gap-2">
-                    <h4 className="font-medium truncate">
-                      {monitor.friendly_name}
-                    </h4>
-                    <Badge
-                      variant={isHealthy ? "default" : "destructive"}
-                      className="shrink-0"
-                    >
-                      {isHealthy ? LABELS.NORMAL : LABELS.ISSUE_DETECTED}
-                    </Badge>
-                  </div>
-
-                  {/* 가동률 정보 */}
-                  <div className="space-y-1 mt-2">
-                    <p className="text-sm text-muted-foreground">
-                      {LABELS.UPTIME_RATIO.replace(
-                        "{ratio}",
-                        safeUptimeRatio.toFixed(1)
+                <div className="flex flex-col sm:flex-row items-start sm:items-center gap-1 sm:gap-2 w-full">
+                  <h4 className="font-medium break-words w-full text-base sm:text-lg">
+                    {monitor.friendly_name}
+                  </h4>
+                  <Badge
+                    variant={isHealthy ? "default" : "destructive"}
+                    className="shrink-0 mt-1 sm:mt-0"
+                  >
+                    {isHealthy ? LABELS.NORMAL : LABELS.ISSUE_DETECTED}
+                  </Badge>
+                </div>
+                <div className="space-y-1 mt-2 w-full">
+                  <p className="text-sm sm:text-base text-muted-foreground break-words">
+                    {LABELS.UPTIME_RATIO.replace(
+                      "{ratio}",
+                      safeUptimeRatio.toFixed(1)
+                    )}
+                    {monitor.custom_uptime_ratio !== undefined &&
+                      monitor.custom_uptime_ratio !== null && (
+                        <span className="text-xs text-muted-foreground/70 ml-1">
+                          {LABELS.UPTIME_30_DAYS}
+                        </span>
                       )}
-                      {monitor.custom_uptime_ratio !== undefined &&
-                        monitor.custom_uptime_ratio !== null && (
-                          <span className="text-xs text-muted-foreground/70 ml-1">
-                            {LABELS.UPTIME_30_DAYS}
-                          </span>
+                  </p>
+                  {/* 추가 정보 */}
+                  {monitor.id && (
+                    <div className="flex items-center gap-1 text-xs sm:text-sm">
+                      <Hash className="h-3 w-3" />
+                      <span>
+                        {LABELS.MONITOR_ID.replace(
+                          "{id}",
+                          monitor.id.toString()
                         )}
-                    </p>
-
-                    {/* 추가 정보 */}
-                    <div className="grid grid-cols-2 gap-2 text-xs text-muted-foreground">
-                      {monitor.id && (
-                        <div className="flex items-center gap-1">
-                          <Hash className="h-3 w-3" />
-                          <span>
-                            {LABELS.MONITOR_ID.replace(
-                              "{id}",
-                              monitor.id.toString()
-                            )}
-                          </span>
-                        </div>
-                      )}
-
-                      {monitor.interval && (
-                        <div className="flex items-center gap-1">
-                          <Activity className="h-3 w-3" />
-                          <span>
-                            {LABELS.CHECK_INTERVAL.replace(
-                              "{interval}",
-                              formatInterval(monitor.interval)
-                            )}
-                          </span>
-                        </div>
-                      )}
-
-                      {monitor.create_datetime && (
-                        <div className="flex items-center gap-1">
-                          <Calendar className="h-3 w-3" />
-                          <span>
-                            {LABELS.CREATED.replace(
-                              "{time}",
-                              formatCreateTime(monitor.create_datetime)
-                            )}
-                          </span>
-                        </div>
-                      )}
+                      </span>
                     </div>
-                  </div>
+                  )}
+                  {monitor.interval && (
+                    <div className="flex items-center gap-1 text-xs sm:text-sm">
+                      <Activity className="h-3 w-3" />
+                      <span>
+                        {LABELS.CHECK_INTERVAL.replace(
+                          "{interval}",
+                          formatInterval(monitor.interval)
+                        )}
+                      </span>
+                    </div>
+                  )}
+                  {monitor.create_datetime && (
+                    <div className="flex items-center gap-1 text-xs sm:text-sm">
+                      <Calendar className="h-3 w-3" />
+                      <span>
+                        {LABELS.CREATED.replace(
+                          "{time}",
+                          formatCreateTime(monitor.create_datetime)
+                        )}
+                      </span>
+                    </div>
+                  )}
                 </div>
               </div>
             );

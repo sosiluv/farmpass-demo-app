@@ -88,32 +88,29 @@ export function ErrorLogsCard({ errors }: ErrorLogsCardProps) {
                 return (
                   <div
                     key={`${error.timestamp}-${index}`}
-                    className="rounded-lg bg-muted/50 p-4 transition-colors hover:bg-muted/70"
+                    className="rounded-lg bg-muted/50 p-3 sm:p-4 transition-colors hover:bg-muted/70 flex flex-col gap-2"
                   >
-                    <div className="flex items-start gap-3">
-                      <ErrorIcon
-                        className={cn(
-                          "h-5 w-5 mt-0.5",
-                          getErrorColor(error.level)
-                        )}
-                      />
-                      <div className="flex-1 space-y-1">
-                        <div className="flex items-center justify-between">
-                          <p
-                            className={cn(
-                              "text-sm font-medium",
-                              getErrorColor(error.level)
-                            )}
-                          >
-                            {error.level.toUpperCase()}
-                          </p>
-                          <time className="text-xs text-muted-foreground">
-                            {new Date(error.timestamp).toLocaleString()}
-                          </time>
-                        </div>
-                        <p className="text-sm">{error.message}</p>
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center gap-1 sm:gap-3 w-full">
+                      <div className="flex items-center gap-2">
+                        <ErrorIcon
+                          className={cn("h-5 w-5", getErrorColor(error.level))}
+                        />
+                        <p
+                          className={cn(
+                            "text-sm font-medium break-words",
+                            getErrorColor(error.level)
+                          )}
+                        >
+                          {error.level.toUpperCase()}
+                        </p>
                       </div>
+                      <time className="text-xs text-muted-foreground ml-0 sm:ml-auto mt-1 sm:mt-0">
+                        {new Date(error.timestamp).toLocaleString()}
+                      </time>
                     </div>
+                    <p className="text-sm break-words whitespace-pre-line w-full">
+                      {error.message}
+                    </p>
                   </div>
                 );
               })

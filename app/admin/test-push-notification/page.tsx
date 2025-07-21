@@ -261,8 +261,6 @@ export default function PushNotificationTestPage() {
         return;
       }
 
-      console.log("사용할 VAPID 키:", testState.vapidPublicKey);
-
       const registration = await navigator.serviceWorker.register("/sw.js");
       await navigator.serviceWorker.ready;
 
@@ -275,10 +273,6 @@ export default function PushNotificationTestPage() {
       const deviceId = generateDeviceId();
 
       // 구독 데이터 확인
-      console.log("전송할 구독 데이터:", subscription);
-      console.log("생성된 device_id:", deviceId);
-
-      // 서버에 구독 정보 전송 (device_id 포함)
       const response = await fetch("/api/push/subscription", {
         method: "POST",
         headers: {
@@ -297,7 +291,6 @@ export default function PushNotificationTestPage() {
         // 실제 구독 상태를 다시 확인하여 업데이트
         const actualSubscription =
           await registration.pushManager.getSubscription();
-        console.log("구독 등록 후 실제 구독 상태:", actualSubscription);
         setTestState((prev) => ({ ...prev, subscription: actualSubscription }));
         setIsLoading(false); // 먼저 로딩 상태 해제
         toast.success("웹푸시 구독이 완료되었습니다!");
@@ -344,8 +337,6 @@ export default function PushNotificationTestPage() {
         await testState.subscription.unsubscribe();
 
         // 구독 해제 데이터 확인
-        console.log("해제할 구독 데이터:", testState.subscription);
-
         const response = await fetch("/api/push/subscription", {
           method: "DELETE",
           headers: {
@@ -365,7 +356,6 @@ export default function PushNotificationTestPage() {
           if (registration) {
             const actualSubscription =
               await registration.pushManager.getSubscription();
-            console.log("구독 해제 후 실제 구독 상태:", actualSubscription);
             setTestState((prev) => ({
               ...prev,
               subscription: actualSubscription,
@@ -693,7 +683,6 @@ export default function PushNotificationTestPage() {
                     }),
                   });
                   const result = await response.json();
-                  console.log("방문자 등록 알림 결과:", result);
                   toast.success("방문자 등록 알림 테스트 완료!");
                 } catch (e) {
                   toast.error("방문자 등록 알림 테스트 실패");
@@ -764,7 +753,6 @@ export default function PushNotificationTestPage() {
                       }),
                     });
                     const result = await response.json();
-                    console.log("커스텀 방문자 등록 알림 결과:", result);
                     toast.success("커스텀 방문자 등록 알림 테스트 완료!");
                   } catch (e) {
                     toast.error("커스텀 방문자 등록 알림 테스트 실패");
