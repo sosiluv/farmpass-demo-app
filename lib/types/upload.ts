@@ -15,16 +15,6 @@ export interface UploadConfig {
   cacheControl: string;
 }
 
-// 업로드 타입별 설정
-export interface UploadTypeConfig extends UploadConfig {
-  bucket: "profiles" | "visitor-photos";
-  pathGenerator: (file: File, contextId?: string) => string;
-  dbTable?: string;
-  dbField?: string;
-  cacheBusterField?: string;
-  preUploadCleanup?: () => Promise<void>;
-}
-
 // 업로드 결과 타입
 export interface UploadResult {
   publicUrl: string;

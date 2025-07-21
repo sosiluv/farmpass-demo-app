@@ -18,19 +18,15 @@ export function useUpdateProfileMutation() {
   const { refreshProfile } = useAuth();
 
   return useMutation({
-    mutationFn: async (data: {
-      name: string;
-      phoneNumber: string;
-      position: string;
-      department: string;
-      bio: string;
-    }): Promise<{ success: boolean; message?: string }> => {
+    mutationFn: async (
+      data: ProfileFormData
+    ): Promise<{ success: boolean; message?: string }> => {
       const profileData = {
         name: data.name,
-        phone: data.phoneNumber,
-        position: data.position,
-        department: data.department,
-        bio: data.bio,
+        phone: data.phoneNumber || null,
+        position: data.position || null,
+        department: data.department || null,
+        bio: data.bio || null,
       };
 
       const result = await apiClient("/api/profile", {
@@ -55,23 +51,22 @@ export function useUpdateCompanyMutation() {
   const { refreshProfile } = useAuth();
 
   return useMutation({
-    mutationFn: async (data: {
-      companyName: string;
-      companyAddress: string;
-      businessType: string;
-      company_description: string;
-      establishment_date: string;
-      employee_count: string;
-      company_website: string;
-    }): Promise<{ success: boolean; message?: string }> => {
+    mutationFn: async (
+      data: CompanyFormData
+    ): Promise<{ success: boolean; message?: string }> => {
       const companyData = {
-        company_name: data.companyName,
-        company_address: data.companyAddress,
-        business_type: data.businessType,
-        company_description: data.company_description,
-        establishment_date: data.establishment_date,
-        employee_count: parseInt(data.employee_count),
-        company_website: data.company_website,
+        company_name: data.companyName || null,
+        company_address: data.companyAddress || null,
+        business_type: data.businessType || null,
+        company_description: data.company_description || null,
+        establishment_date:
+          data.establishment_date && data.establishment_date.trim()
+            ? new Date(data.establishment_date).toISOString()
+            : null,
+        employee_count: data.employee_count
+          ? parseInt(data.employee_count)
+          : null,
+        company_website: data.company_website || null,
       };
 
       const result = await apiClient("/api/profile", {

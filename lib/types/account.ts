@@ -8,26 +8,32 @@ import type { Profile } from "./common";
 export type { Profile } from "./common";
 
 // ===========================================
-// 계정 폼 데이터 타입
+// 계정 폼 데이터 타입 (DB 스키마 기반)
 // ===========================================
 
+/**
+ * 프로필 폼 데이터 타입 (DB profiles 테이블 기반)
+ */
 export interface ProfileFormData {
   name: string;
   email: string;
-  phoneNumber: string;
-  position: string;
-  department: string;
-  bio: string;
+  phoneNumber: string | null;
+  position: string | null;
+  department: string | null;
+  bio: string | null;
 }
 
+/**
+ * 회사 정보 폼 데이터 타입 (DB profiles 테이블 기반)
+ */
 export interface CompanyFormData {
-  companyName: string;
-  companyAddress: string;
-  businessType: string;
-  company_description: string;
-  establishment_date: string;
-  employee_count: string;
-  company_website: string;
+  companyName: string | null;
+  companyAddress: string | null;
+  businessType: string | null;
+  company_description: string | null;
+  establishment_date: string | null;
+  employee_count: string | null;
+  company_website: string | null;
 }
 
 export interface PasswordFormData {

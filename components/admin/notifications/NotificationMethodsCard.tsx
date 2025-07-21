@@ -16,8 +16,8 @@ const notificationTypeOptions = [
     badge: "권장",
   },
   {
-    title: LABELS.SMS_NOTIFICATION,
-    description: LABELS.SMS_NOTIFICATION_DESC,
+    title: LABELS.KAKAO_NOTIFICATION,
+    description: LABELS.KAKAO_NOTIFICATION_DESC,
     icon: <MessageSquare className="h-5 w-5 text-muted-foreground" />,
     value: "kakao" as const,
     disabled: true,
@@ -65,14 +65,6 @@ export function NotificationMethodsCard({
                 badge={option.badge}
               />
             ))}
-          </div>
-          <div className="text-sm text-muted-foreground">
-            <p>
-              • {LABELS.PUSH_NOTIFICATION}: {LABELS.PUSH_NOTIFICATION_DESC}
-            </p>
-            <p>
-              • {LABELS.SMS_NOTIFICATION}: {LABELS.SMS_NOTIFICATION_DESC}
-            </p>
           </div>
         </div>
       </CardContent>

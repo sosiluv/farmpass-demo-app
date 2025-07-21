@@ -139,6 +139,7 @@ export async function GET(request: NextRequest) {
               name: true,
               email: true,
               profile_image_url: true,
+              avatar_seed: true,
             },
           },
         },

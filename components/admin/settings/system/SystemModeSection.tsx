@@ -38,7 +38,7 @@ export function SystemModeSection({
 
     // 유지보수 모드 활성화 시 시작 시간 설정
     if (checked && !settings.maintenanceStartTime) {
-      onUpdate("maintenanceStartTime", new Date());
+      onUpdate("maintenanceStartTime", new Date().toISOString());
     }
     // 유지보수 모드 비활성화 시 시작 시간 초기화
     else if (!checked) {

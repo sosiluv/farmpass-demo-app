@@ -2,7 +2,7 @@
  * 방문자 관련 타입 정의
  */
 
-import type { Profile, VisitorEntry } from "./common";
+import type { VisitorEntry } from "./common";
 import type { VisitorPurposeStats } from "./statistics";
 
 // ===========================================
@@ -36,16 +36,6 @@ export interface VisitorWithFarm extends VisitorEntry {
   farms?: Farm;
 }
 
-/**
- * 등록자 프로필 정보가 포함된 방문자
- */
-export interface VisitorWithProfile extends VisitorEntry {
-  registered_by_profile?: Pick<
-    Profile,
-    "name" | "email" | "company_name" | "profile_image_url"
-  >;
-}
-
 // ===========================================
 // 방문자 폼 데이터 타입
 // ===========================================
@@ -58,12 +48,12 @@ export interface CreateVisitorData {
   visitor_name: string;
   visitor_phone: string;
   visitor_address: string;
-  visitor_purpose?: string | null;
-  vehicle_number?: string | null;
-  notes?: string | null;
+  visitor_purpose: string | null;
+  vehicle_number: string | null;
+  notes: string | null;
   disinfection_check: boolean;
   consent_given: boolean;
-  profile_photo_url?: string | null;
+  profile_photo_url: string | null;
 }
 
 /**
@@ -73,9 +63,9 @@ export interface UpdateVisitorData {
   visitor_name?: string;
   visitor_phone?: string;
   visitor_address?: string;
-  visitor_purpose?: string | null;
-  vehicle_number?: string | null;
-  notes?: string | null;
+  visitor_purpose: string | null;
+  vehicle_number: string | null;
+  notes: string | null;
   disinfection_check?: boolean;
 }
 
@@ -150,26 +140,6 @@ export interface VisitorStatistics {
 // API 응답 타입
 // ===========================================
 
-export interface VisitorApiResponse {
-  success: boolean;
-  data?: VisitorWithFarm | VisitorWithFarm[];
-  error?: string;
-  message?: string;
-}
-
-export interface VisitorListApiResponse {
-  success: boolean;
-  data: {
-    visitors: VisitorWithFarm[];
-    total: number;
-    page: number;
-    limit: number;
-    hasMore: boolean;
-  };
-  error?: string;
-  message?: string;
-}
-
 export interface VisitorStatsApiResponse {
   success: boolean;
   data: VisitorStatistics;
@@ -220,59 +190,3 @@ export interface VisitorFiltersProps {
   showAllOption?: boolean;
   isAdmin?: boolean;
 }
-
-// ===========================================
-// 스키마 및 타입 가드
-// ===========================================
-
-export const visitorSchema = {
-  id: "string",
-  farm_id: "string",
-  visit_datetime: "string",
-  visitor_name: "string",
-  visitor_phone: "string",
-  visitor_address: "string",
-  visitor_purpose: "string|null",
-  vehicle_number: "string|null",
-  notes: "string|null",
-  disinfection_check: "boolean",
-  consent_given: "boolean",
-  session_token: "string",
-  registered_by: "string|undefined",
-  created_at: "string",
-  updated_at: "string|undefined",
-  profile_photo_url: "string|null|undefined",
-} as const;
-
-export function isVisitorEntry(obj: any): obj is VisitorEntry {
-  return (
-    typeof obj === "object" &&
-    obj !== null &&
-    typeof obj.id === "string" &&
-    typeof obj.farm_id === "string" &&
-    typeof obj.visit_datetime === "string" &&
-    typeof obj.visitor_name === "string" &&
-    typeof obj.visitor_phone === "string" &&
-    typeof obj.visitor_address === "string" &&
-    (obj.visitor_purpose === null || typeof obj.visitor_purpose === "string") &&
-    (obj.vehicle_number === null || typeof obj.vehicle_number === "string") &&
-    (obj.notes === null || typeof obj.notes === "string") &&
-    typeof obj.disinfection_check === "boolean" &&
-    typeof obj.consent_given === "boolean" &&
-    typeof obj.session_token === "string" &&
-    typeof obj.created_at === "string"
-  );
-}
-
-export function isFarm(obj: any): obj is Farm {
-  return (
-    typeof obj === "object" &&
-    obj !== null &&
-    typeof obj.id === "string" &&
-    typeof obj.farm_name === "string"
-  );
-}
-
-// Backward compatibility
-export const isVisitorBase = isVisitorEntry;
-export type VisitorEntryWithFarm = VisitorWithFarm;

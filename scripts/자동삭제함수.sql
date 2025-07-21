@@ -509,13 +509,13 @@ BEGIN
   BEGIN
     -- 시스템 설정에서 정리 옵션 가져오기
     SELECT 
-      "subscriptionCleanupInactive",
-      "subscriptionForceDelete",
-      "subscriptionFailCountThreshold",
-      "subscriptionCleanupDays"
+      subscriptionCleanupInactive,
+      subscriptionForceDelete,
+      subscriptionFailCountThreshold,
+      subscriptionCleanupDays
     INTO v_cleanup_inactive, v_force_delete, 
          v_fail_count_threshold, v_delete_after_days
-    FROM "system_settings" 
+    FROM system_settings 
     LIMIT 1;
     
     -- 기본값 설정

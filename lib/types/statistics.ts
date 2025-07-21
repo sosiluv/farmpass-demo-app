@@ -1,37 +1,3 @@
-import type { UserRole } from "./index";
-
-export interface AdminStats {
-  todayLogins: number;
-  todayFarms: number;
-  todayVisitors: number;
-  todayQRScans: number;
-  hasErrors: boolean;
-  totalUsers: number;
-  activeUsers: number;
-  inactiveUsers: number;
-  systemAdmins: number;
-  farmOwners: number;
-}
-
-export interface FarmStatistics {
-  id: string;
-  farm_id: string;
-  total_visitors: number;
-  recent_visitors: number;
-  member_count: number;
-  manager_count: number;
-  viewer_count: number;
-  disinfection_rate: number;
-  created_at: string;
-  updated_at: string;
-}
-
-export interface RoleStatistics {
-  role_type: string;
-  user_count: number;
-  role_code: UserRole | "general";
-}
-
 export interface VisitorStats {
   date: string;
   visitors: number;

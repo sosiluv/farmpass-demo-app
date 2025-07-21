@@ -118,8 +118,9 @@ export const LABELS = {
   // NotificationMethodsCard
   PUSH_NOTIFICATION: "푸시 알림",
   PUSH_NOTIFICATION_DESC: "실시간 알림을 받아보세요",
-  SMS_NOTIFICATION: "SMS 알림",
-  SMS_NOTIFICATION_DESC: "SMS로 알림을 받아보세요",
+  KAKAO_NOTIFICATION: "카카오톡",
+  KAKAO_NOTIFICATION_DESC:
+    "카카오톡 메시지를 통해 알림을 받을 수 있습니다. (미구현)",
 } as const;
 
 // 알림 유형 정의

@@ -84,6 +84,7 @@ export async function GET(
               name: true,
               email: true,
               profile_image_url: true,
+              avatar_seed: true,
             },
           },
         },
@@ -274,6 +275,7 @@ export async function POST(
           email: true,
           name: true,
           profile_image_url: true,
+          avatar_seed: true,
         },
       });
     } catch (profileError) {
@@ -408,6 +410,7 @@ export async function POST(
         name: userToAdd.name,
         email: userToAdd.email,
         profile_image_url: userToAdd.profile_image_url,
+        avatar_seed: userToAdd.avatar_seed,
       },
     };
 

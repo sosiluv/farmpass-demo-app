@@ -107,7 +107,6 @@ export function generateAvatarUrl(
     radius: "50",
     accessoriesProbability: "30",
     mouth: "smile,tongue,twinkle",
-    topProbability: "90",
     accessories:
       "kurt,prescription01,prescription02,round,sunglasses,wayfarers",
   });

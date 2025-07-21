@@ -2,8 +2,8 @@ import type { LogLevel } from "./common";
 
 export interface SystemSettings {
   id: string;
-  created_at: Date;
-  updated_at: Date;
+  created_at: string;
+  updated_at: string;
 
   // 일반 설정
   siteName: string;
@@ -13,8 +13,6 @@ export interface SystemSettings {
   dateFormat: string;
   favicon: string | null;
   logo: string | null;
-  logoCacheBuster?: number;
-  faviconCacheBuster?: number;
 
   // 보안 설정
   maxLoginAttempts: number;
@@ -60,7 +58,7 @@ export interface SystemSettings {
   // 유지보수 설정
   maintenanceMessage: string;
   maintenanceEstimatedTime: number;
-  maintenanceStartTime: Date | null;
+  maintenanceStartTime: string | null;
   maintenanceContactInfo: string;
 }
 
