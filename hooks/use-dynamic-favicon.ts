@@ -17,7 +17,6 @@ export function useDynamicFavicon(faviconUrl: string) {
     if (finalFaviconUrl === lastFaviconUrl.current) return;
 
     lastFaviconUrl.current = finalFaviconUrl;
-    console.log("useDynamicFavicon - 파비콘 URL:", finalFaviconUrl);
 
     // 캐시 무효화를 위한 타임스탬프 추가
     const timestamp = Date.now();
@@ -45,19 +44,11 @@ export function useDynamicFavicon(faviconUrl: string) {
     if (existingLink) {
       // 기존 링크가 있으면 href만 업데이트 (안전함)
       existingLink.href = faviconUrlWithCacheBuster;
-      console.log(
-        "useDynamicFavicon - 기존 링크 업데이트:",
-        faviconUrlWithCacheBuster
-      );
 
       // 브라우저 캐시 문제로 즉시 반영되지 않을 수 있으므로 강제 업데이트
       setTimeout(() => {
         if (existingLink.href !== faviconUrlWithCacheBuster) {
           existingLink.href = faviconUrlWithCacheBuster;
-          console.log(
-            "useDynamicFavicon - 강제 업데이트:",
-            faviconUrlWithCacheBuster
-          );
         }
       }, 50);
     } else {
@@ -67,10 +58,6 @@ export function useDynamicFavicon(faviconUrl: string) {
         link.rel = "icon";
         link.href = faviconUrlWithCacheBuster;
         document.head.appendChild(link);
-        console.log(
-          "useDynamicFavicon - 새 링크 생성:",
-          faviconUrlWithCacheBuster
-        );
       } catch (error) {
         console.warn("Failed to create favicon link:", error);
       }

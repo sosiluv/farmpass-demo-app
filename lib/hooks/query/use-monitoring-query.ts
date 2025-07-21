@@ -100,29 +100,96 @@ export interface MonitoringData {
 }
 
 /**
- * React Query 기반 Monitoring Hook
- * 시스템 모니터링 대시보드 데이터를 조회합니다.
+ * 분리된 모니터링 API용 React Query 훅들
  */
-export function useMonitoringQuery() {
+export function useMonitoringHealthQuery() {
   const { state } = useAuth();
   const user = state.status === "authenticated" ? state.user : null;
   const profile = state.status === "authenticated" ? state.profile : null;
 
   return useAuthenticatedQuery(
-    [...settingsKeys.all, "monitoring", "dashboard"],
-    async (): Promise<MonitoringData> => {
-      const result = await apiClient("/api/monitoring/dashboard", {
-        context: "시스템 모니터링 데이터 조회",
+    [...settingsKeys.all, "monitoring", "health"],
+    async () => {
+      return await apiClient("/api/monitoring/health", {
+        context: "시스템 헬스체크 데이터 조회",
       });
-      return result as MonitoringData;
     },
     {
       enabled: !!user && profile?.account_type === "admin",
-      staleTime: 1000 * 60 * 2, // 2분간 stale하지 않음 (모니터링은 실시간성이 중요)
-      gcTime: 1000 * 60 * 5, // 5분간 캐시 유지
+      staleTime: 1000 * 60 * 2,
+      gcTime: 1000 * 60 * 5,
       refetchOnWindowFocus: true,
-      refetchInterval: 1000 * 60 * 2, // 2분마다 자동 갱신
-      retry: 3, // 모니터링은 재시도가 중요
+      refetchInterval: 1000 * 60 * 2,
+      retry: 3,
+    }
+  );
+}
+
+export function useMonitoringUptimeQuery() {
+  const { state } = useAuth();
+  const user = state.status === "authenticated" ? state.user : null;
+  const profile = state.status === "authenticated" ? state.profile : null;
+
+  return useAuthenticatedQuery(
+    [...settingsKeys.all, "monitoring", "uptime"],
+    async () => {
+      return await apiClient("/api/monitoring/uptime", {
+        context: "업타임 데이터 조회",
+      });
+    },
+    {
+      enabled: !!user && profile?.account_type === "admin",
+      staleTime: 1000 * 60 * 2,
+      gcTime: 1000 * 60 * 5,
+      refetchOnWindowFocus: true,
+      refetchInterval: 1000 * 60 * 2,
+      retry: 3,
+    }
+  );
+}
+
+export function useMonitoringAnalyticsQuery() {
+  const { state } = useAuth();
+  const user = state.status === "authenticated" ? state.user : null;
+  const profile = state.status === "authenticated" ? state.profile : null;
+
+  return useAuthenticatedQuery(
+    [...settingsKeys.all, "monitoring", "analytics"],
+    async () => {
+      return await apiClient("/api/monitoring/analytics", {
+        context: "방문자 통계 데이터 조회",
+      });
+    },
+    {
+      enabled: !!user && profile?.account_type === "admin",
+      staleTime: 1000 * 60 * 2,
+      gcTime: 1000 * 60 * 5,
+      refetchOnWindowFocus: true,
+      refetchInterval: 1000 * 60 * 2,
+      retry: 3,
+    }
+  );
+}
+
+export function useMonitoringErrorsQuery() {
+  const { state } = useAuth();
+  const user = state.status === "authenticated" ? state.user : null;
+  const profile = state.status === "authenticated" ? state.profile : null;
+
+  return useAuthenticatedQuery(
+    [...settingsKeys.all, "monitoring", "errors"],
+    async () => {
+      return await apiClient("/api/monitoring/errors", {
+        context: "에러 로그 데이터 조회",
+      });
+    },
+    {
+      enabled: !!user && profile?.account_type === "admin",
+      staleTime: 1000 * 60 * 2,
+      gcTime: 1000 * 60 * 5,
+      refetchOnWindowFocus: true,
+      refetchInterval: 1000 * 60 * 2,
+      retry: 3,
     }
   );
 }
