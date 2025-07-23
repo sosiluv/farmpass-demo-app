@@ -20,7 +20,7 @@ import { logout } from "@/lib/utils/auth/authService";
 type AuthState =
   | { status: "initializing" }
   | { status: "loading" }
-  | { status: "authenticated"; session: Session; user: User; profile: Profile }
+  | { status: "authenticated"; session: Session; user: User }
   | { status: "unauthenticated" }
   | { status: "error"; error: Error };
 
@@ -31,11 +31,9 @@ type AuthAction =
       type: "SET_AUTHENTICATED";
       session: Session;
       user: User;
-      profile: Profile;
     }
   | { type: "SET_UNAUTHENTICATED" }
   | { type: "SET_ERROR"; error: Error }
-  | { type: "UPDATE_PROFILE"; profile: Profile }
   | { type: "APP_INITIALIZED" };
 
 // 리듀서
@@ -49,7 +47,6 @@ function authReducer(state: AuthState, action: AuthAction): AuthState {
         status: "authenticated",
         session: action.session,
         user: action.user,
-        profile: action.profile,
       };
 
     case "SET_UNAUTHENTICATED":
@@ -57,12 +54,6 @@ function authReducer(state: AuthState, action: AuthAction): AuthState {
 
     case "SET_ERROR":
       return { status: "error", error: action.error };
-
-    case "UPDATE_PROFILE":
-      if (state.status === "authenticated") {
-        return { ...state, profile: action.profile };
-      }
-      return state;
 
     case "APP_INITIALIZED":
       if (state.status === "initializing") {
@@ -91,7 +82,6 @@ interface AuthContextType {
     currentPassword?: string;
     email?: string;
   }) => Promise<{ success: boolean; error?: string }>;
-  refreshProfile: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -101,50 +91,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const supabase = createClient();
   const initialSessionLoaded = useRef(false);
   const isSigningOutRef = useRef<boolean>(false);
-  const profileLoadingPromise = useRef<Promise<Profile | null> | null>(null);
 
   // 구독 관리 훅 사용 - Lazy Loading으로 최적화
   const { switchSubscription, cleanupSubscription } = useSubscriptionManager();
-
-  // 프로필 로드 (최적화된 버전)
-  const loadProfile = async (userId: string): Promise<Profile | null> => {
-    // 중복 요청 방지: 이미 진행 중인 요청이 있으면 그 결과를 기다림
-    if (profileLoadingPromise.current) {
-      return await profileLoadingPromise.current;
-    }
-
-    // 새로운 프로필 로딩 시작
-    const loadingPromise = (async (): Promise<Profile | null> => {
-      try {
-        // 타임아웃과 프로필 조회를 동시에 실행 (타임아웃 단축)
-        const { data, error } = await Promise.race([
-          supabase.from("profiles").select("*").eq("id", userId).single(),
-          new Promise<never>((_, reject) =>
-            setTimeout(() => reject(new Error("프로필 로딩 타임아웃")), 3000)
-          ),
-        ]);
-
-        if (error) throw error;
-        return data;
-      } catch (error) {
-        // 타임아웃이나 네트워크 에러는 조용히 처리
-        if (error instanceof Error && error.message.includes("타임아웃")) {
-          return null;
-        }
-        // 기타 에러는 로그 기록
-        devLog.warn("Profile loading error:", error);
-        handleError(error, { context: "load-profile" });
-        return null;
-      } finally {
-        // 메모리 누수 방지: 로딩 완료 후 Promise 초기화
-        profileLoadingPromise.current = null;
-      }
-    })();
-
-    // 현재 요청을 저장하여 중복 방지
-    profileLoadingPromise.current = loadingPromise;
-    return await loadingPromise;
-  };
 
   // 초기 세션 로드
   useEffect(() => {
@@ -176,24 +125,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               return;
             }
 
-            const profile = await loadProfile(session.user.id);
-
-            if (profile && mounted) {
-              dispatch({
-                type: "SET_AUTHENTICATED",
-                session,
-                user: session.user,
-                profile,
-              });
-              // ✅ 최초 세션 로드 시에도 구독 전환 시도
-              switchSubscription(session.user.id).catch((error) => {
-                devLog.error("구독 전환 실패:", error);
-              });
-            } else if (mounted) {
-              devLog.warn("프로필 로드 실패, 로그아웃 처리");
-              await logout(true); // 강제 로그아웃으로 클라이언트 상태 정리
-              dispatch({ type: "SET_UNAUTHENTICATED" });
-            }
+            // profile 로드는 더 이상 필요 없으므로 제거
+            dispatch({
+              type: "SET_AUTHENTICATED",
+              session,
+              user: session.user,
+            });
+            // ✅ 최초 세션 로드 시에도 구독 전환 시도
+            switchSubscription(session.user.id).catch((error) => {
+              devLog.error("구독 전환 실패:", error);
+            });
           } catch (userError) {
             devLog.warn("사용자 정보 검증 중 오류:", userError);
             await logout(true); // 강제 로그아웃으로 클라이언트 상태 정리
@@ -254,30 +195,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             state.status !== "authenticated" &&
             state.status !== "loading"
           ) {
-            const profile = await loadProfile(session.user.id);
-            if (profile && mounted) {
-              dispatch({
-                type: "SET_AUTHENTICATED",
-                session,
-                user: session.user,
-                profile,
-              });
-            }
+            // profile 로드는 더 이상 필요 없으므로 제거
+            dispatch({
+              type: "SET_AUTHENTICATED",
+              session,
+              user: session.user,
+            });
           }
           break;
 
         case "SIGNED_OUT":
           // signOut 함수에서 처리 중인 경우 스킵
           if (!isSigningOutRef.current && mounted) {
-            if (state.status === "authenticated") {
-              // 구독 정리 (세션 정리 전에 수행)
-              try {
-                await cleanupSubscription();
-              } catch (error) {
-                devLog.warn("SIGNED_OUT 이벤트 중 구독 정리 실패:", error);
-              }
-            }
-
             dispatch({ type: "SET_UNAUTHENTICATED" });
           }
           break;
@@ -289,7 +218,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               type: "SET_AUTHENTICATED",
               session,
               user: state.user,
-              profile: state.profile,
             });
           }
           break;
@@ -346,21 +274,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       });
 
       if (!result.success) {
-        // 로그인 실패 시 에러 처리
-        if (result.status === 429) {
-          // 계정 잠금 - timeLeft 정보 포함
-          const error = new Error(result.message || "계정이 잠겼습니다.");
-          (error as any).timeLeft = result.timeLeft;
-          throw error;
-        } else if (result.status === 401) {
-          // 인증 실패
-          throw new Error(
-            result.message || "이메일 또는 비밀번호가 올바르지 않습니다."
-          );
-        } else {
-          // 기타 오류
-          throw new Error(result.error || "로그인에 실패했습니다.");
-        }
+        // 에러 메시지/코드만 throw (timeLeft 등 추가 정보는 제거)
+        throw new Error(
+          result.message || result.error || "로그인에 실패했습니다."
+        );
       }
 
       // 로그인 성공 시 세션 정보 가져오기
@@ -373,30 +290,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         throw new Error("세션 정보를 가져올 수 없습니다.");
       }
 
-      // 프로필 로드
-      let profile = await loadProfile(session.user.id);
-
-      if (!profile) {
-        // 프로필 로딩 실패 시 한 번 더 시도
-        devLog.warn("첫 번째 프로필 로딩 실패, 재시도 중...");
-        await new Promise((resolve) => setTimeout(resolve, 1000)); // 1초 대기
-        const retryProfile = await loadProfile(session.user.id);
-
-        if (!retryProfile) {
-          throw new Error(
-            "프로필을 불러올 수 없습니다. 네트워크 상태를 확인하고 다시 시도해주세요."
-          );
-        }
-
-        // 재시도 성공
-        profile = retryProfile;
-      }
-
       dispatch({
         type: "SET_AUTHENTICATED",
         session: session,
         user: session.user,
-        profile,
       });
 
       return { success: true, message: result.message };
@@ -476,7 +373,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     password: string;
   }) => {
     try {
-      const { data, error } = await supabase.auth.signInWithPassword({
+      const { error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
@@ -484,7 +381,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (error) {
         return {
           success: false,
-          error: "현재 비밀번호가 올바르지 않습니다.",
+          error: error.message,
         };
       }
 
@@ -495,7 +392,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       return {
         success: false,
-        error: "비밀번호 검증 중 오류가 발생했습니다.",
+        error: error instanceof Error ? error.message : String(error),
       };
     }
   };
@@ -526,16 +423,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       });
 
       if (error) {
-        if (
-          error.message ===
-          "New password should be different from the old password."
-        ) {
-          return {
-            success: false,
-            error: "새 비밀번호는 현재 비밀번호와 달라야 합니다.",
-          };
-        }
-
         return { success: false, error: error.message };
       }
 
@@ -543,20 +430,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     } catch (error) {
       devLog.error("Password change error:", error);
       handleError(error, { context: "change-password" });
-
       return {
         success: false,
-        error: "비밀번호 변경 중 오류가 발생했습니다.",
+        error: error instanceof Error ? error.message : String(error),
       };
-    }
-  };
-
-  const refreshProfile = async () => {
-    if (state.status === "authenticated") {
-      const profile = await loadProfile(state.user.id);
-      if (profile) {
-        dispatch({ type: "UPDATE_PROFILE", profile });
-      }
     }
   };
 
@@ -566,7 +443,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     signOut,
     verifyPassword,
     changePassword,
-    refreshProfile,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

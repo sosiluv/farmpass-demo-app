@@ -23,6 +23,7 @@ import {
 import { PAGE_HEADER } from "@/lib/constants/monitoring";
 import { ERROR_CONFIGS } from "@/lib/constants/error";
 import { ErrorBoundary } from "@/components/error/error-boundary";
+import { useProfileQuery } from "@/lib/hooks/query/use-profile-query";
 
 // 카드별 로딩/에러/데이터 렌더링 유틸
 type RenderCardProps = {
@@ -43,13 +44,10 @@ export default function MonitoringDashboard() {
   const analytics = useMonitoringAnalyticsQuery();
   const errors = useMonitoringErrorsQuery();
 
-  const router = useRouter();
   const { state } = useAuth();
-  const profile = state.status === "authenticated" ? state.profile : null;
-  const isAdmin = useMemo(
-    () => profile?.account_type === "admin",
-    [profile?.account_type]
-  );
+  const userId = state.status === "authenticated" ? state.user.id : undefined;
+  const { data: profile } = useProfileQuery(userId);
+  const isAdmin = profile?.account_type === "admin";
 
   // 권한이 없는 경우(기존 유지)
   if (!isAdmin) {

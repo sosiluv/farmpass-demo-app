@@ -25,6 +25,7 @@ import {
 } from "@/components/admin/settings";
 import { ERROR_CONFIGS } from "@/lib/constants/error";
 import { LABELS } from "@/lib/constants/settings";
+import { useProfileQuery } from "@/lib/hooks/query/use-profile-query";
 
 export default function SettingsPage() {
   const { settings, isLoading: loading, refetch } = useSystemSettingsContext();
@@ -35,7 +36,8 @@ export default function SettingsPage() {
   const { refreshSystemModes } = useSystemMode();
   const { state } = useAuth();
   const user = state.status === "authenticated" ? state.user : null;
-  const profile = state.status === "authenticated" ? state.profile : null;
+  const userId = state.status === "authenticated" ? state.user.id : undefined;
+  const { data: profile } = useProfileQuery(userId);
 
   const [unsavedChanges, setUnsavedChanges] = useState(false);
   const [activeTab, setActiveTab] = useState("general");
@@ -77,7 +79,7 @@ export default function SettingsPage() {
   }
 
   // admin 권한 체크
-  if (profile && profile.account_type !== "admin") {
+  if (!profile || profile.account_type !== "admin") {
     return (
       <AccessDenied
         title={ERROR_CONFIGS.PERMISSION.title}

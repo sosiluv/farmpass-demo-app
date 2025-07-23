@@ -10,7 +10,8 @@ import {
 } from "@/lib/utils/browser/safari-compat";
 import { useCreateSubscriptionMutation } from "@/lib/hooks/query/use-push-mutations";
 import { requestNotificationPermissionAndSubscribe } from "@/lib/utils/notification/push-subscription";
-import { useVapidKeyEffective } from "@/hooks/useVapidKeyEffective";
+import { useVapidKeyEffective } from "@/hooks/useVapidKey";
+import { useProfileQuery } from "@/lib/hooks/query/use-profile-query";
 
 interface NotificationPermissionState {
   hasAsked: boolean;
@@ -21,11 +22,10 @@ interface NotificationPermissionState {
 
 export function useNotificationPermission() {
   const { state: authState } = useAuth();
-
-  // 사용자 정보 추출
   const user = authState.status === "authenticated" ? authState.user : null;
-  const profile =
-    authState.status === "authenticated" ? authState.profile : null;
+  const userId =
+    authState.status === "authenticated" ? authState.user.id : undefined;
+  const { data: profile } = useProfileQuery(userId);
 
   const createSubscriptionMutation = useCreateSubscriptionMutation();
 

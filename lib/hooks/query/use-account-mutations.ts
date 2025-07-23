@@ -4,7 +4,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/components/providers/auth-provider";
 import { apiClient } from "@/lib/utils/data/api-client";
 import { createClient } from "@/lib/supabase/client";
-import { settingsKeys, farmsKeys } from "@/lib/hooks/query/query-keys";
+import { profileKeys } from "@/lib/hooks/query/query-keys";
 import type {
   ProfileFormData,
   CompanyFormData,
@@ -15,7 +15,7 @@ import type {
  * 프로필 정보 저장 Mutation Hook
  */
 export function useUpdateProfileMutation() {
-  const { refreshProfile } = useAuth();
+  const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: async (
@@ -38,8 +38,8 @@ export function useUpdateProfileMutation() {
       return { success: result.success, message: result.message };
     },
     onSuccess: async () => {
-      // 프로필 데이터 새로고침
-      await refreshProfile();
+      // 프로필 데이터 캐시 무효화
+      await queryClient.invalidateQueries({ queryKey: profileKeys.all });
     },
   });
 }
@@ -48,7 +48,7 @@ export function useUpdateProfileMutation() {
  * 회사 정보 저장 Mutation Hook
  */
 export function useUpdateCompanyMutation() {
-  const { refreshProfile } = useAuth();
+  const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: async (
@@ -78,8 +78,8 @@ export function useUpdateCompanyMutation() {
       return { success: result.success, message: result.message };
     },
     onSuccess: async () => {
-      // 프로필 데이터 새로고침
-      await refreshProfile();
+      // 프로필 데이터 캐시 무효화
+      await queryClient.invalidateQueries({ queryKey: profileKeys.all });
     },
   });
 }
@@ -113,7 +113,6 @@ export function useChangePasswordMutation() {
  * 아바타 시드 업데이트 Mutation Hook
  */
 export function useUpdateAvatarSeedMutation() {
-  const { refreshProfile } = useAuth();
   const queryClient = useQueryClient();
 
   return useMutation({
@@ -143,7 +142,7 @@ export function useUpdateAvatarSeedMutation() {
       };
     },
     onSuccess: async (data, variables) => {
-      await refreshProfile();
+      await queryClient.invalidateQueries({ queryKey: profileKeys.all });
     },
   });
 }

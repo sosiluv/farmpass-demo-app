@@ -12,13 +12,15 @@ import { AccessDenied } from "@/components/error/access-denied";
 import { useAuth } from "@/components/providers/auth-provider";
 import { LABELS, PAGE_HEADER } from "@/lib/constants/management";
 import { ERROR_CONFIGS } from "@/lib/constants/error";
+import { useProfileQuery } from "@/lib/hooks/query/use-profile-query";
 
 export default function SystemManagementPage() {
   const { state } = useAuth();
-  const profile = state.status === "authenticated" ? state.profile : null;
+  const userId = state.status === "authenticated" ? state.user.id : undefined;
+  const { data: profile } = useProfileQuery(userId);
 
   // admin 권한 체크
-  if (profile && profile.account_type !== "admin") {
+  if (!profile || profile.account_type !== "admin") {
     return (
       <AccessDenied
         title={ERROR_CONFIGS.PERMISSION.title}

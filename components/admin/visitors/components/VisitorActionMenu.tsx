@@ -154,7 +154,10 @@ export function VisitorActionMenu({
                   {BUTTONS.VISITOR_ACTION_MENU_DELETING}
                 </>
               ) : (
-                BUTTONS.VISITOR_ACTION_MENU_DELETE
+                <>
+                  <Trash className="h-4 w-4 mr-2" />
+                  {BUTTONS.VISITOR_ACTION_MENU_DELETE}
+                </>
               )}
             </AlertDialogAction>
           </AlertDialogFooter>

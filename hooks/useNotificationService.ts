@@ -14,7 +14,7 @@ import {
   useSubscriptionStatusQuery,
 } from "@/lib/hooks/query/use-push-mutations";
 import { useSaveNotificationSettingsMutation } from "@/lib/hooks/query/use-notification-mutations";
-import { useVapidKeyEffective } from "@/hooks/useVapidKeyEffective";
+import { useVapidKeyEffective } from "@/hooks/useVapidKey";
 
 export function useNotificationService() {
   // 토스트 대신 메시지 상태만 반환

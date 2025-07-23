@@ -152,7 +152,7 @@ export function useFarmMembersPreviewQuery(farmIds: string[]) {
   const { state } = useAuth();
 
   const membersQuery = useAuthenticatedQuery(
-    ["farmMembersPreview", ...farmIds.sort()], // 정렬하여 일관된 쿼리 키 생성
+    farmsKeys.farmMembersPreview(farmIds), // 팩토리 사용
     async (): Promise<Record<string, FarmMembers>> => {
       if (!farmIds.length) {
         return {};

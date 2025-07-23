@@ -41,11 +41,17 @@ export function CleanupActions({
               cleanupLoading || cleanupStatus.expiredData.systemLogs.count === 0
             }
           >
-            {cleanupLoading && (
-              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+            {cleanupLoading ? (
+              <>
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                {BUTTONS.CLEANUP_SYSTEM_LOGS_BUTTON}
+              </>
+            ) : (
+              <>
+                <Trash2 className="h-4 w-4 mr-2" />
+                {BUTTONS.CLEANUP_SYSTEM_LOGS_BUTTON}
+              </>
             )}
-            <Trash2 className="h-4 w-4 mr-2" />
-            {BUTTONS.CLEANUP_SYSTEM_LOGS_BUTTON}
             {cleanupStatus.expiredData.systemLogs.count > 0 && (
               <Badge variant="secondary" className="ml-2">
                 {LABELS.COUNT_UNIT.replace(
@@ -111,7 +117,10 @@ export function CleanupActions({
                   {BUTTONS.CLEANUP_CLEANING}
                 </>
               ) : (
-                BUTTONS.CLEANUP_DELETE
+                <>
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  {BUTTONS.CLEANUP_DELETE}
+                </>
               )}
             </AlertDialogAction>
           </AlertDialogFooter>
@@ -129,11 +138,17 @@ export function CleanupActions({
                 cleanupStatus.expiredData.visitorEntries.count === 0)
             }
           >
-            {cleanupLoading && (
-              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+            {cleanupLoading ? (
+              <>
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                {BUTTONS.CLEANUP_ALL_DATA_BUTTON}
+              </>
+            ) : (
+              <>
+                <Trash2 className="h-4 w-4 mr-2" />
+                {BUTTONS.CLEANUP_ALL_DATA_BUTTON}
+              </>
             )}
-            <Trash2 className="h-4 w-4 mr-2" />
-            {BUTTONS.CLEANUP_ALL_DATA_BUTTON}
             {totalExpiredCount > 0 && (
               <Badge variant="secondary" className="ml-2">
                 {LABELS.COUNT_UNIT.replace(
@@ -199,7 +214,10 @@ export function CleanupActions({
                   {BUTTONS.CLEANUP_CLEANING}
                 </>
               ) : (
-                BUTTONS.CLEANUP_DELETE
+                <>
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  {BUTTONS.CLEANUP_DELETE}
+                </>
               )}
             </AlertDialogAction>
           </AlertDialogFooter>

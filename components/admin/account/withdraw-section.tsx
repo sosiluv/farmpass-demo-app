@@ -12,7 +12,7 @@ import {
   AlertDialogCancel,
   AlertDialogAction,
 } from "@/components/ui/alert-dialog";
-import { AlertTriangle } from "lucide-react";
+import { AlertTriangle, Loader2 } from "lucide-react";
 import AccountCardHeader from "./AccountCardHeader";
 import { PAGE_HEADER, BUTTONS, LABELS } from "@/lib/constants/account";
 import { useRouter } from "next/navigation";
@@ -76,9 +76,18 @@ export default function WithdrawSection({
         </div>
         <AlertDialog open={open} onOpenChange={setOpen}>
           <AlertDialogTrigger asChild>
-            <Button variant="destructive">
-              <AlertTriangle className="h-4 w-4 mr-2" />
-              {BUTTONS.WITHDRAW}
+            <Button variant="destructive" disabled={loading}>
+              {loading ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  {BUTTONS.WITHDRAW}
+                </>
+              ) : (
+                <>
+                  <AlertTriangle className="h-4 w-4 mr-2" />
+                  {BUTTONS.WITHDRAW}
+                </>
+              )}
             </Button>
           </AlertDialogTrigger>
           <AlertDialogContent>
@@ -99,7 +108,17 @@ export default function WithdrawSection({
                 disabled={loading}
                 className="bg-destructive text-white hover:bg-destructive/90"
               >
-                {loading ? BUTTONS.WITHDRAWING : BUTTONS.WITHDRAW_CONFIRM}
+                {loading ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    {BUTTONS.WITHDRAWING}
+                  </>
+                ) : (
+                  <>
+                    <AlertTriangle className="h-4 w-4 mr-2" />
+                    {BUTTONS.WITHDRAW_CONFIRM}
+                  </>
+                )}
               </AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>

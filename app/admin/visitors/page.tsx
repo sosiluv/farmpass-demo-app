@@ -23,6 +23,7 @@ import { LABELS, PAGE_HEADER } from "@/lib/constants/visitor";
 // React Query Hooks
 import { useFarmsContext } from "@/components/providers/farms-provider";
 import { useFarmVisitorsWithFiltersQuery } from "@/lib/hooks/query/use-farm-visitors-filtered-query";
+import { useProfileQuery } from "@/lib/hooks/query/use-profile-query";
 
 /**
  * 방문자 기록 조회 페이지
@@ -34,7 +35,8 @@ import { useFarmVisitorsWithFiltersQuery } from "@/lib/hooks/query/use-farm-visi
  */
 export default function VisitorsPage() {
   const { state } = useAuth();
-  const profile = state.status === "authenticated" ? state.profile : null;
+  const userId = state.status === "authenticated" ? state.user.id : undefined;
+  const { data: profile } = useProfileQuery(userId);
   const isAdmin = profile?.account_type === "admin";
   const { showError } = useCommonToast();
 

@@ -8,6 +8,7 @@ import { supabase } from "@/lib/supabase/client";
 // 클라이언트 전용 가드
 const isClient = typeof window !== "undefined";
 import { useSupabaseRealtime } from "@/hooks/useSupabaseRealtime";
+import { useProfileQuery } from "@/lib/hooks/query/use-profile-query";
 
 // 트렌드 계산 헬퍼 함수 - 첫 달 시작 시 0% 표시
 const calculateTrend = (current: number, previous: number): number => {
@@ -24,7 +25,8 @@ const calculateTrend = (current: number, previous: number): number => {
 export function useAdminFarmsQuery() {
   const { state } = useAuth();
   const user = state.status === "authenticated" ? state.user : null;
-  const profile = state.status === "authenticated" ? state.profile : null;
+  const userId = state.status === "authenticated" ? state.user.id : undefined;
+  const { data: profile } = useProfileQuery(userId);
 
   const farmsQuery = useAuthenticatedQuery(
     farmsKeys.list({ type: "admin-stats" }),
@@ -157,7 +159,8 @@ export function useAdminFarmsQuery() {
 export function useAdminFarmsListQuery() {
   const { state } = useAuth();
   const user = state.status === "authenticated" ? state.user : null;
-  const profile = state.status === "authenticated" ? state.profile : null;
+  const userId = state.status === "authenticated" ? state.user.id : undefined;
+  const { data: profile } = useProfileQuery(userId);
 
   const farmsListQuery = useAuthenticatedQuery(
     farmsKeys.list({ type: "admin-list" }),

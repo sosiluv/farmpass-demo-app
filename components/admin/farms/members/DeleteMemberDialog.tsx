@@ -7,7 +7,7 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
-import { Loader2 } from "lucide-react";
+import { Loader2, Trash2 } from "lucide-react";
 import { BUTTONS, LABELS } from "@/lib/constants/farms";
 
 interface DeleteMemberDialogProps {
@@ -55,7 +55,10 @@ export function DeleteMemberDialog({
                 {BUTTONS.DELETE_FARM_LOADING}
               </>
             ) : (
-              BUTTONS.DELETE_BUTTON
+              <>
+                <Trash2 className="h-4 w-4 mr-2" />
+                {BUTTONS.DELETE_BUTTON}
+              </>
             )}
           </Button>
         </DialogFooter>

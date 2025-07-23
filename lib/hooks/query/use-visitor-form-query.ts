@@ -8,11 +8,12 @@ import { apiClient } from "@/lib/utils/data";
 import { devLog } from "@/lib/utils/logging/dev-logger";
 import type { VisitorFormData } from "@/lib/utils/validation/visitor-validation";
 import type { Farm as VisitorFarm } from "@/lib/types/visitor";
+import { visitorsKeys, farmsKeys } from "@/lib/hooks/query/query-keys";
 
 // 농장 정보 조회 (Query)
 export const useFarmInfoQuery = (farmId: string) => {
   return useQuery({
-    queryKey: ["farm-info", farmId],
+    queryKey: farmsKeys.info(farmId),
     queryFn: async (): Promise<VisitorFarm> => {
       devLog.log(`[QUERY] 농장 정보 조회 시작: ${farmId}`);
 
@@ -45,7 +46,7 @@ export const useVisitorSessionQuery = (
   enabled: boolean = true
 ) => {
   return useQuery({
-    queryKey: ["visitor-session", farmId],
+    queryKey: visitorsKeys.session(farmId),
     queryFn: async () => {
       devLog.log(`[QUERY] 세션 체크 시작: ${farmId}`);
 
@@ -71,7 +72,7 @@ export const useDailyVisitorCountQuery = (
   enabled: boolean = false
 ) => {
   return useQuery({
-    queryKey: ["daily-visitor-count", farmId],
+    queryKey: visitorsKeys.dailyCount(farmId),
     queryFn: async () => {
       devLog.log(`[QUERY] 일일 방문자 수 조회: ${farmId}`);
 
@@ -124,12 +125,12 @@ export const useCreateVisitorMutation = () => {
     },
     onSuccess: (result, { farmId }) => {
       // 방문자 관련 쿼리만 무효화 (실시간 업데이트)
-      queryClient.invalidateQueries({ queryKey: ["visitors"] });
-      queryClient.invalidateQueries({ queryKey: ["visitor-session", farmId] });
+      queryClient.invalidateQueries({ queryKey: visitorsKeys.all });
+      queryClient.invalidateQueries({ queryKey: visitorsKeys.session(farmId) });
       queryClient.invalidateQueries({
-        queryKey: ["daily-visitor-count", farmId],
+        queryKey: visitorsKeys.dailyCount(farmId),
       });
-      queryClient.invalidateQueries({ queryKey: ["farm-info"] });
+      queryClient.invalidateQueries({ queryKey: farmsKeys.info(farmId) });
 
       // 방문자 실시간 업데이트를 위한 Broadcast Channel
       try {

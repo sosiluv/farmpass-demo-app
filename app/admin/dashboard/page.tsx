@@ -24,9 +24,12 @@ import { ERROR_CONFIGS } from "@/lib/constants/error";
 // React Query Hooks (100% 마이그레이션 완료)
 import { useFarmsQuery } from "@/lib/hooks/query/use-farms-query";
 import { useFarmVisitorsQuery } from "@/lib/hooks/query/use-farm-visitors-query";
+import { useProfileQuery } from "@/lib/hooks/query/use-profile-query";
 
 export default function DashboardPage() {
   const { state } = useAuth();
+  const userId = state.status === "authenticated" ? state.user.id : undefined;
+  const { data: profile } = useProfileQuery(userId);
 
   // React Query 100% 마이그레이션 완료 - 더 이상 Feature Flag 불필요
   const {
@@ -37,13 +40,9 @@ export default function DashboardPage() {
     refetch: refetchFarms,
   } = useFarmsQuery();
 
-  // state에서 profile 추출 및 admin 여부 확인 - useMemo로 최적화
-  const profile = state.status === "authenticated" ? state.profile : null;
-  const isAdmin = useMemo(
-    () => profile?.account_type === "admin",
-    [profile?.account_type]
-  );
-  const userLoading = state.status === "loading"; // 새로운 상태 기반 로딩 확인
+  // profile에서 admin 여부 확인
+  const isAdmin = profile?.account_type === "admin";
+  const userLoading = state.status === "loading";
 
   // 초기 농장 선택 - useMemo로 최적화
   const initialSelectedFarm = useMemo(() => {

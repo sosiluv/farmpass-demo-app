@@ -4,6 +4,7 @@ import { useAuthenticatedQuery } from "@/lib/hooks/query-utils";
 import { useAuth } from "@/components/providers/auth-provider";
 import { apiClient } from "@/lib/utils/data/api-client";
 import { settingsKeys } from "./query-keys";
+import { useProfileQuery } from "@/lib/hooks/query/use-profile-query";
 
 export interface MonitoringData {
   timestamp: string;
@@ -105,7 +106,8 @@ export interface MonitoringData {
 export function useMonitoringHealthQuery() {
   const { state } = useAuth();
   const user = state.status === "authenticated" ? state.user : null;
-  const profile = state.status === "authenticated" ? state.profile : null;
+  const userId = state.status === "authenticated" ? state.user.id : undefined;
+  const { data: profile } = useProfileQuery(userId);
 
   return useAuthenticatedQuery(
     [...settingsKeys.all, "monitoring", "health"],
@@ -128,7 +130,8 @@ export function useMonitoringHealthQuery() {
 export function useMonitoringUptimeQuery() {
   const { state } = useAuth();
   const user = state.status === "authenticated" ? state.user : null;
-  const profile = state.status === "authenticated" ? state.profile : null;
+  const userId = state.status === "authenticated" ? state.user.id : undefined;
+  const { data: profile } = useProfileQuery(userId);
 
   return useAuthenticatedQuery(
     [...settingsKeys.all, "monitoring", "uptime"],
@@ -151,7 +154,8 @@ export function useMonitoringUptimeQuery() {
 export function useMonitoringAnalyticsQuery() {
   const { state } = useAuth();
   const user = state.status === "authenticated" ? state.user : null;
-  const profile = state.status === "authenticated" ? state.profile : null;
+  const userId = state.status === "authenticated" ? state.user.id : undefined;
+  const { data: profile } = useProfileQuery(userId);
 
   return useAuthenticatedQuery(
     [...settingsKeys.all, "monitoring", "analytics"],
@@ -174,7 +178,8 @@ export function useMonitoringAnalyticsQuery() {
 export function useMonitoringErrorsQuery() {
   const { state } = useAuth();
   const user = state.status === "authenticated" ? state.user : null;
-  const profile = state.status === "authenticated" ? state.profile : null;
+  const userId = state.status === "authenticated" ? state.user.id : undefined;
+  const { data: profile } = useProfileQuery(userId);
 
   return useAuthenticatedQuery(
     [...settingsKeys.all, "monitoring", "errors"],
