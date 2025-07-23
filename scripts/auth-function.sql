@@ -2,39 +2,24 @@
 -- Recreate the function with comprehensive logging
 CREATE OR REPLACE FUNCTION public.handle_new_user()
 RETURNS TRIGGER AS $$
-DECLARE
-    v_profile_id UUID;
-    v_error_message TEXT;
 BEGIN
-    BEGIN
-        -- 프로필 생성 시도
     INSERT INTO public.profiles (
         id,
         email,
         name,
         phone,
-        account_type
+        account_type,
+        profile_image_url
     )
     VALUES (
         NEW.id,
         NEW.email,
         COALESCE(NEW.raw_user_meta_data->>'name', ''),
         COALESCE(NEW.raw_user_meta_data->>'phone', ''),
-        'user'
-    )
-    RETURNING id INTO v_profile_id;
-
-
-
+        'user',
+        COALESCE(NEW.raw_user_meta_data->>'avatar_url', '')
+    );
     RETURN NEW;
-
-    EXCEPTION WHEN OTHERS THEN
-        -- 에러 정보 수집
-        GET STACKED DIAGNOSTICS v_error_message = MESSAGE_TEXT;
-        
-
-        RAISE;
-    END;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public; 
 

@@ -67,6 +67,7 @@ export function SubscriptionCleanupActions({
       <AlertDialog>
         <AlertDialogTrigger asChild>
           <Button variant="destructive" className="flex-1" disabled={isLoading}>
+            {isLoading && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
             <Trash2 className="h-4 w-4 mr-2" />
             {BUTTONS.SUBSCRIPTION_CLEANUP_BUTTON}
           </Button>

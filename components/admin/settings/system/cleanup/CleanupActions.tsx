@@ -41,6 +41,9 @@ export function CleanupActions({
               cleanupLoading || cleanupStatus.expiredData.systemLogs.count === 0
             }
           >
+            {cleanupLoading && (
+              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+            )}
             <Trash2 className="h-4 w-4 mr-2" />
             {BUTTONS.CLEANUP_SYSTEM_LOGS_BUTTON}
             {cleanupStatus.expiredData.systemLogs.count > 0 && (
@@ -126,6 +129,9 @@ export function CleanupActions({
                 cleanupStatus.expiredData.visitorEntries.count === 0)
             }
           >
+            {cleanupLoading && (
+              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+            )}
             <Trash2 className="h-4 w-4 mr-2" />
             {BUTTONS.CLEANUP_ALL_DATA_BUTTON}
             {totalExpiredCount > 0 && (

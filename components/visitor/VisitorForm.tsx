@@ -2,6 +2,7 @@
 
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useEffect } from "react";
 import { CardContent } from "@/components/ui/card";
 import { Form } from "@/components/ui/form";
 import type { VisitorSettings } from "@/lib/types/visitor";
@@ -50,6 +51,11 @@ export const VisitorForm = ({
     resolver: zodResolver(visitorSchema),
     defaultValues: formData,
   });
+
+  // formData가 바뀔 때마다 input 값 동기화
+  useEffect(() => {
+    form.reset(formData);
+  }, [formData]);
 
   // 이미지 업로드 핸들러
   const handleImageUpload = async (file: File) => {

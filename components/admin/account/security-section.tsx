@@ -6,6 +6,7 @@ import { ERROR_CONFIGS } from "@/lib/constants/error";
 import type { SecuritySectionProps } from "@/lib/types/account";
 import { PasswordSection } from "./password-section";
 import { LoginActivitySection } from "./login-activity-section";
+import WithdrawSection from "./withdraw-section";
 
 export function SecuritySection({
   profile,
@@ -29,6 +30,7 @@ export function SecuritySection({
           onPasswordChange={onPasswordChange}
         />
         <LoginActivitySection profile={profile} />
+        <WithdrawSection />
       </motion.div>
     </ErrorBoundary>
   );

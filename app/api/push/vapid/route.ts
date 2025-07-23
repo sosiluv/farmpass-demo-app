@@ -94,21 +94,19 @@ export async function GET(request: NextRequest) {
   const clientIP = getClientIP(request);
   const userAgent = getUserAgent(request);
   try {
-    // 1. 시스템 설정에서 VAPID 키 조회
-    const settings = await getSystemSettings();
-    let publicKey = null;
+    // 1. 환경변수에서 VAPID 키 조회 (우선)
+    let publicKey = process.env.VAPID_PUBLIC_KEY || null;
 
-    if (settings?.vapidPublicKey) {
-      try {
-        publicKey = settings.vapidPublicKey;
-      } catch (e) {
-        devLog.warn("VAPID 키 파싱 실패:", e);
-      }
-    }
-
-    // 2. 시스템 설정에 없으면 환경변수에서 조회
+    // 2. 환경변수에 없으면 시스템 설정에서 조회
     if (!publicKey) {
-      publicKey = process.env.VAPID_PUBLIC_KEY;
+      const settings = await getSystemSettings();
+      if (settings?.vapidPublicKey) {
+        try {
+          publicKey = settings.vapidPublicKey;
+        } catch (e) {
+          devLog.warn("VAPID 키 파싱 실패:", e);
+        }
+      }
     }
 
     // 3. 둘 다 없으면 404 반환

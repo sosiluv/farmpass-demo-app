@@ -41,6 +41,9 @@ export function OrphanFilesActions({
             className="flex-1"
             disabled={orphanFilesLoading || totalOrphanCount === 0}
           >
+            {orphanFilesLoading && (
+              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+            )}
             <FileX className="h-4 w-4 mr-2" />
             {BUTTONS.ORPHAN_FILES_CLEANUP_BUTTON}
             {totalOrphanCount > 0 && (

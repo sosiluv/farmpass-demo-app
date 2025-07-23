@@ -185,6 +185,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 user: session.user,
                 profile,
               });
+              // ✅ 최초 세션 로드 시에도 구독 전환 시도
+              switchSubscription(session.user.id).catch((error) => {
+                devLog.error("구독 전환 실패:", error);
+              });
             } else if (mounted) {
               devLog.warn("프로필 로드 실패, 로그아웃 처리");
               await logout(true); // 강제 로그아웃으로 클라이언트 상태 정리
@@ -387,15 +391,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         // 재시도 성공
         profile = retryProfile;
       }
-
-      // 구독 전환 (백그라운드에서 처리) - 로그에 더 상세한 정보 표시
-      switchSubscription(session.user.id).catch((error: any) => {
-        devLog.warn(
-          "로그인 시 구독 전환 실패 - 사용자는 재구독 다이얼로그에서 수동 구독 가능:",
-          error
-        );
-        // 구독 실패해도 로그인은 계속 진행 (재구독 다이얼로그로 처리)
-      });
 
       dispatch({
         type: "SET_AUTHENTICATED",

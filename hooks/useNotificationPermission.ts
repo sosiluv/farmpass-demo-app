@@ -8,11 +8,9 @@ import {
   safeLocalStorageAccess,
   safeNotificationAccess,
 } from "@/lib/utils/browser/safari-compat";
-import {
-  useVapidKeyQuery,
-  useCreateSubscriptionMutation,
-} from "@/lib/hooks/query/use-push-mutations";
+import { useCreateSubscriptionMutation } from "@/lib/hooks/query/use-push-mutations";
 import { requestNotificationPermissionAndSubscribe } from "@/lib/utils/notification/push-subscription";
+import { useVapidKeyEffective } from "@/hooks/useVapidKeyEffective";
 
 interface NotificationPermissionState {
   hasAsked: boolean;
@@ -29,10 +27,6 @@ export function useNotificationPermission() {
   const profile =
     authState.status === "authenticated" ? authState.profile : null;
 
-  // React Query hooks - 필요할 때만 로드 (Lazy Loading)
-  const { data: vapidData, refetch: refetchVapidKey } = useVapidKeyQuery({
-    enabled: false, // 처음엔 로드하지 않음
-  });
   const createSubscriptionMutation = useCreateSubscriptionMutation();
 
   // 토스트 대신 메시지 상태만 반환
@@ -47,6 +41,12 @@ export function useNotificationPermission() {
     showDialog: false,
     isResubscribe: false,
   });
+
+  const {
+    vapidKey,
+    isLoading: vapidKeyLoading,
+    error: vapidKeyError,
+  } = useVapidKeyEffective();
 
   // 로컬스토리지 키 (통합)
   const getPromptStorageKey = (userId: string) =>
@@ -212,13 +212,8 @@ export function useNotificationPermission() {
     }
 
     try {
-      let key = vapidData;
-      if (!key) {
-        const { data: newKey } = await refetchVapidKey();
-        key = newKey;
-      }
-
-      if (!key) {
+      // VAPID 키 사용 (최상위에서 받은 값)
+      if (!vapidKey) {
         setLastMessage({
           type: "error",
           title: "VAPID 키 오류",
@@ -228,7 +223,7 @@ export function useNotificationPermission() {
       }
 
       const result = await requestNotificationPermissionAndSubscribe(
-        async () => key,
+        async () => vapidKey,
         async (subscription, deviceId, options) => {
           return await createSubscriptionMutation.mutateAsync({
             subscription,
