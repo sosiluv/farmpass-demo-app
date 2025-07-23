@@ -225,7 +225,7 @@ export default function HomePage() {
       </section>
 
       {/* 푸터 */}
-      <footer className="border-t bg-card py-12">
+      {/* <footer className="border-t bg-card py-12">
         <div className="container mx-auto px-4">
           <div className="flex flex-col items-center justify-between gap-4 md:flex-row">
             <Logo size="xl" />
@@ -240,7 +240,7 @@ export default function HomePage() {
             </p>
           </div>
         </div>
-      </footer>
+      </footer> */}
     </div>
   );
 }

@@ -39,6 +39,8 @@ const MIDDLEWARE_CONFIG = {
     "/sw.js", // Service Worker
     "/workbox-", // Workbox 관련
     "/push-sw.js", // 푸시 Service Worker
+    "/terms", // 이용약관
+    "/privacy", // 개인정보처리방침
   ] as string[],
 
   // 🔒 정규식 패턴으로 매칭되는 공개 경로들
