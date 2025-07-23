@@ -43,6 +43,11 @@ export const visitorsKeys = {
   stats: () => [...visitorsKeys.all, "stats"] as const,
   farmStats: (farmId: string) => [...visitorsKeys.stats(), farmId] as const,
   globalStats: () => [...visitorsKeys.stats(), "global"] as const,
+  // 계층적 구조로 통일
+  session: (farmId: string) =>
+    [...visitorsKeys.all, "session", farmId] as const,
+  dailyCount: (farmId: string) =>
+    [...visitorsKeys.all, "daily-count", farmId] as const,
 } as const;
 
 /**
@@ -72,6 +77,10 @@ export const farmsKeys = {
   // 농장 통계
   stats: () => [...farmsKeys.all, "stats"] as const,
   farmStats: (farmId: string) => [...farmsKeys.stats(), farmId] as const,
+  // 계층적 구조로 통일
+  info: (farmId: string) => [...farmsKeys.all, "info", farmId] as const,
+  farmMembersPreview: (farmIds: string[]) =>
+    ["farms", "farmMembersPreview", ...farmIds.sort()] as const,
 } as const;
 
 /**
@@ -129,6 +138,7 @@ export const settingsKeys = {
   cache: () => [...settingsKeys.all, "cache"] as const,
   cleanup: () => [...settingsKeys.all, "cleanup"] as const,
   images: () => [...settingsKeys.all, "images"] as const,
+  logs: () => [...settingsKeys.all, "logs"] as const,
 } as const;
 
 /**
@@ -189,6 +199,14 @@ export const accountKeys = {
   company: () => [...accountKeys.all, "company"] as const,
   settings: () => [...accountKeys.all, "settings"] as const,
 } as const;
+
+/**
+ * 프로필 관련 Query Key Factory
+ */
+export const profileKeys = {
+  all: ["profile"] as const,
+  detail: (userId: string | undefined) => ["profile", userId] as const,
+};
 
 // ===========================================
 // Cache Invalidation Helpers

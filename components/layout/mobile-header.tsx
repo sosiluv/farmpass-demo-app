@@ -5,12 +5,14 @@ import { useFarmsContext } from "@/components/providers/farms-provider";
 import { Logo } from "@/components/common";
 import { usePathname } from "next/navigation";
 import { LABELS } from "@/lib/constants/common";
+import { useProfileQuery } from "@/lib/hooks/query/use-profile-query";
 
 export function MobileHeader() {
   const { state } = useAuth();
-  const profile = state.status === "authenticated" ? state.profile : null;
+  const userId = state.status === "authenticated" ? state.user.id : undefined;
+  const { data: profile } = useProfileQuery(userId);
   const { farms } = useFarmsContext();
-  const pathname = usePathname();
+  const pathname = usePathname() || "";
 
   // 현재 경로에 따른 페이지 제목
   const getPageTitle = () => {

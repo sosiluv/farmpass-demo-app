@@ -24,7 +24,7 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-import { Mail, User, Lock, Phone } from "lucide-react";
+import { Mail, User, Lock, Phone, Plus, Loader2 } from "lucide-react";
 import { motion } from "framer-motion";
 import { useCommonToast } from "@/lib/utils/notification/toast-messages";
 import { formatPhone } from "@/lib/utils/validation/validation";
@@ -261,17 +261,14 @@ const RegisterButton = memo(
     >
       {loading ? (
         <>
-          <Loading
-            spinnerSize={20}
-            showText={false}
-            minHeight="auto"
-            spinnerColor="text-white"
-            className="mr-2"
-          />
+          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
           {BUTTONS.REGISTER_LOADING}
         </>
       ) : (
-        BUTTONS.REGISTER_BUTTON
+        <>
+          <Plus className="h-4 w-4 mr-2" />
+          {BUTTONS.REGISTER_BUTTON}
+        </>
       )}
     </Button>
   )

@@ -156,6 +156,9 @@ export function CompanySection({
                   onChange={(e) =>
                     handleChange("establishment_date", e.target.value)
                   }
+                  onFocus={(e) => {
+                    if (e.target.showPicker) e.target.showPicker();
+                  }}
                   disabled={loading}
                 />
               </div>

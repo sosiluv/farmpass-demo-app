@@ -41,8 +41,17 @@ export function OrphanFilesActions({
             className="flex-1"
             disabled={orphanFilesLoading || totalOrphanCount === 0}
           >
-            <FileX className="h-4 w-4 mr-2" />
-            {BUTTONS.ORPHAN_FILES_CLEANUP_BUTTON}
+            {orphanFilesLoading ? (
+              <>
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                {BUTTONS.ORPHAN_FILES_CLEANUP_BUTTON}
+              </>
+            ) : (
+              <>
+                <FileX className="h-4 w-4 mr-2" />
+                {BUTTONS.ORPHAN_FILES_CLEANUP_BUTTON}
+              </>
+            )}
             {totalOrphanCount > 0 && (
               <Badge variant="secondary" className="ml-2">
                 {totalOrphanCount}개
@@ -115,7 +124,10 @@ export function OrphanFilesActions({
                   {BUTTONS.CLEANUP_CLEANING}
                 </>
               ) : (
-                BUTTONS.CLEANUP_DELETE
+                <>
+                  <FileX className="h-4 w-4 mr-2" />
+                  {BUTTONS.CLEANUP_DELETE}
+                </>
               )}
             </AlertDialogAction>
           </AlertDialogFooter>

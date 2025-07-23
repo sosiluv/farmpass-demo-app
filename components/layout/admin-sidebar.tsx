@@ -43,17 +43,16 @@ import { useMemo } from "react";
 import { Logo, ThemeToggle } from "@/components/common";
 import { useLogo } from "@/hooks/use-logo";
 import { BUTTONS, LABELS } from "@/lib/constants/common";
+import { useProfileQuery } from "@/lib/hooks/query/use-profile-query";
 
 export function AdminSidebar() {
   const { state, signOut } = useAuth();
   const { farms } = useFarmsContext();
   const settings = useSystemSettings();
   const { isMobile, setOpenMobile } = useSidebar();
-
-  // useLogo에 settings 전달하여 중복 query 방지
-  const { logoUrl, siteName } = useLogo(settings || null);
-
-  const profile = state.status === "authenticated" ? state.profile : null;
+  const { siteName } = useLogo(settings || null);
+  const userId = state.status === "authenticated" ? state.user.id : undefined;
+  const { data: profile } = useProfileQuery(userId);
 
   // 모바일에서 메뉴 클릭 시 사이드바 닫기
   const handleMenuClick = () => {

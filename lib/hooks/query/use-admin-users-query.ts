@@ -6,6 +6,7 @@ import { supabase } from "@/lib/supabase/client";
 import { settingsKeys } from "./query-keys";
 import { useSupabaseRealtime } from "@/hooks/useSupabaseRealtime";
 import { toDateString } from "@/lib/utils/datetime/date";
+import { useProfileQuery } from "@/lib/hooks/query/use-profile-query";
 
 // 클라이언트 전용 가드
 const isClient = typeof window !== "undefined";
@@ -38,7 +39,8 @@ export interface UserStats {
 export function useAdminUsersQuery() {
   const { state } = useAuth();
   const user = state.status === "authenticated" ? state.user : null;
-  const profile = state.status === "authenticated" ? state.profile : null;
+  const userId = state.status === "authenticated" ? state.user.id : undefined;
+  const { data: profile } = useProfileQuery(userId);
 
   const usersQuery = useAuthenticatedQuery(
     [...settingsKeys.all, "users", "admin-stats"],
@@ -239,7 +241,8 @@ export function useAdminUsersQueryCompat() {
 export function useAdminUsersListQuery() {
   const { state } = useAuth();
   const user = state.status === "authenticated" ? state.user : null;
-  const profile = state.status === "authenticated" ? state.profile : null;
+  const userId = state.status === "authenticated" ? state.user.id : undefined;
+  const { data: profile } = useProfileQuery(userId);
 
   const usersListQuery = useAuthenticatedQuery(
     [...settingsKeys.all, "users", "admin-list"],

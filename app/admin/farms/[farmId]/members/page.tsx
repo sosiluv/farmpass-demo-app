@@ -18,6 +18,7 @@ import { getAuthErrorMessage } from "@/lib/utils/validation/validation";
 // React Query Hooks
 import { useFarmsQuery } from "@/lib/hooks/query/use-farms-query";
 import { useFarmMembersQuery } from "@/lib/hooks/query/use-farm-members-query";
+import { useProfileQuery } from "@/lib/hooks/query/use-profile-query";
 
 // React Query Mutations
 import {
@@ -35,7 +36,8 @@ interface PageProps {
 export default function MembersPage({ params }: PageProps) {
   const farmId = params.farmId as string;
   const { state } = useAuth();
-  const profile = state.status === "authenticated" ? state.profile : null;
+  const userId = state.status === "authenticated" ? state.user.id : undefined;
+  const { data: profile } = useProfileQuery(userId);
   const { showInfo, showSuccess, showError } = useCommonToast();
 
   // React Query Hooks
@@ -71,10 +73,8 @@ export default function MembersPage({ params }: PageProps) {
   // 현재 사용자가 농장 소유자, 관리자 또는 시스템 관리자인지 확인
   const canManageMembers = useCallback(() => {
     if (!profile || !farm) return false;
-
     // 시스템 관리자인 경우 모든 농장의 구성원 관리 가능
     if (profile.account_type == "admin") return true;
-
     // 농장 소유자이거나 농장 관리자인 경우
     return (
       farm.owner_id === profile.id ||

@@ -17,6 +17,7 @@ import { useResetLoginAttemptsMutation } from "@/lib/hooks/query/use-auth-mutati
 import { getAuthErrorMessage } from "@/lib/utils/validation/validation";
 import { generateInitials, getAvatarUrl } from "@/lib/utils/media/avatar";
 import { BUTTONS, LABELS, PAGE_HEADER } from "@/lib/constants/management";
+import { Loader2, LockOpen } from "lucide-react";
 
 interface UserDetailModalProps {
   user: Profile | null;
@@ -228,7 +229,17 @@ export function UserDetailModal({ user, open, onClose }: UserDetailModalProps) {
             onClick={handleUnlock}
             disabled={loading || !user}
           >
-            {loading ? BUTTONS.UNLOCKING : BUTTONS.UNLOCK_ACCOUNT}
+            {loading ? (
+              <>
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                {BUTTONS.UNLOCKING}
+              </>
+            ) : (
+              <>
+                <LockOpen className="h-4 w-4 mr-2" />
+                {BUTTONS.UNLOCK_ACCOUNT}
+              </>
+            )}
           </Button>
         </div>
       </DialogContent>

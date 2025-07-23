@@ -8,13 +8,13 @@ import {
 
 // React Query Hooks
 import {
-  useVapidKeyQuery,
   useCreateSubscriptionMutation,
   useDeleteSubscriptionMutation,
   useCleanupSubscriptionsMutation,
   useSubscriptionStatusQuery,
 } from "@/lib/hooks/query/use-push-mutations";
 import { useSaveNotificationSettingsMutation } from "@/lib/hooks/query/use-notification-mutations";
+import { useVapidKeyEffective } from "@/hooks/useVapidKey";
 
 export function useNotificationService() {
   // 토스트 대신 메시지 상태만 반환
@@ -26,40 +26,18 @@ export function useNotificationService() {
   const [isLoading, setIsLoading] = useState(false);
 
   // React Query Hooks - Lazy Loading으로 최적화
-  const { data: vapidKey, refetch: refetchVapidKey } = useVapidKeyQuery({
-    enabled: false, // 필요할 때만 로드
-  });
-  const { data: subscriptions, refetch: refetchSubscriptions } =
-    useSubscriptionStatusQuery(false); // 수동으로 조회할 때만 사용
+  const { refetch: refetchSubscriptions } = useSubscriptionStatusQuery(false); // 수동으로 조회할 때만 사용
   const createSubscriptionMutation = useCreateSubscriptionMutation();
   const deleteSubscriptionMutation = useDeleteSubscriptionMutation();
   const cleanupSubscriptionsMutation = useCleanupSubscriptionsMutation();
   const saveNotificationSettingsMutation =
     useSaveNotificationSettingsMutation();
 
-  // VAPID 키 관리 - Lazy Loading
-  const getVapidPublicKey = async () => {
-    try {
-      devLog.log("[NOTIFICATION] VAPID 키 조회 시작");
-
-      // 캐시된 데이터가 있으면 사용
-      let key = vapidKey;
-      if (!key) {
-        const { data: newKey } = await refetchVapidKey();
-        key = newKey;
-      }
-
-      if (!key) {
-        devLog.error("VAPID 키를 가져올 수 없습니다");
-        return null;
-      }
-
-      return key;
-    } catch (error) {
-      devLog.error("VAPID 키 조회 실패:", error);
-      return null;
-    }
-  };
+  const {
+    vapidKey,
+    isLoading: vapidKeyLoading,
+    error: vapidKeyError,
+  } = useVapidKeyEffective();
 
   // 구독 해제 - React Query 사용
   const handleUnsubscription = async (
@@ -161,9 +139,8 @@ export function useNotificationService() {
   const requestNotificationPermission = useCallback(async () => {
     setIsLoading(true);
     try {
-      // VAPID 키 lazy loading
-      const key = await getVapidPublicKey();
-      if (!key) {
+      // VAPID 키 사용 (최상위에서 받은 값)
+      if (!vapidKey) {
         setLastMessage({
           type: "error",
           title: "VAPID 키 오류",
@@ -174,7 +151,7 @@ export function useNotificationService() {
 
       // 공통 로직 사용 (알림 설정 페이지용)
       const result = await requestNotificationPermissionAndSubscribe(
-        async () => key,
+        async () => vapidKey,
         async (subscription, deviceId, options) => {
           // 서버에 구독 정보 전송 (device_id 포함)
           const mutationResult = await createSubscriptionMutation.mutateAsync({
@@ -225,12 +202,7 @@ export function useNotificationService() {
     } finally {
       setIsLoading(false);
     }
-  }, [
-    vapidKey,
-    refetchVapidKey,
-    createSubscriptionMutation,
-    saveNotificationSettingsMutation,
-  ]);
+  }, [vapidKey, createSubscriptionMutation, saveNotificationSettingsMutation]);
 
   // 기존 구독으로 재구독 (권한 요청 없음)
   const resubscribeFromExisting = useCallback(async () => {
@@ -285,7 +257,6 @@ export function useNotificationService() {
 
   return {
     isLoading,
-    getVapidPublicKey,
     handleUnsubscription,
     getSubscriptionStatus,
     cleanupSubscriptions,

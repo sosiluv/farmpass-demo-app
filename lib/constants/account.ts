@@ -15,6 +15,10 @@ export const PAGE_HEADER = {
 
   PROFILE_INFO_TITLE: "개인 정보",
   PROFILE_INFO_DESCRIPTION: "개인 프로필 정보를 관리합니다",
+
+  WITHDRAW_TITLE: "회원탈퇴",
+  WITHDRAW_DESCRIPTION:
+    "회원탈퇴 시 계정 및 모든 데이터가 영구적으로 삭제되며 복구할 수 없습니다.",
 } as const;
 
 export const BUTTONS = {
@@ -23,6 +27,10 @@ export const BUTTONS = {
   SAVING: "저장 중...",
   CHANGE_PASSWORD: "비밀번호 변경",
   CHANGING: "변경 중...",
+  WITHDRAW: "회원탈퇴",
+  WITHDRAWING: "탈퇴 중...",
+  WITHDRAW_CONFIRM: "탈퇴하기",
+  WITHDRAW_CANCEL: "취소",
 } as const;
 
 // 계정 관리 페이지 라벨
@@ -42,7 +50,7 @@ export const LABELS = {
   PROFILE_PHOTO: "프로필 사진",
   NAME: "이름",
   EMAIL: "이메일",
-  PHONE_NUMBER: "전화번호",
+  PHONE_NUMBER: "휴대폰번호",
   POSITION: "직책",
   DEPARTMENT: "부서",
   BIO: "자기소개",
@@ -64,6 +72,9 @@ export const LABELS = {
   ACCOUNT_STATUS: "계정 상태",
   ACTIVE: "활성화",
   INACTIVE: "비활성화",
+  WITHDRAW_DIALOG_TITLE: "정말로 회원탈퇴 하시겠습니까?",
+  WITHDRAW_DIALOG_DESC:
+    "이 작업은 되돌릴 수 없습니다. 계정 및 모든 데이터가 영구적으로 삭제됩니다.",
 } as const;
 
 // 플레이스홀더

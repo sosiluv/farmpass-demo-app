@@ -126,8 +126,9 @@ model profiles {
   updated_at          DateTime          @default(now()) @db.Timestamptz(6)            // 수정 시간
   farm_members        farm_members[]
   farms               farms[]
-  system_logs         system_logs[]
   visitor_entries     visitor_entries[]
+  push_subscriptions  push_subscriptions[]
+  user_notification_settings UserNotificationSettings[]
 
   @@index([account_type], map: "idx_profiles_account_type")
   @@index([created_at], map: "idx_profiles_created_at")
@@ -147,7 +148,6 @@ model system_logs {
   resource_id   String?   @db.Uuid                                                          // 관련 리소스 ID
   metadata      Json?                                                                       // 추가 메타데이터 (JSON 형태)
   created_at    DateTime  @default(now()) @db.Timestamptz(6)                                // 생성 시간
-  profiles      profiles? @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
 
   @@index([user_id])
   @@index([level])
@@ -174,7 +174,7 @@ model visitor_entries {
   created_at         DateTime  @default(now()) @db.Timestamptz(6)                                 // 생성 시간
   updated_at         DateTime  @default(now()) @db.Timestamptz(6)                                 // 수정 시간
   farms              farms     @relation(fields: [farm_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
-  profiles           profiles? @relation(fields: [registered_by], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  profiles           profiles? @relation(fields: [registered_by], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
   @@index([created_at], map: "idx_visitor_entries_created_at")
   @@index([farm_id], map: "idx_visitor_entries_farm_id")
@@ -197,6 +197,7 @@ model push_subscriptions {
   last_used_at DateTime? @db.Timestamptz(6)                                                // 마지막 사용 시간
   created_at   DateTime  @default(now()) @db.Timestamptz(6)                                // 구독 생성 시간
   updated_at   DateTime  @default(now()) @db.Timestamptz(6)                                // 구독 정보 수정 시간
+  profiles profiles? @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
   @@unique([user_id, endpoint])
   @@index([endpoint], map: "idx_push_subscriptions_endpoint")
@@ -215,6 +216,7 @@ model UserNotificationSettings {
   notice_alerts       Boolean   @default(true)                                                     // 공지사항 알림 활성화 여부
   created_at          DateTime  @default(now()) @db.Timestamptz(6)                                 // 생성 시간
   updated_at          DateTime  @default(now()) @updatedAt @db.Timestamptz(6)                      // 수정 시간
+  profiles profiles? @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
   @@map("user_notification_settings")
 }

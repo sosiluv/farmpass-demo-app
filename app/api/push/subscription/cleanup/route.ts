@@ -43,8 +43,17 @@ export async function POST(request: NextRequest) {
 
     // VAPID 키 설정 확인 (실시간 검사 시에만 필요)
     if (realTimeCheck) {
-      const settings = await getSystemSettings();
-      if (!settings?.vapidPublicKey || !settings?.vapidPrivateKey) {
+      // 환경변수 우선, 없으면 시스템 설정에서 조회
+      const envPublicKey = process.env.VAPID_PUBLIC_KEY;
+      const envPrivateKey = process.env.VAPID_PRIVATE_KEY;
+      let publicKey: string | undefined = envPublicKey;
+      let privateKey: string | undefined = envPrivateKey;
+      if (!publicKey || !privateKey) {
+        const settings = await getSystemSettings();
+        publicKey = publicKey || settings?.vapidPublicKey || undefined;
+        privateKey = privateKey || settings?.vapidPrivateKey || undefined;
+      }
+      if (!publicKey || !privateKey) {
         return NextResponse.json(
           {
             success: false,
@@ -54,13 +63,7 @@ export async function POST(request: NextRequest) {
           { status: 500 }
         );
       }
-
-      // VAPID 키 설정
-      webpush.setVapidDetails(
-        "mailto:k331502@nate.com",
-        settings.vapidPublicKey,
-        settings.vapidPrivateKey
-      );
+      webpush.setVapidDetails("mailto:k331502@nate.com", publicKey, privateKey);
     }
 
     // 사용자의 모든 구독 조회 (삭제되지 않은 구독만)
@@ -238,8 +241,8 @@ export async function POST(request: NextRequest) {
         tag: "validity-check-silent",
         silent: true,
         requireInteraction: false,
-        icon: "/icon-192x192.svg",
-        badge: "/icon-192x192.svg",
+        icon: "/icon-192x192.png",
+        badge: "/icon-192x192.png",
         data: {
           isValidityCheck: true,
           timestamp: Date.now(),

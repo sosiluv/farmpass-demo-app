@@ -23,11 +23,10 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Mail } from "lucide-react";
+import { Mail, Key, Loader2 } from "lucide-react";
 import { motion } from "framer-motion";
 import { useCommonToast } from "@/lib/utils/notification/toast-messages";
 import { Logo } from "@/components/common";
-import { Loading } from "@/components/ui/loading";
 import { apiClient } from "@/lib/utils/data";
 import { resetPasswordRequestFormSchema } from "@/lib/utils/validation/auth-validation";
 import type { ResetPasswordRequestFormData } from "@/lib/utils/validation/auth-validation";
@@ -140,17 +139,14 @@ export default function ResetPasswordPage() {
                 >
                   {loading ? (
                     <>
-                      <Loading
-                        spinnerSize={20}
-                        showText={false}
-                        minHeight="auto"
-                        spinnerColor="text-white"
-                        className="mr-2"
-                      />
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                       {BUTTONS.RESET_PASSWORD_LOADING}
                     </>
                   ) : (
-                    BUTTONS.RESET_PASSWORD_BUTTON
+                    <>
+                      <Key className="h-4 w-4 mr-2" />
+                      {BUTTONS.RESET_PASSWORD_BUTTON}
+                    </>
                   )}
                 </Button>
               </form>

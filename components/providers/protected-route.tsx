@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import { Loader2, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { BUTTONS } from "@/lib/constants/common";
+import { useProfileQuery } from "@/lib/hooks/query/use-profile-query";
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -19,6 +20,8 @@ export function ProtectedRoute({
   redirectTo = "/login",
 }: ProtectedRouteProps) {
   const { state } = useAuth();
+  const userId = state.status === "authenticated" ? state.user.id : undefined;
+  const { data: profile } = useProfileQuery(userId);
   const router = useRouter();
   const [loadingTimeout, setLoadingTimeout] = useState(false);
 
@@ -33,12 +36,12 @@ export function ProtectedRoute({
     if (
       requireAdmin &&
       state.status === "authenticated" &&
-      state.profile.account_type !== "admin"
+      (!profile || profile.account_type !== "admin")
     ) {
       router.push("/unauthorized");
       return;
     }
-  }, [state.status, requireAdmin, redirectTo, router]);
+  }, [state.status, requireAdmin, redirectTo, router, profile]);
 
   // 로딩 타임아웃 처리 (10초)
   useEffect(() => {
@@ -122,7 +125,7 @@ export function ProtectedRoute({
   if (
     requireAdmin &&
     state.status === "authenticated" &&
-    state.profile.account_type !== "admin"
+    (!profile || profile.account_type !== "admin")
   ) {
     return null;
   }

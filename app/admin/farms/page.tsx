@@ -19,6 +19,7 @@ import { ERROR_CONFIGS } from "@/lib/constants/error";
 import { LABELS, PLACEHOLDERS } from "@/lib/constants/farms";
 import { ResponsivePagination } from "@/components/common/responsive-pagination";
 import type { FarmFormValues } from "@/lib/utils/validation";
+import { useProfileQuery } from "@/lib/hooks/query/use-profile-query";
 
 export default function FarmsPage() {
   const { showInfo, showSuccess, showError } = useCommonToast();
@@ -38,7 +39,8 @@ export default function FarmsPage() {
     isUpdating,
   } = useFarmMutations();
   const { state } = useAuth();
-  const profile = state.status === "authenticated" ? state.profile : null;
+  const userId = state.status === "authenticated" ? state.user.id : undefined;
+  const { data: profile } = useProfileQuery(userId);
 
   // 농장별 멤버 데이터는 각 FarmCard에서 개별적으로 로딩
   // 여기서는 전체적인 농장 목록만 관리

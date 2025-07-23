@@ -10,7 +10,7 @@ import {
   DialogTrigger,
   DialogFooter,
 } from "@/components/ui/dialog";
-import { Plus, Loader2 } from "lucide-react";
+import { Plus, Loader2, Edit } from "lucide-react";
 import type { Farm } from "@/lib/types/farm";
 import type { FarmType } from "@/lib/constants/farm-types";
 import {
@@ -132,9 +132,15 @@ export function FarmFormDialog({
                       : BUTTONS.REGISTERING_LOADING}
                   </>
                 ) : editingFarm ? (
-                  BUTTONS.EDIT_BUTTON
+                  <>
+                    <Edit className="h-4 w-4 mr-2" />
+                    {BUTTONS.EDIT_BUTTON}
+                  </>
                 ) : (
-                  BUTTONS.REGISTER_BUTTON
+                  <>
+                    <Plus className="h-4 w-4 mr-2" />
+                    {BUTTONS.REGISTER_BUTTON}
+                  </>
                 )}
               </Button>
             </DialogFooter>

@@ -151,7 +151,10 @@ export function AddMemberDialog({
                 {BUTTONS.REGISTERING_LOADING}
               </>
             ) : (
-              BUTTONS.REGISTER_BUTTON
+              <>
+                <UserPlus className="h-4 w-4 mr-2" />
+                {BUTTONS.REGISTER_BUTTON}
+              </>
             )}
           </Button>
         </DialogFooter>

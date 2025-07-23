@@ -671,13 +671,11 @@ export default function PushNotificationTestPage() {
                       title: "방문자 등록 알림",
                       message: "새 방문자가 등록되었습니다.",
                       notificationType: "visitor",
-                      farmId: "3d5f33f1-cff9-4a18-970b-6edaca7c61e6",
                       icon: "/icon-192x192.png",
                       badge: "/icon-192x192.png",
                       tag: "visitor-test",
                       data: {
                         url: window.location.origin,
-                        farmId: "3d5f33f1-cff9-4a18-970b-6edaca7c61e6",
                         timestamp: Date.now(),
                       },
                     }),
@@ -692,7 +690,7 @@ export default function PushNotificationTestPage() {
               }}
               variant="outline"
             >
-              3d5f33f1 농장 방문자 등록 알림 테스트
+              농장 방문자 등록 알림 테스트
             </Button>
           </div>
 

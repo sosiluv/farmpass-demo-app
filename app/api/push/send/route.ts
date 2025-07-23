@@ -10,10 +10,15 @@ import { prisma } from "@/lib/prisma";
 // VAPID 키 설정 초기화
 async function initializeVapidKeys() {
   try {
-    const settings = await getSystemSettings();
-    const publicKey = settings?.vapidPublicKey || process.env.VAPID_PUBLIC_KEY;
+    // 1. 환경변수 우선 (null 대신 undefined)
+    const publicKey =
+      process.env.VAPID_PUBLIC_KEY ||
+      (await getSystemSettings())?.vapidPublicKey ||
+      undefined;
     const privateKey =
-      settings?.vapidPrivateKey || process.env.VAPID_PRIVATE_KEY;
+      process.env.VAPID_PRIVATE_KEY ||
+      (await getSystemSettings())?.vapidPrivateKey ||
+      undefined;
 
     if (publicKey && privateKey) {
       webpush.setVapidDetails("mailto:k331502@nate.com", publicKey, privateKey);
@@ -112,7 +117,7 @@ export async function POST(request: NextRequest) {
       icon,
       badge,
       requireInteraction = false,
-      notificationType = "visitor",
+      notificationType,
     } = body;
 
     // 입력 검증

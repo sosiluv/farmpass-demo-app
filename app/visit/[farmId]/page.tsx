@@ -38,6 +38,9 @@ import type { VisitorSettings } from "@/lib/types/visitor";
  */
 export default function VisitPage() {
   const params = useParams();
+  if (!params || !params.farmId) {
+    throw new Error("잘못된 접근입니다. (farmId 없음)");
+  }
   const farmId = params.farmId as string;
   const { showInfo, showSuccess, showError } = useCommonToast();
 

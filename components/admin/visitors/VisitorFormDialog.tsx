@@ -6,7 +6,16 @@ import { devLog } from "@/lib/utils/logging/dev-logger";
 import { handleError } from "@/lib/utils/error";
 import { formatPhone } from "@/lib/utils/validation/validation";
 import { getAuthErrorMessage } from "@/lib/utils/validation/validation";
-import { User, Phone, MapPin, FileText, Car } from "lucide-react";
+import {
+  User,
+  Phone,
+  MapPin,
+  FileText,
+  Car,
+  Plus,
+  Pencil,
+  Loader2,
+} from "lucide-react";
 
 import {
   visitorDialogFormSchema,
@@ -453,13 +462,19 @@ export function VisitorFormDialog({
                 >
                   {isSubmitting ? (
                     <>
-                      <div className="animate-spin mr-2 h-5 w-5 border-2 border-white border-t-transparent rounded-full" />
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                       {BUTTONS.VISITOR_FORM_DIALOG_PROCESSING}
                     </>
                   ) : mode === "create" ? (
-                    BUTTONS.VISITOR_FORM_DIALOG_CREATE_BUTTON
+                    <>
+                      <Plus className="h-4 w-4 mr-2" />
+                      {BUTTONS.VISITOR_FORM_DIALOG_CREATE_BUTTON}
+                    </>
                   ) : (
-                    BUTTONS.VISITOR_FORM_DIALOG_EDIT_BUTTON
+                    <>
+                      <Pencil className="h-4 w-4 mr-2" />
+                      {BUTTONS.VISITOR_FORM_DIALOG_EDIT_BUTTON}
+                    </>
                   )}
                 </Button>
               </DialogFooter>

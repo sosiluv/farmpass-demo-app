@@ -2,6 +2,7 @@
 
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useState, useEffect } from "react";
+import { visitorsKeys, farmsKeys } from "@/lib/hooks/query/query-keys";
 
 // QueryClient 설정
 function makeQueryClient() {
@@ -64,16 +65,15 @@ function makeQueryClient() {
 
       if (type === "VISITOR_REGISTERED") {
         // 방문자 관련 쿼리만 무효화 (실시간 업데이트)
-        queryClient.invalidateQueries({ queryKey: ["visitors"] });
-        queryClient.invalidateQueries({ queryKey: ["farm-info"] });
-
-        // 특정 농장 방문자 관련 쿼리 무효화
+        queryClient.invalidateQueries({ queryKey: visitorsKeys.all });
+        // 농장 정보 쿼리 무효화 (farmId가 있을 때만)
         if (farmId) {
+          queryClient.invalidateQueries({ queryKey: farmsKeys.info(farmId) });
           queryClient.invalidateQueries({
-            queryKey: ["visitor-session", farmId],
+            queryKey: visitorsKeys.session(farmId),
           });
           queryClient.invalidateQueries({
-            queryKey: ["daily-visitor-count", farmId],
+            queryKey: visitorsKeys.dailyCount(farmId),
           });
         }
       }
@@ -81,31 +81,6 @@ function makeQueryClient() {
   }
 
   return queryClient;
-}
-
-// 글로벌 에러 처리 함수
-function handleGlobalQueryError(error: any, queryKey: any) {
-  // 개발 환경에서만 콘솔에 에러 출력
-  if (process.env.NODE_ENV === "development") {
-    console.error("React Query Error:", {
-      error: error?.message || error,
-      queryKey,
-      timestamp: new Date().toISOString(),
-    });
-  }
-
-  // 인증 에러는 자동으로 처리하지 않음 (AuthProvider에서 처리)
-  if (
-    error?.message?.includes("Unauthorized") ||
-    error?.message?.includes("Admin access required")
-  ) {
-    return;
-  }
-
-  // 네트워크 에러는 자동 재시도되므로 별도 처리 안함
-  if (error?.message?.includes("Failed to fetch")) {
-    return;
-  }
 }
 
 // 개발 환경에서만 DevTools 컴포넌트 생성

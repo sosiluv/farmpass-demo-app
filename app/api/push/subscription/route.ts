@@ -260,20 +260,27 @@ export async function GET(request: NextRequest) {
 
     if (subscriptions && subscriptions.length > 0) {
       // VAPID 키 설정 확인
-      const settings = await prisma.systemSettings.findFirst({
-        select: {
-          vapidPublicKey: true,
-          vapidPrivateKey: true,
-        },
-      });
-
-      if (settings?.vapidPublicKey && settings?.vapidPrivateKey) {
-        // web-push 설정
+      // 환경변수 우선, 없으면 시스템 설정에서 조회
+      const envPublicKey = process.env.VAPID_PUBLIC_KEY;
+      const envPrivateKey = process.env.VAPID_PRIVATE_KEY;
+      let publicKey: string | undefined = envPublicKey;
+      let privateKey: string | undefined = envPrivateKey;
+      if (!publicKey || !privateKey) {
+        const settings = await prisma.systemSettings.findFirst({
+          select: {
+            vapidPublicKey: true,
+            vapidPrivateKey: true,
+          },
+        });
+        publicKey = publicKey || settings?.vapidPublicKey || undefined;
+        privateKey = privateKey || settings?.vapidPrivateKey || undefined;
+      }
+      if (publicKey && privateKey) {
         const webpush = require("web-push");
         webpush.setVapidDetails(
           "mailto:k331502@nate.com",
-          settings.vapidPublicKey,
-          settings.vapidPrivateKey
+          publicKey,
+          privateKey
         );
 
         // 각 구독의 유효성 검사

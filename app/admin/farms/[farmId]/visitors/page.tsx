@@ -28,13 +28,15 @@ import { ResponsivePagination } from "@/components/common/responsive-pagination"
 // React Query Hooks
 import { useFarmsQuery } from "@/lib/hooks/query/use-farms-query";
 import { useFarmVisitorsWithFiltersQuery } from "@/lib/hooks/query/use-farm-visitors-filtered-query";
+import { useProfileQuery } from "@/lib/hooks/query/use-profile-query";
 
 export default function FarmVisitorsPage() {
   const params = useParams();
   const router = useRouter();
   const { state } = useAuth();
-  const user = state.status === "authenticated" ? state.user : null;
-  const farmId = params.farmId as string;
+  const userId = state.status === "authenticated" ? state.user.id : undefined;
+  const { data: profile } = useProfileQuery(userId);
+  const farmId = (params as any).farmId as string; // useParams()는 항상 객체 반환
   const { showError } = useCommonToast();
 
   // React Query Hooks
@@ -84,7 +86,7 @@ export default function FarmVisitorsPage() {
   const { handleEdit, handleDelete, handleExport } = useVisitorActions({
     farms: farms, // map 변환 없이 그대로 전달
     isAdmin: false,
-    profileId: user?.id,
+    profileId: profile?.id,
     allVisitors: allVisitors, // map 변환 없이 그대로 전달
   });
 

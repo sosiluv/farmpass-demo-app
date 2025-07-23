@@ -67,8 +67,17 @@ export function SubscriptionCleanupActions({
       <AlertDialog>
         <AlertDialogTrigger asChild>
           <Button variant="destructive" className="flex-1" disabled={isLoading}>
-            <Trash2 className="h-4 w-4 mr-2" />
-            {BUTTONS.SUBSCRIPTION_CLEANUP_BUTTON}
+            {isLoading ? (
+              <>
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                {BUTTONS.SUBSCRIPTION_CLEANUP_BUTTON}
+              </>
+            ) : (
+              <>
+                <Trash2 className="h-4 w-4 mr-2" />
+                {BUTTONS.SUBSCRIPTION_CLEANUP_BUTTON}
+              </>
+            )}
           </Button>
         </AlertDialogTrigger>
         <AlertDialogContent>
@@ -142,7 +151,10 @@ export function SubscriptionCleanupActions({
                   {BUTTONS.CLEANUP_CLEANING}
                 </>
               ) : (
-                BUTTONS.CLEANUP_DELETE
+                <>
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  {BUTTONS.CLEANUP_DELETE}
+                </>
               )}
             </AlertDialogAction>
           </AlertDialogFooter>

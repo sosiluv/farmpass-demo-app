@@ -1,8 +1,7 @@
 import React from "react";
 import { Button } from "@/components/ui/button";
-import { Loading } from "@/components/ui/loading";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { AlertTriangle } from "lucide-react";
+import { AlertTriangle, Plus, Loader2 } from "lucide-react";
 import type { VisitorFormData } from "@/lib/utils/validation/visitor-validation";
 import { BUTTONS } from "@/lib/constants/visitor";
 
@@ -45,16 +44,14 @@ export const FormFooter = ({
       >
         {isSubmitting ? (
           <>
-            <Loading
-              spinnerSize={16}
-              showText={false}
-              minHeight="auto"
-              className="mr-2"
-            />
+            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
             {BUTTONS.FORM_FOOTER_REGISTERING}
           </>
         ) : (
-          BUTTONS.FORM_FOOTER_REGISTER_VISIT
+          <>
+            <Plus className="h-4 w-4 mr-2" />
+            {BUTTONS.FORM_FOOTER_REGISTER_VISIT}
+          </>
         )}
       </Button>
     </div>

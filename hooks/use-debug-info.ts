@@ -3,7 +3,7 @@ import { usePathname } from "next/navigation";
 import type { DebugInfo } from "@/lib/types/debug";
 
 export function useDebugInfo(enabled: boolean) {
-  const pathname = usePathname();
+  const pathname = usePathname() || "";
   const [debugInfo, setDebugInfo] = useState<DebugInfo | null>(null);
   const [lastUpdate, setLastUpdate] = useState<Date>(new Date());
 

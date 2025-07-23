@@ -45,11 +45,14 @@ import {
   PAGE_HEADER,
   BUTTONS,
 } from "@/lib/constants/auth";
+import { createClient } from "@/lib/supabase/client";
 
 export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [redirecting, setRedirecting] = useState(false);
   const [formError, setFormError] = useState<string>("");
+  const [kakaoLoading, setKakaoLoading] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
   const router = useRouter();
   const { showInfo, showSuccess, showError } = useCommonToast();
   const { state, signIn } = useAuth();
@@ -126,9 +129,6 @@ export default function LoginPage() {
 
       if (result.success) {
         showSuccess("로그인 성공", result.message || "대시보드로 이동합니다.");
-        // 리다이렉트는 useEffect에서 처리하므로 여기서는 제거
-        // setRedirecting(true);
-        // router.replace("/admin/dashboard");
         return;
       }
     } catch (error: any) {
@@ -140,6 +140,37 @@ export default function LoginPage() {
     } finally {
       setLoading(false);
     }
+  };
+
+  // 공통 소셜 로그인 핸들러
+  const handleSocialLogin = async (
+    provider: "kakao" | "google",
+    setLoading: React.Dispatch<React.SetStateAction<boolean>>
+  ) => {
+    setLoading(true);
+    try {
+      const supabase = createClient();
+      await supabase.auth.signInWithOAuth({
+        provider,
+        options: {
+          redirectTo: `${window.location.origin}/api/auth/callback`,
+        },
+      });
+    } finally {
+      // 실제로는 리다이렉트가 발생하므로 setLoading(false)는 필요 없음
+    }
+  };
+
+  // 카카오 로그인 핸들러
+  const handleKakaoLogin = () => {
+    if (kakaoLoading || redirecting) return;
+    handleSocialLogin("kakao", setKakaoLoading);
+  };
+
+  // 구글 로그인 핸들러
+  const handleGoogleLogin = () => {
+    if (googleLoading || redirecting) return;
+    handleSocialLogin("google", setGoogleLoading);
   };
 
   return (
@@ -238,6 +269,72 @@ export default function LoginPage() {
                       </>
                     ) : (
                       BUTTONS.LOGIN_BUTTON
+                    )}
+                  </Button>
+                  {/* 카카오 로그인 버튼 */}
+                  <Button
+                    type="button"
+                    onClick={handleKakaoLogin}
+                    className="w-full h-12 min-h-[48px] rounded-md shadow-sm relative flex items-center justify-center"
+                    style={{
+                      background: "#FEE500",
+                      color: "#191600",
+                      border: "1px solid #e0e0e0",
+                      marginTop: 8,
+                      fontWeight: 600,
+                      padding: 0,
+                    }}
+                    disabled={kakaoLoading || redirecting}
+                  >
+                    {kakaoLoading ? (
+                      <div className="flex items-center justify-center w-full h-full">
+                        <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                        {BUTTONS.LOGIN_LOADING}
+                      </div>
+                    ) : (
+                      <>
+                        <img
+                          src="/btn_kakao.svg"
+                          alt="카카오 로그인"
+                          className="absolute left-4 top-1/2 -translate-y-1/2 h-6 w-6"
+                        />
+                        <span className="w-full text-center block">
+                          Kakao로 시작하기
+                        </span>
+                      </>
+                    )}
+                  </Button>
+                  {/* 구글 로그인 버튼 */}
+                  <Button
+                    type="button"
+                    onClick={handleGoogleLogin}
+                    className="w-full h-12 min-h-[48px] rounded-md shadow-sm relative flex items-center justify-center"
+                    style={{
+                      background: "#fff",
+                      color: "#191600",
+                      border: "1px solid #e0e0e0",
+                      marginTop: 8,
+                      fontWeight: 600,
+                      padding: 0,
+                    }}
+                    disabled={googleLoading || redirecting}
+                  >
+                    {googleLoading ? (
+                      <div className="flex items-center justify-center w-full h-full">
+                        <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                        {BUTTONS.LOGIN_LOADING}
+                      </div>
+                    ) : (
+                      <>
+                        <img
+                          src="/btn_google.svg"
+                          alt="구글 로그인"
+                          className="absolute left-4 top-1/2 -translate-y-1/2 h-6 w-6"
+                        />
+                        <span className="w-full text-center block">
+                          Google로 시작하기
+                        </span>
+                      </>
                     )}
                   </Button>
                 </form>

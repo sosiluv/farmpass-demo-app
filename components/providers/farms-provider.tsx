@@ -9,6 +9,7 @@ import {
 } from "react";
 import { useAuth } from "@/components/providers/auth-provider";
 import { useFarmsQuery } from "@/lib/hooks/query/use-farms-query";
+import { useProfileQuery } from "@/lib/hooks/query/use-profile-query";
 import { devLog } from "@/lib/utils/logging/dev-logger";
 import type { Farm } from "@/lib/types/farm";
 
@@ -26,7 +27,8 @@ const FarmsContext = createContext<FarmsContextValue | undefined>(undefined);
 
 export function FarmsProvider({ children }: { children: React.ReactNode }) {
   const { state } = useAuth();
-  const profile = state.status === "authenticated" ? state.profile : null;
+  const userId = state.status === "authenticated" ? state.user.id : undefined;
+  const { data: profile } = useProfileQuery(userId);
   const {
     farms,
     refetch: refetchFarms,

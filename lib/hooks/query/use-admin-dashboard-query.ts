@@ -10,6 +10,7 @@ import {
 } from "@/lib/utils/datetime/date";
 import { dashboardKeys } from "./query-keys";
 import { useSupabaseRealtime } from "@/hooks/useSupabaseRealtime";
+import { useProfileQuery } from "@/lib/hooks/query/use-profile-query";
 
 // 클라이언트 전용 가드
 const isClient = typeof window !== "undefined";
@@ -71,7 +72,8 @@ export interface DashboardStats {
 export function useAdminDashboardQuery() {
   const { state } = useAuth();
   const user = state.status === "authenticated" ? state.user : null;
-  const profile = state.status === "authenticated" ? state.profile : null;
+  const userId = state.status === "authenticated" ? state.user.id : undefined;
+  const { data: profile } = useProfileQuery(userId);
 
   const dashboardQuery = useAuthenticatedQuery(
     dashboardKeys.all,
