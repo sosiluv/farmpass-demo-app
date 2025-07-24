@@ -368,6 +368,8 @@ export async function POST(
         old: null,
         table: "farm_members",
         schema: "public",
+        title: "멤버 추가",
+        message: `${userToAdd.name}님이 ${farm.farm_name}에 추가되었습니다.`,
       },
     });
 

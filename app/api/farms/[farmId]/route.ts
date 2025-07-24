@@ -149,6 +149,8 @@ export async function PUT(
         old: null,
         table: "farms",
         schema: "public",
+        title: "농장 정보 수정",
+        message: `${farm.farm_name}의 정보가 수정되었습니다.`,
       },
     });
 
@@ -324,6 +326,8 @@ export async function DELETE(
         },
         table: "farms",
         schema: "public",
+        title: "농장 삭제",
+        message: `${farm.farm_name}이 삭제되었습니다.`,
       },
     });
 

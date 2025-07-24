@@ -201,14 +201,6 @@ export function useAdminUsersQuery() {
     // 농장 멤버 변경은 사용자 통계에 영향을 줄 수 있음
   });
 
-  // 🔥 사용자 프로필 변경 시 실시간 갱신 (회원가입 브로드캐스트 포함)
-  useSupabaseRealtime({
-    table: "profiles",
-    refetch: usersQuery.refetch,
-    events: ["INSERT", "UPDATE", "DELETE"],
-    // 사용자 가입/탈퇴/수정 시 통계 갱신 + 회원가입 브로드캐스트 수신
-  });
-
   return usersQuery;
 }
 

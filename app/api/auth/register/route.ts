@@ -3,7 +3,6 @@ import { createClient } from "@/lib/supabase/server";
 import { createSystemLog, logApiError } from "@/lib/utils/logging/system-log";
 import { getClientIP, getUserAgent } from "@/lib/server/ip-helpers";
 import { devLog } from "@/lib/utils/logging/dev-logger";
-import { sendSupabaseBroadcast } from "@/lib/supabase/broadcast";
 
 // Turnstile 검증 함수
 async function verifyTurnstile(
@@ -126,26 +125,6 @@ export async function POST(request: NextRequest) {
         { status: 500 }
       );
     }
-
-    // 🔥 회원가입 성공 실시간 브로드캐스트
-    await sendSupabaseBroadcast({
-      channel: "profile_updates",
-      event: "profile_created",
-      payload: {
-        eventType: "INSERT",
-        new: {
-          id: authData.user.id,
-          email: validatedData.email,
-          name: validatedData.name,
-          phone: validatedData.phone,
-          created_at: new Date().toISOString(),
-          account_type: "user",
-        },
-        old: null,
-        table: "profiles",
-        schema: "public",
-      },
-    });
 
     // 회원가입 성공 로그 기록
     await createSystemLog(

@@ -19,20 +19,21 @@ export function useUpdateProfileMutation() {
 
   return useMutation({
     mutationFn: async (
-      data: ProfileFormData
+      data: Partial<ProfileFormData>
     ): Promise<{ success: boolean; message?: string }> => {
-      const profileData = {
-        name: data.name,
-        phone: data.phoneNumber || null,
-        position: data.position || null,
-        department: data.department || null,
-        bio: data.bio || null,
-      };
+      // 변경된 필드만 PATCH로 보냄
+      const profileData: any = {};
+      if (data.name !== undefined) profileData.name = data.name;
+      if (data.phoneNumber !== undefined) profileData.phone = data.phoneNumber;
+      if (data.position !== undefined) profileData.position = data.position;
+      if (data.department !== undefined)
+        profileData.department = data.department;
+      if (data.bio !== undefined) profileData.bio = data.bio;
 
       const result = await apiClient("/api/profile", {
         method: "PATCH",
         body: JSON.stringify(profileData),
-        context: "프로필 정보 저장",
+        context: "프로필 정보 업데이트",
       });
 
       return { success: result.success, message: result.message };
@@ -52,22 +53,28 @@ export function useUpdateCompanyMutation() {
 
   return useMutation({
     mutationFn: async (
-      data: CompanyFormData
+      data: Partial<CompanyFormData>
     ): Promise<{ success: boolean; message?: string }> => {
-      const companyData = {
-        company_name: data.companyName || null,
-        company_address: data.companyAddress || null,
-        business_type: data.businessType || null,
-        company_description: data.company_description || null,
-        establishment_date:
+      const companyData: any = {};
+      if (data.companyName !== undefined)
+        companyData.company_name = data.companyName;
+      if (data.companyAddress !== undefined)
+        companyData.company_address = data.companyAddress;
+      if (data.businessType !== undefined)
+        companyData.business_type = data.businessType;
+      if (data.company_description !== undefined)
+        companyData.company_description = data.company_description;
+      if (data.establishment_date !== undefined)
+        companyData.establishment_date =
           data.establishment_date && data.establishment_date.trim()
             ? new Date(data.establishment_date).toISOString()
-            : null,
-        employee_count: data.employee_count
+            : null;
+      if (data.employee_count !== undefined)
+        companyData.employee_count = data.employee_count
           ? parseInt(data.employee_count)
-          : null,
-        company_website: data.company_website || null,
-      };
+          : null;
+      if (data.company_website !== undefined)
+        companyData.company_website = data.company_website;
 
       const result = await apiClient("/api/profile", {
         method: "PATCH",

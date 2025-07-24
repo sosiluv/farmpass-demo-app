@@ -24,11 +24,23 @@ export async function apiClient(input: RequestInfo, init?: ApiClientOptions) {
     ...fetchOptions
   } = init || {};
 
+  // fetch 타임아웃(ms)
+  const FETCH_TIMEOUT = 10000; // 10초
+
   try {
-    const response = await fetch(input, {
-      credentials: "include",
-      ...fetchOptions,
-    });
+    // AbortController로 fetch 타임아웃 구현
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), FETCH_TIMEOUT);
+    let response;
+    try {
+      response = await fetch(input, {
+        credentials: "include",
+        signal: controller.signal,
+        ...fetchOptions,
+      });
+    } finally {
+      clearTimeout(timeoutId);
+    }
 
     // 401: 인증 실패 (토큰 갱신 시도)
     if (response.status === 401) {
@@ -131,6 +143,18 @@ export async function apiClient(input: RequestInfo, init?: ApiClientOptions) {
 
     return response.json();
   } catch (error) {
+    // fetch 타임아웃(AbortError) 처리
+    if (error instanceof DOMException && error.name === "AbortError") {
+      const timeoutError = new Error(
+        "네트워크 요청이 10초 이상 지연되어 중단되었습니다."
+      );
+      (timeoutError as any).status = 0;
+      if (!skipDefaultErrorHandling) {
+        handleError(timeoutError, { context });
+      }
+      if (onError) onError(timeoutError, context);
+      throw timeoutError;
+    }
     // 네트워크 에러나 JSON 파싱 에러는 여기서 처리
     if (error instanceof TypeError && error.message.includes("fetch")) {
       const networkError = new Error("Failed to fetch");

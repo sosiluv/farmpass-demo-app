@@ -1,3 +1,8 @@
+ALTER TABLE public.profiles
+ADD CONSTRAINT fk_profiles_auth_users_id
+FOREIGN KEY (id) REFERENCES auth.users(id)
+ON DELETE CASCADE;
+
 
 
 -- 인증된 사용자에게 테이블 접근 권한 부여
@@ -261,7 +266,7 @@ COMMENT ON TABLE public.visitor_entries IS '방문자 입장 기록을 저장하
 COMMENT ON COLUMN public.visitor_entries.id IS '방문 기록 고유 ID';
 COMMENT ON COLUMN public.visitor_entries.farm_id IS '방문한 농장 ID (farms 테이블 참조)';
 COMMENT ON COLUMN public.visitor_entries.visit_datetime IS '방문 일시';
-COMMENT ON COLUMN public.visitor_entries.visitor_name IS '방문자 성명';
+COMMENT ON COLUMN public.visitor_entries.visitor_name IS '방문자 이름';
 COMMENT ON COLUMN public.visitor_entries.visitor_phone IS '방문자 연락처';
 COMMENT ON COLUMN public.visitor_entries.visitor_address IS '방문자 주소';
 COMMENT ON COLUMN public.visitor_entries.visitor_purpose IS '방문 목적';

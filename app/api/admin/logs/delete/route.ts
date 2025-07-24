@@ -4,7 +4,6 @@ import { devLog } from "@/lib/utils/logging/dev-logger";
 import { getClientIP, getUserAgent } from "@/lib/server/ip-helpers";
 import { requireAuth } from "@/lib/server/auth-utils";
 import { prisma } from "@/lib/prisma";
-import { sendSupabaseBroadcast } from "@/lib/supabase/broadcast";
 
 export async function POST(request: NextRequest) {
   // 요청 컨텍스트 정보 추출
@@ -84,28 +83,6 @@ export async function POST(request: NextRequest) {
           },
           { status: 400 }
         );
-    }
-
-    // 🔥 로그 삭제 실시간 브로드캐스트
-    try {
-      await sendSupabaseBroadcast({
-        channel: "log_updates",
-        event: "log_deleted",
-        payload: {
-          eventType: "DELETE",
-          new: null,
-          old: {
-            action: action,
-            deleted_count: result.count || 1,
-            log_id: logId,
-          },
-          table: "system_logs",
-          schema: "public",
-        },
-      });
-      devLog.log("[LOG-DELETE-API] Supabase Broadcast 발송 완료");
-    } catch (broadcastError) {
-      devLog.error("[LOG-DELETE-API] Broadcast 발송 실패:", broadcastError);
     }
 
     // 삭제 작업 로그 기록

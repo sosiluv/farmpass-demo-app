@@ -21,6 +21,7 @@ interface FarmsContextValue {
   error: Error | null;
   refetch: () => Promise<any>;
   refreshFarms: () => Promise<void>;
+  profile?: any; // Profile 타입 사용 가능
 }
 
 const FarmsContext = createContext<FarmsContextValue | undefined>(undefined);
@@ -89,6 +90,7 @@ export function FarmsProvider({ children }: { children: React.ReactNode }) {
         error,
         refetch: refetchFarms,
         refreshFarms,
+        profile,
       }}
     >
       {children}

@@ -62,31 +62,11 @@ export function useFarmVisitorsQuery(farmId: string | null) {
   );
 
   // 🔥 방문자 실시간 업데이트를 위한 안정된 필터 함수
-  const visitorFilter = React.useCallback(
-    (payload: any) => {
-      if (!farmId) {
-        // 전체 농장 모드에서는 모든 변경사항 감지
-        return true;
-      }
-
-      // 특정 농장의 변경사항만 감지
-      const visitorFarmId = payload.new?.farm_id || payload.old?.farm_id;
-      const result = visitorFarmId === farmId;
-
-      console.log(
-        `🔥 [VISITOR QUERY FILTER] target farmId: ${farmId}, payload farm_id: ${visitorFarmId}, result: ${result}`
-      );
-      return result;
-    },
-    [farmId]
-  );
-
   // 실시간 업데이트 - visitor_entries 테이블 변경 시 리프레시
   useSupabaseRealtime({
     table: "visitor_entries",
     refetch: visitorsQuery.refetch,
     events: ["INSERT", "UPDATE", "DELETE"],
-    filter: visitorFilter,
   });
 
   // 30일 날짜 배열 - 한 번만 생성하여 재사용

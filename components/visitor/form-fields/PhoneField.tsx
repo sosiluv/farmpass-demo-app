@@ -7,27 +7,26 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-import type { UseFormReturn } from "react-hook-form";
-import type { VisitorFormData } from "@/lib/utils/validation/visitor-validation";
+import type { UseFormReturn, FieldValues, Path } from "react-hook-form";
 import { formatPhone } from "@/lib/utils/validation/validation";
 import { LABELS, PLACEHOLDERS } from "@/lib/constants/visitor";
 import { Phone } from "lucide-react";
 
-interface PhoneFieldProps {
-  form: UseFormReturn<VisitorFormData>;
+interface PhoneFieldProps<T extends FieldValues = any> {
+  form: UseFormReturn<T>;
   required?: boolean;
   className?: string;
 }
 
-export const PhoneField = ({
+export const PhoneField = <T extends FieldValues = any>({
   form,
   required = false,
   className = "",
-}: PhoneFieldProps) => {
+}: PhoneFieldProps<T>) => {
   return (
     <FormField
       control={form.control}
-      name="phoneNumber"
+      name={"phoneNumber" as Path<T>}
       render={({ field }) => (
         <FormItem className={`space-y-2 sm:space-y-2 ${className}`}>
           <FormLabel

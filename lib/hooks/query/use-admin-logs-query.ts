@@ -147,14 +147,6 @@ export function useAdminLogsQuery() {
     }
   );
 
-  // 🔥 로그 통계 실시간 업데이트 구독
-  useSupabaseRealtime({
-    table: "system_logs",
-    refetch: logsQuery.refetch,
-    events: ["INSERT", "UPDATE", "DELETE"],
-    // 새로운 로그 생성/수정/삭제 시 통계 갱신
-  });
-
   return logsQuery;
 }
 

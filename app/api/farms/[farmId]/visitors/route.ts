@@ -227,7 +227,7 @@ export async function POST(
     // 필수 필드 검증
     if (!visitorData.fullName?.trim()) {
       return NextResponse.json(
-        { message: "성명은 필수 입력 항목입니다." },
+        { message: "이름은 필수 입력 항목입니다." },
         { status: 400 }
       );
     }
@@ -319,6 +319,8 @@ export async function POST(
         old: null,
         table: "visitor_entries",
         schema: "public",
+        title: "방문자 등록",
+        message: `${visitor.visitor_name}님이 방문자로 등록되었습니다.`,
       },
     });
 

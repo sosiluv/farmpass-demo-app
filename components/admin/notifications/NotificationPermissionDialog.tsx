@@ -15,6 +15,7 @@ import { Bell, Shield, Users, Activity, CheckCircle, X } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { devLog } from "@/lib/utils/logging/dev-logger";
 import { BUTTONS, LABELS } from "@/lib/constants/notifications";
+import { useCommonToast } from "@/lib/utils/notification/toast-messages";
 
 interface NotificationPermissionDialogProps {
   open: boolean;
@@ -34,6 +35,7 @@ export default function NotificationPermissionDialog({
   isResubscribe = false, // 기본값 false
 }: NotificationPermissionDialogProps) {
   const [isAllowing, setIsAllowing] = useState(false);
+  const { showSuccess, showError } = useCommonToast();
 
   // benefits 배열을 useMemo로 메모이제이션
   const benefits = useMemo(
@@ -73,8 +75,20 @@ export default function NotificationPermissionDialog({
     setIsAllowing(true);
     try {
       await onAllow();
+      showSuccess(
+        isResubscribe ? "알림 재구독 완료" : "알림 구독 완료",
+        isResubscribe
+          ? "알림 구독이 다시 설정되었습니다."
+          : "중요한 농장 관리 알림을 받으실 수 있습니다."
+      );
     } catch (error) {
       devLog.error("알림 허용 처리 실패:", error);
+      showError(
+        "알림 구독 실패",
+        error instanceof Error
+          ? error.message
+          : "알림 구독 중 오류가 발생했습니다."
+      );
     } finally {
       setIsAllowing(false);
     }
@@ -90,6 +104,7 @@ export default function NotificationPermissionDialog({
       <DialogContent
         className="sm:max-w-[480px] w-[calc(100%-2rem)] p-0 gap-0 overflow-hidden"
         data-notification-dialog="true"
+        preventOutsideClose
       >
         <div className="relative">
           {/* 헤더 배경 그라데이션 */}

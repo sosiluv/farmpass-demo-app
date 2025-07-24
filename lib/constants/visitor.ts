@@ -47,8 +47,8 @@ export const BUTTONS = {
 // 라벨
 export const LABELS = {
   VISIT_PURPOSE: "방문목적",
-  FULL_NAME: "성명",
-  PHONE_NUMBER: "연락처",
+  FULL_NAME: "이름",
+  PHONE_NUMBER: "휴대폰 번호",
   ADDRESS: "주소",
   CAR_PLATE: "차량번호",
   DISINFECTION: "소독여부",
@@ -238,7 +238,7 @@ export const LABELS = {
 
 // 플레이스홀더
 export const PLACEHOLDERS = {
-  FULL_NAME: "홍길동",
+  FULL_NAME: "이름을 입력하세요",
   PHONE_NUMBER: "숫자만 입력 가능합니다",
   ADDRESS: "주소 검색 버튼을 클릭하여 주소를 입력하세요",
   CAR_PLATE: "12가3456 (선택사항)",
@@ -283,8 +283,8 @@ export const DATE_RANGE_OPTIONS = [
 
 // 에러 메시지
 export const ERROR_MESSAGES = {
-  REQUIRED_NAME: "성명을 입력해주세요",
-  REQUIRED_CONTACT: "연락처를 입력해주세요",
+  REQUIRED_NAME: "이름을 입력해주세요",
+  REQUIRED_CONTACT: "휴대폰 번호를 입력해주세요",
   REQUIRED_ADDRESS: "주소를 검색해주세요",
   REQUIRED_PURPOSE: "방문목적을 선택해주세요",
   REQUIRED_PHOTO: "방문자 사진을 등록해주세요",

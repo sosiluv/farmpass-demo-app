@@ -32,6 +32,8 @@ import {
   PAGE_HEADER,
 } from "@/lib/constants/account";
 import { POSITION_OPTIONS } from "@/lib/constants/account";
+import { profileSchema } from "@/lib/utils/validation/profile-validation";
+import { useCommonToast } from "@/lib/utils/notification/toast-messages";
 
 export function ProfileSection({
   profile,
@@ -40,6 +42,7 @@ export function ProfileSection({
   onImageUpload,
   onImageDelete,
 }: ProfileSectionProps) {
+  const { showError } = useCommonToast();
   // 아바타 시드 관리 훅
   const {
     updateAvatarSeed,
@@ -108,6 +111,15 @@ export function ProfileSection({
 
   const handleSave = async () => {
     if (!hasChanges || loading) return;
+
+    // profile-validation 스키마로 검증
+    const result = profileSchema.safeParse(formData);
+    if (!result.success) {
+      const firstError =
+        result.error.errors[0]?.message || "입력값을 확인하세요.";
+      showError("프로필 저장 실패", firstError);
+      return;
+    }
 
     try {
       await onSave(formData);
@@ -179,6 +191,7 @@ export function ProfileSection({
                   onChange={handleInputChange}
                   disabled={loading}
                   autoComplete="name"
+                  placeholder={PLACEHOLDERS.NAME}
                 />
               </div>
               <div className="space-y-2">
@@ -191,6 +204,7 @@ export function ProfileSection({
                   onChange={handleInputChange}
                   disabled={loading}
                   autoComplete="email"
+                  placeholder={PLACEHOLDERS.EMAIL}
                 />
               </div>
             </div>
@@ -206,7 +220,7 @@ export function ProfileSection({
                   onChange={handleInputChange}
                   disabled={loading}
                   maxLength={13}
-                  placeholder={PLACEHOLDERS.PHONE_NUMBER_PLACEHOLDER}
+                  placeholder={PLACEHOLDERS.PHONE_NUMBER}
                 />
               </div>
               <div className="space-y-2">
@@ -217,9 +231,7 @@ export function ProfileSection({
                   disabled={loading}
                 >
                   <SelectTrigger id="position">
-                    <SelectValue
-                      placeholder={PLACEHOLDERS.POSITION_PLACEHOLDER}
-                    />
+                    <SelectValue placeholder={PLACEHOLDERS.POSITION} />
                   </SelectTrigger>
                   <SelectContent>
                     {POSITION_OPTIONS.map((option) => (
@@ -242,7 +254,7 @@ export function ProfileSection({
                   value={formData.department || ""}
                   onChange={handleInputChange}
                   disabled={loading}
-                  placeholder={PLACEHOLDERS.DEPARTMENT_PLACEHOLDER}
+                  placeholder={PLACEHOLDERS.DEPARTMENT}
                 />
               </div>
             </div>
@@ -255,7 +267,7 @@ export function ProfileSection({
                 value={formData.bio || ""}
                 onChange={handleInputChange}
                 disabled={loading}
-                placeholder={PLACEHOLDERS.BIO_PLACEHOLDER}
+                placeholder={PLACEHOLDERS.BIO}
                 rows={4}
               />
             </div>

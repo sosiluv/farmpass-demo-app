@@ -1,12 +1,12 @@
-import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { devLog } from "@/lib/utils/logging/dev-logger";
 import { useAuth } from "@/components/providers/auth-provider";
 import type { Profile } from "@/lib/types";
-import type { PasswordFormData } from "@/lib/types/account";
+import type { PasswordFormData, CompanyFormData } from "@/lib/types/account";
 import { useAccountMutations } from "@/lib/hooks/query/use-account-mutations";
 import { useUnifiedImageUpload } from "@/hooks/useUnifiedImageUpload";
 import { getAuthErrorMessage } from "@/lib/utils/validation/validation";
+import type { ProfileFormData } from "@/lib/types/account";
 
 interface UseAccountActionsProps {
   profile: Profile;
@@ -77,14 +77,9 @@ export function useAccountActions({ profile, userId }: UseAccountActionsProps) {
   };
 
   // 프로필 정보 저장 (React Query mutation 사용)
-  const handleProfileSave = async (data: {
-    name: string;
-    email: string;
-    phoneNumber: string;
-    position: string;
-    department: string;
-    bio: string;
-  }): Promise<SaveResult> => {
+  const handleProfileSave = async (
+    data: Partial<ProfileFormData>
+  ): Promise<SaveResult> => {
     try {
       const result = await accountMutations.updateProfileAsync(data);
       devLog.log("프로필 정보 저장 완료");
@@ -97,15 +92,9 @@ export function useAccountActions({ profile, userId }: UseAccountActionsProps) {
   };
 
   // 회사 정보 저장 (React Query mutation 사용)
-  const handleCompanySave = async (data: {
-    companyName: string;
-    companyAddress: string;
-    businessType: string;
-    company_description: string;
-    establishment_date: string;
-    employee_count: string;
-    company_website: string;
-  }): Promise<SaveResult> => {
+  const handleCompanySave = async (
+    data: Partial<CompanyFormData>
+  ): Promise<SaveResult> => {
     try {
       const result = await accountMutations.updateCompanyAsync(data);
       devLog.log("회사 정보 저장 완료");

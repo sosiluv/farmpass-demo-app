@@ -34,6 +34,8 @@ export const BUTTONS = {
   ADDRESS_SEARCH_BUTTON: "주소 검색",
 
   REFRESH_BUTTON: "새로고침",
+  PHONE_INPUT_SAVE: "저장",
+  PHONE_INPUT_LOADING: "저장중...",
 } as const;
 
 // 공통 컴포넌트 라벨
@@ -238,6 +240,8 @@ export const LABELS = {
   MOBILE_HEADER_SYSTEM_ADMIN: "시스템 관리자",
   MOBILE_HEADER_FARM_COUNT: "{count}개 농장",
   MOBILE_HEADER_FARM_REGISTRATION_NEEDED: "농장 등록 필요",
+  PHONE_INPUT_TITLE: "휴대폰번호 입력",
+  PHONE_INPUT_DESCRIPTION: "서비스 이용을 위해 휴대폰번호를 입력해주세요.",
 } as const;
 
 // 공통 컴포넌트 플레이스홀더

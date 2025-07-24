@@ -50,7 +50,7 @@ export const LABELS = {
   PROFILE_PHOTO: "프로필 사진",
   NAME: "이름",
   EMAIL: "이메일",
-  PHONE_NUMBER: "휴대폰번호",
+  PHONE_NUMBER: "휴대폰 번호",
   POSITION: "직책",
   DEPARTMENT: "부서",
   BIO: "자기소개",
@@ -81,16 +81,19 @@ export const LABELS = {
 export const PLACEHOLDERS = {
   BUSINESS_TYPE_SELECT: "업종 선택",
   EMPLOYEE_COUNT_SELECT: "직원 수 선택",
+  COMPANY_NAME: "회사명을 입력하세요",
   COMPANY_ADDRESS: "주소 검색을 통해 주소를 입력해주세요",
   COMPANY_WEBSITE: "https://example.com",
   COMPANY_DESCRIPTION: "회사 및 농장에 대한 간단한 소개를 입력하세요",
   // 비밀번호 섹션
   CURRENT_PASSWORD_PLACEHOLDER: "현재 비밀번호를 입력하세요",
   // 프로필 섹션
-  PHONE_NUMBER_PLACEHOLDER: "숫자만 입력 가능합니다",
-  POSITION_PLACEHOLDER: "직책을 선택하세요",
-  DEPARTMENT_PLACEHOLDER: "부서명을 입력하세요",
-  BIO_PLACEHOLDER: "자기소개를 입력하세요",
+  EMAIL: "name@example.com",
+  NAME: "이름을 입력하세요",
+  PHONE_NUMBER: "숫자만 입력 가능합니다",
+  POSITION: "직책을 선택하세요",
+  DEPARTMENT: "부서명을 입력하세요",
+  BIO: "자기소개를 입력하세요",
 } as const;
 
 // 직원 수 옵션

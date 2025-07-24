@@ -160,7 +160,7 @@ model visitor_entries {
   id                 String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid           // 방문 기록 고유 ID
   farm_id            String    @db.Uuid                                                           // 방문한 농장 ID (farms 테이블 참조)
   visit_datetime     DateTime  @db.Timestamptz(6)                                                  // 방문 일시
-  visitor_name       String                                                                      // 방문자 성명
+  visitor_name       String                                                                      // 방문자 이름
   visitor_phone      String                                                                      // 방문자 연락처
   visitor_address    String                                                                      // 방문자 주소
   visitor_purpose    String?                                                                     // 방문 목적

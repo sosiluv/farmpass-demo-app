@@ -5,7 +5,6 @@ import { requireAuth } from "@/lib/server/auth-utils";
 import { getClientIP, getUserAgent } from "@/lib/server/ip-helpers";
 import { logApiError } from "@/lib/utils/logging/system-log";
 import { prisma } from "@/lib/prisma";
-import { sendSupabaseBroadcast } from "@/lib/supabase/broadcast";
 
 // PATCH: 프로필 정보 수정
 export async function PATCH(request: NextRequest) {
@@ -30,19 +29,6 @@ export async function PATCH(request: NextRequest) {
       data: {
         ...data,
         updated_at: new Date(),
-      },
-    });
-
-    // 🔥 프로필 수정 실시간 브로드캐스트
-    await sendSupabaseBroadcast({
-      channel: "profile_updates",
-      event: "profile_updated",
-      payload: {
-        eventType: "UPDATE",
-        new: updatedProfile,
-        old: null,
-        table: "profiles",
-        schema: "public",
       },
     });
 

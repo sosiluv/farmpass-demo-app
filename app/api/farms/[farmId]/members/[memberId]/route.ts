@@ -180,6 +180,10 @@ export async function PUT(
         },
         table: "farm_members",
         schema: "public",
+        title: "멤버 역할 변경",
+        message: `${
+          (memberToUpdate.profiles as any)?.name
+        }님의 역할이 ${oldRole}에서 ${role}로 변경되었습니다.`,
       },
     });
 
@@ -425,6 +429,10 @@ export async function DELETE(
         },
         table: "farm_members",
         schema: "public",
+        title: "멤버 삭제",
+        message: `${(memberToRemove.profiles as any)?.name}님이 ${
+          farm.farm_name
+        }에서 삭제되었습니다.`,
       },
     });
 

@@ -33,13 +33,5 @@ export function useSystemLogsQuery() {
     refetchOnMount: true, // 마운트 시 새로고침
   });
 
-  // 🔥 시스템 로그 실시간 업데이트 구독
-  useSupabaseRealtime({
-    table: "system_logs",
-    refetch: logsQuery.refetch,
-    events: ["INSERT", "UPDATE", "DELETE"],
-    // 새로운 로그 생성/수정/삭제 시 목록 갱신
-  });
-
   return logsQuery;
 }

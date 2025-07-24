@@ -99,6 +99,7 @@ export function CompanySection({
                   value={formData.companyName || ""}
                   onChange={(e) => handleChange("companyName", e.target.value)}
                   disabled={loading}
+                  placeholder={PLACEHOLDERS.COMPANY_NAME}
                 />
               </div>
               <div className="space-y-2">

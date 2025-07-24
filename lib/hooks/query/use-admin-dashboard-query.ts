@@ -393,20 +393,6 @@ export function useAdminDashboardQuery() {
     // 관리자는 모든 방문자 변경사항에 대해 대시보드 갱신
   });
 
-  useSupabaseRealtime({
-    table: "system_logs",
-    refetch: dashboardQuery.refetch,
-    events: ["INSERT", "UPDATE", "DELETE"],
-    // 시스템 로그 변경 시 대시보드 통계 갱신
-  });
-
-  useSupabaseRealtime({
-    table: "profiles",
-    refetch: dashboardQuery.refetch,
-    events: ["INSERT", "UPDATE", "DELETE"],
-    // 사용자 프로필 변경 시 대시보드 통계 갱신 (회원가입 브로드캐스트 포함)
-  });
-
   return dashboardQuery;
 }
 

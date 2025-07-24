@@ -115,9 +115,9 @@ export const MEMBER_ROLE_OPTIONS = [
 export const PLACEHOLDERS = {
   FARM_NAME: "그린팜 1농장",
   FARM_TYPE: "농장 유형을 선택하세요",
-  FARM_ADDRESS: "주소 검색 버튼을 클릭하여 주소를 입력하세요",
+  FARM_ADDRESS: "주소 검색을 통해 주소를 입력해주세요",
   FARM_DETAILED_ADDRESS: "상세 주소를 입력하세요 (예: 101동 1234호)",
-  MANAGER_NAME: "홍길동",
+  MANAGER_NAME: "이름을 입력하세요",
   MANAGER_PHONE: "숫자만 입력 가능합니다",
   DESCRIPTION: "농장에 대한 설명을 입력하세요",
   // 구성원 추가
@@ -130,7 +130,7 @@ export const PLACEHOLDERS = {
 // 에러 메시지
 export const ERROR_MESSAGES = {
   REQUIRED_FARM_NAME: "농장 이름을 입력해주세요",
-  REQUIRED_FARM_ADDRESS: "농장 주소를 입력해주세요",
+  REQUIRED_FARM_ADDRESS: "농장 주소를 검색해주세요",
   REQUIRED_FARM_TYPE: "농장 유형을 선택해주세요",
   REQUIRED_MANAGER_NAME: "관리자 이름을 입력해주세요",
   REQUIRED_MANAGER_PHONE: "관리자 연락처를 입력해주세요",

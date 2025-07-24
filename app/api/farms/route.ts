@@ -110,6 +110,8 @@ export async function POST(request: NextRequest) {
         old: null,
         table: "farms",
         schema: "public",
+        title: "농장 등록",
+        message: `${farm.farm_name}이 등록되었습니다.`,
       },
     });
 

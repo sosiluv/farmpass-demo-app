@@ -94,6 +94,8 @@ export async function PUT(
         old: null,
         table: "visitor_entries",
         schema: "public",
+        title: "방문자 정보 수정",
+        message: `${data.visitor_name}님의 정보가 수정되었습니다.`,
       },
     });
 
@@ -243,6 +245,8 @@ export async function DELETE(
         },
         table: "visitor_entries",
         schema: "public",
+        title: "방문자 삭제",
+        message: `${visitor.visitor_name}님이 삭제되었습니다.`,
       },
     });
 
