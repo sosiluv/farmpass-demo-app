@@ -4,7 +4,6 @@ import { devLog } from "@/lib/utils/logging/dev-logger";
 import { requireAuth } from "@/lib/server/auth-utils";
 import { getClientIP, getUserAgent } from "@/lib/server/ip-helpers";
 import { prisma } from "@/lib/prisma";
-import { sendSupabaseBroadcast } from "@/lib/supabase/broadcast";
 
 // GET - 농장 멤버 목록 조회
 export async function GET(
@@ -342,6 +341,7 @@ export async function POST(
           farm_id: params.farmId,
           user_id: userToAdd.id,
           role: role,
+          member_name: userToAdd.name, // 프로필 이름을 멤버명으로 저장
           is_active: true,
         },
         select: { id: true, created_at: true },
@@ -350,28 +350,6 @@ export async function POST(
       devLog.error("Error creating farm member:", insertError);
       throw insertError;
     }
-
-    // 🔥 농장 멤버 추가 실시간 브로드캐스트
-    await sendSupabaseBroadcast({
-      channel: "member_updates",
-      event: "member_created",
-      payload: {
-        eventType: "INSERT",
-        new: {
-          id: newMember.id,
-          farm_id: params.farmId,
-          user_id: userToAdd.id,
-          role: role,
-          name: userToAdd.name,
-          email: userToAdd.email,
-        },
-        old: null,
-        table: "farm_members",
-        schema: "public",
-        title: "멤버 추가",
-        message: `${userToAdd.name}님이 ${farm.farm_name}에 추가되었습니다.`,
-      },
-    });
 
     // 농장 멤버 추가 로그 기록
     await createSystemLog(
@@ -402,6 +380,7 @@ export async function POST(
       farm_id: params.farmId,
       user_id: userToAdd.id,
       role: role,
+      member_name: userToAdd.name, // 프로필 이름을 멤버명으로 저장
       position: null,
       responsibilities: null,
       is_active: true,

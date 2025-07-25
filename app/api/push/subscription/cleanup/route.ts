@@ -118,7 +118,7 @@ export async function POST(request: NextRequest) {
     // 1. fail_count 기반 정리 (먼저 처리)
     if (failCountThreshold > 0) {
       const highFailCountSubscriptions = subscriptions.filter(
-        (sub) => (sub.fail_count || 0) >= failCountThreshold
+        (sub: any) => (sub.fail_count || 0) >= failCountThreshold
       );
 
       for (const subscription of highFailCountSubscriptions) {
@@ -194,7 +194,7 @@ export async function POST(request: NextRequest) {
     // 3. 비활성 구독 정리
     if (cleanupInactive) {
       const inactiveSubscriptions = subscriptions.filter(
-        (sub) => sub.is_active === false
+        (sub: any) => sub.is_active === false
       );
 
       for (const subscription of inactiveSubscriptions) {
@@ -229,7 +229,7 @@ export async function POST(request: NextRequest) {
 
     // 3. 실시간 검사 또는 기본 검사
     const remainingSubscriptions = subscriptions.filter(
-      (sub) =>
+      (sub: any) =>
         (sub.fail_count || 0) < failCountThreshold && sub.is_active !== false
     );
 

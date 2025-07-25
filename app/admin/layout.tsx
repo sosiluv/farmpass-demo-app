@@ -14,6 +14,7 @@ import { ErrorBoundary } from "@/components/error/error-boundary";
 import { ERROR_CONFIGS } from "@/lib/constants/error";
 import { ThemeProvider } from "@/components/common/theme-provider";
 import { DialogManager } from "@/components/common/DialogManager";
+import { RealtimeNotificationBell } from "@/components/common/RealtimeNotificationBell";
 
 export default function AdminLayout({
   children,
@@ -38,6 +39,7 @@ export default function AdminLayout({
               <SidebarInset>
                 <MobileHeader />
                 <MaintenanceBanner isAdmin={true} />
+                <RealtimeNotificationBell />
                 <main className="flex-1 p-4 md:p-6">{children}</main>
               </SidebarInset>
               <MobileMenuButton />

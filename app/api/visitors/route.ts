@@ -151,7 +151,7 @@ export async function GET(request: NextRequest) {
         );
       }
 
-      const farmIds = userFarms.map((farm) => farm.id);
+      const farmIds = userFarms.map((farm: any) => farm.id);
       whereCondition.farm_id = {
         in: farmIds,
       };

@@ -139,11 +139,11 @@ export async function GET(request: NextRequest) {
       });
 
       const memberUserIds = new Set(
-        existingMembers?.map((m) => m.user_id) || []
+        existingMembers?.map((m: any) => m.user_id) || []
       );
 
       filteredUsers = filteredUsers.filter(
-        (user) => !memberUserIds.has(user.id)
+        (user: any) => !memberUserIds.has(user.id)
       );
     }
 

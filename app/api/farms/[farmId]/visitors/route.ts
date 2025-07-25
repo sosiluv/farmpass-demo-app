@@ -13,7 +13,6 @@ import {
 } from "@/lib/utils/notification/notification-template";
 import { devLog } from "@/lib/utils/logging/dev-logger";
 import { getClientIP, getUserAgent } from "@/lib/server/ip-helpers";
-import { sendSupabaseBroadcast } from "@/lib/supabase/broadcast";
 
 interface VisitorData {
   fullName: string;
@@ -284,7 +283,7 @@ export async function POST(
       );
     }
 
-    // 방문자 데이터 저장 (Prisma 사용하되 실시간 위해 BroadcastChannel 활용)
+    // 방문자 데이터 저장 (Prisma 사용하되 실시간 위해 활용)
     const visitor = await prisma.visitor_entries.create({
       data: {
         farm_id: farmId,
@@ -303,24 +302,6 @@ export async function POST(
         consent_given: visitorData.consentGiven,
         profile_photo_url: visitorData.profile_photo_url || null,
         session_token: newSessionToken,
-      },
-    });
-
-    console.log("🎉 [VISITOR-API] 방문자 등록 완료:", visitor);
-    devLog.log("🎉 [VISITOR-API] 방문자 등록 완료:", visitor);
-
-    // 🔥 실시간 업데이트를 위한 Supabase Broadcast 강제 발송
-    await sendSupabaseBroadcast({
-      channel: "visitor_updates",
-      event: "visitor_inserted",
-      payload: {
-        eventType: "INSERT",
-        new: visitor,
-        old: null,
-        table: "visitor_entries",
-        schema: "public",
-        title: "방문자 등록",
-        message: `${visitor.visitor_name}님이 방문자로 등록되었습니다.`,
       },
     });
 

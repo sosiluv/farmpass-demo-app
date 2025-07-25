@@ -4,7 +4,6 @@ import { devLog } from "@/lib/utils/logging/dev-logger";
 import { getClientIP, getUserAgent } from "@/lib/server/ip-helpers";
 import { requireAuth } from "@/lib/server/auth-utils";
 import { prisma } from "@/lib/prisma";
-import { sendSupabaseBroadcast } from "@/lib/supabase/broadcast";
 
 export async function GET(
   request: NextRequest,
@@ -137,21 +136,6 @@ export async function PUT(
     const farm = await prisma.farms.update({
       where: { id: params.farmId },
       data: farmData,
-    });
-
-    // 🔥 농장 수정 실시간 브로드캐스트
-    await sendSupabaseBroadcast({
-      channel: "farm_updates",
-      event: "farm_updated",
-      payload: {
-        eventType: "UPDATE",
-        new: farm,
-        old: null,
-        table: "farms",
-        schema: "public",
-        title: "농장 정보 수정",
-        message: `${farm.farm_name}의 정보가 수정되었습니다.`,
-      },
     });
 
     // 농장 수정 로그
@@ -310,25 +294,6 @@ export async function DELETE(
     // 농장 삭제 (CASCADE로 farm_members도 자동 삭제됨)
     await prisma.farms.delete({
       where: { id: params.farmId },
-    });
-
-    // 🔥 농장 삭제 실시간 브로드캐스트
-    await sendSupabaseBroadcast({
-      channel: "farm_updates",
-      event: "farm_deleted",
-      payload: {
-        eventType: "DELETE",
-        new: null,
-        old: {
-          id: params.farmId,
-          farm_name: farm.farm_name,
-          owner_id: farm.owner_id,
-        },
-        table: "farms",
-        schema: "public",
-        title: "농장 삭제",
-        message: `${farm.farm_name}이 삭제되었습니다.`,
-      },
     });
 
     return NextResponse.json(

@@ -1,6 +1,5 @@
 import { useEffect, useRef } from "react";
 import { supabase } from "@/lib/supabase/client";
-import { devLog } from "@/lib/utils/logging/dev-logger";
 import { useNotificationStore } from "@/store/use-notification-store";
 import { useFarmsContext } from "@/components/providers/farms-provider";
 import { useAuth } from "@/components/providers/auth-provider";
@@ -52,11 +51,15 @@ export function useSupabaseRealtime({
     profile = ctx.profile;
     accountType = profile?.account_type;
   } catch (e) {
-    // FarmsProvider 내부 등 Context가 없을 때는 undefined로 처리 (순환 참조 방지)
     farms = [];
     profile = undefined;
     accountType = undefined;
   }
+
+  // ✅ useAuth 훅은 여기서만 호출
+  const { state } = useAuth();
+  const currentUserId =
+    state.status === "authenticated" ? state.user.id : undefined;
 
   useEffect(() => {
     const id = callbackId.current;
@@ -68,7 +71,7 @@ export function useSupabaseRealtime({
 
     if (!globalSubscribed) {
       globalSubscribed = true;
-      setupGlobalSubscriptions(accountType || "", farms);
+      setupGlobalSubscriptions(accountType || "", farms, currentUserId);
     }
 
     return () => {
@@ -78,7 +81,7 @@ export function useSupabaseRealtime({
         cleanupGlobalSubscriptions();
       }
     };
-  }, [table, accountType, farms]);
+  }, [table, accountType, farms, currentUserId]);
 }
 
 // 전역 이벤트 핸들러
@@ -113,176 +116,129 @@ function showBellNotification(title: string, message: string, extra?: any) {
 
 let channels: any[] = [];
 
-function setupGlobalSubscriptions(accountType: string, farms: any[]) {
-  // 구독 해제 후 재구독 방지
+function setupGlobalSubscriptions(
+  accountType: string,
+  farms: any[],
+  currentUserId?: string
+) {
   cleanupGlobalSubscriptions();
 
-  // 내 소속 농장 id 배열 추출
   const myFarmIds = Array.isArray(farms) ? farms.map((f) => f.id) : [];
 
-  // 전체 채널만 구독 (farmId별 채널 구독 제거)
+  // farms 테이블 실시간 구독
   channels.push(
     supabase
-      .channel("farm_updates")
-      .on("broadcast", { event: "farm_created" }, (payload) => {
-        const farmId =
-          payload.payload?.new?.id ||
-          payload.payload?.new?.farm_id ||
-          payload.payload?.old?.id ||
-          payload.payload?.old?.farm_id;
-        if (myFarmIds.includes(farmId)) {
-          handleGlobalEvent(payload, "farms", "farm created");
-          if (payload.payload?.title && payload.payload?.message) {
+      .channel("public:farms")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "farms" },
+        (payload) => {
+          const farmId =
+            (payload.new && "id" in payload.new ? payload.new.id : undefined) ||
+            (payload.old && "id" in payload.old ? payload.old.id : undefined);
+          if (farmId && myFarmIds.includes(farmId)) {
+            handleGlobalEvent(
+              payload,
+              "farms",
+              payload.eventType?.toLowerCase?.() || ""
+            );
+            let action = "";
+            if (payload.eventType === "INSERT") action = "등록";
+            else if (payload.eventType === "UPDATE") action = "수정";
+            else if (payload.eventType === "DELETE") action = "삭제";
+
+            const farmName =
+              (payload.new as any)?.farm_name ||
+              (payload.old as any)?.farm_name ||
+              "알 수 없음";
             showBellNotification(
-              payload.payload.title,
-              payload.payload.message
+              `농장 정보 ${action}`,
+              `${farmName}의 정보가 ${action}되었습니다.`
             );
           }
         }
-      })
-      .on("broadcast", { event: "farm_updated" }, (payload) => {
-        const farmId =
-          payload.payload?.new?.id ||
-          payload.payload?.new?.farm_id ||
-          payload.payload?.old?.id ||
-          payload.payload?.old?.farm_id;
-        if (myFarmIds.includes(farmId)) {
-          handleGlobalEvent(payload, "farms", "farm updated");
-          if (payload.payload?.title && payload.payload?.message) {
-            showBellNotification(
-              payload.payload.title,
-              payload.payload.message
-            );
-          }
-        }
-      })
-      .on("broadcast", { event: "farm_deleted" }, (payload) => {
-        const farmId =
-          payload.payload?.old?.id || payload.payload?.old?.farm_id;
-        if (myFarmIds.includes(farmId)) {
-          handleGlobalEvent(payload, "farms", "farm deleted");
-          if (payload.payload?.title && payload.payload?.message) {
-            showBellNotification(
-              payload.payload.title,
-              payload.payload.message
-            );
-          }
-        }
-      })
-      .subscribe(),
-    supabase
-      .channel("visitor_updates")
-      .on("broadcast", { event: "visitor_created" }, (payload) => {
-        const farmId =
-          payload.payload?.new?.farm_id || payload.payload?.old?.farm_id;
-        if (myFarmIds.includes(farmId)) {
-          handleGlobalEvent(payload, "visitor_entries", "visitor created");
-          if (payload.payload?.title && payload.payload?.message) {
-            showBellNotification(
-              payload.payload.title,
-              payload.payload.message
-            );
-          }
-        }
-      })
-      .on("broadcast", { event: "visitor_updated" }, (payload) => {
-        const farmId =
-          payload.payload?.new?.farm_id || payload.payload?.old?.farm_id;
-        if (myFarmIds.includes(farmId)) {
-          handleGlobalEvent(payload, "visitor_entries", "visitor updated");
-          if (payload.payload?.title && payload.payload?.message) {
-            showBellNotification(
-              payload.payload.title,
-              payload.payload.message
-            );
-          }
-        }
-      })
-      .on("broadcast", { event: "visitor_deleted" }, (payload) => {
-        const farmId = payload.payload?.old?.farm_id;
-        if (myFarmIds.includes(farmId)) {
-          handleGlobalEvent(payload, "visitor_entries", "visitor deleted");
-          if (payload.payload?.title && payload.payload?.message) {
-            showBellNotification(
-              payload.payload.title,
-              payload.payload.message
-            );
-          }
-        }
-      })
-      .subscribe(),
-    supabase
-      .channel("member_updates")
-      .on("broadcast", { event: "member_created" }, (payload) => {
-        const farmId =
-          payload.payload?.new?.farm_id || payload.payload?.old?.farm_id;
-        if (myFarmIds.includes(farmId)) {
-          handleGlobalEvent(payload, "farm_members", "member created");
-          if (payload.payload?.title && payload.payload?.message) {
-            showBellNotification(
-              payload.payload.title,
-              payload.payload.message
-            );
-          }
-        }
-      })
-      .on("broadcast", { event: "member_updated" }, (payload) => {
-        const farmId =
-          payload.payload?.new?.farm_id || payload.payload?.old?.farm_id;
-        if (myFarmIds.includes(farmId)) {
-          handleGlobalEvent(payload, "farm_members", "member updated");
-          if (payload.payload?.title && payload.payload?.message) {
-            showBellNotification(
-              payload.payload.title,
-              payload.payload.message
-            );
-          }
-        }
-      })
-      .on("broadcast", { event: "member_deleted" }, (payload) => {
-        const farmId = payload.payload?.old?.farm_id;
-        if (myFarmIds.includes(farmId)) {
-          handleGlobalEvent(payload, "farm_members", "member deleted");
-          if (payload.payload?.title && payload.payload?.message) {
-            showBellNotification(
-              payload.payload.title,
-              payload.payload.message
-            );
-          }
-        }
-      })
+      )
       .subscribe()
   );
 
-  // 프로필, 시스템로그는 Postgres changes만 구독 (알림/토스트 없음)
+  // visitor_entries 테이블 실시간 구독
   channels.push(
     supabase
-      .channel("public:profiles")
+      .channel("public:visitor_entries")
       .on(
         "postgres_changes",
-        { event: "*", schema: "public", table: "profiles" },
+        { event: "*", schema: "public", table: "visitor_entries" },
         (payload) => {
-          devLog.log("[postgres_changes:profiles]", payload);
-          handleGlobalEvent(
-            payload,
-            "profiles",
-            payload.eventType?.toLowerCase?.() || ""
-          );
+          const farmId =
+            (payload.new && "farm_id" in payload.new
+              ? payload.new.farm_id
+              : undefined) ||
+            (payload.old && "farm_id" in payload.old
+              ? payload.old.farm_id
+              : undefined);
+          if (farmId && myFarmIds.includes(farmId)) {
+            handleGlobalEvent(
+              payload,
+              "visitor_entries",
+              payload.eventType?.toLowerCase?.() || ""
+            );
+            let action = "";
+            if (payload.eventType === "INSERT") action = "등록";
+            else if (payload.eventType === "UPDATE") action = "수정";
+            else if (payload.eventType === "DELETE") action = "삭제";
+
+            const visitorName =
+              (payload.new as any)?.visitor_name ||
+              (payload.old as any)?.visitor_name ||
+              "알 수 없음";
+            showBellNotification(
+              `방문자 정보 ${action}`,
+              `${visitorName}님의 정보가 ${action}되었습니다.`
+            );
+          }
         }
       )
-      .subscribe(),
+      .subscribe()
+  );
+
+  // farm_members 테이블 실시간 구독
+  channels.push(
     supabase
-      .channel("public:system_logs")
+      .channel("public:farm_members")
       .on(
         "postgres_changes",
-        { event: "*", schema: "public", table: "system_logs" },
+        { event: "*", schema: "public", table: "farm_members" },
         (payload) => {
-          devLog.log("[postgres_changes:system_logs]", payload);
-          handleGlobalEvent(
-            payload,
-            "system_logs",
-            payload.eventType?.toLowerCase?.() || ""
-          );
+          const farmId =
+            (payload.new && "farm_id" in payload.new
+              ? payload.new.farm_id
+              : undefined) ||
+            (payload.old && "farm_id" in payload.old
+              ? payload.old.farm_id
+              : undefined);
+          if (farmId && myFarmIds.includes(farmId)) {
+            handleGlobalEvent(
+              payload,
+              "farm_members",
+              payload.eventType?.toLowerCase?.() || ""
+            );
+            let action = "";
+            if (payload.eventType === "INSERT") action = "등록";
+            else if (payload.eventType === "UPDATE") action = "수정";
+            else if (payload.eventType === "DELETE") action = "삭제";
+
+            const memberName =
+              (payload.new as any)?.member_name ||
+              (payload.old as any)?.member_name ||
+              "알 수 없음";
+            const oldRole = (payload.old as any)?.role || "알 수 없음";
+            const newRole = (payload.new as any)?.role || "알 수 없음";
+            let memberMessage = `${memberName}님의 정보가 ${action}되었습니다.`;
+            if (payload.eventType === "UPDATE" && oldRole !== newRole) {
+              memberMessage = `${memberName}님의 역할이 ${oldRole}에서 ${newRole}로 변경되었습니다.`;
+            }
+            showBellNotification(`농장 멤버 ${action}`, memberMessage);
+          }
         }
       )
       .subscribe()

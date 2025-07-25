@@ -12,6 +12,7 @@ export type { Farm, FarmMember } from "./common";
 // ===========================================
 
 export interface MemberWithProfile extends FarmMember {
+  member_name: string; // 농장 내 별칭(멤버명)
   representative_name: string; // 실제 사용되는 필드명
   email: string;
   profile_image_url: string | null;

@@ -8,7 +8,6 @@ import {
 import { getClientIP, getUserAgent } from "@/lib/server/ip-helpers";
 import { requireAuth } from "@/lib/server/auth-utils";
 import { prisma } from "@/lib/prisma";
-import { sendSupabaseBroadcast } from "@/lib/supabase/broadcast";
 
 export async function POST(request: NextRequest) {
   // 성능 모니터링 시작
@@ -58,98 +57,69 @@ export async function POST(request: NextRequest) {
     let farm;
 
     try {
-      farm = await prisma.farms.create({
-        data: {
+      farm = await prisma.$transaction(async (tx: typeof prisma) => {
+        const createdFarm = await tx.farms.create({
+          data: {
+            farm_name,
+            farm_address,
+            farm_detailed_address,
+            farm_type,
+            description,
+            manager_name,
+            manager_phone,
+            owner_id: user.id,
+          },
+        });
+        await tx.farm_members.create({
+          data: {
+            farm_id: createdFarm.id,
+            user_id: user.id,
+            role: "owner",
+            member_name: user.name,
+          },
+        });
+        return createdFarm;
+      });
+
+      // 농장 생성 로그
+      await createSystemLog(
+        "FARM_CREATE",
+        `농장 생성: ${farm_name} (${farm.id})`,
+        "info",
+        user.id,
+        "farm",
+        farm.id,
+        {
+          farm_id: farm.id,
           farm_name,
-          farm_address,
-          farm_detailed_address,
           farm_type,
-          description,
+          farm_address,
           manager_name,
           manager_phone,
-          owner_id: user.id,
+          action_type: "farm_management",
         },
-      });
+        user.email,
+        clientIP,
+        userAgent
+      );
 
-      devLog.log("✅ Farm created successfully:", farm.id);
+      // 새로운 권한 시스템에서는 profiles.account_type은 시스템 레벨 권한만 관리
+      // 농장 소유자 권한은 farms 테이블의 owner_id로 관리됨
+      // 따라서 profiles.role 업데이트는 더 이상 필요하지 않음
 
-      // 농장주를 farm_members 테이블에 추가
-      devLog.log("🔄 Adding farm owner to farm_members...");
-      await prisma.farm_members.create({
-        data: {
-          farm_id: farm.id,
-          user_id: user.id,
-          role: "owner",
+      statusCode = 201;
+      return NextResponse.json(
+        {
+          farm,
+          success: true,
+          message: `${farm_name}이 등록되었습니다.`,
         },
-      });
+        { status: 201, headers: { "Cache-Control": "no-store" } }
+      );
     } catch (error) {
-      // 트랜잭션 실패 시 farm이 생성되었다면 삭제
-      if (farm?.id) {
-        try {
-          await prisma.farms.delete({
-            where: { id: farm.id },
-          });
-        } catch (deleteError) {
-          devLog.error(
-            "Failed to delete farm after member creation error:",
-            deleteError
-          );
-        }
-      }
       statusCode = 500;
       throw error;
     }
-
-    // 🔥 농장 등록 실시간 브로드캐스트
-    await sendSupabaseBroadcast({
-      channel: "farm_updates",
-      event: "farm_created",
-      payload: {
-        eventType: "INSERT",
-        new: farm,
-        old: null,
-        table: "farms",
-        schema: "public",
-        title: "농장 등록",
-        message: `${farm.farm_name}이 등록되었습니다.`,
-      },
-    });
-
-    // 농장 생성 로그
-    await createSystemLog(
-      "FARM_CREATE",
-      `농장 생성: ${farm_name} (${farm.id})`,
-      "info",
-      user.id,
-      "farm",
-      farm.id,
-      {
-        farm_id: farm.id,
-        farm_name,
-        farm_type,
-        farm_address,
-        manager_name,
-        manager_phone,
-        action_type: "farm_management",
-      },
-      user.email,
-      clientIP,
-      userAgent
-    );
-
-    // 새로운 권한 시스템에서는 profiles.account_type은 시스템 레벨 권한만 관리
-    // 농장 소유자 권한은 farms 테이블의 owner_id로 관리됨
-    // 따라서 profiles.role 업데이트는 더 이상 필요하지 않음
-
-    statusCode = 201;
-    return NextResponse.json(
-      {
-        farm,
-        success: true,
-        message: `${farm_name}이 등록되었습니다.`,
-      },
-      { status: 201, headers: { "Cache-Control": "no-store" } }
-    );
   } catch (error) {
     statusCode = 500;
 

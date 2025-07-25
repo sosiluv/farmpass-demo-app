@@ -8,7 +8,7 @@ datasource db {
   directUrl = env("DIRECT_URL")
 }
 
-model SystemSettings {
+model system_settings {
   id                             String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid    // 설정 고유 ID
   siteName                       String    @default("농장 출입 관리 시스템(FarmPass)")                   // 사이트명
   siteDescription                String    @default("방역은 출입자 관리부터 시작됩니다. QR기록으로 축산 질병 예방의 첫걸음을 함께하세요.") // 사이트 설명
@@ -53,7 +53,6 @@ model SystemSettings {
   created_at                     DateTime  @default(now()) @db.Timestamptz(6)                        // 생성 시간
   updated_at                     DateTime  @default(now()) @db.Timestamptz(6)                        // 수정 시간
 
-  @@map("system_settings")
 }
 
 model farm_members {
@@ -61,6 +60,7 @@ model farm_members {
   farm_id          String    @db.Uuid                                                           // 농장 ID (farms 테이블 참조)
   user_id          String    @db.Uuid                                                           // 사용자 ID (profiles 테이블 참조)
   role             String    @default("viewer")                                                 // 농장 내 역할: owner(소유자), manager(관리자), viewer(조회자)
+  member_name      String                                                                       // 농장 내 별칭(멤버명)
   position         String?                                                                      // 농장 내 직책
   responsibilities String?                                                                      // 담당 업무 설명
   is_active        Boolean   @default(true)                                                     // 구성원 활성화 상태
@@ -128,7 +128,7 @@ model profiles {
   farms               farms[]
   visitor_entries     visitor_entries[]
   push_subscriptions  push_subscriptions[]
-  user_notification_settings UserNotificationSettings[]
+  user_notification_settings user_notification_settings[]
 
   @@index([account_type], map: "idx_profiles_account_type")
   @@index([created_at], map: "idx_profiles_created_at")
@@ -204,7 +204,7 @@ model push_subscriptions {
   @@index([user_id], map: "idx_push_subscriptions_user_id")
 }
 
-model UserNotificationSettings {
+model user_notification_settings {
   id                  String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid            // 알림 설정 고유 ID
   user_id             String    @unique @db.Uuid                                                   // 사용자 ID (auth.users 테이블 참조)
   notification_method String    @db.VarChar(20)                                                    // 알림 방법: push, kakao

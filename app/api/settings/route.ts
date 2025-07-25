@@ -16,11 +16,11 @@ export async function GET(request: NextRequest) {
   const userAgent = getUserAgent(request);
 
   try {
-    const settings = await prisma.systemSettings.findFirst();
+    const settings = await prisma.system_settings.findFirst();
 
     if (!settings) {
       // 설정이 없으면 기본값으로 생성
-      const newSettings = await prisma.systemSettings.create({
+      const newSettings = await prisma.system_settings.create({
         data: {
           ...DEFAULT_SYSTEM_SETTINGS,
           id: crypto.randomUUID(),
@@ -106,7 +106,7 @@ export async function PATCH(request: NextRequest) {
     const user = authResult.user;
 
     const data = await request.json();
-    const settings = await prisma.systemSettings.findFirst();
+    const settings = await prisma.system_settings.findFirst();
 
     if (!settings) {
       // 설정 PATCH 에러 (설정 없음) 로그

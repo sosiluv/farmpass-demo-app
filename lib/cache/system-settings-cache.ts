@@ -45,7 +45,7 @@ export class SystemSettingsCache {
       // 서버 사이드에서는 직접 데이터베이스 조회
       if (typeof window === "undefined") {
         const { prisma } = await import("@/lib/prisma");
-        const settings = await prisma.systemSettings.findFirst();
+        const settings = await prisma.system_settings.findFirst();
 
         if (settings) {
           if (process.env.NODE_ENV === "development") {
@@ -60,7 +60,7 @@ export class SystemSettingsCache {
           } as SystemSettings;
         } else {
           // 설정이 없으면 기본값으로 생성
-          const newSettings = await prisma.systemSettings.create({
+          const newSettings = await prisma.system_settings.create({
             data: {
               ...DEFAULT_SYSTEM_SETTINGS,
               id: crypto.randomUUID(),

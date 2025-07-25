@@ -294,6 +294,7 @@ COMMENT ON TABLE public.farm_members IS '농장별 구성원 및 권한 정보�
 COMMENT ON COLUMN public.farm_members.id IS '구성원 관계 고유 ID';
 COMMENT ON COLUMN public.farm_members.farm_id IS '농장 ID (farms 테이블 참조)';
 COMMENT ON COLUMN public.farm_members.user_id IS '사용자 ID (profiles 테이블 참조)';
+COMMENT ON COLUMN public.farm_members.member_name IS '농장 구성원 이름';
 COMMENT ON COLUMN public.farm_members.role IS '농장 내 역할: owner(소유자), manager(관리자), viewer(조회자)';
 COMMENT ON COLUMN public.farm_members.position IS '농장 내 직책';
 COMMENT ON COLUMN public.farm_members.responsibilities IS '담당 업무 설명';
@@ -404,3 +405,18 @@ COMMENT ON COLUMN public.user_notification_settings.kakao_user_id IS '카카오�
 COMMENT ON COLUMN public.user_notification_settings.is_active IS '알림 설정 활성화 상태';
 COMMENT ON COLUMN public.user_notification_settings.created_at IS '생성 시간';
 COMMENT ON COLUMN public.user_notification_settings.updated_at IS '수정 시간';
+
+
+model realtime_notification_events {
+  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid // 알림 고유 ID
+  user_id    String   @db.Uuid                                               // 알림 대상 사용자 ID (profiles 테이블 참조)
+  title      String                                                          // 알림 제목
+  message    String                                                          // 알림 본문
+  created_at DateTime @default(now()) @db.Timestamptz(6)                     // 생성 시각
+  read       Boolean  @default(false)                                        // 읽음 여부
+
+  profiles   profiles @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([user_id], map: "idx_realtime_notification_events_user_id")
+  @@index([created_at], map: "idx_realtime_notification_events_created_at")
+}

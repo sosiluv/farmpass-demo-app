@@ -4,7 +4,6 @@ import { createSystemLog } from "@/lib/utils/logging/system-log";
 import { devLog } from "@/lib/utils/logging/dev-logger";
 import { getClientIP, getUserAgent } from "@/lib/server/ip-helpers";
 import { requireAuth } from "@/lib/server/auth-utils";
-import { sendSupabaseBroadcast } from "@/lib/supabase/broadcast";
 
 export async function PUT(
   request: NextRequest,
@@ -83,21 +82,6 @@ export async function PUT(
     });
 
     devLog.log("방문자 정보 업데이트 성공:", data);
-
-    // 🔥 방문자 수정 실시간 브로드캐스트
-    await sendSupabaseBroadcast({
-      channel: "visitor_updates",
-      event: "visitor_updated",
-      payload: {
-        eventType: "UPDATE",
-        new: data,
-        old: null,
-        table: "visitor_entries",
-        schema: "public",
-        title: "방문자 정보 수정",
-        message: `${data.visitor_name}님의 정보가 수정되었습니다.`,
-      },
-    });
 
     // 성공 로그 기록
     await createSystemLog(
@@ -228,25 +212,6 @@ export async function DELETE(
       where: {
         id: visitorId,
         farm_id: farmId,
-      },
-    });
-
-    // 🔥 방문자 삭제 실시간 브로드캐스트
-    await sendSupabaseBroadcast({
-      channel: "visitor_updates",
-      event: "visitor_deleted",
-      payload: {
-        eventType: "DELETE",
-        new: null,
-        old: {
-          id: visitorId,
-          farm_id: farmId,
-          visitor_name: visitor.visitor_name,
-        },
-        table: "visitor_entries",
-        schema: "public",
-        title: "방문자 삭제",
-        message: `${visitor.visitor_name}님이 삭제되었습니다.`,
       },
     });
 

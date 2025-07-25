@@ -131,14 +131,13 @@ export async function POST(request: NextRequest) {
 
     // 알림 설정 업데이트 (options.updateSettings가 true인 경우에만)
     if (options?.updateSettings !== false) {
-      const existingSettings = await prisma.userNotificationSettings.findUnique(
-        {
+      const existingSettings =
+        await prisma.user_notification_settings.findUnique({
           where: { user_id: user.id },
-        }
-      );
+        });
       if (!existingSettings) {
         try {
-          await prisma.userNotificationSettings.create({
+          await prisma.user_notification_settings.create({
             data: {
               user_id: user.id,
               notification_method: "push",
@@ -172,7 +171,7 @@ export async function POST(request: NextRequest) {
         }
       } else if (options?.isResubscribe) {
         try {
-          await prisma.userNotificationSettings.update({
+          await prisma.user_notification_settings.update({
             where: { user_id: user.id },
             data: { is_active: true, updated_at: new Date() },
           });
@@ -266,7 +265,7 @@ export async function GET(request: NextRequest) {
       let publicKey: string | undefined = envPublicKey;
       let privateKey: string | undefined = envPrivateKey;
       if (!publicKey || !privateKey) {
-        const settings = await prisma.systemSettings.findFirst({
+        const settings = await prisma.system_settings.findFirst({
           select: {
             vapidPublicKey: true,
             vapidPrivateKey: true,
@@ -503,7 +502,7 @@ export async function DELETE(request: NextRequest) {
     if (options?.updateSettings !== false) {
       try {
         // 구독 해제 시 알림 설정 비활성화
-        await prisma.userNotificationSettings.update({
+        await prisma.user_notification_settings.update({
           where: { user_id: user.id },
           data: {
             is_active: false,
@@ -546,7 +545,7 @@ export async function DELETE(request: NextRequest) {
         endpoint,
         deletedCount: updateResult.count,
         deviceIds: existingSubscriptions
-          .map((sub) => sub.device_id)
+          .map((sub: any) => sub.device_id)
           .filter(Boolean),
         userAgent,
         updateSettings: options?.updateSettings !== false,

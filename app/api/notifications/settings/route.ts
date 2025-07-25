@@ -27,7 +27,7 @@ export async function GET(request: NextRequest) {
 
     devLog.log("사용자 ID:", user.id);
 
-    const settings = await prisma.userNotificationSettings.findUnique({
+    const settings = await prisma.user_notification_settings.findUnique({
       where: {
         user_id: user.id,
       },
@@ -124,14 +124,16 @@ export async function PUT(request: NextRequest) {
     const user = authResult.user;
 
     const body = await request.json();
-    const existingSettings = await prisma.userNotificationSettings.findUnique({
-      where: {
-        user_id: user.id,
-      },
-      select: {
-        id: true,
-      },
-    });
+    const existingSettings = await prisma.user_notification_settings.findUnique(
+      {
+        where: {
+          user_id: user.id,
+        },
+        select: {
+          id: true,
+        },
+      }
+    );
 
     let result;
     if (existingSettings) {
@@ -140,7 +142,7 @@ export async function PUT(request: NextRequest) {
       const now = new Date();
 
       try {
-        result = await prisma.userNotificationSettings.update({
+        result = await prisma.user_notification_settings.update({
           where: {
             user_id: user.id,
           },
@@ -201,7 +203,7 @@ export async function PUT(request: NextRequest) {
       const now = new Date();
 
       try {
-        result = await prisma.userNotificationSettings.create({
+        result = await prisma.user_notification_settings.create({
           data: {
             ...insertData,
             user_id: user.id,

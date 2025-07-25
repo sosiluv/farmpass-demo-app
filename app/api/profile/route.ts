@@ -22,7 +22,7 @@ export async function PATCH(request: NextRequest) {
   try {
     const data = await request.json();
 
-    const updatedProfile = await prisma.profiles.update({
+    await prisma.profiles.update({
       where: {
         id: user.id,
       },

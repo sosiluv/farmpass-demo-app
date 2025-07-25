@@ -4,7 +4,6 @@ import { devLog } from "@/lib/utils/logging/dev-logger";
 import { getClientIP, getUserAgent } from "@/lib/server/ip-helpers";
 import { requireAuth } from "@/lib/server/auth-utils";
 import { prisma } from "@/lib/prisma";
-import { sendSupabaseBroadcast } from "@/lib/supabase/broadcast";
 
 // PUT - 농장 멤버 역할 변경
 export async function PUT(
@@ -154,38 +153,6 @@ export async function PUT(
       devLog.error("Error updating member role:", updateError);
       throw updateError;
     }
-
-    // 🔥 농장 멤버 수정 실시간 브로드캐스트
-    await sendSupabaseBroadcast({
-      channel: "member_updates",
-      event: "member_updated",
-      payload: {
-        eventType: "UPDATE",
-        new: {
-          id: params.memberId,
-          farm_id: params.farmId,
-          user_id: memberToUpdate.user_id,
-          role: role,
-          old_role: oldRole,
-          name: (memberToUpdate.profiles as any)?.name,
-          email: (memberToUpdate.profiles as any)?.email,
-        },
-        old: {
-          id: params.memberId,
-          farm_id: params.farmId,
-          user_id: memberToUpdate.user_id,
-          role: oldRole,
-          name: (memberToUpdate.profiles as any)?.name,
-          email: (memberToUpdate.profiles as any)?.email,
-        },
-        table: "farm_members",
-        schema: "public",
-        title: "멤버 역할 변경",
-        message: `${
-          (memberToUpdate.profiles as any)?.name
-        }님의 역할이 ${oldRole}에서 ${role}로 변경되었습니다.`,
-      },
-    });
 
     // 농장 멤버 역할 변경 로그 기록
     await createSystemLog(
@@ -411,30 +378,6 @@ export async function DELETE(
       devLog.error("Error deleting member:", deleteError);
       throw deleteError;
     }
-
-    // 🔥 농장 멤버 삭제 실시간 브로드캐스트
-    await sendSupabaseBroadcast({
-      channel: "member_updates",
-      event: "member_deleted",
-      payload: {
-        eventType: "DELETE",
-        new: null,
-        old: {
-          id: params.memberId,
-          farm_id: params.farmId,
-          user_id: memberToRemove.user_id,
-          role: memberToRemove.role,
-          name: (memberToRemove.profiles as any)?.name,
-          email: (memberToRemove.profiles as any)?.email,
-        },
-        table: "farm_members",
-        schema: "public",
-        title: "멤버 삭제",
-        message: `${(memberToRemove.profiles as any)?.name}님이 ${
-          farm.farm_name
-        }에서 삭제되었습니다.`,
-      },
-    });
 
     // 농장 멤버 제거 로그 기록
     await createSystemLog(

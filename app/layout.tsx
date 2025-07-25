@@ -20,7 +20,6 @@ import { PWAProvider } from "@/components/providers/pwa-provider";
 import { SystemSettingsProvider } from "@/components/providers/system-settings-provider";
 import { Logo } from "@/components/common";
 import { Badge } from "@/components/ui/badge";
-import { RealtimeNotificationBell } from "@/components/common/RealtimeNotificationBell";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -197,7 +196,6 @@ export default function RootLayout({
                   <PWAProvider>
                     <ToastPositionProvider>
                       {/* === 상단 실시간 알림 Bell === */}
-                      <RealtimeNotificationBell />
                       {children}
                       <Footer />
                       {/* === 공통 푸터 끝 === */}

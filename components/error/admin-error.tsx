@@ -39,7 +39,7 @@ export function AdminError({
 
   return (
     <div className="flex items-center justify-center min-h-[500px] p-6">
-      <div className="text-center max-w-lg mx-auto">
+      <div className="text-center max-w-md w-full mx-auto">
         <div className="relative mb-8">
           <div className="w-24 h-24 bg-gradient-to-br from-amber-100 to-orange-100 rounded-2xl flex items-center justify-center mx-auto shadow-lg">
             <AlertCircle className="w-12 h-12 text-amber-600" />
@@ -49,23 +49,23 @@ export function AdminError({
           </div>
         </div>
 
-        <h2 className="text-2xl font-bold text-slate-800 mb-3 tracking-tight">
+        <h2 className="text-2xl sm:text-3xl font-bold text-slate-800 mb-4 tracking-tight">
           {title}
         </h2>
 
-        <p className="text-lg text-slate-500 mb-8 leading-relaxed">
+        <p className="text-base sm:text-lg text-slate-500 mb-10 leading-relaxed">
           {description}
         </p>
 
         <Button
           onClick={handleRetry}
-          className="px-8 py-3 bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-700 hover:to-orange-700 text-white font-medium rounded-lg transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
+          className="px-8 py-3 bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-700 hover:to-orange-700 text-white font-medium rounded-lg transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 w-full sm:w-auto"
         >
           <RefreshCw className="w-4 h-4 mr-2" />
           {ERROR_LABELS.GLOBAL_ERROR_RETRY}
         </Button>
 
-        <div className="mt-12 flex justify-center space-x-1">
+        <div className="mt-16 flex justify-center space-x-2">
           <div className="w-2 h-2 bg-amber-400 rounded-full animate-pulse"></div>
           <div className="w-2 h-2 bg-orange-400 rounded-full animate-pulse delay-75"></div>
           <div className="w-2 h-2 bg-amber-400 rounded-full animate-pulse delay-150"></div>
