@@ -145,7 +145,7 @@ export async function PUT(
 
     // 멤버 역할 업데이트 + 알림 트랜잭션 처리
     try {
-      await prisma.$transaction(async (tx: typeof prisma) => {
+      await prisma.$transaction(async (tx: any) => {
         await tx.farm_members.update({
           where: { id: params.memberId },
           data: { role },
@@ -395,7 +395,7 @@ export async function DELETE(
 
     // 멤버 삭제 + 알림 트랜잭션 처리
     try {
-      await prisma.$transaction(async (tx: typeof prisma) => {
+      await prisma.$transaction(async (tx: any) => {
         await tx.farm_members.delete({
           where: { id: params.memberId },
         });

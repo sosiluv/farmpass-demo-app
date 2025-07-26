@@ -303,7 +303,7 @@ export async function POST(
       session_token: newSessionToken,
     };
 
-    const visitor = await prisma.$transaction(async (tx: typeof prisma) => {
+    const visitor = await prisma.$transaction(async (tx: any) => {
       const createdVisitor = await tx.visitor_entries.create({
         data: visitorCreateData,
       });

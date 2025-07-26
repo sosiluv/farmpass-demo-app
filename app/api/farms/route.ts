@@ -65,7 +65,7 @@ export async function POST(request: NextRequest) {
     };
 
     try {
-      farm = await prisma.$transaction(async (tx: typeof prisma) => {
+      farm = await prisma.$transaction(async (tx: any) => {
         const createdFarm = await tx.farms.create({
           data: farmCreateData,
         });

@@ -137,7 +137,7 @@ export async function PUT(
     };
 
     // 트랜잭션으로 묶어서 처리
-    const farm = await prisma.$transaction(async (tx: typeof prisma) => {
+    const farm = await prisma.$transaction(async (tx: any) => {
       const updatedFarm = await tx.farms.update({
         where: { id: params.farmId },
         data: farmUpdateData,
@@ -297,7 +297,7 @@ export async function DELETE(
     }
 
     // 트랜잭션으로 묶어서 처리
-    await prisma.$transaction(async (tx: typeof prisma) => {
+    await prisma.$transaction(async (tx: any) => {
       // 농장 삭제 (CASCADE로 farm_members도 자동 삭제됨)
       await tx.farms.delete({
         where: { id: params.farmId },

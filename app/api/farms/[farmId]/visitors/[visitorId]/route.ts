@@ -54,7 +54,7 @@ export async function PUT(
     };
 
     // 방문자 정보 업데이트 + 알림 트랜잭션 처리
-    const data = await prisma.$transaction(async (tx: typeof prisma) => {
+    const data = await prisma.$transaction(async (tx: any) => {
       const updatedVisitor = await tx.visitor_entries.update({
         where: {
           id: visitorId,
@@ -214,7 +214,7 @@ export async function DELETE(
     }
 
     // 방문자 삭제 + 알림 트랜잭션 처리
-    await prisma.$transaction(async (tx: typeof prisma) => {
+    await prisma.$transaction(async (tx: any) => {
       await tx.visitor_entries.delete({
         where: {
           id: visitorId,

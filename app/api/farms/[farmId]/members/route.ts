@@ -335,7 +335,7 @@ export async function POST(
     // 새 멤버 추가 + 알림 insert 트랜잭션 처리
     let newMember;
     try {
-      newMember = await prisma.$transaction(async (tx: typeof prisma) => {
+      newMember = await prisma.$transaction(async (tx: any) => {
         const createdMember = await tx.farm_members.create({
           data: {
             farm_id: params.farmId,
