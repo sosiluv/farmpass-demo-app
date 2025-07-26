@@ -46,9 +46,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 2. 연관 데이터도 삭제 (예: profiles)
-    await serviceRoleSupabase.from("profiles").delete().eq("id", user.id);
-
     // 시스템 로그 기록
     await createSystemLog(
       "WITHDRAW_SUCCESS",

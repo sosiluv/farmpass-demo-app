@@ -60,6 +60,11 @@ export type SystemLog = Tables["system_logs"]["Row"];
  */
 export type SystemSetting = Tables["system_settings"]["Row"];
 
+/**
+ * 알림 타입
+ */
+export type Notification = Tables["notifications"]["Row"];
+
 // ===========================================
 // 공통 열거형 타입
 // ===========================================

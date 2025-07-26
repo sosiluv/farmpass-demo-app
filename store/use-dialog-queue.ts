@@ -6,7 +6,8 @@ export type SystemDialogType =
   | "notification" // 알림 권한
   | "pwa-install" // PWA 설치
   | "maintenance" // 유지보수
-  | "update"; // 업데이트
+  | "update" // 업데이트
+  | "phone-input"; // 전화번호 입력
 
 // 사용자 다이얼로그 (사용자가 직접 열는 것들)
 export type UserDialogType =
@@ -26,6 +27,7 @@ const isSystemDialog = (type: DialogType): boolean => {
     "pwa-install",
     "maintenance",
     "update",
+    "phone-input",
   ];
   return systemTypes.includes(type as SystemDialogType);
 };

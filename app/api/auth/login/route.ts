@@ -18,7 +18,6 @@ import {
   getUserAgent,
   getLocationFromIP,
 } from "@/lib/server/ip-helpers";
-import { sendSupabaseBroadcast } from "@/lib/supabase/broadcast";
 
 // 동적 렌더링 강제
 export const dynamic = "force-dynamic";
@@ -37,6 +36,7 @@ interface LoginAttempts {
   timeLeft: number;
   maxAttempts: number;
   lockoutDurationMs: number;
+  profileId?: string; // 프로필이 있으면 id, 없으면 undefined
 }
 
 /**
@@ -62,6 +62,7 @@ async function checkLoginAttempts(email: string): Promise<LoginAttempts> {
       timeLeft: 0,
       maxAttempts,
       lockoutDurationMs,
+      profileId: undefined,
     };
   }
 
@@ -86,9 +87,10 @@ async function checkLoginAttempts(email: string): Promise<LoginAttempts> {
           previous_attempts: user.login_attempts,
           max_attempts: maxAttempts,
           locked_duration_minutes: settings.accountLockoutDurationMinutes,
-          action_type: "security_event",
           unlocked_at: new Date().toISOString(),
           unlock_type: "automatic_timeout",
+          location: location,
+          action_type: "security_event",
         },
         email,
         "system-auto", // 자동 해제이므로 system-auto로 표시
@@ -113,6 +115,7 @@ async function checkLoginAttempts(email: string): Promise<LoginAttempts> {
       timeLeft: 0,
       maxAttempts,
       lockoutDurationMs,
+      profileId: user.id,
     };
   }
 
@@ -133,6 +136,7 @@ async function checkLoginAttempts(email: string): Promise<LoginAttempts> {
       timeLeft,
       maxAttempts,
       lockoutDurationMs,
+      profileId: user.id,
     };
   }
 
@@ -142,18 +146,22 @@ async function checkLoginAttempts(email: string): Promise<LoginAttempts> {
     timeLeft: 0,
     maxAttempts,
     lockoutDurationMs,
+    profileId: user.id,
   };
 }
 
 /**
  * 로그인 실패 시 시도 횟수 증가
+ * profileId가 없으면 아무 작업도 하지 않음
  */
 async function incrementLoginAttempts(
   email: string,
   clientIP: string,
   userAgent: string,
-  location: any // 타입은 getLocationFromIP 반환값에 맞게 지정
+  location: any, // 타입은 getLocationFromIP 반환값에 맞게 지정
+  profileId?: string
 ): Promise<void> {
+  if (!profileId) return; // 존재하지 않는 계정이면 아무 작업도 하지 않음
   const settings = await getSystemSettings();
   const suspiciousThreshold = Math.floor(settings.maxLoginAttempts / 2);
 
@@ -178,10 +186,9 @@ async function incrementLoginAttempts(
     undefined,
     {
       attempts: profile.login_attempts || 0,
-      ip: clientIP,
-      user_agent: userAgent,
       location: location,
       timestamp: new Date().toISOString(),
+      action_type: "security_event",
     },
     email,
     clientIP,
@@ -213,8 +220,9 @@ async function incrementLoginAttempts(
         max_attempts: settings.maxLoginAttempts,
         last_failed_login: profile.last_failed_login,
         time_left_minutes: Math.ceil(settings.accountLockoutDurationMinutes),
-        action_type: "security_event",
         blocked_at: new Date().toISOString(),
+        location: location,
+        action_type: "security_event",
       },
       email,
       clientIP,
@@ -294,11 +302,38 @@ export async function POST(request: NextRequest) {
 
     // 3. 로그인 결과에 따른 처리
     if (error) {
+      if (!attempts.profileId) {
+        // 존재하지 않는 계정이면 일반적인 실패 메시지 반환 (update, 시도횟수 증가 X)
+        const duration = await monitor.finish();
+        await logApiPerformance({
+          endpoint: "/api/auth/login",
+          method: "POST",
+          duration_ms: duration,
+          status_code: 401,
+          response_size: 0,
+        });
+        return NextResponse.json(
+          {
+            success: false,
+            error: "LOGIN_FAILED",
+            message: "이메일 또는 비밀번호가 올바르지 않습니다.",
+            remainingAttempts: attempts.remainingAttempts - 1,
+            accountLocked: attempts.remainingAttempts - 1 <= 0,
+          },
+          { status: 401 }
+        );
+      }
       // 로그인 실패: 시도 횟수 증가
       const incrementMonitor = new PerformanceMonitor(
         "auth_increment_attempts"
       );
-      await incrementLoginAttempts(email, clientIP, userAgent, location);
+      await incrementLoginAttempts(
+        email,
+        clientIP,
+        userAgent,
+        location,
+        attempts.profileId
+      );
       const incrementDuration = await incrementMonitor.finish();
 
       await logDatabasePerformance(
@@ -356,24 +391,6 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    // ✅ 로그인 성공 시 프로필 실시간 브로드캐스트 추가
-    const updatedProfile = await prisma.profiles.findUnique({
-      where: { email },
-    });
-    if (updatedProfile) {
-      await sendSupabaseBroadcast({
-        channel: "profile_updates",
-        event: "profile_updated",
-        payload: {
-          eventType: "UPDATE",
-          new: updatedProfile,
-          old: null,
-          table: "profiles",
-          schema: "public",
-        },
-      });
-    }
-
     // 로그인 성공 로그 기록 (백그라운드에서 처리)
     setTimeout(async () => {
       try {
@@ -388,11 +405,9 @@ export async function POST(request: NextRequest) {
             previous_attempts:
               attempts.maxAttempts - attempts.remainingAttempts,
             reset_reason: "successful_login",
-            action_type: "security_event",
             reset_at: new Date().toISOString(),
-            ip: clientIP,
-            user_agent: userAgent,
             location: location, // IP 기반 위치 정보
+            action_type: "security_event",
           },
           email,
           clientIP,

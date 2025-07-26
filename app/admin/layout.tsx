@@ -14,6 +14,7 @@ import { ErrorBoundary } from "@/components/error/error-boundary";
 import { ERROR_CONFIGS } from "@/lib/constants/error";
 import { ThemeProvider } from "@/components/common/theme-provider";
 import { DialogManager } from "@/components/common/DialogManager";
+import { RealtimeNotificationBell } from "@/components/common/RealtimeNotificationBell";
 
 export default function AdminLayout({
   children,
@@ -38,7 +39,10 @@ export default function AdminLayout({
               <SidebarInset>
                 <MobileHeader />
                 <MaintenanceBanner isAdmin={true} />
-                <main className="flex-1 p-4 md:p-6">{children}</main>
+                <RealtimeNotificationBell />
+                <main className="flex-1 p-4 md:p-6 pt-15 md:pt-12">
+                  {children}
+                </main>
               </SidebarInset>
               <MobileMenuButton />
               {/* Admin 페이지에서만 알림 권한 다이얼로그 관리 */}

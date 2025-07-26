@@ -272,8 +272,6 @@ export async function middleware(request: NextRequest) {
         const isAdmin = user ? await isAdminUser(user.id) : false;
 
         if (!isAdmin) {
-          devLog.log(`[MIDDLEWARE] Redirecting to maintenance page`);
-
           // 권한 없는 접근 시도 로그 (보안 감사용)
           await createSystemLog(
             "PERMISSION_ERROR",
@@ -285,10 +283,9 @@ export async function middleware(request: NextRequest) {
             "system",
             undefined,
             {
-              resource: "maintenance_mode",
-              action: "access",
-              required_role: "admin",
+              is_admin: isAdmin,
               pathname,
+              action_type: "maintenance_mode_access",
             },
             undefined,
             clientIP,

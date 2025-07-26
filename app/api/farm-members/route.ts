@@ -219,7 +219,6 @@ export async function GET(request: NextRequest) {
           error_message:
             error instanceof Error ? error.message : "Unknown error",
           action_type: "bulk_member_fetch",
-          status: "failed",
         },
         user.email,
         clientIP,

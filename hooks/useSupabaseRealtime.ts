@@ -1,6 +1,7 @@
 import { useEffect, useRef } from "react";
 import { supabase } from "@/lib/supabase/client";
-import { devLog } from "@/lib/utils/logging/dev-logger";
+import { useFarmsContext } from "@/components/providers/farms-provider";
+import { useAuth } from "@/components/providers/auth-provider";
 
 // 전역 구독 상태 관리
 let globalSubscribed = false;
@@ -15,20 +16,17 @@ const callbacks = new Map<
 
 /**
  * Supabase 실시간 구독 훅 - 전역 브로드캐스트 방식
- * @param table 테이블명 ('visitor_entries', 'farms', 'farm_members')
+ * @param table 테이블명 ('visitor_entries', 'farms', 'farm_members', 'notifications')
  * @param refetch 데이터 refetch 함수 (React Query 등)
- * @param events 구독할 이벤트 타입 배열 (기본값: ['INSERT', 'UPDATE', 'DELETE'])
  * @param filter (선택) row 필터 함수(payload) => boolean
  */
 export function useSupabaseRealtime({
   table,
   refetch,
-  events = ["INSERT", "UPDATE", "DELETE"],
   filter,
 }: {
   table: string;
   refetch: () => void;
-  events?: ("INSERT" | "UPDATE" | "DELETE")[];
   filter?: (payload: any) => boolean;
 }) {
   const callbackId = useRef(`${table}_${Date.now()}_${Math.random()}`);
@@ -39,48 +37,54 @@ export function useSupabaseRealtime({
   refetchRef.current = refetch;
   filterRef.current = filter;
 
+  // farms을 가져옴
+  let farms: any[] = [];
+  let profile: any = undefined;
+  try {
+    const ctx = useFarmsContext();
+    farms = ctx.farms;
+    profile = ctx.profile;
+  } catch (e) {
+    farms = [];
+    profile = undefined;
+  }
+
+  const { state } = useAuth();
+  const currentUserId =
+    state.status === "authenticated" ? state.user.id : undefined;
+
   useEffect(() => {
     const id = callbackId.current;
-    // 콜백 등록
     callbacks.set(id, {
       table,
       refetch: () => refetchRef.current(),
       filter: filterRef.current,
     });
 
-    // 전역 구독이 없으면 생성
     if (!globalSubscribed) {
       globalSubscribed = true;
-      setupGlobalSubscriptions();
+      setupGlobalSubscriptions(farms, currentUserId);
     }
 
     return () => {
       callbacks.delete(id);
-
-      // 모든 콜백이 제거되면 전역 구독도 정리
       if (callbacks.size === 0) {
         globalSubscribed = false;
         cleanupGlobalSubscriptions();
       }
     };
-  }, [table]);
+  }, [table, farms, currentUserId]);
 }
 
 // 전역 이벤트 핸들러
-function handleGlobalEvent(
-  payload: any,
-  targetTable: string,
-  eventType: string
-) {
+function handleGlobalEvent(payload: any, targetTable: string) {
   // 해당 테이블의 모든 콜백 실행
-  callbacks.forEach((callback, id) => {
+  callbacks.forEach((callback) => {
     if (callback.table === targetTable) {
       // 필터 적용
       if (callback.filter) {
-        const shouldRefetch = callback.filter(payload.payload);
-        if (!shouldRefetch) {
-          return;
-        }
+        const shouldRefetch = callback.filter(payload);
+        if (!shouldRefetch) return;
       }
 
       callback.refetch();
@@ -90,84 +94,95 @@ function handleGlobalEvent(
 
 let channels: any[] = [];
 
-function setupGlobalSubscriptions() {
-  // 🔥 방문자 브로드캐스트 구독 (visitor_updates)
-  const visitorChannel = supabase
-    .channel("visitor_updates")
-    .on("broadcast", { event: "visitor_inserted" }, (payload) => {
-      handleGlobalEvent(payload, "visitor_entries", "visitor inserted");
-    })
-    .on("broadcast", { event: "visitor_updated" }, (payload) => {
-      handleGlobalEvent(payload, "visitor_entries", "visitor updated");
-    })
-    .on("broadcast", { event: "visitor_deleted" }, (payload) => {
-      handleGlobalEvent(payload, "visitor_entries", "visitor deleted");
-    })
-    .subscribe((status: any, error: any) => {});
+function setupGlobalSubscriptions(farms: any[], currentUserId?: string) {
+  cleanupGlobalSubscriptions();
 
-  // 🔥 농장 브로드캐스트 구독 (farm_updates)
-  const farmChannel = supabase
-    .channel("farm_updates")
-    .on("broadcast", { event: "farm_created" }, (payload) => {
-      handleGlobalEvent(payload, "farms", "farm created");
-    })
-    .on("broadcast", { event: "farm_updated" }, (payload) => {
-      handleGlobalEvent(payload, "farms", "farm updated");
-    })
-    .on("broadcast", { event: "farm_deleted" }, (payload) => {
-      handleGlobalEvent(payload, "farms", "farm deleted");
-    })
-    .subscribe((status: any, error: any) => {});
+  const myFarmIds = Array.isArray(farms) ? farms.map((f) => f.id) : [];
 
-  // 🔥 농장 멤버 브로드캐스트 구독 (member_updates)
-  const memberChannel = supabase
-    .channel("member_updates")
-    .on("broadcast", { event: "member_created" }, (payload) => {
-      handleGlobalEvent(payload, "farm_members", "member created");
-    })
-    .on("broadcast", { event: "member_updated" }, (payload) => {
-      handleGlobalEvent(payload, "farm_members", "member updated");
-    })
-    .on("broadcast", { event: "member_deleted" }, (payload) => {
-      handleGlobalEvent(payload, "farm_members", "member deleted");
-    })
-    .subscribe((status: any, error: any) => {});
+  // farms 테이블 실시간 구독
+  if (myFarmIds.length > 0) {
+    channels.push(
+      supabase
+        .channel("public:farms")
+        .on(
+          "postgres_changes",
+          {
+            event: "*",
+            schema: "public",
+            table: "farms",
+            filter: `id=in.(${myFarmIds.join(",")})`,
+          },
+          (payload) => {
+            handleGlobalEvent(payload, "farms");
+          }
+        )
+        .subscribe()
+    );
+  }
 
-  // 🔥 시스템 로그 브로드캐스트 구독 (log_updates)
-  const logChannel = supabase
-    .channel("log_updates")
-    .on("broadcast", { event: "log_created" }, (payload) => {
-      handleGlobalEvent(payload, "system_logs", "log created");
-    })
-    .on("broadcast", { event: "log_updated" }, (payload) => {
-      handleGlobalEvent(payload, "system_logs", "log updated");
-    })
-    .on("broadcast", { event: "log_deleted" }, (payload) => {
-      handleGlobalEvent(payload, "system_logs", "log deleted");
-    })
-    .subscribe((status: any, error: any) => {});
+  // visitor_entries 테이블 실시간 구독
+  if (myFarmIds.length > 0) {
+    channels.push(
+      supabase
+        .channel("public:visitor_entries")
+        .on(
+          "postgres_changes",
+          {
+            event: "*",
+            schema: "public",
+            table: "visitor_entries",
+            filter: `farm_id=in.(${myFarmIds.join(",")})`,
+          },
+          (payload) => {
+            handleGlobalEvent(payload, "visitor_entries");
+          }
+        )
+        .subscribe()
+    );
+  }
 
-  // 🔥 사용자 프로필 브로드캐스트 구독 (profile_updates)
-  const profileChannel = supabase
-    .channel("profile_updates")
-    .on("broadcast", { event: "profile_created" }, (payload) => {
-      handleGlobalEvent(payload, "profiles", "profile created");
-    })
-    .on("broadcast", { event: "profile_updated" }, (payload) => {
-      handleGlobalEvent(payload, "profiles", "profile updated");
-    })
-    .on("broadcast", { event: "profile_deleted" }, (payload) => {
-      handleGlobalEvent(payload, "profiles", "profile deleted");
-    })
-    .subscribe((status: any, error: any) => {});
+  // farm_members 테이블 실시간 구독
+  if (myFarmIds.length > 0) {
+    channels.push(
+      supabase
+        .channel("public:farm_members")
+        .on(
+          "postgres_changes",
+          {
+            event: "*",
+            schema: "public",
+            table: "farm_members",
+            filter: `farm_id=in.(${myFarmIds.join(",")})`,
+          },
+          (payload) => {
+            handleGlobalEvent(payload, "farm_members");
+          }
+        )
+        .subscribe()
+    );
+  }
 
-  channels = [
-    visitorChannel,
-    farmChannel,
-    memberChannel,
-    logChannel,
-    profileChannel,
-  ];
+  // notifications 테이블 실시간 구독 추가
+  if (currentUserId) {
+    channels.push(
+      supabase
+        .channel("public:notifications")
+        .on(
+          "postgres_changes",
+          {
+            event: "*",
+            schema: "public",
+            table: "notifications",
+            filter: `user_id=eq.${currentUserId}`,
+          },
+          (payload) => {
+            // notifications 테이블의 모든 콜백 실행 (React Query refetch)
+            handleGlobalEvent(payload, "notifications");
+          }
+        )
+        .subscribe()
+    );
+  }
 }
 
 function cleanupGlobalSubscriptions() {

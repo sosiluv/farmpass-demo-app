@@ -10,7 +10,7 @@ export const prisma =
   });
 
 // 데이터베이스 연결 오류 처리
-prisma.$connect().catch(async (error) => {
+prisma.$connect().catch(async (error: any) => {
   await createSystemLog(
     "DATABASE_CONNECTION_ERROR",
     "데이터베이스 연결 실패",
@@ -18,7 +18,10 @@ prisma.$connect().catch(async (error) => {
     undefined,
     "system",
     undefined,
-    { error: error instanceof Error ? error.message : String(error) }
+    {
+      error_message: error instanceof Error ? error.message : String(error),
+      action_type: "database_connection",
+    }
   );
 });
 

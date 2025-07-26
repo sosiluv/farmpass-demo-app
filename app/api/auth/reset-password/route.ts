@@ -2,12 +2,17 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createSystemLog } from "@/lib/utils/logging/system-log";
 import { devLog } from "@/lib/utils/logging/dev-logger";
-import { getClientIP, getUserAgent } from "@/lib/server/ip-helpers";
+import {
+  getClientIP,
+  getLocationFromIP,
+  getUserAgent,
+} from "@/lib/server/ip-helpers";
 import { prisma } from "@/lib/prisma";
 
 export async function POST(request: NextRequest) {
   const clientIP = getClientIP(request);
   const userAgent = getUserAgent(request);
+  const location = await getLocationFromIP(clientIP);
   try {
     const { email } = await request.json();
 
@@ -59,11 +64,10 @@ export async function POST(request: NextRequest) {
         "auth",
         undefined,
         {
-          error_type: error.code || "unknown_error",
           error_message: error.message,
-          request_ip: clientIP,
-          user_agent: userAgent,
           timestamp: new Date().toISOString(),
+          location: location,
+          action_type: "security_event",
         },
         email,
         clientIP,
@@ -92,9 +96,8 @@ export async function POST(request: NextRequest) {
       "auth",
       undefined,
       {
-        request_ip: clientIP,
-        user_agent: userAgent,
         timestamp: new Date().toISOString(),
+        location: location,
         action_type: "security_event",
       },
       email,
@@ -120,9 +123,10 @@ export async function POST(request: NextRequest) {
       "auth",
       undefined,
       {
-        error: error instanceof Error ? error.message : String(error),
-        stack: error instanceof Error ? error.stack : undefined,
+        error_message: error instanceof Error ? error.message : String(error),
         timestamp: new Date().toISOString(),
+        location: location,
+        action_type: "security_event",
       },
       undefined,
       clientIP,

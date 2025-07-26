@@ -8,7 +8,6 @@ import {
 import { getClientIP, getUserAgent } from "@/lib/server/ip-helpers";
 import { requireAuth } from "@/lib/server/auth-utils";
 import { prisma } from "@/lib/prisma";
-import { sendSupabaseBroadcast } from "@/lib/supabase/broadcast";
 
 export async function POST(request: NextRequest) {
   // 성능 모니터링 시작
@@ -33,7 +32,6 @@ export async function POST(request: NextRequest) {
     }
 
     user = authResult.user;
-    devLog.log("👤 Creating farm for user:", user.id);
 
     const {
       farm_name,
@@ -52,102 +50,80 @@ export async function POST(request: NextRequest) {
       manager_name,
       manager_phone,
     };
-    devLog.log("📝 Farm data:", { farm_name, farm_type, manager_name });
 
     // Start a transaction
     let farm;
+    const farmCreateData = {
+      farm_name: farm_name.trim(),
+      farm_address: farm_address.trim(),
+      farm_detailed_address: farm_detailed_address?.trim() || null,
+      farm_type,
+      description: description?.trim() || null,
+      manager_name: manager_name?.trim(),
+      manager_phone: manager_phone?.trim(),
+      owner_id: user.id,
+    };
 
     try {
-      farm = await prisma.farms.create({
-        data: {
-          farm_name,
-          farm_address,
-          farm_detailed_address,
-          farm_type,
-          description,
-          manager_name,
-          manager_phone,
-          owner_id: user.id,
-        },
+      farm = await prisma.$transaction(async (tx: any) => {
+        const createdFarm = await tx.farms.create({
+          data: farmCreateData,
+        });
+        await tx.farm_members.create({
+          data: {
+            farm_id: createdFarm.id,
+            user_id: user.id,
+            role: "owner",
+          },
+        });
+        // 알림 생성도 트랜잭션 안에서 처리
+        await tx.notifications.create({
+          data: {
+            user_id: createdFarm.owner_id,
+            type: "farm_created",
+            title: `새 농장 등록`,
+            message: `${createdFarm.farm_name} 농장이 등록되었습니다.`,
+            data: {
+              farm_id: createdFarm.id,
+              farm_name: createdFarm.farm_name,
+            },
+            link: `/admin/farms`,
+          },
+        });
+        return createdFarm;
       });
 
-      devLog.log("✅ Farm created successfully:", farm.id);
-
-      // 농장주를 farm_members 테이블에 추가
-      devLog.log("🔄 Adding farm owner to farm_members...");
-      await prisma.farm_members.create({
-        data: {
+      // 농장 생성 로그
+      await createSystemLog(
+        "FARM_CREATE",
+        `농장 생성: ${farmCreateData.farm_name} (${farm.id})`,
+        "info",
+        user.id,
+        "farm",
+        farm.id,
+        {
           farm_id: farm.id,
-          user_id: user.id,
-          role: "owner",
+          farm_data: farmCreateData,
+          action_type: "farm_management",
         },
-      });
+        user.email,
+        clientIP,
+        userAgent
+      );
+
+      statusCode = 201;
+      return NextResponse.json(
+        {
+          farm,
+          success: true,
+          message: `${farm_name}이 등록되었습니다.`,
+        },
+        { status: 201, headers: { "Cache-Control": "no-store" } }
+      );
     } catch (error) {
-      // 트랜잭션 실패 시 farm이 생성되었다면 삭제
-      if (farm?.id) {
-        try {
-          await prisma.farms.delete({
-            where: { id: farm.id },
-          });
-        } catch (deleteError) {
-          devLog.error(
-            "Failed to delete farm after member creation error:",
-            deleteError
-          );
-        }
-      }
       statusCode = 500;
       throw error;
     }
-
-    // 🔥 농장 등록 실시간 브로드캐스트
-    await sendSupabaseBroadcast({
-      channel: "farm_updates",
-      event: "farm_created",
-      payload: {
-        eventType: "INSERT",
-        new: farm,
-        old: null,
-        table: "farms",
-        schema: "public",
-      },
-    });
-
-    // 농장 생성 로그
-    await createSystemLog(
-      "FARM_CREATE",
-      `농장 생성: ${farm_name} (${farm.id})`,
-      "info",
-      user.id,
-      "farm",
-      farm.id,
-      {
-        farm_id: farm.id,
-        farm_name,
-        farm_type,
-        farm_address,
-        manager_name,
-        manager_phone,
-        action_type: "farm_management",
-      },
-      user.email,
-      clientIP,
-      userAgent
-    );
-
-    // 새로운 권한 시스템에서는 profiles.account_type은 시스템 레벨 권한만 관리
-    // 농장 소유자 권한은 farms 테이블의 owner_id로 관리됨
-    // 따라서 profiles.role 업데이트는 더 이상 필요하지 않음
-
-    statusCode = 201;
-    return NextResponse.json(
-      {
-        farm,
-        success: true,
-        message: `${farm_name}이 등록되었습니다.`,
-      },
-      { status: 201, headers: { "Cache-Control": "no-store" } }
-    );
   } catch (error) {
     statusCode = 500;
 
@@ -165,7 +141,6 @@ export async function POST(request: NextRequest) {
         error_message: error instanceof Error ? error.message : "Unknown error",
         farm_data: farmData,
         action_type: "farm_management",
-        status: "failed",
       },
       user?.email,
       clientIP,
@@ -329,7 +304,6 @@ export async function GET(request: NextRequest) {
       {
         error_message: error instanceof Error ? error.message : "Unknown error",
         action_type: "farm_management",
-        status: "failed",
       },
       undefined,
       clientIP,

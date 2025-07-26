@@ -16,11 +16,11 @@ export async function GET(request: NextRequest) {
   const userAgent = getUserAgent(request);
 
   try {
-    const settings = await prisma.systemSettings.findFirst();
+    const settings = await prisma.system_settings.findFirst();
 
     if (!settings) {
       // 설정이 없으면 기본값으로 생성
-      const newSettings = await prisma.systemSettings.create({
+      const newSettings = await prisma.system_settings.create({
         data: {
           ...DEFAULT_SYSTEM_SETTINGS,
           id: crypto.randomUUID(),
@@ -38,9 +38,9 @@ export async function GET(request: NextRequest) {
         "system",
         undefined,
         {
-          action: "INITIALIZE",
           settingsCount: Object.keys(DEFAULT_SYSTEM_SETTINGS).length,
           method: "GET /api/settings",
+          action_type: "system_settings",
         },
         undefined, // userEmail
         clientIP, // userIP
@@ -106,7 +106,7 @@ export async function PATCH(request: NextRequest) {
     const user = authResult.user;
 
     const data = await request.json();
-    const settings = await prisma.systemSettings.findFirst();
+    const settings = await prisma.system_settings.findFirst();
 
     if (!settings) {
       // 설정 PATCH 에러 (설정 없음) 로그
@@ -175,16 +175,9 @@ export async function PATCH(request: NextRequest) {
         "system",
         undefined,
         {
+          updated_fields: Object.keys(data),
           changed_fields: changedFields,
-          old_values: changedFields.reduce((acc, field) => {
-            acc[field] = settings[field as keyof typeof settings];
-            return acc;
-          }, {} as Record<string, any>),
-          new_values: changedFields.reduce((acc, field) => {
-            acc[field] = data[field];
-            return acc;
-          }, {} as Record<string, any>),
-          update_method: "PATCH_API",
+          action_type: "system_settings",
         },
         user.email,
         clientIP,
@@ -237,8 +230,8 @@ export async function PATCH(request: NextRequest) {
       "system",
       undefined,
       {
-        error: error instanceof Error ? error.message : String(error),
-        update_method: "PATCH_API",
+        error_message: error instanceof Error ? error.message : String(error),
+        action_type: "system_settings",
       },
       undefined, // userEmail - 에러 상황에서는 user 정보가 없을 수 있음
       clientIP,

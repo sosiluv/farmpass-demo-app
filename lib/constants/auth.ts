@@ -32,6 +32,10 @@ export const BUTTONS = {
   REGISTER_LOADING: "가입 중...",
   RESET_PASSWORD_LOADING: "처리 중...",
   RESET_PASSWORD_CONFIRM_LOADING: "비밀번호 변경 중...",
+
+  // 소셜 로그인
+  KAKAO_LOGIN: "Kakao로 시작하기",
+  GOOGLE_LOGIN: "Google로 시작하기",
 } as const;
 
 // 라벨
@@ -65,7 +69,7 @@ export const PLACEHOLDERS = {
   EMAIL: "name@example.com",
   PASSWORD: "비밀번호를 입력하세요",
   CONFIRM_PASSWORD: "비밀번호를 다시 입력하세요",
-  NAME: "홍길동",
+  NAME: "이름을 입력하세요",
   PHONE: "숫자만 입력 가능합니다",
 } as const;
 
@@ -76,7 +80,7 @@ export const ERROR_MESSAGES = {
   REQUIRED_PASSWORD: "비밀번호를 입력해주세요",
   REQUIRED_CONFIRM_PASSWORD: "비밀번호를 입력해주세요",
   REQUIRED_NAME: "이름을 입력해주세요",
-  REQUIRED_PHONE: "전화번호를 입력해주세요",
+  REQUIRED_PHONE: "휴대폰 번호를 입력해주세요",
   REQUIRED_CURRENT_PASSWORD: "현재 비밀번호를 입력해주세요",
 
   // 형식 검증

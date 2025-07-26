@@ -6,15 +6,17 @@ import {
   useEffect,
   useReducer,
   useRef,
+  useState,
 } from "react";
 import { Session, User } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/client";
-import type { Profile } from "@/lib/types";
 import { devLog } from "@/lib/utils/logging/dev-logger";
 import { apiClient } from "@/lib/utils/data/api-client";
 import { useSubscriptionManager } from "@/hooks/useSubscriptionManager";
 import { handleError } from "@/lib/utils/error";
 import { logout } from "@/lib/utils/auth/authService";
+// 알림 벨(Zustand) store
+import { useNotificationStore } from "@/store/use-notification-store";
 
 // 통합된 인증 상태 정의
 type AuthState =
@@ -89,11 +91,18 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [state, dispatch] = useReducer(authReducer, { status: "initializing" });
   const supabase = createClient();
-  const initialSessionLoaded = useRef(false);
+  const [initialSessionLoaded, setInitialSessionLoaded] = useState(false);
   const isSigningOutRef = useRef<boolean>(false);
 
   // 구독 관리 훅 사용 - Lazy Loading으로 최적화
   const { switchSubscription, cleanupSubscription } = useSubscriptionManager();
+
+  // user.id(또는 인증 상태)가 바뀔 때 알림 벨 기록 초기화
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      useNotificationStore.getState().clearAll();
+    }
+  }, [state.status === "authenticated" ? state.user?.id : undefined]);
 
   // 초기 세션 로드
   useEffect(() => {
@@ -174,7 +183,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       } finally {
         // 초기 세션 로드 완료 표시
         if (mounted) {
-          initialSessionLoaded.current = true;
+          setInitialSessionLoaded(true);
         }
       }
     };
@@ -232,7 +241,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   // 앱 초기화 완료 감지
   useEffect(() => {
-    if (initialSessionLoaded.current && state.status === "initializing") {
+    if (initialSessionLoaded && state.status === "initializing") {
       // 지연 최소화
       const timer = setTimeout(() => {
         dispatch({ type: "APP_INITIALIZED" });
@@ -240,7 +249,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       return () => clearTimeout(timer);
     }
-  }, [initialSessionLoaded.current, state.status]);
+  }, [initialSessionLoaded, state.status]);
 
   // 배포 환경에서 무한 로딩 방지를 위한 안전장치
   useEffect(() => {
@@ -298,10 +307,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       return { success: true, message: result.message };
     } catch (error) {
-      devLog.error("Sign in error:", error);
       handleError(error, { context: "sign-in" });
       dispatch({ type: "SET_UNAUTHENTICATED" });
-
       throw error;
     }
   };
@@ -323,39 +330,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           try {
             await cleanupSubscription();
           } catch (error) {
-            devLog.warn("구독 정리 실패:", error);
             // 구독 정리 실패해도 로그아웃은 계속 진행
           }
         }
-
         // Supabase 로그아웃
-        try {
-          await logout(false);
-        } catch (error) {
-          devLog.warn("Supabase 로그아웃 실패:", error);
-        }
+        await logout(false);
       })();
 
       // 전체 로그아웃 작업에 타임아웃 적용
       try {
         await Promise.race([logoutPromise, timeoutPromise]);
       } catch (error) {
-        devLog.warn("로그아웃 타임아웃 또는 실패:", error);
         // 타임아웃이나 에러 발생 시 강제로 클라이언트 상태 정리
         await logout(true); // 강제 로그아웃으로 로컬 스토리지와 쿠키 정리
       }
 
       return { success: true };
     } catch (error) {
-      devLog.error("SignOut error:", error);
       handleError(error, { context: "sign-out" });
 
-      // 에러 발생 시에도 강제로 클라이언트 상태 정리
-      try {
-        await logout(true); // 강제 로그아웃으로 로컬 스토리지와 쿠키 정리
-      } catch (cleanupError) {
-        devLog.error("강제 정리 실패:", cleanupError);
-      }
+      await logout(true); // 강제 로그아웃으로 로컬 스토리지와 쿠키 정리
 
       return { success: false };
     } finally {
@@ -387,7 +381,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       return { success: true };
     } catch (error) {
-      devLog.error("Password verification error:", error);
       handleError(error, { context: "verify-password" });
 
       return {
@@ -428,7 +421,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       return { success: true };
     } catch (error) {
-      devLog.error("Password change error:", error);
       handleError(error, { context: "change-password" });
       return {
         success: false,

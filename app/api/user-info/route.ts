@@ -38,6 +38,7 @@ export async function GET(request: NextRequest) {
         user_agent: userAgent,
         request_source: "user-info-api",
         headers_checked: ["x-forwarded-for", "x-real-ip", "cf-connecting-ip"],
+        action_type: "user_info",
       },
       undefined,
       ip,
@@ -84,6 +85,7 @@ export async function GET(request: NextRequest) {
       {
         error_message: error instanceof Error ? error.message : String(error),
         request_source: "user-info-api",
+        action_type: "user_info",
       },
       undefined,
       getClientIP(request),

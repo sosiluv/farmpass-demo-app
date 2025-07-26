@@ -4,7 +4,6 @@ import { devLog } from "@/lib/utils/logging/dev-logger";
 import { requireAuth } from "@/lib/server/auth-utils";
 import { getClientIP, getUserAgent } from "@/lib/server/ip-helpers";
 import { prisma } from "@/lib/prisma";
-import { sendSupabaseBroadcast } from "@/lib/supabase/broadcast";
 
 // GET - 농장 멤버 목록 조회
 export async function GET(
@@ -145,7 +144,6 @@ export async function GET(
         error_message: error instanceof Error ? error.message : "Unknown error",
         farm_id: params.farmId,
         action_type: "member_management",
-        status: "failed",
       },
       undefined,
       clientIP,
@@ -334,42 +332,42 @@ export async function POST(
       );
     }
 
-    // 새 멤버 추가
+    // 새 멤버 추가 + 알림 insert 트랜잭션 처리
     let newMember;
     try {
-      newMember = await prisma.farm_members.create({
-        data: {
-          farm_id: params.farmId,
-          user_id: userToAdd.id,
-          role: role,
-          is_active: true,
-        },
-        select: { id: true, created_at: true },
+      newMember = await prisma.$transaction(async (tx: any) => {
+        const createdMember = await tx.farm_members.create({
+          data: {
+            farm_id: params.farmId,
+            user_id: userToAdd.id,
+            role: role,
+            is_active: true,
+          },
+          select: { id: true, created_at: true },
+        });
+        await tx.notifications.create({
+          data: {
+            user_id: userToAdd.id,
+            type: "farm_member_added",
+            title: `농장 멤버 추가`,
+            message: `${farm.farm_name} 농장에 ${
+              role === "manager" ? "관리자" : "구성원"
+            }으로 추가되었습니다.`,
+            data: {
+              farm_id: params.farmId,
+              farm_name: farm.farm_name,
+              role,
+              invited_by: user.email,
+            },
+            link: `/admin/farms/${params.farmId}/members`,
+          },
+        });
+        return createdMember;
       });
     } catch (insertError) {
-      devLog.error("Error creating farm member:", insertError);
+      devLog.error("Error creating farm member or notification:", insertError);
       throw insertError;
     }
-
-    // 🔥 농장 멤버 추가 실시간 브로드캐스트
-    await sendSupabaseBroadcast({
-      channel: "member_updates",
-      event: "member_created",
-      payload: {
-        eventType: "INSERT",
-        new: {
-          id: newMember.id,
-          farm_id: params.farmId,
-          user_id: userToAdd.id,
-          role: role,
-          name: userToAdd.name,
-          email: userToAdd.email,
-        },
-        old: null,
-        table: "farm_members",
-        schema: "public",
-      },
-    });
 
     // 농장 멤버 추가 로그 기록
     await createSystemLog(
@@ -384,7 +382,6 @@ export async function POST(
         farm_id: params.farmId,
         farm_name: farm.farm_name,
         member_email: userToAdd.email,
-        member_name: userToAdd.name,
         member_role: role,
         target_user_id: userToAdd.id,
         action_type: "member_management",
@@ -446,7 +443,6 @@ export async function POST(
         error_message: error instanceof Error ? error.message : "Unknown error",
         farm_id: params.farmId,
         action_type: "member_management",
-        status: "failed",
       },
       user?.email,
       clientIP,

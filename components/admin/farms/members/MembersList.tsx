@@ -7,6 +7,7 @@ interface Member {
   email: string;
   role: string;
   profile_image_url?: string | null;
+  avatar_seed?: string | null;
 }
 
 interface MembersListProps {

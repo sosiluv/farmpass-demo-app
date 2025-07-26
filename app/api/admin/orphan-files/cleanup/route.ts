@@ -114,11 +114,11 @@ async function cleanupProfileOrphans(supabase: any) {
   // 4. Storage → DB에 없는 파일: Storage orphan (삭제 대상)
   const dbFileSet = new Set(
     profiles
-      .map((p) => {
+      .map((p: any) => {
         const match = p.profile_image_url?.match(/profiles\/(.+)$/);
         return match ? match[1] : null;
       })
-      .filter((v) => v && !v.startsWith("systems/"))
+      .filter((v: any) => v && !v.startsWith("systems/"))
   );
 
   for (const filePath of profileFiles) {
@@ -191,11 +191,11 @@ async function cleanupVisitorOrphans(supabase: any) {
   // 4. Storage → DB에 없는 파일: Storage orphan (삭제 대상)
   const dbFileSet = new Set(
     entries
-      .map((e) => {
+      .map((e: any) => {
         const match = e.profile_photo_url?.match(/visitor-photos\/(.+)$/);
         return match ? match[1] : null;
       })
-      .filter((v) => v)
+      .filter((v: any) => v)
   );
 
   for (const filePath of visitorFiles) {
@@ -278,9 +278,7 @@ export async function POST(request: NextRequest) {
         profile_db_orphan_updated: results.profile.db_orphan_updated,
         profile_db_orphan_total: results.profile.db_total,
         total_deleted: totalDeleted,
-        cleanup_type: "manual",
-        userAgent,
-        ip: clientIP,
+        action_type: "orphan_file_cleanup",
       },
       user.email,
       clientIP,
@@ -307,10 +305,8 @@ export async function POST(request: NextRequest) {
       "system",
       undefined,
       {
-        error: error instanceof Error ? error.message : "Unknown error",
-        cleanup_type: "manual",
-        userAgent,
-        ip: clientIP,
+        error_message: error instanceof Error ? error.message : "Unknown error",
+        action_type: "orphan_file_cleanup",
       },
       user?.email,
       clientIP,

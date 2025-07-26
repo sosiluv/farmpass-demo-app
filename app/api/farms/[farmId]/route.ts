@@ -4,7 +4,6 @@ import { devLog } from "@/lib/utils/logging/dev-logger";
 import { getClientIP, getUserAgent } from "@/lib/server/ip-helpers";
 import { requireAuth } from "@/lib/server/auth-utils";
 import { prisma } from "@/lib/prisma";
-import { sendSupabaseBroadcast } from "@/lib/supabase/broadcast";
 
 export async function GET(
   request: NextRequest,
@@ -27,12 +26,6 @@ export async function GET(
         is_active: true,
         created_at: true,
       },
-    });
-
-    devLog.log("🔍 농장 조회 결과:", {
-      hasData: !!farm,
-      farmId: params.farmId,
-      isActive: farm?.is_active,
     });
 
     if (!farm) {
@@ -133,30 +126,48 @@ export async function PUT(
       }
     }
 
-    // Update farm
-    const farm = await prisma.farms.update({
-      where: { id: params.farmId },
-      data: farmData,
-    });
+    const farmUpdateData = {
+      farm_name: farmData.farm_name?.trim(),
+      farm_address: farmData.farm_address?.trim(),
+      farm_detailed_address: farmData.farm_detailed_address?.trim() || null,
+      farm_type: farmData.farm_type,
+      description: farmData.description?.trim() || null,
+      manager_name: farmData.manager_name?.trim() || null,
+      manager_phone: farmData.manager_phone?.trim() || null,
+    };
 
-    // 🔥 농장 수정 실시간 브로드캐스트
-    await sendSupabaseBroadcast({
-      channel: "farm_updates",
-      event: "farm_updated",
-      payload: {
-        eventType: "UPDATE",
-        new: farm,
-        old: null,
-        table: "farms",
-        schema: "public",
-      },
+    // 트랜잭션으로 묶어서 처리
+    const farm = await prisma.$transaction(async (tx: any) => {
+      const updatedFarm = await tx.farms.update({
+        where: { id: params.farmId },
+        data: farmUpdateData,
+      });
+      const members = await tx.farm_members.findMany({
+        where: { farm_id: params.farmId },
+        select: { user_id: true },
+      });
+      await tx.notifications.createMany({
+        data: members.map((m: any) => ({
+          user_id: m.user_id,
+          type: "farm_updated",
+          title: `농장 정보 변경`,
+          message: `${updatedFarm.farm_name} 농장 정보가 변경되었습니다.`,
+          data: {
+            farm_id: params.farmId,
+            farm_name: updatedFarm.farm_name,
+            updated_fields: Object.keys(farmUpdateData),
+          },
+          link: `/admin/farms`,
+        })),
+      });
+      return updatedFarm;
     });
 
     // 농장 수정 로그
     await createSystemLog(
       "FARM_UPDATE",
       `농장 정보 수정: ${farm.farm_name} (${
-        Object.keys(farmData).length
+        Object.keys(farmUpdateData).length
       }개 필드 수정)`,
       "info",
       user.id,
@@ -164,10 +175,10 @@ export async function PUT(
       params.farmId,
       {
         farm_id: params.farmId,
-        updated_fields: Object.keys(farmData),
+        updated_fields: Object.keys(farmUpdateData),
         farm_name: farm.farm_name,
-        action_type: "farm_management",
         admin_action: isAdmin, // 관리자 액션 여부 기록
+        action_type: "farm_management",
       },
       user.email,
       clientIP,
@@ -200,7 +211,6 @@ export async function PUT(
         farm_id: params.farmId,
         farm_data: farmData,
         action_type: "farm_management",
-        status: "failed",
       },
       user?.email,
       clientIP,
@@ -286,6 +296,31 @@ export async function DELETE(
       );
     }
 
+    // 트랜잭션으로 묶어서 처리
+    await prisma.$transaction(async (tx: any) => {
+      // 농장 삭제 (CASCADE로 farm_members도 자동 삭제됨)
+      await tx.farms.delete({
+        where: { id: params.farmId },
+      });
+      const members = await tx.farm_members.findMany({
+        where: { farm_id: params.farmId },
+        select: { user_id: true },
+      });
+      await tx.notifications.createMany({
+        data: members.map((m: any) => ({
+          user_id: m.user_id,
+          type: "farm_deleted",
+          title: "농장 정보 삭제",
+          message: `${farm.farm_name} 농장이 삭제되었습니다.`,
+          data: {
+            farm_id: params.farmId,
+            farm_name: farm.farm_name,
+          },
+          link: "/admin/farms",
+        })),
+      });
+    });
+
     // 농장 삭제 로그 (삭제 전에 기록)
     await createSystemLog(
       "FARM_DELETE",
@@ -297,40 +332,18 @@ export async function DELETE(
       {
         farm_id: params.farmId,
         farm_name: farm.farm_name || "Unknown",
-        action_type: "farm_management",
         admin_action: isAdmin, // 관리자 액션 여부 기록
+        action_type: "farm_management",
       },
       user.email,
       clientIP,
       userAgent
     );
 
-    // 농장 삭제 (CASCADE로 farm_members도 자동 삭제됨)
-    await prisma.farms.delete({
-      where: { id: params.farmId },
-    });
-
-    // 🔥 농장 삭제 실시간 브로드캐스트
-    await sendSupabaseBroadcast({
-      channel: "farm_updates",
-      event: "farm_deleted",
-      payload: {
-        eventType: "DELETE",
-        new: null,
-        old: {
-          id: params.farmId,
-          farm_name: farm.farm_name,
-          owner_id: farm.owner_id,
-        },
-        table: "farms",
-        schema: "public",
-      },
-    });
-
     return NextResponse.json(
       {
         success: true,
-        message: `${farm.farm_name}이 삭제되었습니다.`,
+        message: `${farm.farm_name} 농장이 삭제되었습니다.`,
       },
       { status: 200, headers: { "Cache-Control": "no-store" } }
     );
@@ -342,9 +355,7 @@ export async function DELETE(
       "FARM_DELETE_FAILED",
       `농장 삭제 실패: ${
         error instanceof Error ? error.message : "Unknown error"
-      } (농장: ${existingFarm?.farm_name || "Unknown"}, 농장 ID: ${
-        params.farmId
-      })`,
+      } (농장 ID: ${params.farmId})`,
       "error",
       user?.id,
       "farm",
@@ -353,15 +364,14 @@ export async function DELETE(
         error_message: error instanceof Error ? error.message : "Unknown error",
         farm_id: params.farmId,
         farm_name: existingFarm?.farm_name || "Unknown",
-        action_type: "farm_management",
-        status: "failed",
         admin_action: user ? isAdmin : false, // 관리자 액션 여부 기록
+        action_type: "farm_management",
       },
       user?.email,
       clientIP,
       userAgent
     ).catch((logError: any) =>
-      devLog.error("Failed to log farm deletion error:", logError)
+      devLog.error("Failed to log farm delete error:", logError)
     );
 
     return NextResponse.json(

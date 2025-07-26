@@ -56,30 +56,6 @@ function makeQueryClient() {
     }
   });
 
-  // 방문자 실시간 업데이트를 위한 Broadcast Channel 설정
-  if (typeof window !== "undefined" && "BroadcastChannel" in window) {
-    const channel = new BroadcastChannel("visitor-updates");
-
-    channel.addEventListener("message", (event) => {
-      const { type, farmId } = event.data;
-
-      if (type === "VISITOR_REGISTERED") {
-        // 방문자 관련 쿼리만 무효화 (실시간 업데이트)
-        queryClient.invalidateQueries({ queryKey: visitorsKeys.all });
-        // 농장 정보 쿼리 무효화 (farmId가 있을 때만)
-        if (farmId) {
-          queryClient.invalidateQueries({ queryKey: farmsKeys.info(farmId) });
-          queryClient.invalidateQueries({
-            queryKey: visitorsKeys.session(farmId),
-          });
-          queryClient.invalidateQueries({
-            queryKey: visitorsKeys.dailyCount(farmId),
-          });
-        }
-      }
-    });
-  }
-
   return queryClient;
 }
 

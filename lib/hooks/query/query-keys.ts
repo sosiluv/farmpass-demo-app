@@ -155,6 +155,13 @@ export const cleanupKeys = {
  */
 export const notificationKeys = {
   all: ["notifications"] as const,
+  lists: () => [...notificationKeys.all, "list"] as const,
+  list: (filters?: Record<string, any>) =>
+    filters
+      ? ([...notificationKeys.lists(), { filters }] as const)
+      : ([...notificationKeys.lists()] as const),
+  details: () => [...notificationKeys.all, "detail"] as const,
+  detail: (id: string) => [...notificationKeys.details(), id] as const,
   settings: () => [...notificationKeys.all, "settings"] as const,
   subscriptions: () => [...notificationKeys.all, "subscriptions"] as const,
   subscription: (endpoint?: string) =>

@@ -49,9 +49,6 @@ export function useFarmsQuery(userId?: string) {
   useSupabaseRealtime({
     table: "farms",
     refetch: farmsQuery.refetch,
-    events: ["INSERT", "UPDATE", "DELETE"],
-    // 필터 제거: 농장 변경사항은 모든 사용자가 refetch
-    // (멤버십 체크가 복잡하고, API에서 필터링하므로 안전함)
   });
 
   return {

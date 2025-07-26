@@ -147,7 +147,7 @@ function Footer() {
             주소 : 경상북도 안동시 풍산읍 괴정2길 106-23 주101~104동
           </div>
           <div className="mt-2 font-semibold">
-            © {new Date().getFullYear()}{" "}
+            Copyright. © {new Date().getFullYear()}{" "}
             {process.env.ENV_COMPANY_NAME || "SWKorea"} All rights reserved.
           </div>
         </div>
@@ -156,7 +156,7 @@ function Footer() {
   );
 }
 
-export default async function RootLayout({
+export default function RootLayout({
   children,
 }: {
   children: React.ReactNode;
@@ -195,6 +195,7 @@ export default async function RootLayout({
                 <DebugProvider>
                   <PWAProvider>
                     <ToastPositionProvider>
+                      {/* === 상단 실시간 알림 Bell === */}
                       {children}
                       <Footer />
                       {/* === 공통 푸터 끝 === */}

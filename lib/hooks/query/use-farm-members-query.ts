@@ -6,7 +6,7 @@ import { useAuth } from "@/components/providers/auth-provider";
 import type { FarmMembers } from "@/lib/types";
 import { apiClient } from "@/lib/utils/data/api-client";
 import { useSupabaseRealtime } from "@/hooks/useSupabaseRealtime";
-import { useCallback } from "react";
+import { useMemo } from "react";
 
 /**
  * React Query 기반 Farm Members Hook
@@ -85,37 +85,15 @@ export function useFarmMembersQuery(farmId: string | null) {
     }
   );
 
-  // 🔥 농장 멤버 실시간 업데이트를 위한 안정된 필터 함수
-  const memberFilter = useCallback(
-    (payload: any) => {
-      if (!farmId) return false;
-
-      // 특정 농장의 멤버 변경사항만 감지
-      const memberData = payload.new || payload.old;
-      const result = memberData?.farm_id === farmId;
-
-      console.log(
-        `🔥 [MEMBER FILTER] farmId: ${farmId}, payload farm_id: ${memberData?.farm_id}, result: ${result}`
-      );
-      return result;
-    },
-    [farmId]
-  );
-
   // 🔥 농장 멤버 실시간 업데이트 구독
   useSupabaseRealtime({
     table: "farm_members",
     refetch: membersQuery.refetch,
-    events: ["INSERT", "UPDATE", "DELETE"],
-    filter: farmId ? memberFilter : undefined,
-  });
-
-  // 🔥 프로필 변경 시 멤버 아바타 업데이트를 위한 구독
-  useSupabaseRealtime({
-    table: "profiles",
-    refetch: membersQuery.refetch,
-    events: ["UPDATE"],
-    // 멤버의 프로필이 변경되면 아바타도 업데이트
+    filter: (payload) => {
+      const changedFarmId = payload?.new?.farm_id || payload?.old?.farm_id;
+      // farmId가 null이면 모든 농장의 변경사항 처리 (전체 농장 선택)
+      return farmId === null || changedFarmId === farmId;
+    },
   });
 
   return {
@@ -151,15 +129,18 @@ export function useFarmMembersQuery(farmId: string | null) {
 export function useFarmMembersPreviewQuery(farmIds: string[]) {
   const { state } = useAuth();
 
+  // farmIds를 항상 정렬해서 key로 사용
+  const sortedFarmIds = useMemo(() => [...farmIds].sort(), [farmIds]);
+
   const membersQuery = useAuthenticatedQuery(
-    farmsKeys.farmMembersPreview(farmIds), // 팩토리 사용
+    farmsKeys.farmMembersPreview(sortedFarmIds),
     async (): Promise<Record<string, FarmMembers>> => {
-      if (!farmIds.length) {
+      if (!sortedFarmIds.length) {
         return {};
       }
 
       try {
-        const uniqueFarmIds = Array.from(new Set(farmIds));
+        const uniqueFarmIds = Array.from(new Set(sortedFarmIds));
 
         const response = await apiClient(
           `/api/farm-members?farmIds=${uniqueFarmIds.join(",")}`,
@@ -209,59 +190,42 @@ export function useFarmMembersPreviewQuery(farmIds: string[]) {
       }
     },
     {
-      enabled: state.status === "authenticated" && farmIds.length > 0,
+      enabled: state.status === "authenticated" && sortedFarmIds.length > 0,
       staleTime: 5 * 60 * 1000, // 5분 캐싱 (프리뷰는 더 길게)
       refetchOnWindowFocus: false,
       refetchOnReconnect: true,
     }
   );
 
-  // 🔥 다중 농장 멤버 실시간 업데이트를 위한 안정된 필터 함수
-  const previewFilter = useCallback(
-    (payload: any) => {
-      if (!farmIds.length) return false;
-
-      // 현재 조회 중인 농장들의 멤버 변경사항만 감지
-      const memberData = payload.new || payload.old;
-      const targetFarmId = memberData?.farm_id;
-      const result = farmIds.includes(targetFarmId);
-
-      console.log(
-        `🔥 [MEMBER PREVIEW FILTER] farmIds: [${farmIds.join(
-          ", "
-        )}], payload farm_id: ${targetFarmId}, result: ${result}`
-      );
-      return result;
-    },
-    [farmIds]
-  );
-
-  // 🔥 농장 멤버 실시간 업데이트 구독 (다중 농장)
+  // 🔥 다중 농장 멤버 실시간 업데이트 구독
   useSupabaseRealtime({
     table: "farm_members",
-    refetch: membersQuery.refetch,
-    events: ["INSERT", "UPDATE", "DELETE"],
-    filter: farmIds.length > 0 ? previewFilter : undefined,
-  });
-
-  // 🔥 프로필 변경 시 멤버 아바타 업데이트를 위한 구독 (다중 농장)
-  useSupabaseRealtime({
-    table: "profiles",
-    refetch: membersQuery.refetch,
-    events: ["UPDATE"],
-    // 멤버의 프로필이 변경되면 아바타도 업데이트
+    refetch: () => {
+      membersQuery.refetch();
+    },
+    filter: (payload) => {
+      const farmId = payload?.new?.farm_id || payload?.old?.farm_id;
+      return sortedFarmIds.includes(farmId);
+    },
   });
 
   return {
-    // 기존 인터페이스 호환성 유지
     farmMembers: membersQuery.data || {},
-
+    // 단일 농장용 간편 접근
+    members: membersQuery.data
+      ? Object.values(membersQuery.data).flatMap((fm) => fm.members)
+      : [],
+    count: membersQuery.data
+      ? Object.values(membersQuery.data).reduce(
+          (acc, fm) => acc + (fm.count || 0),
+          0
+        )
+      : 0,
     // 상태
     loading: membersQuery.isLoading,
     isLoading: membersQuery.isLoading,
     isError: membersQuery.isError,
     error: membersQuery.error,
-
     // 액션
     refetch: membersQuery.refetch,
     fetchMembers: membersQuery.refetch,

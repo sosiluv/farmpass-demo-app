@@ -4,7 +4,6 @@ import { devLog } from "@/lib/utils/logging/dev-logger";
 import { getClientIP, getUserAgent } from "@/lib/server/ip-helpers";
 import { requireAuth } from "@/lib/server/auth-utils";
 import { prisma } from "@/lib/prisma";
-import { sendSupabaseBroadcast } from "@/lib/supabase/broadcast";
 
 // PUT - 농장 멤버 역할 변경
 export async function PUT(
@@ -144,44 +143,42 @@ export async function PUT(
 
     const oldRole = memberToUpdate.role;
 
-    // 멤버 역할 업데이트
+    // 멤버 역할 업데이트 + 알림 트랜잭션 처리
     try {
-      await prisma.farm_members.update({
-        where: { id: params.memberId },
-        data: { role },
+      await prisma.$transaction(async (tx: any) => {
+        await tx.farm_members.update({
+          where: { id: params.memberId },
+          data: { role },
+        });
+        const members = await tx.farm_members.findMany({
+          where: { farm_id: params.farmId },
+          select: { user_id: true },
+        });
+        await tx.notifications.createMany({
+          data: members.map((m: any) => ({
+            user_id: m.user_id,
+            type: "member_updated",
+            title: `멤버 역할 변경`,
+            message: `${farm.farm_name} 농장 멤버 ${
+              (memberToUpdate.profiles as any)?.name || ""
+            }의 역할이 ${oldRole === "manager" ? "관리자" : "조회자"}에서 ${
+              role === "manager" ? "관리자" : "조회자"
+            }로 변경되었습니다.`,
+            data: {
+              farm_id: params.farmId,
+              farm_name: farm.farm_name,
+              member_id: params.memberId,
+              old_role: oldRole,
+              new_role: role,
+            },
+            link: `/admin/farms/${params.farmId}/members`,
+          })),
+        });
       });
     } catch (updateError) {
       devLog.error("Error updating member role:", updateError);
       throw updateError;
     }
-
-    // 🔥 농장 멤버 수정 실시간 브로드캐스트
-    await sendSupabaseBroadcast({
-      channel: "member_updates",
-      event: "member_updated",
-      payload: {
-        eventType: "UPDATE",
-        new: {
-          id: params.memberId,
-          farm_id: params.farmId,
-          user_id: memberToUpdate.user_id,
-          role: role,
-          old_role: oldRole,
-          name: (memberToUpdate.profiles as any)?.name,
-          email: (memberToUpdate.profiles as any)?.email,
-        },
-        old: {
-          id: params.memberId,
-          farm_id: params.farmId,
-          user_id: memberToUpdate.user_id,
-          role: oldRole,
-          name: (memberToUpdate.profiles as any)?.name,
-          email: (memberToUpdate.profiles as any)?.email,
-        },
-        table: "farm_members",
-        schema: "public",
-      },
-    });
 
     // 농장 멤버 역할 변경 로그 기록
     await createSystemLog(
@@ -198,7 +195,6 @@ export async function PUT(
         farm_id: params.farmId,
         farm_name: farm.farm_name,
         member_email: (memberToUpdate.profiles as any)?.email,
-        member_name: (memberToUpdate.profiles as any)?.name,
         old_role: oldRole,
         new_role: role,
         target_user_id: memberToUpdate.user_id,
@@ -243,7 +239,6 @@ export async function PUT(
         farm_id: params.farmId,
         member_id: params.memberId,
         action_type: "member_management",
-        status: "failed",
       },
       user?.email,
       clientIP,
@@ -398,36 +393,38 @@ export async function DELETE(
       );
     }
 
-    // 멤버 삭제
+    // 멤버 삭제 + 알림 트랜잭션 처리
     try {
-      await prisma.farm_members.delete({
-        where: { id: params.memberId },
+      await prisma.$transaction(async (tx: any) => {
+        await tx.farm_members.delete({
+          where: { id: params.memberId },
+        });
+        const members = await tx.farm_members.findMany({
+          where: { farm_id: params.farmId },
+          select: { user_id: true },
+        });
+        await tx.notifications.createMany({
+          data: members.map((m: any) => ({
+            user_id: m.user_id,
+            type: "member_deleted",
+            title: `멤버 정보 삭제`,
+            message: `${farm.farm_name} 농장 멤버 ${
+              (memberToRemove.profiles as any)?.name || ""
+            }이(가) 제거되었습니다.`,
+            data: {
+              farm_id: params.farmId,
+              farm_name: farm.farm_name,
+              member_id: params.memberId,
+              member_role: memberToRemove.role,
+            },
+            link: `/admin/farms/${params.farmId}/members`,
+          })),
+        });
       });
     } catch (deleteError) {
-      devLog.error("Error deleting member:", deleteError);
+      devLog.error("Error deleting member or notification:", deleteError);
       throw deleteError;
     }
-
-    // 🔥 농장 멤버 삭제 실시간 브로드캐스트
-    await sendSupabaseBroadcast({
-      channel: "member_updates",
-      event: "member_deleted",
-      payload: {
-        eventType: "DELETE",
-        new: null,
-        old: {
-          id: params.memberId,
-          farm_id: params.farmId,
-          user_id: memberToRemove.user_id,
-          role: memberToRemove.role,
-          name: (memberToRemove.profiles as any)?.name,
-          email: (memberToRemove.profiles as any)?.email,
-        },
-        table: "farm_members",
-        schema: "public",
-      },
-    });
-
     // 농장 멤버 제거 로그 기록
     await createSystemLog(
       "MEMBER_DELETE",
@@ -443,7 +440,6 @@ export async function DELETE(
         farm_id: params.farmId,
         farm_name: farm.farm_name,
         member_email: (memberToRemove.profiles as any)?.email,
-        member_name: (memberToRemove.profiles as any)?.name,
         member_role: memberToRemove.role,
         target_user_id: memberToRemove.user_id,
         action_type: "member_management",
@@ -484,7 +480,6 @@ export async function DELETE(
         farm_id: params.farmId,
         member_id: params.memberId,
         action_type: "member_management",
-        status: "failed",
       },
       user?.email,
       clientIP,

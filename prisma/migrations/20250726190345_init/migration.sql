@@ -39,8 +39,8 @@ CREATE TABLE "system_settings" (
     "pushVibrateEnabled" BOOLEAN NOT NULL DEFAULT false,
     "vapidPrivateKey" TEXT,
     "vapidPublicKey" TEXT,
-    "created_at" TIMESTAMPTZ(6) DEFAULT CURRENT_TIMESTAMP,
-    "updated_at" TIMESTAMPTZ(6) DEFAULT CURRENT_TIMESTAMP,
+    "created_at" TIMESTAMPTZ(6) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMPTZ(6) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "id" UUID NOT NULL DEFAULT gen_random_uuid(),
     "subscriptionCleanupDays" INTEGER NOT NULL DEFAULT 30,
     "subscriptionCleanupInactive" BOOLEAN NOT NULL DEFAULT true,
@@ -58,9 +58,9 @@ CREATE TABLE "farm_members" (
     "role" TEXT NOT NULL DEFAULT 'viewer',
     "position" TEXT,
     "responsibilities" TEXT,
-    "is_active" BOOLEAN DEFAULT true,
-    "created_at" TIMESTAMPTZ(6) DEFAULT CURRENT_TIMESTAMP,
-    "updated_at" TIMESTAMPTZ(6) DEFAULT CURRENT_TIMESTAMP,
+    "is_active" BOOLEAN NOT NULL DEFAULT true,
+    "created_at" TIMESTAMPTZ(6) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMPTZ(6) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
     CONSTRAINT "farm_members_pkey" PRIMARY KEY ("id")
 );
@@ -76,9 +76,9 @@ CREATE TABLE "farms" (
     "owner_id" UUID NOT NULL,
     "manager_phone" TEXT,
     "manager_name" TEXT,
-    "is_active" BOOLEAN DEFAULT true,
-    "created_at" TIMESTAMPTZ(6) DEFAULT CURRENT_TIMESTAMP,
-    "updated_at" TIMESTAMPTZ(6) DEFAULT CURRENT_TIMESTAMP,
+    "is_active" BOOLEAN NOT NULL DEFAULT true,
+    "created_at" TIMESTAMPTZ(6) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMPTZ(6) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
     CONSTRAINT "farms_pkey" PRIMARY KEY ("id")
 );
@@ -103,13 +103,14 @@ CREATE TABLE "profiles" (
     "profile_image_url" TEXT,
     "last_login_at" TIMESTAMPTZ(6),
     "password_changed_at" TIMESTAMPTZ(6),
-    "login_count" INTEGER DEFAULT 0,
-    "is_active" BOOLEAN DEFAULT true,
-    "created_at" TIMESTAMPTZ(6) DEFAULT CURRENT_TIMESTAMP,
-    "updated_at" TIMESTAMPTZ(6) DEFAULT CURRENT_TIMESTAMP,
+    "login_count" INTEGER NOT NULL DEFAULT 0,
+    "is_active" BOOLEAN NOT NULL DEFAULT true,
+    "created_at" TIMESTAMPTZ(6) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMPTZ(6) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "login_attempts" INTEGER NOT NULL DEFAULT 0,
     "last_login_attempt" TIMESTAMPTZ(6),
     "last_failed_login" TIMESTAMPTZ(6),
+    "avatar_seed" TEXT,
 
     CONSTRAINT "profiles_pkey" PRIMARY KEY ("id")
 );
@@ -127,7 +128,7 @@ CREATE TABLE "system_logs" (
     "resource_type" TEXT,
     "resource_id" UUID,
     "metadata" JSONB,
-    "created_at" TIMESTAMPTZ(6) DEFAULT CURRENT_TIMESTAMP,
+    "created_at" TIMESTAMPTZ(6) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
     CONSTRAINT "system_logs_pkey" PRIMARY KEY ("id")
 );
@@ -141,14 +142,14 @@ CREATE TABLE "visitor_entries" (
     "visitor_phone" TEXT NOT NULL,
     "visitor_address" TEXT NOT NULL,
     "visitor_purpose" TEXT,
-    "disinfection_check" BOOLEAN DEFAULT false,
+    "disinfection_check" BOOLEAN NOT NULL DEFAULT false,
     "vehicle_number" TEXT,
     "notes" TEXT,
     "registered_by" UUID,
     "session_token" TEXT NOT NULL DEFAULT (gen_random_uuid())::text,
-    "consent_given" BOOLEAN DEFAULT false,
-    "created_at" TIMESTAMPTZ(6) DEFAULT CURRENT_TIMESTAMP,
-    "updated_at" TIMESTAMPTZ(6) DEFAULT CURRENT_TIMESTAMP,
+    "consent_given" BOOLEAN NOT NULL DEFAULT false,
+    "created_at" TIMESTAMPTZ(6) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMPTZ(6) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "profile_photo_url" TEXT,
 
     CONSTRAINT "visitor_entries_pkey" PRIMARY KEY ("id")
@@ -161,12 +162,12 @@ CREATE TABLE "push_subscriptions" (
     "endpoint" TEXT NOT NULL,
     "p256dh" TEXT,
     "auth" TEXT,
-    "created_at" TIMESTAMPTZ(6) DEFAULT CURRENT_TIMESTAMP,
-    "updated_at" TIMESTAMPTZ(6) DEFAULT CURRENT_TIMESTAMP,
+    "created_at" TIMESTAMPTZ(6) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMPTZ(6) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "deleted_at" TIMESTAMPTZ(6),
     "device_id" TEXT,
-    "fail_count" INTEGER DEFAULT 0,
-    "is_active" BOOLEAN DEFAULT true,
+    "fail_count" INTEGER NOT NULL DEFAULT 0,
+    "is_active" BOOLEAN NOT NULL DEFAULT true,
     "last_fail_at" TIMESTAMPTZ(6),
     "last_used_at" TIMESTAMPTZ(6),
     "user_agent" TEXT,
@@ -179,16 +180,32 @@ CREATE TABLE "user_notification_settings" (
     "id" UUID NOT NULL DEFAULT gen_random_uuid(),
     "user_id" UUID NOT NULL,
     "notification_method" VARCHAR(20) NOT NULL,
-    "visitor_alerts" BOOLEAN DEFAULT true,
-    "emergency_alerts" BOOLEAN DEFAULT true,
-    "maintenance_alerts" BOOLEAN DEFAULT true,
+    "visitor_alerts" BOOLEAN NOT NULL DEFAULT true,
+    "emergency_alerts" BOOLEAN NOT NULL DEFAULT true,
+    "maintenance_alerts" BOOLEAN NOT NULL DEFAULT true,
     "kakao_user_id" VARCHAR(100),
-    "is_active" BOOLEAN DEFAULT false,
-    "created_at" TIMESTAMPTZ(6) DEFAULT CURRENT_TIMESTAMP,
-    "updated_at" TIMESTAMPTZ(6) DEFAULT CURRENT_TIMESTAMP,
-    "notice_alerts" BOOLEAN DEFAULT true,
+    "is_active" BOOLEAN NOT NULL DEFAULT false,
+    "created_at" TIMESTAMPTZ(6) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMPTZ(6) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "notice_alerts" BOOLEAN NOT NULL DEFAULT true,
 
     CONSTRAINT "user_notification_settings_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "notifications" (
+    "id" UUID NOT NULL DEFAULT gen_random_uuid(),
+    "user_id" UUID NOT NULL,
+    "type" TEXT NOT NULL,
+    "title" TEXT NOT NULL,
+    "message" TEXT NOT NULL,
+    "data" JSONB,
+    "read" BOOLEAN NOT NULL DEFAULT false,
+    "created_at" TIMESTAMPTZ(6) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMPTZ(6) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "link" TEXT,
+
+    CONSTRAINT "notifications_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateIndex
@@ -225,6 +242,21 @@ CREATE INDEX "idx_profiles_created_at" ON "profiles"("created_at");
 CREATE INDEX "idx_profiles_email" ON "profiles"("email");
 
 -- CreateIndex
+CREATE INDEX "system_logs_user_id_idx" ON "system_logs"("user_id");
+
+-- CreateIndex
+CREATE INDEX "system_logs_level_idx" ON "system_logs"("level");
+
+-- CreateIndex
+CREATE INDEX "system_logs_action_idx" ON "system_logs"("action");
+
+-- CreateIndex
+CREATE INDEX "system_logs_resource_type_idx" ON "system_logs"("resource_type");
+
+-- CreateIndex
+CREATE INDEX "system_logs_created_at_idx" ON "system_logs"("created_at");
+
+-- CreateIndex
 CREATE INDEX "idx_visitor_entries_created_at" ON "visitor_entries"("created_at");
 
 -- CreateIndex
@@ -248,6 +280,9 @@ CREATE UNIQUE INDEX "push_subscriptions_user_id_endpoint_key" ON "push_subscript
 -- CreateIndex
 CREATE UNIQUE INDEX "user_notification_settings_user_id_key" ON "user_notification_settings"("user_id");
 
+-- CreateIndex
+CREATE INDEX "idx_notifications_user_id" ON "notifications"("user_id");
+
 -- AddForeignKey
 ALTER TABLE "farm_members" ADD CONSTRAINT "farm_members_farm_id_fkey" FOREIGN KEY ("farm_id") REFERENCES "farms"("id") ON DELETE CASCADE ON UPDATE NO ACTION;
 
@@ -258,10 +293,19 @@ ALTER TABLE "farm_members" ADD CONSTRAINT "farm_members_user_id_fkey" FOREIGN KE
 ALTER TABLE "farms" ADD CONSTRAINT "farms_owner_id_fkey" FOREIGN KEY ("owner_id") REFERENCES "profiles"("id") ON DELETE CASCADE ON UPDATE NO ACTION;
 
 -- AddForeignKey
-ALTER TABLE "system_logs" ADD CONSTRAINT "system_logs_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "profiles"("id") ON DELETE NO ACTION ON UPDATE NO ACTION;
+ALTER TABLE "system_logs" ADD CONSTRAINT "system_logs_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "profiles"("id") ON DELETE SET NULL ON UPDATE NO ACTION;
 
 -- AddForeignKey
 ALTER TABLE "visitor_entries" ADD CONSTRAINT "visitor_entries_farm_id_fkey" FOREIGN KEY ("farm_id") REFERENCES "farms"("id") ON DELETE CASCADE ON UPDATE NO ACTION;
 
 -- AddForeignKey
-ALTER TABLE "visitor_entries" ADD CONSTRAINT "visitor_entries_registered_by_fkey" FOREIGN KEY ("registered_by") REFERENCES "profiles"("id") ON DELETE NO ACTION ON UPDATE NO ACTION;
+ALTER TABLE "visitor_entries" ADD CONSTRAINT "visitor_entries_registered_by_fkey" FOREIGN KEY ("registered_by") REFERENCES "profiles"("id") ON DELETE CASCADE ON UPDATE NO ACTION;
+
+-- AddForeignKey
+ALTER TABLE "push_subscriptions" ADD CONSTRAINT "push_subscriptions_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "profiles"("id") ON DELETE CASCADE ON UPDATE NO ACTION;
+
+-- AddForeignKey
+ALTER TABLE "user_notification_settings" ADD CONSTRAINT "user_notification_settings_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "profiles"("id") ON DELETE CASCADE ON UPDATE NO ACTION;
+
+-- AddForeignKey
+ALTER TABLE "notifications" ADD CONSTRAINT "notifications_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "profiles"("id") ON DELETE CASCADE ON UPDATE NO ACTION;

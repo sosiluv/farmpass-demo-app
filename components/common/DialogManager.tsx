@@ -7,6 +7,8 @@ import { InstallPrompt } from "./InstallPrompt";
 import { useNotificationPermission } from "@/hooks/useNotificationPermission";
 import { usePWAInstall } from "@/components/providers/pwa-provider";
 import { useFarmsQuery } from "@/lib/hooks/query/use-farms-query";
+import { PhoneInputDialog } from "@/components/common/PhoneInputDialog";
+import { usePhoneInputDialog } from "@/hooks/usePhoneInputDialog";
 
 export function DialogManager() {
   const { currentDialog, isVisible, removeDialog, addDialog, queue } =
@@ -15,6 +17,12 @@ export function DialogManager() {
   const installInfo = usePWAInstall();
   const { showDialog, handleAllow, handleDeny, closeDialog, isResubscribe } =
     useNotificationPermission();
+
+  const {
+    showDialog: showPhoneDialog,
+    handleSave: handlePhoneSave,
+    closeDialog: closePhoneDialog,
+  } = usePhoneInputDialog();
 
   // 농장 데이터 가져오기
   const { farms } = useFarmsQuery();
@@ -30,7 +38,7 @@ export function DialogManager() {
       if (!hasNotificationDialog) {
         addDialog({
           type: "notification",
-          priority: 100, // 최고 우선순위
+          priority: 90, // 최고 우선순위
           data: {
             showDialog,
             handleAllow,
@@ -79,6 +87,33 @@ export function DialogManager() {
     }
   }, [installInfo.canInstall, addDialog, currentDialog, queue]); // queue도 의존성에 추가
 
+  // 휴대폰번호 입력 다이얼로그 관리 (알림설정 다이얼로그와 동일하게 useEffect로 큐에 추가)
+  useEffect(() => {
+    if (showPhoneDialog) {
+      const hasPhoneDialog =
+        currentDialog?.type === "phone-input" ||
+        queue.some((dialog) => dialog.type === "phone-input");
+      if (!hasPhoneDialog) {
+        addDialog({
+          type: "phone-input",
+          priority: 100,
+          data: {
+            handleSave: handlePhoneSave,
+            closeDialog: closePhoneDialog,
+          },
+          isSystemDialog: true,
+        });
+      }
+    }
+  }, [
+    showPhoneDialog,
+    addDialog,
+    currentDialog,
+    queue,
+    handlePhoneSave,
+    closePhoneDialog,
+  ]);
+
   // 현재 다이얼로그 렌더링
   const renderCurrentDialog = () => {
     if (!currentDialog || !isVisible) return null;
@@ -115,6 +150,23 @@ export function DialogManager() {
             delay={0} // 즉시 표시
             onDismiss={() => removeDialog(currentDialog.id)}
             onInstall={() => removeDialog(currentDialog.id)}
+          />
+        );
+
+      case "phone-input":
+        return (
+          <PhoneInputDialog
+            open={true}
+            onOpenChange={(open) => {
+              if (!open) {
+                currentDialog.data.closeDialog();
+                removeDialog(currentDialog.id);
+              }
+            }}
+            onSubmit={async (phoneNumber) => {
+              await currentDialog.data.handleSave(phoneNumber);
+              removeDialog(currentDialog.id);
+            }}
           />
         );
 

@@ -2,7 +2,11 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { createSystemLog } from "@/lib/utils/logging/system-log";
 import { devLog } from "@/lib/utils/logging/dev-logger";
-import { getClientIP, getUserAgent } from "@/lib/server/ip-helpers";
+import {
+  getClientIP,
+  getLocationFromIP,
+  getUserAgent,
+} from "@/lib/server/ip-helpers";
 
 // 동적 렌더링 강제
 export const dynamic = "force-dynamic";
@@ -11,6 +15,7 @@ export async function GET(request: NextRequest) {
   // 요청 컨텍스트 정보 추출
   const clientIP = getClientIP(request);
   const userAgent = getUserAgent(request);
+  const location = await getLocationFromIP(clientIP);
 
   try {
     const { searchParams } = new URL(request.url);
@@ -27,8 +32,8 @@ export async function GET(request: NextRequest) {
         undefined,
         {
           requested_days: days,
+          location: location,
           action_type: "data_retention_check",
-          status: "failed",
         },
         undefined,
         clientIP,
@@ -78,9 +83,10 @@ export async function GET(request: NextRequest) {
         "visitor",
         undefined,
         {
-          error_details: error instanceof Error ? error.stack : undefined,
+          error_message:
+            error instanceof Error ? error.message : "Unknown error",
+          location: location,
           action_type: "data_retention_check",
-          status: "failed",
         },
         undefined,
         clientIP,

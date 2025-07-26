@@ -20,7 +20,7 @@ export const PersonalInfoSection = ({
 }: PersonalInfoSectionProps) => {
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-6">
-      {/* 성명 */}
+      {/* 이름 */}
       <TextField form={form} name="fullName" icon={User} required={true} />
 
       {/* 연락처 */}

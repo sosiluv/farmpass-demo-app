@@ -7,6 +7,7 @@ import { Loader2, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { BUTTONS } from "@/lib/constants/common";
 import { useProfileQuery } from "@/lib/hooks/query/use-profile-query";
+import { PageLoading } from "@/components/ui/loading";
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -118,7 +119,16 @@ export function ProtectedRoute({
 
   // 인증되지 않은 경우 (리다이렉트 처리됨)
   if (state.status === "unauthenticated") {
-    return null;
+    return (
+      <>
+        {/* 로그인 페이지로 이동 중 로딩 UI */}
+        <PageLoading
+          text="로그인 페이지를 불러오는 중..."
+          variant="gradient"
+          fullScreen={true}
+        />
+      </>
+    );
   }
 
   // 권한 부족 (리다이렉트 처리됨)

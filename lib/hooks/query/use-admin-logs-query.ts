@@ -4,7 +4,6 @@ import { useAuthenticatedQuery } from "@/lib/hooks/query-utils";
 import { useAuth } from "@/components/providers/auth-provider";
 import { supabase } from "@/lib/supabase/client";
 import { settingsKeys } from "./query-keys";
-import { useSupabaseRealtime } from "@/hooks/useSupabaseRealtime";
 import { useProfileQuery } from "@/lib/hooks/query/use-profile-query";
 
 // 클라이언트 전용 가드
@@ -146,14 +145,6 @@ export function useAdminLogsQuery() {
       refetchOnMount: false, // 마운트 시 refetch 비활성화 (캐시 우선)
     }
   );
-
-  // 🔥 로그 통계 실시간 업데이트 구독
-  useSupabaseRealtime({
-    table: "system_logs",
-    refetch: logsQuery.refetch,
-    events: ["INSERT", "UPDATE", "DELETE"],
-    // 새로운 로그 생성/수정/삭제 시 통계 갱신
-  });
 
   return logsQuery;
 }

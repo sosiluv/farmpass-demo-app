@@ -2,14 +2,29 @@
  * 알림 관련 타입 정의
  */
 
-import type { NotificationMethod } from "./common";
+import type { NotificationMethod, Notification } from "./common";
 
 // Re-export common types
-export type { NotificationMethod } from "./common";
+export type { NotificationMethod, Notification } from "./common";
 
 // ===========================================
 // 알림 기본 타입
 // ===========================================
+
+export interface NotificationsResponse {
+  notifications: Notification[];
+  total: number;
+  page: number;
+  totalPages: number;
+  pageSize: number;
+}
+
+export interface NotificationsFilters {
+  page?: number;
+  pageSize?: number;
+  read?: boolean;
+  type?: string;
+}
 
 export interface NotificationSettings {
   id: string;

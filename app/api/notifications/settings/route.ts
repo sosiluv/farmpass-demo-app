@@ -27,7 +27,7 @@ export async function GET(request: NextRequest) {
 
     devLog.log("사용자 ID:", user.id);
 
-    const settings = await prisma.userNotificationSettings.findUnique({
+    const settings = await prisma.user_notification_settings.findUnique({
       where: {
         user_id: user.id,
       },
@@ -89,9 +89,8 @@ export async function GET(request: NextRequest) {
       "notification",
       undefined,
       {
-        error: error instanceof Error ? error.message : String(error),
-        stack: error instanceof Error ? error.stack : undefined,
-        status: "failed",
+        error_message: error instanceof Error ? error.message : String(error),
+        action_type: "notification_settings",
       },
       undefined,
       clientIP,
@@ -124,14 +123,16 @@ export async function PUT(request: NextRequest) {
     const user = authResult.user;
 
     const body = await request.json();
-    const existingSettings = await prisma.userNotificationSettings.findUnique({
-      where: {
-        user_id: user.id,
-      },
-      select: {
-        id: true,
-      },
-    });
+    const existingSettings = await prisma.user_notification_settings.findUnique(
+      {
+        where: {
+          user_id: user.id,
+        },
+        select: {
+          id: true,
+        },
+      }
+    );
 
     let result;
     if (existingSettings) {
@@ -140,7 +141,7 @@ export async function PUT(request: NextRequest) {
       const now = new Date();
 
       try {
-        result = await prisma.userNotificationSettings.update({
+        result = await prisma.user_notification_settings.update({
           where: {
             user_id: user.id,
           },
@@ -178,8 +179,7 @@ export async function PUT(request: NextRequest) {
             error_message:
               error instanceof Error ? error.message : String(error),
             user_id: user.id,
-            action_type: "update",
-            status: "failed",
+            action_type: "notification_settings",
           },
           user.email,
           clientIP,
@@ -201,7 +201,7 @@ export async function PUT(request: NextRequest) {
       const now = new Date();
 
       try {
-        result = await prisma.userNotificationSettings.create({
+        result = await prisma.user_notification_settings.create({
           data: {
             ...insertData,
             user_id: user.id,
@@ -238,8 +238,7 @@ export async function PUT(request: NextRequest) {
             error_message:
               error instanceof Error ? error.message : String(error),
             user_id: user.id,
-            action_type: "create",
-            status: "failed",
+            action_type: "notification_settings",
           },
           user.email,
           clientIP,
@@ -266,8 +265,8 @@ export async function PUT(request: NextRequest) {
       undefined,
       {
         user_id: user.id,
-        action_type: existingSettings ? "update" : "create",
-        status: "success",
+        updated_fields: Object.keys(result),
+        action_type: "notification_settings",
       },
       user.email,
       clientIP,
@@ -307,9 +306,8 @@ export async function PUT(request: NextRequest) {
       "notification",
       undefined,
       {
-        error: error instanceof Error ? error.message : String(error),
-        stack: error instanceof Error ? error.stack : undefined,
-        status: "failed",
+        error_message: error instanceof Error ? error.message : String(error),
+        action_type: "notification_settings",
       },
       undefined,
       clientIP,

@@ -130,10 +130,13 @@ export async function POST(request: NextRequest) {
         "system",
         "all",
         {
+          user_id: user?.id,
+          user_email: user?.email,
           title,
           message,
           notificationType,
           targetUserIds,
+          action_type: "push_notification",
         },
         user?.email,
         clientIP,
@@ -162,10 +165,13 @@ export async function POST(request: NextRequest) {
         "system",
         "all",
         {
+          user_id: user?.id,
+          user_email: user?.email,
           title,
           message,
           notificationType,
           targetUserIds,
+          action_type: "push_notification",
         },
         user?.email,
         clientIP,
@@ -204,10 +210,13 @@ export async function POST(request: NextRequest) {
         "system",
         "all",
         {
+          user_id: user?.id,
+          user_email: user?.email,
           title,
           message,
           notificationType,
           targetUserIds,
+          action_type: "push_notification",
         },
         user?.email,
         clientIP,
@@ -270,12 +279,15 @@ export async function POST(request: NextRequest) {
         "system",
         "all",
         {
+          subscriptionError:
+            error instanceof Error ? error.message : String(error),
+          user_id: user?.id,
+          user_email: user?.email,
           title,
           message,
           notificationType,
           targetUserIds,
-          subscriptionError:
-            error instanceof Error ? error.message : String(error),
+          action_type: "push_notification",
         },
         user?.email,
         clientIP,
@@ -304,10 +316,13 @@ export async function POST(request: NextRequest) {
         "system",
         "all",
         {
+          user_id: user?.id,
+          user_email: user?.email,
           notification_type: notificationType,
           target_user_ids: targetUserIds,
           title,
           message,
+          action_type: "push_notification",
         },
         user.email,
         clientIP,
@@ -326,13 +341,13 @@ export async function POST(request: NextRequest) {
 
     // 구독자의 사용자 ID 추출 (중복 제거)
     const userIds = Array.from(
-      new Set(subscriptions.map((sub) => sub.user_id))
+      new Set(subscriptions.map((sub: any) => sub.user_id))
     );
 
     // 알림 설정 조회
     let notificationSettings;
     try {
-      notificationSettings = await prisma.userNotificationSettings.findMany({
+      notificationSettings = await prisma.user_notification_settings.findMany({
         where: {
           user_id: {
             in: userIds,
@@ -349,11 +364,14 @@ export async function POST(request: NextRequest) {
         "system",
         "all",
         {
+          settingsError: error instanceof Error ? error.message : String(error),
+          user_id: user?.id,
+          user_email: user?.email,
           title,
           message,
           notificationType,
           targetUserIds,
-          settingsError: error instanceof Error ? error.message : String(error),
+          action_type: "push_notification",
         },
         user?.email,
         clientIP,
@@ -372,12 +390,12 @@ export async function POST(request: NextRequest) {
 
     // 설정 맵 생성 (빠른 조회를 위해)
     const settingsMap = new Map();
-    notificationSettings?.forEach((setting) => {
+    notificationSettings?.forEach((setting: any) => {
       settingsMap.set(setting.user_id, setting);
     });
 
     // 알림 설정에 따라 필터링
-    const filteredSubscriptions = subscriptions.filter((subscription) => {
+    const filteredSubscriptions = subscriptions.filter((subscription: any) => {
       const userSettings = settingsMap.get(subscription.user_id);
 
       // 알림 설정이 없는 경우 기본적으로 알림 발송하지 않음
@@ -412,6 +430,8 @@ export async function POST(request: NextRequest) {
         "system",
         "all",
         {
+          user_id: user?.id,
+          user_email: user?.email,
           notification_type: notificationType,
           total_subscribers: subscriptions.length,
           filtered_subscribers: 0,
@@ -422,6 +442,7 @@ export async function POST(request: NextRequest) {
             total_settings: userIds.length,
             active_settings: notificationSettings?.length || 0,
           },
+          action_type: "push_notification",
         },
         user.email,
         clientIP,
@@ -468,88 +489,90 @@ export async function POST(request: NextRequest) {
     };
 
     // 필터링된 구독자에게만 푸시 알림 발송
-    const sendPromises = filteredSubscriptions.map(async (subscription) => {
-      try {
-        devLog.log("푸시 알림 발송 시도:", {
-          subscriptionId: subscription.id,
-          user_id: subscription.user_id,
-          endpoint: subscription.endpoint,
-          currentFailCount: subscription.fail_count || 0,
-        });
-
-        const result = await sendPushWithRetry(
-          subscription,
-          JSON.stringify(notificationPayload)
-        );
-
-        // 성공 시 fail_count 초기화 및 last_used_at 업데이트
-        if (result.success) {
-          await prisma.push_subscriptions.update({
-            where: { id: subscription.id },
-            data: {
-              fail_count: 0,
-              last_used_at: new Date(),
-              updated_at: new Date(),
-            },
-          });
-        }
-
-        return {
-          success: result.success,
-          subscriptionId: subscription.id,
-          error: result.error,
-          retryCount: result.retryCount,
-        };
-      } catch (error: any) {
-        devLog.error(`푸시 발송 실패 (구독 ID: ${subscription.id}):`, error);
-
-        // 실패 시 fail_count 증가 및 last_fail_at 업데이트
-        const newFailCount = (subscription.fail_count || 0) + 1;
-
+    const sendPromises = filteredSubscriptions.map(
+      async (subscription: any) => {
         try {
-          await prisma.push_subscriptions.update({
-            where: { id: subscription.id },
-            data: {
-              fail_count: newFailCount,
-              last_fail_at: new Date(),
-              updated_at: new Date(),
-            },
+          devLog.log("푸시 알림 발송 시도:", {
+            subscriptionId: subscription.id,
+            user_id: subscription.user_id,
+            endpoint: subscription.endpoint,
+            currentFailCount: subscription.fail_count || 0,
           });
-        } catch (updateError) {
-          devLog.error("fail_count 업데이트 실패:", updateError);
-        }
 
-        // 410 Gone 에러이거나 fail_count가 5회 이상인 경우 구독 비활성화
-        if (error.statusCode === 410 || newFailCount >= 5) {
+          const result = await sendPushWithRetry(
+            subscription,
+            JSON.stringify(notificationPayload)
+          );
+
+          // 성공 시 fail_count 초기화 및 last_used_at 업데이트
+          if (result.success) {
+            await prisma.push_subscriptions.update({
+              where: { id: subscription.id },
+              data: {
+                fail_count: 0,
+                last_used_at: new Date(),
+                updated_at: new Date(),
+              },
+            });
+          }
+
+          return {
+            success: result.success,
+            subscriptionId: subscription.id,
+            error: result.error,
+            retryCount: result.retryCount,
+          };
+        } catch (error: any) {
+          devLog.error(`푸시 발송 실패 (구독 ID: ${subscription.id}):`, error);
+
+          // 실패 시 fail_count 증가 및 last_fail_at 업데이트
+          const newFailCount = (subscription.fail_count || 0) + 1;
+
           try {
             await prisma.push_subscriptions.update({
               where: { id: subscription.id },
               data: {
-                is_active: false,
-                deleted_at: new Date(),
+                fail_count: newFailCount,
+                last_fail_at: new Date(),
                 updated_at: new Date(),
               },
             });
-
-            devLog.log(
-              `구독 비활성화됨 (ID: ${subscription.id}, 이유: ${
-                error.statusCode === 410 ? "410_GONE" : "FAIL_COUNT_EXCEEDED"
-              })`
-            );
-          } catch (deactivateError) {
-            devLog.error("구독 비활성화 실패:", deactivateError);
+          } catch (updateError) {
+            devLog.error("fail_count 업데이트 실패:", updateError);
           }
-        }
 
-        return {
-          success: false,
-          subscriptionId: subscription.id,
-          error: "PUSH_SEND_FAILED",
-          statusCode: error.statusCode,
-          userId: subscription.user_id,
-        };
+          // 410 Gone 에러이거나 fail_count가 5회 이상인 경우 구독 비활성화
+          if (error.statusCode === 410 || newFailCount >= 5) {
+            try {
+              await prisma.push_subscriptions.update({
+                where: { id: subscription.id },
+                data: {
+                  is_active: false,
+                  deleted_at: new Date(),
+                  updated_at: new Date(),
+                },
+              });
+
+              devLog.log(
+                `구독 비활성화됨 (ID: ${subscription.id}, 이유: ${
+                  error.statusCode === 410 ? "410_GONE" : "FAIL_COUNT_EXCEEDED"
+                })`
+              );
+            } catch (deactivateError) {
+              devLog.error("구독 비활성화 실패:", deactivateError);
+            }
+          }
+
+          return {
+            success: false,
+            subscriptionId: subscription.id,
+            error: "PUSH_SEND_FAILED",
+            statusCode: error.statusCode,
+            userId: subscription.user_id,
+          };
+        }
       }
-    });
+    );
 
     const results = await Promise.all(sendPromises);
     const successCount = results.filter((r) => r.success).length;
@@ -587,6 +610,8 @@ export async function POST(request: NextRequest) {
         "all",
         {
           notification_type: notificationType,
+          user_id: user?.id,
+          user_email: user?.email,
           title,
           message,
           total_attempts: filteredSubscriptions.length,
@@ -604,6 +629,7 @@ export async function POST(request: NextRequest) {
                 status_code: results.find((r) => !r.success)?.statusCode,
               }
             : null,
+          action_type: "push_notification",
         },
         user.email,
         clientIP,
@@ -621,6 +647,8 @@ export async function POST(request: NextRequest) {
       "all",
       {
         notification_type: notificationType,
+        user_id: user?.id,
+        user_email: user?.email,
         title,
         message,
         total_subscribers: subscriptions.length,
@@ -640,6 +668,7 @@ export async function POST(request: NextRequest) {
           sound_enabled: settings?.pushSoundEnabled || false,
           vibrate_enabled: settings?.pushVibrateEnabled || false,
         },
+        action_type: "push_notification",
       },
       user.email,
       clientIP,

@@ -6,11 +6,11 @@ const prisma = new PrismaClient();
 
 async function main() {
   // 기존 시스템 설정이 있는지 확인
-  const existingSettings = await prisma.systemSettings.findFirst();
+  const existingSettings = await prisma.system_settings.findFirst();
 
   if (!existingSettings) {
     // 초기 시스템 설정 생성
-    await prisma.systemSettings.create({
+    await prisma.system_settings.create({
       data: {
         ...DEFAULT_SYSTEM_SETTINGS,
       },

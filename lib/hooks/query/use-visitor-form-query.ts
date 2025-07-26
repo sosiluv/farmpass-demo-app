@@ -132,22 +132,6 @@ export const useCreateVisitorMutation = () => {
       });
       queryClient.invalidateQueries({ queryKey: farmsKeys.info(farmId) });
 
-      // 방문자 실시간 업데이트를 위한 Broadcast Channel
-      try {
-        if (typeof window !== "undefined" && "BroadcastChannel" in window) {
-          const channel = new BroadcastChannel("visitor-updates");
-          channel.postMessage({
-            type: "VISITOR_REGISTERED",
-            farmId,
-            timestamp: Date.now(),
-            data: result,
-          });
-          channel.close();
-        }
-      } catch (error) {
-        console.warn("방문자 실시간 업데이트 브로드캐스트 실패:", error);
-      }
-
       devLog.log("[MUTATION] 방문자 등록 캐시 무효화 완료");
     },
   });
