@@ -13,6 +13,8 @@ export async function PUT(
   const userAgent = getUserAgent(request);
   const { farmId, visitorId } = params;
 
+  let updateData: any = {};
+
   // 인증 확인
   const authResult = await requireAuth(false);
   if (!authResult.success || !authResult.user) {
@@ -22,14 +24,7 @@ export async function PUT(
   const user = authResult.user;
 
   try {
-    devLog.log("방문자 수정 API 요청 시작:", params);
-    const updateData = await request.json();
-
-    devLog.log("수정할 데이터:", {
-      farmId,
-      visitorId,
-      updateData,
-    });
+    updateData = await request.json();
 
     // 필수 필드 검증
     if (
@@ -37,12 +32,6 @@ export async function PUT(
       !updateData.visitor_phone?.trim() ||
       !updateData.visitor_address?.trim()
     ) {
-      devLog.log("필수 필드 누락:", {
-        name: !updateData.visitor_name?.trim(),
-        phone: !updateData.visitor_phone?.trim(),
-        address: !updateData.visitor_address?.trim(),
-      });
-
       return NextResponse.json(
         {
           success: false,
@@ -53,36 +42,56 @@ export async function PUT(
       );
     }
 
-    // 방문자 정보 업데이트
-    devLog.log("Prisma 업데이트 시작");
+    const visitorUpdateData = {
+      visitor_name: updateData.visitor_name.trim(),
+      visitor_phone: updateData.visitor_phone.trim(),
+      visitor_address: updateData.visitor_address.trim(),
+      visitor_purpose: updateData.visitor_purpose?.trim() || null,
+      vehicle_number: updateData.vehicle_number?.trim() || null,
+      notes: updateData.notes?.trim() || null,
+      disinfection_check: updateData.disinfection_check || false,
+      updated_at: new Date(),
+    };
 
-    const data = await prisma.visitor_entries.update({
-      where: {
-        id: visitorId,
-        farm_id: farmId,
-      },
-      data: {
-        visitor_name: updateData.visitor_name.trim(),
-        visitor_phone: updateData.visitor_phone.trim(),
-        visitor_address: updateData.visitor_address.trim(),
-        visitor_purpose: updateData.visitor_purpose?.trim() || null,
-        vehicle_number: updateData.vehicle_number?.trim() || null,
-        notes: updateData.notes?.trim() || null,
-        disinfection_check: updateData.disinfection_check || false,
-        updated_at: new Date(),
-      },
-      include: {
-        farms: {
-          select: {
-            farm_name: true,
-            farm_type: true,
+    // 방문자 정보 업데이트 + 알림 트랜잭션 처리
+    const data = await prisma.$transaction(async (tx: typeof prisma) => {
+      const updatedVisitor = await tx.visitor_entries.update({
+        where: {
+          id: visitorId,
+          farm_id: farmId,
+        },
+        data: visitorUpdateData,
+        include: {
+          farms: {
+            select: {
+              farm_name: true,
+              farm_type: true,
+            },
           },
         },
-      },
+      });
+      const members = await tx.farm_members.findMany({
+        where: { farm_id: farmId },
+        select: { user_id: true },
+      });
+      await tx.notifications.createMany({
+        data: members.map((m: any) => ({
+          user_id: m.user_id,
+          type: "visitor_updated",
+          title: `방문자 정보 수정`,
+          message: `${updatedVisitor.farms?.farm_name} 농장 방문자 정보가 수정되었습니다: ${updatedVisitor.visitor_name}`,
+          data: {
+            farm_id: farmId,
+            farm_name: updatedVisitor.farms?.farm_name,
+            visitor_id: updatedVisitor.id,
+            visitor_name: updatedVisitor.visitor_name,
+            updated_fields: Object.keys(visitorUpdateData),
+          },
+          link: `/admin/farms/${farmId}/visitors`,
+        })),
+      });
+      return updatedVisitor;
     });
-
-    devLog.log("방문자 정보 업데이트 성공:", data);
-
     // 성공 로그 기록
     await createSystemLog(
       "VISITOR_UPDATED",
@@ -93,10 +102,10 @@ export async function PUT(
       visitorId,
       {
         farm_id: farmId,
+        farm_name: data.farms?.farm_name,
         visitor_id: visitorId,
-        visitor_name: data.visitor_name,
-        status: "success",
-        changes: updateData,
+        updated_fields: Object.keys(visitorUpdateData),
+        action_type: "visitor_management",
       },
       user.email,
       clientIP,
@@ -143,14 +152,11 @@ export async function PUT(
       "visitor",
       visitorId,
       {
+        error_message: error instanceof Error ? error.message : "Unknown error",
         farm_id: farmId,
         visitor_id: visitorId,
-        error: error.message,
-        status: "failed",
-        metadata: {
-          message: "방문자 정보 수정 실패",
-          error_code: error.code,
-        },
+        visitor_data: updateData,
+        action_type: "visitor_management",
       },
       user.email,
       clientIP,
@@ -207,14 +213,33 @@ export async function DELETE(
       );
     }
 
-    // 방문자 삭제
-    await prisma.visitor_entries.delete({
-      where: {
-        id: visitorId,
-        farm_id: farmId,
-      },
+    // 방문자 삭제 + 알림 트랜잭션 처리
+    await prisma.$transaction(async (tx: typeof prisma) => {
+      await tx.visitor_entries.delete({
+        where: {
+          id: visitorId,
+          farm_id: farmId,
+        },
+      });
+      const members = await tx.farm_members.findMany({
+        where: { farm_id: farmId },
+        select: { user_id: true },
+      });
+      await tx.notifications.createMany({
+        data: members.map((m: any) => ({
+          user_id: m.user_id,
+          type: "visitor_deleted",
+          title: `방문자 정보 삭제`,
+          message: `농장 방문자가 삭제되었습니다: ${visitor.visitor_name}`,
+          data: {
+            farm_id: farmId,
+            visitor_id: visitorId,
+            visitor_name: visitor.visitor_name,
+          },
+          link: `/admin/farms/${farmId}/visitors`,
+        })),
+      });
     });
-
     // 성공 로그 기록
     await createSystemLog(
       "VISITOR_DELETED",
@@ -227,7 +252,7 @@ export async function DELETE(
         farm_id: farmId,
         visitor_id: visitorId,
         visitor_name: visitor.visitor_name,
-        status: "success",
+        action_type: "visitor_management",
       },
       user.email,
       clientIP,
@@ -261,14 +286,10 @@ export async function DELETE(
       "visitor",
       visitorId,
       {
+        error_message: error instanceof Error ? error.message : "Unknown error",
         farm_id: farmId,
         visitor_id: visitorId,
-        error: error.message,
-        status: "failed",
-        metadata: {
-          message: "방문자 삭제 실패",
-          error_code: error.code,
-        },
+        action_type: "visitor_management",
       },
       user.email,
       clientIP,

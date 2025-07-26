@@ -41,9 +41,8 @@ export async function PATCH(request: NextRequest) {
       user.id,
       {
         target_user_id: user.id,
-        action_type: "profile_info_update",
         updated_fields: Object.keys(data),
-        status: "success",
+        action_type: "profile_info_update",
       },
       user.email,
       clientIP,
@@ -85,10 +84,9 @@ export async function PATCH(request: NextRequest) {
       "user",
       user?.id,
       {
+        error_message: error instanceof Error ? error.message : String(error),
         target_user_id: user?.id,
         action_type: "profile_info_update",
-        error: error instanceof Error ? error.message : String(error),
-        status: "failed",
       },
       user?.email,
       clientIP,

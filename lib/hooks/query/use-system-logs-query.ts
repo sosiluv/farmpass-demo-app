@@ -4,7 +4,6 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase/client";
 import { logsKeys } from "./query-keys";
 import type { SystemLog } from "@/lib/types/system";
-import { useSupabaseRealtime } from "@/hooks/useSupabaseRealtime";
 
 /**
  * 시스템 로그 리스트 조회 Hook

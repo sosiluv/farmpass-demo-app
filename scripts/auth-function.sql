@@ -242,6 +242,20 @@ CREATE TRIGGER tr_handle_session_event
 
 -----------------------------------------------------------------------------------------------------------------------
 
+-- CREATE OR REPLACE FUNCTION public.handle_profile_delete_on_user_delete()
+-- RETURNS TRIGGER AS $$
+-- BEGIN
+--   DELETE FROM public.profiles WHERE id = OLD.id;
+--   RETURN OLD;
+-- END;
+-- $$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- DROP TRIGGER IF EXISTS tr_handle_profile_delete_on_user_delete ON auth.users;
+-- CREATE TRIGGER tr_handle_profile_delete_on_user_delete
+--   AFTER DELETE ON auth.users
+--   FOR EACH ROW
+--   EXECUTE FUNCTION public.handle_profile_delete_on_user_delete();
+
 
 
 -- 사용자 프로필 테이블 주석
@@ -294,7 +308,6 @@ COMMENT ON TABLE public.farm_members IS '농장별 구성원 및 권한 정보�
 COMMENT ON COLUMN public.farm_members.id IS '구성원 관계 고유 ID';
 COMMENT ON COLUMN public.farm_members.farm_id IS '농장 ID (farms 테이블 참조)';
 COMMENT ON COLUMN public.farm_members.user_id IS '사용자 ID (profiles 테이블 참조)';
-COMMENT ON COLUMN public.farm_members.member_name IS '농장 구성원 이름';
 COMMENT ON COLUMN public.farm_members.role IS '농장 내 역할: owner(소유자), manager(관리자), viewer(조회자)';
 COMMENT ON COLUMN public.farm_members.position IS '농장 내 직책';
 COMMENT ON COLUMN public.farm_members.responsibilities IS '담당 업무 설명';
@@ -407,16 +420,16 @@ COMMENT ON COLUMN public.user_notification_settings.created_at IS '생성 시간
 COMMENT ON COLUMN public.user_notification_settings.updated_at IS '수정 시간';
 
 
-model realtime_notification_events {
-  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid // 알림 고유 ID
-  user_id    String   @db.Uuid                                               // 알림 대상 사용자 ID (profiles 테이블 참조)
-  title      String                                                          // 알림 제목
-  message    String                                                          // 알림 본문
-  created_at DateTime @default(now()) @db.Timestamptz(6)                     // 생성 시각
-  read       Boolean  @default(false)                                        // 읽음 여부
+-- 알림 테이블 주석
+COMMENT ON TABLE public.notifications IS '시스템 알림(이벤트, 권한, 방문 등)을 저장하는 테이블';
+COMMENT ON COLUMN public.notifications.id IS '알림 고유 ID';
+COMMENT ON COLUMN public.notifications.user_id IS '알림을 받을 사용자 ID (profiles.id)';
+COMMENT ON COLUMN public.notifications.type IS '알림 유형(예: farm_member_added, visitor_registered 등)';
+COMMENT ON COLUMN public.notifications.title IS '알림 제목';
+COMMENT ON COLUMN public.notifications.message IS '알림 본문/내용';
+COMMENT ON COLUMN public.notifications.data IS '추가 데이터(관련 리소스 ID 등, JSON)';
+COMMENT ON COLUMN public.notifications.read IS '읽음 여부';
+COMMENT ON COLUMN public.notifications.created_at IS '생성 시각';
+COMMENT ON COLUMN public.notifications.updated_at IS '수정 시각(읽음 처리 등)';
 
-  profiles   profiles @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
-  @@index([user_id], map: "idx_realtime_notification_events_user_id")
-  @@index([created_at], map: "idx_realtime_notification_events_created_at")
-}

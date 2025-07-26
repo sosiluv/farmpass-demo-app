@@ -1,58 +1,72 @@
 import { create } from "zustand";
-
-export type Notification = {
-  title: string;
-  message: string;
-  timestamp?: number;
-  read?: boolean;
-  [key: string]: any;
-};
+import type { Notification } from "@/lib/types/notification";
 
 interface NotificationState {
   notifications: Notification[];
   unread: boolean;
-  addNotification: (n: Notification) => void;
+  page: number;
+  total: number;
+  totalPages: number;
+  pageSize: number;
   markAllRead: () => void;
-  markNotificationRead: (id: string) => void;
   removeNotification: (id: string) => void;
+  loadNotifications: (page?: number, pageSize?: number) => Promise<void>;
+  loadMoreNotifications: () => Promise<void>;
+  markNotificationsRead: (ids: string[]) => Promise<void>;
 }
 
 function getNotificationId(n: Notification) {
-  return `${n.timestamp ?? 0}_${n.title}_${n.message}`;
+  return `${n.created_at}_${n.title}_${n.message}`;
 }
 
 export const useNotificationStore = create<
   NotificationState & { clearAll: () => void }
->((set) => ({
+>((set, get) => ({
   notifications: [],
   unread: false,
-  addNotification: (n) =>
-    set((state) => ({
-      notifications: [{ ...n, read: false }, ...state.notifications].slice(
-        0,
-        10
-      ),
-      unread: true,
-    })),
+  page: 1,
+  total: 0,
+  totalPages: 1,
+  pageSize: 20,
   markAllRead: () =>
     set((state) => ({
       notifications: state.notifications.map((n) => ({ ...n, read: true })),
       unread: false,
     })),
-  markNotificationRead: (id) =>
-    set((state) => {
-      const notifications = state.notifications.map((n) =>
-        getNotificationId(n) === id ? { ...n, read: true } : n
-      );
-      const unread = notifications.some((n) => !n.read);
-      return { notifications, unread };
-    }),
-  removeNotification: (id) =>
+  removeNotification: async (idOrIds) => {
+    const ids = Array.isArray(idOrIds) ? idOrIds : [idOrIds];
+    // React Query mutation을 사용하므로 여기서는 상태만 업데이트
     set((state) => ({
-      notifications: state.notifications.filter(
-        (n) => getNotificationId(n) !== id
+      notifications: state.notifications.filter((n) => !ids.includes(n.id)),
+    }));
+  },
+  loadNotifications: async (page = 1, pageSize = 20) => {
+    // React Query를 사용하므로 여기서는 상태만 업데이트
+    // 실제 데이터는 useNotificationsQuery에서 관리
+    set({
+      page,
+      pageSize,
+    });
+  },
+  loadMoreNotifications: async () => {
+    const { page, totalPages, pageSize } = get();
+    if (page < totalPages) {
+      const nextPage = page + 1;
+      // React Query를 사용하므로 여기서는 상태만 업데이트
+      set({
+        page: nextPage,
+      });
+    }
+  },
+  markNotificationsRead: async (ids) => {
+    // React Query mutation을 사용하므로 여기서는 상태만 업데이트
+    set((state) => ({
+      notifications: state.notifications.map((n) =>
+        ids.includes(n.id) ? { ...n, read: true } : n
       ),
-    })),
+      unread: state.notifications.some((n) => !ids.includes(n.id) && !n.read),
+    }));
+  },
   clearAll: () => set({ notifications: [], unread: false }),
 }));
 

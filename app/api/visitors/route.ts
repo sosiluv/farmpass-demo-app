@@ -132,8 +132,7 @@ export async function GET(request: NextRequest) {
           {
             user_id: user.id,
             user_email: user.email,
-            reason: "no_farm_access",
-            action: "visitor_list_access_denied",
+            action_type: "visitor_list_access_denied",
           },
           user.email,
           clientIP,
@@ -208,10 +207,7 @@ export async function GET(request: NextRequest) {
       {
         visitor_count: visitorData?.length || 0,
         access_scope: includeAllFarms ? "all_farms" : "own_farms",
-        metadata: {
-          ipAddress: clientIP,
-          userAgent: userAgent,
-        },
+        action_type: "visitor_list_access",
       },
       user.email,
       clientIP,
@@ -330,6 +326,7 @@ export async function POST(request: NextRequest) {
       {
         visitor_id: data.id,
         visitor_data: body,
+        action_type: "visitor_registration",
       },
       undefined,
       clientIP,
@@ -363,8 +360,9 @@ export async function POST(request: NextRequest) {
       "visitor",
       undefined,
       {
-        error: error instanceof Error ? error.message : String(error),
-        visitor_data: "request body parsing failed",
+        error_message: error instanceof Error ? error.message : String(error),
+        visitor_data: request.body,
+        action_type: "visitor_registration",
       },
       undefined,
       clientIP,
@@ -380,7 +378,8 @@ export async function POST(request: NextRequest) {
       "visitor",
       undefined,
       {
-        error: error instanceof Error ? error.message : String(error),
+        error_message: error instanceof Error ? error.message : String(error),
+        action_type: "visitor_registration",
       },
       undefined,
       clientIP,

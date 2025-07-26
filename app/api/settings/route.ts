@@ -38,9 +38,9 @@ export async function GET(request: NextRequest) {
         "system",
         undefined,
         {
-          action: "INITIALIZE",
           settingsCount: Object.keys(DEFAULT_SYSTEM_SETTINGS).length,
           method: "GET /api/settings",
+          action_type: "system_settings",
         },
         undefined, // userEmail
         clientIP, // userIP
@@ -175,16 +175,9 @@ export async function PATCH(request: NextRequest) {
         "system",
         undefined,
         {
+          updated_fields: Object.keys(data),
           changed_fields: changedFields,
-          old_values: changedFields.reduce((acc, field) => {
-            acc[field] = settings[field as keyof typeof settings];
-            return acc;
-          }, {} as Record<string, any>),
-          new_values: changedFields.reduce((acc, field) => {
-            acc[field] = data[field];
-            return acc;
-          }, {} as Record<string, any>),
-          update_method: "PATCH_API",
+          action_type: "system_settings",
         },
         user.email,
         clientIP,
@@ -237,8 +230,8 @@ export async function PATCH(request: NextRequest) {
       "system",
       undefined,
       {
-        error: error instanceof Error ? error.message : String(error),
-        update_method: "PATCH_API",
+        error_message: error instanceof Error ? error.message : String(error),
+        action_type: "system_settings",
       },
       undefined, // userEmail - 에러 상황에서는 user 정보가 없을 수 있음
       clientIP,

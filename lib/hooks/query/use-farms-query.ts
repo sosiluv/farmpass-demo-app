@@ -49,7 +49,6 @@ export function useFarmsQuery(userId?: string) {
   useSupabaseRealtime({
     table: "farms",
     refetch: farmsQuery.refetch,
-    events: ["INSERT", "UPDATE", "DELETE"],
   });
 
   return {

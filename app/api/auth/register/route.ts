@@ -1,7 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createSystemLog, logApiError } from "@/lib/utils/logging/system-log";
-import { getClientIP, getUserAgent } from "@/lib/server/ip-helpers";
+import {
+  getClientIP,
+  getLocationFromIP,
+  getUserAgent,
+} from "@/lib/server/ip-helpers";
 import { devLog } from "@/lib/utils/logging/dev-logger";
 
 // Turnstile 검증 함수
@@ -58,6 +62,7 @@ async function verifyTurnstile(
 export async function POST(request: NextRequest) {
   const clientIP = getClientIP(request);
   const userAgent = getUserAgent(request);
+  const location = await getLocationFromIP(clientIP);
 
   try {
     const body = await request.json();
@@ -95,10 +100,11 @@ export async function POST(request: NextRequest) {
         "user",
         undefined,
         {
+          error_message: authError.message,
           email: validatedData.email,
           name: validatedData.name,
-          error_message: authError.message,
-          error_code: authError.status || "UNKNOWN",
+          location: location,
+          action_type: "security_event",
         },
         validatedData.email,
         clientIP,
@@ -139,8 +145,8 @@ export async function POST(request: NextRequest) {
         email: validatedData.email,
         name: validatedData.name,
         phone: validatedData.phone,
-        account_type: "user",
-        registration_source: "web",
+        location: location,
+        action_type: "security_event",
       },
       validatedData.email,
       clientIP,
@@ -174,7 +180,8 @@ export async function POST(request: NextRequest) {
       undefined,
       {
         error_message: error instanceof Error ? error.message : "Unknown error",
-        error_type: "SYSTEM_ERROR",
+        location: location,
+        action_type: "security_event",
       },
       undefined,
       clientIP,

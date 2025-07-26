@@ -197,7 +197,6 @@ export function useAdminUsersQuery() {
   useSupabaseRealtime({
     table: "farm_members",
     refetch: usersQuery.refetch,
-    events: ["INSERT", "UPDATE", "DELETE"],
     // 농장 멤버 변경은 사용자 통계에 영향을 줄 수 있음
   });
 
@@ -269,21 +268,6 @@ export function useAdminUsersListQuery() {
       refetchOnWindowFocus: true,
     }
   );
-
-  // 🔥 사용자 목록 실시간 업데이트 구독
-  useSupabaseRealtime({
-    table: "profiles",
-    refetch: usersListQuery.refetch,
-    events: ["INSERT", "UPDATE", "DELETE"],
-    // 사용자 가입/탈퇴/수정 시 목록 갱신
-  });
-
-  useSupabaseRealtime({
-    table: "farm_members",
-    refetch: usersListQuery.refetch,
-    events: ["INSERT", "UPDATE", "DELETE"],
-    // 농장 멤버 변경 시 목록 갱신 (역할 정보 포함)
-  });
 
   return usersListQuery;
 }

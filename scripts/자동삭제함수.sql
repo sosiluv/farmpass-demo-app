@@ -788,6 +788,155 @@ BEGIN
 END;
 $$;
 
+-- =========================================================================================================
+-- 알림(notifications) 30일 초과 데이터 자동 삭제 함수
+-- =========================================================================================================
+
+CREATE OR REPLACE FUNCTION auto_cleanup_expired_notifications()
+RETURNS TABLE(
+  execution_id UUID,
+  deleted_count INTEGER,
+  retention_days INTEGER,
+  cutoff_date TIMESTAMPTZ,
+  execution_time INTERVAL,
+  status TEXT
+)
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  v_execution_id UUID := gen_random_uuid();
+  v_start_time TIMESTAMPTZ := NOW();
+  v_retention_days INTEGER := 30;
+  v_cutoff_date TIMESTAMPTZ;
+  v_deleted_count INTEGER;
+  v_execution_time INTERVAL;
+  v_admin_user_id UUID;
+  v_admin_email TEXT;
+  v_error_message TEXT;
+BEGIN
+  -- 첫 번째 admin 사용자 정보 가져오기
+  SELECT id, email 
+  INTO v_admin_user_id, v_admin_email
+  FROM profiles 
+  WHERE account_type = 'admin' 
+  ORDER BY created_at 
+  LIMIT 1;
+  IF v_admin_user_id IS NULL THEN
+    v_admin_email := 'admin@system';
+  END IF;
+
+  -- 실행 시작 로그
+  INSERT INTO system_logs (
+    level, action, message, user_id, user_email, user_ip, user_agent,
+    resource_type, metadata, created_at
+  ) VALUES (
+    'info', 'SCHEDULED_JOB',
+    '스케줄 작업: notifications_cleanup started',
+    v_admin_user_id, COALESCE(v_admin_email, 'admin@system'),
+    'system-internal', 'PostgreSQL Auto Cleanup Service', 'system',
+    jsonb_build_object(
+      'job_name', 'notifications_cleanup',
+      'job_status', 'STARTED',
+      'execution_id', v_execution_id,
+      'start_time', v_start_time,
+      'trigger_type', 'cron_scheduled',
+      'executed_by', 'system_automation',
+      'timestamp', v_start_time
+    ), v_start_time
+  );
+
+  BEGIN
+    v_cutoff_date := NOW() - (v_retention_days || ' days')::INTERVAL;
+    DELETE FROM notifications WHERE created_at < v_cutoff_date;
+    GET DIAGNOSTICS v_deleted_count = ROW_COUNT;
+    v_execution_time := NOW() - v_start_time;
+
+    -- 성공 로그
+    INSERT INTO system_logs (
+      level, action, message, user_id, user_email, user_ip, user_agent,
+      resource_type, metadata, created_at
+    ) VALUES (
+      'info', 'SCHEDULED_JOB',
+      format('스케줄 작업: notifications_cleanup completed (%s건 삭제)', v_deleted_count),
+      v_admin_user_id, COALESCE(v_admin_email, 'admin@system'),
+      'system-internal', 'PostgreSQL Auto Cleanup Service', 'system',
+      jsonb_build_object(
+        'job_name', 'notifications_cleanup',
+        'job_status', 'COMPLETED',
+        'execution_id', v_execution_id,
+        'deleted_count', v_deleted_count,
+        'retention_days', v_retention_days,
+        'cutoff_date', v_cutoff_date,
+        'duration_ms', EXTRACT(EPOCH FROM v_execution_time) * 1000,
+        'cleanup_type', 'automated',
+        'executed_by', 'system_automation',
+        'timestamp', NOW()
+      ), NOW()
+    );
+
+    -- 데이터 변경 로그
+    IF v_deleted_count > 0 THEN
+      INSERT INTO system_logs (
+        level, action, message, user_id, user_email, user_ip, user_agent,
+        resource_type, metadata, created_at
+      ) VALUES (
+        'info', 'NOTIFICATION_DELETED',
+        format('notification delete: 만료된 알림 자동 정리 (%s건)', v_deleted_count),
+        v_admin_user_id, COALESCE(v_admin_email, 'admin@system'),
+        'system-internal', 'PostgreSQL Auto Cleanup Service', 'notification',
+        jsonb_build_object(
+          'resource_type', 'notification',
+          'action', 'DELETE',
+          'record_id', null,
+          'changes', jsonb_build_object(
+            'deleted_count', v_deleted_count,
+            'retention_days', v_retention_days,
+            'cutoff_date', v_cutoff_date,
+            'cleanup_type', 'automated'
+          ),
+          'timestamp', NOW()
+        ), NOW()
+      );
+    END IF;
+
+    RETURN QUERY SELECT 
+      v_execution_id, v_deleted_count, v_retention_days, v_cutoff_date,
+      v_execution_time, 'SUCCESS'::TEXT;
+
+  EXCEPTION WHEN OTHERS THEN
+    v_error_message := SQLERRM;
+    v_execution_time := NOW() - v_start_time;
+    -- 실패 로그
+    INSERT INTO system_logs (
+      level, action, message, user_id, user_email, user_ip, user_agent,
+      resource_type, metadata, created_at
+    ) VALUES (
+      'error', 'SCHEDULED_JOB',
+      format('스케줄 작업 실패: notifications_cleanup - %s', v_error_message),
+      v_admin_user_id, COALESCE(v_admin_email, 'admin@system'),
+      'system-internal', 'PostgreSQL Auto Cleanup Service', 'system',
+      jsonb_build_object(
+        'job_name', 'notifications_cleanup',
+        'job_status', 'FAILED',
+        'execution_id', v_execution_id,
+        'error_message', v_error_message,
+        'duration_ms', EXTRACT(EPOCH FROM v_execution_time) * 1000,
+        'cleanup_type', 'automated',
+        'executed_by', 'system_automation',
+        'timestamp', NOW()
+      ), NOW()
+    );
+    RETURN QUERY SELECT 
+      v_execution_id, 0, v_retention_days, v_cutoff_date,
+      v_execution_time, 'ERROR'::TEXT;
+  END;
+END;
+$$;
+
+ 
+
 ----------------------------------------------------------------------------------------------------------------
 
 
@@ -802,18 +951,8 @@ SELECT cron.schedule('cleanup-system-logs', '0 18 * * *', 'SELECT auto_cleanup_e
 -- 한국 시간 새벽 4시 (UTC 전날 19시)에 푸시 구독 정리
 SELECT cron.schedule('cleanup-push-subscriptions', '0 19 * * *', 'SELECT auto_cleanup_expired_push_subscriptions();');
 
--- 한국 시간 일요일 새벽 4시 (UTC 토요일 19시)에 주간 보고서 생성
-SELECT cron.schedule('weekly-cleanup-report', '0 19 * * 6', 'SELECT generate_weekly_cleanup_report();');
-
--- 시간대 참고사항:
--- - PostgreSQL 크론은 UTC 기준으로 실행됩니다
--- - 한국 시간(KST)은 UTC+9 이므로 9시간을 빼서 설정해야 합니다
--- - 예: 한국 새벽 2시 = UTC 전날 17시
--- - 일요일은 한국 기준이므로 UTC에서는 토요일(6)이 됩니다
-
--- 또는 통합 정리 (한국 시간 새벽 2시 = UTC 전날 17시)
-SELECT cron.schedule('cleanup-all-data', '0 17 * * *', 'SELECT auto_cleanup_all_expired_data();');
-*/
+-- 한국 시간 새벽 4시 (UTC 전날 20시)에 알람 정리
+SELECT cron.schedule('cleanup-notifications', '0 20 * * *', 'SELECT auto_cleanup_expired_notifications();');
 
 
 ----------------------------------------------------------------------------------------------------------------
@@ -1165,4 +1304,4 @@ SELECT cron.schedule(
 
 -----------------------------------------------------------------------------------------------------------------------------------------------------------
 
- 
+

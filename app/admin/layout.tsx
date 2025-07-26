@@ -40,7 +40,9 @@ export default function AdminLayout({
                 <MobileHeader />
                 <MaintenanceBanner isAdmin={true} />
                 <RealtimeNotificationBell />
-                <main className="flex-1 p-4 md:p-6">{children}</main>
+                <main className="flex-1 p-4 md:p-6 pt-15 md:pt-12">
+                  {children}
+                </main>
               </SidebarInset>
               <MobileMenuButton />
               {/* Admin 페이지에서만 알림 권한 다이얼로그 관리 */}

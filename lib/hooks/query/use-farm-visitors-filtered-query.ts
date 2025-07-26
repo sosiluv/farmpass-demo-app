@@ -5,8 +5,8 @@ import { useAuthenticatedQuery } from "@/lib/hooks/query-utils";
 import { visitorsKeys } from "@/lib/hooks/query/query-keys";
 import { useAuth } from "@/components/providers/auth-provider";
 import { createClient } from "@/lib/supabase/client";
-import type { VisitorEntry } from "@/lib/types";
-import type { VisitorStats } from "@/lib/types/statistics";
+import type { VisitorEntry, VisitorFilters } from "@/lib/types";
+
 import {
   calculateVisitorStats,
   calculatePurposeStats,
@@ -21,14 +21,6 @@ import {
 } from "@/lib/utils/datetime/date";
 import { useSupabaseRealtime } from "@/hooks/useSupabaseRealtime";
 
-interface VisitorFilters {
-  farmId?: string;
-  searchTerm?: string;
-  dateRange?: "today" | "week" | "month" | "custom" | "all";
-  dateStart?: string;
-  dateEnd?: string;
-}
-
 /**
  * React Query 기반 방문자 필터링 Hook
  *
@@ -37,7 +29,9 @@ interface VisitorFilters {
  * - 검색어 (이름, 연락처, 주소)
  * - 날짜 범위 (오늘, 일주일, 한달, 커스텀)
  */
-export function useFarmVisitorsWithFiltersQuery(filters: VisitorFilters = {}) {
+export function useFarmVisitorsWithFiltersQuery(
+  filters: Partial<VisitorFilters> = {}
+) {
   const { state } = useAuth();
   const supabase = createClient();
 
@@ -93,7 +87,11 @@ export function useFarmVisitorsWithFiltersQuery(filters: VisitorFilters = {}) {
   useSupabaseRealtime({
     table: "visitor_entries",
     refetch: visitorsQuery.refetch,
-    events: ["INSERT", "UPDATE", "DELETE"],
+    filter: (payload) => {
+      const changedFarmId = payload?.new?.farm_id || payload?.old?.farm_id;
+      // filters.farmId가 null이면 모든 농장의 변경사항 처리 (전체 농장 선택)
+      return filters.farmId === null || changedFarmId === filters.farmId;
+    },
   });
 
   // 필터링된 데이터 및 통계 계산

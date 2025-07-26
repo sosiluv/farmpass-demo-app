@@ -66,7 +66,11 @@ export function useFarmVisitorsQuery(farmId: string | null) {
   useSupabaseRealtime({
     table: "visitor_entries",
     refetch: visitorsQuery.refetch,
-    events: ["INSERT", "UPDATE", "DELETE"],
+    filter: (payload) => {
+      const changedFarmId = payload?.new?.farm_id || payload?.old?.farm_id;
+      // farmId가 null이면 모든 농장의 변경사항 처리 (전체 농장 선택)
+      return farmId === null || changedFarmId === farmId;
+    },
   });
 
   // 30일 날짜 배열 - 한 번만 생성하여 재사용

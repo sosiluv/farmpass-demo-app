@@ -4,7 +4,6 @@ import { useAuthenticatedQuery } from "@/lib/hooks/query-utils";
 import { useAuth } from "@/components/providers/auth-provider";
 import { supabase } from "@/lib/supabase/client";
 import { settingsKeys } from "./query-keys";
-import { useSupabaseRealtime } from "@/hooks/useSupabaseRealtime";
 import { useProfileQuery } from "@/lib/hooks/query/use-profile-query";
 
 // 클라이언트 전용 가드

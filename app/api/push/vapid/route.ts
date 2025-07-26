@@ -32,7 +32,11 @@ export async function POST(request: NextRequest) {
       user.id,
       "system",
       undefined,
-      undefined,
+      {
+        user_id: user.id,
+        user_email: user.email,
+        action_type: "push_notification_vapid",
+      },
       user.email,
       clientIP,
       userAgent
@@ -59,7 +63,10 @@ export async function POST(request: NextRequest) {
       undefined,
       "system",
       undefined,
-      undefined,
+      {
+        error_message: error instanceof Error ? error.message : String(error),
+        action_type: "push_notification_vapid",
+      },
       undefined,
       clientIP,
       userAgent
@@ -119,7 +126,9 @@ export async function GET(request: NextRequest) {
         undefined,
         "system",
         undefined,
-        undefined,
+        {
+          action_type: "push_notification_vapid",
+        },
         undefined,
         clientIP,
         userAgent
@@ -142,7 +151,9 @@ export async function GET(request: NextRequest) {
       undefined,
       "system",
       undefined,
-      undefined,
+      {
+        action_type: "push_notification_vapid",
+      },
       undefined,
       clientIP,
       userAgent
@@ -162,7 +173,10 @@ export async function GET(request: NextRequest) {
       undefined,
       "system",
       undefined,
-      undefined,
+      {
+        error_message: error instanceof Error ? error.message : String(error),
+        action_type: "push_notification_vapid",
+      },
       undefined,
       clientIP,
       userAgent

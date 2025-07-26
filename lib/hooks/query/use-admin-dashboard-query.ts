@@ -382,14 +382,12 @@ export function useAdminDashboardQuery() {
   useSupabaseRealtime({
     table: "farms",
     refetch: dashboardQuery.refetch,
-    events: ["INSERT", "UPDATE", "DELETE"],
     // 관리자는 모든 농장 변경사항에 대해 대시보드 갱신
   });
 
   useSupabaseRealtime({
     table: "visitor_entries",
     refetch: dashboardQuery.refetch,
-    events: ["INSERT", "UPDATE", "DELETE"],
     // 관리자는 모든 방문자 변경사항에 대해 대시보드 갱신
   });
 

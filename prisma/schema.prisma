@@ -9,65 +9,63 @@ datasource db {
 }
 
 model system_settings {
-  id                             String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid    // 설정 고유 ID
-  siteName                       String    @default("농장 출입 관리 시스템(FarmPass)")                   // 사이트명
-  siteDescription                String    @default("방역은 출입자 관리부터 시작됩니다. QR기록으로 축산 질병 예방의 첫걸음을 함께하세요.") // 사이트 설명
-  language                       String    @default("ko")                                            // 기본 언어 설정
-  timezone                       String    @default("Asia/Seoul")                                    // 기본 시간대 설정
-  dateFormat                     String    @default("YYYY-MM-DD")                                    // 날짜 형식
-  favicon                        String?                                                             // 파비콘 URL
-  logo                           String?                                                             // 로고 URL
-  maxLoginAttempts               Int       @default(5)                                               // 최대 로그인 시도 횟수
-  passwordMinLength              Int       @default(8)                                               // 비밀번호 최소 길이
-  passwordRequireSpecialChar     Boolean   @default(true)                                            // 비밀번호 특수문자 포함 여부
-  passwordRequireNumber          Boolean   @default(true)                                            // 비밀번호 숫자 포함 여부
-  reVisitAllowInterval           Int       @default(6)                                               // 재방문 허용 간격 (시간)
-  maxVisitorsPerDay              Int       @default(100)                                             // 일일 최대 방문자 수
-  visitorDataRetentionDays       Int       @default(1095)                                            // 방문자 데이터 보존 기간 (일)
-  requireVisitorPhoto            Boolean   @default(false)                                           // 방문자 사진 필수 여부
-  requireVisitorContact          Boolean   @default(true)                                            // 방문자 연락처 필수 여부
-  requireVisitPurpose            Boolean   @default(true)                                            // 방문 목적 필수 여부
-  visitTemplate                  String    @default("{방문자명}님이 {방문날짜} {방문시간}에 {농장명}을 방문하였습니다.") // 방문 알림 템플릿
-  logLevel                       LogLevel  @default(info)                                            // 로그 레벨 설정
-  logRetentionDays               Int       @default(90)                                              // 로그 보존 기간 (일)
-  maintenanceMode                Boolean   @default(false)                                           // 유지보수 모드 활성화 여부
-  debugMode                      Boolean   @default(false)                                           // 디버그 모드 활성화 여부
-  passwordRequireUpperCase       Boolean   @default(true)                                            // 비밀번호 대문자 포함 여부
-  passwordRequireLowerCase       Boolean   @default(true)                                            // 비밀번호 소문자 포함 여부
-  maintenanceContactInfo         String    @default("문의사항이 있으시면 관리자에게 연락해 주세요.")           // 유지보수 중 연락처 정보
-  maintenanceEstimatedTime       Int       @default(30)                                              // 유지보수 예상 시간 (분)
-  maintenanceMessage             String    @default("현재 시스템 업데이트 및 유지보수 작업이 진행 중입니다.") // 유지보수 안내 메시지
-  maintenanceStartTime           DateTime?                                                           // 유지보수 시작 시간
-  accountLockoutDurationMinutes  Int       @default(15)                                              // 계정 잠금 해제 대기 시간 (분)
-  notificationBadge              String?                                                             // 푸시 알림 배지 URL
-  notificationIcon               String?                                                             // 푸시 알림 아이콘 URL
-  pushRequireInteraction         Boolean   @default(false)                                           // 푸시 알림 사용자 상호작용 필요 여부
-  pushSoundEnabled               Boolean   @default(false)                                           // 푸시 알림 소리 활성화 여부
-  pushVibrateEnabled             Boolean   @default(false)                                           // 푸시 알림 진동 활성화 여부
-  vapidPrivateKey                String?                                                             // VAPID 비공개키 (웹푸시 인증용)
-  vapidPublicKey                 String?                                                             // VAPID 공개키 (웹푸시 인증용)
-  subscriptionCleanupDays        Int       @default(30)                                              // 구독 정리 삭제 일수 (soft delete 후 완전 삭제까지)
-  subscriptionCleanupInactive    Boolean   @default(true)                                            // 비활성 구독 자동 정리 여부
-  subscriptionFailCountThreshold Int       @default(5)                                               // 구독 비활성화 실패 횟수 임계값
-  subscriptionForceDelete        Boolean   @default(false)                                           // 구독 강제 삭제 여부 (soft delete 대신)
-  created_at                     DateTime  @default(now()) @db.Timestamptz(6)                        // 생성 시간
-  updated_at                     DateTime  @default(now()) @db.Timestamptz(6)                        // 수정 시간
-
+  siteName                       String    @default("농장 출입 관리 시스템(FarmPass)")
+  siteDescription                String    @default("방역은 출입자 관리부터 시작됩니다. QR기록으로 축산 질병 예방의 첫걸음을 함께하세요.")
+  language                       String    @default("ko")
+  timezone                       String    @default("Asia/Seoul")
+  dateFormat                     String    @default("YYYY-MM-DD")
+  favicon                        String?
+  logo                           String?
+  maxLoginAttempts               Int       @default(5)
+  passwordMinLength              Int       @default(8)
+  passwordRequireSpecialChar     Boolean   @default(true)
+  passwordRequireNumber          Boolean   @default(true)
+  reVisitAllowInterval           Int       @default(6)
+  maxVisitorsPerDay              Int       @default(100)
+  visitorDataRetentionDays       Int       @default(1095)
+  requireVisitorPhoto            Boolean   @default(false)
+  requireVisitorContact          Boolean   @default(true)
+  requireVisitPurpose            Boolean   @default(true)
+  visitTemplate                  String    @default("{방문자명}님이 {방문날짜} {방문시간}에 {농장명}을 방문하였습니다.")
+  logLevel                       LogLevel  @default(info)
+  logRetentionDays               Int       @default(90)
+  maintenanceMode                Boolean   @default(false)
+  debugMode                      Boolean   @default(false)
+  passwordRequireUpperCase       Boolean   @default(true)
+  passwordRequireLowerCase       Boolean   @default(true)
+  maintenanceContactInfo         String    @default("문의사항이 있으시면 관리자에게 연락해 주세요.")
+  maintenanceEstimatedTime       Int       @default(30)
+  maintenanceMessage             String    @default("현재 시스템 업데이트 및 유지보수 작업이 진행 중입니다.")
+  maintenanceStartTime           DateTime?
+  accountLockoutDurationMinutes  Int       @default(15)
+  notificationBadge              String?
+  notificationIcon               String?
+  pushRequireInteraction         Boolean   @default(false)
+  pushSoundEnabled               Boolean   @default(false)
+  pushVibrateEnabled             Boolean   @default(false)
+  vapidPrivateKey                String?
+  vapidPublicKey                 String?
+  created_at                     DateTime  @default(now()) @db.Timestamptz(6)
+  updated_at                     DateTime  @default(now()) @db.Timestamptz(6)
+  id                             String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  subscriptionCleanupDays        Int       @default(30)
+  subscriptionCleanupInactive    Boolean   @default(true)
+  subscriptionFailCountThreshold Int       @default(5)
+  subscriptionForceDelete        Boolean   @default(false)
 }
 
 model farm_members {
-  id               String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid            // 구성원 관계 고유 ID
-  farm_id          String    @db.Uuid                                                           // 농장 ID (farms 테이블 참조)
-  user_id          String    @db.Uuid                                                           // 사용자 ID (profiles 테이블 참조)
-  role             String    @default("viewer")                                                 // 농장 내 역할: owner(소유자), manager(관리자), viewer(조회자)
-  member_name      String                                                                       // 농장 내 별칭(멤버명)
-  position         String?                                                                      // 농장 내 직책
-  responsibilities String?                                                                      // 담당 업무 설명
-  is_active        Boolean   @default(true)                                                     // 구성원 활성화 상태
-  created_at       DateTime  @default(now()) @db.Timestamptz(6)                                 // 생성 시간
-  updated_at       DateTime  @default(now()) @db.Timestamptz(6)                                 // 수정 시간
-  farms            farms     @relation(fields: [farm_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
-  profiles         profiles  @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  id               String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  farm_id          String   @db.Uuid
+  user_id          String   @db.Uuid
+  role             String   @default("viewer")
+  position         String?
+  responsibilities String?
+  is_active        Boolean  @default(true)
+  created_at       DateTime @default(now()) @db.Timestamptz(6)
+  updated_at       DateTime @default(now()) @db.Timestamptz(6)
+  farms            farms    @relation(fields: [farm_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  profiles         profiles @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
   @@unique([farm_id, user_id])
   @@index([farm_id], map: "idx_farm_members_farm_id")
@@ -76,20 +74,20 @@ model farm_members {
 }
 
 model farms {
-  id                    String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid   // 농장 고유 ID
-  farm_name             String                                                                    // 농장명
-  description           String?                                                                   // 농장 설명
-  farm_address          String                                                                    // 농장 주소
-  farm_detailed_address String?                                                                   // 농장 상세주소
-  farm_type             String?                                                                   // 농장 유형 (축산, 농업, 과수원 등)
-  owner_id              String          @db.Uuid                                                  // 농장 소유자 ID (profiles 테이블 참조)
-  manager_phone         String?                                                                   // 농장 관리자 연락처
-  manager_name          String?                                                                   // 농장 관리자명
-  is_active             Boolean         @default(true)                                            // 농장 활성화 상태
-  created_at            DateTime        @default(now()) @db.Timestamptz(6)                        // 생성 시간
-  updated_at            DateTime        @default(now()) @db.Timestamptz(6)                        // 수정 시간
+  id                    String            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  farm_name             String
+  description           String?
+  farm_address          String
+  farm_detailed_address String?
+  farm_type             String?
+  owner_id              String            @db.Uuid
+  manager_phone         String?
+  manager_name          String?
+  is_active             Boolean           @default(true)
+  created_at            DateTime          @default(now()) @db.Timestamptz(6)
+  updated_at            DateTime          @default(now()) @db.Timestamptz(6)
   farm_members          farm_members[]
-  profiles              profiles        @relation(fields: [owner_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  profiles              profiles          @relation(fields: [owner_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
   visitor_entries       visitor_entries[]
 
   @@index([created_at], map: "idx_farms_created_at")
@@ -98,37 +96,39 @@ model farms {
 }
 
 model profiles {
-  id                  String            @id @db.Uuid                                  // 사용자 고유 ID (auth.users와 연결)
-  email               String            @unique                                       // 사용자 이메일 주소 (로그인 ID)
-  name                String            @default("")                                  // 사용자 실명
-  phone               String?                                                         // 연락처 전화번호
-  account_type        String            @default("user")                              // 계정 유형: admin(관리자), user(일반사용자)
-  company_name        String?                                                         // 소속 회사명
-  company_address     String?                                                         // 회사 주소
-  business_type       String?                                                         // 업종/사업 유형
-  company_description String?                                                         // 회사 설명
-  establishment_date  DateTime?         @db.Date                                      // 회사 설립일
-  employee_count      Int?                                                            // 직원 수
-  company_website     String?                                                         // 회사 웹사이트
-  position            String?                                                         // 직책
-  department          String?                                                         // 부서
-  bio                 String?                                                         // 자기소개
-  is_active           Boolean           @default(true)                                // 계정 활성화 상태
-  profile_image_url   String?                                                         // 프로필 이미지 URL
-  avatar_seed         String?                                                         // 아바타 생성용 seed (Dicebear)
-  last_login_at       DateTime?         @db.Timestamptz(6)                            // 마지막 로그인 시간
-  password_changed_at DateTime?         @db.Timestamptz(6)                            // 비밀번호 변경 시간
-  login_count         Int               @default(0)                                   // 총 로그인 횟수
-  login_attempts      Int               @default(0)                                   // 로그인 시도 횟수 (잠금 해제용)
-  last_login_attempt  DateTime?         @db.Timestamptz(6)                            // 마지막 로그인 시도 시간
-  last_failed_login   DateTime?         @db.Timestamptz(6)                            // 마지막 로그인 실패 시간
-  created_at          DateTime          @default(now()) @db.Timestamptz(6)            // 생성 시간
-  updated_at          DateTime          @default(now()) @db.Timestamptz(6)            // 수정 시간
-  farm_members        farm_members[]
-  farms               farms[]
-  visitor_entries     visitor_entries[]
-  push_subscriptions  push_subscriptions[]
-  user_notification_settings user_notification_settings[]
+  id                         String                      @id @db.Uuid
+  email                      String                      @unique
+  name                       String                      @default("")
+  phone                      String?
+  account_type               String                      @default("user")
+  company_name               String?
+  company_address            String?
+  business_type              String?
+  company_description        String?
+  establishment_date         DateTime?                   @db.Date
+  employee_count             Int?
+  company_website            String?
+  position                   String?
+  department                 String?
+  bio                        String?
+  profile_image_url          String?
+  last_login_at              DateTime?                   @db.Timestamptz(6)
+  password_changed_at        DateTime?                   @db.Timestamptz(6)
+  login_count                Int                         @default(0)
+  is_active                  Boolean                     @default(true)
+  created_at                 DateTime                    @default(now()) @db.Timestamptz(6)
+  updated_at                 DateTime                    @default(now()) @db.Timestamptz(6)
+  login_attempts             Int                         @default(0)
+  last_login_attempt         DateTime?                   @db.Timestamptz(6)
+  last_failed_login          DateTime?                   @db.Timestamptz(6)
+  avatar_seed                String?
+  farm_members               farm_members[]
+  farms                      farms[]
+  notifications              notifications[]
+  push_subscriptions         push_subscriptions[]
+  system_logs                system_logs[]
+  user_notification_settings user_notification_settings?
+  visitor_entries            visitor_entries[]
 
   @@index([account_type], map: "idx_profiles_account_type")
   @@index([created_at], map: "idx_profiles_created_at")
@@ -136,18 +136,19 @@ model profiles {
 }
 
 model system_logs {
-  id            String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid           // 로그 고유 ID
-  level         LogLevel  @default(info)                                                     // 로그 레벨: error(오류), warn(경고), info(정보), debug(디버그)
-  action        String                                                                      // 수행된 액션 (예: USER_LOGIN, FARM_CREATED)
-  message       String                                                                      // 로그 메시지
-  user_id       String?   @db.Uuid                                                          // 관련 사용자 ID (profiles 테이블 참조)
-  user_email    String?                                                                     // 사용자 이메일 (로그 조회용)
-  user_ip       String?                                                                     // 사용자 IP 주소
-  user_agent    String?                                                                     // 사용자 브라우저 정보
-  resource_type String?                                                                     // 관련 리소스 유형: farm, user, visitor, system
-  resource_id   String?   @db.Uuid                                                          // 관련 리소스 ID
-  metadata      Json?                                                                       // 추가 메타데이터 (JSON 형태)
-  created_at    DateTime  @default(now()) @db.Timestamptz(6)                                // 생성 시간
+  id            String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  level         LogLevel  @default(info)
+  action        String
+  message       String
+  user_id       String?   @db.Uuid
+  user_email    String?
+  user_ip       String?
+  user_agent    String?
+  resource_type String?
+  resource_id   String?   @db.Uuid
+  metadata      Json?
+  created_at    DateTime  @default(now()) @db.Timestamptz(6)
+  profiles      profiles? @relation(fields: [user_id], references: [id], onUpdate: NoAction)
 
   @@index([user_id])
   @@index([level])
@@ -157,22 +158,22 @@ model system_logs {
 }
 
 model visitor_entries {
-  id                 String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid           // 방문 기록 고유 ID
-  farm_id            String    @db.Uuid                                                           // 방문한 농장 ID (farms 테이블 참조)
-  visit_datetime     DateTime  @db.Timestamptz(6)                                                  // 방문 일시
-  visitor_name       String                                                                      // 방문자 이름
-  visitor_phone      String                                                                      // 방문자 연락처
-  visitor_address    String                                                                      // 방문자 주소
-  visitor_purpose    String?                                                                     // 방문 목적
-  vehicle_number     String?                                                                     // 차량 번호
-  notes              String?                                                                     // 추가 메모
-  disinfection_check Boolean   @default(false)                                                    // 소독 여부 확인
-  consent_given      Boolean   @default(false)                                                    // 개인정보 수집 동의 여부
-  profile_photo_url  String?                                                                      // 방문자 프로필 사진 URL
-  session_token      String    @default(dbgenerated("(gen_random_uuid())::text"))                // 방문자 세션 토큰 (QR코드 생성용)
-  registered_by      String?   @db.Uuid                                                          // 등록한 사용자 ID (profiles 테이블 참조)
-  created_at         DateTime  @default(now()) @db.Timestamptz(6)                                 // 생성 시간
-  updated_at         DateTime  @default(now()) @db.Timestamptz(6)                                 // 수정 시간
+  id                 String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  farm_id            String    @db.Uuid
+  visit_datetime     DateTime  @db.Timestamptz(6)
+  visitor_name       String
+  visitor_phone      String
+  visitor_address    String
+  visitor_purpose    String?
+  disinfection_check Boolean   @default(false)
+  vehicle_number     String?
+  notes              String?
+  registered_by      String?   @db.Uuid
+  session_token      String    @default(dbgenerated("(gen_random_uuid())::text"))
+  consent_given      Boolean   @default(false)
+  created_at         DateTime  @default(now()) @db.Timestamptz(6)
+  updated_at         DateTime  @default(now()) @db.Timestamptz(6)
+  profile_photo_url  String?
   farms              farms     @relation(fields: [farm_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
   profiles           profiles? @relation(fields: [registered_by], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
@@ -183,21 +184,21 @@ model visitor_entries {
 }
 
 model push_subscriptions {
-  id           String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid           // 구독 고유 ID
-  user_id      String    @db.Uuid                                                           // 구독한 사용자 ID
-  endpoint     String                                                                      // 푸시 서비스 엔드포인트 URL
-  p256dh       String?                                                                     // 공개키 (P-256 ECDH)
-  auth         String?                                                                     // 인증 비밀키
-  deleted_at   DateTime? @db.Timestamptz(6)                                                // 구독 삭제 시간 (soft delete)
-  device_id    String?                                                                     // 디바이스 식별자
-  user_agent   String?                                                                     // 사용자 브라우저 정보
-  is_active    Boolean   @default(true)                                                    // 구독 활성화 상태
-  fail_count   Int       @default(0)                                                       // 푸시 발송 실패 횟수
-  last_fail_at DateTime? @db.Timestamptz(6)                                                // 마지막 실패 시간
-  last_used_at DateTime? @db.Timestamptz(6)                                                // 마지막 사용 시간
-  created_at   DateTime  @default(now()) @db.Timestamptz(6)                                // 구독 생성 시간
-  updated_at   DateTime  @default(now()) @db.Timestamptz(6)                                // 구독 정보 수정 시간
-  profiles profiles? @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  id           String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id      String    @db.Uuid
+  endpoint     String
+  p256dh       String?
+  auth         String?
+  created_at   DateTime  @default(now()) @db.Timestamptz(6)
+  updated_at   DateTime  @default(now()) @db.Timestamptz(6)
+  deleted_at   DateTime? @db.Timestamptz(6)
+  device_id    String?
+  fail_count   Int       @default(0)
+  is_active    Boolean   @default(true)
+  last_fail_at DateTime? @db.Timestamptz(6)
+  last_used_at DateTime? @db.Timestamptz(6)
+  user_agent   String?
+  profiles     profiles  @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
   @@unique([user_id, endpoint])
   @@index([endpoint], map: "idx_push_subscriptions_endpoint")
@@ -205,20 +206,34 @@ model push_subscriptions {
 }
 
 model user_notification_settings {
-  id                  String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid            // 알림 설정 고유 ID
-  user_id             String    @unique @db.Uuid                                                   // 사용자 ID (auth.users 테이블 참조)
-  notification_method String    @db.VarChar(20)                                                    // 알림 방법: push, kakao
-  visitor_alerts      Boolean   @default(true)                                                     // 방문자 알림 활성화 여부
-  emergency_alerts    Boolean   @default(true)                                                     // 긴급 알림 활성화 여부
-  maintenance_alerts  Boolean   @default(true)                                                     // 시스템 알림 활성화 여부
-  kakao_user_id       String?   @db.VarChar(100)                                                   // 카카오톡 사용자 ID
-  is_active           Boolean   @default(false)                                                    // 알림 설정 활성화 상태
-  notice_alerts       Boolean   @default(true)                                                     // 공지사항 알림 활성화 여부
-  created_at          DateTime  @default(now()) @db.Timestamptz(6)                                 // 생성 시간
-  updated_at          DateTime  @default(now()) @updatedAt @db.Timestamptz(6)                      // 수정 시간
-  profiles profiles? @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  id                  String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id             String   @unique @db.Uuid
+  notification_method String   @db.VarChar(20)
+  visitor_alerts      Boolean  @default(true)
+  emergency_alerts    Boolean  @default(true)
+  maintenance_alerts  Boolean  @default(true)
+  kakao_user_id       String?  @db.VarChar(100)
+  is_active           Boolean  @default(false)
+  created_at          DateTime @default(now()) @db.Timestamptz(6)
+  updated_at          DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+  notice_alerts       Boolean  @default(true)
+  profiles            profiles @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+}
 
-  @@map("user_notification_settings")
+model notifications {
+  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id    String   @db.Uuid
+  type       String
+  title      String
+  message    String
+  data       Json?
+  read       Boolean  @default(false)
+  created_at DateTime @default(now()) @db.Timestamptz(6)
+  updated_at DateTime @default(now()) @db.Timestamptz(6)
+  link       String?
+  profiles   profiles @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([user_id], map: "idx_notifications_user_id")
 }
 
 enum LogLevel {

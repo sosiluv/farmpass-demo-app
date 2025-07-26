@@ -85,7 +85,11 @@ export async function POST(request: NextRequest) {
         user.id,
         "system",
         "cleanup",
-        undefined,
+        {
+          user_id: user.id,
+          user_email: user.email,
+          action_type: "push_notification_cleanup",
+        },
         user.email,
         clientIP,
         userAgent
@@ -446,6 +450,8 @@ export async function POST(request: NextRequest) {
         "system",
         "cleanup",
         {
+          user_id: user.id,
+          user_email: user.email,
           cleanedCount,
           validCount,
           totalChecked: subscriptions.length,
@@ -460,6 +466,7 @@ export async function POST(request: NextRequest) {
             forceDeleted,
             oldSoftDeletedCleaned,
           },
+          action_type: "push_notification_cleanup",
         },
         user.email,
         clientIP,
@@ -477,6 +484,8 @@ export async function POST(request: NextRequest) {
         "system",
         "cleanup",
         {
+          user_id: user.id,
+          user_email: user.email,
           cleanedCount,
           validCount,
           totalChecked: subscriptions.length,
@@ -484,6 +493,7 @@ export async function POST(request: NextRequest) {
           forceDelete,
           failCountThreshold,
           cleanupInactive,
+          action_type: "push_notification_cleanup",
         },
         user.email,
         clientIP,

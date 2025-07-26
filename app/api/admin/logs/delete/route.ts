@@ -94,11 +94,11 @@ export async function POST(request: NextRequest) {
       "system",
       undefined,
       {
-        action: action,
         user_email: user.email,
         deleted_count: result.count || 1,
         log_id: logId,
         timestamp: new Date().toISOString(),
+        action_type: action,
       },
       user.email,
       clientIP,

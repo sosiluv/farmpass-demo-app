@@ -89,7 +89,11 @@ export function useFarmMembersQuery(farmId: string | null) {
   useSupabaseRealtime({
     table: "farm_members",
     refetch: membersQuery.refetch,
-    events: ["INSERT", "UPDATE", "DELETE"],
+    filter: (payload) => {
+      const changedFarmId = payload?.new?.farm_id || payload?.old?.farm_id;
+      // farmId가 null이면 모든 농장의 변경사항 처리 (전체 농장 선택)
+      return farmId === null || changedFarmId === farmId;
+    },
   });
 
   return {
@@ -199,11 +203,9 @@ export function useFarmMembersPreviewQuery(farmIds: string[]) {
     refetch: () => {
       membersQuery.refetch();
     },
-    events: ["INSERT", "UPDATE", "DELETE"],
     filter: (payload) => {
       const farmId = payload?.new?.farm_id || payload?.old?.farm_id;
-      const result = sortedFarmIds.includes(farmId);
-      return result;
+      return sortedFarmIds.includes(farmId);
     },
   });
 

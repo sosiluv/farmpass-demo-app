@@ -81,8 +81,8 @@ export async function GET(request: NextRequest) {
             {
               farm_id: farmId,
               attempted_user_id: user.id,
-              action: "user_search",
               reason: "not_owner_or_member",
+              action_type: "user_search",
             },
             user.email,
             clientIP,
@@ -160,6 +160,7 @@ export async function GET(request: NextRequest) {
         farm_id: farmId,
         result_count: filteredUsers.length,
         search_context: farmId ? "farm_member_search" : "general_search",
+        action_type: "user_search",
       },
       user.email,
       clientIP,
@@ -190,10 +191,11 @@ export async function GET(request: NextRequest) {
           "user",
           undefined,
           {
-            search_query: new URL(request.url).searchParams.get("q"),
-            farm_id: new URL(request.url).searchParams.get("farmId"),
             error_message:
               error instanceof Error ? error.message : String(error),
+            search_query: new URL(request.url).searchParams.get("q"),
+            farm_id: new URL(request.url).searchParams.get("farmId"),
+            action_type: "user_search",
           },
           user.email,
           clientIP,

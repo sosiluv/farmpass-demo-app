@@ -295,11 +295,11 @@ export default function LoginPage() {
                       <>
                         <img
                           src="/btn_kakao.svg"
-                          alt="카카오 로그인"
+                          alt={BUTTONS.KAKAO_LOGIN}
                           className="absolute left-4 top-1/2 -translate-y-1/2 h-6 w-6"
                         />
                         <span className="w-full text-center block">
-                          Kakao로 시작하기
+                          {BUTTONS.KAKAO_LOGIN}
                         </span>
                       </>
                     )}
@@ -328,11 +328,11 @@ export default function LoginPage() {
                       <>
                         <img
                           src="/btn_google.svg"
-                          alt="구글 로그인"
+                          alt={BUTTONS.GOOGLE_LOGIN}
                           className="absolute left-4 top-1/2 -translate-y-1/2 h-6 w-6"
                         />
                         <span className="w-full text-center block">
-                          Google로 시작하기
+                          {BUTTONS.GOOGLE_LOGIN}
                         </span>
                       </>
                     )}

@@ -32,6 +32,10 @@ export const BUTTONS = {
   REGISTER_LOADING: "가입 중...",
   RESET_PASSWORD_LOADING: "처리 중...",
   RESET_PASSWORD_CONFIRM_LOADING: "비밀번호 변경 중...",
+
+  // 소셜 로그인
+  KAKAO_LOGIN: "Kakao로 시작하기",
+  GOOGLE_LOGIN: "Google로 시작하기",
 } as const;
 
 // 라벨

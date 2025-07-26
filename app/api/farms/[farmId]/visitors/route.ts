@@ -133,7 +133,7 @@ export async function POST(
 
   const farmId = params.farmId;
   let visitorData: VisitorData | undefined;
-  let farm: { id: string; farm_name: string } | null = null;
+  let farm: { id: string; farm_name: string; owner_id: string } | null = null;
 
   try {
     const requestData = await request.json();
@@ -213,7 +213,7 @@ export async function POST(
     // 농장 정보 조회
     farm = await prisma.farms.findUnique({
       where: { id: farmId },
-      select: { id: true, farm_name: true },
+      select: { id: true, farm_name: true, owner_id: true },
     });
 
     if (!farm) {
@@ -267,8 +267,7 @@ export async function POST(
           count: todayCount,
           maxVisitorsPerDay: settings.maxVisitorsPerDay,
           visitor_name: visitorData.fullName,
-          access_scope: "single_farm",
-          status: "failed",
+          action_type: "visitor_management",
         },
         undefined,
         clientIP,
@@ -284,53 +283,69 @@ export async function POST(
     }
 
     // 방문자 데이터 저장 (Prisma 사용하되 실시간 위해 활용)
-    const visitor = await prisma.visitor_entries.create({
-      data: {
-        farm_id: farmId,
-        visit_datetime: new Date(),
-        visitor_name: visitorData.fullName.trim(),
-        visitor_phone: visitorData.phoneNumber?.trim() || "",
-        visitor_address: `${visitorData.address?.trim() || ""}${
-          visitorData.detailedAddress?.trim()
-            ? " " + visitorData.detailedAddress.trim()
-            : ""
-        }`,
-        vehicle_number: visitorData.carPlateNumber?.trim() || null,
-        visitor_purpose: visitorData.visitPurpose?.trim() || null,
-        disinfection_check: visitorData.disinfectionCheck || false,
-        notes: visitorData.notes?.trim() || null,
-        consent_given: visitorData.consentGiven,
-        profile_photo_url: visitorData.profile_photo_url || null,
-        session_token: newSessionToken,
-      },
-    });
+    // 방문자 등록 + 알림 트랜잭션 처리
+    const visitorCreateData = {
+      farm_id: farmId,
+      visit_datetime: new Date(),
+      visitor_name: visitorData!.fullName.trim(),
+      visitor_phone: visitorData!.phoneNumber?.trim() || "",
+      visitor_address: `${visitorData!.address?.trim() || ""}${
+        visitorData!.detailedAddress?.trim()
+          ? " " + visitorData!.detailedAddress.trim()
+          : ""
+      }`,
+      vehicle_number: visitorData!.carPlateNumber?.trim() || null,
+      visitor_purpose: visitorData!.visitPurpose?.trim() || null,
+      disinfection_check: visitorData!.disinfectionCheck || false,
+      notes: visitorData!.notes?.trim() || null,
+      consent_given: visitorData!.consentGiven,
+      profile_photo_url: visitorData!.profile_photo_url || null,
+      session_token: newSessionToken,
+    };
 
+    const visitor = await prisma.$transaction(async (tx: typeof prisma) => {
+      const createdVisitor = await tx.visitor_entries.create({
+        data: visitorCreateData,
+      });
+      const members = await tx.farm_members.findMany({
+        where: { farm_id: farmId },
+        select: { user_id: true },
+      });
+      await tx.notifications.createMany({
+        data: members.map((m: any) => ({
+          user_id: m.user_id,
+          type: "visitor_registered",
+          title: `새 방문자 등록`,
+          message: `${farm!.farm_name} 농장에 방문자가 등록되었습니다: ${
+            createdVisitor.visitor_name
+          }`,
+          data: {
+            farm_id: farmId,
+            farm_name: farm!.farm_name,
+            visitor_id: createdVisitor.id,
+            visitor_name: createdVisitor.visitor_name,
+          },
+          link: `/admin/farms/${farmId}/visitors`,
+        })),
+      });
+      return createdVisitor;
+    });
     // 방문자 등록 성공 로그 생성
     await createSystemLog(
       "VISITOR_CREATED",
-      `방문자 등록: ${String(visitor.visitor_name)} (농장: ${
+      `방문자 등록: ${visitorCreateData.visitor_name} (농장: ${
         farm.farm_name
       }, 방문자 ID: ${String(visitor.id)})`,
       "info",
       undefined,
       "visitor",
-      String(visitor.id),
+      visitor.id,
       {
         farm_id: farmId,
         farm_name: farm.farm_name,
-        visitor_id: String(visitor.id),
-        visitor_name: String(visitor.visitor_name),
-        access_scope: "single_farm",
-        status: "success",
-        metadata: {
-          visitor_phone: String(visitor.visitor_phone || ""),
-          visit_purpose: String(visitor.visitor_purpose || ""),
-          has_photo: !!visitor.profile_photo_url,
-          has_vehicle: !!visitor.vehicle_number,
-          disinfection_check: Boolean(visitor.disinfection_check) || false,
-          consent_given: Boolean(visitor.consent_given) || false,
-          is_new_registration: true,
-        },
+        visitor_id: visitor.id,
+        visitor_data: visitorCreateData,
+        action_type: "visitor_management",
       },
       undefined,
       clientIP,
@@ -385,15 +400,12 @@ export async function POST(
       "visitor",
       undefined,
       {
+        error_message: error instanceof Error ? error.message : "Unknown error",
         farm_id: farmId,
         farm_name: farm?.farm_name,
         visitor_name: visitorData?.fullName || "알 수 없음",
-        access_scope: "single_farm",
-        status: "failed",
-        error: error instanceof Error ? error.message : String(error),
-        metadata: {
-          is_new_registration: true,
-        },
+        visitor_data: visitorData,
+        action_type: "visitor_management",
       },
       undefined,
       clientIP,
@@ -456,9 +468,9 @@ export async function GET(
       "visitor",
       undefined,
       {
+        error_message: error instanceof Error ? error.message : String(error),
         farm_id: params.farmId,
-        error: error instanceof Error ? error.message : String(error),
-        action: "visitor_list_fetch",
+        action_type: "visitor_management",
       },
       undefined,
       clientIP,

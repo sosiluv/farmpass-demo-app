@@ -3,7 +3,6 @@ import { LABELS } from "@/lib/constants/farms";
 
 interface Member {
   id: string;
-  member_name: string; // 농장 내 별칭(멤버명)
   representative_name: string;
   email: string;
   role: string;

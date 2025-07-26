@@ -2,12 +2,17 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { createSystemLog } from "@/lib/utils/logging/system-log";
 import { devLog } from "@/lib/utils/logging/dev-logger";
-import { getClientIP, getUserAgent } from "@/lib/server/ip-helpers";
+import {
+  getClientIP,
+  getLocationFromIP,
+  getUserAgent,
+} from "@/lib/server/ip-helpers";
 import { requireAuth } from "@/lib/server/auth-utils";
 
 export async function POST(request: NextRequest) {
   const clientIP = getClientIP(request);
   const userAgent = getUserAgent(request);
+  const location = await getLocationFromIP(clientIP);
 
   try {
     // 관리자 권한 인증 확인
@@ -65,10 +70,11 @@ export async function POST(request: NextRequest) {
       {
         previous_attempts: currentProfile.login_attempts,
         reset_reason: reason || "manual_reset",
-        action_type: "security_event",
         reset_at: new Date().toISOString(),
         admin_id: user.id,
         admin_action: true,
+        location: location,
+        action_type: "security_event",
       },
       email,
       clientIP,
@@ -98,9 +104,9 @@ export async function POST(request: NextRequest) {
       undefined,
       {
         error_message: error instanceof Error ? error.message : "Unknown error",
-        error_type: error.constructor?.name || "Unknown",
-        action_type: "system_error",
         timestamp: new Date().toISOString(),
+        location: location,
+        action_type: "security_event",
       },
       undefined,
       clientIP,

@@ -73,20 +73,6 @@ export interface UpdateVisitorData {
 // 방문자 필터 및 검색 타입
 // ===========================================
 
-/**
- * 방문자 필터 (BaseFilter 확장)
- */
-export interface VisitorFilter {
-  farmId?: string;
-  disinfectionCheck?: boolean;
-  consentGiven?: boolean;
-  sortBy?: "visit_datetime" | "visitor_name" | "created_at";
-}
-
-/**
- * 방문자 필터 (레거시 호환성용)
- * @deprecated VisitorFilter 사용 권장
- */
 export interface VisitorFilters {
   searchTerm: string;
   farmId?: string;
@@ -95,15 +81,6 @@ export interface VisitorFilters {
   dateEnd?: string;
   disinfectionCheck?: boolean;
   consentGiven?: boolean;
-}
-
-/**
- * 방문자 내보내기 옵션
- */
-export interface VisitorExportOptions extends VisitorFilter {
-  format: "csv" | "excel";
-  includeFields: Array<keyof VisitorEntry>;
-  anonymize?: boolean;
 }
 
 // ===========================================

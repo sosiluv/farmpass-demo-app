@@ -146,7 +146,6 @@ export function useAdminFarmsQuery() {
   useSupabaseRealtime({
     table: "farms",
     refetch: farmsQuery.refetch,
-    events: ["INSERT", "UPDATE", "DELETE"],
     // 농장 변경은 농장 통계에 직접적인 영향을 줌
   });
 
@@ -237,7 +236,6 @@ export function useAdminFarmsListQuery() {
   useSupabaseRealtime({
     table: "farms",
     refetch: farmsListQuery.refetch,
-    events: ["INSERT", "UPDATE", "DELETE"],
   });
 
   return farmsListQuery;
