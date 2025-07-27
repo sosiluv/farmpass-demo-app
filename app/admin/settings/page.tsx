@@ -13,7 +13,6 @@ import {
   NotificationTab,
   SystemTab,
 } from "@/components/admin/settings/tabs";
-import { useSystemSettingsContext } from "@/components/providers/system-settings-provider";
 import { useDynamicFavicon } from "@/hooks/use-dynamic-favicon";
 import { useSystemMode } from "@/components/providers/debug-provider";
 import { useAuth } from "@/components/providers/auth-provider";
@@ -26,9 +25,15 @@ import {
 import { ERROR_CONFIGS } from "@/lib/constants/error";
 import { LABELS } from "@/lib/constants/settings";
 import { useProfileQuery } from "@/lib/hooks/query/use-profile-query";
+import { useSystemSettingsQuery } from "@/lib/hooks/query/use-system-settings-query";
+import { PageLoading } from "@/components/ui/loading";
 
 export default function SettingsPage() {
-  const { settings, isLoading: loading, refetch } = useSystemSettingsContext();
+  const {
+    data: settings,
+    isLoading: loading,
+    refetch,
+  } = useSystemSettingsQuery();
 
   // 설정 페이지에서만 동적 파비콘 업데이트 (기본 파비콘 포함)
   useDynamicFavicon(settings?.favicon || "/favicon.ico");
@@ -37,7 +42,7 @@ export default function SettingsPage() {
   const { state } = useAuth();
   const user = state.status === "authenticated" ? state.user : null;
   const userId = state.status === "authenticated" ? state.user.id : undefined;
-  const { data: profile } = useProfileQuery(userId);
+  const { data: profile, isLoading: profileLoading } = useProfileQuery(userId);
 
   const [unsavedChanges, setUnsavedChanges] = useState(false);
   const [activeTab, setActiveTab] = useState("general");
@@ -64,8 +69,8 @@ export default function SettingsPage() {
     },
   });
 
-  // 설정이 로딩 중이거나 localSettings가 없으면 로딩 표시
-  if (loading || !localSettings) {
+  // 설정이 로딩 중이거나 localSettings가 없거나 프로필 로딩 중일 때는 스켈레톤 표시
+  if (loading || !localSettings || profileLoading) {
     return (
       <div className="flex-1 space-y-4 p-4 md:p-6 pt-2 md:pt-4">
         <SettingsHeader

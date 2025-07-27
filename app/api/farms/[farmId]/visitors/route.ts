@@ -13,6 +13,11 @@ import {
 } from "@/lib/utils/notification/notification-template";
 import { devLog } from "@/lib/utils/logging/dev-logger";
 import { getClientIP, getUserAgent } from "@/lib/server/ip-helpers";
+import {
+  visitorRegistrationRateLimiter,
+  createRateLimitHeaders,
+} from "@/lib/utils/system/rate-limit";
+import { logSecurityError } from "@/lib/utils/logging/system-log";
 
 interface VisitorData {
   fullName: string;
@@ -130,6 +135,42 @@ export async function POST(
 ) {
   const clientIP = getClientIP(request);
   const userAgent = getUserAgent(request);
+
+  // 🚦 방문자 등록 전용 Rate Limiting 체크
+  // IP당 1분에 10회 방문자 등록 제한
+  const rateLimitResult = visitorRegistrationRateLimiter.checkLimit(clientIP);
+
+  if (!rateLimitResult.allowed) {
+    // Rate limit 초과 시 보안 로그 기록
+    await logSecurityError(
+      "RATE_LIMIT_EXCEEDED",
+      `IP ${clientIP}에서 방문자 등록 요청 제한 초과`,
+      undefined,
+      clientIP,
+      userAgent
+    ).catch((error) => {
+      devLog.error(`[VISITORS API] Rate limit logging error: ${error}`);
+    });
+
+    // 429 Too Many Requests 응답 반환
+    const response = NextResponse.json(
+      {
+        success: false,
+        error: "RATE_LIMIT_EXCEEDED",
+        message: "방문자 등록 요청이 너무 많습니다. 1분 후 다시 시도해주세요.",
+        retryAfter: rateLimitResult.retryAfter,
+      },
+      { status: 429 }
+    );
+
+    // Rate limit 헤더 추가
+    const headers = createRateLimitHeaders(rateLimitResult);
+    Object.entries(headers).forEach(([key, value]) => {
+      response.headers.set(key, value);
+    });
+
+    return response;
+  }
 
   const farmId = params.farmId;
   let visitorData: VisitorData | undefined;
@@ -417,71 +458,6 @@ export async function POST(
         success: false,
         error: "VISITOR_CREATE_ERROR",
         message: "방문자 등록에 실패했습니다. 잠시 후 다시 시도해주세요.",
-      },
-      { status: 500 }
-    );
-  }
-}
-
-export async function GET(
-  request: NextRequest,
-  { params }: { params: { farmId: string } }
-) {
-  const clientIP = getClientIP(request);
-  const userAgent = getUserAgent(request);
-
-  try {
-    const farmId = params.farmId;
-    const { searchParams } = new URL(request.url);
-    const page = parseInt(searchParams.get("page") || "1");
-    const limit = parseInt(searchParams.get("limit") || "10");
-    const skip = (page - 1) * limit;
-
-    const visitors = await prisma.visitor_entries.findMany({
-      where: { farm_id: farmId },
-      orderBy: { visit_datetime: "desc" },
-      skip,
-      take: limit,
-    });
-
-    const total = await prisma.visitor_entries.count({
-      where: { farm_id: farmId },
-    });
-
-    return NextResponse.json({
-      visitors,
-      total,
-      page,
-      totalPages: Math.ceil(total / limit),
-    });
-  } catch (error) {
-    devLog.error("Error fetching visitors:", error);
-
-    // 방문자 조회 실패 로그 기록
-    await createSystemLog(
-      "VISITOR_FETCH_FAILED",
-      `방문자 조회 실패: ${
-        error instanceof Error ? error.message : String(error)
-      } (농장 ID: ${params.farmId})`,
-      "error",
-      undefined,
-      "visitor",
-      undefined,
-      {
-        error_message: error instanceof Error ? error.message : String(error),
-        farm_id: params.farmId,
-        action_type: "visitor_management",
-      },
-      undefined,
-      clientIP,
-      userAgent
-    );
-
-    return NextResponse.json(
-      {
-        success: false,
-        error: "VISITOR_FETCH_ERROR",
-        message: "방문자 정보 조회 중 오류가 발생했습니다.",
       },
       { status: 500 }
     );

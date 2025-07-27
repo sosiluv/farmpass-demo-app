@@ -376,6 +376,9 @@ export const LABELS = {
 
   // 단위 표시
   COUNT_UNIT: "{count}건",
+
+  // 권한 확인
+  CHECKING_PERMISSION: "권한을 확인하는 중...",
 } as const;
 
 // 설정 페이지 플레이스홀더

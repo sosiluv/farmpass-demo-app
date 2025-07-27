@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
-import { useSystemSettingsContext } from "@/components/providers/system-settings-provider";
+import { useSystemSettingsQuery } from "@/lib/hooks/query/use-system-settings-query";
 import { extractPasswordRules } from "@/lib/utils/validation/validation";
 import type { PasswordRules } from "@/lib/utils/validation/validation";
 
@@ -14,7 +14,7 @@ export function usePasswordRules(): {
   isLoading: boolean;
   error: Error | null;
 } {
-  const { settings, isLoading, error } = useSystemSettingsContext();
+  const { data: settings, isLoading, error } = useSystemSettingsQuery();
 
   const rules = useMemo(() => {
     return extractPasswordRules(settings);

@@ -70,26 +70,26 @@ export async function PUT(
           },
         },
       });
-      const members = await tx.farm_members.findMany({
-        where: { farm_id: farmId },
-        select: { user_id: true },
-      });
-      await tx.notifications.createMany({
-        data: members.map((m: any) => ({
-          user_id: m.user_id,
-          type: "visitor_updated",
-          title: `방문자 정보 수정`,
-          message: `${updatedVisitor.farms?.farm_name} 농장 방문자 정보가 수정되었습니다: ${updatedVisitor.visitor_name}`,
-          data: {
-            farm_id: farmId,
-            farm_name: updatedVisitor.farms?.farm_name,
-            visitor_id: updatedVisitor.id,
-            visitor_name: updatedVisitor.visitor_name,
-            updated_fields: Object.keys(visitorUpdateData),
-          },
-          link: `/admin/farms/${farmId}/visitors`,
-        })),
-      });
+      // const members = await tx.farm_members.findMany({
+      //   where: { farm_id: farmId },
+      //   select: { user_id: true },
+      // });
+      // await tx.notifications.createMany({
+      //   data: members.map((m: any) => ({
+      //     user_id: m.user_id,
+      //     type: "visitor_updated",
+      //     title: `방문자 정보 수정`,
+      //     message: `${updatedVisitor.farms?.farm_name} 농장 방문자 정보가 수정되었습니다: ${updatedVisitor.visitor_name}`,
+      //     data: {
+      //       farm_id: farmId,
+      //       farm_name: updatedVisitor.farms?.farm_name,
+      //       visitor_id: updatedVisitor.id,
+      //       visitor_name: updatedVisitor.visitor_name,
+      //       updated_fields: Object.keys(visitorUpdateData),
+      //     },
+      //     link: `/admin/farms/${farmId}/visitors`,
+      //   })),
+      // });
       return updatedVisitor;
     });
     // 성공 로그 기록
@@ -221,24 +221,24 @@ export async function DELETE(
           farm_id: farmId,
         },
       });
-      const members = await tx.farm_members.findMany({
-        where: { farm_id: farmId },
-        select: { user_id: true },
-      });
-      await tx.notifications.createMany({
-        data: members.map((m: any) => ({
-          user_id: m.user_id,
-          type: "visitor_deleted",
-          title: `방문자 정보 삭제`,
-          message: `농장 방문자가 삭제되었습니다: ${visitor.visitor_name}`,
-          data: {
-            farm_id: farmId,
-            visitor_id: visitorId,
-            visitor_name: visitor.visitor_name,
-          },
-          link: `/admin/farms/${farmId}/visitors`,
-        })),
-      });
+      // const members = await tx.farm_members.findMany({
+      //   where: { farm_id: farmId },
+      //   select: { user_id: true },
+      // });
+      // await tx.notifications.createMany({
+      //   data: members.map((m: any) => ({
+      //     user_id: m.user_id,
+      //     type: "visitor_deleted",
+      //     title: `방문자 정보 삭제`,
+      //     message: `농장 방문자가 삭제되었습니다: ${visitor.visitor_name}`,
+      //     data: {
+      //       farm_id: farmId,
+      //       visitor_id: visitorId,
+      //       visitor_name: visitor.visitor_name,
+      //     },
+      //     link: `/admin/farms/${farmId}/visitors`,
+      //   })),
+      // });
     });
     // 성공 로그 기록
     await createSystemLog(

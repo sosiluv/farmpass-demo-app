@@ -99,9 +99,6 @@ export function useDeleteFarmMutation() {
       // 1. 사용자의 농장 목록 쿼리 무효화
       const userId =
         state.status === "authenticated" ? state.user?.id : undefined;
-      queryClient.invalidateQueries({
-        queryKey: farmsKeys.list({ userId }),
-      });
 
       // 2. 농장 목록에서 삭제된 농장 제거 (즉시 반영)
       queryClient.setQueryData(

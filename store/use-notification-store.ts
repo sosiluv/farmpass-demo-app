@@ -19,9 +19,7 @@ function getNotificationId(n: Notification) {
   return `${n.created_at}_${n.title}_${n.message}`;
 }
 
-export const useNotificationStore = create<
-  NotificationState & { clearAll: () => void }
->((set, get) => ({
+export const useNotificationStore = create<NotificationState>((set, get) => ({
   notifications: [],
   unread: false,
   page: 1,
@@ -67,7 +65,6 @@ export const useNotificationStore = create<
       unread: state.notifications.some((n) => !ids.includes(n.id) && !n.read),
     }));
   },
-  clearAll: () => set({ notifications: [], unread: false }),
 }));
 
 export { getNotificationId };

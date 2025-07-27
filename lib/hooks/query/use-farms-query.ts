@@ -38,8 +38,8 @@ export function useFarmsQuery(userId?: string) {
     },
     {
       enabled: state.status === "authenticated" && !!targetUserId,
-      staleTime: 10 * 60 * 1000, // 10분 캐싱 (농장 데이터는 자주 변경되지 않음)
-      gcTime: 20 * 60 * 1000, // 20분간 캐시 유지
+      staleTime: 15 * 60 * 1000, // 15분 캐싱 (농장 데이터는 자주 변경되지 않음)
+      gcTime: 30 * 60 * 1000, // 30분간 캐시 유지
       refetchOnWindowFocus: false, // 윈도우 포커스 시 refetch 비활성화
       refetchOnReconnect: true,
     }
@@ -49,6 +49,7 @@ export function useFarmsQuery(userId?: string) {
   useSupabaseRealtime({
     table: "farms",
     refetch: farmsQuery.refetch,
+    farms: farmsQuery.data || [], // farms 데이터를 전달
   });
 
   return {

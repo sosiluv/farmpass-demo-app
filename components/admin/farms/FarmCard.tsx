@@ -1,3 +1,4 @@
+import React from "react";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { motion } from "framer-motion";
 import type { Farm } from "@/lib/types/farm";
@@ -18,7 +19,7 @@ interface FarmCardProps {
   membersData?: FarmMembers;
 }
 
-export function FarmCard({
+export const FarmCard = React.memo(function FarmCard({
   farm,
   index,
   isOwner,
@@ -29,7 +30,7 @@ export function FarmCard({
   return (
     <motion.div
       key={farm.id}
-      initial={{ opacity: 0, y: 20 }}
+      initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5, delay: index * 0.1 }}
     >
@@ -50,4 +51,4 @@ export function FarmCard({
       </Card>
     </motion.div>
   );
-}
+});

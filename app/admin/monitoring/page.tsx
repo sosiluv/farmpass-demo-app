@@ -20,7 +20,7 @@ import {
   useMonitoringAnalyticsQuery,
   useMonitoringErrorsQuery,
 } from "@/lib/hooks/query/use-monitoring-query";
-import { PAGE_HEADER } from "@/lib/constants/monitoring";
+import { PAGE_HEADER, LABELS } from "@/lib/constants/monitoring";
 import { ERROR_CONFIGS } from "@/lib/constants/error";
 import { ErrorBoundary } from "@/components/error/error-boundary";
 import { useProfileQuery } from "@/lib/hooks/query/use-profile-query";
@@ -46,8 +46,22 @@ export default function MonitoringDashboard() {
 
   const { state } = useAuth();
   const userId = state.status === "authenticated" ? state.user.id : undefined;
-  const { data: profile } = useProfileQuery(userId);
+  const { data: profile, isLoading: profileLoading } = useProfileQuery(userId);
   const isAdmin = profile?.account_type === "admin";
+
+  // 프로필 로딩 중일 때는 스켈레톤 표시
+  if (profileLoading) {
+    return (
+      <div className="flex-1 space-y-6 p-4 md:p-6 pt-2 md:pt-4">
+        <PageHeader
+          title={PAGE_HEADER.PAGE_TITLE}
+          description={PAGE_HEADER.PAGE_DESCRIPTION}
+          breadcrumbs={[{ label: PAGE_HEADER.BREADCRUMB }]}
+        />
+        <CardSkeleton count={5} />
+      </div>
+    );
+  }
 
   // 권한이 없는 경우(기존 유지)
   if (!isAdmin) {

@@ -7,7 +7,6 @@ import {
   MobileHeader,
   MobileMenuButton,
 } from "@/components/layout";
-import { FarmsProvider } from "@/components/providers/farms-provider";
 import { ProtectedRoute } from "@/components/providers/protected-route";
 import { MaintenanceBanner } from "@/components/maintenance";
 import { ErrorBoundary } from "@/components/error/error-boundary";
@@ -34,20 +33,18 @@ export default function AdminLayout({
           description={ERROR_CONFIGS.GENERAL.description}
         >
           <SidebarProvider>
-            <FarmsProvider>
-              <AdminSidebar />
-              <SidebarInset>
-                <MobileHeader />
-                <MaintenanceBanner isAdmin={true} />
-                <RealtimeNotificationBell />
-                <main className="flex-1 p-4 md:p-6 pt-15 md:pt-12">
-                  {children}
-                </main>
-              </SidebarInset>
-              <MobileMenuButton />
-              {/* Admin 페이지에서만 알림 권한 다이얼로그 관리 */}
-              <DialogManager />
-            </FarmsProvider>
+            <AdminSidebar />
+            <SidebarInset>
+              <MobileHeader />
+              <MaintenanceBanner isAdmin={true} />
+              <RealtimeNotificationBell />
+              <main className="flex-1 p-4 md:p-6 pt-15 md:pt-12">
+                {children}
+              </main>
+            </SidebarInset>
+            <MobileMenuButton />
+            {/* Admin 페이지에서만 알림 권한 다이얼로그 관리 */}
+            <DialogManager />
           </SidebarProvider>
         </ErrorBoundary>
       </ProtectedRoute>

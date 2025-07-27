@@ -18,13 +18,14 @@ import { DEFAULT_SYSTEM_SETTINGS } from "@/lib/constants/defaults";
 import { Logo } from "@/components/common";
 import { useAuth } from "@/components/providers/auth-provider";
 import { PageLoading } from "@/components/ui/loading";
-import { useSystemSettingsContext } from "@/components/providers/system-settings-provider";
+import { useSystemSettingsQuery } from "@/lib/hooks/query/use-system-settings-query";
 
 // 클라이언트 컴포넌트로 변경
 export default function HomePage() {
   const router = useRouter();
   const { state } = useAuth();
-  const { settings, isLoading: settingsLoading } = useSystemSettingsContext();
+  const { data: settings, isLoading: settingsLoading } =
+    useSystemSettingsQuery();
 
   // 인증된 사용자 리다이렉트를 useEffect로 처리
   useEffect(() => {

@@ -15,8 +15,8 @@ import { apiClient } from "@/lib/utils/data/api-client";
 import { useSubscriptionManager } from "@/hooks/useSubscriptionManager";
 import { handleError } from "@/lib/utils/error";
 import { logout } from "@/lib/utils/auth/authService";
-// 알림 벨(Zustand) store
-import { useNotificationStore } from "@/store/use-notification-store";
+// React Query 캐시 정리를 위한 import
+import { useQueryClient } from "@tanstack/react-query";
 
 // 통합된 인증 상태 정의
 type AuthState =
@@ -97,12 +97,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   // 구독 관리 훅 사용 - Lazy Loading으로 최적화
   const { switchSubscription, cleanupSubscription } = useSubscriptionManager();
 
-  // user.id(또는 인증 상태)가 바뀔 때 알림 벨 기록 초기화
+  // React Query 캐시 정리를 위한 queryClient
+  const queryClient = useQueryClient();
+
+  // user.id(또는 인증 상태)가 바뀔 때 React Query 캐시 초기화
   useEffect(() => {
     if (typeof window !== "undefined") {
-      useNotificationStore.getState().clearAll();
+      // React Query 캐시 정리 (알림벨 데이터 포함)
+      queryClient.clear();
     }
-  }, [state.status === "authenticated" ? state.user?.id : undefined]);
+  }, [
+    state.status === "authenticated" ? state.user?.id : undefined,
+    queryClient,
+  ]);
 
   // 초기 세션 로드
   useEffect(() => {

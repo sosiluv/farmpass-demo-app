@@ -1,8 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { useRouter } from "next/navigation";
-import { useFarmsContext } from "@/components/providers/farms-provider";
+
 import { useFarmMutations } from "@/lib/hooks/query/use-farm-mutations";
 import { useAuth } from "@/components/providers/auth-provider";
 import { useCommonToast } from "@/lib/utils/notification/toast-messages";
@@ -20,6 +19,7 @@ import { LABELS, PLACEHOLDERS } from "@/lib/constants/farms";
 import { ResponsivePagination } from "@/components/common/responsive-pagination";
 import type { FarmFormValues } from "@/lib/utils/validation";
 import { useProfileQuery } from "@/lib/hooks/query/use-profile-query";
+import { useFarmsQuery } from "@/lib/hooks/query/use-farms-query";
 
 export default function FarmsPage() {
   const { showInfo, showSuccess, showError } = useCommonToast();
@@ -29,7 +29,13 @@ export default function FarmsPage() {
   const [farmToDelete, setFarmToDelete] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
 
-  const { farms, isLoading, error } = useFarmsContext();
+  const { state } = useAuth();
+  const userId = state.status === "authenticated" ? state.user.id : undefined;
+  const { data: profile } = useProfileQuery(userId);
+
+  // useFarmsContext 대신 useFarmsQuery 직접 사용
+  const { farms, isLoading, error } = useFarmsQuery(profile?.id);
+
   const {
     createFarmAsync,
     updateFarmAsync,
@@ -38,18 +44,16 @@ export default function FarmsPage() {
     isCreating,
     isUpdating,
   } = useFarmMutations();
-  const { state } = useAuth();
-  const userId = state.status === "authenticated" ? state.user.id : undefined;
-  const { data: profile } = useProfileQuery(userId);
 
-  // 농장별 멤버 데이터는 각 FarmCard에서 개별적으로 로딩
-  // 여기서는 전체적인 농장 목록만 관리
-
-  // 검색 필터링
-  const filteredFarms = farms.filter(
-    (farm: Farm) =>
-      farm.farm_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      farm.farm_address.toLowerCase().includes(searchTerm.toLowerCase())
+  // 검색 필터링 (메모이제이션 추가)
+  const filteredFarms = React.useMemo(
+    () =>
+      farms.filter(
+        (farm: Farm) =>
+          farm.farm_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          farm.farm_address.toLowerCase().includes(searchTerm.toLowerCase())
+      ),
+    [farms, searchTerm]
   );
 
   const handleAddClick = () => {
@@ -125,11 +129,14 @@ export default function FarmsPage() {
     }
   };
 
-  const isOwner = (farm: Farm) => {
-    if (!profile) return false;
-    // 관리자이거나 농장 소유자인 경우
-    return profile.account_type === "admin" || farm.owner_id === profile.id;
-  };
+  const isOwner = React.useCallback(
+    (farm: Farm) => {
+      if (!profile) return false;
+      // 관리자이거나 농장 소유자인 경우
+      return profile.account_type === "admin" || farm.owner_id === profile.id;
+    },
+    [profile]
+  );
 
   if (isLoading) {
     return (

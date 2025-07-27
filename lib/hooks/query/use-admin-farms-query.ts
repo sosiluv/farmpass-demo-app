@@ -143,11 +143,12 @@ export function useAdminFarmsQuery() {
   );
 
   // 🔥 관리자 농장 통계 실시간 업데이트 구독 (농장 변경 시 갱신)
-  useSupabaseRealtime({
-    table: "farms",
-    refetch: farmsQuery.refetch,
-    // 농장 변경은 농장 통계에 직접적인 영향을 줌
-  });
+  // Admin 대시보드는 실시간 업데이트가 필수가 아니므로 주기적 갱신으로 충분
+  // useSupabaseRealtime({
+  //   table: "farms",
+  //   refetch: farmsQuery.refetch,
+  //   // 농장 변경은 농장 통계에 직접적인 영향을 줌
+  // });
 
   return farmsQuery;
 }
@@ -233,10 +234,11 @@ export function useAdminFarmsListQuery() {
   );
 
   // 농장 실시간 업데이트 - farms 테이블 변경 시 리프레시
-  useSupabaseRealtime({
-    table: "farms",
-    refetch: farmsListQuery.refetch,
-  });
+  // Admin 대시보드는 실시간 업데이트가 필수가 아니므로 주기적 갱신으로 충분
+  // useSupabaseRealtime({
+  //   table: "farms",
+  //   refetch: farmsListQuery.refetch,
+  // });
 
   return farmsListQuery;
 }

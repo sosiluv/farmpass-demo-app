@@ -17,7 +17,7 @@ import { ErrorBoundary } from "@/components/error/error-boundary";
 import { ERROR_CONFIGS } from "@/lib/constants/error";
 import { Analytics } from "@vercel/analytics/react";
 import { PWAProvider } from "@/components/providers/pwa-provider";
-import { SystemSettingsProvider } from "@/components/providers/system-settings-provider";
+
 import { Logo } from "@/components/common";
 import { Badge } from "@/components/ui/badge";
 
@@ -191,20 +191,18 @@ export default function RootLayout({
           <PWAUpdater />
           <QueryProvider>
             <AuthProvider>
-              <SystemSettingsProvider>
-                <DebugProvider>
-                  <PWAProvider>
-                    <ToastPositionProvider>
-                      {/* === 상단 실시간 알림 Bell === */}
-                      {children}
-                      <Footer />
-                      {/* === 공통 푸터 끝 === */}
-                      <Toaster />
-                      <SystemMonitor />
-                    </ToastPositionProvider>
-                  </PWAProvider>
-                </DebugProvider>
-              </SystemSettingsProvider>
+              <DebugProvider>
+                <PWAProvider>
+                  <ToastPositionProvider>
+                    {/* === 상단 실시간 알림 Bell === */}
+                    {children}
+                    <Footer />
+                    {/* === 공통 푸터 끝 === */}
+                    <Toaster />
+                    <SystemMonitor />
+                  </ToastPositionProvider>
+                </PWAProvider>
+              </DebugProvider>
             </AuthProvider>
           </QueryProvider>
           <Analytics />

@@ -82,7 +82,7 @@ export function useAdminDashboardQuery() {
         throw new Error("이 함수는 클라이언트에서만 실행할 수 있습니다.");
       }
 
-      // 병렬 데이터 조회 (기존 legacy 코드 구조 참고)
+      // 병렬 데이터 조회
       const [usersResult, farmsResult, visitorsResult, logsResult] =
         await Promise.all([
           supabase.from("profiles").select(`*, farm_members(role)`),
@@ -90,7 +90,7 @@ export function useAdminDashboardQuery() {
           supabase.from("visitor_entries").select("*"),
           supabase
             .from("system_logs")
-            .select("*, profiles(name)")
+            .select("*") // profiles 조인 제거
             .order("created_at", { ascending: false }),
         ]);
 
@@ -104,6 +104,9 @@ export function useAdminDashboardQuery() {
       const farms = farmsResult.data || [];
       const visitors = visitorsResult.data || [];
       const logs = logsResult.data || [];
+
+      // 사용자 이름 캐시 생성 (O(1) 조회를 위해 Map 사용)
+      const userNameCache = new Map(users.map((user) => [user.id, user.name]));
 
       const totalUsers = users.length;
       const totalFarms = farms.length;
@@ -279,14 +282,14 @@ export function useAdminDashboardQuery() {
         { status: "QR 스캔 동작" as const, count: todayVisitors, trend: 0 },
       ];
 
-      // 최근 활동
+      // 최근 활동 (Map 캐시 사용)
       const recentActivities =
         logs?.slice(0, 5).map((log) => ({
           id: log.id,
           type: log.action,
           timestamp: log.created_at,
           details: log.message,
-          userName: log.profiles?.name,
+          userName: userNameCache.get(log.user_id),
         })) || [];
 
       // 트렌드 계산을 위한 데이터
@@ -379,11 +382,12 @@ export function useAdminDashboardQuery() {
   );
 
   // 🔥 관리자 대시보드 실시간 업데이트 구독 (모든 테이블 변경 시 갱신)
-  useSupabaseRealtime({
-    table: "farms",
-    refetch: dashboardQuery.refetch,
-    // 관리자는 모든 농장 변경사항에 대해 대시보드 갱신
-  });
+  // Admin 대시보드는 실시간 업데이트가 필수가 아니므로 주기적 갱신으로 충분
+  // useSupabaseRealtime({
+  //   table: "farms",
+  //   refetch: dashboardQuery.refetch,
+  //   // 관리자는 모든 농장 변경사항에 대해 대시보드 갱신
+  // });
 
   useSupabaseRealtime({
     table: "visitor_entries",

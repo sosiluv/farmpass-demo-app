@@ -1,6 +1,5 @@
 import { useEffect, useRef } from "react";
 import { supabase } from "@/lib/supabase/client";
-import { useFarmsContext } from "@/components/providers/farms-provider";
 import { useAuth } from "@/components/providers/auth-provider";
 
 // 전역 구독 상태 관리
@@ -19,15 +18,18 @@ const callbacks = new Map<
  * @param table 테이블명 ('visitor_entries', 'farms', 'farm_members', 'notifications')
  * @param refetch 데이터 refetch 함수 (React Query 등)
  * @param filter (선택) row 필터 함수(payload) => boolean
+ * @param farms (선택) farms 데이터 - farms 테이블 구독 시 필요
  */
 export function useSupabaseRealtime({
   table,
   refetch,
   filter,
+  farms = [],
 }: {
   table: string;
   refetch: () => void;
   filter?: (payload: any) => boolean;
+  farms?: any[];
 }) {
   const callbackId = useRef(`${table}_${Date.now()}_${Math.random()}`);
   const refetchRef = useRef(refetch);
@@ -37,18 +39,7 @@ export function useSupabaseRealtime({
   refetchRef.current = refetch;
   filterRef.current = filter;
 
-  // farms을 가져옴
-  let farms: any[] = [];
-  let profile: any = undefined;
-  try {
-    const ctx = useFarmsContext();
-    farms = ctx.farms;
-    profile = ctx.profile;
-  } catch (e) {
-    farms = [];
-    profile = undefined;
-  }
-
+  // farms 데이터를 직접 가져오기 (Context 사용 안함)
   const { state } = useAuth();
   const currentUserId =
     state.status === "authenticated" ? state.user.id : undefined;

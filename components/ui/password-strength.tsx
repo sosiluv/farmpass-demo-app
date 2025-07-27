@@ -2,8 +2,7 @@
 
 import { useMemo } from "react";
 import { Progress } from "./progress";
-import { useSystemSettingsContext } from "@/components/providers/system-settings-provider";
-import type { SystemSettings } from "@/lib/types/settings";
+import { useSystemSettingsQuery } from "@/lib/hooks/query/use-system-settings-query";
 import { devLog } from "@/lib/utils/logging/dev-logger";
 import { LABELS } from "@/lib/constants/common";
 
@@ -30,7 +29,7 @@ interface PasswordStrengthProps {
 
 export function PasswordStrength({ password }: PasswordStrengthProps) {
   // 전역 시스템 설정 사용
-  const { settings, isLoading, error } = useSystemSettingsContext();
+  const { data: settings, isLoading, error } = useSystemSettingsQuery();
   // 시스템 설정에서 비밀번호 규칙 추출
   const rules: PasswordRules = useMemo(() => {
     if (!settings) {
