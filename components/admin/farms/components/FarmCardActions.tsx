@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { FarmQRCode } from "../farm-qr-code";
-import { Edit, Trash2, Users } from "lucide-react";
+import { Edit, Trash2, Users, QrCode } from "lucide-react";
 import type { Farm } from "@/lib/types/farm";
 import Link from "next/link";
 import { BUTTONS, LABELS } from "@/lib/constants/farms";
@@ -19,17 +19,27 @@ export function FarmCardActions({
   onDelete,
 }: FarmCardActionsProps) {
   return (
-    <div className="flex flex-col gap-2">
+    <div className="flex flex-col gap-3">
       {/* 첫 번째 줄: 주요 액션 */}
       <div className="flex gap-2">
+        {/* QR 코드 버튼 - 더 세련된 디자인 */}
         <FarmQRCode farmId={farm.id} farmName={farm.farm_name} />
-        <Button variant="outline" size="sm" className="flex-1 min-w-0" asChild>
+
+        {/* 구성원 버튼 - 더 세련된 디자인 */}
+        <Button
+          variant="outline"
+          size="sm"
+          className="flex-1 min-w-0 bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200 hover:from-blue-100 hover:to-indigo-100 hover:border-blue-300 transition-all duration-200 group"
+          asChild
+        >
           <Link
             href={`/admin/farms/${farm.id}/members`}
             className="flex items-center justify-center gap-2"
           >
-            <Users className="h-4 w-4" />
-            <span className="hidden sm:inline">{LABELS.MEMBERS}</span>
+            <Users className="h-4 w-4 text-blue-600 group-hover:text-blue-700 transition-colors" />
+            <span className="font-medium text-blue-700 group-hover:text-blue-800">
+              {BUTTONS.MEMBERS_BUTTON}
+            </span>
           </Link>
         </Button>
       </div>
@@ -37,25 +47,32 @@ export function FarmCardActions({
       {/* 두 번째 줄: 관리 액션 (소유자만) */}
       {isOwner && (
         <div className="flex gap-2">
+          {/* 수정 버튼 - 더 세련된 디자인 */}
           <Button
             variant="outline"
             size="sm"
             onClick={() => onEdit(farm)}
-            className="flex-1 min-w-0"
+            className="flex-1 min-w-0 bg-gradient-to-r from-amber-50 to-orange-50 border-amber-200 hover:from-amber-100 hover:to-orange-100 hover:border-amber-300 transition-all duration-200 group"
             title={LABELS.EDIT_FARM_TOOLTIP}
           >
-            <Edit className="h-4 w-4 sm:mr-2" />
-            <span className="hidden sm:inline">{BUTTONS.EDIT_BUTTON}</span>
+            <Edit className="h-4 w-4 mr-2 text-amber-600 group-hover:text-amber-700 transition-colors" />
+            <span className="font-medium text-amber-700 group-hover:text-amber-800">
+              {BUTTONS.EDIT_BUTTON}
+            </span>
           </Button>
+
+          {/* 삭제 버튼 - 더 세련된 디자인 */}
           <Button
             variant="outline"
             size="sm"
             onClick={() => onDelete(farm.id)}
-            className="flex-1 min-w-0 text-red-600 hover:text-red-700"
+            className="flex-1 min-w-0 bg-gradient-to-r from-red-50 to-pink-50 border-red-200 hover:from-red-100 hover:to-pink-100 hover:border-red-300 transition-all duration-200 group"
             title={LABELS.DELETE_FARM_TOOLTIP}
           >
-            <Trash2 className="h-4 w-4 sm:mr-2" />
-            <span className="hidden sm:inline">{BUTTONS.DELETE_BUTTON}</span>
+            <Trash2 className="h-4 w-4 mr-2 text-red-600 group-hover:text-red-700 transition-colors" />
+            <span className="font-medium text-red-700 group-hover:text-red-800">
+              {BUTTONS.DELETE_BUTTON}
+            </span>
           </Button>
         </div>
       )}
