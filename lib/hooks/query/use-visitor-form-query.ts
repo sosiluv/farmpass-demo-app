@@ -124,13 +124,15 @@ export const useCreateVisitorMutation = () => {
       return result;
     },
     onSuccess: (result, { farmId }) => {
-      // 방문자 관련 쿼리만 무효화 (실시간 업데이트)
-      queryClient.invalidateQueries({ queryKey: visitorsKeys.all });
+      // 해당 농장의 방문자 관련 쿼리만 무효화
       queryClient.invalidateQueries({ queryKey: visitorsKeys.session(farmId) });
       queryClient.invalidateQueries({
         queryKey: visitorsKeys.dailyCount(farmId),
       });
       queryClient.invalidateQueries({ queryKey: farmsKeys.info(farmId) });
+      queryClient.invalidateQueries({
+        queryKey: visitorsKeys.list(farmId),
+      });
 
       devLog.log("[MUTATION] 방문자 등록 캐시 무효화 완료");
     },

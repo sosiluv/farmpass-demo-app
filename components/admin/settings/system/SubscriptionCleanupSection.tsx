@@ -8,7 +8,7 @@ import {
   SubscriptionCleanupForm,
   SubscriptionCleanupSuccessMessage,
 } from "./subscription-cleanup";
-import { useSubscriptionCleanupManager } from "@/lib/hooks/query/use-subscription-cleanup-manager";
+import { useCleanupSubscriptionsMutation } from "@/lib/hooks/query/use-push-mutations";
 import { PAGE_HEADER } from "@/lib/constants/settings";
 
 interface SubscriptionCleanupSectionProps {
@@ -25,20 +25,19 @@ export function SubscriptionCleanupSection({
   onUpdate,
   isLoading,
 }: SubscriptionCleanupSectionProps) {
-  const { cleanupLoading, lastCleanupSuccess, executeCleanup } =
-    useSubscriptionCleanupManager();
+  const cleanupSubscriptionsMutation = useCleanupSubscriptionsMutation();
 
   const handleCleanupRequest = async (isTest: boolean = false) => {
     try {
       const options = {
-        realTimeCheck: false,
+        realTimeCheck: true,
         forceDelete: isTest ? false : settings.subscriptionForceDelete || false,
         failCountThreshold: settings.subscriptionFailCountThreshold || 5,
         cleanupInactive: settings.subscriptionCleanupInactive || true,
         deleteAfterDays: settings.subscriptionCleanupDays || 30,
       };
 
-      await executeCleanup(options);
+      await cleanupSubscriptionsMutation.mutateAsync(options);
     } catch (error) {
       console.error("구독 정리 실패:", error);
     }
@@ -57,18 +56,19 @@ export function SubscriptionCleanupSection({
           onUpdate={onUpdate}
           isLoading={isLoading}
         />
-        {lastCleanupSuccess && (
-          <>
-            <Separator />
-            <SubscriptionCleanupSuccessMessage
-              lastCleanupResult={lastCleanupSuccess as any}
-            />
-          </>
-        )}
+        {cleanupSubscriptionsMutation.isSuccess &&
+          cleanupSubscriptionsMutation.data && (
+            <>
+              <Separator />
+              <SubscriptionCleanupSuccessMessage
+                lastCleanupResult={cleanupSubscriptionsMutation.data as any}
+              />
+            </>
+          )}
         <Separator />
         <SubscriptionCleanupActions
           settings={settings}
-          isLoading={isLoading || cleanupLoading}
+          isLoading={isLoading || cleanupSubscriptionsMutation.isPending}
           onCleanupRequest={handleCleanupRequest}
         />
       </CardContent>

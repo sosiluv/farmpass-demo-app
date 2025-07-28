@@ -111,7 +111,7 @@ export function useNotificationService() {
 
       // 구독 정리 Mutation 사용
       const result = await cleanupSubscriptionsMutation.mutateAsync({
-        realTimeCheck: false,
+        realTimeCheck: true,
       });
 
       setLastMessage({

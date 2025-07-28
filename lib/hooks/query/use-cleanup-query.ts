@@ -4,7 +4,7 @@ import { useAuth } from "@/components/providers/auth-provider";
 import { useAuthenticatedQuery } from "@/lib/hooks/query-utils";
 import { apiClient } from "@/lib/utils/data";
 import { devLog } from "@/lib/utils/logging/dev-logger";
-import { cleanupKeys } from "./query-keys";
+import { settingsKeys } from "./query-keys";
 import type { CleanupStatus } from "@/lib/types/settings";
 
 /**
@@ -15,7 +15,7 @@ export function useCleanupStatusQuery() {
   const user = state.status === "authenticated" ? state.user : null;
 
   return useAuthenticatedQuery(
-    cleanupKeys.status(),
+    settingsKeys.cleanup.status(),
     async (): Promise<CleanupStatus> => {
       devLog.log("[QUERY] 정리 상태 조회 시작");
 

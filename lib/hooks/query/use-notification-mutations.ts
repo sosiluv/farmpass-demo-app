@@ -3,7 +3,11 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiClient } from "@/lib/utils/data/api-client";
 import type { NotificationSettings } from "@/lib/types/notification";
-import { notificationKeys, settingsKeys } from "@/lib/hooks/query/query-keys";
+import {
+  notificationKeys,
+  settingsKeys,
+  pushKeys,
+} from "@/lib/hooks/query/query-keys";
 
 /**
  * 알림 설정 저장 Mutation Hook
@@ -37,6 +41,8 @@ export function useSaveNotificationSettingsMutation() {
  * 푸시 구독 등록 Mutation Hook
  */
 export function useSubscribePushMutation() {
+  const queryClient = useQueryClient();
+
   return useMutation({
     mutationFn: async (
       subscription: PushSubscription
@@ -48,6 +54,12 @@ export function useSubscribePushMutation() {
       });
       return result;
     },
+    onSuccess: () => {
+      // 푸시 구독 상태 무효화
+      queryClient.invalidateQueries({
+        queryKey: pushKeys.status(),
+      });
+    },
   });
 }
 
@@ -55,6 +67,8 @@ export function useSubscribePushMutation() {
  * 푸시 구독 해제 Mutation Hook
  */
 export function useUnsubscribePushMutation() {
+  const queryClient = useQueryClient();
+
   return useMutation({
     mutationFn: async (data: {
       endpoint: string;
@@ -66,6 +80,12 @@ export function useUnsubscribePushMutation() {
       });
       return result;
     },
+    onSuccess: () => {
+      // 푸시 구독 상태 무효화
+      queryClient.invalidateQueries({
+        queryKey: pushKeys.status(),
+      });
+    },
   });
 }
 
@@ -73,6 +93,8 @@ export function useUnsubscribePushMutation() {
  * 푸시 알림 전송 Mutation Hook
  */
 export function useSendPushNotificationMutation() {
+  const queryClient = useQueryClient();
+
   return useMutation({
     mutationFn: async (data: {
       title: string;
@@ -85,6 +107,12 @@ export function useSendPushNotificationMutation() {
         context: "푸시 알림 전송",
       });
       return response;
+    },
+    onSuccess: () => {
+      // 푸시 전송 상태 무효화
+      queryClient.invalidateQueries({
+        queryKey: pushKeys.status(),
+      });
     },
   });
 }

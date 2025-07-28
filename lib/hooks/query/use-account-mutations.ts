@@ -10,6 +10,7 @@ import type {
   CompanyFormData,
   PasswordFormData,
 } from "@/lib/types/account";
+import { useAuthActions } from "@/hooks/useAuthActions";
 
 /**
  * 프로필 정보 저장 Mutation Hook
@@ -95,7 +96,7 @@ export function useUpdateCompanyMutation() {
  * 비밀번호 변경 Mutation Hook
  */
 export function useChangePasswordMutation() {
-  const { changePassword } = useAuth();
+  const { changePassword } = useAuthActions();
 
   return useMutation({
     mutationFn: async (

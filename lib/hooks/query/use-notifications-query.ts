@@ -19,9 +19,13 @@ export function useNotificationsQuery(filters: NotificationsFilters = {}) {
 
   const { page = 1, pageSize = 20, read, type } = filters;
 
-  // 알림 목록 쿼리
+  // 현재 사용자 ID
+  const currentUserId =
+    state.status === "authenticated" ? state.user.id : undefined;
+
+  // 알림 목록 쿼리 (사용자별로 캐시 분리)
   const notificationsQuery = useAuthenticatedQuery(
-    notificationKeys.list({ page, pageSize, read, type }),
+    [...notificationKeys.list({ page, pageSize, read, type }), currentUserId],
     async (): Promise<NotificationsResponse> => {
       const params = new URLSearchParams({
         page: page.toString(),
@@ -47,7 +51,7 @@ export function useNotificationsQuery(filters: NotificationsFilters = {}) {
       return response;
     },
     {
-      enabled: state.status === "authenticated",
+      enabled: state.status === "authenticated" && !!currentUserId,
       staleTime: 2 * 60 * 1000, // 2분 캐싱 (알림은 자주 변경됨)
       gcTime: 5 * 60 * 1000, // 5분간 캐시 유지
       refetchOnWindowFocus: false,

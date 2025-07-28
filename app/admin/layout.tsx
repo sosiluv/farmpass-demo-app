@@ -14,6 +14,8 @@ import { ERROR_CONFIGS } from "@/lib/constants/error";
 import { ThemeProvider } from "@/components/common/theme-provider";
 import { DialogManager } from "@/components/common/DialogManager";
 import { RealtimeNotificationBell } from "@/components/common/RealtimeNotificationBell";
+import { AuthProvider } from "@/components/providers/auth-provider";
+import { PWAUpdater } from "@/components/common/pwa-updater";
 
 export default function AdminLayout({
   children,
@@ -21,33 +23,36 @@ export default function AdminLayout({
   children: React.ReactNode;
 }) {
   return (
-    <ThemeProvider
-      attribute="class"
-      defaultTheme="system"
-      enableSystem
-      disableTransitionOnChange
+    <ErrorBoundary
+      title={ERROR_CONFIGS.GENERAL.title}
+      description={ERROR_CONFIGS.GENERAL.description}
     >
-      <ProtectedRoute>
-        <ErrorBoundary
-          title={ERROR_CONFIGS.GENERAL.title}
-          description={ERROR_CONFIGS.GENERAL.description}
+      <AuthProvider>
+        <PWAUpdater />
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="system"
+          enableSystem
+          disableTransitionOnChange
         >
-          <SidebarProvider>
-            <AdminSidebar />
-            <SidebarInset>
-              <MobileHeader />
-              <MaintenanceBanner isAdmin={true} />
-              <RealtimeNotificationBell />
-              <main className="flex-1 p-4 md:p-6 pt-15 md:pt-12">
-                {children}
-              </main>
-            </SidebarInset>
-            <MobileMenuButton />
-            {/* Admin 페이지에서만 알림 권한 다이얼로그 관리 */}
-            <DialogManager />
-          </SidebarProvider>
-        </ErrorBoundary>
-      </ProtectedRoute>
-    </ThemeProvider>
+          <ProtectedRoute>
+            <SidebarProvider>
+              <AdminSidebar />
+              <SidebarInset>
+                <MobileHeader />
+                <MaintenanceBanner isAdmin={true} />
+                <RealtimeNotificationBell />
+                <main className="flex-1 p-4 md:p-6 pt-15 md:pt-12">
+                  {children}
+                </main>
+              </SidebarInset>
+              <MobileMenuButton />
+              {/* Admin 페이지에서만 알림 권한 다이얼로그 관리 */}
+              <DialogManager />
+            </SidebarProvider>
+          </ProtectedRoute>
+        </ThemeProvider>
+      </AuthProvider>
+    </ErrorBoundary>
   );
 }

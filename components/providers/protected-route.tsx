@@ -18,7 +18,7 @@ interface ProtectedRouteProps {
 export function ProtectedRoute({
   children,
   requireAdmin = false,
-  redirectTo = "/login",
+  redirectTo = "/auth/login",
 }: ProtectedRouteProps) {
   const { state } = useAuth();
   const userId = state.status === "authenticated" ? state.user.id : undefined;

@@ -37,7 +37,7 @@ export function useFarmVisitorsWithFiltersQuery(
 
   // 쿼리 키 - farmId 변경 시 새로운 쿼리 실행
   const queryKey = React.useMemo(() => {
-    const baseKey = visitorsKeys.farm(filters.farmId || "all", { filters });
+    const baseKey = visitorsKeys.list(filters.farmId || "all", { filters });
     return [...baseKey, "filtered", filters.farmId || "all"];
   }, [filters.farmId]);
 

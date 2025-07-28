@@ -32,13 +32,7 @@ export default function DashboardPage() {
   const { data: profile } = useProfileQuery(userId);
 
   // React Query 100% 마이그레이션 완료 - 더 이상 Feature Flag 불필요
-  const {
-    farms: availableFarms,
-    isLoading: farmsLoading,
-    isError: farmsError,
-    error: farmsErrorDetails,
-    refetch: refetchFarms,
-  } = useFarmsQuery();
+  const { farms: availableFarms, isLoading: farmsLoading } = useFarmsQuery();
 
   // profile에서 admin 여부 확인
   const isAdmin = profile?.account_type === "admin";
@@ -57,8 +51,8 @@ export default function DashboardPage() {
     }
   }, [farmsLoading, availableFarms, isAdmin]);
 
-  // selectedFarm 상태 관리 개선
-  const [selectedFarm, setSelectedFarm] = useState<string>("");
+  // selectedFarm 상태 관리 - 로딩 상태 고려
+  const [selectedFarm, setSelectedFarm] = useState<string>("all");
   const [isInitialized, setIsInitialized] = useState(false);
 
   // 농장 선택 콜백 - useCallback으로 최적화
@@ -71,19 +65,15 @@ export default function DashboardPage() {
 
   const { showWarning, showSuccess, showError } = useCommonToast();
 
-  // 초기 농장 선택 설정 - 한 번만 실행
+  // 초기화 완료 체크 - farms 로딩 완료 후 초기값 설정
   useEffect(() => {
-    if (
-      !isInitialized &&
-      initialSelectedFarm &&
-      !farmsLoading &&
-      availableFarms.length > 0
-    ) {
-      setSelectedFarm(initialSelectedFarm);
+    if (!isInitialized && !farmsLoading && availableFarms.length > 0) {
+      const initialFarm = isAdmin ? "all" : availableFarms[0]?.id || "all";
+      setSelectedFarm(initialFarm);
       setIsInitialized(true);
-      devLog.log(`Initial farm selected: ${initialSelectedFarm}`);
+      devLog.log(`Initialization completed. Selected farm: ${initialFarm}`);
     }
-  }, [initialSelectedFarm, farmsLoading, availableFarms.length, isInitialized]);
+  }, [farmsLoading, availableFarms, isAdmin, isInitialized]);
 
   // 알림 메시지 처리
   useEffect(() => {
@@ -97,10 +87,7 @@ export default function DashboardPage() {
     }
   }, [lastMessage, showSuccess, showError, clearLastMessage]);
 
-  // useFarmVisitorsQuery 호출을 메모화하여 불필요한 재호출 방지
-  const memoizedSelectedFarm = useMemo(() => {
-    return selectedFarm === "all" ? null : selectedFarm;
-  }, [selectedFarm]);
+  const memoizedSelectedFarm = isInitialized ? selectedFarm : null;
 
   // React Query 방문자 Hook (100% 마이그레이션 완료)
   const {
@@ -210,7 +197,7 @@ export default function DashboardPage() {
 
               {/* 농장 선택기를 핵심통계 제목과 같은 행에 배치 */}
               <FarmSelector
-                selectedFarm={selectedFarm}
+                selectedFarm={farmsLoading ? "" : selectedFarm}
                 onFarmChange={handleFarmSelect}
                 availableFarms={availableFarms}
                 isAdmin={isAdmin}

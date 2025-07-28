@@ -42,13 +42,23 @@ const DeleteOldLogsDialog = memo(
           className="bg-orange-50 text-orange-600 hover:bg-orange-100 hover:text-orange-700 border-orange-200 h-8 px-3 text-xs"
           disabled={isLoading}
         >
-          <Trash2 className="h-3 w-3 sm:h-4 sm:w-4 sm:mr-2" />
-          <span className="hidden sm:inline">
-            {BUTTONS.DELETE_OLD_LOGS_30_DAYS}
-          </span>
-          <span className="sm:hidden">
-            {BUTTONS.DELETE_OLD_LOGS_30_DAYS_MOBILE}
-          </span>
+          {isLoading ? (
+            <>
+              <Loader2 className="h-3 w-3 sm:h-4 sm:w-4 sm:mr-2 animate-spin" />
+              <span className="hidden sm:inline">{BUTTONS.DELETING}</span>
+              <span className="sm:hidden">{BUTTONS.DELETING}</span>
+            </>
+          ) : (
+            <>
+              <Trash2 className="h-3 w-3 sm:h-4 sm:w-4 sm:mr-2" />
+              <span className="hidden sm:inline">
+                {BUTTONS.DELETE_OLD_LOGS_30_DAYS}
+              </span>
+              <span className="sm:hidden">
+                {BUTTONS.DELETE_OLD_LOGS_30_DAYS_MOBILE}
+              </span>
+            </>
+          )}
         </Button>
       </AlertDialogTrigger>
       <AlertDialogContent className="max-w-[500px]">
@@ -130,9 +140,23 @@ const DeleteAllLogsDialog = memo(
           className="h-8 px-3 text-xs"
           disabled={isLoading}
         >
-          <Trash2 className="h-3 w-3 sm:h-4 sm:w-4 sm:mr-2" />
-          <span className="hidden sm:inline">{BUTTONS.DELETE_ALL_LOGS}</span>
-          <span className="sm:hidden">{BUTTONS.DELETE_ALL_LOGS_MOBILE}</span>
+          {isLoading ? (
+            <>
+              <Loader2 className="h-3 w-3 sm:h-4 sm:w-4 sm:mr-2 animate-spin" />
+              <span className="hidden sm:inline">{BUTTONS.DELETING}</span>
+              <span className="sm:hidden">{BUTTONS.DELETING}</span>
+            </>
+          ) : (
+            <>
+              <Trash2 className="h-3 w-3 sm:h-4 sm:w-4 sm:mr-2" />
+              <span className="hidden sm:inline">
+                {BUTTONS.DELETE_ALL_LOGS}
+              </span>
+              <span className="sm:hidden">
+                {BUTTONS.DELETE_ALL_LOGS_MOBILE}
+              </span>
+            </>
+          )}
         </Button>
       </AlertDialogTrigger>
       <AlertDialogContent className="max-w-[500px]">

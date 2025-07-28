@@ -119,6 +119,6 @@ export async function logout(isForceLogout = false): Promise<void> {
   // 클라이언트 사이드에서 리다이렉트 (강제 로그아웃 시에만)
   if (typeof window !== "undefined" && isForceLogout) {
     // 강제 로그아웃 시에만 리다이렉트
-    window.location.replace("/login");
+    window.location.replace("/auth/login");
   }
 }

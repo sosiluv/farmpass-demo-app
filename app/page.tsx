@@ -11,60 +11,22 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { ArrowRight, ChevronRight } from "lucide-react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { useEffect } from "react";
 import { features, steps } from "./home-data";
 import { DEFAULT_SYSTEM_SETTINGS } from "@/lib/constants/defaults";
 import { Logo } from "@/components/common";
-import { useAuth } from "@/components/providers/auth-provider";
 import { PageLoading } from "@/components/ui/loading";
 import { useSystemSettingsQuery } from "@/lib/hooks/query/use-system-settings-query";
 
 // 클라이언트 컴포넌트로 변경
 export default function HomePage() {
-  const router = useRouter();
-  const { state } = useAuth();
   const { data: settings, isLoading: settingsLoading } =
     useSystemSettingsQuery();
 
-  // 인증된 사용자 리다이렉트를 useEffect로 처리
-  useEffect(() => {
-    if (state.status === "authenticated") {
-      router.replace("/admin/dashboard");
-    }
-  }, [state.status, router]);
-
-  // 로딩 상태별 적절한 텍스트 표시
-  if (
-    state.status === "initializing" ||
-    state.status === "loading" ||
-    settingsLoading
-  ) {
-    let loadingText = "페이지를 불러오는 중...";
-
-    if (state.status === "initializing") {
-      loadingText = "시스템을 초기화하는 중...";
-    } else if (state.status === "loading") {
-      loadingText = "로그인 상태를 확인하는 중...";
-    } else if (settingsLoading) {
-      loadingText = "사이트 설정을 불러오는 중...";
-    }
-
+  // 로딩 상태 표시
+  if (settingsLoading) {
     return (
       <PageLoading
-        text={loadingText}
-        subText="잠시만 기다려주세요"
-        variant="gradient"
-        fullScreen={true}
-      />
-    );
-  }
-
-  // 인증된 사용자는 로딩 표시
-  if (state.status === "authenticated") {
-    return (
-      <PageLoading
-        text="대시보드로 이동 중..."
+        text="사이트 설정을 불러오는 중..."
         subText="잠시만 기다려주세요"
         variant="gradient"
         fullScreen={true}
@@ -102,7 +64,7 @@ export default function HomePage() {
 
             <div className="flex flex-col items-center justify-center gap-4 sm:flex-row">
               <Button asChild size="lg" className="btn-hover min-w-[160px]">
-                <Link href="/register">
+                <Link href="/auth/register">
                   시작하기
                   <ArrowRight className="ml-2 h-4 w-4" />
                 </Link>
@@ -113,7 +75,7 @@ export default function HomePage() {
                 size="lg"
                 className="btn-hover min-w-[160px]"
               >
-                <Link href="/login">관리자 로그인</Link>
+                <Link href="/auth/login">관리자 로그인</Link>
               </Button>
             </div>
           </div>
@@ -215,7 +177,7 @@ export default function HomePage() {
                 variant="secondary"
                 className="btn-hover min-w-[160px]"
               >
-                <Link href="/register">
+                <Link href="/auth/register">
                   무료로 시작하기
                   <ChevronRight className="ml-1 h-4 w-4" />
                 </Link>

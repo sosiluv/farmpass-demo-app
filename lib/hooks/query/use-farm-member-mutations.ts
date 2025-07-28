@@ -41,6 +41,11 @@ export function useInviteMemberMutation() {
       queryClient.invalidateQueries({
         queryKey: farmsKeys.farmMembers(variables.farm_id),
       });
+
+      // 농장 정보 무효화 (멤버 변경으로 인한 영향)
+      queryClient.invalidateQueries({
+        queryKey: farmsKeys.info(variables.farm_id),
+      });
     },
   });
 }
@@ -69,6 +74,11 @@ export function useUpdateMemberRoleMutation() {
       // 농장 멤버 목록 쿼리 무효화
       queryClient.invalidateQueries({
         queryKey: farmsKeys.farmMembers(variables.farm_id),
+      });
+
+      // 농장 정보 무효화 (멤버 역할 변경으로 인한 영향)
+      queryClient.invalidateQueries({
+        queryKey: farmsKeys.info(variables.farm_id),
       });
     },
   });
@@ -101,6 +111,11 @@ export function useRemoveMemberMutation() {
       // 농장 멤버 목록 쿼리 무효화
       queryClient.invalidateQueries({
         queryKey: farmsKeys.farmMembers(variables.farmId),
+      });
+
+      // 농장 정보 무효화 (멤버 제거로 인한 영향)
+      queryClient.invalidateQueries({
+        queryKey: farmsKeys.info(variables.farmId),
       });
     },
   });

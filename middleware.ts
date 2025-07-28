@@ -20,11 +20,8 @@ const MIDDLEWARE_CONFIG = {
   // 이 경로들은 로그인하지 않은 사용자도 접근할 수 있습니다.
   PUBLIC_PATHS: [
     "/", // 루트 페이지 (랜딩 페이지)
-    "/login", // 로그인 페이지
     "/auth", // 인증 관련 (이메일 확인, 비밀번호 리셋 등)
     "/api/auth", // 인증 API (Supabase 인증)
-    "/register", // 회원가입
-    "/reset-password", // 비밀번호 리셋
     "/visit", // 방문자 페이지 (QR코드로 접근)
     "/api/settings", // 설정 API (공개 설정 조회)
     "/api/farms", // 농장 API (공개 농장 정보)
@@ -239,7 +236,7 @@ export async function middleware(request: NextRequest) {
       // (로그인 페이지에서 session_expired=true 파라미터로 구독 정리 수행)
 
       // 세션 쿠키 정리 (미들웨어에서는 NextResponse cookies API 사용)
-      const loginUrl = new URL("/login", request.url);
+      const loginUrl = new URL("/auth/login", request.url);
       loginUrl.searchParams.set("session_expired", "true");
       const response = NextResponse.redirect(loginUrl);
 
@@ -325,7 +322,7 @@ export async function middleware(request: NextRequest) {
 
     // 로그인 페이지로 리다이렉트
     const url = request.nextUrl.clone();
-    url.pathname = "/login";
+    url.pathname = "/auth/login";
     return NextResponse.redirect(url);
   }
 

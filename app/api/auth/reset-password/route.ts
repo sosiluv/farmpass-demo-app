@@ -51,7 +51,7 @@ export async function POST(request: NextRequest) {
 
     // Supabase Auth를 통한 비밀번호 재설정 이메일 전송
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL}/reset-password/confirm`,
+      redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL}/auth/reset-password/confirm`,
     });
 
     if (error) {

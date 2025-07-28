@@ -8,7 +8,7 @@ import {
   getKSTTodayRange,
   createKSTDateRange,
 } from "@/lib/utils/datetime/date";
-import { dashboardKeys } from "./query-keys";
+import { adminKeys } from "./query-keys";
 import { useSupabaseRealtime } from "@/hooks/useSupabaseRealtime";
 import { useProfileQuery } from "@/lib/hooks/query/use-profile-query";
 
@@ -76,7 +76,7 @@ export function useAdminDashboardQuery() {
   const { data: profile } = useProfileQuery(userId);
 
   const dashboardQuery = useAuthenticatedQuery(
-    dashboardKeys.all,
+    adminKeys.dashboard(),
     async (): Promise<DashboardStats> => {
       if (!isClient) {
         throw new Error("이 함수는 클라이언트에서만 실행할 수 있습니다.");
@@ -373,11 +373,11 @@ export function useAdminDashboardQuery() {
     },
     {
       enabled: !!user && profile?.account_type === "admin",
-      staleTime: 1000 * 60 * 15, // 15분간 stale하지 않음 (중복 호출 방지)
-      gcTime: 1000 * 60 * 30, // 30분간 캐시 유지
-      refetchOnWindowFocus: false, // 윈도우 포커스 시 refetch 비활성화
-      refetchInterval: 1000 * 60 * 30, // 30분마다 자동 갱신 (덜 빈번하게)
-      refetchOnMount: false, // 마운트 시 refetch 비활성화 (캐시 우선)
+      staleTime: 1000 * 60 * 5, // 5분간 stale하지 않음 (로그 삭제 시 빠른 반영을 위해 단축)
+      gcTime: 1000 * 60 * 15, // 15분간 캐시 유지 (단축)
+      refetchOnWindowFocus: true, // 윈도우 포커스 시 refetch 활성화 (로그 변경 감지)
+      refetchInterval: 1000 * 60 * 10, // 10분마다 자동 갱신 (더 빈번하게)
+      refetchOnMount: true, // 마운트 시 refetch 활성화 (최신 데이터 보장)
     }
   );
 
@@ -396,27 +396,4 @@ export function useAdminDashboardQuery() {
   });
 
   return dashboardQuery;
-}
-
-/**
- * Legacy Hook과의 호환성을 위한 Wrapper
- * 기존 코드와 동일한 인터페이스를 제공합니다.
- */
-export function useAdminDashboardQueryCompat() {
-  const {
-    data: stats,
-    isLoading: loading,
-    error,
-    refetch,
-  } = useAdminDashboardQuery();
-
-  return {
-    stats,
-    loading,
-    error,
-    refetch: async () => {
-      const result = await refetch();
-      return result.data;
-    },
-  };
 }

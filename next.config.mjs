@@ -64,7 +64,7 @@ const nextConfig = {
    *
    * @see https://react.dev/reference/react/StrictMode
    */
-  reactStrictMode: true,
+  reactStrictMode: false,
 
   /**
    * 🖼️ 이미지 최적화 설정

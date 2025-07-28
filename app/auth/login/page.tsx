@@ -18,7 +18,6 @@ import { Mail, Lock, Loader2 } from "lucide-react";
 import { motion } from "framer-motion";
 import { useCommonToast } from "@/lib/utils/notification/toast-messages";
 import { devLog } from "@/lib/utils/logging/dev-logger";
-import { useAuth } from "@/components/providers/auth-provider";
 import { ErrorBoundary } from "@/components/error/error-boundary";
 import { ERROR_CONFIGS } from "@/lib/constants/error";
 import { Logo } from "@/components/common";
@@ -44,26 +43,21 @@ import {
   PLACEHOLDERS,
   PAGE_HEADER,
   BUTTONS,
+  PAGE_LOADING,
 } from "@/lib/constants/auth";
 import { createClient } from "@/lib/supabase/client";
+import { useAuthActions } from "@/hooks/useAuthActions";
 
 export default function LoginPage() {
   const [loading, setLoading] = useState(false);
-  const [redirecting, setRedirecting] = useState(false);
   const [formError, setFormError] = useState<string>("");
   const [kakaoLoading, setKakaoLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
+  const [checkingSession, setCheckingSession] = useState(true);
+  const [redirecting, setRedirecting] = useState(false);
   const router = useRouter();
   const { showInfo, showSuccess, showError } = useCommonToast();
-  const { state, signIn } = useAuth();
-
-  // 인증된 사용자 리다이렉트를 useEffect로 처리 (redirecting 상태 고려)
-  useEffect(() => {
-    if (state.status === "authenticated" && !loading && !redirecting) {
-      setRedirecting(true);
-      router.replace("/admin/dashboard");
-    }
-  }, [state.status, router, loading, redirecting]);
+  const { signIn } = useAuthActions();
 
   const form = useForm<LoginFormData>({
     resolver: zodResolver(loginFormSchema),
@@ -73,8 +67,29 @@ export default function LoginPage() {
     },
   });
 
-  // 세션 만료 시 URL 파라미터 정리 (일반 웹서비스 방식: 구독은 유지)
+  // 세션 확인 및 세션 만료 파라미터 정리
   useEffect(() => {
+    const checkSession = async () => {
+      try {
+        const supabase = createClient();
+        const {
+          data: { session },
+        } = await supabase.auth.getSession();
+
+        if (session?.user) {
+          // 이미 로그인된 사용자는 대시보드로 리다이렉트
+          setRedirecting(true);
+          setCheckingSession(false);
+          router.replace("/admin/dashboard");
+          return;
+        }
+      } catch (error) {
+        devLog.error("세션 확인 중 오류:", error);
+      } finally {
+        setCheckingSession(false);
+      }
+    };
+
     // URL 파라미터로 세션 만료 여부 확인
     const urlParams = new URLSearchParams(window.location.search);
     const sessionExpired = urlParams.get("session_expired");
@@ -87,28 +102,22 @@ export default function LoginPage() {
       newUrl.searchParams.delete("session_expired");
       window.history.replaceState({}, "", newUrl.toString());
     }
-  }, []);
 
-  // 로딩 상태별 적절한 텍스트 표시
-  if (
-    state.status === "loading" ||
-    state.status === "initializing" ||
-    redirecting
-  ) {
-    let loadingText = "페이지를 불러오는 중...";
+    checkSession();
+  }, [router]);
 
-    if (redirecting) {
-      loadingText = "대시보드로 이동 중...";
-    } else if (state.status === "initializing") {
-      loadingText = "시스템을 초기화하는 중...";
-    } else if (state.status === "loading") {
-      loadingText = "로그인 상태를 확인하는 중...";
-    }
-
+  // 로딩 상태 표시 (세션 확인 중, 로그인 중, 또는 리다이렉트 중일 때)
+  if (checkingSession || loading || redirecting) {
     return (
       <PageLoading
-        text={loadingText}
-        subText="잠시만 기다려주세요"
+        text={
+          checkingSession
+            ? PAGE_LOADING.CHECKING_SESSION
+            : redirecting
+            ? PAGE_LOADING.REDIRECTING_TO_DASHBOARD
+            : BUTTONS.LOGIN_LOADING
+        }
+        subText={PAGE_LOADING.SUB_TEXT}
         variant="gradient"
         fullScreen={true}
       />
@@ -121,7 +130,6 @@ export default function LoginPage() {
     showInfo("로그인 시도 중", "잠시만 기다려주세요.");
 
     try {
-      // Safari 재시도 로직 제거, signIn 직접 호출
       const result = await signIn({
         email: data.email,
         password: data.password,
@@ -129,6 +137,8 @@ export default function LoginPage() {
 
       if (result.success) {
         showSuccess("로그인 성공", result.message || "대시보드로 이동합니다.");
+        setRedirecting(true);
+        router.replace("/admin/dashboard");
         return;
       }
     } catch (error: any) {
@@ -137,6 +147,7 @@ export default function LoginPage() {
       const authError = getAuthErrorMessage(error);
       setFormError(authError.message);
       showError("로그인 실패", authError.message);
+      setRedirecting(false);
     } finally {
       setLoading(false);
     }
@@ -150,26 +161,42 @@ export default function LoginPage() {
     setLoading(true);
     try {
       const supabase = createClient();
-      await supabase.auth.signInWithOAuth({
-        provider,
-        options: {
-          redirectTo: `${window.location.origin}/api/auth/callback`,
+
+      // 카카오와 구글 모두 계정 선택 화면 강제 표시
+      const oauthOptions = {
+        redirectTo: `${window.location.origin}/api/auth/callback`,
+        queryParams: {
+          prompt: "select_account", // 계정 선택 화면 강제 표시
         },
+      };
+
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider,
+        options: oauthOptions,
       });
-    } finally {
-      // 실제로는 리다이렉트가 발생하므로 setLoading(false)는 필요 없음
+
+      if (error) {
+        devLog.error(`${provider} 로그인 오류:`, error);
+        setLoading(false);
+        showError(`${provider} 로그인 실패`, error.message);
+      }
+      // 성공 시에는 리다이렉트가 발생하므로 로딩 상태를 유지
+    } catch (error) {
+      devLog.error(`${provider} 로그인 예외:`, error);
+      setLoading(false);
+      showError(`${provider} 로그인 실패`, "로그인 중 오류가 발생했습니다.");
     }
   };
 
   // 카카오 로그인 핸들러
   const handleKakaoLogin = () => {
-    if (kakaoLoading || redirecting) return;
+    if (kakaoLoading) return;
     handleSocialLogin("kakao", setKakaoLoading);
   };
 
   // 구글 로그인 핸들러
   const handleGoogleLogin = () => {
-    if (googleLoading || redirecting) return;
+    if (googleLoading) return;
     handleSocialLogin("google", setGoogleLoading);
   };
 
@@ -343,7 +370,7 @@ export default function LoginPage() {
             <CardFooter className="flex flex-col space-y-2">
               <div className="text-center text-sm">
                 <Link
-                  href="/reset-password"
+                  href="/auth/reset-password"
                   className="text-primary hover:underline"
                 >
                   {BUTTONS.FORGOT_PASSWORD}
@@ -351,7 +378,10 @@ export default function LoginPage() {
               </div>
               <div className="text-center text-sm">
                 {BUTTONS.NO_ACCOUNT}{" "}
-                <Link href="/register" className="text-primary hover:underline">
+                <Link
+                  href="/auth/register"
+                  className="text-primary hover:underline"
+                >
                   {BUTTONS.REGISTER_BUTTON}
                 </Link>
               </div>

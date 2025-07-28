@@ -31,15 +31,15 @@ export function useFarmVisitorsQuery(farmId: string | null) {
 
   // 방문자 데이터 쿼리
   const visitorsQuery = useAuthenticatedQuery(
-    visitorsKeys.farm(farmId || "all"),
+    visitorsKeys.list(farmId || "all"),
     async (): Promise<VisitorEntry[]> => {
       let query = supabase
         .from("visitor_entries")
         .select("*")
         .order("visit_datetime", { ascending: false });
 
-      // farmId가 null이면 전체 농장 데이터 조회
-      if (farmId) {
+      // farmId가 "all"이 아니면 특정 농장 필터링
+      if (farmId && farmId !== "all") {
         query = query.eq("farm_id", farmId);
       }
 
@@ -52,7 +52,7 @@ export function useFarmVisitorsQuery(farmId: string | null) {
       return data || [];
     },
     {
-      enabled: state.status === "authenticated",
+      enabled: state.status === "authenticated" && farmId !== null, // null일 때는 쿼리 비활성화
       staleTime: 2 * 60 * 1000, // 🕐 2분 후 fresh → stale 상태 변경
       refetchOnWindowFocus: true, // 창 포커스 시 새로고침 (다른 탭에서 돌아올 때)
       refetchOnReconnect: true, // 네트워크 재연결 시 새로고침
@@ -68,8 +68,8 @@ export function useFarmVisitorsQuery(farmId: string | null) {
     refetch: visitorsQuery.refetch,
     filter: (payload) => {
       const changedFarmId = payload?.new?.farm_id || payload?.old?.farm_id;
-      // farmId가 null이면 모든 농장의 변경사항 처리 (전체 농장 선택)
-      return farmId === null || changedFarmId === farmId;
+      // farmId가 "all"이면 모든 농장의 변경사항 처리 (전체 농장 선택)
+      return farmId === "all" || changedFarmId === farmId;
     },
   });
 
@@ -106,7 +106,7 @@ export function useFarmVisitorsQuery(farmId: string | null) {
     return { visitors };
   }, [visitorsQuery.data]);
 
-  // 타입 호환성 변환 최적화 - 별도 메모이제이션
+  // 타입 호환성 변화 - 별도 메모이제이션
   // compatibleVisitors 변수 제거, computedStats.visitors 직접 사용
   const purposeStats = React.useMemo(() => {
     if (!computedStats.visitors || computedStats.visitors.length === 0)

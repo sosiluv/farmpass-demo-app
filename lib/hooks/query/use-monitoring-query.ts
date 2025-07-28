@@ -3,7 +3,7 @@
 import { useAuthenticatedQuery } from "@/lib/hooks/query-utils";
 import { useAuth } from "@/components/providers/auth-provider";
 import { apiClient } from "@/lib/utils/data/api-client";
-import { settingsKeys } from "./query-keys";
+import { monitoringKeys } from "./query-keys";
 import { useProfileQuery } from "@/lib/hooks/query/use-profile-query";
 
 export interface MonitoringData {
@@ -110,7 +110,7 @@ export function useMonitoringHealthQuery() {
   const { data: profile } = useProfileQuery(userId);
 
   return useAuthenticatedQuery(
-    [...settingsKeys.all, "monitoring", "health"],
+    monitoringKeys.health(),
     async () => {
       return await apiClient("/api/monitoring/health", {
         context: "시스템 헬스체크 데이터 조회",
@@ -134,7 +134,7 @@ export function useMonitoringUptimeQuery() {
   const { data: profile } = useProfileQuery(userId);
 
   return useAuthenticatedQuery(
-    [...settingsKeys.all, "monitoring", "uptime"],
+    monitoringKeys.uptime(),
     async () => {
       return await apiClient("/api/monitoring/uptime", {
         context: "업타임 데이터 조회",
@@ -158,7 +158,7 @@ export function useMonitoringAnalyticsQuery() {
   const { data: profile } = useProfileQuery(userId);
 
   return useAuthenticatedQuery(
-    [...settingsKeys.all, "monitoring", "analytics"],
+    monitoringKeys.analytics(),
     async () => {
       return await apiClient("/api/monitoring/analytics", {
         context: "방문자 통계 데이터 조회",
@@ -182,7 +182,7 @@ export function useMonitoringErrorsQuery() {
   const { data: profile } = useProfileQuery(userId);
 
   return useAuthenticatedQuery(
-    [...settingsKeys.all, "monitoring", "errors"],
+    monitoringKeys.errors(),
     async () => {
       return await apiClient("/api/monitoring/errors", {
         context: "에러 로그 데이터 조회",

@@ -70,7 +70,7 @@ export default function ResetPasswordPage() {
       );
 
       // 로그인 페이지로 리다이렉트
-      router.push("/login");
+      router.push("/auth/login");
     } catch (error) {
       handleError(error, { context: "reset-password-request" });
       const authError = getAuthErrorMessage(error);
@@ -154,7 +154,7 @@ export default function ResetPasswordPage() {
           </CardContent>
           <CardFooter className="flex flex-col">
             <div className="mt-2 text-center text-sm">
-              <Link href="/login" className="text-primary hover:underline">
+              <Link href="/auth/login" className="text-primary hover:underline">
                 {BUTTONS.BACK_TO_LOGIN}
               </Link>
             </div>

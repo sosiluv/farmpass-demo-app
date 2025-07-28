@@ -188,22 +188,19 @@ export default function RootLayout({
           title={ERROR_CONFIGS.GENERAL.title}
           description={ERROR_CONFIGS.GENERAL.description}
         >
-          <PWAUpdater />
           <QueryProvider>
-            <AuthProvider>
+            <PWAProvider>
               <DebugProvider>
-                <PWAProvider>
-                  <ToastPositionProvider>
-                    {/* === 상단 실시간 알림 Bell === */}
-                    {children}
-                    <Footer />
-                    {/* === 공통 푸터 끝 === */}
-                    <Toaster />
-                    <SystemMonitor />
-                  </ToastPositionProvider>
-                </PWAProvider>
+                <ToastPositionProvider>
+                  {/* === 상단 실시간 알림 Bell === */}
+                  {children}
+                  <Footer />
+                  {/* === 공통 푸터 끝 === */}
+                  <Toaster />
+                  <SystemMonitor />
+                </ToastPositionProvider>
               </DebugProvider>
-            </AuthProvider>
+            </PWAProvider>
           </QueryProvider>
           <Analytics />
         </ErrorBoundary>

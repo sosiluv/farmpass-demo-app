@@ -3,7 +3,7 @@
 import { useAuthenticatedQuery } from "@/lib/hooks/query-utils";
 import { useAuth } from "@/components/providers/auth-provider";
 import { supabase } from "@/lib/supabase/client";
-import { settingsKeys } from "./query-keys";
+import { adminKeys } from "./query-keys";
 import { useProfileQuery } from "@/lib/hooks/query/use-profile-query";
 
 // 클라이언트 전용 가드
@@ -43,7 +43,7 @@ export function useAdminLogsQuery() {
   const { data: profile } = useProfileQuery(userId);
 
   const logsQuery = useAuthenticatedQuery(
-    [...settingsKeys.all, "logs", "admin-stats"],
+    adminKeys.logs.stats(),
     async (): Promise<LogStats> => {
       if (!isClient) {
         throw new Error("이 함수는 클라이언트에서만 실행할 수 있습니다.");

@@ -2,7 +2,7 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase/client";
-import { logsKeys } from "./query-keys";
+import { adminKeys } from "./query-keys";
 import type { SystemLog } from "@/lib/types/system";
 
 /**
@@ -10,7 +10,7 @@ import type { SystemLog } from "@/lib/types/system";
  */
 export function useSystemLogsQuery() {
   const logsQuery = useQuery({
-    queryKey: logsKeys.list(),
+    queryKey: adminKeys.logs.list(),
     queryFn: async (): Promise<SystemLog[]> => {
       const { data, error } = await supabase
         .from("system_logs")

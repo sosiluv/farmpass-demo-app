@@ -61,7 +61,10 @@ export const useUpdateMemberRoleMutation = () => {
       queryClient.invalidateQueries({
         queryKey: farmsKeys.farmMembers(farmId),
       });
-      queryClient.invalidateQueries({ queryKey: farmsKeys.all });
+      // 농장 정보 무효화 (멤버 변경으로 인한 영향)
+      queryClient.invalidateQueries({
+        queryKey: farmsKeys.info(farmId),
+      });
       devLog.log("[MUTATION] 멤버 역할 변경 완료, 캐시 무효화");
     },
     onError: (error, { farmId, memberId, newRole }) => {
@@ -104,7 +107,10 @@ export const useDeleteMemberMutation = () => {
       queryClient.invalidateQueries({
         queryKey: farmsKeys.farmMembers(farmId),
       });
-      queryClient.invalidateQueries({ queryKey: farmsKeys.all });
+      // 농장 정보 무효화 (멤버 삭제로 인한 영향)
+      queryClient.invalidateQueries({
+        queryKey: farmsKeys.info(farmId),
+      });
       devLog.log("[MUTATION] 멤버 삭제 완료, 캐시 무효화");
     },
     onError: (error, { farmId, memberId }) => {
@@ -175,7 +181,10 @@ export const useBulkUpdateMemberRoleMutation = () => {
       queryClient.invalidateQueries({
         queryKey: farmsKeys.farmMembers(farmId),
       });
-      queryClient.invalidateQueries({ queryKey: farmsKeys.all });
+      // 농장 정보 무효화 (멤버 변경으로 인한 영향)
+      queryClient.invalidateQueries({
+        queryKey: farmsKeys.info(farmId),
+      });
       devLog.log("[MUTATION] 멤버 일괄 역할 변경 완료, 캐시 무효화");
     },
     onError: (error, { farmId, memberIds, newRole }) => {
@@ -231,7 +240,10 @@ export const useBulkDeleteMembersMutation = () => {
       queryClient.invalidateQueries({
         queryKey: farmsKeys.farmMembers(farmId),
       });
-      queryClient.invalidateQueries({ queryKey: farmsKeys.all });
+      // 농장 정보 무효화 (멤버 삭제로 인한 영향)
+      queryClient.invalidateQueries({
+        queryKey: farmsKeys.info(farmId),
+      });
       devLog.log("[MUTATION] 멤버 일괄 삭제 완료, 캐시 무효화");
     },
     onError: (error, { farmId, memberIds }) => {

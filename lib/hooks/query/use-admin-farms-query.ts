@@ -1,7 +1,7 @@
 "use client";
 
 import { useAuthenticatedQuery } from "@/lib/hooks/query-utils";
-import { farmsKeys } from "@/lib/hooks/query/query-keys";
+import { adminKeys } from "@/lib/hooks/query/query-keys";
 import { useAuth } from "@/components/providers/auth-provider";
 import type { FarmStats } from "@/lib/types";
 import { supabase } from "@/lib/supabase/client";
@@ -29,7 +29,7 @@ export function useAdminFarmsQuery() {
   const { data: profile } = useProfileQuery(userId);
 
   const farmsQuery = useAuthenticatedQuery(
-    farmsKeys.list({ type: "admin-stats" }),
+    adminKeys.farms.stats(),
     async (): Promise<FarmStats> => {
       if (!isClient) {
         throw new Error("이 함수는 클라이언트에서만 실행할 수 있습니다.");
@@ -163,7 +163,7 @@ export function useAdminFarmsListQuery() {
   const { data: profile } = useProfileQuery(userId);
 
   const farmsListQuery = useAuthenticatedQuery(
-    farmsKeys.list({ type: "admin-list" }),
+    adminKeys.farms.list(),
     async (): Promise<any[]> => {
       // ExtendedFarm[] 대신 any[]로 변경
       if (!isClient) {

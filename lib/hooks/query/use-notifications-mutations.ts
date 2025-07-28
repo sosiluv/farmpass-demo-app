@@ -25,7 +25,7 @@ export function useMarkNotificationsReadMutation() {
       onSuccess: () => {
         // 알림 목록 캐시 무효화
         queryClient.invalidateQueries({
-          queryKey: notificationKeys.lists(),
+          queryKey: notificationKeys.list(),
         });
       },
     }
@@ -51,7 +51,7 @@ export function useDeleteNotificationsMutation() {
       onSuccess: () => {
         // 알림 목록 캐시 무효화
         queryClient.invalidateQueries({
-          queryKey: notificationKeys.lists(),
+          queryKey: notificationKeys.list(),
         });
       },
     }
