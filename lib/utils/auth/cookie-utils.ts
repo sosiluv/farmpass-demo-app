@@ -21,10 +21,8 @@ export function getSupabaseAuthCookies(): string[] {
   const projectId = getSupabaseProjectId();
   if (!projectId) return [];
 
-  return [
-    `sb-${projectId}-auth-token`,
-    `sb-${projectId}-auth-token-code-verifier`,
-  ];
+  const prefix = `sb-${projectId}-auth-token`;
+  return [prefix, `${prefix}.0`, `${prefix}.1`, `${prefix}-code-verifier`];
 }
 
 /**

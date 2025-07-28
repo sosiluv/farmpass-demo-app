@@ -80,13 +80,25 @@ const PathMatcher = {
  */
 async function validateAndRefreshToken(supabase: any, request: NextRequest) {
   // 쿠키에서 토큰 정보 확인 (세션 만료 감지용)
-  // Supabase 쿠키명: sb-{projectId}-auth-token
+  // Supabase 쿠키명: sb-{projectId}-auth-token (인덱스 포함)
   const projectId =
     process.env.NEXT_PUBLIC_SUPABASE_URL?.split("//")[1]?.split(".")[0];
-  const authCookieName = projectId ? `sb-${projectId}-auth-token` : null;
-  const authCookie = authCookieName
-    ? request.cookies.get(authCookieName)?.value
-    : null;
+
+  // 기본 쿠키와 인덱스 쿠키 모두 확인
+  const authCookieNames = projectId
+    ? [
+        `sb-${projectId}-auth-token`,
+        `sb-${projectId}-auth-token.0`,
+        `sb-${projectId}-auth-token.1`,
+        `sb-${projectId}-auth-token-code-verifier`,
+        "_vercel_jwt",
+        "_vercel_session",
+      ]
+    : [];
+
+  const authCookie = authCookieNames.find(
+    (cookieName) => request.cookies.get(cookieName)?.value
+  );
   const hasTokens = !!authCookie;
   try {
     // 사용자 정보 조회 (보안 강화)
@@ -321,8 +333,7 @@ export async function middleware(request: NextRequest) {
     }
 
     // 로그인 페이지로 리다이렉트
-    const url = request.nextUrl.clone();
-    url.pathname = "/auth/login";
+    const url = new URL("/auth/login", request.url);
     return NextResponse.redirect(url);
   }
 

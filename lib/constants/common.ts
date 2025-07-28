@@ -10,6 +10,7 @@ export const BUTTONS = {
   LAYOUT_ADD_NEW_FARM: "새 농장 추가",
   LAYOUT_GO_TO_DASHBOARD: "대시보드로 이동",
   LAYOUT_LOGOUT: "로그아웃",
+  LAYOUT_LOGOUT_LOADING: "로그아웃 중...",
 
   LAYOUT_ALL_VISITORS_STATUS: "전체 방문자 현황",
   LAYOUT_VISITORS_STATUS: "방문자 현황",

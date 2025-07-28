@@ -182,10 +182,21 @@ export function useSubscriptionManager() {
 
       // 브라우저에서 구독 해제 및 endpoint 추출
       if ("serviceWorker" in navigator && "PushManager" in window) {
-        const registration = await navigator.serviceWorker.ready;
+        const existingRegistration =
+          await navigator.serviceWorker.getRegistration();
+        const registration =
+          existingRegistration ??
+          ((await Promise.race([
+            navigator.serviceWorker.ready,
+            new Promise((_, reject) =>
+              setTimeout(() => reject("서비스워커 Timeout"), 1000)
+            ),
+          ])) as ServiceWorkerRegistration);
+
         const subscription = await registration.pushManager.getSubscription();
 
         if (subscription) {
+          endpoint = subscription.endpoint; // ✅ endpoint 추출
           await subscription.unsubscribe();
           devLog.log("브라우저 구독 해제 완료");
         }
