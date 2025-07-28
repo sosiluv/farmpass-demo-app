@@ -79,12 +79,6 @@ export async function logout(isForceLogout = false): Promise<void> {
     new URLSearchParams(window.location.search).get("session_expired") ===
       "true";
 
-  if (isAlreadyCleanedByMiddleware) {
-    devLog.log(
-      "미들웨어에서 이미 쿠키 정리됨 - authService에서는 Supabase 로그아웃만 수행"
-    );
-  }
-
   // Supabase 로그아웃 (타임아웃 적용)
   try {
     const supabase = createClient();

@@ -11,7 +11,6 @@ import { Session, User } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/client";
 import { devLog } from "@/lib/utils/logging/dev-logger";
 import { useSubscriptionManager } from "@/hooks/useSubscriptionManager";
-import { logout } from "@/lib/utils/auth/authService";
 // React Query 캐시 정리를 위한 import
 import { useQueryClient } from "@tanstack/react-query";
 import {
@@ -26,8 +25,7 @@ type AuthState =
   | { status: "initializing" }
   | { status: "loading" }
   | { status: "authenticated"; session: Session; user: User }
-  | { status: "unauthenticated" }
-  | { status: "error"; error: Error };
+  | { status: "unauthenticated" };
 
 // 액션 타입 정의
 type AuthAction =
@@ -37,9 +35,7 @@ type AuthAction =
       session: Session;
       user: User;
     }
-  | { type: "SET_UNAUTHENTICATED" }
-  | { type: "SET_ERROR"; error: Error }
-  | { type: "APP_INITIALIZED" };
+  | { type: "SET_UNAUTHENTICATED" };
 
 // 리듀서
 function authReducer(state: AuthState, action: AuthAction): AuthState {
@@ -57,15 +53,6 @@ function authReducer(state: AuthState, action: AuthAction): AuthState {
     case "SET_UNAUTHENTICATED":
       return { status: "unauthenticated" };
 
-    case "SET_ERROR":
-      return { status: "error", error: action.error };
-
-    case "APP_INITIALIZED":
-      if (state.status === "initializing") {
-        return { status: "unauthenticated" };
-      }
-      return state;
-
     default:
       return state;
   }
@@ -80,7 +67,6 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [state, dispatch] = useReducer(authReducer, { status: "initializing" });
   const supabase = createClient();
-  const [initialSessionLoaded, setInitialSessionLoaded] = useState(false);
 
   // 구독 관리 훅 사용 - Lazy Loading으로 최적화
   const { switchSubscription } = useSubscriptionManager();
@@ -124,8 +110,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
             // 세션은 있지만 유저 정보를 가져올 수 없으면 세션이 유효하지 않음
             if (error || !user) {
-              devLog.warn("세션은 있지만 유저 정보 검증 실패, 로그아웃 처리");
-              await logout(true); // 강제 로그아웃으로 클라이언트 상태 정리
+              devLog.warn("세션은 있지만 유저 정보 검증 실패");
               if (mounted) {
                 dispatch({ type: "SET_UNAUTHENTICATED" });
               }
@@ -144,7 +129,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             });
           } catch (userError) {
             devLog.warn("사용자 정보 검증 중 오류:", userError);
-            await logout(true); // 강제 로그아웃으로 클라이언트 상태 정리
             if (mounted) {
               dispatch({ type: "SET_UNAUTHENTICATED" });
             }
@@ -154,34 +138,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
       } catch (error) {
         if (mounted) {
-          // 모든 초기화 오류의 경우 클라이언트 상태를 정리하고 unauthenticated로 처리
-          devLog.warn("초기화 중 오류 발생, 클라이언트 상태 정리:", error);
-
-          try {
-            await logout(true); // 강제 로그아웃으로 클라이언트 상태 정리
-          } catch (logoutError) {
-            devLog.error("초기화 오류 시 로그아웃 실패:", logoutError);
-          }
-
-          // 네트워크 관련 에러의 경우 unauthenticated로 처리
-          if (
-            error instanceof Error &&
-            (error.message.includes("타임아웃") ||
-              error.message.includes("network") ||
-              error.message.includes("fetch"))
-          ) {
-            devLog.warn(
-              "Network error during initialization, setting unauthenticated"
-            );
-            dispatch({ type: "SET_UNAUTHENTICATED" });
-          } else {
-            dispatch({ type: "SET_ERROR", error: error as Error });
-          }
-        }
-      } finally {
-        // 초기 세션 로드 완료 표시
-        if (mounted) {
-          setInitialSessionLoaded(true);
+          devLog.warn("초기화 중 오류 발생:", error);
+          dispatch({ type: "SET_UNAUTHENTICATED" });
         }
       }
     };
@@ -235,18 +193,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       subscription.unsubscribe();
     };
   }, []);
-
-  // 앱 초기화 완료 감지
-  useEffect(() => {
-    if (initialSessionLoaded && state.status === "initializing") {
-      // 지연 최소화
-      const timer = setTimeout(() => {
-        dispatch({ type: "APP_INITIALIZED" });
-      }, 50);
-
-      return () => clearTimeout(timer);
-    }
-  }, [initialSessionLoaded, state.status]);
 
   // 배포 환경에서 무한 로딩 방지를 위한 안전장치
   useEffect(() => {

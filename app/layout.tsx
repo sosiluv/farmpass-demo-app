@@ -5,13 +5,10 @@ import "./globals.css";
 import Script from "next/script";
 import { cn } from "@/lib/utils";
 import { Toaster } from "@/components/ui/toaster";
-import { AuthProvider } from "@/components/providers/auth-provider";
 import { QueryProvider } from "@/components/providers/query-provider";
 import { ToastPositionProvider } from "@/components/providers/toast-position-provider";
 import { DebugProvider } from "@/components/providers/debug-provider";
 import { SystemMonitor } from "@/components/common/system-monitor";
-import { PWAUpdater } from "@/components/common/pwa-updater";
-
 import { getMetadataSettings } from "@/lib/server/metadata";
 import { ErrorBoundary } from "@/components/error/error-boundary";
 import { ERROR_CONFIGS } from "@/lib/constants/error";

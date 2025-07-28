@@ -36,10 +36,11 @@ import {
   Home,
   Shield,
   Activity,
+  Loader2,
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { Logo, ThemeToggle } from "@/components/common";
 import { useLogo } from "@/hooks/use-logo";
 import { BUTTONS, LABELS } from "@/lib/constants/common";
@@ -55,11 +56,24 @@ export function AdminSidebar() {
   const { data: settings } = useSystemSettingsQuery();
   const { isMobile, setOpenMobile } = useSidebar();
   const { siteName } = useLogo(settings || null);
+  const [isLoggingOut, setIsLoggingOut] = useState(false); // 로그아웃 로딩 상태 추가
 
   // 모바일에서 메뉴 클릭 시 사이드바 닫기
   const handleMenuClick = () => {
     if (isMobile) {
       setOpenMobile(false);
+    }
+  };
+
+  // 로그아웃 핸들러 추가
+  const handleLogout = async () => {
+    setIsLoggingOut(true); // 즉시 로딩 상태 표시
+    try {
+      await signOut();
+    } catch (error) {
+      console.error("로그아웃 실패:", error);
+    } finally {
+      setIsLoggingOut(false);
     }
   };
 
@@ -388,13 +402,20 @@ export function AdminSidebar() {
               <Button
                 variant="ghost"
                 className="flex-1 justify-start text-red-600 hover:text-red-700 hover:bg-red-50"
-                onClick={async () => {
-                  // Auth Provider에서 모든 로그아웃 로직 처리
-                  await signOut();
-                }}
+                onClick={handleLogout}
+                disabled={isLoggingOut}
               >
-                <LogOut className="mr-2 h-4 w-4" />
-                {BUTTONS.LAYOUT_LOGOUT}
+                {isLoggingOut ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    {BUTTONS.LAYOUT_LOGOUT_LOADING}
+                  </>
+                ) : (
+                  <>
+                    <LogOut className="mr-2 h-4 w-4" />
+                    {BUTTONS.LAYOUT_LOGOUT}
+                  </>
+                )}
               </Button>
               <ThemeToggle />
             </div>

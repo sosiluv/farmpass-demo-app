@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { BUTTONS } from "@/lib/constants/common";
 import { useProfileQuery } from "@/lib/hooks/query/use-profile-query";
 import { PageLoading } from "@/components/ui/loading";
+import { useAuthActions } from "@/hooks/useAuthActions";
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -25,11 +26,22 @@ export function ProtectedRoute({
   const { data: profile } = useProfileQuery(userId);
   const router = useRouter();
   const [loadingTimeout, setLoadingTimeout] = useState(false);
+  const { signOut } = useAuthActions();
 
   useEffect(() => {
-    // 인증되지 않은 경우 리다이렉트
+    // 인증되지 않은 경우 로그아웃 처리 후 리다이렉트
     if (state.status === "unauthenticated") {
-      router.push(redirectTo);
+      const handleUnauthenticated = async () => {
+        try {
+          await signOut(); // 클라이언트 상태 정리
+        } catch (error) {
+          console.error("로그아웃 처리 중 오류:", error);
+        } finally {
+          router.push(redirectTo);
+        }
+      };
+
+      handleUnauthenticated();
       return;
     }
 
@@ -42,7 +54,7 @@ export function ProtectedRoute({
       router.push("/unauthorized");
       return;
     }
-  }, [state.status, requireAdmin, redirectTo, router, profile]);
+  }, [state.status, requireAdmin, redirectTo, router, profile, signOut]);
 
   // 로딩 타임아웃 처리 (10초)
   useEffect(() => {
@@ -92,31 +104,6 @@ export function ProtectedRoute({
             </Button>
           </div>
         )}
-      </>
-    );
-  }
-
-  // 에러 상태
-  if (state.status === "error") {
-    return (
-      <>
-        <PageLoading
-          text="인증 중 오류가 발생했습니다"
-          subText="새로고침을 시도해보세요"
-          variant="gradient"
-          fullScreen={true}
-        />
-        <div className="fixed bottom-8 left-1/2 transform -translate-x-1/2 z-50">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => window.location.reload()}
-            className="flex items-center gap-2"
-          >
-            <RefreshCw className="h-4 w-4" />
-            {BUTTONS.REFRESH_BUTTON}
-          </Button>
-        </div>
       </>
     );
   }

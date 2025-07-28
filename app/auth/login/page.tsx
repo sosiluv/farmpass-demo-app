@@ -57,7 +57,7 @@ export default function LoginPage() {
   const [redirecting, setRedirecting] = useState(false);
   const router = useRouter();
   const { showInfo, showSuccess, showError } = useCommonToast();
-  const { signIn } = useAuthActions();
+  const { signIn, signOut } = useAuthActions();
 
   const form = useForm<LoginFormData>({
     resolver: zodResolver(loginFormSchema),
@@ -70,19 +70,50 @@ export default function LoginPage() {
   // 세션 확인 및 세션 만료 파라미터 정리
   useEffect(() => {
     const checkSession = async () => {
-      try {
-        const supabase = createClient();
-        const {
-          data: { session },
-        } = await supabase.auth.getSession();
+      // 타임아웃 설정 (5초)
+      const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => reject(new Error("세션 확인 타임아웃")), 5000);
+      });
 
-        if (session?.user) {
-          // 이미 로그인된 사용자는 대시보드로 리다이렉트
-          setRedirecting(true);
-          setCheckingSession(false);
-          router.replace("/admin/dashboard");
-          return;
-        }
+      try {
+        const sessionPromise = (async () => {
+          const supabase = createClient();
+          const {
+            data: { session },
+          } = await supabase.auth.getSession();
+
+          if (session?.user) {
+            // 추가 세션 유효성 검증
+            try {
+              const {
+                data: { user },
+                error,
+              } = await supabase.auth.getUser();
+
+              // 세션은 있지만 유저 정보를 가져올 수 없으면 세션이 유효하지 않음
+              if (error || !user) {
+                devLog.warn("세션은 있지만 유저 정보 검증 실패, 로그아웃 처리");
+                await signOut();
+                setCheckingSession(false);
+                return;
+              }
+
+              // 유효한 세션이면 대시보드로 리다이렉트
+              setRedirecting(true);
+              setCheckingSession(false);
+              router.replace("/admin/dashboard");
+              return;
+            } catch (userError) {
+              devLog.warn("사용자 정보 검증 중 오류:", userError);
+              await signOut();
+              setCheckingSession(false);
+              return;
+            }
+          }
+        })();
+
+        // 타임아웃과 함께 실행
+        await Promise.race([sessionPromise, timeoutPromise]);
       } catch (error) {
         devLog.error("세션 확인 중 오류:", error);
       } finally {
@@ -101,10 +132,31 @@ export default function LoginPage() {
       const newUrl = new URL(window.location.href);
       newUrl.searchParams.delete("session_expired");
       window.history.replaceState({}, "", newUrl.toString());
+
+      showInfo(
+        "세션 만료",
+        "보안을 위해 자동으로 로그아웃되었습니다. 다시 로그인해주세요."
+      );
     }
 
     checkSession();
-  }, [router]);
+  }, [router, showInfo]);
+
+  // 소셜 로그인 무한 로딩 방지
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "visible") {
+        // 페이지가 다시 보이게 되면 로딩 상태 리셋
+        setKakaoLoading(false);
+        setGoogleLoading(false);
+        devLog.log("[LOGIN] 페이지 포커스 - 소셜 로그인 로딩 상태 리셋");
+      }
+    };
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    return () => {
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
+  }, []);
 
   // 로딩 상태 표시 (세션 확인 중, 로그인 중, 또는 리다이렉트 중일 때)
   if (checkingSession || loading || redirecting) {
