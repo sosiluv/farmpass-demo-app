@@ -2,7 +2,6 @@
 
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useState, useEffect } from "react";
-import { visitorsKeys, farmsKeys } from "@/lib/hooks/query/query-keys";
 
 // QueryClient 설정
 function makeQueryClient() {

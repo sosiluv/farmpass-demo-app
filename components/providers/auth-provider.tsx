@@ -5,18 +5,21 @@ import {
   useContext,
   useEffect,
   useReducer,
-  useRef,
   useState,
 } from "react";
 import { Session, User } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/client";
 import { devLog } from "@/lib/utils/logging/dev-logger";
-import { apiClient } from "@/lib/utils/data/api-client";
 import { useSubscriptionManager } from "@/hooks/useSubscriptionManager";
-import { handleError } from "@/lib/utils/error";
 import { logout } from "@/lib/utils/auth/authService";
-// 알림 벨(Zustand) store
-import { useNotificationStore } from "@/store/use-notification-store";
+// React Query 캐시 정리를 위한 import
+import { useQueryClient } from "@tanstack/react-query";
+import {
+  profileKeys,
+  farmsKeys,
+  notificationKeys,
+  visitorsKeys,
+} from "@/lib/hooks/query/query-keys";
 
 // 통합된 인증 상태 정의
 type AuthState =
@@ -70,20 +73,6 @@ function authReducer(state: AuthState, action: AuthAction): AuthState {
 
 interface AuthContextType {
   state: AuthState;
-  signIn: (credentials: {
-    email: string;
-    password: string;
-  }) => Promise<{ success: boolean; message?: string }>;
-  signOut: () => Promise<{ success: boolean }>;
-  verifyPassword: (credentials: {
-    email: string;
-    password: string;
-  }) => Promise<{ success: boolean; error?: string }>;
-  changePassword: (data: {
-    newPassword: string;
-    currentPassword?: string;
-    email?: string;
-  }) => Promise<{ success: boolean; error?: string }>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -92,17 +81,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [state, dispatch] = useReducer(authReducer, { status: "initializing" });
   const supabase = createClient();
   const [initialSessionLoaded, setInitialSessionLoaded] = useState(false);
-  const isSigningOutRef = useRef<boolean>(false);
 
   // 구독 관리 훅 사용 - Lazy Loading으로 최적화
-  const { switchSubscription, cleanupSubscription } = useSubscriptionManager();
+  const { switchSubscription } = useSubscriptionManager();
 
-  // user.id(또는 인증 상태)가 바뀔 때 알림 벨 기록 초기화
+  // React Query 캐시 정리를 위한 queryClient
+  const queryClient = useQueryClient();
+
+  // 인증 상태 변경 시 관련 캐시 초기화
   useEffect(() => {
     if (typeof window !== "undefined") {
-      useNotificationStore.getState().clearAll();
+      queryClient.invalidateQueries({ queryKey: profileKeys.all });
+      queryClient.invalidateQueries({ queryKey: farmsKeys.all });
+      queryClient.invalidateQueries({ queryKey: notificationKeys.all });
+      queryClient.invalidateQueries({ queryKey: visitorsKeys.all });
     }
-  }, [state.status === "authenticated" ? state.user?.id : undefined]);
+  }, [
+    state.status,
+    state.status === "authenticated" ? state.user?.id : undefined,
+    queryClient,
+  ]);
 
   // 초기 세션 로드
   useEffect(() => {
@@ -214,8 +212,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           break;
 
         case "SIGNED_OUT":
-          // signOut 함수에서 처리 중인 경우 스킵
-          if (!isSigningOutRef.current && mounted) {
+          if (mounted) {
             dispatch({ type: "SET_UNAUTHENTICATED" });
           }
           break;
@@ -262,179 +259,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, [state.status]);
 
-  const signIn = async ({
-    email,
-    password,
-  }: {
-    email: string;
-    password: string;
-  }) => {
-    try {
-      dispatch({ type: "SET_LOADING" });
-
-      // 새로운 통합 로그인 API 사용
-      const result = await apiClient("/api/auth/login", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ email, password }),
-        context: "로그인",
-      });
-
-      if (!result.success) {
-        // 에러 메시지/코드만 throw (timeLeft 등 추가 정보는 제거)
-        throw new Error(
-          result.message || result.error || "로그인에 실패했습니다."
-        );
-      }
-
-      // 로그인 성공 시 세션 정보 가져오기
-      const {
-        data: { session },
-        error: sessionError,
-      } = await supabase.auth.getSession();
-
-      if (sessionError || !session) {
-        throw new Error("세션 정보를 가져올 수 없습니다.");
-      }
-
-      dispatch({
-        type: "SET_AUTHENTICATED",
-        session: session,
-        user: session.user,
-      });
-
-      return { success: true, message: result.message };
-    } catch (error) {
-      handleError(error, { context: "sign-in" });
-      dispatch({ type: "SET_UNAUTHENTICATED" });
-      throw error;
-    }
-  };
-
-  const signOut = async () => {
-    try {
-      isSigningOutRef.current = true;
-      dispatch({ type: "SET_LOADING" });
-
-      // 타임아웃 설정 (10초)
-      const timeoutPromise = new Promise((_, reject) => {
-        setTimeout(() => reject(new Error("로그아웃 타임아웃")), 10000);
-      });
-
-      // 로그아웃 작업들을 병렬로 실행하고 타임아웃 적용
-      const logoutPromise = (async () => {
-        // 구독 정리 (세션 정리 전에 수행)
-        if (state.status === "authenticated") {
-          try {
-            await cleanupSubscription();
-          } catch (error) {
-            // 구독 정리 실패해도 로그아웃은 계속 진행
-          }
-        }
-        // Supabase 로그아웃
-        await logout(false);
-      })();
-
-      // 전체 로그아웃 작업에 타임아웃 적용
-      try {
-        await Promise.race([logoutPromise, timeoutPromise]);
-      } catch (error) {
-        // 타임아웃이나 에러 발생 시 강제로 클라이언트 상태 정리
-        await logout(true); // 강제 로그아웃으로 로컬 스토리지와 쿠키 정리
-      }
-
-      return { success: true };
-    } catch (error) {
-      handleError(error, { context: "sign-out" });
-
-      await logout(true); // 강제 로그아웃으로 로컬 스토리지와 쿠키 정리
-
-      return { success: false };
-    } finally {
-      // 상태 정리 (타임아웃이든 성공이든 에러든 항상 실행)
-      dispatch({ type: "SET_UNAUTHENTICATED" });
-      isSigningOutRef.current = false;
-    }
-  };
-
-  const verifyPassword = async ({
-    email,
-    password,
-  }: {
-    email: string;
-    password: string;
-  }) => {
-    try {
-      const { error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
-
-      if (error) {
-        return {
-          success: false,
-          error: error.message,
-        };
-      }
-
-      return { success: true };
-    } catch (error) {
-      handleError(error, { context: "verify-password" });
-
-      return {
-        success: false,
-        error: error instanceof Error ? error.message : String(error),
-      };
-    }
-  };
-
-  const changePassword = async ({
-    newPassword,
-    currentPassword,
-    email,
-  }: {
-    newPassword: string;
-    currentPassword?: string;
-    email?: string;
-  }) => {
-    try {
-      // 현재 비밀번호 검증
-      if (currentPassword && email) {
-        const verification = await verifyPassword({
-          email,
-          password: currentPassword,
-        });
-        if (!verification.success) {
-          return verification;
-        }
-      }
-
-      const { error } = await supabase.auth.updateUser({
-        password: newPassword,
-      });
-
-      if (error) {
-        return { success: false, error: error.message };
-      }
-
-      return { success: true };
-    } catch (error) {
-      handleError(error, { context: "change-password" });
-      return {
-        success: false,
-        error: error instanceof Error ? error.message : String(error),
-      };
-    }
-  };
-
   const value = {
     state,
-    signIn,
-    signOut,
-    verifyPassword,
-    changePassword,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

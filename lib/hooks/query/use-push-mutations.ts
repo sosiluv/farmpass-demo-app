@@ -163,10 +163,8 @@ export const useRegenerateVapidKeyMutation = () => {
       return result;
     },
     onSuccess: () => {
-      // VAPID 키 캐시 무효화
+      // VAPID 키 정보 무효화
       queryClient.invalidateQueries({ queryKey: pushKeys.vapid() });
-      // 구독 상태도 무효화 (새 키로 재구독 필요)
-      queryClient.invalidateQueries({ queryKey: pushKeys.status() });
       devLog.log("[MUTATION] VAPID 키 캐시 무효화 완료");
     },
     onError: (error) => {

@@ -79,7 +79,7 @@ export function useFarmMembersQuery(farmId: string | null) {
     },
     {
       enabled: state.status === "authenticated" && !!farmId,
-      staleTime: 3 * 60 * 1000, // 3분 캐싱 (멤버 데이터는 중간 정도 빈도로 변경)
+      staleTime: 5 * 60 * 1000, // 5분 캐싱 (멤버 데이터는 중간 정도 빈도로 변경)
       refetchOnWindowFocus: false, // 멤버 데이터는 포커스 시 자동 갱신 불필요
       refetchOnReconnect: true,
     }
@@ -129,8 +129,11 @@ export function useFarmMembersQuery(farmId: string | null) {
 export function useFarmMembersPreviewQuery(farmIds: string[]) {
   const { state } = useAuth();
 
-  // farmIds를 항상 정렬해서 key로 사용
-  const sortedFarmIds = useMemo(() => [...farmIds].sort(), [farmIds]);
+  // farmIds를 항상 정렬해서 key로 사용 (메모이제이션 개선)
+  const sortedFarmIds = useMemo(() => {
+    const uniqueIds = Array.from(new Set(farmIds));
+    return uniqueIds.sort();
+  }, [farmIds]);
 
   const membersQuery = useAuthenticatedQuery(
     farmsKeys.farmMembersPreview(sortedFarmIds),
@@ -191,7 +194,7 @@ export function useFarmMembersPreviewQuery(farmIds: string[]) {
     },
     {
       enabled: state.status === "authenticated" && sortedFarmIds.length > 0,
-      staleTime: 5 * 60 * 1000, // 5분 캐싱 (프리뷰는 더 길게)
+      staleTime: 10 * 60 * 1000, // 10분 캐싱 (프리뷰는 더 길게)
       refetchOnWindowFocus: false,
       refetchOnReconnect: true,
     }

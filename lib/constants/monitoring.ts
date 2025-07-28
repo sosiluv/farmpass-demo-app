@@ -110,4 +110,7 @@ export const LABELS = {
   MINUTES: "분",
   HOURS: "시간",
   DAYS: "일",
+
+  // 권한 확인
+  CHECKING_PERMISSION: "권한을 확인하는 중...",
 } as const;

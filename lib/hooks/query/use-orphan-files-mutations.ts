@@ -3,7 +3,7 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiClient } from "@/lib/utils/data";
 import { devLog } from "@/lib/utils/logging/dev-logger";
-import { cleanupKeys } from "./query-keys";
+import { settingsKeys, adminKeys } from "./query-keys";
 
 interface CleanupResult {
   success: boolean;
@@ -35,7 +35,17 @@ export function useCleanupOrphanFilesMutation() {
     onSuccess: (result) => {
       // Orphan 파일 상태 쿼리 무효화
       queryClient.invalidateQueries({
-        queryKey: cleanupKeys.orphanFiles(),
+        queryKey: settingsKeys.cleanup.orphanFiles(),
+      });
+
+      // 시스템 로그 무효화 (정리 작업 로그 생성)
+      queryClient.invalidateQueries({
+        queryKey: adminKeys.logs.all(),
+      });
+
+      // 관리자 대시보드 무효화 (통계 변경)
+      queryClient.invalidateQueries({
+        queryKey: adminKeys.dashboard(),
       });
 
       devLog.log(

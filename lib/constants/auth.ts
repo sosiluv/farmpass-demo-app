@@ -64,6 +64,13 @@ export const LABELS = {
   EMAIL_CONFIRMATION_REDIRECTING: "로그인 페이지로 이동 중...",
 } as const;
 
+// PageLoading 텍스트
+export const PAGE_LOADING = {
+  CHECKING_SESSION: "로그인 상태를 확인하는 중...",
+  REDIRECTING_TO_DASHBOARD: "대시보드로 이동 중...",
+  SUB_TEXT: "잠시만 기다려주세요",
+} as const;
+
 // 플레이스홀더
 export const PLACEHOLDERS = {
   EMAIL: "name@example.com",

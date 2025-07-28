@@ -21,7 +21,7 @@ import { FarmInfoCard } from "@/components/visitor/FarmInfoCard";
 import { SuccessCard } from "@/components/visitor/SuccessCard";
 import { ErrorBoundary } from "@/components/error/error-boundary";
 import { ERROR_CONFIGS } from "@/lib/constants/error";
-import { useSystemSettingsContext } from "@/components/providers/system-settings-provider";
+import { useSystemSettingsQuery } from "@/lib/hooks/query/use-system-settings-query";
 import { useVisitorForm } from "@/hooks/useVisitorForm";
 import { VisitorForm } from "@/components/visitor/VisitorForm";
 import { useCommonToast } from "@/lib/utils/notification/toast-messages";
@@ -46,10 +46,10 @@ export default function VisitPage() {
 
   // 전역 시스템 설정 사용
   const {
-    settings: systemSettings,
+    data: systemSettings,
     isLoading: isSettingsLoading,
     error: settingsError,
-  } = useSystemSettingsContext();
+  } = useSystemSettingsQuery();
 
   // 시스템 설정에서 방문자 설정 추출
   const settings: VisitorSettings = useMemo(() => {

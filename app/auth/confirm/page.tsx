@@ -22,7 +22,7 @@ import { ErrorBoundary } from "@/components/error/error-boundary";
 import { Logo } from "@/components/common";
 import { Loading } from "@/components/ui/loading";
 import { getAuthErrorMessage } from "@/lib/utils/validation";
-import { useAuth } from "@/components/providers/auth-provider";
+import { useAuthActions } from "@/hooks/useAuthActions";
 
 export default function ConfirmPage() {
   const [loading, setLoading] = useState(true);
@@ -32,7 +32,7 @@ export default function ConfirmPage() {
   const [tokenProcessed, setTokenProcessed] = useState(false);
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { signOut } = useAuth();
+  const { signOut } = useAuthActions();
   const { showSuccess, showError } = useCommonToast();
   const processingRef = useRef(false);
 
@@ -110,7 +110,7 @@ export default function ConfirmPage() {
           if (prev <= 1) {
             clearInterval(countdownInterval);
             setTimeout(() => {
-              router.push("/login");
+              router.push("/auth/login");
             }, 500);
             return 0;
           }
@@ -138,11 +138,11 @@ export default function ConfirmPage() {
   }, [searchParams, handleEmailConfirmation]);
 
   const handleGoToLogin = () => {
-    router.push("/login");
+    router.push("/auth/login");
   };
 
   const handleResendConfirmation = () => {
-    router.push("/register");
+    router.push("/auth/register");
   };
 
   // 타임아웃 상태 처리

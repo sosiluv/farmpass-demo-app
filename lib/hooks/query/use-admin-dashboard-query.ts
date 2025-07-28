@@ -8,7 +8,7 @@ import {
   getKSTTodayRange,
   createKSTDateRange,
 } from "@/lib/utils/datetime/date";
-import { dashboardKeys } from "./query-keys";
+import { adminKeys } from "./query-keys";
 import { useSupabaseRealtime } from "@/hooks/useSupabaseRealtime";
 import { useProfileQuery } from "@/lib/hooks/query/use-profile-query";
 
@@ -76,13 +76,13 @@ export function useAdminDashboardQuery() {
   const { data: profile } = useProfileQuery(userId);
 
   const dashboardQuery = useAuthenticatedQuery(
-    dashboardKeys.all,
+    adminKeys.dashboard(),
     async (): Promise<DashboardStats> => {
       if (!isClient) {
         throw new Error("이 함수는 클라이언트에서만 실행할 수 있습니다.");
       }
 
-      // 병렬 데이터 조회 (기존 legacy 코드 구조 참고)
+      // 병렬 데이터 조회
       const [usersResult, farmsResult, visitorsResult, logsResult] =
         await Promise.all([
           supabase.from("profiles").select(`*, farm_members(role)`),
@@ -90,7 +90,7 @@ export function useAdminDashboardQuery() {
           supabase.from("visitor_entries").select("*"),
           supabase
             .from("system_logs")
-            .select("*, profiles(name)")
+            .select("*") // profiles 조인 제거
             .order("created_at", { ascending: false }),
         ]);
 
@@ -104,6 +104,9 @@ export function useAdminDashboardQuery() {
       const farms = farmsResult.data || [];
       const visitors = visitorsResult.data || [];
       const logs = logsResult.data || [];
+
+      // 사용자 이름 캐시 생성 (O(1) 조회를 위해 Map 사용)
+      const userNameCache = new Map(users.map((user) => [user.id, user.name]));
 
       const totalUsers = users.length;
       const totalFarms = farms.length;
@@ -279,14 +282,14 @@ export function useAdminDashboardQuery() {
         { status: "QR 스캔 동작" as const, count: todayVisitors, trend: 0 },
       ];
 
-      // 최근 활동
+      // 최근 활동 (Map 캐시 사용)
       const recentActivities =
         logs?.slice(0, 5).map((log) => ({
           id: log.id,
           type: log.action,
           timestamp: log.created_at,
           details: log.message,
-          userName: log.profiles?.name,
+          userName: userNameCache.get(log.user_id),
         })) || [];
 
       // 트렌드 계산을 위한 데이터
@@ -370,20 +373,21 @@ export function useAdminDashboardQuery() {
     },
     {
       enabled: !!user && profile?.account_type === "admin",
-      staleTime: 1000 * 60 * 15, // 15분간 stale하지 않음 (중복 호출 방지)
-      gcTime: 1000 * 60 * 30, // 30분간 캐시 유지
-      refetchOnWindowFocus: false, // 윈도우 포커스 시 refetch 비활성화
-      refetchInterval: 1000 * 60 * 30, // 30분마다 자동 갱신 (덜 빈번하게)
-      refetchOnMount: false, // 마운트 시 refetch 비활성화 (캐시 우선)
+      staleTime: 1000 * 60 * 5, // 5분간 stale하지 않음 (로그 삭제 시 빠른 반영을 위해 단축)
+      gcTime: 1000 * 60 * 15, // 15분간 캐시 유지 (단축)
+      refetchOnWindowFocus: true, // 윈도우 포커스 시 refetch 활성화 (로그 변경 감지)
+      refetchInterval: 1000 * 60 * 10, // 10분마다 자동 갱신 (더 빈번하게)
+      refetchOnMount: true, // 마운트 시 refetch 활성화 (최신 데이터 보장)
     }
   );
 
   // 🔥 관리자 대시보드 실시간 업데이트 구독 (모든 테이블 변경 시 갱신)
-  useSupabaseRealtime({
-    table: "farms",
-    refetch: dashboardQuery.refetch,
-    // 관리자는 모든 농장 변경사항에 대해 대시보드 갱신
-  });
+  // Admin 대시보드는 실시간 업데이트가 필수가 아니므로 주기적 갱신으로 충분
+  // useSupabaseRealtime({
+  //   table: "farms",
+  //   refetch: dashboardQuery.refetch,
+  //   // 관리자는 모든 농장 변경사항에 대해 대시보드 갱신
+  // });
 
   useSupabaseRealtime({
     table: "visitor_entries",
@@ -392,27 +396,4 @@ export function useAdminDashboardQuery() {
   });
 
   return dashboardQuery;
-}
-
-/**
- * Legacy Hook과의 호환성을 위한 Wrapper
- * 기존 코드와 동일한 인터페이스를 제공합니다.
- */
-export function useAdminDashboardQueryCompat() {
-  const {
-    data: stats,
-    isLoading: loading,
-    error,
-    refetch,
-  } = useAdminDashboardQuery();
-
-  return {
-    stats,
-    loading,
-    error,
-    refetch: async () => {
-      const result = await refetch();
-      return result.data;
-    },
-  };
 }

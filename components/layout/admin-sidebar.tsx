@@ -1,8 +1,8 @@
 "use client";
 
 import { useAuth } from "@/components/providers/auth-provider";
-import { useFarmsContext } from "@/components/providers/farms-provider";
-import { useSystemSettings } from "@/components/providers/system-settings-provider";
+import { useAuthActions } from "@/hooks/useAuthActions";
+import { useSystemSettingsQuery } from "@/lib/hooks/query/use-system-settings-query";
 import { getFarmTypeLabel, getFarmTypeIcon } from "@/lib/constants/farm-types";
 import type { Farm } from "@/lib/types/farm";
 import {
@@ -44,15 +44,17 @@ import { Logo, ThemeToggle } from "@/components/common";
 import { useLogo } from "@/hooks/use-logo";
 import { BUTTONS, LABELS } from "@/lib/constants/common";
 import { useProfileQuery } from "@/lib/hooks/query/use-profile-query";
+import { useFarmsQuery } from "@/lib/hooks/query/use-farms-query";
 
 export function AdminSidebar() {
-  const { state, signOut } = useAuth();
-  const { farms } = useFarmsContext();
-  const settings = useSystemSettings();
+  const { state } = useAuth();
+  const { signOut } = useAuthActions();
+  const userId = state.status === "authenticated" ? state.user.id : undefined;
+  const { data: profile, isLoading: profileLoading } = useProfileQuery(userId);
+  const { farms } = useFarmsQuery(profile?.id);
+  const { data: settings } = useSystemSettingsQuery();
   const { isMobile, setOpenMobile } = useSidebar();
   const { siteName } = useLogo(settings || null);
-  const userId = state.status === "authenticated" ? state.user.id : undefined;
-  const { data: profile } = useProfileQuery(userId);
 
   // 모바일에서 메뉴 클릭 시 사이드바 닫기
   const handleMenuClick = () => {
@@ -369,10 +371,14 @@ export function AdminSidebar() {
                 {LABELS.LAYOUT_CURRENT_LOGIN}
               </div>
               <div className="text-sm font-medium truncate">
-                {profile?.name || LABELS.LAYOUT_LOGIN_REQUIRED}
+                {state.status === "loading" || profileLoading
+                  ? BUTTONS.PAGINATION_LOADING
+                  : profile?.name || LABELS.LAYOUT_LOGIN_REQUIRED}
               </div>
               <div className="text-xs text-muted-foreground truncate">
-                {profile?.email || LABELS.LAYOUT_LOGIN_NEEDED}
+                {state.status === "loading" || profileLoading
+                  ? BUTTONS.PAGINATION_LOADING
+                  : profile?.email || LABELS.LAYOUT_LOGIN_NEEDED}
               </div>
             </div>
           </SidebarMenuItem>

@@ -37,6 +37,8 @@ export const BUTTONS = {
   ADD_FARM_BUTTON: "농장 추가",
   ADD_MEMBER: "구성원 추가",
   ADD_MEMBER_SHORT: "추가",
+  QR_CODE_BUTTON: "QR코드",
+  MEMBERS_BUTTON: "구성원",
 } as const;
 
 // 라벨
@@ -76,6 +78,7 @@ export const LABELS = {
 
   NO_MEMBERS: "멤버 없음",
   MEMBERS_COUNT: "구성원 {count}명",
+  ADD_MEMBERS_SUGGESTION: "구성원을 추가해보세요",
   FARM_OWNER: "(농장 소유자)",
   NO_REGISTERED_MEMBERS: "등록된 구성원이 없습니다",
   NO_MEMBERS_DESCRIPTION:

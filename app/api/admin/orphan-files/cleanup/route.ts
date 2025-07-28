@@ -90,10 +90,21 @@ async function cleanupProfileOrphans(supabase: any) {
   totalFiles = profileFiles.length;
   const fileSet = new Set(profileFiles);
 
-  // 3. DB → Storage에 없는 파일: DB orphan (초기화 대상)
+  // 3. DB → Storage에 없는 파일: DB orphan (초기화 대상, 소셜 로그인 제외)
   for (const profile of profiles) {
     const url = profile.profile_image_url;
     if (!url) continue;
+
+    // 소셜 로그인 URL 제외
+    if (
+      url.includes("googleusercontent.com") ||
+      url.includes("lh3.googleusercontent.com") ||
+      url.includes("k.kakaocdn.net") ||
+      url.includes("profile.kakaocdn.net")
+    ) {
+      continue;
+    }
+
     const match = url.match(/profiles\/(.+)$/);
     const filePath = match ? match[1] : null;
     if (!filePath) continue;
@@ -111,11 +122,22 @@ async function cleanupProfileOrphans(supabase: any) {
     }
   }
 
-  // 4. Storage → DB에 없는 파일: Storage orphan (삭제 대상)
+  // 4. Storage → DB에 없는 파일: Storage orphan (삭제 대상, 소셜 로그인 제외)
   const dbFileSet = new Set(
     profiles
       .map((p: any) => {
-        const match = p.profile_image_url?.match(/profiles\/(.+)$/);
+        const url = p.profile_image_url;
+        // 소셜 로그인 URL 제외
+        if (
+          url &&
+          (url.includes("googleusercontent.com") ||
+            url.includes("lh3.googleusercontent.com") ||
+            url.includes("k.kakaocdn.net") ||
+            url.includes("profile.kakaocdn.net"))
+        ) {
+          return null;
+        }
+        const match = url?.match(/profiles\/(.+)$/);
         return match ? match[1] : null;
       })
       .filter((v: any) => v && !v.startsWith("systems/"))

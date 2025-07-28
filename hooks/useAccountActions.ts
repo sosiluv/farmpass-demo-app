@@ -1,6 +1,6 @@
 import { useRouter } from "next/navigation";
 import { devLog } from "@/lib/utils/logging/dev-logger";
-import { useAuth } from "@/components/providers/auth-provider";
+import { useAuthActions } from "@/hooks/useAuthActions";
 import type { Profile } from "@/lib/types";
 import type { PasswordFormData, CompanyFormData } from "@/lib/types/account";
 import { useAccountMutations } from "@/lib/hooks/query/use-account-mutations";
@@ -21,7 +21,7 @@ interface SaveResult {
 
 export function useAccountActions({ profile, userId }: UseAccountActionsProps) {
   const router = useRouter();
-  const { signOut } = useAuth();
+  const { signOut } = useAuthActions();
   const accountMutations = useAccountMutations();
 
   // 통합 이미지 업로드 훅 사용
@@ -118,7 +118,7 @@ export function useAccountActions({ profile, userId }: UseAccountActionsProps) {
       // 비밀번호 변경 성공 후 자동 로그아웃
       setTimeout(async () => {
         await signOut();
-        router.push("/login");
+        router.push("/auth/login");
       }, 2000); // 2초 후 로그아웃
 
       return { success: true };

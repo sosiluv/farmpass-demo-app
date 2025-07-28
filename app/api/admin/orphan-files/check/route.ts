@@ -110,7 +110,7 @@ export async function GET(request: NextRequest) {
         )
     );
 
-    // 프로필 orphan 파일 체크
+    // 프로필 orphan 파일 체크 (소셜 로그인 URL 제외)
     let profiles;
     let profileDbError = null;
 
@@ -130,6 +130,19 @@ export async function GET(request: NextRequest) {
       profileDbError = error;
       devLog.error("[CHECK_ORPHAN] Profile DB error:", profileDbError);
     }
+
+    // 소셜 로그인 URL 제외 (구글, 카카오)
+    const socialLoginUrls =
+      profiles?.filter((p: any) => {
+        const url = p.profile_image_url;
+        return (
+          url &&
+          (url.includes("googleusercontent.com") ||
+            url.includes("lh3.googleusercontent.com") ||
+            url.includes("k.kakaocdn.net") ||
+            url.includes("profile.kakaocdn.net"))
+        );
+      }) || [];
 
     const usedProfileSet = new Set(
       profiles?.map((p: any) => p.profile_image_url).filter(Boolean) || []
@@ -156,10 +169,21 @@ export async function GET(request: NextRequest) {
       return !visitorFiles.includes(filePath);
     });
 
-    // 프로필 DB orphan (DB에는 있는데 Storage에는 없는 profile_image_url)
+    // 프로필 DB orphan (DB에는 있는데 Storage에는 없는 profile_image_url, 소셜 로그인 제외)
     const profileDbOrphans = (profiles || []).filter((profile: any) => {
       const url = profile.profile_image_url;
       if (!url) return false;
+
+      // 소셜 로그인 URL 제외
+      if (
+        url.includes("googleusercontent.com") ||
+        url.includes("lh3.googleusercontent.com") ||
+        url.includes("k.kakaocdn.net") ||
+        url.includes("profile.kakaocdn.net")
+      ) {
+        return false;
+      }
+
       const match = url.match(/profiles\/(.+)$/);
       const filePath = match ? match[1] : null;
       if (!filePath) return false;
@@ -189,6 +213,8 @@ export async function GET(request: NextRequest) {
         profile: {
           usedUrls: Array.from(usedProfileSet),
           usedUrlCount: usedProfileSet.size,
+          socialLoginUrls: socialLoginUrls.map((p: any) => p.profile_image_url),
+          socialLoginUrlCount: socialLoginUrls.length,
           storageFiles: profileFiles,
           storageFileCount: profileFiles.length,
           dbError: profileDbError,

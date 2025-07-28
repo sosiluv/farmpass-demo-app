@@ -7,7 +7,6 @@ import {
   MobileHeader,
   MobileMenuButton,
 } from "@/components/layout";
-import { FarmsProvider } from "@/components/providers/farms-provider";
 import { ProtectedRoute } from "@/components/providers/protected-route";
 import { MaintenanceBanner } from "@/components/maintenance";
 import { ErrorBoundary } from "@/components/error/error-boundary";
@@ -15,6 +14,8 @@ import { ERROR_CONFIGS } from "@/lib/constants/error";
 import { ThemeProvider } from "@/components/common/theme-provider";
 import { DialogManager } from "@/components/common/DialogManager";
 import { RealtimeNotificationBell } from "@/components/common/RealtimeNotificationBell";
+import { AuthProvider } from "@/components/providers/auth-provider";
+import { PWAUpdater } from "@/components/common/pwa-updater";
 
 export default function AdminLayout({
   children,
@@ -22,19 +23,20 @@ export default function AdminLayout({
   children: React.ReactNode;
 }) {
   return (
-    <ThemeProvider
-      attribute="class"
-      defaultTheme="system"
-      enableSystem
-      disableTransitionOnChange
+    <ErrorBoundary
+      title={ERROR_CONFIGS.GENERAL.title}
+      description={ERROR_CONFIGS.GENERAL.description}
     >
-      <ProtectedRoute>
-        <ErrorBoundary
-          title={ERROR_CONFIGS.GENERAL.title}
-          description={ERROR_CONFIGS.GENERAL.description}
+      <AuthProvider>
+        <PWAUpdater />
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="system"
+          enableSystem
+          disableTransitionOnChange
         >
-          <SidebarProvider>
-            <FarmsProvider>
+          <ProtectedRoute>
+            <SidebarProvider>
               <AdminSidebar />
               <SidebarInset>
                 <MobileHeader />
@@ -47,10 +49,10 @@ export default function AdminLayout({
               <MobileMenuButton />
               {/* Admin 페이지에서만 알림 권한 다이얼로그 관리 */}
               <DialogManager />
-            </FarmsProvider>
-          </SidebarProvider>
-        </ErrorBoundary>
-      </ProtectedRoute>
-    </ThemeProvider>
+            </SidebarProvider>
+          </ProtectedRoute>
+        </ThemeProvider>
+      </AuthProvider>
+    </ErrorBoundary>
   );
 }

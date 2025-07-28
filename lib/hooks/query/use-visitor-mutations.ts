@@ -2,7 +2,7 @@
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiClient } from "@/lib/utils/data/api-client";
-import { visitorsKeys, dashboardKeys } from "@/lib/hooks/query/query-keys";
+import { visitorsKeys, adminKeys } from "@/lib/hooks/query/query-keys";
 import type { VisitorEntry } from "@/lib/types";
 
 export interface CreateVisitorRequest {
@@ -44,15 +44,14 @@ export function useUpdateVisitorMutation() {
       return response;
     },
     onSuccess: (updatedVisitor, variables) => {
-      // 관련 쿼리 무효화
+      // 해당 농장의 방문자 목록 무효화
       queryClient.invalidateQueries({
-        queryKey: visitorsKeys.farm(updatedVisitor.farm_id),
+        queryKey: visitorsKeys.list(updatedVisitor.farm_id),
       });
+
+      // 관리자 대시보드 무효화 (방문자 통계 변경)
       queryClient.invalidateQueries({
-        queryKey: visitorsKeys.farm("all"),
-      });
-      queryClient.invalidateQueries({
-        queryKey: dashboardKeys.stats(),
+        queryKey: adminKeys.dashboard(),
       });
     },
   });
@@ -85,14 +84,15 @@ export function useDeleteVisitorMutation() {
       );
       return response;
     },
-    onSuccess: (result, visitorId) => {
-      // 모든 방문자 관련 쿼리 무효화
+    onSuccess: (result, { farmId }) => {
+      // 해당 농장의 방문자 목록 무효화
       queryClient.invalidateQueries({
-        queryKey: visitorsKeys.all,
-        exact: false,
+        queryKey: visitorsKeys.list(farmId),
       });
+
+      // 관리자 대시보드 무효화 (방문자 통계 변경)
       queryClient.invalidateQueries({
-        queryKey: dashboardKeys.stats(),
+        queryKey: adminKeys.dashboard(),
       });
     },
   });

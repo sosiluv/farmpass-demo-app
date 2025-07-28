@@ -345,22 +345,26 @@ export async function POST(
           },
           select: { id: true, created_at: true },
         });
-        await tx.notifications.create({
+        const notificationData = {
+          type: "farm_member_added",
+          title: `농장 멤버 추가`,
+          message: `${farm.farm_name} 농장에 ${
+            role === "manager" ? "관리자" : "구성원"
+          }으로 추가되었습니다.`,
           data: {
-            user_id: userToAdd.id,
-            type: "farm_member_added",
-            title: `농장 멤버 추가`,
-            message: `${farm.farm_name} 농장에 ${
-              role === "manager" ? "관리자" : "구성원"
-            }으로 추가되었습니다.`,
-            data: {
-              farm_id: params.farmId,
-              farm_name: farm.farm_name,
-              role,
-              invited_by: user.email,
-            },
-            link: `/admin/farms/${params.farmId}/members`,
+            farm_id: params.farmId,
+            farm_name: farm.farm_name,
+            role,
+            invited_by: user.email,
           },
+          link: `/admin/farms/${params.farmId}/members`,
+        };
+
+        await tx.notifications.createMany({
+          data: [
+            { ...notificationData, user_id: userToAdd.id },
+            { ...notificationData, user_id: user.id },
+          ],
         });
         return createdMember;
       });

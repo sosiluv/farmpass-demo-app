@@ -13,11 +13,10 @@ import {
   AlertDialogAction,
 } from "@/components/ui/alert-dialog";
 import { AlertTriangle, Loader2 } from "lucide-react";
-import AccountCardHeader from "./AccountCardHeader";
 import { PAGE_HEADER, BUTTONS, LABELS } from "@/lib/constants/account";
 import { useRouter } from "next/navigation";
 import { useCommonToast } from "@/lib/utils/notification/toast-messages";
-import { useAuth } from "@/components/providers/auth-provider";
+import { useAuthActions } from "@/hooks/useAuthActions";
 import { apiClient } from "@/lib/utils/data/api-client";
 import { handleError } from "@/lib/utils/error/handleError";
 import { getAuthErrorMessage } from "@/lib/utils/validation/validation";
@@ -33,7 +32,7 @@ export default function WithdrawSection({
 
   const router = useRouter();
   const { showSuccess, showError } = useCommonToast();
-  const { signOut } = useAuth();
+  const { signOut } = useAuthActions();
 
   const handleWithdraw = async () => {
     setLoading(true);
@@ -52,7 +51,7 @@ export default function WithdrawSection({
           data.message || "회원탈퇴가 완료되었습니다."
         );
         await signOut();
-        router.replace("/login");
+        router.replace("/auth/login");
         return;
       }
       setOpen(false);

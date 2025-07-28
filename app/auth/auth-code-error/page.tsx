@@ -16,7 +16,7 @@ export default function AuthCodeErrorPage() {
         </p>
         <div className="flex gap-2 w-full">
           <Button asChild className="w-full">
-            <Link href="/login">로그인 페이지로 이동</Link>
+            <Link href="/auth/login">로그인 페이지로 이동</Link>
           </Button>
           <Button asChild variant="secondary" className="w-full">
             <Link href="/">홈으로</Link>

@@ -18,7 +18,7 @@ interface ProtectedRouteProps {
 export function ProtectedRoute({
   children,
   requireAdmin = false,
-  redirectTo = "/login",
+  redirectTo = "/auth/login",
 }: ProtectedRouteProps) {
   const { state } = useAuth();
   const userId = state.status === "authenticated" ? state.user.id : undefined;
@@ -70,39 +70,43 @@ export function ProtectedRoute({
     }
 
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="flex flex-col items-center gap-4">
-          <div className="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center">
-            <Loader2 className="h-6 w-6 text-blue-600 animate-spin" />
+      <>
+        <PageLoading
+          text={loadingText}
+          subText={
+            loadingTimeout ? "새로고침을 시도해보세요" : "잠시만 기다려주세요"
+          }
+          variant="gradient"
+          fullScreen={true}
+        />
+        {loadingTimeout && (
+          <div className="fixed bottom-8 left-1/2 transform -translate-x-1/2 z-50">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => window.location.reload()}
+              className="flex items-center gap-2"
+            >
+              <RefreshCw className="h-4 w-4" />
+              {BUTTONS.REFRESH_BUTTON}
+            </Button>
           </div>
-          <p className="text-sm text-gray-600">{loadingText}</p>
-          {loadingTimeout && (
-            <div className="flex gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => window.location.reload()}
-                className="flex items-center gap-2"
-              >
-                <RefreshCw className="h-4 w-4" />
-                {BUTTONS.REFRESH_BUTTON}
-              </Button>
-            </div>
-          )}
-        </div>
-      </div>
+        )}
+      </>
     );
   }
 
   // 에러 상태
   if (state.status === "error") {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="flex flex-col items-center gap-4">
-          <div className="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center">
-            <Loader2 className="h-6 w-6 text-red-600" />
-          </div>
-          <p className="text-sm text-red-600">인증 중 오류가 발생했습니다</p>
+      <>
+        <PageLoading
+          text="인증 중 오류가 발생했습니다"
+          subText="새로고침을 시도해보세요"
+          variant="gradient"
+          fullScreen={true}
+        />
+        <div className="fixed bottom-8 left-1/2 transform -translate-x-1/2 z-50">
           <Button
             variant="outline"
             size="sm"
@@ -113,7 +117,7 @@ export function ProtectedRoute({
             {BUTTONS.REFRESH_BUTTON}
           </Button>
         </div>
-      </div>
+      </>
     );
   }
 

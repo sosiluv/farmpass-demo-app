@@ -154,7 +154,7 @@ export async function PATCH(request: NextRequest) {
 
     const updatedSettings = await prisma.$transaction(async (tx: any) => {
       // 설정 업데이트
-      const updated = await tx.systemSettings.update({
+      const updated = await tx.system_settings.update({
         where: { id: settings.id },
         data,
       });

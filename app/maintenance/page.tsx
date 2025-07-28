@@ -119,7 +119,7 @@ export default async function MaintenancePage() {
           <div className="pt-4 border-t">
             <p className="text-xs text-gray-400 mb-3">관리자이신가요?</p>
             <div className="space-y-2">
-              <Link href="/login">
+              <Link href="/auth/login">
                 <Button variant="outline" size="sm" className="w-full">
                   <ArrowLeft className="h-4 w-4 mr-2" />
                   로그인 페이지로 이동

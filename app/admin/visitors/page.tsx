@@ -21,7 +21,7 @@ import { getAuthErrorMessage } from "@/lib/utils/validation/validation";
 import { LABELS, PAGE_HEADER } from "@/lib/constants/visitor";
 
 // React Query Hooks
-import { useFarmsContext } from "@/components/providers/farms-provider";
+import { useFarmsQuery } from "@/lib/hooks/query/use-farms-query";
 import { useFarmVisitorsWithFiltersQuery } from "@/lib/hooks/query/use-farm-visitors-filtered-query";
 import { useProfileQuery } from "@/lib/hooks/query/use-profile-query";
 
@@ -40,8 +40,12 @@ export default function VisitorsPage() {
   const isAdmin = profile?.account_type === "admin";
   const { showError } = useCommonToast();
 
-  // React Query Hooks
-  const farmsQuery = useFarmsContext();
+  // React Query Hooks - useFarmsContext 대신 useFarmsQuery 사용
+  const {
+    farms,
+    isLoading: farmsLoading,
+    error: farmsError,
+  } = useFarmsQuery(profile?.id);
 
   // 필터 Store
   const {
@@ -64,11 +68,10 @@ export default function VisitorsPage() {
   });
 
   // 데이터 선택
-  const farms = farmsQuery.farms || [];
   const visitors = visitorsFilteredQuery.visitors || [];
   const allVisitors = visitorsFilteredQuery.allVisitors || [];
-  const loading = visitorsFilteredQuery.loading || farmsQuery.isLoading;
-  const error = visitorsFilteredQuery.error || farmsQuery.error;
+  const loading = visitorsFilteredQuery.loading || farmsLoading;
+  const error = visitorsFilteredQuery.error || farmsError;
 
   // 에러 처리
   useEffect(() => {

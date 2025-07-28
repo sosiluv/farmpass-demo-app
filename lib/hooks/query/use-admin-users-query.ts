@@ -3,7 +3,7 @@
 import { useAuthenticatedQuery } from "@/lib/hooks/query-utils";
 import { useAuth } from "@/components/providers/auth-provider";
 import { supabase } from "@/lib/supabase/client";
-import { settingsKeys } from "./query-keys";
+import { adminKeys } from "./query-keys";
 import { useSupabaseRealtime } from "@/hooks/useSupabaseRealtime";
 import { toDateString } from "@/lib/utils/datetime/date";
 import { useProfileQuery } from "@/lib/hooks/query/use-profile-query";
@@ -43,7 +43,7 @@ export function useAdminUsersQuery() {
   const { data: profile } = useProfileQuery(userId);
 
   const usersQuery = useAuthenticatedQuery(
-    [...settingsKeys.all, "users", "admin-stats"],
+    adminKeys.users.stats(),
     async (): Promise<UserStats> => {
       if (!isClient) {
         throw new Error("이 함수는 클라이언트에서만 실행할 수 있습니다.");
@@ -236,7 +236,7 @@ export function useAdminUsersListQuery() {
   const { data: profile } = useProfileQuery(userId);
 
   const usersListQuery = useAuthenticatedQuery(
-    [...settingsKeys.all, "users", "admin-list"],
+    adminKeys.users.list(),
     async (): Promise<any[]> => {
       if (!isClient) {
         throw new Error("이 함수는 클라이언트에서만 실행할 수 있습니다.");

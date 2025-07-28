@@ -4,7 +4,6 @@ import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { PageHeader } from "@/components/layout";
 import { WebPushSubscription } from "@/components/admin/notifications/WebPushSubscription";
-import { useFarmsContext } from "@/components/providers/farms-provider";
 import { useNotificationSettingsQuery } from "@/lib/hooks/query/use-notification-settings-query";
 import { useAuth } from "@/components/providers/auth-provider";
 import { ErrorBoundary } from "@/components/error/error-boundary";
@@ -20,16 +19,23 @@ import { getAuthErrorMessage } from "@/lib/utils/validation/validation";
 import type { NotificationSettings } from "@/lib/types/notification";
 import { FormSkeleton } from "@/components/common/skeletons/form-skeleton";
 import { PAGE_HEADER } from "@/lib/constants/notifications";
+import { useFarmsQuery } from "@/lib/hooks/query/use-farms-query";
+import { useProfileQuery } from "@/lib/hooks/query/use-profile-query";
 
 export default function NotificationsPage() {
   const { state } = useAuth();
   const user = state.status === "authenticated" ? state.user : null;
+  const userId = state.status === "authenticated" ? state.user.id : undefined;
+  const { data: profile } = useProfileQuery(userId);
+
+  // useFarmsContext 대신 useFarmsQuery 사용
   const {
     farms,
     isLoading: farmsLoading,
     error: farmsError,
     refetch: refetchFarms,
-  } = useFarmsContext();
+  } = useFarmsQuery(profile?.id);
+
   const [isSubscribed, setIsSubscribed] = useState(false);
   const {
     data: settings,

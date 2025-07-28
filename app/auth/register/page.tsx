@@ -37,6 +37,7 @@ import {
   checkEmailDuplicate,
   getAuthErrorMessage,
 } from "@/lib/utils/validation";
+import { useAuthActions } from "@/hooks/useAuthActions";
 import {
   createRegistrationFormSchema,
   createDefaultRegistrationFormSchema,
@@ -284,6 +285,7 @@ export default function RegisterPage() {
   const [turnstileError, setTurnstileError] = useState<string>("");
   const router = useRouter();
   const { showInfo, showSuccess, showError } = useCommonToast();
+  const { signOut } = useAuthActions();
 
   // 시스템 설정에서 비밀번호 규칙 가져오기 (React Query 기반)
   const { rules: passwordRules, isLoading: isPasswordRulesLoading } =
@@ -386,12 +388,14 @@ export default function RegisterPage() {
         });
 
         if (response.success) {
+          // 회원가입 성공 후 로그아웃 처리
+          await signOut();
           // 서버에서 반환된 메시지 그대로 사용
           showSuccess(
             "회원가입 완료",
             response.message || "회원가입이 완료되었습니다."
           );
-          router.push("/login");
+          router.push("/auth/login");
         } else {
           throw new Error(response.message || "회원가입에 실패했습니다.");
         }
@@ -405,7 +409,7 @@ export default function RegisterPage() {
         setLoading(false);
       }
     },
-    [turnstileToken, showInfo, showSuccess, showError, router]
+    [turnstileToken, showInfo, showSuccess, showError, router, signOut]
   );
 
   // 메모이제이션된 버튼 비활성화 상태
@@ -522,7 +526,7 @@ export default function RegisterPage() {
               <p className="text-sm text-muted-foreground">
                 {BUTTONS.HAS_ACCOUNT}{" "}
                 <Link
-                  href="/login"
+                  href="/auth/login"
                   className="font-medium text-primary hover:underline"
                 >
                   {BUTTONS.LOGIN_BUTTON}

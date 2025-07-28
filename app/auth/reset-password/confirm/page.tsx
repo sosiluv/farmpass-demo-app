@@ -29,7 +29,8 @@ import { motion } from "framer-motion";
 import { useCommonToast } from "@/lib/utils/notification/toast-messages";
 import { devLog } from "@/lib/utils/logging/dev-logger";
 import { supabase } from "@/lib/supabase/client";
-import { useAuth } from "@/components/providers/auth-provider";
+
+import { useAuthActions } from "@/hooks/useAuthActions";
 import { ErrorBoundary } from "@/components/error/error-boundary";
 import { getAuthErrorMessage } from "@/lib/utils/validation";
 import { usePasswordRules } from "@/lib/utils/validation/usePasswordRules";
@@ -56,7 +57,7 @@ export default function ResetPasswordConfirmPage() {
   const [schema, setSchema] = useState<any>(null);
   const router = useRouter();
   const { showSuccess, showError } = useCommonToast();
-  const { signOut, changePassword } = useAuth();
+  const { signOut, changePassword } = useAuthActions();
   const searchParams = useSearchParams();
   const processingRef = useRef(false);
 
@@ -165,7 +166,7 @@ export default function ResetPasswordConfirmPage() {
       );
       await signOut();
       setTimeout(() => {
-        window.location.href = "/login";
+        window.location.href = "/auth/login";
       }, 2000);
     } catch (error: any) {
       devLog.error("Password update error:", error);
@@ -246,7 +247,7 @@ export default function ResetPasswordConfirmPage() {
             </CardHeader>
             <CardContent>
               <Button
-                onClick={() => router.push("/reset-password")}
+                onClick={() => router.push("/auth/reset-password")}
                 className="w-full"
               >
                 {BUTTONS.RETRY_REQUEST_BUTTON}

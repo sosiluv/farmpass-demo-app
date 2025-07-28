@@ -6,7 +6,7 @@ ADD CONSTRAINT fk_profiles_auth_users_id
 FOREIGN KEY (id) REFERENCES auth.users(id)
 ON DELETE CASCADE;
 
-
+ALTER TABLE system_logs DROP CONSTRAINT system_logs_user_id_fkey;
 
 -- 인증된 사용자에게 테이블 접근 권한 부여
 GRANT USAGE ON SCHEMA public TO authenticated;
@@ -219,6 +219,57 @@ CREATE POLICY "Users can delete own push subscriptions" ON public.push_subscript
 
 COMMENT ON POLICY "Users can delete own push subscriptions" ON public.push_subscriptions IS 
 '인증된 사용자는 본인 user_id에 해당하는 push_subscriptions만 삭제 가능';
+
+
+-- =================================
+-- notifications 테이블 정책 (실시간 알림 지원)
+-- =================================
+
+-- 사용자는 자신의 알림만 조회 가능
+CREATE POLICY "Users can view own notifications" ON public.notifications
+  FOR SELECT
+  USING (
+    auth.uid() IS NOT NULL AND user_id = auth.uid()
+  );
+
+-- 관리자는 모든 알림에 대한 전체 권한
+CREATE POLICY "Admins can manage all notifications" ON public.notifications
+  FOR ALL
+  USING (public.is_system_admin())
+  WITH CHECK (public.is_system_admin());
+
+COMMENT ON POLICY "Users can view own notifications" ON public.notifications IS 
+'사용자는 자신의 알림만 조회할 수 있음 (실시간 알림 지원)';
+
+COMMENT ON POLICY "Admins can manage all notifications" ON public.notifications IS 
+'관리자는 모든 알림에 대한 전체 권한을 가짐';
+
+
+-- =================================
+-- user_notification_settings 테이블 정책
+-- =================================
+
+-- 사용자는 자신의 알림 설정만 조회/수정 가능
+CREATE POLICY "Users can manage own notification settings" ON public.user_notification_settings
+  FOR ALL
+  USING (
+    auth.uid() IS NOT NULL AND user_id = auth.uid()
+  )
+  WITH CHECK (
+    auth.uid() IS NOT NULL AND user_id = auth.uid()
+  );
+
+-- 관리자는 모든 알림 설정에 대한 전체 권한
+CREATE POLICY "Admins can manage all notification settings" ON public.user_notification_settings
+  FOR ALL
+  USING (public.is_system_admin())
+  WITH CHECK (public.is_system_admin());
+
+COMMENT ON POLICY "Users can manage own notification settings" ON public.user_notification_settings IS 
+'사용자는 자신의 알림 설정만 조회/수정할 수 있음';
+
+COMMENT ON POLICY "Admins can manage all notification settings" ON public.user_notification_settings IS 
+'관리자는 모든 알림 설정에 대한 전체 권한을 가짐';
 
 
 

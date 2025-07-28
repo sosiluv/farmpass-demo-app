@@ -19,7 +19,7 @@ import {
   UploadState,
   UseImageUploadReturn,
 } from "@/lib/types/upload";
-import { useSystemSettingsContext } from "@/components/providers/system-settings-provider";
+import { useSystemSettingsQuery } from "@/lib/hooks/query/use-system-settings-query";
 import { getImageUploadErrorMessage } from "@/lib/utils/validation/validation";
 import { handleError } from "@/lib/utils/error/handleError";
 
@@ -58,7 +58,7 @@ export function useUnifiedImageUpload(
   const { showInfo, showSuccess, showError } = useCommonToast();
 
   // settings context에서 refetch 함수 가져오기
-  const { refetch: refetchSettingsContext } = useSystemSettingsContext();
+  const { refetch: refetchSettingsContext } = useSystemSettingsQuery();
 
   // 상태 관리
   const [state, setState] = useState<UploadState>({

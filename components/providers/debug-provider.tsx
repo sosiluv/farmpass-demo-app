@@ -2,7 +2,7 @@
 
 import { createContext, useContext, useEffect, useState } from "react";
 import { DebugPanel } from "@/components/debug/debug-panel";
-import { useSystemSettingsContext } from "./system-settings-provider";
+import { useSystemSettingsQuery } from "@/lib/hooks/query/use-system-settings-query";
 import { devLog } from "@/lib/utils/logging/dev-logger";
 
 interface SystemModeContextType {
@@ -49,7 +49,7 @@ export function SystemModeProvider({
   initialDebugMode = false,
   initialMaintenanceMode = false,
 }: SystemModeProviderProps) {
-  const { settings, refetch, error } = useSystemSettingsContext();
+  const { data: settings, refetch, error } = useSystemSettingsQuery();
   const [debugMode, setDebugMode] = useState(initialDebugMode);
   const [maintenanceMode, setMaintenanceMode] = useState(
     initialMaintenanceMode

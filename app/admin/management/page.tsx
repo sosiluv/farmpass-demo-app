@@ -13,11 +13,26 @@ import { useAuth } from "@/components/providers/auth-provider";
 import { LABELS, PAGE_HEADER } from "@/lib/constants/management";
 import { ERROR_CONFIGS } from "@/lib/constants/error";
 import { useProfileQuery } from "@/lib/hooks/query/use-profile-query";
+import { CardSkeleton } from "@/components/common/skeletons";
 
 export default function SystemManagementPage() {
   const { state } = useAuth();
   const userId = state.status === "authenticated" ? state.user.id : undefined;
-  const { data: profile } = useProfileQuery(userId);
+  const { data: profile, isLoading: profileLoading } = useProfileQuery(userId);
+
+  // 프로필 로딩 중일 때는 스켈레톤 표시
+  if (profileLoading) {
+    return (
+      <div className="flex-1 space-y-6 sm:space-y-8 lg:space-y-10 p-4 sm:p-6 lg:p-8">
+        <PageHeader
+          title={PAGE_HEADER.PAGE_TITLE}
+          description={PAGE_HEADER.PAGE_DESCRIPTION}
+          breadcrumbs={[{ label: PAGE_HEADER.BREADCRUMB }]}
+        />
+        <CardSkeleton count={4} />
+      </div>
+    );
+  }
 
   // admin 권한 체크
   if (!profile || profile.account_type !== "admin") {

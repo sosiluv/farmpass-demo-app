@@ -268,18 +268,18 @@ export function getAuthErrorMessage(
       message:
         "인증 링크가 만료되었거나 유효하지 않습니다. 새로운 링크를 요청해주세요.",
       shouldRedirect: true,
-      redirectTo: "/login",
+      redirectTo: "/auth/login",
     },
     token_already_used: {
       message:
         "이미 사용된 비밀번호 재설정 링크입니다. 새로운 링크를 요청해주세요.",
       shouldRedirect: true,
-      redirectTo: "/reset-password",
+      redirectTo: "/auth/reset-password",
     },
     session: {
       message: "세션이 만료되었습니다. 다시 시도해주세요.",
       shouldRedirect: true,
-      redirectTo: "/login",
+      redirectTo: "/auth/login",
     },
     // 회원가입/로그인 관련
     "user already registered": {

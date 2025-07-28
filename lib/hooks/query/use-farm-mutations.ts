@@ -3,7 +3,7 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/components/providers/auth-provider";
 import { apiClient } from "@/lib/utils/data/api-client";
-import { farmsKeys } from "@/lib/hooks/query/query-keys";
+import { farmsKeys, visitorsKeys } from "@/lib/hooks/query/query-keys";
 import type { Farm } from "@/lib/types/farm";
 
 export interface CreateFarmRequest {
@@ -99,9 +99,6 @@ export function useDeleteFarmMutation() {
       // 1. 사용자의 농장 목록 쿼리 무효화
       const userId =
         state.status === "authenticated" ? state.user?.id : undefined;
-      queryClient.invalidateQueries({
-        queryKey: farmsKeys.list({ userId }),
-      });
 
       // 2. 농장 목록에서 삭제된 농장 제거 (즉시 반영)
       queryClient.setQueryData(
@@ -112,23 +109,14 @@ export function useDeleteFarmMutation() {
         }
       );
 
-      // 3. 삭제된 농장과 관련된 모든 쿼리 제거
-      queryClient.removeQueries({
-        predicate: (query) => {
-          const queryKey = query.queryKey as string[];
-          const [type, id] = queryKey;
-          return (
-            (type === "visitors" && id === farmId) ||
-            (type === "farms" && queryKey.includes(farmId)) ||
-            (type === "dashboard" && queryKey.includes(farmId))
-          );
-        },
-      });
-
-      // 4. 전체 농장 목록 쿼리도 무효화
+      // 3. 모든 농장 관련 쿼리 무효화
       queryClient.invalidateQueries({
         queryKey: farmsKeys.all,
-        exact: false,
+      });
+
+      // 4. 삭제된 농장의 방문자 데이터도 무효화
+      queryClient.invalidateQueries({
+        queryKey: visitorsKeys.list(farmId),
       });
     },
     onError: (error: Error, farmId) => {

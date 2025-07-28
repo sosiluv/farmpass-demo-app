@@ -1,17 +1,17 @@
 "use client";
 
 import { useAuth } from "@/components/providers/auth-provider";
-import { useFarmsContext } from "@/components/providers/farms-provider";
 import { Logo } from "@/components/common";
 import { usePathname } from "next/navigation";
 import { LABELS } from "@/lib/constants/common";
 import { useProfileQuery } from "@/lib/hooks/query/use-profile-query";
+import { useFarmsQuery } from "@/lib/hooks/query/use-farms-query";
 
 export function MobileHeader() {
   const { state } = useAuth();
   const userId = state.status === "authenticated" ? state.user.id : undefined;
   const { data: profile } = useProfileQuery(userId);
-  const { farms } = useFarmsContext();
+  const { farms } = useFarmsQuery(profile?.id);
   const pathname = usePathname() || "";
 
   // 현재 경로에 따른 페이지 제목

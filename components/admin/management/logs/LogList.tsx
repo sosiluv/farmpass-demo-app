@@ -70,16 +70,44 @@ export function LogList({ logs, onShowDetails, onDeleteLog }: LogListProps) {
             }
             primary={log.action}
             secondary={
-              <span className="max-w-[80px] sm:max-w-[150px] lg:max-w-[800px] xl:max-w-[1000px] 2xl:max-w-[1200px] inline-block align-bottom">
-                {log.message}
-              </span>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <span className="block break-words whitespace-pre-wrap max-w-full text-xs sm:text-sm lg:text-base cursor-help">
+                      {log.message}
+                    </span>
+                  </TooltipTrigger>
+                  <TooltipContent side="top" className="max-w-md">
+                    <p className="whitespace-pre-wrap break-words">
+                      {log.message}
+                    </p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
             }
             meta={
-              <span className="min-w-0 max-w-[80px] sm:max-w-[200px] lg:max-w-[1000px] xl:max-w-[1200px] 2xl:max-w-[1400px] block">
-                {`${log.user_email || LABELS.SYSTEM_LABEL} / ${formatDateTime(
-                  log.created_at
-                )} / ${log.user_ip || "-"}`}
-              </span>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <span className="block break-words whitespace-pre-wrap max-w-full text-[10px] sm:text-xs lg:text-sm cursor-help">
+                      {`${
+                        log.user_email || LABELS.SYSTEM_LABEL
+                      } / ${formatDateTime(log.created_at)} / ${
+                        log.user_ip || "-"
+                      }`}
+                    </span>
+                  </TooltipTrigger>
+                  <TooltipContent side="top" className="max-w-md">
+                    <p className="whitespace-pre-wrap break-words">
+                      {`${
+                        log.user_email || LABELS.SYSTEM_LABEL
+                      } / ${formatDateTime(log.created_at)} / ${
+                        log.user_ip || "-"
+                      }`}
+                    </p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
             }
             badges={
               <Badge
