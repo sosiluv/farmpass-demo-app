@@ -21,6 +21,7 @@ import { FormSkeleton } from "@/components/common/skeletons/form-skeleton";
 import { PAGE_HEADER } from "@/lib/constants/notifications";
 import { useFarmsQuery } from "@/lib/hooks/query/use-farms-query";
 import { useProfileQuery } from "@/lib/hooks/query/use-profile-query";
+import { Bell } from "lucide-react";
 
 export default function NotificationsPage() {
   const { state } = useAuth();
@@ -104,11 +105,11 @@ export default function NotificationsPage() {
 
   if (isLoading) {
     return (
-      <div className="flex-1 space-y-4 p-3 md:p-6 pt-2 md:pt-4">
+      <div className="flex-1 space-y-4 md:space-y-6 px-4 md:px-6 lg:px-8 pt-3 pb-4 md:pb-6 lg:pb-8">
         <PageHeader
           title={PAGE_HEADER.PAGE_TITLE}
           description={PAGE_HEADER.PAGE_DESCRIPTION}
-          breadcrumbs={[{ label: PAGE_HEADER.BREADCRUMB }]}
+          icon={Bell}
         />
         <FormSkeleton fields={5} />
       </div>
@@ -120,11 +121,11 @@ export default function NotificationsPage() {
       title={ERROR_CONFIGS.LOADING.title}
       description={ERROR_CONFIGS.LOADING.description}
     >
-      <div className="flex-1 space-y-4 p-3 md:p-6 pt-2 md:pt-4">
+      <div className="flex-1 space-y-4 md:space-y-6 px-4 md:px-6 lg:px-8 pt-3 pb-4 md:pb-6 lg:pb-8">
         <PageHeader
           title={PAGE_HEADER.PAGE_TITLE}
           description={PAGE_HEADER.PAGE_DESCRIPTION}
-          breadcrumbs={[{ label: PAGE_HEADER.BREADCRUMB }]}
+          icon={Bell}
         />
 
         <div className="space-y-4 md:space-y-6">

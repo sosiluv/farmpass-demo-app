@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { Check, Loader2 } from "lucide-react";
+import { Check, Loader2, Settings } from "lucide-react";
 import { PageHeader } from "@/components/layout";
 import { LABELS, PAGE_HEADER, BUTTONS } from "@/lib/constants/settings";
 
@@ -38,7 +38,7 @@ export function SettingsHeader({
     <PageHeader
       title={PAGE_HEADER.PAGE_TITLE}
       description={PAGE_HEADER.PAGE_DESCRIPTION}
-      breadcrumbs={[{ label: PAGE_HEADER.BREADCRUMB }]}
+      icon={Settings}
       actions={saveButton}
     />
   );

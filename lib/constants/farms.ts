@@ -1,12 +1,10 @@
 export const PAGE_HEADER = {
   FARMS_PAGE_TITLE: "농장 관리",
   FARMS_PAGE_DESCRIPTION: "등록된 농장을 관리하고 QR 코드를 생성하세요",
-  FARMS_BREADCRUMB: "농장 관리",
 
   MEMBERS_PAGE_TITLE: "구성원 관리",
   MEMBERS_PAGE_DESCRIPTION:
     "{farmName} 농장의 구성원을 관리하고 권한을 설정하세요",
-  MEMBERS_BREADCRUMB: "구성원 관리",
 
   FARM_VISITORS_PAGE_TITLE: "방문자 기록",
   FARM_VISITORS_PAGE_DESCRIPTION: "방문자 기록을 조회하고 관리합니다.",

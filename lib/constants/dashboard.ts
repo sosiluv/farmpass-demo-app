@@ -1,7 +1,6 @@
 export const PAGE_HEADER = {
   PAGE_TITLE: "대시보드",
   PAGE_DESCRIPTION: "농장 방문자 현황과 통계를 한눈에 확인하세요",
-  BREADCRUMB: "대시보드",
 } as const;
 
 // 대시보드 페이지 라벨

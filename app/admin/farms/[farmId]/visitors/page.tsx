@@ -17,6 +17,7 @@ import { getAuthErrorMessage } from "@/lib/utils/validation/validation";
 import { AccessDenied } from "@/components/error/access-denied";
 import { LABELS, PAGE_HEADER } from "@/lib/constants/farms";
 import { ERROR_CONFIGS } from "@/lib/constants/error";
+import { Users } from "lucide-react";
 
 // Zustand Store 사용
 import { useVisitorFiltersStore } from "@/lib/hooks/query/use-visitor-filters";
@@ -151,11 +152,6 @@ export default function FarmVisitorsPage() {
         <PageHeader
           title={PAGE_HEADER.FARM_VISITORS_PAGE_TITLE}
           description={PAGE_HEADER.FARM_VISITORS_PAGE_DESCRIPTION}
-          breadcrumbs={[
-            { label: LABELS.FARM_MANAGEMENT, href: "/admin/farms" },
-            { label: LABELS.LOADING, href: `/admin/farms/${farmId}` },
-            { label: PAGE_HEADER.FARM_VISITORS_PAGE_TITLE },
-          ]}
         />
         <StatsSkeleton columns={4} />
         <TableSkeleton rows={5} columns={6} />
@@ -195,7 +191,7 @@ export default function FarmVisitorsPage() {
       title={ERROR_CONFIGS.LOADING.title}
       description={ERROR_CONFIGS.LOADING.description}
     >
-      <div className="flex-1 space-y-3 sm:space-y-4 md:space-y-6 p-1 sm:p-4 md:p-6 lg:p-8 pt-3 sm:pt-4 md:pt-6">
+      <div className="flex-1 space-y-3 sm:space-y-4 md:space-y-6 px-4 md:px-6 lg:px-8 pt-3 pb-4 md:pb-6 lg:pb-8">
         <PageHeader
           title={PAGE_HEADER.FARM_VISITORS_TITLE.replace(
             "{farmName}",
@@ -205,11 +201,7 @@ export default function FarmVisitorsPage() {
             "{farmName}",
             currentFarm.farm_name
           )}
-          breadcrumbs={[
-            { label: LABELS.FARM_MANAGEMENT, href: "/admin/farms" },
-            { label: currentFarm.farm_name, href: `/admin/farms/${farmId}` },
-            { label: PAGE_HEADER.FARM_VISITORS_PAGE_TITLE },
-          ]}
+          icon={Users}
           actions={
             <VisitorExportRefactored
               farms={farms} // map 변환 없이 그대로 전달

@@ -140,7 +140,7 @@ export default function FarmsPage() {
 
   if (isLoading) {
     return (
-      <div className="flex-1 space-y-4 p-4 md:p-6 pt-2 md:pt-4">
+      <div className="flex-1 space-y-4 md:space-y-6 px-4 md:px-6 lg:px-8 pt-3 pb-4 md:pb-6 lg:pb-8">
         <FarmsPageHeader
           dialogOpen={false}
           onDialogOpenChange={() => {}}
@@ -161,7 +161,7 @@ export default function FarmsPage() {
       title={ERROR_CONFIGS.LOADING.title}
       description={ERROR_CONFIGS.LOADING.description}
     >
-      <div className="flex-1 space-y-4 p-1 md:p-6 pt-2 md:pt-4">
+      <div className="flex-1 space-y-4 md:space-y-6 px-4 md:px-6 lg:px-8 pt-3 pb-4 md:pb-6 lg:pb-8">
         <FarmsPageHeader
           dialogOpen={dialogOpen}
           onDialogOpenChange={setDialogOpen}

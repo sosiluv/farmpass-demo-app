@@ -33,9 +33,7 @@ export function useSaveSystemSettingsMutation() {
       queryClient.setQueryData(settingsKeys.system(), updatedSettings);
 
       // 시스템 설정 쿼리 무효화 (다른 캐시들도 갱신)
-      queryClient.invalidateQueries({
-        queryKey: settingsKeys.all,
-      });
+      queryClient.invalidateQueries({ queryKey: settingsKeys.all });
     },
   });
 }
@@ -56,9 +54,7 @@ export function useInvalidateSystemSettingsCacheMutation() {
     },
     onSuccess: () => {
       // React Query 캐시도 무효화
-      queryClient.invalidateQueries({
-        queryKey: settingsKeys.all,
-      });
+      queryClient.invalidateQueries({ queryKey: settingsKeys.all });
     },
   });
 }

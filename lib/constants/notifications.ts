@@ -1,7 +1,6 @@
 export const PAGE_HEADER = {
   PAGE_TITLE: "알림 설정",
   PAGE_DESCRIPTION: "농장 관령 알림을 설정하세요",
-  BREADCRUMB: "알림 설정",
 
   NOTIFICATION_SETTINGS: "알림 설정",
   NOTIFICATION_SETTINGS_DESC: "알림 방식과 종류를 설정하세요",

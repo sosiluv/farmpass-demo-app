@@ -1,7 +1,6 @@
 export const PAGE_HEADER = {
   PAGE_TITLE: "시스템 설정",
   PAGE_DESCRIPTION: "시스템의 전반적인 설정을 관리하세요",
-  BREADCRUMB: "시스템 설정",
 
   CLEANUP_SYSTEM_LOGS_CONFIRM_TITLE: "시스템 로그 정리 확인",
 

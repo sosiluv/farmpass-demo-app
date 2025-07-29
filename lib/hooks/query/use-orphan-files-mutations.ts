@@ -39,14 +39,10 @@ export function useCleanupOrphanFilesMutation() {
       });
 
       // 시스템 로그 무효화 (정리 작업 로그 생성)
-      queryClient.invalidateQueries({
-        queryKey: adminKeys.logs.all(),
-      });
+      queryClient.invalidateQueries({ queryKey: adminKeys.logs.all() });
 
       // 관리자 대시보드 무효화 (통계 변경)
-      queryClient.invalidateQueries({
-        queryKey: adminKeys.dashboard(),
-      });
+      queryClient.invalidateQueries({ queryKey: adminKeys.dashboard() });
 
       devLog.log(
         `[SUCCESS] Orphan 파일 정리 완료: ${

@@ -11,7 +11,6 @@ import { Session, User } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/client";
 import { devLog } from "@/lib/utils/logging/dev-logger";
 import { useSubscriptionManager } from "@/hooks/useSubscriptionManager";
-// React Query 캐시 정리를 위한 import
 import { useQueryClient } from "@tanstack/react-query";
 import {
   profileKeys,

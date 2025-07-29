@@ -31,23 +31,51 @@ if (process.env.NODE_ENV === "production") {
 
     // 에러 필터링 및 처리
     beforeSend(event) {
-      // 네트워크 에러는 제외 (너무 많음)
-      if (event.exception && event.exception.values) {
+      // 예외가 있는 경우에만 처리
+      if (
+        event.exception &&
+        event.exception.values &&
+        event.exception.values.length > 0
+      ) {
         const exception = event.exception.values[0];
-        if (exception.value && exception.value.includes("Failed to fetch")) {
-          return null; // 네트워크 에러는 제외
-        }
-      }
 
-      // 인증 에러는 별도 태그 추가
-      if (event.exception && event.exception.values) {
-        const exception = event.exception.values[0];
-        if (
-          exception.value &&
-          (exception.value.includes("Unauthorized") ||
-            exception.value.includes("Admin access required"))
-        ) {
-          event.tags = { ...event.tags, auth_error: true };
+        // exception.value가 존재하는지 확인
+        if (exception && exception.value) {
+          // 네트워크 에러 필터링
+          if (exception.value.includes("Failed to fetch")) {
+            return null; // 네트워크 에러는 제외
+          }
+
+          // Hydration 오류 필터링
+          if (
+            exception.value.includes("Hydration") ||
+            exception.value.includes(
+              "Text content does not match server-rendered HTML"
+            ) ||
+            exception.value.includes(
+              "Expected server HTML to contain a matching"
+            ) ||
+            exception.value.includes("Hydration failed because") ||
+            exception.value.includes("Hydration mismatch")
+          ) {
+            return null; // Hydration 오류는 제외
+          }
+
+          // 개발 환경 관련 에러 필터링
+          if (
+            exception.value.includes("must be used within") ||
+            exception.value.includes(
+              "이 함수는 클라이언트에서만 실행할 수 있습니다"
+            ) ||
+            exception.value.includes("잘못된 접근입니다")
+          ) {
+            return null; // 개발 환경 에러는 제외
+          }
+
+          // 인증 에러는 별도 태그 추가
+          if (exception.value.includes("Unauthorized")) {
+            event.tags = { ...event.tags, auth_error: true };
+          }
         }
       }
 

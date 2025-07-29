@@ -4,8 +4,6 @@ export const PAGE_HEADER = {
   ALL_VISITORS_PAGE_DESCRIPTION:
     "모든 농장의 방문자 기록을 조회하고 관리합니다.",
   VISITORS_PAGE_DESCRIPTION: "내 농장의 방문자 기록을 조회하고 관리합니다.",
-  ALL_VISITORS_PAGE_BREADCRUMB: "전체 방문자 기록",
-  VISITORS_PAGE_BREADCRUMB: "방문자 기록",
 
   // FormHeader
   FORM_HEADER_DEFAULT_TITLE: "방문자 등록",

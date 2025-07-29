@@ -12,6 +12,9 @@ import { useAccountActions } from "@/hooks/useAccountActions";
 import { useCommonToast } from "@/lib/utils/notification/toast-messages";
 import { getAuthErrorMessage } from "@/lib/utils/validation/validation";
 import type { Profile } from "@/lib/types";
+import { useSearchParams, useRouter } from "next/navigation";
+import { useCallback, useMemo } from "react";
+import { useAuth } from "@/components/providers/auth-provider";
 
 interface AccountTabsProps {
   profile: Profile;
@@ -20,6 +23,29 @@ interface AccountTabsProps {
 
 export function AccountTabs({ profile, userId }: AccountTabsProps) {
   const { showInfo, showSuccess, showError } = useCommonToast();
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const { state } = useAuth();
+  const defaultTab = searchParams.get("tab") || "profile";
+
+  // 소셜 로그인 사용자 감지
+  const socialUserInfo = useMemo(() => {
+    if (state.status === "authenticated" && state.user) {
+      const provider = state.user.app_metadata?.provider;
+      return {
+        isSocialUser: provider && provider !== "email",
+        socialProvider: provider || "",
+      };
+    }
+    return {
+      isSocialUser: false,
+      socialProvider: "",
+    };
+  }, [state]) as {
+    isSocialUser: boolean;
+    socialProvider: string;
+  };
+
   const {
     isLoading,
     handleImageUpload,
@@ -28,6 +54,16 @@ export function AccountTabs({ profile, userId }: AccountTabsProps) {
     handleCompanySave,
     handlePasswordChange,
   } = useAccountActions({ profile, userId });
+
+  // 탭 변경 핸들러
+  const handleTabChange = useCallback(
+    (value: string) => {
+      const params = new URLSearchParams(searchParams);
+      params.set("tab", value);
+      router.push(`/admin/account?${params.toString()}`);
+    },
+    [searchParams, router]
+  );
 
   // 저장 핸들러들
   const handleProfileSaveWrapped = async (data: any) => {
@@ -102,7 +138,11 @@ export function AccountTabs({ profile, userId }: AccountTabsProps) {
       description={ERROR_CONFIGS.LOADING.description}
     >
       <div className="space-y-6">
-        <Tabs defaultValue="profile" className="space-y-6">
+        <Tabs
+          value={defaultTab}
+          onValueChange={handleTabChange}
+          className="space-y-6"
+        >
           <TabsList className="grid w-full grid-cols-3 h-auto">
             <TabsTrigger
               value="profile"
@@ -159,6 +199,7 @@ export function AccountTabs({ profile, userId }: AccountTabsProps) {
               profile={profile}
               loading={isLoading}
               onPasswordChange={handlePasswordChangeWrapped}
+              socialUserInfo={socialUserInfo}
             />
           </TabsContent>
         </Tabs>

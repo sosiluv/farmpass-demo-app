@@ -42,7 +42,7 @@ export function AnalyticsCard({ data }: AnalyticsCardProps) {
     return (
       <Card className="bg-gradient-to-br from-background to-muted/20">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
+          <CardTitle className="flex items-center gap-2 text-base">
             <TrendingUp className="h-5 w-5" />
             {PAGE_HEADER.ANALYTICS_TITLE}
           </CardTitle>
@@ -97,7 +97,7 @@ export function AnalyticsCard({ data }: AnalyticsCardProps) {
   return (
     <Card className="bg-gradient-to-br from-background to-muted/20">
       <CardHeader>
-        <CardTitle className="flex items-center gap-2">
+        <CardTitle className="flex items-center gap-2 text-base">
           <TrendingUp className="h-5 w-5" />
           {PAGE_HEADER.ANALYTICS_TITLE}
         </CardTitle>

@@ -1,3 +1,4 @@
+import { Building2 } from "lucide-react";
 import { PageHeader } from "@/components/layout";
 import { FarmFormDialog } from "./FarmFormDialog";
 import type { Farm } from "@/lib/types/farm";
@@ -25,7 +26,7 @@ export function FarmsPageHeader({
     <PageHeader
       title={PAGE_HEADER.FARMS_PAGE_TITLE}
       description={PAGE_HEADER.FARMS_PAGE_DESCRIPTION}
-      breadcrumbs={[{ label: PAGE_HEADER.FARMS_BREADCRUMB }]}
+      icon={Building2}
       actions={
         <FarmFormDialog
           open={dialogOpen}

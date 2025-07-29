@@ -47,7 +47,7 @@ export function UptimeCard({
     return (
       <Card className="bg-gradient-to-br from-background to-muted/20">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
+          <CardTitle className="flex items-center gap-2 text-base">
             <Clock className="h-5 w-5" />
             {PAGE_HEADER.UPTIME}
           </CardTitle>
@@ -74,7 +74,7 @@ export function UptimeCard({
     return (
       <Card className="bg-gradient-to-br from-background to-muted/20">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
+          <CardTitle className="flex items-center gap-2 text-base">
             <Clock className="h-5 w-5" />
             {PAGE_HEADER.UPTIME}
           </CardTitle>
@@ -149,7 +149,7 @@ export function UptimeCard({
   return (
     <Card className="bg-gradient-to-br from-background to-muted/20">
       <CardHeader>
-        <CardTitle className="flex items-center gap-2">
+        <CardTitle className="flex items-center gap-2 text-base">
           <Clock className="h-5 w-5" />
           {PAGE_HEADER.UPTIME}
         </CardTitle>

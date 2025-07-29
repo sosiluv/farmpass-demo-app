@@ -31,13 +31,9 @@ export function useDeleteLogsMutation() {
     },
     onSuccess: () => {
       // 로그 전체 무효화
-      queryClient.invalidateQueries({
-        queryKey: adminKeys.logs.all(),
-      });
+      queryClient.invalidateQueries({ queryKey: adminKeys.logs.all() });
       // 관리자 대시보드 통계 무효화
-      queryClient.invalidateQueries({
-        queryKey: adminKeys.dashboard(),
-      });
+      queryClient.invalidateQueries({ queryKey: adminKeys.dashboard() });
     },
   });
 }

@@ -131,7 +131,7 @@ export function SystemStatusCard({ data }: SystemStatusCardProps) {
       <CardHeader>
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <CardTitle className="flex items-center gap-2">
+            <CardTitle className="flex items-center gap-2 text-base">
               <Activity className="h-5 w-5 flex-shrink-0" />
               <span>{PAGE_HEADER.SYSTEM_STATUS}</span>
             </CardTitle>

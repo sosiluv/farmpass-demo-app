@@ -24,6 +24,7 @@ import { PAGE_HEADER, LABELS } from "@/lib/constants/monitoring";
 import { ERROR_CONFIGS } from "@/lib/constants/error";
 import { ErrorBoundary } from "@/components/error/error-boundary";
 import { useProfileQuery } from "@/lib/hooks/query/use-profile-query";
+import { Activity } from "lucide-react";
 
 // 카드별 로딩/에러/데이터 렌더링 유틸
 type RenderCardProps = {
@@ -52,11 +53,11 @@ export default function MonitoringDashboard() {
   // 프로필 로딩 중일 때는 스켈레톤 표시
   if (profileLoading) {
     return (
-      <div className="flex-1 space-y-6 p-4 md:p-6 pt-2 md:pt-4">
+      <div className="flex-1 space-y-4 md:space-y-6 px-4 md:px-6 lg:px-8 pt-3 pb-4 md:pb-6 lg:pb-8">
         <PageHeader
           title={PAGE_HEADER.PAGE_TITLE}
           description={PAGE_HEADER.PAGE_DESCRIPTION}
-          breadcrumbs={[{ label: PAGE_HEADER.BREADCRUMB }]}
+          icon={Activity}
         />
         <CardSkeleton count={5} />
       </div>
@@ -80,11 +81,11 @@ export default function MonitoringDashboard() {
       title={ERROR_CONFIGS.LOADING.title}
       description={ERROR_CONFIGS.LOADING.description}
     >
-      <div className="flex-1 space-y-6 p-4 md:p-6 pt-2 md:pt-4">
+      <div className="flex-1 space-y-4 md:space-y-6 px-4 md:px-6 lg:px-8 pt-3 pb-4 md:pb-6 lg:pb-8">
         <PageHeader
           title={PAGE_HEADER.PAGE_TITLE}
           description={PAGE_HEADER.PAGE_DESCRIPTION}
-          breadcrumbs={[{ label: PAGE_HEADER.BREADCRUMB }]}
+          icon={Activity}
         />
 
         {/* 시스템 상태 카드 */}

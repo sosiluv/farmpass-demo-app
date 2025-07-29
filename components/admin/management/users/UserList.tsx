@@ -86,7 +86,7 @@ export function UserList({ users, onUserClick }: UserListProps) {
             key={user.id}
             avatar={
               <Avatar
-                className="h-6 w-6 sm:h-10 sm:w-10 lg:h-12 lg:w-12 flex-shrink-0 mr-8 sm:mr-10 lg:mr-12 xl:mr-16 2xl:mr-20"
+                className="h-8 w-8 sm:h-12 sm:w-12 lg:h-14 lg:w-14 xl:h-16 xl:w-16 flex-shrink-0"
                 onClick={() => handleAvatarClick(user)}
                 style={{
                   cursor: user.profile_image_url ? "pointer" : undefined,
@@ -104,18 +104,26 @@ export function UserList({ users, onUserClick }: UserListProps) {
               </Avatar>
             }
             primary={user.name}
-            secondary={user.email}
+            secondary={
+              <span className="text-xs sm:text-sm lg:text-base xl:text-lg text-muted-foreground">
+                {user.email}
+              </span>
+            }
             meta={
-              user.last_login_at
-                ? `${LABELS.LAST_ACCESS} ${formatDateTime(user.last_login_at)}`
-                : LABELS.NO_LOGIN_RECORD
+              <span className="text-xs sm:text-sm lg:text-base xl:text-lg text-muted-foreground">
+                {user.last_login_at
+                  ? `${LABELS.LAST_ACCESS} ${formatDateTime(
+                      user.last_login_at
+                    )}`
+                  : LABELS.NO_LOGIN_RECORD}
+              </span>
             }
             badges={
               <div className="flex flex-col gap-1">
                 <Badge
                   className={`${getRoleColor(
                     user.account_type
-                  )} text-xs px-2 py-1`}
+                  )} text-[10px] sm:text-xs px-1.5 sm:px-2 py-0.5 sm:py-1`}
                 >
                   {user.account_type === "admin"
                     ? LABELS.SYSTEM_ADMIN_USER
@@ -124,24 +132,24 @@ export function UserList({ users, onUserClick }: UserListProps) {
                 <Badge
                   className={`${getStatusColor(
                     user.is_active
-                  )} text-xs px-2 py-1`}
+                  )} text-[10px] sm:text-xs px-1.5 sm:px-2 py-0.5 sm:py-1`}
                 >
                   {user.is_active ? LABELS.ACTIVE_CSV : LABELS.INACTIVE_CSV}
                 </Badge>
               </div>
             }
             actions={
-              <div className="flex items-center gap-2 flex-shrink-0 ml-2">
+              <div className="flex items-center gap-2 flex-shrink-0 ml-1">
                 <TooltipProvider>
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <Button
                         variant="ghost"
                         size="icon"
-                        className="h-8 w-8 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 flex-shrink-0"
+                        className="h-8 w-8 sm:h-12 sm:w-12 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 flex-shrink-0"
                         onClick={() => setSelectedUser(user)}
                       >
-                        <Eye className="h-4 w-4 text-muted-foreground" />
+                        <Eye className="h-4 w-4 sm:h-6 sm:w-6 text-muted-foreground" />
                       </Button>
                     </TooltipTrigger>
                     <TooltipContent>

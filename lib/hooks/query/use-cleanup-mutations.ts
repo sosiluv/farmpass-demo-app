@@ -35,13 +35,9 @@ export function useExecuteCleanupMutation() {
         queryKey: settingsKeys.cleanup.status(),
       });
       // 로그 데이터 무효화 (정리로 인한 영향)
-      queryClient.invalidateQueries({
-        queryKey: adminKeys.logs.all(),
-      });
+      queryClient.invalidateQueries({ queryKey: adminKeys.logs.all() });
       // 관리자 대시보드 통계 무효화 (로그 정리로 인한 통계 변경)
-      queryClient.invalidateQueries({
-        queryKey: adminKeys.dashboard(),
-      });
+      queryClient.invalidateQueries({ queryKey: adminKeys.dashboard() });
     },
   });
 }

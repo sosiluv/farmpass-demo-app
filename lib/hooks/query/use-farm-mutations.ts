@@ -42,9 +42,7 @@ export function useCreateFarmMutation() {
       // 사용자의 농장 목록 쿼리 무효화
       const userId =
         state.status === "authenticated" ? state.user?.id : undefined;
-      queryClient.invalidateQueries({
-        queryKey: farmsKeys.list({ userId }),
-      });
+      queryClient.invalidateQueries({ queryKey: farmsKeys.list({ userId }) });
     },
   });
 }
@@ -71,9 +69,7 @@ export function useUpdateFarmMutation() {
       // 사용자의 농장 목록 쿼리 무효화
       const userId =
         state.status === "authenticated" ? state.user?.id : undefined;
-      queryClient.invalidateQueries({
-        queryKey: farmsKeys.list({ userId }),
-      });
+      queryClient.invalidateQueries({ queryKey: farmsKeys.list({ userId }) });
     },
   });
 }
@@ -110,14 +106,10 @@ export function useDeleteFarmMutation() {
       );
 
       // 3. 모든 농장 관련 쿼리 무효화
-      queryClient.invalidateQueries({
-        queryKey: farmsKeys.all,
-      });
+      queryClient.invalidateQueries({ queryKey: farmsKeys.all });
 
       // 4. 삭제된 농장의 방문자 데이터도 무효화
-      queryClient.invalidateQueries({
-        queryKey: visitorsKeys.list(farmId),
-      });
+      queryClient.invalidateQueries({ queryKey: visitorsKeys.all });
     },
     onError: (error: Error, farmId) => {
       // 404 에러인 경우 (농장이 이미 삭제된 경우) 캐시에서 제거
@@ -132,9 +124,7 @@ export function useDeleteFarmMutation() {
           }
         );
 
-        queryClient.invalidateQueries({
-          queryKey: farmsKeys.list({ userId }),
-        });
+        queryClient.invalidateQueries({ queryKey: farmsKeys.list({ userId }) });
       }
     },
   });

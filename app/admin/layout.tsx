@@ -2,18 +2,13 @@
 
 import type React from "react";
 import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
-import {
-  AdminSidebar,
-  MobileHeader,
-  MobileMenuButton,
-} from "@/components/layout";
+import { AdminSidebar, Header, MobileMenuButton } from "@/components/layout";
 import { ProtectedRoute } from "@/components/providers/protected-route";
 import { MaintenanceBanner } from "@/components/maintenance";
 import { ErrorBoundary } from "@/components/error/error-boundary";
 import { ERROR_CONFIGS } from "@/lib/constants/error";
 import { ThemeProvider } from "@/components/common/theme-provider";
 import { DialogManager } from "@/components/common/DialogManager";
-import { RealtimeNotificationBell } from "@/components/common/RealtimeNotificationBell";
 import { AuthProvider } from "@/components/providers/auth-provider";
 import { PWAUpdater } from "@/components/common/pwa-updater";
 
@@ -39,12 +34,11 @@ export default function AdminLayout({
             <SidebarProvider>
               <AdminSidebar />
               <SidebarInset>
-                <MobileHeader />
+                <Header />
                 <MaintenanceBanner isAdmin={true} />
-                <RealtimeNotificationBell />
-                <main className="flex-1 p-4 md:p-6 pt-15 md:pt-12">
-                  {children}
-                </main>
+                {/* <main className="flex-1 overflow-y-auto px-4 md:px-6 pt-3 pb-4 md:pb-6"> */}
+                {children}
+                {/* </main> */}
               </SidebarInset>
               <MobileMenuButton />
               {/* Admin 페이지에서만 알림 권한 다이얼로그 관리 */}

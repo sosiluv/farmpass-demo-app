@@ -42,6 +42,42 @@ export const BUTTONS = {
   NOTIFICATION_LOAD_MORE: "더보기",
   NOTIFICATION_LOADING: "로딩 중...",
   NOTIFICATION_MARK_ALL_READ: "모두 읽음 처리",
+  NOTIFICATION_DELETE_ALL: "전체 삭제",
+} as const;
+
+// 헤더 메뉴 상수
+export const HEADER_MENU = {
+  MY_PROFILE: "내 프로필",
+  PASSWORD_CHANGE: "비밀번호 변경",
+  COMPANY_INFO: "회사 정보",
+  MENU: "메뉴",
+} as const;
+
+// Footer 상수
+export const FOOTER = {
+  BADGES: {
+    MOBILE_OPTIMIZED: "모바일 최적화",
+    QR_CODE_SUPPORT: "QR 코드 지원",
+    REAL_TIME_NOTIFICATION: "실시간 알림",
+  },
+  LINKS: {
+    COMPANY_INTRO: "회사소개",
+    LOCATION: "오시는길",
+    TERMS_OF_SERVICE: "이용약관",
+    PRIVACY_POLICY: "개인정보처리방침",
+  },
+  COMPANY_INFO: {
+    PHONE: "대표전화 : 054-843-1141",
+    FAX: "팩스 : 054-855-9398",
+    ADDRESS: "주소 : 경상북도 안동시 풍산읍 괴정2길 106-23 주101~104동",
+    COPYRIGHT: "Copyright. © {year} SWKorea All rights reserved.",
+  },
+  URLS: {
+    COMPANY_INTRO: "http://www.swkukorea.com/theme/sample60/html/a1.php",
+    LOCATION: "http://www.swkukorea.com/theme/sample60/html/a5.php",
+    TERMS: "/terms",
+    PRIVACY: "/privacy",
+  },
 } as const;
 
 // 공통 컴포넌트 라벨

@@ -1,7 +1,6 @@
 export const PAGE_HEADER = {
   PAGE_TITLE: "계정 관리",
   PAGE_DESCRIPTION: "개인 정보 및 회사 정보를 관리하세요",
-  BREADCRUMB: "계정 관리",
 
   COMPANY_INFO_TITLE: "회사 정보",
   COMPANY_INFO_DESCRIPTION: "회사 및 농장 정보를 관리합니다",
@@ -75,6 +74,11 @@ export const LABELS = {
   WITHDRAW_DIALOG_TITLE: "정말로 회원탈퇴 하시겠습니까?",
   WITHDRAW_DIALOG_DESC:
     "이 작업은 되돌릴 수 없습니다. 계정 및 모든 데이터가 영구적으로 삭제됩니다.",
+  // 소셜 로그인
+  SOCIAL_LOGIN_ACCOUNT: "소셜 로그인 계정",
+  SOCIAL_PASSWORD_CHANGE_GUIDE:
+    "소셜 로그인 계정의 비밀번호는 해당 서비스에서 변경하세요.",
+  SECURITY_INFO_MANAGED: "보안 정보는 해당 서비스에서 관리됩니다",
 } as const;
 
 // 플레이스홀더
@@ -94,6 +98,13 @@ export const PLACEHOLDERS = {
   POSITION: "직책을 선택하세요",
   DEPARTMENT: "부서명을 입력하세요",
   BIO: "자기소개를 입력하세요",
+} as const;
+
+// 소셜 로그인 메시지
+export const SOCIAL_LOGIN_MESSAGES = {
+  GOOGLE_LOGIN: "Google 계정으로 로그인하셨습니다.",
+  KAKAO_LOGIN: "카카오 계정으로 로그인하셨습니다.",
+  OTHER_LOGIN: (provider: string) => `${provider} 계정으로 로그인하셨습니다.`,
 } as const;
 
 // 직원 수 옵션

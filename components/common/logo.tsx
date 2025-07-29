@@ -44,7 +44,7 @@ const sizeMap = {
 
 /**
  * 시스템 로고 표시 컴포넌트
- * 업로드된 로고가 있으면 이미지를, 없으면 Leaf 아이콘을 표시
+ * 업로드된 로고가 있으면 이미지를, 없으면 기본 로고를 표시
  */
 export function Logo({
   className,
@@ -54,37 +54,9 @@ export function Logo({
   size = "md",
   settings, // 중복 query 방지용
 }: LogoProps) {
-  const { logoUrl, siteName, hasLogo } = useLogo(settings);
+  const { logoUrl, siteName } = useLogo(settings);
   const sizeConfig = sizeMap[size];
 
-  if (hasLogo && logoUrl) {
-    return (
-      <div className={cn("flex flex-col items-center gap-2", className)}>
-        <div
-          className={cn(
-            "relative overflow-hidden rounded-lg",
-            sizeConfig.container
-          )}
-        >
-          <Image
-            src={logoUrl}
-            alt={siteName}
-            fill
-            priority
-            className="object-contain"
-            sizes="(max-width: 768px) 32px, 40px"
-          />
-        </div>
-        {showText && (
-          <span className={cn("font-semibold", sizeConfig.text, textClassName)}>
-            {siteName}
-          </span>
-        )}
-      </div>
-    );
-  }
-
-  // 로고가 없을 때 기본 이미지 사용
   return (
     <div className={cn("flex flex-col items-center gap-2", className)}>
       <div
@@ -95,7 +67,7 @@ export function Logo({
         )}
       >
         <Image
-          src="/default-logo2.svg"
+          src={logoUrl}
           alt={siteName}
           fill
           priority

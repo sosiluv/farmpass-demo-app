@@ -13,7 +13,6 @@ import {
   NotificationTab,
   SystemTab,
 } from "@/components/admin/settings/tabs";
-import { useDynamicFavicon } from "@/hooks/use-dynamic-favicon";
 import { useSystemMode } from "@/components/providers/debug-provider";
 import { useAuth } from "@/components/providers/auth-provider";
 import type { SystemSettings } from "@/lib/types/settings";
@@ -26,7 +25,6 @@ import { ERROR_CONFIGS } from "@/lib/constants/error";
 import { LABELS } from "@/lib/constants/settings";
 import { useProfileQuery } from "@/lib/hooks/query/use-profile-query";
 import { useSystemSettingsQuery } from "@/lib/hooks/query/use-system-settings-query";
-import { PageLoading } from "@/components/ui/loading";
 
 export default function SettingsPage() {
   const {
@@ -34,9 +32,6 @@ export default function SettingsPage() {
     isLoading: loading,
     refetch,
   } = useSystemSettingsQuery();
-
-  // 설정 페이지에서만 동적 파비콘 업데이트 (기본 파비콘 포함)
-  useDynamicFavicon(settings?.favicon || "/favicon.ico");
 
   const { refreshSystemModes } = useSystemMode();
   const { state } = useAuth();
@@ -72,7 +67,7 @@ export default function SettingsPage() {
   // 설정이 로딩 중이거나 localSettings가 없거나 프로필 로딩 중일 때는 스켈레톤 표시
   if (loading || !localSettings || profileLoading) {
     return (
-      <div className="flex-1 space-y-4 p-4 md:p-6 pt-2 md:pt-4">
+      <div className="flex-1 space-y-4 md:space-y-6 px-4 md:px-6 lg:px-8 pt-3 pb-4 md:pb-6 lg:pb-8">
         <SettingsHeader
           saving={false}
           unsavedChanges={false}
@@ -130,7 +125,7 @@ export default function SettingsPage() {
       title={ERROR_CONFIGS.LOADING.title}
       description={ERROR_CONFIGS.LOADING.description}
     >
-      <div className="flex-1 space-y-4 p-4 md:p-6 pt-2 md:pt-4">
+      <div className="flex-1 space-y-4 md:space-y-6 px-4 md:px-6 lg:px-8 pt-3 pb-4 md:pb-6 lg:pb-8">
         <SettingsHeader
           saving={saving}
           unsavedChanges={unsavedChanges}

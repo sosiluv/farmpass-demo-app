@@ -41,7 +41,7 @@ import {
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useMemo, useState } from "react";
-import { Logo, ThemeToggle } from "@/components/common";
+import { Logo } from "@/components/common";
 import { useLogo } from "@/hooks/use-logo";
 import { BUTTONS, LABELS } from "@/lib/constants/common";
 import { useProfileQuery } from "@/lib/hooks/query/use-profile-query";
@@ -417,7 +417,6 @@ export function AdminSidebar() {
                   </>
                 )}
               </Button>
-              <ThemeToggle />
             </div>
           </SidebarMenuItem>
         </SidebarMenu>

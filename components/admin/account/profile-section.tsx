@@ -34,6 +34,7 @@ import {
 import { POSITION_OPTIONS } from "@/lib/constants/account";
 import { profileSchema } from "@/lib/utils/validation/profile-validation";
 import { useCommonToast } from "@/lib/utils/notification/toast-messages";
+import { useAuth } from "@/components/providers/auth-provider";
 
 export function ProfileSection({
   profile,
@@ -42,13 +43,10 @@ export function ProfileSection({
   onImageUpload,
   onImageDelete,
 }: ProfileSectionProps) {
+  const { state } = useAuth();
   const { showError } = useCommonToast();
   // 아바타 시드 관리 훅
-  const {
-    updateAvatarSeed,
-    generateRandomSeed,
-    loading: avatarLoading,
-  } = useAvatarSeedManager({
+  const { updateAvatarSeed, generateRandomSeed } = useAvatarSeedManager({
     userId: profile?.id || "",
   });
   const [profileImagePreview, setProfileImagePreview] = useState<string | null>(
@@ -83,6 +81,11 @@ export function ProfileSection({
 
   // profile prop이 변경될 때마다 프리뷰 업데이트
   useEffect(() => {
+    console.log(
+      "session",
+      state.status === "authenticated" ? state.session : null
+    );
+    console.log("user", state.status === "authenticated" ? state.user : null);
     if (profile?.profile_image_url) {
       const newPreviewUrl = `${profile.profile_image_url}?t=${Date.now()}`;
       setProfileImagePreview(newPreviewUrl);

@@ -89,10 +89,10 @@ export function InsightCard({
             <BarChart3 className="h-4 w-4 sm:h-5 sm:w-5 text-amber-700" />
           </div>
           <div>
-            <h3 className="text-base sm:text-lg font-semibold text-amber-800">
+            <h3 className="text-sm sm:text-base md:text-lg font-semibold text-amber-800">
               {LABELS.INSIGHT_CARD_TITLE}
             </h3>
-            <p className="text-xs sm:text-sm text-amber-600">
+            <p className="text-xs sm:text-sm md:text-base text-amber-600">
               {LABELS.INSIGHT_CARD_SUBTITLE}
             </p>
           </div>
@@ -111,11 +111,11 @@ export function InsightCard({
                 />
                 <div className="min-w-0 flex-1">
                   <p
-                    className={`text-xs sm:text-sm font-medium ${insight.textColor} truncate`}
+                    className={`text-xs sm:text-sm md:text-base font-medium ${insight.textColor} truncate mb-1`}
                   >
                     {insight.label}
                   </p>
-                  <p className="text-xs sm:text-sm text-amber-600 font-semibold">
+                  <p className="text-xs sm:text-sm md:text-base text-amber-600 font-semibold">
                     {insight.value}
                   </p>
                 </div>

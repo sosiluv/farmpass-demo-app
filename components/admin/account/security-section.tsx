@@ -12,7 +12,13 @@ export function SecuritySection({
   profile,
   loading,
   onPasswordChange,
-}: SecuritySectionProps) {
+  socialUserInfo,
+}: SecuritySectionProps & {
+  socialUserInfo?: {
+    isSocialUser: boolean;
+    socialProvider: string;
+  };
+}) {
   return (
     <ErrorBoundary
       title={ERROR_CONFIGS.LOADING.title}
@@ -28,6 +34,7 @@ export function SecuritySection({
           profile={profile}
           loading={loading}
           onPasswordChange={onPasswordChange}
+          socialUserInfo={socialUserInfo}
         />
         <LoginActivitySection profile={profile} />
         <WithdrawSection />

@@ -43,33 +43,41 @@ export function FarmList({ farms }: FarmListProps) {
           <CommonListItem
             key={farm.id}
             avatar={
-              <Avatar className="h-6 w-6 sm:h-10 sm:w-10 lg:h-12 lg:w-12 flex-shrink-0">
+              <Avatar className="h-8 w-8 sm:h-12 sm:w-12 lg:h-14 lg:w-14 xl:h-16 xl:w-16 flex-shrink-0">
                 <AvatarFallback className="bg-blue-100 dark:bg-blue-900 flex items-center justify-center w-full h-full">
                   {(() => {
                     const Icon = getFarmTypeIcon(farm.farm_type || undefined);
                     return (
-                      <Icon className="h-4 w-4 sm:h-6 sm:w-6 lg:h-7 lg:w-7 text-blue-600 dark:text-blue-300" />
+                      <Icon className="h-4 w-4 sm:h-6 sm:w-6 lg:h-7 lg:w-7 xl:h-8 xl:w-8 text-blue-600 dark:text-blue-300" />
                     );
                   })()}
                 </AvatarFallback>
               </Avatar>
             }
             primary={farm.farm_name}
-            secondary={farm.farm_address}
-            meta={`${farm.manager_name || LABELS.UNASSIGNED} / ${formatDateTime(
-              farm.created_at
-            )}`}
+            secondary={
+              <span className="text-xs sm:text-sm lg:text-base xl:text-lg text-muted-foreground">
+                {farm.farm_address}
+              </span>
+            }
+            meta={
+              <span className="text-xs sm:text-sm lg:text-base xl:text-lg text-muted-foreground">
+                {`${farm.manager_name || LABELS.UNASSIGNED} / ${formatDateTime(
+                  farm.created_at
+                )}`}
+              </span>
+            }
             badges={
               farm.farm_type && (
                 <Badge
                   className={`${getFarmTypeColor(
                     farm.farm_type
-                  )} text-xs px-2 py-1`}
+                  )} text-[10px] sm:text-xs px-1.5 sm:px-2 py-0.5 sm:py-1`}
                 >
-                  <div className="flex items-center gap-1">
+                  <div className="flex items-center gap-0.5 sm:gap-1">
                     {(() => {
                       const Icon = getFarmTypeIcon(farm.farm_type);
-                      return <Icon className="h-4 w-4" />;
+                      return <Icon className="h-3 w-3 sm:h-4 sm:w-4" />;
                     })()}
                     <span>{getFarmTypeLabel(farm.farm_type)}</span>
                   </div>
@@ -84,10 +92,10 @@ export function FarmList({ farms }: FarmListProps) {
                       <Button
                         variant="ghost"
                         size="icon"
-                        className="h-6 w-6 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 flex-shrink-0"
+                        className="h-8 w-8 sm:h-12 sm:w-12 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 flex-shrink-0"
                         onClick={() => setSelectedFarm(farm)}
                       >
-                        <Eye className="h-4 w-4 text-muted-foreground" />
+                        <Eye className="h-4 w-4 sm:h-6 sm:w-6 text-muted-foreground" />
                       </Button>
                     </TooltipTrigger>
                     <TooltipContent>

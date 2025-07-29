@@ -45,14 +45,10 @@ export function useUpdateVisitorMutation() {
     },
     onSuccess: (updatedVisitor, variables) => {
       // 해당 농장의 방문자 목록 무효화
-      queryClient.invalidateQueries({
-        queryKey: visitorsKeys.list(updatedVisitor.farm_id),
-      });
+      queryClient.invalidateQueries({ queryKey: visitorsKeys.all });
 
       // 관리자 대시보드 무효화 (방문자 통계 변경)
-      queryClient.invalidateQueries({
-        queryKey: adminKeys.dashboard(),
-      });
+      queryClient.invalidateQueries({ queryKey: adminKeys.dashboard() });
     },
   });
 }
@@ -86,14 +82,10 @@ export function useDeleteVisitorMutation() {
     },
     onSuccess: (result, { farmId }) => {
       // 해당 농장의 방문자 목록 무효화
-      queryClient.invalidateQueries({
-        queryKey: visitorsKeys.list(farmId),
-      });
+      queryClient.invalidateQueries({ queryKey: visitorsKeys.all });
 
       // 관리자 대시보드 무효화 (방문자 통계 변경)
-      queryClient.invalidateQueries({
-        queryKey: adminKeys.dashboard(),
-      });
+      queryClient.invalidateQueries({ queryKey: adminKeys.dashboard() });
     },
   });
 }

@@ -133,12 +133,24 @@ export function FarmsTab() {
                             hasMore,
                           }) => (
                             <>
-                              {/* 농장 수 표시 */}
-                              <div className="text-sm text-muted-foreground">
-                                {LABELS.TOTAL_FARMS_COUNT_TAB.replace(
-                                  "{count}",
-                                  totalItems.toString()
-                                )}
+                              {/* 결과 요약 카드 - 모바일 가독성 개선 */}
+                              <div className="bg-card border rounded-lg p-3 sm:p-4">
+                                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                                  <div className="flex items-center gap-2">
+                                    <div className="w-2 h-2 bg-primary rounded-full"></div>
+                                    <span className="text-sm sm:text-base font-medium text-foreground">
+                                      {LABELS.TOTAL_FARMS_COUNT_TAB.replace(
+                                        "{count}",
+                                        totalItems.toString()
+                                      )}
+                                    </span>
+                                  </div>
+                                  {totalItems > 0 && (
+                                    <div className="text-xs sm:text-sm text-muted-foreground">
+                                      {paginatedData.length}개 표시 중
+                                    </div>
+                                  )}
+                                </div>
                               </div>
 
                               {/* 농장 목록 */}

@@ -1,7 +1,6 @@
 export const PAGE_HEADER = {
   PAGE_TITLE: "시스템 관리",
   PAGE_DESCRIPTION: "사용자, 농장, 시스템 로그 등을 관리합니다",
-  BREADCRUMB: "시스템 관리",
 
   FARM_DETAIL_TITLE: "농장 상세 정보",
   FARM_DETAIL_DESCRIPTION: "선택된 농장의 상세 정보를 확인할 수 있습니다.",

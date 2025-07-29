@@ -158,11 +158,11 @@ export default function DashboardPage() {
 
   if (isInitialLoading) {
     return (
-      <div className="flex-1 space-y-6 sm:space-y-8 lg:space-y-10 p-1 sm:p-6 lg:p-8">
+      <div className="flex-1 space-y-6 sm:space-y-8 lg:space-y-10 px-4 md:px-6 lg:px-8 pt-3 pb-4 md:pb-6 lg:pb-8">
         <PageHeader
           title={PAGE_HEADER.PAGE_TITLE}
           description={PAGE_HEADER.PAGE_DESCRIPTION}
-          breadcrumbs={[{ label: PAGE_HEADER.BREADCRUMB }]}
+          icon={BarChart3}
           actions={<InstallGuide />}
         />
         <DashboardSkeleton />
@@ -176,13 +176,13 @@ export default function DashboardPage() {
       description={ERROR_CONFIGS.LOADING.description}
     >
       <>
-        <div className="flex-1 space-y-6 sm:space-y-8 lg:space-y-10 p-1 sm:p-6 lg:p-8">
+        <div className="flex-1 space-y-4 sm:space-y-6 lg:space-y-8 px-4 md:px-6 lg:px-8 pt-3 pb-4 md:pb-6 lg:pb-8">
           {/* 헤더 섹션 */}
           <div className="space-y-4">
             <PageHeader
               title={PAGE_HEADER.PAGE_TITLE}
               description={PAGE_HEADER.PAGE_DESCRIPTION}
-              breadcrumbs={[{ label: PAGE_HEADER.BREADCRUMB }]}
+              icon={BarChart3}
               actions={<InstallGuide />}
             />
           </div>

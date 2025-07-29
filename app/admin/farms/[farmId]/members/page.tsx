@@ -177,7 +177,7 @@ export default function MembersPage({ params }: PageProps) {
   // 로딩 상태 처리
   if (membersLoading || farmsLoading || !farm) {
     return (
-      <div className="flex-1 space-y-3 sm:space-y-4 md:space-y-6 p-2 sm:p-4 md:p-6 lg:p-8 pt-3 sm:pt-4 md:pt-6">
+      <div className="flex-1 space-y-3 sm:space-y-4 md:space-y-6 px-4 md:px-6 lg:px-8 pt-3 pb-4 md:pb-6 lg:pb-8">
         <MembersPageHeader
           farm={farm || ({ id: farmId, farm_name: "로딩 중..." } as any)}
           canManageMembers={false}
@@ -209,7 +209,7 @@ export default function MembersPage({ params }: PageProps) {
       title={ERROR_CONFIGS.LOADING.title}
       description={ERROR_CONFIGS.LOADING.description}
     >
-      <div className="flex-1 space-y-3 sm:space-y-4 md:space-y-6 p-2 sm:p-4 md:p-6 lg:p-8 pt-3 sm:pt-4 md:pt-6">
+      <div className="flex-1 space-y-3 sm:space-y-4 md:space-y-6 px-4 md:px-6 lg:px-8 pt-3 pb-4 md:pb-6 lg:pb-8">
         <MembersPageHeader
           farm={farm}
           canManageMembers={canManageMembers()}

@@ -3,7 +3,6 @@ export const PAGE_HEADER = {
   PAGE_TITLE: "시스템 모니터링",
   PAGE_DESCRIPTION:
     "서버 상태, 가동시간, 에러 로그를 실시간으로 모니터링하세요",
-  BREADCRUMB: "시스템 모니터링",
 
   ANALYTICS_TITLE: "방문자 통계",
   RECENT_ERRORS: "최근 에러",

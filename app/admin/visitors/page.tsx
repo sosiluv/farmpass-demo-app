@@ -19,6 +19,7 @@ import { ResponsivePagination } from "@/components/common/responsive-pagination"
 import { useCommonToast } from "@/lib/utils/notification/toast-messages";
 import { getAuthErrorMessage } from "@/lib/utils/validation/validation";
 import { LABELS, PAGE_HEADER } from "@/lib/constants/visitor";
+import { Users } from "lucide-react";
 
 // React Query Hooks
 import { useFarmsQuery } from "@/lib/hooks/query/use-farms-query";
@@ -124,7 +125,7 @@ export default function VisitorsPage() {
 
   if (loading) {
     return (
-      <div className="flex-1 space-y-3 sm:space-y-4 md:space-y-6 p-1 sm:p-4 md:p-6 lg:p-8 pt-3 sm:pt-4 md:pt-6">
+      <div className="flex-1 space-y-3 sm:space-y-4 md:space-y-6 p-1 sm:p-4 md:p-6 lg:p-8">
         <PageHeader
           title={
             isAdmin
@@ -136,13 +137,7 @@ export default function VisitorsPage() {
               ? PAGE_HEADER.ALL_VISITORS_PAGE_DESCRIPTION
               : PAGE_HEADER.VISITORS_PAGE_DESCRIPTION
           }
-          breadcrumbs={[
-            {
-              label: isAdmin
-                ? PAGE_HEADER.ALL_VISITORS_PAGE_BREADCRUMB
-                : PAGE_HEADER.VISITORS_PAGE_BREADCRUMB,
-            },
-          ]}
+          icon={Users}
         />
         <StatsSkeleton columns={4} />
         <TableSkeleton rows={5} columns={6} />
@@ -155,7 +150,7 @@ export default function VisitorsPage() {
       title={ERROR_CONFIGS.LOADING.title}
       description={ERROR_CONFIGS.LOADING.description}
     >
-      <div className="flex-1 space-y-3 sm:space-y-4 md:space-y-6 p-1 sm:p-4 md:p-6 lg:p-8 pt-3 sm:pt-4 md:pt-6">
+      <div className="flex-1 space-y-3 sm:space-y-4 md:space-y-6 px-4 md:px-6 lg:px-8 pt-3 pb-4 md:pb-6 lg:pb-8">
         <PageHeader
           title={
             isAdmin
@@ -167,13 +162,7 @@ export default function VisitorsPage() {
               ? PAGE_HEADER.ALL_VISITORS_PAGE_DESCRIPTION
               : PAGE_HEADER.VISITORS_PAGE_DESCRIPTION
           }
-          breadcrumbs={[
-            {
-              label: isAdmin
-                ? PAGE_HEADER.ALL_VISITORS_PAGE_BREADCRUMB
-                : PAGE_HEADER.VISITORS_PAGE_BREADCRUMB,
-            },
-          ]}
+          icon={Users}
           actions={
             <VisitorExportRefactored
               farms={farms} // 변환 없이 그대로 전달

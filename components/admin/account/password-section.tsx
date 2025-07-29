@@ -36,6 +36,7 @@ import {
   LABELS,
   PLACEHOLDERS,
   PAGE_HEADER,
+  SOCIAL_LOGIN_MESSAGES,
 } from "@/lib/constants/account";
 
 interface PasswordSectionProps {
@@ -44,12 +45,19 @@ interface PasswordSectionProps {
   } | null;
   loading: boolean;
   onPasswordChange: (data: PasswordFormData) => Promise<void>;
+  socialUserInfo?: {
+    isSocialUser: boolean;
+    socialProvider: string;
+    allProviders: string[];
+    socialProviders: string[];
+  };
 }
 
 export function PasswordSection({
   profile,
   loading,
   onPasswordChange,
+  socialUserInfo,
 }: PasswordSectionProps) {
   const [schema, setSchema] = useState<any>(null);
   const { showInfo, showError } = useCommonToast();
@@ -117,6 +125,48 @@ export function PasswordSection({
       showError("오류", authError.message);
     }
   };
+
+  // 소셜 로그인 사용자 UI
+  if (socialUserInfo?.isSocialUser) {
+    return (
+      <Card>
+        <AccountCardHeader
+          icon={Shield}
+          title={PAGE_HEADER.PASSWORD_CHANGE_TITLE}
+          description={PAGE_HEADER.PASSWORD_CHANGE_DESCRIPTION}
+        />
+        <CardContent>
+          <div className="text-center py-10">
+            <div className="mx-auto w-16 h-16 bg-blue-50 dark:bg-blue-950/50 rounded-full flex items-center justify-center mb-4 relative">
+              <Shield className="h-8 w-8 text-blue-600 dark:text-blue-400" />
+              <div className="absolute -top-1 -right-1 w-4 h-4 bg-blue-500 rounded-full flex items-center justify-center">
+                <span className="text-xs text-white">✓</span>
+              </div>
+            </div>
+            <h3 className="text-lg sm:text-xl font-semibold mb-2 text-blue-800 dark:text-blue-200">
+              {LABELS.SOCIAL_LOGIN_ACCOUNT}
+            </h3>
+            <p className="text-sm sm:text-base text-muted-foreground mb-6 max-w-sm mx-auto">
+              {socialUserInfo.socialProvider === "google" &&
+                SOCIAL_LOGIN_MESSAGES.GOOGLE_LOGIN}
+              {socialUserInfo.socialProvider === "kakao" &&
+                SOCIAL_LOGIN_MESSAGES.KAKAO_LOGIN}
+              {socialUserInfo.socialProvider !== "google" &&
+                socialUserInfo.socialProvider !== "kakao" &&
+                SOCIAL_LOGIN_MESSAGES.OTHER_LOGIN(
+                  socialUserInfo.socialProvider
+                )}
+              <br />
+              <br />
+              <span className="font-medium text-blue-600 dark:text-blue-400">
+                {LABELS.SOCIAL_PASSWORD_CHANGE_GUIDE}
+              </span>
+            </p>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <Card>

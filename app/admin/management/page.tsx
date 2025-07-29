@@ -23,11 +23,11 @@ export default function SystemManagementPage() {
   // 프로필 로딩 중일 때는 스켈레톤 표시
   if (profileLoading) {
     return (
-      <div className="flex-1 space-y-6 sm:space-y-8 lg:space-y-10 p-4 sm:p-6 lg:p-8">
+      <div className="flex-1 space-y-4 md:space-y-6 px-4 md:px-6 lg:px-8 pt-3 pb-4 md:pb-6 lg:pb-8">
         <PageHeader
           title={PAGE_HEADER.PAGE_TITLE}
           description={PAGE_HEADER.PAGE_DESCRIPTION}
-          breadcrumbs={[{ label: PAGE_HEADER.BREADCRUMB }]}
+          icon={Shield}
         />
         <CardSkeleton count={4} />
       </div>
@@ -51,11 +51,11 @@ export default function SystemManagementPage() {
       title={ERROR_CONFIGS.LOADING.title}
       description={ERROR_CONFIGS.LOADING.description}
     >
-      <div className="flex-1 space-y-6 sm:space-y-8 lg:space-y-10 p-4 sm:p-6 lg:p-8">
+      <div className="flex-1 space-y-4 md:space-y-6 px-4 md:px-6 lg:px-8 pt-3 pb-4 md:pb-6 lg:pb-8">
         <PageHeader
           title={PAGE_HEADER.PAGE_TITLE}
           description={PAGE_HEADER.PAGE_DESCRIPTION}
-          breadcrumbs={[{ label: PAGE_HEADER.BREADCRUMB }]}
+          icon={Shield}
         />
 
         <div className="space-y-6">
