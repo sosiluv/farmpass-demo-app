@@ -90,14 +90,17 @@ export function ChartCard({
           <div className="space-y-1 flex-1">
             <CardTitle
               className={cn(
-                "text-sm font-medium leading-none tracking-tight",
+                "text-base sm:text-lg md:text-xl font-medium leading-none tracking-tight",
                 titleClassName || styles.title
               )}
             >
               {title}
             </CardTitle>
             <CardDescription
-              className={cn("text-xs leading-relaxed", styles.description)}
+              className={cn(
+                "text-sm sm:text-base leading-relaxed",
+                styles.description
+              )}
             >
               {description}
             </CardDescription>

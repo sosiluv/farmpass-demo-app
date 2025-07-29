@@ -36,7 +36,7 @@ export function CleanupActions({
         <AlertDialogTrigger asChild>
           <Button
             variant="outline"
-            className="flex-1"
+            className="flex-1 text-sm sm:text-base"
             disabled={
               cleanupLoading || cleanupStatus.expiredData.systemLogs.count === 0
             }
@@ -53,7 +53,7 @@ export function CleanupActions({
               </>
             )}
             {cleanupStatus.expiredData.systemLogs.count > 0 && (
-              <Badge variant="secondary" className="ml-2">
+              <Badge variant="secondary" className="ml-2 text-sm sm:text-base">
                 {LABELS.COUNT_UNIT.replace(
                   "{count}",
                   cleanupStatus.expiredData.systemLogs.count.toString()
@@ -64,12 +64,12 @@ export function CleanupActions({
         </AlertDialogTrigger>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>
+            <AlertDialogTitle className="text-base sm:text-lg md:text-xl">
               {PAGE_HEADER.CLEANUP_SYSTEM_LOGS_CONFIRM_TITLE}
             </AlertDialogTitle>
             <AlertDialogDescription asChild>
               <div>
-                <div className="text-sm mb-3">
+                <div className="text-sm sm:text-base mb-3">
                   <strong className="text-orange-600">
                     {LABELS.COUNT_UNIT.replace(
                       "{count}",
@@ -81,11 +81,11 @@ export function CleanupActions({
                 <div className="bg-orange-50 border border-orange-200 rounded-lg p-3">
                   <div className="flex items-start gap-2">
                     <AlertTriangle className="h-4 w-4 text-orange-500 mt-0.5 flex-shrink-0" />
-                    <div className="text-sm text-orange-700">
+                    <div className="text-sm sm:text-base text-orange-700">
                       <div className="font-medium mb-1">
                         {LABELS.CLEANUP_DELETE_DATA_TITLE}
                       </div>
-                      <ul className="list-disc list-inside space-y-1 text-xs">
+                      <ul className="list-disc list-inside space-y-1 text-sm sm:text-base">
                         <li>
                           {LABELS.CLEANUP_SYSTEM_LOGS_DELETE.replace(
                             "{date}",
@@ -103,13 +103,16 @@ export function CleanupActions({
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={cleanupLoading}>
+            <AlertDialogCancel
+              disabled={cleanupLoading}
+              className="text-sm sm:text-base"
+            >
               {BUTTONS.CLEANUP_CANCEL}
             </AlertDialogCancel>
             <AlertDialogAction
               onClick={() => onCleanupRequest("system_logs")}
               disabled={cleanupLoading}
-              className="bg-orange-600 hover:bg-orange-700"
+              className="bg-orange-600 hover:bg-orange-700 text-sm sm:text-base"
             >
               {cleanupLoading ? (
                 <>
@@ -131,7 +134,7 @@ export function CleanupActions({
         <AlertDialogTrigger asChild>
           <Button
             variant="destructive"
-            className="flex-1"
+            className="flex-1 text-sm sm:text-base"
             disabled={
               cleanupLoading ||
               (cleanupStatus.expiredData.systemLogs.count === 0 &&
@@ -150,7 +153,7 @@ export function CleanupActions({
               </>
             )}
             {totalExpiredCount > 0 && (
-              <Badge variant="secondary" className="ml-2">
+              <Badge variant="secondary" className="ml-2 text-sm sm:text-base">
                 {LABELS.COUNT_UNIT.replace(
                   "{count}",
                   totalExpiredCount.toString()
@@ -161,22 +164,22 @@ export function CleanupActions({
         </AlertDialogTrigger>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>
+            <AlertDialogTitle className="text-base sm:text-lg md:text-xl">
               {PAGE_HEADER.CLEANUP_ALL_DATA_CONFIRM_TITLE}
             </AlertDialogTitle>
             <AlertDialogDescription asChild>
               <div>
-                <div className="text-sm mb-3">
+                <div className="text-sm sm:text-base mb-3">
                   {PAGE_HEADER.CLEANUP_ALL_DATA_CONFIRM_DESC}
                 </div>
                 <div className="bg-red-50 border border-red-200 rounded-lg p-3">
                   <div className="flex items-start gap-2">
                     <AlertTriangle className="h-4 w-4 text-red-500 mt-0.5 flex-shrink-0" />
-                    <div className="text-sm text-red-700">
+                    <div className="text-sm sm:text-base text-red-700">
                       <div className="font-medium mb-1">
                         {LABELS.CLEANUP_DELETE_DATA_TITLE}
                       </div>
-                      <ul className="list-disc list-inside space-y-1 text-xs">
+                      <ul className="list-disc list-inside space-y-1 text-sm sm:text-base">
                         <li>
                           {LABELS.CLEANUP_VISITOR_DATA_DELETE.replace(
                             "{count}",
@@ -200,13 +203,16 @@ export function CleanupActions({
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={cleanupLoading}>
+            <AlertDialogCancel
+              disabled={cleanupLoading}
+              className="text-sm sm:text-base"
+            >
               {BUTTONS.CLEANUP_CANCEL}
             </AlertDialogCancel>
             <AlertDialogAction
               onClick={() => onCleanupRequest("all")}
               disabled={cleanupLoading}
-              className="bg-red-600 hover:bg-red-700"
+              className="bg-red-600 hover:bg-red-700 text-sm sm:text-base"
             >
               {cleanupLoading ? (
                 <>

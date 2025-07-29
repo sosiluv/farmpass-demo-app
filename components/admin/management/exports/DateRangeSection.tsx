@@ -32,7 +32,7 @@ export function DateRangeSection({
   return (
     <Card className={`border ${colorClasses[color]}`}>
       <CardHeader className="pb-1.5 sm:pb-2 md:pb-3">
-        <CardTitle className="flex items-center space-x-1.5 sm:space-x-2 text-xs sm:text-sm md:text-base">
+        <CardTitle className="flex items-center space-x-1.5 sm:space-x-2 text-sm sm:text-base md:text-lg">
           <Calendar className="h-3 w-3 sm:h-4 sm:w-4" />
           <span>{title}</span>
         </CardTitle>
@@ -40,25 +40,25 @@ export function DateRangeSection({
       <CardContent className="space-y-2 sm:space-y-3 pt-0">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3">
           <div className="space-y-1 sm:space-y-1.5">
-            <Label className="text-[10px] sm:text-xs md:text-sm font-medium">
+            <Label className="text-xs sm:text-sm md:text-base font-medium">
               {LABELS.START_DATE}
             </Label>
             <Input
               type="date"
               value={startDate}
               onChange={(e) => onStartDateChange(e.target.value)}
-              className="h-7 sm:h-8 md:h-9 text-[10px] sm:text-xs md:text-sm"
+              className="h-7 sm:h-8 md:h-9 text-xs sm:text-sm md:text-base"
             />
           </div>
           <div className="space-y-1 sm:space-y-1.5">
-            <Label className="text-[10px] sm:text-xs md:text-sm font-medium">
+            <Label className="text-xs sm:text-sm md:text-base font-medium">
               {LABELS.END_DATE}
             </Label>
             <Input
               type="date"
               value={endDate}
               onChange={(e) => onEndDateChange(e.target.value)}
-              className="h-7 sm:h-8 md:h-9 text-[10px] sm:text-xs md:text-sm"
+              className="h-7 sm:h-8 md:h-9 text-xs sm:text-sm md:text-base"
             />
           </div>
         </div>

@@ -80,11 +80,11 @@ export function LogDetailModal({ log, isOpen, onClose }: LogDetailModalProps) {
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="w-[95vw] max-w-[350px] sm:max-w-[500px] md:max-w-[600px] lg:max-w-[700px] xl:max-w-[900px] max-h-[90vh] sm:max-h-[85vh] overflow-hidden p-3 sm:p-4 md:p-6">
         <DialogHeader className="space-y-2">
-          <DialogTitle className="flex items-center gap-2 text-base sm:text-lg">
+          <DialogTitle className="flex items-center gap-2 text-base sm:text-lg md:text-xl">
             <Activity className="h-4 w-4 sm:h-5 sm:w-5" />
             {LABELS.LOG_DETAIL_TITLE}
           </DialogTitle>
-          <DialogDescription className="text-xs sm:text-sm text-muted-foreground">
+          <DialogDescription className="text-sm sm:text-base text-muted-foreground">
             {LABELS.LOG_DETAIL_DESCRIPTION}
           </DialogDescription>
         </DialogHeader>
@@ -95,22 +95,19 @@ export function LogDetailModal({ log, isOpen, onClose }: LogDetailModalProps) {
               <div className="flex flex-wrap items-center gap-1 sm:gap-1.5 md:gap-2">
                 <Badge
                   variant="outline"
-                  className={`${levelConfig.className} text-[10px] sm:text-xs md:text-sm`}
+                  className={`${levelConfig.className} text-xs sm:text-sm`}
                 >
                   <Icon className="h-2 w-2 sm:h-3 sm:w-3 mr-1" />
                   {levelConfig.label}
                 </Badge>
                 {log.resource_type && (
-                  <Badge
-                    variant="secondary"
-                    className="text-[10px] sm:text-xs md:text-sm"
-                  >
+                  <Badge variant="secondary" className="text-xs sm:text-sm">
                     {LABELS.LOG_CATEGORY_LABELS[
                       log.resource_type as keyof typeof LABELS.LOG_CATEGORY_LABELS
                     ] || log.resource_type}
                   </Badge>
                 )}
-                <div className="flex items-center text-[10px] sm:text-xs md:text-sm text-muted-foreground">
+                <div className="flex items-center text-xs sm:text-sm text-muted-foreground">
                   <Calendar className="h-2 w-2 sm:h-3 sm:w-3 md:h-4 md:w-4 mr-1" />
                   <span className="break-all">
                     {formatDateTime(log.created_at)}
@@ -118,7 +115,7 @@ export function LogDetailModal({ log, isOpen, onClose }: LogDetailModalProps) {
                 </div>
               </div>
               <div className="p-2 sm:p-3 md:p-4 bg-muted rounded-lg">
-                <p className="text-xs sm:text-sm md:text-base font-medium break-words whitespace-pre-wrap">
+                <p className="text-sm sm:text-base font-medium break-words whitespace-pre-wrap">
                   {log.message}
                 </p>
               </div>
@@ -129,40 +126,42 @@ export function LogDetailModal({ log, isOpen, onClose }: LogDetailModalProps) {
             {/* 사용자 정보 */}
             {(log.user_email || log.user_ip || log.user_agent) && (
               <div className="space-y-2 sm:space-y-3">
-                <h4 className="text-xs sm:text-sm md:text-base font-medium flex items-center gap-2">
+                <h4 className="text-sm sm:text-base font-medium flex items-center gap-2">
                   <User className="h-3 w-3 sm:h-4 sm:w-4" />
                   {LABELS.USER_INFO}
                 </h4>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-2 sm:gap-3 text-[10px] sm:text-xs md:text-sm">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-2 sm:gap-3">
                   {log.user_email && (
                     <div className="p-2 sm:p-3 bg-muted rounded-lg">
-                      <span className="text-muted-foreground font-medium">
+                      <span className="text-muted-foreground font-medium text-sm sm:text-base">
                         {LABELS.EMAIL}
                       </span>
-                      <p className="font-medium mt-1 break-all">
+                      <p className="font-medium mt-1 break-all text-sm sm:text-base">
                         {log.user_email}
                       </p>
                     </div>
                   )}
                   {log.user_ip && (
                     <div className="p-2 sm:p-3 bg-muted rounded-lg">
-                      <span className="text-muted-foreground font-medium">
+                      <span className="text-muted-foreground font-medium text-sm sm:text-base">
                         {LABELS.IP_ADDRESS}
                       </span>
                       <div className="flex items-center gap-1 sm:gap-1.5 md:gap-2 mt-1">
                         <Globe className="h-2 w-2 sm:h-3 sm:w-3 md:h-4 md:w-4 flex-shrink-0" />
-                        <span className="font-medium">{log.user_ip}</span>
+                        <span className="font-medium text-sm sm:text-base">
+                          {log.user_ip}
+                        </span>
                       </div>
                     </div>
                   )}
                   {log.user_agent && (
                     <div className="p-2 sm:p-3 bg-muted rounded-lg col-span-full">
-                      <span className="text-muted-foreground font-medium">
+                      <span className="text-muted-foreground font-medium text-sm sm:text-base">
                         {LABELS.USER_AGENT}
                       </span>
                       <div className="flex items-start gap-1 sm:gap-1.5 md:gap-2 mt-1">
                         <Monitor className="h-2 w-2 sm:h-3 sm:w-3 md:h-4 md:w-4 mt-0.5 flex-shrink-0" />
-                        <span className="font-medium break-all">
+                        <span className="font-medium break-all text-sm sm:text-base">
                           {log.user_agent}
                         </span>
                       </div>
@@ -177,17 +176,17 @@ export function LogDetailModal({ log, isOpen, onClose }: LogDetailModalProps) {
               <>
                 <Separator className="my-2 sm:my-3 md:my-4" />
                 <div className="space-y-2 sm:space-y-3">
-                  <h4 className="text-xs sm:text-sm md:text-base font-medium flex items-center gap-2">
+                  <h4 className="text-sm sm:text-base font-medium flex items-center gap-2">
                     <Activity className="h-3 w-3 sm:h-4 sm:w-4" />
                     {LABELS.RESOURCE_INFO}
                   </h4>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2 sm:gap-3 text-[10px] sm:text-xs md:text-sm">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2 sm:gap-3">
                     {log.resource_type && (
                       <div className="p-2 sm:p-3 bg-muted rounded-lg">
-                        <span className="text-muted-foreground font-medium">
+                        <span className="text-muted-foreground font-medium text-sm sm:text-base">
                           {LABELS.RESOURCE_TYPE}
                         </span>
-                        <p className="font-medium mt-1">
+                        <p className="font-medium mt-1 text-sm sm:text-base">
                           {LABELS.LOG_CATEGORY_LABELS[
                             log.resource_type as keyof typeof LABELS.LOG_CATEGORY_LABELS
                           ] || log.resource_type}
@@ -196,10 +195,10 @@ export function LogDetailModal({ log, isOpen, onClose }: LogDetailModalProps) {
                     )}
                     {log.resource_id && (
                       <div className="p-2 sm:p-3 bg-muted rounded-lg">
-                        <span className="text-muted-foreground font-medium">
+                        <span className="text-muted-foreground font-medium text-sm sm:text-base">
                           {LABELS.RESOURCE_ID}
                         </span>
-                        <p className="font-medium mt-1 break-all">
+                        <p className="font-medium mt-1 break-all text-sm sm:text-base">
                           {log.resource_id}
                         </p>
                       </div>
@@ -214,12 +213,12 @@ export function LogDetailModal({ log, isOpen, onClose }: LogDetailModalProps) {
               <>
                 <Separator className="my-2 sm:my-3 md:my-4" />
                 <div className="space-y-2 sm:space-y-3">
-                  <h4 className="text-xs sm:text-sm md:text-base font-medium flex items-center gap-2">
+                  <h4 className="text-sm sm:text-base font-medium flex items-center gap-2">
                     <Info className="h-3 w-3 sm:h-4 sm:w-4" />
                     {LABELS.ADDITIONAL_INFO}
                   </h4>
                   <div className="p-2 sm:p-3 bg-muted rounded-lg">
-                    <pre className="text-[10px] sm:text-xs md:text-sm font-mono whitespace-pre-wrap break-all">
+                    <pre className="text-xs sm:text-sm font-mono whitespace-pre-wrap break-all">
                       {JSON.stringify(log.metadata, null, 2)}
                     </pre>
                   </div>

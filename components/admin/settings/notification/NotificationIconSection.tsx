@@ -98,7 +98,7 @@ const NotificationIconSection = React.memo(function NotificationIconSection({
             <div className="border-2 border-dashed border-blue-200 bg-blue-50/50 rounded-lg p-4 sm:p-6 space-y-3 sm:space-y-4">
               <div className="flex items-center gap-2 text-blue-700">
                 <Bell className="h-5 w-5" />
-                <span className="font-medium">
+                <span className="font-medium text-sm sm:text-base">
                   {LABELS.NOTIFICATION_ICON_LABEL}
                 </span>
               </div>
@@ -114,7 +114,7 @@ const NotificationIconSection = React.memo(function NotificationIconSection({
                   hideGuidelines={false}
                 />
               </div>
-              <div className="text-sm text-blue-600/80 space-y-1 text-center">
+              <div className="text-sm sm:text-base text-blue-600/80 space-y-1 text-center">
                 <p>{LABELS.NOTIFICATION_ICON_DESC}</p>
               </div>
             </div>
@@ -124,7 +124,7 @@ const NotificationIconSection = React.memo(function NotificationIconSection({
             <div className="border-2 border-dashed border-orange-200 bg-orange-50/50 rounded-lg p-4 sm:p-6 space-y-3 sm:space-y-4">
               <div className="flex items-center gap-2 text-orange-700">
                 <BadgeCheck className="h-5 w-5" />
-                <span className="font-medium">
+                <span className="font-medium text-sm sm:text-base">
                   {LABELS.NOTIFICATION_BADGE_LABEL}
                 </span>
               </div>
@@ -140,7 +140,7 @@ const NotificationIconSection = React.memo(function NotificationIconSection({
                   hideGuidelines={false}
                 />
               </div>
-              <div className="text-sm text-orange-600/80 space-y-1 text-center">
+              <div className="text-sm sm:text-base text-orange-600/80 space-y-1 text-center">
                 <p>{LABELS.NOTIFICATION_BADGE_DESC}</p>
               </div>
             </div>

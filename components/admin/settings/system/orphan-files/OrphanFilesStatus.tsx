@@ -14,7 +14,7 @@ export function OrphanFilesStatus({
     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
       <div className="space-y-2">
         <div className="flex items-center justify-between">
-          <Label className="text-sm font-medium">
+          <Label className="text-sm sm:text-base font-medium">
             {LABELS.ORPHAN_FILES_VISITOR_IMAGES}
           </Label>
         </div>
@@ -28,6 +28,7 @@ export function OrphanFilesStatus({
                     ? "destructive"
                     : "default"
                 }
+                className="text-sm sm:text-base"
               >
                 {LABELS.ORPHAN_FILES_STORAGE_ORPHAN.replace(
                   "{count}",
@@ -35,7 +36,7 @@ export function OrphanFilesStatus({
                 )}
               </Badge>
             </div>
-            <span className="text-xs text-muted-foreground mt-1">
+            <span className="text-sm sm:text-base text-muted-foreground mt-1">
               {orphanFilesStatus.visitorOrphanCount === 0
                 ? LABELS.ORPHAN_FILES_NO_STORAGE_ORPHAN
                 : LABELS.ORPHAN_FILES_STORAGE_ORPHAN_DESC}
@@ -50,6 +51,7 @@ export function OrphanFilesStatus({
                     ? "destructive"
                     : "default"
                 }
+                className="text-sm sm:text-base"
               >
                 {LABELS.ORPHAN_FILES_DB_ORPHAN.replace(
                   "{count}",
@@ -57,7 +59,7 @@ export function OrphanFilesStatus({
                 )}
               </Badge>
             </div>
-            <span className="text-xs text-muted-foreground mt-1">
+            <span className="text-sm sm:text-base text-muted-foreground mt-1">
               {orphanFilesStatus.visitorDbOrphanCount === 0
                 ? LABELS.ORPHAN_FILES_NO_DB_ORPHAN
                 : LABELS.ORPHAN_FILES_DB_ORPHAN_DESC}
@@ -68,7 +70,7 @@ export function OrphanFilesStatus({
 
       <div className="space-y-2">
         <div className="flex items-center justify-between">
-          <Label className="text-sm font-medium">
+          <Label className="text-sm sm:text-base font-medium">
             {LABELS.ORPHAN_FILES_PROFILE_IMAGES}
           </Label>
         </div>
@@ -82,6 +84,7 @@ export function OrphanFilesStatus({
                     ? "destructive"
                     : "default"
                 }
+                className="text-sm sm:text-base"
               >
                 {LABELS.ORPHAN_FILES_STORAGE_ORPHAN.replace(
                   "{count}",
@@ -89,7 +92,7 @@ export function OrphanFilesStatus({
                 )}
               </Badge>
             </div>
-            <span className="text-xs text-muted-foreground mt-1">
+            <span className="text-sm sm:text-base text-muted-foreground mt-1">
               {orphanFilesStatus.profileOrphanCount === 0
                 ? LABELS.ORPHAN_FILES_NO_STORAGE_ORPHAN
                 : LABELS.ORPHAN_FILES_STORAGE_ORPHAN_PROFILE_DESC}
@@ -104,6 +107,7 @@ export function OrphanFilesStatus({
                     ? "destructive"
                     : "default"
                 }
+                className="text-sm sm:text-base"
               >
                 {LABELS.ORPHAN_FILES_DB_ORPHAN.replace(
                   "{count}",
@@ -111,7 +115,7 @@ export function OrphanFilesStatus({
                 )}
               </Badge>
             </div>
-            <span className="text-xs text-muted-foreground mt-1">
+            <span className="text-sm sm:text-base text-muted-foreground mt-1">
               {orphanFilesStatus.profileDbOrphanCount === 0
                 ? LABELS.ORPHAN_FILES_NO_DB_ORPHAN
                 : LABELS.ORPHAN_FILES_DB_ORPHAN_PROFILE_DESC}

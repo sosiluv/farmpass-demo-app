@@ -102,7 +102,10 @@ const VapidKeySection = React.memo(function VapidKeySection({
       />
       <CardContent className="space-y-4">
         <div className="grid gap-2">
-          <Label htmlFor="vapidPublicKey">
+          <Label
+            htmlFor="vapidPublicKey"
+            className="text-sm sm:text-base font-medium"
+          >
             {LABELS.VAPID_PUBLIC_KEY_LABEL}
           </Label>
           <div className="flex gap-2">
@@ -113,7 +116,7 @@ const VapidKeySection = React.memo(function VapidKeySection({
                 value={settings.vapidPublicKey || ""}
                 readOnly
                 disabled
-                className="pr-10 bg-muted/50 text-muted-foreground cursor-not-allowed"
+                className="pr-10 bg-muted/50 text-muted-foreground cursor-not-allowed text-sm sm:text-base"
               />
               <Button
                 type="button"
@@ -134,6 +137,7 @@ const VapidKeySection = React.memo(function VapidKeySection({
               variant="outline"
               onClick={handleGenerateKeys}
               disabled={isLoading}
+              className="text-sm sm:text-base"
             >
               {BUTTONS.VAPID_GENERATE_BUTTON}
             </Button>
@@ -141,7 +145,10 @@ const VapidKeySection = React.memo(function VapidKeySection({
         </div>
 
         <div className="grid gap-2">
-          <Label htmlFor="vapidPrivateKey">
+          <Label
+            htmlFor="vapidPrivateKey"
+            className="text-sm sm:text-base font-medium"
+          >
             {LABELS.VAPID_PRIVATE_KEY_LABEL}
           </Label>
           <div className="relative">
@@ -152,7 +159,7 @@ const VapidKeySection = React.memo(function VapidKeySection({
               value={settings.vapidPrivateKey || ""}
               readOnly
               disabled
-              className="pr-10 bg-muted/50 text-muted-foreground cursor-not-allowed font-mono"
+              className="pr-10 bg-muted/50 text-muted-foreground cursor-not-allowed font-mono text-sm sm:text-base"
             />
             <Button
               type="button"
@@ -173,8 +180,10 @@ const VapidKeySection = React.memo(function VapidKeySection({
 
         <Alert>
           <AlertTriangle className="h-4 w-4" />
-          <AlertTitle>{LABELS.VAPID_SECURITY_TITLE}</AlertTitle>
-          <AlertDescription>
+          <AlertTitle className="text-sm sm:text-base">
+            {LABELS.VAPID_SECURITY_TITLE}
+          </AlertTitle>
+          <AlertDescription className="text-sm sm:text-base">
             {LABELS.VAPID_SECURITY_DESCRIPTION}
           </AlertDescription>
         </Alert>

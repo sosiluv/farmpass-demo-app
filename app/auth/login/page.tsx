@@ -47,6 +47,7 @@ import {
 } from "@/lib/constants/auth";
 import { createClient } from "@/lib/supabase/client";
 import { useAuthActions } from "@/hooks/useAuthActions";
+import { useSubscriptionManager } from "@/hooks/useSubscriptionManager";
 
 export default function LoginPage() {
   const [loading, setLoading] = useState(false);
@@ -58,6 +59,7 @@ export default function LoginPage() {
   const router = useRouter();
   const { showInfo, showSuccess, showError } = useCommonToast();
   const { signIn, signOut } = useAuthActions();
+  const { cleanupSubscription } = useSubscriptionManager();
 
   const form = useForm<LoginFormData>({
     resolver: zodResolver(loginFormSchema),
@@ -105,7 +107,6 @@ export default function LoginPage() {
               return;
             } catch (userError) {
               devLog.warn("사용자 정보 검증 중 오류:", userError);
-              await signOut();
               setCheckingSession(false);
               return;
             }
@@ -126,9 +127,24 @@ export default function LoginPage() {
     const sessionExpired = urlParams.get("session_expired");
 
     if (sessionExpired === "true") {
-      devLog.log("[LOGIN] 세션 만료로 인한 로그인 페이지 진입 - 구독은 유지");
+      devLog.log(
+        "[LOGIN] 세션 만료로 인한 로그인 페이지 진입 - 구독 해제 수행"
+      );
 
-      // URL에서 파라미터 제거 (구독 관련 처리는 하지 않음)
+      // 세션 만료 시 브라우저 구독 해제 수행
+      const handleSessionExpiredCleanup = async () => {
+        try {
+          await cleanupSubscription();
+          devLog.log("[LOGIN] 세션 만료로 인한 구독 해제 완료");
+        } catch (error) {
+          devLog.error("[LOGIN] 세션 만료 시 구독 해제 실패:", error);
+        }
+      };
+
+      // 구독 해제 실행
+      handleSessionExpiredCleanup();
+
+      // URL에서 파라미터 제거
       const newUrl = new URL(window.location.href);
       newUrl.searchParams.delete("session_expired");
       window.history.replaceState({}, "", newUrl.toString());

@@ -39,12 +39,12 @@ export function OptionsSection({
   return (
     <Card className={`border ${colorClasses[color]}`}>
       <CardHeader className="pb-1.5 sm:pb-2 md:pb-3">
-        <CardTitle className="flex items-center justify-between text-xs sm:text-sm md:text-base">
+        <CardTitle className="flex items-center justify-between text-sm sm:text-base md:text-lg">
           <div className="flex items-center space-x-1.5 sm:space-x-2">
             <Settings className="h-3 w-3 sm:h-4 sm:w-4" />
             <span>{title}</span>
           </div>
-          <Badge variant="secondary" className="text-[10px] sm:text-xs">
+          <Badge variant="secondary" className="text-xs sm:text-sm">
             {LABELS.SELECTED_COUNT.replace(
               "{selectedCount}",
               selectedCount.toString()
@@ -68,12 +68,12 @@ export function OptionsSection({
               <div className="space-y-0.5">
                 <Label
                   htmlFor={option.key}
-                  className="text-[10px] sm:text-xs md:text-sm font-medium cursor-pointer"
+                  className="text-xs sm:text-sm md:text-base font-medium cursor-pointer"
                 >
                   {option.label}
                 </Label>
                 {option.description && (
-                  <p className="text-[8px] sm:text-[10px] md:text-xs text-muted-foreground">
+                  <p className="text-xs sm:text-sm md:text-base text-muted-foreground">
                     {option.description}
                   </p>
                 )}

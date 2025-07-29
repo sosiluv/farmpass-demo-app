@@ -41,6 +41,7 @@ export function OrphanFilesSection({
             size="sm"
             onClick={onRefreshStatus}
             disabled={statusLoading}
+            className="text-sm sm:text-base"
           >
             <RotateCcw
               className={`h-4 w-4 mr-2 ${statusLoading ? "animate-spin" : ""}`}

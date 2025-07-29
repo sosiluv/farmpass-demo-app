@@ -4,6 +4,7 @@ import { handleError } from "@/lib/utils/error";
 import { devLog } from "@/lib/utils/logging/dev-logger";
 import { logout } from "@/lib/utils/auth/authService";
 import { useSubscriptionManager } from "@/hooks/useSubscriptionManager";
+import { useRef } from "react";
 /**
  * 로그인 액션 훅
  */
@@ -59,8 +60,17 @@ export function useSignIn() {
  */
 export function useSignOut() {
   const { cleanupSubscription } = useSubscriptionManager();
+  const isLoggingOutRef = useRef(false);
 
   const signOut = async (): Promise<{ success: boolean }> => {
+    // 이미 로그아웃 중이면 스킵
+    if (isLoggingOutRef.current) {
+      devLog.warn("로그아웃이 이미 진행 중입니다.");
+      return { success: false };
+    }
+
+    isLoggingOutRef.current = true;
+
     try {
       // 타임아웃 설정 (10초)
       const timeoutPromise = new Promise((_, reject) => {
@@ -95,6 +105,9 @@ export function useSignOut() {
       handleError(error, { context: "sign-out" });
       await logout(true); // 강제 로그아웃으로 로컬 스토리지와 쿠키 정리
       return { success: false };
+    } finally {
+      // 로그아웃 완료 후 플래그 리셋
+      isLoggingOutRef.current = false;
     }
   };
 

@@ -42,10 +42,13 @@ const NotificationBehaviorSection = React.memo(
           {NOTIFICATION_BEHAVIOR_TOGGLES.map((config) => (
             <div key={config.id} className="flex items-center justify-between">
               <div className="space-y-0.5">
-                <Label htmlFor={config.id} className="text-sm font-medium">
+                <Label
+                  htmlFor={config.id}
+                  className="text-sm sm:text-base font-medium"
+                >
                   {config.label}
                 </Label>
-                <p className="text-xs text-muted-foreground">
+                <p className="text-sm sm:text-base text-muted-foreground">
                   {config.description}
                 </p>
               </div>

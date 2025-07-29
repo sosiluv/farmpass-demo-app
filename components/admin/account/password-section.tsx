@@ -145,7 +145,7 @@ export function PasswordSection({
               name="currentPassword"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className="text-sm text-gray-800">
+                  <FormLabel className="text-sm sm:text-base font-medium">
                     {LABELS.CURRENT_PASSWORD}{" "}
                     <span className="text-red-500">*</span>
                   </FormLabel>
@@ -157,7 +157,7 @@ export function PasswordSection({
                         type="password"
                         placeholder={PLACEHOLDERS.CURRENT_PASSWORD_PLACEHOLDER}
                         autoComplete="current-password"
-                        className="h-10 pl-10"
+                        className="h-10 pl-10 text-sm sm:text-base"
                         disabled={loading}
                       />
                     </FormControl>
@@ -172,7 +172,7 @@ export function PasswordSection({
               name="newPassword"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className="text-sm text-gray-800">
+                  <FormLabel className="text-sm sm:text-base font-medium">
                     {AUTH_LABELS.PASSWORD}{" "}
                     <span className="text-red-500">*</span>
                   </FormLabel>
@@ -184,7 +184,7 @@ export function PasswordSection({
                         type="password"
                         placeholder={AUTH_PLACEHOLDERS.PASSWORD}
                         autoComplete="new-password"
-                        className="h-10 pl-10"
+                        className="h-10 pl-10 text-sm sm:text-base"
                         disabled={loading}
                       />
                     </FormControl>
@@ -200,7 +200,7 @@ export function PasswordSection({
               name="confirmPassword"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className="text-sm text-gray-800">
+                  <FormLabel className="text-sm sm:text-base font-medium">
                     {AUTH_LABELS.CONFIRM_PASSWORD}{" "}
                     <span className="text-red-500">*</span>
                   </FormLabel>
@@ -212,7 +212,7 @@ export function PasswordSection({
                         type="password"
                         placeholder={AUTH_PLACEHOLDERS.CONFIRM_PASSWORD}
                         autoComplete="new-password"
-                        className="h-10 pl-10"
+                        className="h-10 pl-10 text-sm sm:text-base"
                         disabled={loading}
                       />
                     </FormControl>
@@ -226,6 +226,7 @@ export function PasswordSection({
               <Button
                 type="submit"
                 disabled={loading || !form.formState.isValid}
+                className="text-sm sm:text-base"
               >
                 {loading ? (
                   <>

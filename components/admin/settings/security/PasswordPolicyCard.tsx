@@ -55,7 +55,10 @@ export default function PasswordPolicyCard({
       <CardContent className="space-y-4">
         <div className="grid gap-4">
           <div className="space-y-2">
-            <Label htmlFor="passwordMinLength">
+            <Label
+              htmlFor="passwordMinLength"
+              className="text-sm sm:text-base font-medium"
+            >
               {PLACEHOLDERS.PASSWORD_MIN_LENGTH}
             </Label>
             <Input
@@ -80,17 +83,21 @@ export default function PasswordPolicyCard({
               }
               onFocus={passwordMinLength.handleFocus}
               disabled={isLoading}
+              className="text-sm sm:text-base"
             />
-            <p className="text-sm text-muted-foreground">
+            <p className="text-sm sm:text-base text-muted-foreground">
               {LABELS.PASSWORD_MIN_LENGTH_DESC}
             </p>
           </div>
           <div className="flex items-center justify-between">
             <div className="space-y-0.5">
-              <Label htmlFor="passwordRequireSpecialChar">
+              <Label
+                htmlFor="passwordRequireSpecialChar"
+                className="text-sm sm:text-base font-medium"
+              >
                 {LABELS.PASSWORD_SPECIAL_CHAR}
               </Label>
-              <p className="text-sm text-muted-foreground">
+              <p className="text-sm sm:text-base text-muted-foreground">
                 {LABELS.PASSWORD_SPECIAL_CHAR_DESC}
               </p>
             </div>
@@ -105,10 +112,13 @@ export default function PasswordPolicyCard({
           </div>
           <div className="flex items-center justify-between">
             <div className="space-y-0.5">
-              <Label htmlFor="passwordRequireNumber">
+              <Label
+                htmlFor="passwordRequireNumber"
+                className="text-sm sm:text-base font-medium"
+              >
                 {LABELS.PASSWORD_NUMBER}
               </Label>
-              <p className="text-sm text-muted-foreground">
+              <p className="text-sm sm:text-base text-muted-foreground">
                 {LABELS.PASSWORD_NUMBER_DESC}
               </p>
             </div>
@@ -123,10 +133,13 @@ export default function PasswordPolicyCard({
           </div>
           <div className="flex items-center justify-between">
             <div className="space-y-0.5">
-              <Label htmlFor="passwordRequireUpperCase">
+              <Label
+                htmlFor="passwordRequireUpperCase"
+                className="text-sm sm:text-base font-medium"
+              >
                 {LABELS.PASSWORD_UPPERCASE}
               </Label>
-              <p className="text-sm text-muted-foreground">
+              <p className="text-sm sm:text-base text-muted-foreground">
                 {LABELS.PASSWORD_UPPERCASE_DESC}
               </p>
             </div>
@@ -141,10 +154,13 @@ export default function PasswordPolicyCard({
           </div>
           <div className="flex items-center justify-between">
             <div className="space-y-0.5">
-              <Label htmlFor="passwordRequireLowerCase">
+              <Label
+                htmlFor="passwordRequireLowerCase"
+                className="text-sm sm:text-base font-medium"
+              >
                 {LABELS.PASSWORD_LOWERCASE}
               </Label>
-              <p className="text-sm text-muted-foreground">
+              <p className="text-sm sm:text-base text-muted-foreground">
                 {LABELS.PASSWORD_LOWERCASE_DESC}
               </p>
             </div>

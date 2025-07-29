@@ -43,7 +43,7 @@ export function FilterSection({
   return (
     <Card className={`border ${colorClasses[color]}`}>
       <CardHeader className="pb-1.5 sm:pb-2 md:pb-3">
-        <CardTitle className="flex items-center space-x-1.5 sm:space-x-2 text-xs sm:text-sm md:text-base">
+        <CardTitle className="flex items-center space-x-1.5 sm:space-x-2 text-sm sm:text-base md:text-lg">
           <Filter className="h-3 w-3 sm:h-4 sm:w-4" />
           <span>{title}</span>
         </CardTitle>
@@ -52,11 +52,11 @@ export function FilterSection({
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3">
           {(filters || []).map((filter) => (
             <div key={filter.key} className="space-y-1 sm:space-y-1.5">
-              <Label className="text-[10px] sm:text-xs md:text-sm font-medium">
+              <Label className="text-xs sm:text-sm md:text-base font-medium">
                 {filter.label}
               </Label>
               <Select value={filter.value} onValueChange={filter.onChange}>
-                <SelectTrigger className="h-7 sm:h-8 md:h-9 text-[10px] sm:text-xs md:text-sm">
+                <SelectTrigger className="h-7 sm:h-8 md:h-9 text-xs sm:text-sm md:text-base">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>

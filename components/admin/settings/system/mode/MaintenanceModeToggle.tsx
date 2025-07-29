@@ -21,22 +21,22 @@ export function MaintenanceModeToggle({
         <div className="flex items-center gap-2">
           <Label
             htmlFor="maintenance-mode"
-            className="text-sm font-medium flex items-center gap-1"
+            className="text-sm sm:text-base font-medium flex items-center gap-1"
           >
             <Wrench className="h-4 w-4" />
             {LABELS.MAINTENANCE_MODE}
           </Label>
           {maintenanceMode && (
-            <Badge variant="destructive" className="text-xs">
+            <Badge variant="destructive" className="text-sm sm:text-base">
               {LABELS.MAINTENANCE_MODE_ACTIVE}
             </Badge>
           )}
         </div>
-        <p className="text-sm text-muted-foreground">
+        <p className="text-sm sm:text-base text-muted-foreground">
           {LABELS.MAINTENANCE_MODE_DESC}
         </p>
         {maintenanceMode && (
-          <div className="flex items-center gap-1 text-xs text-red-600 mt-1">
+          <div className="flex items-center gap-1 text-sm sm:text-base text-red-600 mt-1">
             <AlertTriangle className="h-3 w-3" />
             <span>{LABELS.MAINTENANCE_MODE_WARNING}</span>
           </div>

@@ -138,18 +138,18 @@ export function LogsTab() {
                             {/* 로그 관리 섹션 */}
                             <div className="space-y-4">
                               {/* 헤더 */}
-                              <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-1 lg:gap-3">
+                              <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3">
                                 <div>
-                                  <h3 className="flex items-center gap-1 sm:gap-2 text-base sm:text-lg font-semibold">
-                                    <FileText className="h-4 w-4 sm:h-5 sm:w-5" />
+                                  <h3 className="flex items-center gap-2 text-lg font-semibold">
+                                    <FileText className="h-5 w-5" />
                                     {LABELS.SYSTEM_LOGS_TAB}
                                   </h3>
-                                  <p className="text-xs sm:text-sm text-muted-foreground mt-0.5 sm:mt-1">
+                                  <p className="text-sm text-muted-foreground mt-1">
                                     {LABELS.SYSTEM_LOGS_TAB_DESC}
                                   </p>
                                 </div>
-                                <div className="flex flex-col lg:flex-row lg:items-center gap-1 lg:gap-4">
-                                  <div className="text-xs sm:text-sm text-muted-foreground">
+                                <div className="flex flex-col lg:flex-row lg:items-center gap-2 lg:gap-4">
+                                  <div className="text-sm text-muted-foreground">
                                     {LABELS.LAST_UPDATE_TAB.replace(
                                       "{datetime}",
                                       formatDateTime(lastUpdate)

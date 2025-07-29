@@ -38,24 +38,33 @@ export function DisplayFormatSection({
       <CardContent className="space-y-6">
         {/* 날짜 형식 */}
         <div className="space-y-2">
-          <Label htmlFor="dateFormat">{LABELS.DATE_FORMAT}</Label>
+          <Label
+            htmlFor="dateFormat"
+            className="text-sm sm:text-base font-medium"
+          >
+            {LABELS.DATE_FORMAT}
+          </Label>
           <Select
             value={settings.dateFormat}
             onValueChange={(value) => onSettingChange("dateFormat", value)}
             disabled={loading}
           >
-            <SelectTrigger id="dateFormat">
+            <SelectTrigger id="dateFormat" className="text-sm sm:text-base">
               <SelectValue placeholder={PLACEHOLDERS.DATE_FORMAT_SELECT} />
             </SelectTrigger>
             <SelectContent>
               {DATE_FORMAT_OPTIONS.map((option) => (
-                <SelectItem key={option.value} value={option.value}>
+                <SelectItem
+                  key={option.value}
+                  value={option.value}
+                  className="text-sm sm:text-base"
+                >
                   {option.label}
                 </SelectItem>
               ))}
             </SelectContent>
           </Select>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-sm sm:text-base text-muted-foreground">
             {LABELS.DATE_FORMAT_DESCRIPTION}
           </p>
         </div>

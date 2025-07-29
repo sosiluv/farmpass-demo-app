@@ -23,7 +23,9 @@ const SettingsCardHeader = React.memo(function SettingsCardHeader({
     <CardHeader>
       <div className="flex items-start justify-between">
         <div className="flex-1">
-          <CardTitle className={`flex items-center gap-2 ${titleClassName}`}>
+          <CardTitle
+            className={`flex items-center gap-2 mb-1 ${titleClassName}`}
+          >
             <Icon className={iconClassName} />
             {title}
           </CardTitle>

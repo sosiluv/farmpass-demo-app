@@ -127,7 +127,7 @@ export const PLACEHOLDERS = {
   MEMBER_EMAIL_PLACEHOLDER: "이메일 주소 입력 (최소 2글자)",
   MEMBER_ROLE_PLACEHOLDER: "역할을 선택하세요",
   // 검색
-  SEARCH: "농장 검색... (농장명, 주소)",
+  SEARCH: "농장 검색... (농장명, 주소) 입력하세요",
 } as const;
 
 // 에러 메시지

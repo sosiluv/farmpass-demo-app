@@ -64,25 +64,6 @@ export function LogFilters({
     onFiltersChange({ ...filters, endDate: date });
   };
 
-  const clearFilters = () => {
-    onFiltersChange({
-      search: "",
-      level: undefined,
-      startDate: undefined,
-      endDate: undefined,
-    });
-    onLevelFiltersChange(["all"]);
-    if (onCategoryFiltersChange) {
-      onCategoryFiltersChange(["all"]);
-    }
-  };
-
-  const hasActiveFilters =
-    filters.search ||
-    filters.startDate ||
-    filters.endDate ||
-    !levelFilters.includes("all");
-
   const levelOptions = LABELS.LOG_LEVEL_OPTIONS;
 
   const selectedLevelCount = levelFilters.includes("all")
@@ -90,14 +71,14 @@ export function LogFilters({
     : levelFilters.length;
 
   const datePickers = (
-    <div className="flex flex-col sm:flex-row gap-2">
+    <>
       {/* 시작 날짜 */}
       <Popover>
         <PopoverTrigger asChild>
           <Button
             variant="outline"
             className={cn(
-              "w-full sm:w-auto justify-start text-left font-normal",
+              "h-9 sm:h-10 lg:h-11 xl:h-12 w-full sm:w-auto sm:min-w-[120px] lg:min-w-[140px] xl:min-w-[160px] justify-start text-left font-normal text-xs sm:text-sm",
               !filters.startDate && "text-muted-foreground"
             )}
           >
@@ -125,7 +106,7 @@ export function LogFilters({
           <Button
             variant="outline"
             className={cn(
-              "w-full sm:w-auto justify-start text-left font-normal",
+              "h-9 sm:h-10 lg:h-11 xl:h-12 w-full sm:w-auto sm:min-w-[120px] lg:min-w-[140px] xl:min-w-[160px] justify-start text-left font-normal text-xs sm:text-sm",
               !filters.endDate && "text-muted-foreground"
             )}
           >
@@ -146,7 +127,7 @@ export function LogFilters({
           />
         </PopoverContent>
       </Popover>
-    </div>
+    </>
   );
 
   return (
@@ -155,9 +136,8 @@ export function LogFilters({
         searchPlaceholder={PLACEHOLDERS.LOG_SEARCH_PLACEHOLDER}
         searchValue={filters.search || ""}
         onSearchChange={handleSearchChange}
+        extra={datePickers}
       />
-
-      {datePickers}
 
       {/* 레벨 필터 (다중 선택) */}
       <div className="space-y-3">

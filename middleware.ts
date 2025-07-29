@@ -222,41 +222,24 @@ export async function middleware(request: NextRequest) {
   // 👤 사용자 인증 정보 가져오기 및 토큰 검증
   let user = null;
   let isAuthenticated = false;
+  let sessionExpired = false;
 
   try {
     // 토큰 검증 및 갱신 시도 (authService 사용)
     const {
       isValid,
       user: authUser,
-      sessionExpired,
+      sessionExpired: expired,
     } = await validateAndRefreshToken(supabase, request);
     user = authUser;
     isAuthenticated = isValid;
+    sessionExpired = expired;
+
     devLog.log(
       `[MIDDLEWARE] User: ${
         user?.id ? "authenticated" : "anonymous"
       }, Token valid: ${isAuthenticated}, Session expired: ${sessionExpired}`
     );
-
-    // 세션 만료 감지 시 처리 (토큰은 있었지만 유효하지 않은 경우)
-    if (!isAuthenticated && sessionExpired) {
-      devLog.warn(
-        `[MIDDLEWARE] Session expired detected - redirecting to login`
-      );
-
-      // 세션 만료 시에는 userId를 알 수 없으므로 구독 정리는 클라이언트에서 처리
-      // (로그인 페이지에서 session_expired=true 파라미터로 구독 정리 수행)
-
-      // 세션 쿠키 정리 (미들웨어에서는 NextResponse cookies API 사용)
-      const loginUrl = new URL("/auth/login", request.url);
-      loginUrl.searchParams.set("session_expired", "true");
-      const response = NextResponse.redirect(loginUrl);
-
-      // 공통 쿠키 정리 함수 사용
-      clearServerAuthCookies(response);
-
-      return response;
-    }
   } catch (error) {
     devLog.error(`[MIDDLEWARE] Auth error: ${error}`);
   }
@@ -266,9 +249,38 @@ export async function middleware(request: NextRequest) {
   const isMaintenancePath = pathname === "/maintenance"; // 유지보수 페이지 자체
   const isPublicPath = PathMatcher.isPublicPath(pathname); // 공개 접근 가능한 경로
 
-  devLog.log(
-    `[MIDDLEWARE] isMaintenancePath: ${isMaintenancePath}, isPublicPath: ${isPublicPath}`
-  );
+  // 🔐 통합 인증 체크 - 세션 만료 또는 인증되지 않은 사용자 처리
+  if (!isAuthenticated && (sessionExpired || !isPublicPath)) {
+    // 세션 만료 감지 시 로그
+    if (sessionExpired) {
+      devLog.warn(
+        `[MIDDLEWARE] Session expired detected - redirecting to login`
+      );
+    }
+
+    // 관리자 페이지 무단 접근 시도 로그 (보안 위협 감지) - 인증되지 않고 공개 경로가 아닌 경우에만
+    if (!isAuthenticated && !isPublicPath && pathname.startsWith("/admin")) {
+      await logSecurityError(
+        "UNAUTHORIZED_ACCESS",
+        `관리자 페이지 무단 접근 시도: ${pathname}`,
+        undefined,
+        clientIP,
+        userAgent
+      ).catch((error) => {
+        devLog.error(`[MIDDLEWARE] Security logging error: ${error}`);
+      });
+    }
+
+    // 로그인 페이지로 리다이렉트 (세션 만료와 동일한 처리)
+    const loginUrl = new URL("/auth/login", request.url);
+    loginUrl.searchParams.set("session_expired", "true");
+    const response = NextResponse.redirect(loginUrl);
+
+    // 인증 쿠키 정리
+    clearServerAuthCookies(response);
+
+    return response;
+  }
 
   // 유지보수 모드가 활성화된 경우 관리자만 접근 허용
   if (!isMaintenancePath && !isPublicPath) {
@@ -314,27 +326,6 @@ export async function middleware(request: NextRequest) {
       // 시스템 오류로 인해 사용자 접근을 차단하지 않습니다.
       devLog.error(`[MIDDLEWARE] Maintenance mode check error: ${error}`);
     }
-  }
-
-  // 🔐 인증 체크 - 공개 경로가 아닌 경우 로그인 필요
-  // 로그인하지 않은 사용자가 보호된 페이지에 접근하려 할 때 처리합니다.
-  if (!isAuthenticated && !isPublicPath) {
-    // 관리자 페이지 무단 접근 시도 로그 (보안 위협 감지)
-    if (pathname.startsWith("/admin")) {
-      await logSecurityError(
-        "UNAUTHORIZED_ACCESS",
-        `관리자 페이지 무단 접근 시도: ${pathname}`,
-        undefined,
-        clientIP,
-        userAgent
-      ).catch((error) => {
-        devLog.error(`[MIDDLEWARE] Security logging error: ${error}`);
-      });
-    }
-
-    // 로그인 페이지로 리다이렉트
-    const url = new URL("/auth/login", request.url);
-    return NextResponse.redirect(url);
   }
 
   // 🚦 Rate Limiting 체크 - API 요청 제한

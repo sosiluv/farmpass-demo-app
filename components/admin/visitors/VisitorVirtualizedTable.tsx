@@ -26,6 +26,7 @@ import {
 import { getFarmTypeInfo } from "@/lib/constants/farm-types";
 import { formatPhoneNumber } from "@/lib/utils/validation";
 import { formatResponsiveDateTime } from "@/lib/utils/datetime/date";
+import { LABELS, BUTTONS } from "@/lib/constants/visitor";
 import {
   VisitorAvatar,
   StatusBadge,
@@ -78,7 +79,7 @@ const MobileVisitorCard = memo(function MobileVisitorCard({
               <div className="flex items-center space-x-1 sm:space-x-2 mb-1">
                 <Tooltip delayDuration={300}>
                   <TooltipTrigger asChild>
-                    <h4 className="font-semibold text-gray-900 truncate text-sm sm:text-base max-w-[120px] sm:max-w-none cursor-help touch-manipulation">
+                    <h4 className="font-semibold text-gray-900 truncate text-base sm:text-lg max-w-[120px] sm:max-w-none cursor-help touch-manipulation">
                       {visitor.visitor_name}
                     </h4>
                   </TooltipTrigger>
@@ -93,14 +94,14 @@ const MobileVisitorCard = memo(function MobileVisitorCard({
                 </Tooltip>
                 <Badge
                   variant="outline"
-                  className="text-[10px] sm:text-xs px-1 sm:px-1.5 py-0.5 font-medium"
+                  className="text-xs sm:text-sm px-1 sm:px-1.5 py-0.5 font-medium"
                 >
                   #{index + 1}
                 </Badge>
               </div>
               <Tooltip delayDuration={300}>
                 <TooltipTrigger asChild>
-                  <p className="text-xs sm:text-sm text-gray-600 font-medium cursor-help touch-manipulation">
+                  <p className="text-sm sm:text-base text-gray-600 font-medium cursor-help touch-manipulation">
                     {formatPhoneNumber(visitor.visitor_phone)}
                   </p>
                 </TooltipTrigger>
@@ -127,7 +128,7 @@ const MobileVisitorCard = memo(function MobileVisitorCard({
           </div>
         </div>
 
-        <div className="space-y-2 sm:space-y-2.5 text-xs sm:text-sm">
+        <div className="space-y-2 sm:space-y-2.5 text-sm sm:text-base">
           <div className="flex items-start space-x-2 sm:space-x-3 p-1.5 sm:p-2 bg-gray-50/80 rounded-lg">
             <Calendar className="w-3 h-3 sm:w-4 sm:h-4 text-blue-500 flex-shrink-0 mt-0.5" />
             <div className="min-w-0 flex-1">
@@ -143,7 +144,7 @@ const MobileVisitorCard = memo(function MobileVisitorCard({
                           {datePart}
                         </p>
                         {/* 시간 - 다음 줄에 표시 */}
-                        <p className="text-[10px] sm:text-xs text-gray-600 leading-tight">
+                        <p className="text-xs sm:text-sm text-gray-600 leading-tight">
                           {timePart}
                         </p>
                       </div>
@@ -227,20 +228,23 @@ const MobileVisitorCard = memo(function MobileVisitorCard({
             </div>
           )}
 
-          <div className="flex items-center justify-between pt-2 border-t border-gray-100">
-            <div className="flex items-center space-x-2">
+          <div className="flex items-center justify-between mt-2 sm:mt-3 pt-2 sm:pt-3 border-t border-gray-100">
+            <div className="flex items-center space-x-1 sm:space-x-2 flex-1 min-w-0">
               {visitor.disinfection_check && (
-                <Sparkles className="w-3 h-3 sm:w-4 sm:h-4 text-green-500" />
+                <Sparkles className="w-3 h-3 sm:w-4 sm:h-4 text-green-500 flex-shrink-0" />
               )}
-              <span className="text-[10px] sm:text-xs text-gray-500">
-                방역 {visitor.disinfection_check ? "완료" : "미완료"}
+              <span className="text-xs sm:text-sm text-gray-500 truncate">
+                {LABELS.VISITOR_TABLE_DISINFECTION_STATUS}{" "}
+                {visitor.disinfection_check
+                  ? LABELS.VISITOR_TABLE_DISINFECTION_COMPLETE
+                  : LABELS.VISITOR_TABLE_DISINFECTION_INCOMPLETE}
               </span>
             </div>
             <button
               onClick={() => onViewDetails(visitor)}
-              className="text-[10px] sm:text-xs text-blue-600 hover:text-blue-800 font-medium"
+              className="text-xs sm:text-sm text-blue-600 hover:text-blue-800 font-medium flex-shrink-0 ml-2"
             >
-              상세보기
+              {BUTTONS.VISITOR_TABLE_DETAILS_BUTTON}
             </button>
           </div>
         </div>

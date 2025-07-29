@@ -84,7 +84,10 @@ const NotificationTab = React.memo(function NotificationTab({
           />
           <CardContent className="space-y-4">
             <div className="grid gap-2">
-              <Label htmlFor="visitTemplate">
+              <Label
+                htmlFor="visitTemplate"
+                className="text-sm sm:text-base font-medium"
+              >
                 {LABELS.VISIT_NOTIFICATION_TEMPLATE_LABEL}
               </Label>
               <Textarea
@@ -93,10 +96,11 @@ const NotificationTab = React.memo(function NotificationTab({
                 value={settings.visitTemplate}
                 onChange={(e) => onUpdate("visitTemplate", e.target.value)}
                 rows={3}
+                className="text-sm sm:text-base"
               />
               <div className="flex items-start gap-2">
                 <div className="flex-1">
-                  <p className="text-sm text-muted-foreground">
+                  <p className="text-sm sm:text-base text-muted-foreground">
                     {LABELS.VISIT_NOTIFICATION_TEMPLATE_VARIABLES}
                   </p>
                 </div>
@@ -104,7 +108,7 @@ const NotificationTab = React.memo(function NotificationTab({
                   onClick={handlePreviewTemplate}
                   variant="outline"
                   size="sm"
-                  className="flex items-center gap-1"
+                  className="flex items-center gap-1 text-sm sm:text-base"
                 >
                   <Eye className="h-3 w-3" />
                   {BUTTONS.TEMPLATE_PREVIEW_BUTTON}

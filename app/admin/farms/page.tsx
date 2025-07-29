@@ -173,13 +173,15 @@ export default function FarmsPage() {
 
         {/* 검색 기능 */}
         <div className="mb-6">
-          <Input
-            id="farm-search"
-            placeholder={PLACEHOLDERS.SEARCH}
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full sm:w-64 h-12 text-base placeholder:text-xs sm:placeholder:text-sm"
-          />
+          <div className="relative flex-1">
+            <Input
+              id="farm-search"
+              placeholder={PLACEHOLDERS.SEARCH}
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="h-9 sm:h-10 lg:h-11 xl:h-12 w-full text-xs sm:text-sm placeholder:text-sm sm:placeholder:text-base"
+            />
+          </div>
         </div>
 
         {filteredFarms.length === 0 && searchTerm ? (

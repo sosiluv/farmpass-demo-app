@@ -2,7 +2,7 @@
 
 import { useAuth } from "@/components/providers/auth-provider";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { Loader2, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { BUTTONS } from "@/lib/constants/common";
@@ -28,16 +28,30 @@ export function ProtectedRoute({
   const [loadingTimeout, setLoadingTimeout] = useState(false);
   const { signOut } = useAuthActions();
 
+  // 로그아웃 처리 중복 방지를 위한 ref
+  const isLoggingOut = useRef(false);
+  const hasRedirected = useRef(false);
+
   useEffect(() => {
     // 인증되지 않은 경우 로그아웃 처리 후 리다이렉트
-    if (state.status === "unauthenticated") {
+    if (
+      state.status === "unauthenticated" &&
+      !isLoggingOut.current &&
+      !hasRedirected.current
+    ) {
       const handleUnauthenticated = async () => {
+        if (isLoggingOut.current) return; // 이미 처리 중이면 스킵
+
+        isLoggingOut.current = true;
         try {
           await signOut(); // 클라이언트 상태 정리
         } catch (error) {
           console.error("로그아웃 처리 중 오류:", error);
         } finally {
-          router.push(redirectTo);
+          if (!hasRedirected.current) {
+            hasRedirected.current = true;
+            router.push(redirectTo);
+          }
         }
       };
 
@@ -49,8 +63,10 @@ export function ProtectedRoute({
     if (
       requireAdmin &&
       state.status === "authenticated" &&
-      (!profile || profile.account_type !== "admin")
+      (!profile || profile.account_type !== "admin") &&
+      !hasRedirected.current
     ) {
+      hasRedirected.current = true;
       router.push("/unauthorized");
       return;
     }

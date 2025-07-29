@@ -238,7 +238,7 @@ export function PageHeader({
                   }}
                   className="space-y-0.5 min-w-0"
                 >
-                  <h1 className="text-lg font-bold tracking-tight bg-gradient-to-r from-foreground via-foreground to-foreground/70 bg-clip-text text-transparent sm:text-xl md:text-2xl truncate">
+                  <h1 className="text-xl font-bold tracking-tight bg-gradient-to-r from-foreground via-foreground to-foreground/70 bg-clip-text text-transparent sm:text-2xl truncate">
                     {title}
                   </h1>
                   {description && (
@@ -246,7 +246,7 @@ export function PageHeader({
                       initial={{ opacity: 0, y: 10 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ duration: 0.5, delay: 0.6 }}
-                      className="text-[10px] sm:text-xs md:text-sm text-muted-foreground leading-relaxed max-w-2xl font-medium line-clamp-2"
+                      className="text-[14px] text-muted-foreground leading-relaxed max-w-2xl font-medium line-clamp-2"
                     >
                       {description}
                     </motion.p>

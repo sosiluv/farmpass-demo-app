@@ -127,7 +127,7 @@ export function LoginActivitySection({ profile }: LoginActivitySectionProps) {
                   <div className="font-medium text-sm sm:text-base break-words">
                     {activity.device}
                     {activity.isCurrent && (
-                      <span className="ml-2 text-xs bg-primary/20 text-primary px-2 py-1 rounded-full whitespace-nowrap">
+                      <span className="ml-2 text-xs sm:text-sm bg-primary/20 text-primary px-2 py-1 rounded-full whitespace-nowrap">
                         {LABELS.CURRENT_SESSION}
                       </span>
                     )}
@@ -135,7 +135,7 @@ export function LoginActivitySection({ profile }: LoginActivitySectionProps) {
                   <div className="text-xs sm:text-sm text-muted-foreground mt-1">
                     {activity.location}
                     {activity.ip && !activity.isCurrent && (
-                      <span className="ml-2 text-xs text-muted-foreground">
+                      <span className="ml-2 text-xs sm:text-sm text-muted-foreground">
                         ({activity.ip})
                       </span>
                     )}

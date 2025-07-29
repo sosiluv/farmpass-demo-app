@@ -49,25 +49,25 @@ export function StatCard({
             </div>
             <div className="min-w-0 flex-1">
               <p
-                className={`text-[10px] sm:text-xs md:text-sm font-medium ${textColor} opacity-80 truncate`}
+                className={`text-xs sm:text-sm md:text-base font-medium ${textColor} opacity-80 truncate`}
               >
                 {title}
               </p>
-              <p className="text-[9px] sm:text-xs text-muted-foreground hidden lg:block">
+              <p className="text-xs sm:text-sm text-muted-foreground hidden lg:block">
                 {description}
               </p>
             </div>
           </div>
           <div className="text-right md:text-right md:flex-shrink-0 md:ml-2">
             <div
-              className={`text-sm sm:text-lg md:text-xl lg:text-2xl font-bold ${textColor} leading-none whitespace-nowrap`}
+              className={`text-base sm:text-xl md:text-2xl lg:text-2xl font-bold ${textColor} leading-none whitespace-nowrap`}
             >
               {value.toLocaleString()}
               {suffix}
             </div>
             <Badge
               variant="secondary"
-              className={`${bgColor} ${textColor} border-none text-[9px] sm:text-xs font-medium px-1 py-0 mt-1 hidden lg:inline-flex`}
+              className={`${bgColor} ${textColor} border-none text-xs sm:text-sm font-medium px-1 py-0 mt-1 hidden lg:inline-flex`}
             >
               {trend}
             </Badge>
@@ -75,12 +75,12 @@ export function StatCard({
         </div>
 
         <div className="flex items-center justify-between mt-1.5 sm:mt-2 lg:hidden">
-          <span className="text-[9px] sm:text-xs text-muted-foreground">
+          <span className="text-xs sm:text-sm text-muted-foreground">
             {description}
           </span>
           <Badge
             variant="secondary"
-            className={`${bgColor} ${textColor} border-none text-[9px] sm:text-xs font-medium px-1 py-0`}
+            className={`${bgColor} ${textColor} border-none text-xs sm:text-sm font-medium px-1 py-0`}
           >
             {trend}
           </Badge>

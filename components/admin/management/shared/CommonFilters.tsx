@@ -35,13 +35,13 @@ export function CommonFilters({
 }: CommonFiltersProps) {
   return (
     <div className="flex flex-wrap items-center gap-1 sm:gap-2 lg:gap-3 xl:gap-4 w-full">
-      <div className="relative">
+      <div className="relative flex-1">
         <Input
           id="user-search"
           placeholder={searchPlaceholder}
           value={searchValue}
           onChange={onSearchChange}
-          className="h-9 sm:h-10 lg:h-11 xl:h-12 w-[180px] sm:w-[200px] lg:w-[250px] xl:w-[350px] 2xl:w-[400px] flex-shrink text-xs sm:text-sm"
+          className="h-9 sm:h-10 lg:h-11 xl:h-12 w-full text-xs sm:text-sm placeholder:text-sm sm:placeholder:text-base"
         />
         {searchValue && (
           <Button
@@ -63,25 +63,25 @@ export function CommonFilters({
           <SelectTrigger
             className={
               select.className ||
-              "w-auto min-w-[90px] sm:w-[110px] lg:w-[150px] xl:w-[180px] 2xl:w-[200px] h-9 sm:h-10 lg:h-11 xl:h-12 flex-shrink"
+              "h-9 sm:h-10 lg:h-11 xl:h-12 w-full sm:w-auto sm:min-w-[120px] lg:min-w-[140px] xl:min-w-[160px] text-xs sm:text-sm"
             }
           >
             <SelectValue placeholder={select.placeholder} />
           </SelectTrigger>
           <SelectContent>
             {(select.options || []).map((opt) => (
-              <SelectItem key={opt.value} value={opt.value}>
+              <SelectItem
+                key={opt.value}
+                value={opt.value}
+                className="text-xs sm:text-sm"
+              >
                 {opt.label}
               </SelectItem>
             ))}
           </SelectContent>
         </Select>
       ))}
-      {extra && (
-        <div className="flex flex-wrap items-center gap-1 sm:gap-2 lg:gap-3 xl:gap-4">
-          {extra}
-        </div>
-      )}
+      {extra}
     </div>
   );
 }

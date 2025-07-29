@@ -38,7 +38,7 @@ export function OrphanFilesActions({
         <AlertDialogTrigger asChild>
           <Button
             variant="destructive"
-            className="flex-1"
+            className="flex-1 text-sm sm:text-base"
             disabled={orphanFilesLoading || totalOrphanCount === 0}
           >
             {orphanFilesLoading ? (
@@ -53,7 +53,7 @@ export function OrphanFilesActions({
               </>
             )}
             {totalOrphanCount > 0 && (
-              <Badge variant="secondary" className="ml-2">
+              <Badge variant="secondary" className="ml-2 text-sm sm:text-base">
                 {totalOrphanCount}개
               </Badge>
             )}
@@ -61,23 +61,23 @@ export function OrphanFilesActions({
         </AlertDialogTrigger>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>
+            <AlertDialogTitle className="text-base sm:text-lg md:text-xl">
               {PAGE_HEADER.ORPHAN_FILES_CLEANUP_CONFIRM_TITLE}
             </AlertDialogTitle>
             <AlertDialogDescription asChild>
               <div>
-                <div className="text-sm mb-3">
+                <div className="text-sm sm:text-base mb-3">
                   {PAGE_HEADER.ORPHAN_FILES_CLEANUP_CONFIRM_DESC.replace(
                     "{count}",
                     totalOrphanCount.toString()
                   )}
                 </div>
                 <div className="bg-red-50 border border-red-200 rounded-lg p-3">
-                  <div className="text-sm text-red-700">
+                  <div className="text-sm sm:text-base text-red-700">
                     <div className="font-medium mb-1">
                       {LABELS.ORPHAN_FILES_DELETE_FILES_TITLE}
                     </div>
-                    <ul className="list-disc list-inside space-y-1 text-xs">
+                    <ul className="list-disc list-inside space-y-1 text-sm sm:text-base">
                       <li>
                         {LABELS.ORPHAN_FILES_VISITOR_IMAGES_DELETE.replace(
                           "{count}",
@@ -110,13 +110,16 @@ export function OrphanFilesActions({
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={orphanFilesLoading}>
+            <AlertDialogCancel
+              disabled={orphanFilesLoading}
+              className="text-sm sm:text-base"
+            >
               {BUTTONS.CLEANUP_CANCEL}
             </AlertDialogCancel>
             <AlertDialogAction
               onClick={onCleanupRequest}
               disabled={orphanFilesLoading}
-              className="bg-red-600 hover:bg-red-700"
+              className="bg-red-600 hover:bg-red-700 text-sm sm:text-base"
             >
               {orphanFilesLoading ? (
                 <>

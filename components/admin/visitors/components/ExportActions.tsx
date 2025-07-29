@@ -22,14 +22,14 @@ export function ExportActions({
         variant="outline"
         onClick={onReset}
         disabled={isExporting}
-        className="w-full sm:w-auto h-8 sm:h-9 text-xs sm:text-sm"
+        className="w-full sm:w-auto h-8 sm:h-9 text-sm sm:text-base"
       >
         {BUTTONS.EXPORT_ACTIONS_RESET}
       </Button>
       <Button
         onClick={onExport}
         disabled={isExporting || !canExport}
-        className="w-full sm:w-auto h-8 sm:h-9 text-xs sm:text-sm bg-primary hover:bg-primary/90"
+        className="w-full sm:w-auto h-8 sm:h-9 text-sm sm:text-base bg-primary hover:bg-primary/90"
       >
         {isExporting ? (
           <>

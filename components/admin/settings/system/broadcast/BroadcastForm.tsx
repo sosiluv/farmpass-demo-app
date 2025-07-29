@@ -50,7 +50,10 @@ export function BroadcastForm({
     <div className="space-y-6">
       {/* 알림 유형 선택 */}
       <div className="space-y-2">
-        <Label htmlFor="notification-type">
+        <Label
+          htmlFor="notification-type"
+          className="text-sm sm:text-base font-medium"
+        >
           {LABELS.BROADCAST_NOTIFICATION_TYPE}
         </Label>
         <Select
@@ -63,27 +66,39 @@ export function BroadcastForm({
           }
           disabled={isLoading || isSending}
         >
-          <SelectTrigger id="notification-type" className="w-full">
+          <SelectTrigger
+            id="notification-type"
+            className="w-full text-sm sm:text-base"
+          >
             <SelectValue
               placeholder={PLACEHOLDERS.BROADCAST_NOTIFICATION_TYPE}
             />
           </SelectTrigger>
           <SelectContent>
             {BROADCAST_NOTIFICATION_TYPE_OPTIONS.map((type) => (
-              <SelectItem key={type.value} value={type.value}>
+              <SelectItem
+                key={type.value}
+                value={type.value}
+                className="text-sm sm:text-base"
+              >
                 {type.label}
               </SelectItem>
             ))}
           </SelectContent>
         </Select>
-        <p className="text-xs text-muted-foreground">
+        <p className="text-sm sm:text-base text-muted-foreground">
           {LABELS.BROADCAST_NOTIFICATION_TYPE_DESC}
         </p>
       </div>
 
       {/* 제목 입력 */}
       <div className="space-y-2">
-        <Label htmlFor="broadcast-title">{LABELS.BROADCAST_TITLE}</Label>
+        <Label
+          htmlFor="broadcast-title"
+          className="text-sm sm:text-base font-medium"
+        >
+          {LABELS.BROADCAST_TITLE}
+        </Label>
         <Input
           id="broadcast-title"
           placeholder={PLACEHOLDERS.BROADCAST_TITLE}
@@ -91,15 +106,21 @@ export function BroadcastForm({
           onChange={(e) => onInputChange("title", e.target.value)}
           maxLength={50}
           disabled={isLoading || isSending}
+          className="text-sm sm:text-base"
         />
-        <div className="text-xs text-muted-foreground">
+        <div className="text-sm sm:text-base text-muted-foreground">
           {formData.title.length}/50자
         </div>
       </div>
 
       {/* 메시지 입력 */}
       <div className="space-y-2">
-        <Label htmlFor="broadcast-message">{LABELS.BROADCAST_MESSAGE}</Label>
+        <Label
+          htmlFor="broadcast-message"
+          className="text-sm sm:text-base font-medium"
+        >
+          {LABELS.BROADCAST_MESSAGE}
+        </Label>
         <Textarea
           id="broadcast-message"
           placeholder={PLACEHOLDERS.BROADCAST_MESSAGE}
@@ -108,31 +129,41 @@ export function BroadcastForm({
           maxLength={200}
           rows={4}
           disabled={isLoading || isSending}
+          className="text-sm sm:text-base"
         />
-        <div className="text-xs text-muted-foreground">
+        <div className="text-sm sm:text-base text-muted-foreground">
           {formData.message.length}/200자
         </div>
       </div>
 
       {/* URL 설정 */}
       <div className="space-y-2">
-        <Label htmlFor="broadcast-url">{LABELS.BROADCAST_URL}</Label>
+        <Label
+          htmlFor="broadcast-url"
+          className="text-sm sm:text-base font-medium"
+        >
+          {LABELS.BROADCAST_URL}
+        </Label>
         <Input
           id="broadcast-url"
           placeholder={PLACEHOLDERS.BROADCAST_URL}
           value={formData.url}
           onChange={(e) => onInputChange("url", e.target.value)}
           disabled={isLoading || isSending}
+          className="text-sm sm:text-base"
         />
       </div>
 
       {/* 상호작용 필요 설정 */}
       <div className="flex items-center justify-between">
         <div className="space-y-0.5">
-          <Label htmlFor="require-interaction">
+          <Label
+            htmlFor="require-interaction"
+            className="text-sm sm:text-base font-medium"
+          >
             {LABELS.BROADCAST_REQUIRE_INTERACTION}
           </Label>
-          <div className="text-sm text-muted-foreground">
+          <div className="text-sm sm:text-base text-muted-foreground">
             {LABELS.BROADCAST_REQUIRE_INTERACTION_DESC}
           </div>
         </div>
@@ -157,7 +188,7 @@ export function BroadcastForm({
             !formData.message.trim() ||
             !formData.notificationType
           }
-          className="flex-1"
+          className="flex-1 text-sm sm:text-base"
         >
           {isSending ? (
             <>
@@ -177,9 +208,9 @@ export function BroadcastForm({
       <div className="rounded-lg border p-4">
         <div className="flex items-start gap-2">
           <MessageSquare className="h-4 w-4 text-muted-foreground mt-0.5" />
-          <div className="text-sm text-muted-foreground">
+          <div className="text-sm sm:text-base text-muted-foreground">
             <p className="font-medium mb-1">{LABELS.BROADCAST_GUIDE_TITLE}</p>
-            <ul className="space-y-1 text-xs">
+            <ul className="space-y-1 text-sm sm:text-base">
               <li>{LABELS.BROADCAST_GUIDE_NOTICE}</li>
               <li>{LABELS.BROADCAST_GUIDE_EMERGENCY}</li>
               <li>{LABELS.BROADCAST_GUIDE_MAINTENANCE}</li>

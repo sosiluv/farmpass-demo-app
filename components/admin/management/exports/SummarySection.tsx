@@ -23,7 +23,7 @@ export function SummarySection({
       <CardContent className="pt-2 sm:pt-3 md:pt-4">
         <div className="flex items-center space-x-1.5 sm:space-x-2">
           <AlertCircle className="h-3 w-3 sm:h-4 sm:w-4" />
-          <span className="text-[10px] sm:text-xs md:text-sm font-medium">
+          <span className="text-sm sm:text-base md:text-lg font-medium">
             {message}
           </span>
         </div>

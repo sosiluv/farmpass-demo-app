@@ -25,7 +25,10 @@ export function LoggingRetentionSelect({
 }: LoggingRetentionSelectProps) {
   return (
     <div className="space-y-2">
-      <Label htmlFor="logging-retention" className="text-sm font-medium">
+      <Label
+        htmlFor="logging-retention"
+        className="text-sm sm:text-base font-medium"
+      >
         {LABELS.LOGGING_RETENTION}
       </Label>
       <Select
@@ -33,18 +36,22 @@ export function LoggingRetentionSelect({
         onValueChange={(val) => onChange(parseInt(val))}
         disabled={isLoading}
       >
-        <SelectTrigger id="logging-retention">
+        <SelectTrigger id="logging-retention" className="text-sm sm:text-base">
           <SelectValue placeholder={PLACEHOLDERS.LOGGING_RETENTION} />
         </SelectTrigger>
         <SelectContent>
           {LOGGING_RETENTION_OPTIONS.map((option) => (
-            <SelectItem key={option.value} value={option.value}>
+            <SelectItem
+              key={option.value}
+              value={option.value}
+              className="text-sm sm:text-base"
+            >
               {option.label}
             </SelectItem>
           ))}
         </SelectContent>
       </Select>
-      <p className="text-xs text-muted-foreground">
+      <p className="text-sm sm:text-base text-muted-foreground">
         {LABELS.LOGGING_RETENTION_DESC.replace("{days}", value.toString())}
       </p>
     </div>

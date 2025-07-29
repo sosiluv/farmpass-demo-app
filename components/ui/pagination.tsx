@@ -53,7 +53,7 @@ function Pagination({
   };
 
   return (
-    <div className="flex items-center justify-between">
+    <div className="flex items-center gap-6">
       {showPageInfo &&
         startIndex !== undefined &&
         endIndex !== undefined &&
@@ -62,7 +62,7 @@ function Pagination({
             {startIndex}-{endIndex} / {totalItems}개 표시
           </div>
         )}
-      <div className="flex items-center gap-1">
+      <div className="flex items-center gap-1 ml-auto">
         {showFirstLast && (
           <Button
             variant="outline"

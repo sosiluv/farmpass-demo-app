@@ -74,7 +74,7 @@ export function SystemModeSection({
               <Button
                 variant="ghost"
                 size="sm"
-                className="w-full justify-start text-sm"
+                className="w-full justify-start text-sm sm:text-base"
               >
                 <Settings className="h-4 w-4 mr-2" />
                 {BUTTONS.SYSTEM_MODE_MAINTENANCE_DETAILS}

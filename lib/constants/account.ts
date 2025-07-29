@@ -11,7 +11,7 @@ export const PAGE_HEADER = {
 
   PASSWORD_CHANGE_TITLE: "비밀번호 변경",
   PASSWORD_CHANGE_DESCRIPTION:
-    "계정 보안을 위해 정기적으로 비밀번호를 변경하세요. 변경 후 자동으로 로그아웃됩니다.",
+    "계정 보안을 위해 정기적으로 비밀번호를 변경하세요.",
 
   PROFILE_INFO_TITLE: "개인 정보",
   PROFILE_INFO_DESCRIPTION: "개인 프로필 정보를 관리합니다",

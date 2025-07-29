@@ -100,10 +100,10 @@ export function UserDetailModal({ user, open, onClose }: UserDetailModalProps) {
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="w-[95vw] max-w-[350px] sm:max-w-[500px] md:max-w-[600px] lg:max-w-[700px] max-h-[90vh] sm:max-h-[85vh] overflow-hidden p-3 sm:p-4 md:p-6">
         <DialogHeader className="space-y-2">
-          <DialogTitle className="text-base sm:text-lg">
+          <DialogTitle className="text-base sm:text-lg md:text-xl">
             {PAGE_HEADER.USER_DETAIL_TITLE}
           </DialogTitle>
-          <DialogDescription className="text-xs sm:text-sm text-muted-foreground">
+          <DialogDescription className="text-sm sm:text-base text-muted-foreground">
             {PAGE_HEADER.USER_DETAIL_DESC}
           </DialogDescription>
         </DialogHeader>
@@ -126,22 +126,26 @@ export function UserDetailModal({ user, open, onClose }: UserDetailModalProps) {
                   </AvatarFallback>
                 </Avatar>
                 <div className="text-center sm:text-left flex-1">
-                  <div className="text-lg sm:text-xl font-semibold">
+                  <div className="text-lg sm:text-xl md:text-2xl font-semibold">
                     {user.name}
                   </div>
-                  <div className="text-xs sm:text-sm text-muted-foreground break-all">
+                  <div className="text-sm sm:text-base text-muted-foreground break-all">
                     {user.email}
                   </div>
                   <div className="flex flex-wrap justify-center sm:justify-start gap-1 sm:gap-2 mt-2">
                     <Badge
-                      className={`${getRoleColor(user.account_type)} text-xs`}
+                      className={`${getRoleColor(
+                        user.account_type
+                      )} text-xs sm:text-sm`}
                     >
                       {user.account_type === "admin"
                         ? LABELS.SYSTEM_ADMIN_USER
                         : LABELS.GENERAL_USER_DETAIL}
                     </Badge>
                     <Badge
-                      className={`${getStatusColor(user.is_active)} text-xs`}
+                      className={`${getStatusColor(
+                        user.is_active
+                      )} text-xs sm:text-sm`}
                     >
                       {user.is_active ? LABELS.ACTIVE_CSV : LABELS.INACTIVE_CSV}
                     </Badge>
@@ -151,36 +155,36 @@ export function UserDetailModal({ user, open, onClose }: UserDetailModalProps) {
 
               {/* 상세 정보 */}
               <div className="space-y-3 sm:space-y-4">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 text-xs sm:text-sm">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                   <div className="p-2 sm:p-3 bg-muted rounded-lg">
-                    <div className="font-medium text-foreground">
+                    <div className="font-medium text-foreground text-sm sm:text-base">
                       {LABELS.PHONE_NUMBER_USER}
                     </div>
-                    <div className="text-muted-foreground mt-1">
+                    <div className="text-muted-foreground mt-1 text-sm sm:text-base">
                       {user.phone || LABELS.NO_INFO}
                     </div>
                   </div>
                   <div className="p-2 sm:p-3 bg-muted rounded-lg">
-                    <div className="font-medium text-foreground">
+                    <div className="font-medium text-foreground text-sm sm:text-base">
                       {LABELS.COMPANY_INSTITUTION}
                     </div>
-                    <div className="text-muted-foreground mt-1 break-all">
+                    <div className="text-muted-foreground mt-1 break-all text-sm sm:text-base">
                       {user.company_name || LABELS.NO_INFO}
                     </div>
                   </div>
                   <div className="p-2 sm:p-3 bg-muted rounded-lg">
-                    <div className="font-medium text-foreground">
+                    <div className="font-medium text-foreground text-sm sm:text-base">
                       {LABELS.BUSINESS_TYPE}
                     </div>
-                    <div className="text-muted-foreground mt-1">
+                    <div className="text-muted-foreground mt-1 text-sm sm:text-base">
                       {user.business_type || LABELS.NO_INFO}
                     </div>
                   </div>
                   <div className="p-2 sm:p-3 bg-muted rounded-lg">
-                    <div className="font-medium text-foreground">
+                    <div className="font-medium text-foreground text-sm sm:text-base">
                       {LABELS.COMPANY_ADDRESS_USER}
                     </div>
-                    <div className="text-muted-foreground mt-1 break-all">
+                    <div className="text-muted-foreground mt-1 break-all text-sm sm:text-base">
                       {user.company_address || LABELS.NO_INFO}
                     </div>
                   </div>
@@ -188,29 +192,29 @@ export function UserDetailModal({ user, open, onClose }: UserDetailModalProps) {
 
                 {/* 시간 정보 */}
                 <div className="pt-2 sm:pt-4 border-t space-y-2 sm:space-y-3">
-                  <div className="p-2 sm:p-3 bg-muted rounded-lg text-xs sm:text-sm">
-                    <span className="font-medium text-foreground">
+                  <div className="p-2 sm:p-3 bg-muted rounded-lg">
+                    <span className="font-medium text-foreground text-sm sm:text-base">
                       {LABELS.LAST_LOGIN}
                     </span>
-                    <div className="text-muted-foreground mt-1">
+                    <div className="text-muted-foreground mt-1 text-sm sm:text-base">
                       {user.last_login_at
                         ? formatDateTime(user.last_login_at)
                         : LABELS.NO_LOGIN_RECORD}
                     </div>
                   </div>
-                  <div className="p-2 sm:p-3 bg-muted rounded-lg text-xs sm:text-sm">
-                    <span className="font-medium text-foreground">
+                  <div className="p-2 sm:p-3 bg-muted rounded-lg">
+                    <span className="font-medium text-foreground text-sm sm:text-base">
                       {LABELS.REGISTRATION_DATE}:
                     </span>
-                    <div className="text-muted-foreground mt-1">
+                    <div className="text-muted-foreground mt-1 text-sm sm:text-base">
                       {formatDateTime(user.created_at)}
                     </div>
                   </div>
-                  <div className="p-2 sm:p-3 bg-muted rounded-lg text-xs sm:text-sm">
-                    <span className="font-medium text-foreground">
+                  <div className="p-2 sm:p-3 bg-muted rounded-lg">
+                    <span className="font-medium text-foreground text-sm sm:text-base">
                       {LABELS.INFO_UPDATE_DATE}
                     </span>
-                    <div className="text-muted-foreground mt-1">
+                    <div className="text-muted-foreground mt-1 text-sm sm:text-base">
                       {formatDateTime(user.updated_at)}
                     </div>
                   </div>
@@ -228,6 +232,7 @@ export function UserDetailModal({ user, open, onClose }: UserDetailModalProps) {
             variant="destructive"
             onClick={handleUnlock}
             disabled={loading || !user}
+            className="text-sm sm:text-base"
           >
             {loading ? (
               <>

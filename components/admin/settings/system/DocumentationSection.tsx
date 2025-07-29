@@ -76,7 +76,7 @@ export function DocumentationSection() {
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <p className="text-sm text-muted-foreground">
+          <p className="text-sm sm:text-base text-muted-foreground">
             {PAGE_HEADER.DOCUMENTATION_SECTION_DESC}
           </p>
 
@@ -95,16 +95,16 @@ export function DocumentationSection() {
                         <doc.icon className={`h-5 w-5 ${doc.color}`} />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <h4 className="font-medium text-sm mb-1 group-hover:text-blue-600 transition-colors">
+                        <h4 className="font-medium text-sm sm:text-base mb-1 group-hover:text-blue-600 transition-colors">
                           {doc.title}
                         </h4>
-                        <p className="text-xs text-muted-foreground mb-3 line-clamp-2">
+                        <p className="text-sm sm:text-base text-muted-foreground mb-3 line-clamp-2">
                           {doc.description}
                         </p>
                         <Button
                           variant="outline"
                           size="sm"
-                          className="w-full text-xs"
+                          className="w-full text-sm sm:text-base"
                           onClick={() => handleDocumentClick(doc.href)}
                         >
                           <ExternalLink className="h-3 w-3 mr-1" />
@@ -121,11 +121,11 @@ export function DocumentationSection() {
           <div className="mt-4 p-3 bg-blue-50 rounded-lg">
             <div className="flex items-start gap-2">
               <BookOpen className="h-4 w-4 text-blue-600 mt-0.5 flex-shrink-0" />
-              <div className="text-xs text-blue-700">
+              <div className="text-sm sm:text-base text-blue-700">
                 <p className="font-medium mb-1">
                   {LABELS.DOCUMENTATION_USAGE_TIP}
                 </p>
-                <ul className="space-y-0.5 text-xs">
+                <ul className="space-y-0.5 text-sm sm:text-base">
                   <li>{LABELS.DOCUMENTATION_TIP_1}</li>
                   <li>{LABELS.DOCUMENTATION_TIP_2}</li>
                   <li>{LABELS.DOCUMENTATION_TIP_3}</li>

@@ -2,7 +2,7 @@
   "name": "FarmPass - 농장 출입 관리 시스템",
   "short_name": "FarmPass",
   "description": "농장 방문자 출입 관리를 위한 Progressive Web App",
-  "start_url": "/",
+  "start_url": "/admin/dashboard",
   "display": "standalone",
   "background_color": "#ffffff",
   "theme_color": "#10b981",

@@ -39,7 +39,7 @@ export const CheckingStatus = () => (
       minHeight={120}
       spinnerSize={28}
       spinnerColor="text-primary"
-      className="py-6 w-full"
+      className="py-6 w-full text-base sm:text-lg"
     />
   </div>
 );
@@ -52,8 +52,10 @@ export const UnsupportedStatus = () => (
         <span className="text-xs text-destructive-foreground">!</span>
       </div>
     </div>
-    <h3 className="text-lg font-semibold mb-2">{LABELS.UNSUPPORTED_TITLE}</h3>
-    <p className="text-sm text-muted-foreground mb-4 max-w-sm mx-auto">
+    <h3 className="text-lg sm:text-xl font-semibold mb-2">
+      {LABELS.UNSUPPORTED_TITLE}
+    </h3>
+    <p className="text-sm sm:text-base text-muted-foreground mb-4 max-w-sm mx-auto">
       {LABELS.UNSUPPORTED_DESCRIPTION}
       <br />
       <b>{LABELS.SUPPORTED_BROWSERS}</b>
@@ -62,11 +64,11 @@ export const UnsupportedStatus = () => (
       <br />• <b>{LABELS.FIREFOX}</b> (PC, Android)
       <br />• <b>{LABELS.SAFARI}</b> ({LABELS.SAFARI_NOTE})
       <br />
-      <span className="text-xs text-muted-foreground">
+      <span className="text-xs sm:text-sm text-muted-foreground">
         {LABELS.SAFARI_WARNING}
       </span>
     </p>
-    <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-muted rounded-full text-xs text-muted-foreground">
+    <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-muted rounded-full text-xs sm:text-sm text-muted-foreground">
       <Shield className="h-3 w-3" />
       {LABELS.SECURITY_NOTE}
     </div>
@@ -81,8 +83,10 @@ export const DeniedStatus = ({ onAllow }: StatusProps) => (
         <span className="text-xs text-destructive-foreground">×</span>
       </div>
     </div>
-    <h3 className="text-lg font-semibold mb-2">{LABELS.PERMISSION_NEEDED}</h3>
-    <p className="text-sm text-muted-foreground mb-6 max-w-sm mx-auto">
+    <h3 className="text-lg sm:text-xl font-semibold mb-2">
+      {LABELS.PERMISSION_NEEDED}
+    </h3>
+    <p className="text-sm sm:text-base text-muted-foreground mb-6 max-w-sm mx-auto">
       {LABELS.PERMISSION_DENIED}
       <br />
       {LABELS.PERMISSION_INSTRUCTION}
@@ -103,8 +107,10 @@ export const GrantedStatus = ({ isLoading, onAllow }: StatusProps) => (
           <CheckCircle className="h-3 w-3 text-white" />
         </div>
       </div>
-      <h3 className="text-lg font-semibold mb-2">{LABELS.PUSH_READY}</h3>
-      <p className="text-sm text-muted-foreground mb-6 max-w-sm mx-auto">
+      <h3 className="text-lg sm:text-xl font-semibold mb-2">
+        {LABELS.PUSH_READY}
+      </h3>
+      <p className="text-sm sm:text-base text-muted-foreground mb-6 max-w-sm mx-auto">
         {LABELS.PUSH_READY_DESC}
         <br />
         {LABELS.PUSH_SUBSCRIBE_DESC}
@@ -147,11 +153,11 @@ export const SubscribedStatus = ({
           <Activity className="h-5 w-5 text-primary" />
           <div className="absolute -top-0.5 -right-0.5 w-3 h-3 bg-green-500 rounded-full animate-pulse" />
         </div>
-        <div className="flex-1">
-          <p className="text-base font-semibold text-primary">
+        <div className="flex-1 space-y-2">
+          <p className="text-sm sm:text-base font-semibold text-primary">
             {LABELS.PUSH_ACTIVE}
           </p>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-xs sm:text-sm text-muted-foreground">
             {LABELS.PUSH_ACTIVE_DESC}
           </p>
         </div>
@@ -187,11 +193,13 @@ export const SubscribedStatus = ({
     <div className="p-4 bg-muted/30 rounded-lg border">
       <div className="flex items-start gap-3">
         <div className="p-1.5 bg-primary/10 rounded-full mt-0.5 shrink-0">
-          <Bell className="h-3.5 w-3.5 text-primary" />
+          <Bell className="h-5 w-5 text-primary" />
         </div>
         <div className="space-y-2 min-w-0">
-          <h4 className="text-sm font-medium">{LABELS.NOTIFICATION_SCOPE}</h4>
-          <ul className="text-xs text-muted-foreground space-y-1.5">
+          <h4 className="text-sm sm:text-base font-medium">
+            {LABELS.NOTIFICATION_SCOPE}
+          </h4>
+          <ul className="text-xs sm:text-sm text-muted-foreground space-y-1.5">
             <li className="flex items-center gap-2">
               <div className="w-1 h-1 bg-primary rounded-full shrink-0" />
               <span className="truncate">{LABELS.VISITOR_REGISTRATION}</span>
@@ -213,11 +221,11 @@ export const SubscribedStatus = ({
     {farms && farms.length > 0 && (
       <div className="space-y-3">
         <div className="flex items-center justify-between">
-          <h4 className="text-base font-semibold flex items-center gap-2">
+          <h4 className="text-base sm:text-lg font-semibold flex items-center gap-2">
             <Building className="h-4 w-4" />
             {LABELS.MANAGED_FARMS}
           </h4>
-          <div className="text-xs text-muted-foreground bg-muted px-2.5 py-1.5 rounded-full">
+          <div className="text-xs sm:text-sm text-muted-foreground bg-muted px-2.5 py-1.5 rounded-full">
             {LABELS.FARM_COUNT.replace("{count}", farms.length.toString())}
           </div>
         </div>
@@ -234,11 +242,11 @@ export const SubscribedStatus = ({
                   <div className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-green-500 rounded-full animate-pulse" />
                 </div>
                 <div className="min-w-0">
-                  <p className="text-sm font-medium text-foreground truncate">
+                  <p className="text-sm sm:text-base font-medium text-foreground truncate">
                     {farm.farm_name}
                   </p>
                   {farm.address && (
-                    <p className="text-xs text-muted-foreground truncate">
+                    <p className="text-xs sm:text-sm text-muted-foreground truncate">
                       {farm.address}
                     </p>
                   )}
@@ -246,7 +254,7 @@ export const SubscribedStatus = ({
               </div>
               <Badge
                 variant="secondary"
-                className="text-xs bg-primary/10 text-primary border-primary/30 whitespace-nowrap shrink-0"
+                className="text-xs sm:text-sm bg-primary/10 text-primary border-primary/30 whitespace-nowrap shrink-0"
               >
                 {LABELS.NOTIFICATION_RECEIVING}
               </Badge>

@@ -20,6 +20,7 @@ import { useAuthActions } from "@/hooks/useAuthActions";
 import { apiClient } from "@/lib/utils/data/api-client";
 import { handleError } from "@/lib/utils/error/handleError";
 import { getAuthErrorMessage } from "@/lib/utils/validation/validation";
+import AccountCardHeader from "./AccountCardHeader";
 
 export default function WithdrawSection({
   onWithdraw,
@@ -66,69 +67,74 @@ export default function WithdrawSection({
 
   return (
     <Card>
-      <div className="flex items-center justify-between w-full px-6 pt-6">
-        <div className="flex items-center gap-2">
-          <AlertTriangle className="text-destructive mr-2" />
-          <span className="text-lg font-semibold">
-            {PAGE_HEADER.WITHDRAW_TITLE}
-          </span>
-        </div>
-        <AlertDialog open={open} onOpenChange={setOpen}>
-          <AlertDialogTrigger asChild>
-            <Button variant="destructive" disabled={loading}>
-              {loading ? (
-                <>
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  {BUTTONS.WITHDRAW}
-                </>
-              ) : (
-                <>
-                  <AlertTriangle className="h-4 w-4 mr-2" />
-                  {BUTTONS.WITHDRAW}
-                </>
-              )}
-            </Button>
-          </AlertDialogTrigger>
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>
-                {LABELS.WITHDRAW_DIALOG_TITLE}
-              </AlertDialogTitle>
-              <AlertDialogDescription>
-                {LABELS.WITHDRAW_DIALOG_DESC}
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel disabled={loading}>
-                {BUTTONS.WITHDRAW_CANCEL}
-              </AlertDialogCancel>
-              <AlertDialogAction
-                onClick={handleWithdraw}
+      <AccountCardHeader
+        icon={AlertTriangle}
+        title={PAGE_HEADER.WITHDRAW_TITLE}
+        description={PAGE_HEADER.WITHDRAW_DESCRIPTION}
+      />
+      <CardContent className="space-y-6">
+        <div className="flex items-center justify-between">
+          <AlertDialog open={open} onOpenChange={setOpen}>
+            <AlertDialogTrigger asChild>
+              <Button
+                variant="destructive"
                 disabled={loading}
-                className="bg-destructive text-white hover:bg-destructive/90"
+                className="text-sm sm:text-base"
               >
                 {loading ? (
                   <>
                     <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                    {BUTTONS.WITHDRAWING}
+                    {BUTTONS.WITHDRAW}
                   </>
                 ) : (
                   <>
                     <AlertTriangle className="h-4 w-4 mr-2" />
-                    {BUTTONS.WITHDRAW_CONFIRM}
+                    {BUTTONS.WITHDRAW}
                   </>
                 )}
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
-      </div>
-      <div className="px-6 pb-4">
-        <div className="text-xs text-muted-foreground mb-1">
-          {PAGE_HEADER.WITHDRAW_DESCRIPTION}
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle className="text-base sm:text-lg">
+                  {LABELS.WITHDRAW_DIALOG_TITLE}
+                </AlertDialogTitle>
+                <AlertDialogDescription className="text-sm sm:text-base">
+                  {LABELS.WITHDRAW_DIALOG_DESC}
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel
+                  disabled={loading}
+                  className="text-sm sm:text-base"
+                >
+                  {BUTTONS.WITHDRAW_CANCEL}
+                </AlertDialogCancel>
+                <AlertDialogAction
+                  onClick={handleWithdraw}
+                  disabled={loading}
+                  className="bg-destructive text-white hover:bg-destructive/90 text-sm sm:text-base"
+                >
+                  {loading ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      {BUTTONS.WITHDRAWING}
+                    </>
+                  ) : (
+                    <>
+                      <AlertTriangle className="h-4 w-4 mr-2" />
+                      {BUTTONS.WITHDRAW_CONFIRM}
+                    </>
+                  )}
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
         </div>
-        {error && <div className="text-xs text-red-500 mt-2">{error}</div>}
-      </div>
+        {error && (
+          <div className="text-sm sm:text-base text-red-500">{error}</div>
+        )}
+      </CardContent>
     </Card>
   );
 }

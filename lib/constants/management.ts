@@ -337,7 +337,7 @@ export const PLACEHOLDERS = {
   FARM_TYPE_PLACEHOLDER: "농장 유형",
   STATUS_PLACEHOLDER: "상태",
   LOG_SEARCH_PLACEHOLDER: "로그 검색...",
-  USER_SEARCH_PLACEHOLDER: "이름 또는 이메일로 검색",
+  USER_SEARCH_PLACEHOLDER: "이름 또는 이메일로 검색...",
   ROLE_PLACEHOLDER: "권한",
   USER_STATUS_PLACEHOLDER: "상태",
 } as const;

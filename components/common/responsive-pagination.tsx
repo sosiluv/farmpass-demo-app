@@ -177,14 +177,14 @@ function TabletCompactPagination({
   const pageNumbers = getCompactPageNumbers();
 
   return (
-    <div className="flex items-center justify-between">
+    <div className="flex items-center gap-6">
       <div className="text-sm text-muted-foreground">
         {BUTTONS.PAGINATION_PAGE_RANGE.replace("{start}", startIndex.toString())
           .replace("{end}", endIndex.toString())
           .replace("{total}", totalItems.toString())}
       </div>
 
-      <div className="flex items-center gap-1">
+      <div className="flex items-center gap-1 ml-auto">
         <Button
           variant="outline"
           size="sm"

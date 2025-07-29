@@ -25,7 +25,7 @@ export function MaintenanceSettings({
       <div className="space-y-2">
         <Label
           htmlFor="maintenance-message"
-          className="text-sm font-medium flex items-center gap-1"
+          className="text-sm sm:text-base font-medium flex items-center gap-1"
         >
           <MessageSquare className="h-4 w-4" />
           {LABELS.MAINTENANCE_MESSAGE}
@@ -35,14 +35,14 @@ export function MaintenanceSettings({
           value={settings.maintenanceMessage}
           onChange={(e) => onUpdate("maintenanceMessage", e.target.value)}
           placeholder={PLACEHOLDERS.MAINTENANCE_MESSAGE}
-          className="min-h-[80px]"
+          className="min-h-[80px] text-sm sm:text-base"
           disabled={isLoading}
         />
       </div>
       <div className="space-y-2">
         <Label
           htmlFor="maintenance-time"
-          className="text-sm font-medium flex items-center gap-1"
+          className="text-sm sm:text-base font-medium flex items-center gap-1"
         >
           <Clock className="h-4 w-4" />
           {LABELS.MAINTENANCE_ESTIMATED_TIME}
@@ -58,8 +58,9 @@ export function MaintenanceSettings({
           }
           placeholder={PLACEHOLDERS.MAINTENANCE_ESTIMATED_TIME}
           disabled={isLoading}
+          className="text-sm sm:text-base"
         />
-        <p className="text-xs text-muted-foreground">
+        <p className="text-sm sm:text-base text-muted-foreground">
           {LABELS.MAINTENANCE_CURRENT_SETTING}{" "}
           {settings.maintenanceEstimatedTime < 60
             ? `${settings.maintenanceEstimatedTime}분`
@@ -75,7 +76,7 @@ export function MaintenanceSettings({
         </p>
       </div>
       <div className="space-y-2">
-        <Label className="text-sm font-medium flex items-center gap-1">
+        <Label className="text-sm sm:text-base font-medium flex items-center gap-1">
           <Phone className="h-4 w-4" />
           {LABELS.MAINTENANCE_CONTACT_INFO}
         </Label>
@@ -83,16 +84,16 @@ export function MaintenanceSettings({
           value={settings.maintenanceContactInfo}
           onChange={(e) => onUpdate("maintenanceContactInfo", e.target.value)}
           placeholder={PLACEHOLDERS.MAINTENANCE_CONTACT_INFO}
-          className="min-h-[60px]"
+          className="min-h-[60px] text-sm sm:text-base"
           disabled={isLoading}
         />
       </div>
       {settings.maintenanceStartTime && (
         <div className="space-y-2">
-          <Label className="text-sm font-medium">
+          <Label className="text-sm sm:text-base font-medium">
             {LABELS.MAINTENANCE_START_TIME}
           </Label>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-sm sm:text-base text-muted-foreground">
             {formatDateTime(settings.maintenanceStartTime)}
           </p>
         </div>

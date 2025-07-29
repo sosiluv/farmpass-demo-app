@@ -182,7 +182,12 @@ export function ProfileSection({
             {/* 기본 정보 */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-2">
-                <Label htmlFor="name">{LABELS.NAME}</Label>
+                <Label
+                  htmlFor="name"
+                  className="text-sm sm:text-base font-medium"
+                >
+                  {LABELS.NAME}
+                </Label>
                 <Input
                   id="name"
                   name="name"
@@ -192,10 +197,16 @@ export function ProfileSection({
                   disabled={loading}
                   autoComplete="name"
                   placeholder={PLACEHOLDERS.NAME}
+                  className="text-sm sm:text-base"
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="email">{LABELS.EMAIL}</Label>
+                <Label
+                  htmlFor="email"
+                  className="text-sm sm:text-base font-medium"
+                >
+                  {LABELS.EMAIL}
+                </Label>
                 <Input
                   id="email"
                   name="email"
@@ -205,13 +216,19 @@ export function ProfileSection({
                   disabled={loading}
                   autoComplete="email"
                   placeholder={PLACEHOLDERS.EMAIL}
+                  className="text-sm sm:text-base"
                 />
               </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-2">
-                <Label htmlFor="phoneNumber">{LABELS.PHONE_NUMBER}</Label>
+                <Label
+                  htmlFor="phoneNumber"
+                  className="text-sm sm:text-base font-medium"
+                >
+                  {LABELS.PHONE_NUMBER}
+                </Label>
                 <Input
                   id="phoneNumber"
                   name="phoneNumber"
@@ -221,21 +238,31 @@ export function ProfileSection({
                   disabled={loading}
                   maxLength={13}
                   placeholder={PLACEHOLDERS.PHONE_NUMBER}
+                  className="text-sm sm:text-base"
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="position">{LABELS.POSITION}</Label>
+                <Label
+                  htmlFor="position"
+                  className="text-sm sm:text-base font-medium"
+                >
+                  {LABELS.POSITION}
+                </Label>
                 <Select
                   value={formData.position || ""}
                   onValueChange={(value) => handleChange("position", value)}
                   disabled={loading}
                 >
-                  <SelectTrigger id="position">
+                  <SelectTrigger id="position" className="text-sm sm:text-base">
                     <SelectValue placeholder={PLACEHOLDERS.POSITION} />
                   </SelectTrigger>
                   <SelectContent>
                     {POSITION_OPTIONS.map((option) => (
-                      <SelectItem key={option.value} value={option.value}>
+                      <SelectItem
+                        key={option.value}
+                        value={option.value}
+                        className="text-sm sm:text-base"
+                      >
                         {option.label}
                       </SelectItem>
                     ))}
@@ -246,7 +273,12 @@ export function ProfileSection({
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-2">
-                <Label htmlFor="department">{LABELS.DEPARTMENT}</Label>
+                <Label
+                  htmlFor="department"
+                  className="text-sm sm:text-base font-medium"
+                >
+                  {LABELS.DEPARTMENT}
+                </Label>
                 <Input
                   id="department"
                   name="department"
@@ -255,12 +287,15 @@ export function ProfileSection({
                   onChange={handleInputChange}
                   disabled={loading}
                   placeholder={PLACEHOLDERS.DEPARTMENT}
+                  className="text-sm sm:text-base"
                 />
               </div>
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="bio">{LABELS.BIO}</Label>
+              <Label htmlFor="bio" className="text-sm sm:text-base font-medium">
+                {LABELS.BIO}
+              </Label>
               <Textarea
                 id="bio"
                 name="bio"
@@ -269,6 +304,7 @@ export function ProfileSection({
                 disabled={loading}
                 placeholder={PLACEHOLDERS.BIO}
                 rows={4}
+                className="text-sm sm:text-base"
               />
             </div>
 
@@ -276,7 +312,7 @@ export function ProfileSection({
               <Button
                 onClick={handleSave}
                 disabled={loading || !hasChanges}
-                className="flex items-center gap-2"
+                className="flex items-center gap-2 text-sm sm:text-base"
               >
                 {loading ? (
                   <>

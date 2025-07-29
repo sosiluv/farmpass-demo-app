@@ -93,30 +93,48 @@ export function CompanySection({
           <CardContent className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-2">
-                <Label htmlFor="companyName">{LABELS.COMPANY_NAME}</Label>
+                <Label
+                  htmlFor="companyName"
+                  className="text-sm sm:text-base font-medium"
+                >
+                  {LABELS.COMPANY_NAME}
+                </Label>
                 <Input
                   id="companyName"
                   value={formData.companyName || ""}
                   onChange={(e) => handleChange("companyName", e.target.value)}
                   disabled={loading}
                   placeholder={PLACEHOLDERS.COMPANY_NAME}
+                  className="text-sm sm:text-base"
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="businessType">{LABELS.BUSINESS_TYPE}</Label>
+                <Label
+                  htmlFor="businessType"
+                  className="text-sm sm:text-base font-medium"
+                >
+                  {LABELS.BUSINESS_TYPE}
+                </Label>
                 <Select
                   value={formData.businessType || ""}
                   onValueChange={(value) => handleChange("businessType", value)}
                   disabled={loading}
                 >
-                  <SelectTrigger id="businessType">
+                  <SelectTrigger
+                    id="businessType"
+                    className="text-sm sm:text-base"
+                  >
                     <SelectValue
                       placeholder={PLACEHOLDERS.BUSINESS_TYPE_SELECT}
                     />
                   </SelectTrigger>
                   <SelectContent>
                     {(BUSINESS_TYPE_OPTIONS || []).map((option) => (
-                      <SelectItem key={option.value} value={option.value}>
+                      <SelectItem
+                        key={option.value}
+                        value={option.value}
+                        className="text-sm sm:text-base"
+                      >
                         {option.label}
                       </SelectItem>
                     ))}
@@ -126,7 +144,12 @@ export function CompanySection({
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="companyAddress">{LABELS.COMPANY_ADDRESS}</Label>
+              <Label
+                htmlFor="companyAddress"
+                className="text-sm sm:text-base font-medium"
+              >
+                {LABELS.COMPANY_ADDRESS}
+              </Label>
               <AddressSearch
                 onSelect={(address, detailedAddress) =>
                   handleChange(
@@ -142,12 +165,16 @@ export function CompanySection({
                 placeholder={PLACEHOLDERS.COMPANY_ADDRESS}
                 readOnly
                 disabled={loading}
+                className="text-sm sm:text-base"
               />
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-2">
-                <Label htmlFor="establishment_date">
+                <Label
+                  htmlFor="establishment_date"
+                  className="text-sm sm:text-base font-medium"
+                >
                   {LABELS.ESTABLISHMENT_DATE}
                 </Label>
                 <Input
@@ -161,10 +188,16 @@ export function CompanySection({
                     if (e.target.showPicker) e.target.showPicker();
                   }}
                   disabled={loading}
+                  className="text-sm sm:text-base"
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="employee_count">{LABELS.EMPLOYEE_COUNT}</Label>
+                <Label
+                  htmlFor="employee_count"
+                  className="text-sm sm:text-base font-medium"
+                >
+                  {LABELS.EMPLOYEE_COUNT}
+                </Label>
                 <Select
                   value={formData.employee_count || ""}
                   onValueChange={(value) =>
@@ -172,14 +205,21 @@ export function CompanySection({
                   }
                   disabled={loading}
                 >
-                  <SelectTrigger id="employee_count">
+                  <SelectTrigger
+                    id="employee_count"
+                    className="text-sm sm:text-base"
+                  >
                     <SelectValue
                       placeholder={PLACEHOLDERS.EMPLOYEE_COUNT_SELECT}
                     />
                   </SelectTrigger>
                   <SelectContent>
                     {(EMPLOYEE_COUNT_OPTIONS || []).map((option) => (
-                      <SelectItem key={option.value} value={option.value}>
+                      <SelectItem
+                        key={option.value}
+                        value={option.value}
+                        className="text-sm sm:text-base"
+                      >
                         {option.label}
                       </SelectItem>
                     ))}
@@ -189,7 +229,12 @@ export function CompanySection({
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="company_website">{LABELS.COMPANY_WEBSITE}</Label>
+              <Label
+                htmlFor="company_website"
+                className="text-sm sm:text-base font-medium"
+              >
+                {LABELS.COMPANY_WEBSITE}
+              </Label>
               <Input
                 id="company_website"
                 type="url"
@@ -199,11 +244,15 @@ export function CompanySection({
                 }
                 placeholder={PLACEHOLDERS.COMPANY_WEBSITE}
                 disabled={loading}
+                className="text-sm sm:text-base"
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="company_description">
+              <Label
+                htmlFor="company_description"
+                className="text-sm sm:text-base font-medium"
+              >
                 {LABELS.COMPANY_DESCRIPTION}
               </Label>
               <Textarea
@@ -215,6 +264,7 @@ export function CompanySection({
                 placeholder={PLACEHOLDERS.COMPANY_DESCRIPTION}
                 rows={4}
                 disabled={loading}
+                className="text-sm sm:text-base"
               />
             </div>
 
@@ -222,7 +272,7 @@ export function CompanySection({
               <Button
                 onClick={handleSave}
                 disabled={loading || !hasChanges}
-                className="btn-hover"
+                className="btn-hover text-sm sm:text-base"
               >
                 {loading ? (
                   <>
