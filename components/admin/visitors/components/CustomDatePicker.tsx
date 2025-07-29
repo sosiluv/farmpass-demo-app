@@ -5,7 +5,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
-import { Calendar as CalendarIcon, X } from "lucide-react";
+import { Calendar as CalendarIcon } from "lucide-react";
 import { format } from "date-fns";
 import { ko } from "date-fns/locale";
 import { cn } from "@/lib/utils";
@@ -40,7 +40,7 @@ export function CustomDatePicker({
           >
             <CalendarIcon className="h-3 w-3 sm:h-4 sm:w-4 mr-2 text-indigo-600 dark:text-indigo-300" />
             {customStartDate ? (
-              format(customStartDate, "yyyy년 MM월 dd일", { locale: ko })
+              format(customStartDate, "yyyy-MM-dd", { locale: ko })
             ) : (
               <span className="dark:text-slate-400">
                 {LABELS.CUSTOM_DATE_PICKER_START_DATE}
@@ -73,7 +73,7 @@ export function CustomDatePicker({
           >
             <CalendarIcon className="h-3 w-3 sm:h-4 sm:w-4 mr-2 text-indigo-600 dark:text-indigo-300" />
             {customEndDate ? (
-              format(customEndDate, "yyyy년 MM월 dd일", { locale: ko })
+              format(customEndDate, "yyyy-MM-dd", { locale: ko })
             ) : (
               <span className="dark:text-slate-400">
                 {LABELS.CUSTOM_DATE_PICKER_END_DATE}
@@ -91,24 +91,6 @@ export function CustomDatePicker({
           />
         </PopoverContent>
       </Popover>
-
-      {(customStartDate || customEndDate) && (
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => {
-            if (onClearCustomDates) {
-              onClearCustomDates();
-            } else {
-              onCustomStartDateChange(null);
-              onCustomEndDateChange(null);
-            }
-          }}
-          className="h-9 sm:h-10 md:h-11 p-2 text-gray-500 hover:text-red-600 hover:bg-red-50 transition-all duration-200"
-        >
-          <X className="h-3 w-3 sm:h-4 sm:w-4" />
-        </Button>
-      )}
     </div>
   );
 }

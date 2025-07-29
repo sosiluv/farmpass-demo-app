@@ -47,7 +47,7 @@ export function QuickFilters({
   activeFiltersCount,
 }: QuickFiltersProps) {
   return (
-    <div className="flex gap-2 sm:gap-3 md:gap-3 overflow-x-auto pb-2 scrollbar-hide scroll-smooth">
+    <div className="flex flex-wrap gap-2 sm:gap-3 md:gap-3 min-w-0 w-full">
       {(QUICK_FILTERS || []).map((filter) => {
         const Icon = filter.icon;
         const isActive = dateRange === filter.value;
@@ -75,7 +75,7 @@ export function QuickFilters({
         size="sm"
         onClick={() => onDateRangeChange("all")}
         className={cn(
-          "flex items-center gap-1 sm:gap-2 whitespace-nowrap transition-all duration-200 h-8 sm:h-9 md:h-10 px-3 sm:px-4 md:px-5 text-xs sm:text-sm md:text-base font-medium min-w-fit",
+          "flex items-center gap-1 sm:gap-2 whitespace-nowrap transition-all duration-200 h-8 sm:h-9 md:h-10 px-3 sm:px-4 md:px-5 text-xs sm:text-sm md:text-base font-medium flex-shrink-0",
           dateRange === "all"
             ? "bg-gray-100 dark:bg-slate-800 text-gray-700 dark:text-slate-100 border-2 border-gray-300 dark:border-slate-500 shadow-md"
             : "border-gray-200 dark:border-slate-600 hover:border-gray-300 dark:hover:border-slate-400 bg-white/90 dark:bg-slate-800 hover:bg-white dark:hover:bg-slate-700 shadow-sm hover:shadow-md transform hover:scale-105 dark:text-slate-100"
@@ -86,7 +86,7 @@ export function QuickFilters({
       </Button>
 
       {activeFiltersCount > 0 && (
-        <div className="flex items-center">
+        <div className="flex items-center flex-shrink-0">
           <Badge
             variant="secondary"
             className="bg-orange-100 text-orange-700 border-orange-200 text-[10px] sm:text-xs font-medium px-1.5 sm:px-2 py-0.5 shadow-sm"

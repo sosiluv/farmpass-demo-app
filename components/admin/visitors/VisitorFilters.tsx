@@ -69,12 +69,7 @@ export const VisitorFilters = memo(function VisitorFilters({
   isAdmin = false,
   disableFarmRemoval,
 }: VisitorFiltersProps) {
-  const [isAdvancedOpen, setIsAdvancedOpen] = useState(false);
-
-  // 메모이제이션된 핸들러들
-  const handleAdvancedToggle = useCallback(() => {
-    setIsAdvancedOpen((prev) => !prev);
-  }, []);
+  const [isAdvancedOpen, setIsAdvancedOpen] = useState(true);
 
   // 메모이제이션된 컴포넌트들
   const searchSection = useMemo(
