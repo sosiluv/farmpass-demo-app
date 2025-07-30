@@ -131,3 +131,33 @@ export const POSITION_OPTIONS = [
   { value: "직원", label: "직원" },
   { value: "방역담당자", label: "방역담당자" },
 ] as const;
+
+export const SOCIAL_PROVIDERS: Array<{
+  id: string;
+  name: string;
+  iconSrc?: string;
+  color: string;
+  description: string;
+}> = [
+  {
+    id: "email",
+    name: "이메일",
+    iconSrc: "/btn_mail.svg",
+    color: "bg-blue-50 text-blue-600 border-blue-200",
+    description: "이메일/비밀번호로 로그인",
+  },
+  {
+    id: "google",
+    name: "Google",
+    iconSrc: "/btn_google.svg",
+    color: "bg-white border-gray-200",
+    description: "Google 계정으로 로그인",
+  },
+  {
+    id: "kakao",
+    name: "Kakao",
+    iconSrc: "/btn_kakao.svg",
+    color: "bg-yellow-50 border-yellow-200",
+    description: "카카오 계정으로 로그인",
+  },
+];

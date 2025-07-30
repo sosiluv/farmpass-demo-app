@@ -10,7 +10,7 @@ import type {
   CompanyFormData,
   PasswordFormData,
 } from "@/lib/types/account";
-import { useAuthActions } from "@/hooks/useAuthActions";
+import { useAuthActions } from "@/hooks/auth/useAuthActions";
 
 /**
  * 프로필 정보 저장 Mutation Hook

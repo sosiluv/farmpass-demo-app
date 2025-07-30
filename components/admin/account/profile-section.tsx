@@ -1,13 +1,12 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useMemo } from "react";
 import { motion } from "framer-motion";
-import { User, Save, Loader2, RefreshCw } from "lucide-react";
+import { User, Save, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Separator } from "@/components/ui/separator";
 import { Card, CardContent } from "@/components/ui/card";
 import {
   Select,
@@ -16,12 +15,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { ImageUpload } from "@/components/ui/image-upload";
 import { ErrorBoundary } from "@/components/error/error-boundary";
 import { ERROR_CONFIGS } from "@/lib/constants/error";
 import { formatPhone } from "@/lib/utils/validation/validation";
-import { useAccountForm } from "@/hooks/useAccountForm";
-import { useAvatarSeedManager } from "@/hooks/useAvatarSeedManager";
+import { useAccountForm } from "@/hooks/account/useAccountForm";
 import type { ProfileSectionProps, ProfileFormData } from "@/lib/types/account";
 import AccountCardHeader from "./AccountCardHeader";
 import { devLog } from "@/lib/utils/logging/dev-logger";
@@ -34,7 +31,8 @@ import {
 import { POSITION_OPTIONS } from "@/lib/constants/account";
 import { profileSchema } from "@/lib/utils/validation/profile-validation";
 import { useCommonToast } from "@/lib/utils/notification/toast-messages";
-import { useAuth } from "@/components/providers/auth-provider";
+import { SocialLinkingSection } from "./social-linking-section";
+import { ProfileImageSection } from "./profile-image-section";
 
 export function ProfileSection({
   profile,
@@ -43,17 +41,7 @@ export function ProfileSection({
   onImageUpload,
   onImageDelete,
 }: ProfileSectionProps) {
-  const { state } = useAuth();
   const { showError } = useCommonToast();
-  // 아바타 시드 관리 훅
-  const { updateAvatarSeed, generateRandomSeed } = useAvatarSeedManager({
-    userId: profile?.id || "",
-  });
-  const [profileImagePreview, setProfileImagePreview] = useState<string | null>(
-    profile?.profile_image_url
-      ? `${profile.profile_image_url}?t=${Date.now()}`
-      : null
-  );
 
   // 폼 데이터 관리 - 안정화된 initialData
   const initialData = useMemo<ProfileFormData>(
@@ -79,37 +67,12 @@ export function ProfileSection({
     initialData,
   });
 
-  // profile prop이 변경될 때마다 프리뷰 업데이트
-  useEffect(() => {
-    console.log(
-      "session",
-      state.status === "authenticated" ? state.session : null
-    );
-    console.log("user", state.status === "authenticated" ? state.user : null);
-    if (profile?.profile_image_url) {
-      const newPreviewUrl = `${profile.profile_image_url}?t=${Date.now()}`;
-      setProfileImagePreview(newPreviewUrl);
-    } else {
-      setProfileImagePreview(null);
-    }
-  }, [profile?.profile_image_url]);
-
   const handleInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
   ) => {
     const { name, value } = e.target;
     const processedValue = name === "phoneNumber" ? formatPhone(value) : value;
     handleChange(name as keyof ProfileFormData, processedValue);
-  };
-
-  const handleImageDelete = async () => {
-    try {
-      await onImageDelete();
-      setProfileImagePreview(null);
-    } catch (error) {
-      devLog.error("[PROFILE_SECTION] Failed to delete image:", error);
-      throw error;
-    }
   };
 
   const handleSave = async () => {
@@ -149,38 +112,12 @@ export function ProfileSection({
             description={PAGE_HEADER.PROFILE_INFO_DESCRIPTION}
           />
           <CardContent className="space-y-6">
-            {/* 프로필 사진 */}
-            <div className="space-y-4">
-              <ImageUpload
-                id="profile-image-upload"
-                uploadType="profile"
-                onUpload={async (file) => {
-                  if (!file) return;
-                  setProfileImagePreview(URL.createObjectURL(file));
-                  const result = await onImageUpload(file);
-                  if (result?.publicUrl) {
-                    const cacheBustedUrl = `${
-                      result.publicUrl
-                    }?t=${Date.now()}`;
-                    setProfileImagePreview(cacheBustedUrl);
-                    if (profile) {
-                      profile.profile_image_url = result.publicUrl;
-                    }
-                  }
-                }}
-                onDelete={handleImageDelete}
-                onAvatarChange={async () => {
-                  const newSeed = generateRandomSeed();
-                  await updateAvatarSeed(newSeed);
-                }}
-                currentImage={profileImagePreview}
-                avatarSize="lg"
-                label={LABELS.PROFILE_PHOTO}
-                profile={profile}
-              />
-            </div>
-
-            <Separator />
+            {/* 프로필 이미지 섹션 */}
+            <ProfileImageSection
+              profile={profile}
+              onImageUpload={onImageUpload}
+              onImageDelete={onImageDelete}
+            />
 
             {/* 기본 정보 */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -332,6 +269,11 @@ export function ProfileSection({
             </div>
           </CardContent>
         </Card>
+
+        {/* 소셜 계정 연동 섹션 */}
+        <div className="mt-6">
+          <SocialLinkingSection userId={profile?.id || ""} />
+        </div>
       </motion.div>
     </ErrorBoundary>
   );

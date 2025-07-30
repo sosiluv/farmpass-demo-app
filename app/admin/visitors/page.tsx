@@ -11,7 +11,7 @@ import {
 } from "@/components/admin/visitors";
 import { PageHeader } from "@/components/layout";
 import { useMemo, useEffect } from "react";
-import { useVisitorActions } from "@/hooks/useVisitorActions";
+import { useVisitorActions } from "@/hooks/visitor/useVisitorActions";
 import { generateVisitorPageStats } from "@/lib/utils/data/common-stats";
 import { ErrorBoundary } from "@/components/error/error-boundary";
 import { ERROR_CONFIGS } from "@/lib/constants/error";

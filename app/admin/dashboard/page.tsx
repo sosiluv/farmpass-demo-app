@@ -9,14 +9,14 @@ import {
   StatsGrid,
   ChartGrid,
 } from "@/components/admin/dashboard";
-import { useNotificationPermission } from "@/hooks/useNotificationPermission";
+import { useNotificationPermission } from "@/hooks/notification/useNotificationPermission";
 import { useCommonToast } from "@/lib/utils/notification/toast-messages";
 import { BarChart3, TrendingUp } from "lucide-react";
 import { ErrorBoundary } from "@/components/error/error-boundary";
 import { calculateUnifiedChartData } from "@/lib/utils/data/common-stats";
 import { devLog } from "@/lib/utils/logging/dev-logger";
 import { AdminError } from "@/components/error/admin-error";
-import { useMultipleLoadingTimeout } from "@/hooks/useTimeout";
+import { useMultipleLoadingTimeout } from "@/hooks/system/useTimeout";
 import { InstallGuide } from "@/components/common/InstallGuide";
 import { LABELS, PAGE_HEADER } from "@/lib/constants/dashboard";
 import { ERROR_CONFIGS } from "@/lib/constants/error";

@@ -22,6 +22,8 @@ import {
 import { useSystemSettingsQuery } from "@/lib/hooks/query/use-system-settings-query";
 import { getImageUploadErrorMessage } from "@/lib/utils/validation/validation";
 import { handleError } from "@/lib/utils/error/handleError";
+import { profileKeys } from "@/lib/hooks/query/query-keys";
+import { useQueryClient } from "@tanstack/react-query";
 
 export interface UseUnifiedImageUploadOptions {
   uploadType: UploadType;
@@ -56,6 +58,7 @@ export function useUnifiedImageUpload(
   } = options;
 
   const { showInfo, showSuccess, showError } = useCommonToast();
+  const queryClient = useQueryClient();
 
   // settings context에서 refetch 함수 가져오기
   const { refetch: refetchSettingsContext } = useSystemSettingsQuery();
@@ -132,6 +135,16 @@ export function useUnifiedImageUpload(
       onSuccess?.(result);
       devLog.log("이미지 업로드 성공:", result);
 
+      // 프로필 이미지 업로드인 경우 프로필 캐시 무효화
+      if (uploadType === "profile") {
+        try {
+          await queryClient.invalidateQueries({ queryKey: profileKeys.all });
+          devLog.log("프로필 캐시 무효화 완료");
+        } catch (error) {
+          devLog.error("프로필 캐시 무효화 실패:", error);
+        }
+      }
+
       // settings context refetch (업로드 성공 후)
       if (refetchSettings) {
         try {
@@ -149,6 +162,7 @@ export function useUnifiedImageUpload(
       refetchSettings,
       refetchSettingsContext,
       uploadType,
+      queryClient,
     ]
   );
 
@@ -368,6 +382,16 @@ export function useUnifiedImageUpload(
       showSuccess("이미지 삭제 완료", deleteSuccessMessage);
       devLog.log("이미지 삭제 완료");
 
+      // 프로필 이미지 삭제인 경우 프로필 캐시 무효화
+      if (uploadType === "profile") {
+        try {
+          await queryClient.invalidateQueries({ queryKey: profileKeys.all });
+          devLog.log("프로필 캐시 무효화 완료 (삭제 후)");
+        } catch (error) {
+          devLog.error("프로필 캐시 무효화 실패 (삭제 후):", error);
+        }
+      }
+
       // settings context refetch (삭제 성공 후)
       if (refetchSettings) {
         try {
@@ -404,6 +428,7 @@ export function useUnifiedImageUpload(
     refetchSettings,
     refetchSettingsContext,
     uploadType,
+    queryClient,
   ]);
 
   return {

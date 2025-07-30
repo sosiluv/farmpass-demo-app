@@ -4,7 +4,7 @@ import { useEffect, useState, useRef, useCallback } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { supabase } from "@/lib/supabase/client";
 import { useCommonToast } from "@/lib/utils/notification/toast-messages";
-import { useTimeout } from "@/hooks/useTimeout";
+import { useTimeout } from "@/hooks/system/useTimeout";
 import { AdminError } from "@/components/error/admin-error";
 import { ERROR_CONFIGS } from "@/lib/constants/error";
 import { LABELS, BUTTONS } from "@/lib/constants/auth";
@@ -22,7 +22,7 @@ import { ErrorBoundary } from "@/components/error/error-boundary";
 import { Logo } from "@/components/common";
 import { Loading } from "@/components/ui/loading";
 import { getAuthErrorMessage } from "@/lib/utils/validation";
-import { useAuthActions } from "@/hooks/useAuthActions";
+import { useAuthActions } from "@/hooks/auth/useAuthActions";
 
 export default function ConfirmPage() {
   const [loading, setLoading] = useState(true);

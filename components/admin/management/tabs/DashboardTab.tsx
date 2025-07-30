@@ -15,7 +15,7 @@ import { StatsSkeleton } from "@/components/common/skeletons";
 import { BarChart3, TrendingUp } from "lucide-react";
 import { AdminError } from "@/components/error/admin-error";
 import { ERROR_CONFIGS } from "@/lib/constants/error";
-import { useDataFetchTimeout } from "@/hooks/useTimeout";
+import { useDataFetchTimeout } from "@/hooks/system/useTimeout";
 import { LABELS } from "@/lib/constants/management";
 
 export function DashboardTab() {

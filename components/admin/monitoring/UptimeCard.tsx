@@ -3,25 +3,9 @@ import { Badge } from "@/components/ui/badge";
 import { Clock, Activity, Hash, Calendar, AlertCircle } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { LABELS, PAGE_HEADER } from "@/lib/constants/monitoring";
+import type { UptimeData } from "@/lib/types/monitoring";
 
-interface UptimeCardProps {
-  monitors?: Array<{
-    id: number;
-    friendly_name: string;
-    status: number;
-    all_time_uptime_ratio: number;
-    custom_uptime_ratio?: number;
-    url?: string;
-    interval?: number;
-    type?: number;
-    port?: string;
-    create_datetime?: number;
-  }>;
-  success?: boolean;
-  error?: string;
-  message?: string;
-  details?: string;
-}
+interface UptimeCardProps extends UptimeData {}
 
 export function UptimeCard({
   monitors,

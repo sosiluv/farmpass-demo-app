@@ -22,7 +22,7 @@ import { SuccessCard } from "@/components/visitor/SuccessCard";
 import { ErrorBoundary } from "@/components/error/error-boundary";
 import { ERROR_CONFIGS } from "@/lib/constants/error";
 import { useSystemSettingsQuery } from "@/lib/hooks/query/use-system-settings-query";
-import { useVisitorForm } from "@/hooks/useVisitorForm";
+import { useVisitorForm } from "@/hooks/visitor/useVisitorForm";
 import { VisitorForm } from "@/components/visitor/VisitorForm";
 import { useCommonToast } from "@/lib/utils/notification/toast-messages";
 import { getAuthErrorMessage } from "@/lib/utils/validation/validation";

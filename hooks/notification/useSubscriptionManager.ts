@@ -11,7 +11,7 @@ import {
   useDeleteSubscriptionMutation,
 } from "@/lib/hooks/query/use-push-mutations";
 import { settingsKeys } from "@/lib/hooks/query/query-keys";
-import { useVapidKeyEffective } from "@/hooks/useVapidKey";
+import { useVapidKeyEffective } from "@/hooks/auth/useVapidKey";
 
 export function useSubscriptionManager() {
   const queryClient = useQueryClient();

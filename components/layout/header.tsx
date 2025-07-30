@@ -14,7 +14,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useAuth } from "@/components/providers/auth-provider";
-import { useAuthActions } from "@/hooks/useAuthActions";
+import { useAuthActions } from "@/hooks/auth/useAuthActions";
 import { useProfileQuery } from "@/lib/hooks/query/use-profile-query";
 import { generateInitials, getAvatarUrl } from "@/lib/utils/media/avatar";
 import { User, Settings, LogOut, Lock, Building2 } from "lucide-react";

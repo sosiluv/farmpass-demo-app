@@ -10,52 +10,10 @@ import { Progress } from "@/components/ui/progress";
 import { Activity, Server, HardDrive, Cpu, Clock } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { LABELS, PAGE_HEADER } from "@/lib/constants/monitoring";
+import type { SystemStatusData } from "@/lib/types/monitoring";
 
 interface SystemStatusCardProps {
-  data: {
-    timestamp: string;
-    health: {
-      status: string;
-      timestamp: string;
-      uptime: number;
-      responseTime: string;
-      version: string;
-      performance: {
-        totalResponseTime: string;
-        databaseResponseTime: string;
-        cpu: {
-          user: string;
-          system: string;
-          total: string;
-        };
-      };
-      system: {
-        farmCount: number;
-        visitorCount: number;
-        memory: {
-          used: number;
-          total: number;
-          external: number;
-          status: string;
-        };
-        cpu: {
-          user: number;
-          system: number;
-          total: number;
-          threshold: number;
-          status: string;
-        };
-        nodeVersion: string;
-        platform: string;
-        arch: string;
-      };
-      services: {
-        database: string;
-        api: string;
-        memory: string;
-      };
-    };
-  };
+  data: SystemStatusData;
 }
 
 export function SystemStatusCard({ data }: SystemStatusCardProps) {

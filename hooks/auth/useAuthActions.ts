@@ -3,7 +3,7 @@ import { apiClient } from "@/lib/utils/data/api-client";
 import { handleError } from "@/lib/utils/error";
 import { devLog } from "@/lib/utils/logging/dev-logger";
 import { logout } from "@/lib/utils/auth/authService";
-import { useSubscriptionManager } from "@/hooks/useSubscriptionManager";
+import { useSubscriptionManager } from "@/hooks/notification/useSubscriptionManager";
 import { useRef } from "react";
 /**
  * 로그인 액션 훅

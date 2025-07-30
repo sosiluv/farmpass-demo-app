@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { BUTTONS } from "@/lib/constants/common";
 import { useProfileQuery } from "@/lib/hooks/query/use-profile-query";
 import { PageLoading } from "@/components/ui/loading";
-import { useAuthActions } from "@/hooks/useAuthActions";
+import { useAuthActions } from "@/hooks/auth/useAuthActions";
 
 interface ProtectedRouteProps {
   children: React.ReactNode;

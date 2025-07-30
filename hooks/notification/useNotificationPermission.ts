@@ -10,7 +10,7 @@ import {
 } from "@/lib/utils/browser/safari-compat";
 import { useCreateSubscriptionMutation } from "@/lib/hooks/query/use-push-mutations";
 import { requestNotificationPermissionAndSubscribe } from "@/lib/utils/notification/push-subscription";
-import { useVapidKeyEffective } from "@/hooks/useVapidKey";
+import { useVapidKeyEffective } from "@/hooks/auth/useVapidKey";
 import { useProfileQuery } from "@/lib/hooks/query/use-profile-query";
 
 interface NotificationPermissionState {

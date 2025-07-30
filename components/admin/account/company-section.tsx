@@ -18,7 +18,7 @@ import {
 import { AddressSearch } from "@/components/common/address-search";
 import { ErrorBoundary } from "@/components/error/error-boundary";
 import { ERROR_CONFIGS } from "@/lib/constants/error";
-import { useAccountForm } from "@/hooks/useAccountForm";
+import { useAccountForm } from "@/hooks/account/useAccountForm";
 import type { CompanySectionProps, CompanyFormData } from "@/lib/types/account";
 import AccountCardHeader from "./AccountCardHeader";
 import {

@@ -3,13 +3,10 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { AlertCircle, AlertTriangle, Info } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { LABELS, PAGE_HEADER } from "@/lib/constants/monitoring";
+import type { ErrorLog } from "@/lib/types/monitoring";
 
 interface ErrorLogsCardProps {
-  errors: Array<{
-    timestamp: string;
-    level: string;
-    message: string;
-  }>;
+  errors: ErrorLog[];
 }
 
 export function ErrorLogsCard({ errors }: ErrorLogsCardProps) {

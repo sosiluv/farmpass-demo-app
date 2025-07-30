@@ -2,11 +2,11 @@ import { useCommonToast } from "@/lib/utils/notification/toast-messages";
 import type { SystemSettings } from "@/lib/types/settings";
 import { INPUT_VALIDATION_RULES } from "@/lib/constants/defaults";
 
-interface SettingsValidatorProps {
+interface UseSettingsValidatorProps {
   user: any;
 }
 
-export function useSettingsValidator({ user }: SettingsValidatorProps) {
+export function useSettingsValidator({ user }: UseSettingsValidatorProps) {
   const { showWarning } = useCommonToast();
 
   // 입력 필드 유효성 검사 설정 - 공통 상수에서 가져옴

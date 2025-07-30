@@ -19,7 +19,7 @@ import {
   toDateString,
   toKSTDate,
 } from "@/lib/utils/datetime/date";
-import { useSupabaseRealtime } from "@/hooks/useSupabaseRealtime";
+import { useSupabaseRealtime } from "@/hooks/notification/useSupabaseRealtime";
 
 /**
  * React Query 기반 Farm Visitors Hook - 간단한 버전부터 시작

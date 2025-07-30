@@ -6,7 +6,7 @@ import { useAuth } from "@/components/providers/auth-provider";
 import { apiClient } from "@/lib/utils/data/api-client";
 import { farmsKeys } from "./query-keys";
 import type { Farm } from "@/lib/types/farm";
-import { useSupabaseRealtime } from "@/hooks/useSupabaseRealtime";
+import { useSupabaseRealtime } from "@/hooks/notification/useSupabaseRealtime";
 
 /**
  * React Query 기반 Farms Hook

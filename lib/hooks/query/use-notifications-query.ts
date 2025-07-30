@@ -4,7 +4,7 @@ import { useAuthenticatedQuery } from "@/lib/hooks/query-utils";
 import { useAuth } from "@/components/providers/auth-provider";
 import { apiClient } from "@/lib/utils/data/api-client";
 import { notificationKeys } from "./query-keys";
-import { useSupabaseRealtime } from "@/hooks/useSupabaseRealtime";
+import { useSupabaseRealtime } from "@/hooks/notification/useSupabaseRealtime";
 import type {
   Notification,
   NotificationsResponse,

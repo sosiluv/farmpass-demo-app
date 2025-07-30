@@ -17,21 +17,10 @@ import {
   Bell,
 } from "lucide-react";
 import { LABELS, PAGE_HEADER } from "@/lib/constants/monitoring";
+import type { TechStackData } from "@/lib/types/monitoring";
 
 interface TechStackCardProps {
-  data?: {
-    framework?: string;
-    runtime?: string;
-    react?: string;
-    typescript?: string;
-    database?: string;
-    authentication?: string;
-    deployment?: string;
-    ui?: string;
-    state?: string;
-    monitoring?: string;
-    analytics?: string;
-  };
+  data?: TechStackData;
 }
 
 export function TechStackCard({ data }: TechStackCardProps) {

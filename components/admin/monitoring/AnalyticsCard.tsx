@@ -2,20 +2,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Users, Eye, Clock, TrendingUp, AlertCircle } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { LABELS, PAGE_HEADER } from "@/lib/constants/monitoring";
+import type { AnalyticsData } from "@/lib/types/monitoring";
 
 interface AnalyticsCardProps {
-  data?: {
-    success?: boolean;
-    error?: string;
-    message?: string;
-    details?: string;
-    visitors: number;
-    pageviews: number;
-    sessions?: number;
-    newUsers?: number;
-    bounceRate?: number;
-    avgDuration?: number;
-  };
+  data?: AnalyticsData;
 }
 
 export function AnalyticsCard({ data }: AnalyticsCardProps) {

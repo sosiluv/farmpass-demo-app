@@ -1,6 +1,6 @@
 "use client";
 
-import { useLogo } from "@/hooks/use-logo";
+import { useLogo } from "@/hooks/ui/use-logo";
 import { cn } from "@/lib/utils";
 import Image from "next/image";
 import type { SystemSettings } from "@/lib/types/settings";

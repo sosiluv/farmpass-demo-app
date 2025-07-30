@@ -4,11 +4,11 @@ import { useEffect } from "react";
 import { useDialogQueue } from "@/store/use-dialog-queue";
 import { NotificationPermissionDialog } from "@/components/admin/notifications";
 import { InstallPrompt } from "./InstallPrompt";
-import { useNotificationPermission } from "@/hooks/useNotificationPermission";
+import { useNotificationPermission } from "@/hooks/notification/useNotificationPermission";
 import { usePWAInstall } from "@/components/providers/pwa-provider";
 import { useFarmsQuery } from "@/lib/hooks/query/use-farms-query";
 import { PhoneInputDialog } from "@/components/common/PhoneInputDialog";
-import { usePhoneInputDialog } from "@/hooks/usePhoneInputDialog";
+import { usePhoneInputDialog } from "@/hooks/account/usePhoneInputDialog";
 
 export function DialogManager() {
   const { currentDialog, isVisible, removeDialog, addDialog, queue } =

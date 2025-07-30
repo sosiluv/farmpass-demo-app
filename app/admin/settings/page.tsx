@@ -16,11 +16,9 @@ import {
 import { useSystemMode } from "@/components/providers/debug-provider";
 import { useAuth } from "@/components/providers/auth-provider";
 import type { SystemSettings } from "@/lib/types/settings";
-import {
-  useSettingsValidator,
-  useSettingsSaver,
-  SettingsHeader,
-} from "@/components/admin/settings";
+import { useSettingsValidator } from "@/hooks/settings/useSettingsValidator";
+import { useSettingsSaver } from "@/hooks/settings/useSettingsSaver";
+import { SettingsHeader } from "@/components/admin/settings/SettingsHeader";
 import { ERROR_CONFIGS } from "@/lib/constants/error";
 import { LABELS } from "@/lib/constants/settings";
 import { useProfileQuery } from "@/lib/hooks/query/use-profile-query";

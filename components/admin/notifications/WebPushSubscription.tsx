@@ -12,7 +12,7 @@ interface NotificationFarm extends Pick<Farm, "id" | "farm_name"> {
   address?: string;
   isSubscribed?: boolean;
 }
-import { useNotificationService } from "@/hooks/useNotificationService";
+import { useNotificationService } from "@/hooks/notification/useNotificationService";
 import { renderNotificationStatus } from "./status/NotificationStatus";
 import NotificationCardHeader from "./NotificationCardHeader";
 import { Zap } from "lucide-react";

@@ -2,7 +2,7 @@
 
 import React from "react";
 import type { SystemSettings } from "@/lib/types/settings";
-import { useSystemNotificationSettings } from "@/hooks/useNotificationSettings";
+import { useSystemNotificationSettings } from "@/hooks/settings/useNotificationSettings";
 import {
   VapidKeySection,
   NotificationIconSection,

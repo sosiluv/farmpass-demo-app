@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import type { VisitorSettings } from "@/lib/types/visitor";
 import type { VisitorFormData } from "@/lib/utils/validation/visitor-validation";
 import { handleError } from "@/lib/utils/error";
-import { useUnifiedImageUpload } from "@/hooks/useUnifiedImageUpload";
+import { useUnifiedImageUpload } from "@/hooks/media/useUnifiedImageUpload";
 import { createImageManager } from "@/lib/utils/media/unified-image-manager";
 
 // React Query Hooks

@@ -10,7 +10,7 @@ import {
 import { Session, User } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/client";
 import { devLog } from "@/lib/utils/logging/dev-logger";
-import { useSubscriptionManager } from "@/hooks/useSubscriptionManager";
+import { useSubscriptionManager } from "@/hooks/notification/useSubscriptionManager";
 import { useQueryClient } from "@tanstack/react-query";
 import {
   profileKeys,

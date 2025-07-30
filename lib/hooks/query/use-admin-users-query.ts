@@ -4,7 +4,7 @@ import { useAuthenticatedQuery } from "@/lib/hooks/query-utils";
 import { useAuth } from "@/components/providers/auth-provider";
 import { supabase } from "@/lib/supabase/client";
 import { adminKeys } from "./query-keys";
-import { useSupabaseRealtime } from "@/hooks/useSupabaseRealtime";
+import { useSupabaseRealtime } from "@/hooks/notification/useSupabaseRealtime";
 import { toDateString } from "@/lib/utils/datetime/date";
 import { useProfileQuery } from "@/lib/hooks/query/use-profile-query";
 

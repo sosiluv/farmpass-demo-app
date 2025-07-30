@@ -20,7 +20,7 @@ import { ErrorBoundary } from "@/components/error/error-boundary";
 import { devLog } from "@/lib/utils/logging/dev-logger";
 import { AdminError } from "@/components/error/admin-error";
 import { ERROR_CONFIGS } from "@/lib/constants/error";
-import { useDataFetchTimeout } from "@/hooks/useTimeout";
+import { useDataFetchTimeout } from "@/hooks/system/useTimeout";
 import { LABELS } from "@/lib/constants/management";
 
 export function UsersTab() {

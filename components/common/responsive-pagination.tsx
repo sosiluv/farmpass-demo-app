@@ -1,10 +1,13 @@
 "use client";
 
 import React, { useState, useEffect, useMemo } from "react";
-import { usePagination, type PaginationResult } from "@/hooks/use-pagination";
+import {
+  usePagination,
+  type PaginationResult,
+} from "@/hooks/ui/use-pagination";
 import { Pagination } from "@/components/ui/pagination";
 import { Button } from "@/components/ui/button";
-import { useIsMobile, useIsTablet } from "@/hooks/use-mobile";
+import { useIsMobile, useIsTablet } from "@/hooks/ui/use-mobile";
 import { ChevronLeft, ChevronRight, MoreHorizontal } from "lucide-react";
 import { Loading } from "@/components/ui/loading";
 import { BUTTONS } from "@/lib/constants/common";

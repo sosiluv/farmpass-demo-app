@@ -6,7 +6,7 @@ import type { SystemSettings } from "@/lib/types/settings";
 import SettingsCardHeader from "../SettingsCardHeader";
 
 import { ImageUpload } from "@/components/ui/image-upload";
-import { useUnifiedImageUpload } from "@/hooks/useUnifiedImageUpload";
+import { useUnifiedImageUpload } from "@/hooks/media/useUnifiedImageUpload";
 
 interface NotificationIconSectionProps {
   settings: SystemSettings;

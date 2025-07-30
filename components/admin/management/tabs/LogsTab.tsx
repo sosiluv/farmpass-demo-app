@@ -30,7 +30,7 @@ import { LogFilters } from "../logs";
 import { ErrorBoundary } from "@/components/error/error-boundary";
 import { AdminError } from "@/components/error/admin-error";
 import { ERROR_CONFIGS } from "@/lib/constants/error";
-import { useDataFetchTimeout } from "@/hooks/useTimeout";
+import { useDataFetchTimeout } from "@/hooks/system/useTimeout";
 import { LABELS } from "@/lib/constants/management";
 
 export function LogsTab() {

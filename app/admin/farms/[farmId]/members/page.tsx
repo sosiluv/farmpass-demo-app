@@ -12,7 +12,7 @@ import { ErrorBoundary } from "@/components/error/error-boundary";
 import { StatsSkeleton, TableSkeleton } from "@/components/common/skeletons";
 import { AdminError } from "@/components/error/admin-error";
 import { ERROR_CONFIGS } from "@/lib/constants/error";
-import { useDataFetchTimeout } from "@/hooks/useTimeout";
+import { useDataFetchTimeout } from "@/hooks/system/useTimeout";
 import { getAuthErrorMessage } from "@/lib/utils/validation/validation";
 
 // React Query Hooks

@@ -7,7 +7,7 @@ import {
   useIsMobile,
   useIsMobileOrTablet,
   useIsTablet,
-} from "@/hooks/use-mobile";
+} from "@/hooks/ui/use-mobile";
 import { cn } from "@/lib/utils";
 import { BUTTONS } from "@/lib/constants/common";
 

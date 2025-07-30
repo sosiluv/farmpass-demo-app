@@ -101,3 +101,32 @@ export const ERROR_MESSAGES = {
   PASSWORD_COMPLEXITY:
     "비밀번호는 최소 {minLength}자 이상이어야 하며, {requirements}를 포함해야 합니다",
 } as const;
+
+export const SOCIAL_BUTTON_CONFIG = [
+  {
+    provider: "kakao" as const,
+    label: BUTTONS.KAKAO_LOGIN,
+    iconSrc: "/btn_kakao.svg",
+    style: {
+      background: "#FEE500",
+      color: "#191600",
+      border: "1px solid #e0e0e0",
+      marginTop: 8,
+      fontWeight: 600,
+      padding: 0,
+    },
+  },
+  {
+    provider: "google" as const,
+    label: BUTTONS.GOOGLE_LOGIN,
+    iconSrc: "/btn_google.svg",
+    style: {
+      background: "#fff",
+      color: "#191600",
+      border: "1px solid #e0e0e0",
+      marginTop: 8,
+      fontWeight: 600,
+      padding: 0,
+    },
+  },
+] as const;

@@ -7,7 +7,7 @@ import type { FarmStats } from "@/lib/types";
 import { supabase } from "@/lib/supabase/client";
 // 클라이언트 전용 가드
 const isClient = typeof window !== "undefined";
-import { useSupabaseRealtime } from "@/hooks/useSupabaseRealtime";
+import { useSupabaseRealtime } from "@/hooks/notification/useSupabaseRealtime";
 import { useProfileQuery } from "@/lib/hooks/query/use-profile-query";
 
 // 트렌드 계산 헬퍼 함수 - 첫 달 시작 시 0% 표시

@@ -21,7 +21,7 @@ import { Users } from "lucide-react";
 
 // Zustand Store 사용
 import { useVisitorFiltersStore } from "@/lib/hooks/query/use-visitor-filters";
-import { useVisitorActions } from "@/hooks/useVisitorActions";
+import { useVisitorActions } from "@/hooks/visitor/useVisitorActions";
 import { generateFarmVisitorPageStats } from "@/lib/utils/data/common-stats";
 import { ErrorBoundary } from "@/components/error/error-boundary";
 import { ResponsivePagination } from "@/components/common/responsive-pagination";

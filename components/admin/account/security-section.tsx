@@ -17,6 +17,8 @@ export function SecuritySection({
   socialUserInfo?: {
     isSocialUser: boolean;
     socialProvider: string;
+    allProviders: string[];
+    socialProviders: string[];
   };
 }) {
   return (

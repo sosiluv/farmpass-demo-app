@@ -8,7 +8,7 @@ import { User2, Building2, Shield } from "lucide-react";
 import { ErrorBoundary } from "@/components/error/error-boundary";
 import { ERROR_CONFIGS } from "@/lib/constants/error";
 import { LABELS } from "@/lib/constants/account";
-import { useAccountActions } from "@/hooks/useAccountActions";
+import { useAccountActions } from "@/hooks/account/useAccountActions";
 import { useCommonToast } from "@/lib/utils/notification/toast-messages";
 import { getAuthErrorMessage } from "@/lib/utils/validation/validation";
 import type { Profile } from "@/lib/types";
@@ -35,15 +35,21 @@ export function AccountTabs({ profile, userId }: AccountTabsProps) {
       return {
         isSocialUser: provider && provider !== "email",
         socialProvider: provider || "",
+        allProviders: provider ? [provider] : [],
+        socialProviders: provider && provider !== "email" ? [provider] : [],
       };
     }
     return {
       isSocialUser: false,
       socialProvider: "",
+      allProviders: [],
+      socialProviders: [],
     };
   }, [state]) as {
     isSocialUser: boolean;
     socialProvider: string;
+    allProviders: string[];
+    socialProviders: string[];
   };
 
   const {

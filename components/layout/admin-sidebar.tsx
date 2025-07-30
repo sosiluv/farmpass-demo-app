@@ -1,7 +1,7 @@
 "use client";
 
 import { useAuth } from "@/components/providers/auth-provider";
-import { useAuthActions } from "@/hooks/useAuthActions";
+import { useAuthActions } from "@/hooks/auth/useAuthActions";
 import { useSystemSettingsQuery } from "@/lib/hooks/query/use-system-settings-query";
 import { getFarmTypeLabel, getFarmTypeIcon } from "@/lib/constants/farm-types";
 import type { Farm } from "@/lib/types/farm";
@@ -42,7 +42,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useMemo, useState } from "react";
 import { Logo } from "@/components/common";
-import { useLogo } from "@/hooks/use-logo";
+import { useLogo } from "@/hooks/ui/use-logo";
 import { BUTTONS, LABELS } from "@/lib/constants/common";
 import { useProfileQuery } from "@/lib/hooks/query/use-profile-query";
 import { useFarmsQuery } from "@/lib/hooks/query/use-farms-query";

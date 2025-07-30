@@ -10,7 +10,7 @@ import { LABELS, PAGE_HEADER } from "@/lib/constants/settings";
 import { ErrorBoundary } from "@/components/error/error-boundary";
 import { ERROR_CONFIGS } from "@/lib/constants/error";
 import type { SystemSettings } from "@/lib/types/settings";
-import { useNumberInput } from "@/hooks/use-number-input";
+import { useNumberInput } from "@/hooks/ui/use-number-input";
 import SettingsCardHeader from "../SettingsCardHeader";
 
 interface VisitorTabProps {

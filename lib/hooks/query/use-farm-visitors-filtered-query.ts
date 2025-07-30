@@ -19,7 +19,7 @@ import {
   createKSTDateRange,
   createKSTDateRangeSimple,
 } from "@/lib/utils/datetime/date";
-import { useSupabaseRealtime } from "@/hooks/useSupabaseRealtime";
+import { useSupabaseRealtime } from "@/hooks/notification/useSupabaseRealtime";
 
 /**
  * React Query 기반 방문자 필터링 Hook

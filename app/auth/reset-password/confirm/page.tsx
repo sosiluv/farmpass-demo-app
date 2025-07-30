@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "@/components/ui/button";
-import { useTimeout } from "@/hooks/useTimeout";
+import { useTimeout } from "@/hooks/system/useTimeout";
 import { AdminError } from "@/components/error/admin-error";
 import { ERROR_CONFIGS } from "@/lib/constants/error";
 import {
@@ -30,7 +30,7 @@ import { useCommonToast } from "@/lib/utils/notification/toast-messages";
 import { devLog } from "@/lib/utils/logging/dev-logger";
 import { supabase } from "@/lib/supabase/client";
 
-import { useAuthActions } from "@/hooks/useAuthActions";
+import { useAuthActions } from "@/hooks/auth/useAuthActions";
 import { ErrorBoundary } from "@/components/error/error-boundary";
 import { getAuthErrorMessage } from "@/lib/utils/validation";
 import { usePasswordRules } from "@/lib/utils/validation/usePasswordRules";

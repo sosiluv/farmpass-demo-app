@@ -13,8 +13,8 @@ import {
 } from "@/components/ui/collapsible";
 
 // 커스텀 훅과 컴포넌트 import
-import { useDebugInfo } from "@/hooks/use-debug-info";
-import { useDebugLogs } from "@/hooks/use-debug-logs";
+import { useDebugInfo } from "@/hooks/debug/use-debug-info";
+import { useDebugLogs } from "@/hooks/debug/use-debug-logs";
 import { SystemInfoSection } from "./system-info-section";
 import { PerformanceInfoSection } from "./performance-info-section";
 import { DebugLogsSection } from "./debug-logs-section";

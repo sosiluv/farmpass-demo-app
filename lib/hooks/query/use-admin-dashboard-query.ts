@@ -9,7 +9,7 @@ import {
   createKSTDateRange,
 } from "@/lib/utils/datetime/date";
 import { adminKeys } from "./query-keys";
-import { useSupabaseRealtime } from "@/hooks/useSupabaseRealtime";
+import { useSupabaseRealtime } from "@/hooks/notification/useSupabaseRealtime";
 import { useProfileQuery } from "@/lib/hooks/query/use-profile-query";
 
 // 클라이언트 전용 가드

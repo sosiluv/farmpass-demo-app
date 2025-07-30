@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { UserCheck } from "lucide-react";
 import { LABELS, PLACEHOLDERS, PAGE_HEADER } from "@/lib/constants/settings";
 import type { SystemSettings } from "@/lib/types/settings";
-import { useNumberInput } from "@/hooks/use-number-input";
+import { useNumberInput } from "@/hooks/ui/use-number-input";
 import SettingsCardHeader from "../SettingsCardHeader";
 
 type LoginSecuritySettings = Pick<

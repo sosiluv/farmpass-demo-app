@@ -1,10 +1,9 @@
-import { useState } from "react";
 import { useCommonToast } from "@/lib/utils/notification/toast-messages";
 import { useSystemSettingsMutations } from "@/lib/hooks/query/use-system-settings-mutations";
 import { getAuthErrorMessage } from "@/lib/utils/validation/validation";
 import type { SystemSettings } from "@/lib/types/settings";
 
-interface SettingsSaverProps {
+interface UseSettingsSaverProps {
   onSettingsUpdate: (updatedSettings: SystemSettings) => void;
   onUnsavedChangesChange: (hasChanges: boolean) => void;
   refreshSystemModes: () => Promise<void>;
@@ -16,7 +15,7 @@ export function useSettingsSaver({
   onUnsavedChangesChange,
   refreshSystemModes,
   refetch,
-}: SettingsSaverProps) {
+}: UseSettingsSaverProps) {
   const { showInfo, showWarning, showSuccess, showError } = useCommonToast();
   const systemMutations = useSystemSettingsMutations();
 

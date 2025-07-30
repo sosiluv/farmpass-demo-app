@@ -30,9 +30,14 @@ export const BUTTONS = {
   DELETE_BUTTON: "삭제",
   DELETE_FARM_LOADING: "삭제 중...",
   ADD_FIRST_FARM: "첫 농장 등록하기",
+  ADD_FARM_BUTTON: "농장 추가",
   CANCEL_BUTTON: "취소",
   QR_CODE_DOWNLOAD: "QR 코드 다운로드",
-  ADD_FARM_BUTTON: "농장 추가",
+  QR_CODE_SHARE: "QR 코드 공유",
+  QR_CODE_COPY: "URL 복사",
+  QR_CODE_COPY_SUCCESS: "복사됨!",
+  QR_CODE_OPEN_LINK: "링크 열기",
+
   ADD_MEMBER: "구성원 추가",
   ADD_MEMBER_SHORT: "추가",
   QR_CODE_BUTTON: "QR코드",
@@ -100,6 +105,7 @@ export const LABELS = {
   QR_CODE_TITLE: "{farmName} QR 코드",
   QR_CODE_DESCRIPTION: "방문자 등록을 위한 QR 코드입니다.",
   QR_CODE_SCAN_INFO: "QR 코드를 스캔하면 방문자 등록 페이지로 이동합니다.",
+  QR_CODE_LINK_TITLE: "방문자 등록 링크",
 } as const;
 
 // 구성원 역할 옵션

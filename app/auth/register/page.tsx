@@ -37,7 +37,7 @@ import {
   checkEmailDuplicate,
   getAuthErrorMessage,
 } from "@/lib/utils/validation";
-import { useAuthActions } from "@/hooks/useAuthActions";
+import { useAuthActions } from "@/hooks/auth/useAuthActions";
 import {
   createRegistrationFormSchema,
   createDefaultRegistrationFormSchema,

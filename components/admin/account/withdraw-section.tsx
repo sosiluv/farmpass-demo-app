@@ -16,7 +16,7 @@ import { AlertTriangle, Loader2 } from "lucide-react";
 import { PAGE_HEADER, BUTTONS, LABELS } from "@/lib/constants/account";
 import { useRouter } from "next/navigation";
 import { useCommonToast } from "@/lib/utils/notification/toast-messages";
-import { useAuthActions } from "@/hooks/useAuthActions";
+import { useAuthActions } from "@/hooks/auth/useAuthActions";
 import { apiClient } from "@/lib/utils/data/api-client";
 import { handleError } from "@/lib/utils/error/handleError";
 import { getAuthErrorMessage } from "@/lib/utils/validation/validation";

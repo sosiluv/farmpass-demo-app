@@ -8,9 +8,9 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { QrCode, Download, Copy, ExternalLink } from "lucide-react";
+import { QrCode, Download, Copy, ExternalLink, Share2 } from "lucide-react";
 import { BUTTONS, LABELS } from "@/lib/constants/farms";
-import { useState } from "react";
+import { useQRCodeActions } from "@/hooks/media/useQRCodeActions";
 
 interface FarmQRCodeProps {
   farmId: string;
@@ -19,46 +19,15 @@ interface FarmQRCodeProps {
 }
 
 export function FarmQRCode({ farmId, farmName, size = 256 }: FarmQRCodeProps) {
-  const [copied, setCopied] = useState(false);
-  const qrUrl = `${window.location.origin}/visit/${farmId}`;
-
-  const handleDownload = () => {
-    const svg = document.getElementById(`qr-code-${farmId}`);
-    if (!svg) return;
-
-    const svgData = new XMLSerializer().serializeToString(svg);
-    const canvas = document.createElement("canvas");
-    const ctx = canvas.getContext("2d");
-    const img = new Image();
-
-    img.onload = () => {
-      canvas.width = size;
-      canvas.height = size;
-      ctx?.drawImage(img, 0, 0);
-
-      const pngFile = canvas.toDataURL("image/png");
-      const downloadLink = document.createElement("a");
-      downloadLink.download = `${farmName}-qr-code.png`;
-      downloadLink.href = pngFile;
-      downloadLink.click();
-    };
-
-    img.src = "data:image/svg+xml;base64," + btoa(svgData);
-  };
-
-  const handleCopyUrl = async () => {
-    try {
-      await navigator.clipboard.writeText(qrUrl);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    } catch (err) {
-      console.error("Failed to copy URL:", err);
-    }
-  };
-
-  const handleOpenUrl = () => {
-    window.open(qrUrl, "_blank");
-  };
+  const {
+    copied,
+    isMobile,
+    supportsShare,
+    handleDownload,
+    handleShare,
+    handleCopyUrl,
+    handleOpenUrl,
+  } = useQRCodeActions({ farmId, farmName, size });
 
   return (
     <Dialog>
@@ -96,7 +65,7 @@ export function FarmQRCode({ farmId, farmName, size = 256 }: FarmQRCodeProps) {
               <div className="p-3 sm:p-6 bg-gradient-to-br from-emerald-50 to-teal-50 rounded-xl sm:rounded-2xl border-2 border-emerald-200 shadow-lg">
                 <QRCodeSVG
                   id={`qr-code-${farmId}`}
-                  value={qrUrl}
+                  value={`${window.location.origin}/visit/${farmId}`}
                   size={Math.min(size, window.innerWidth < 640 ? 200 : size)}
                   level="H"
                   className="drop-shadow-sm"
@@ -110,13 +79,24 @@ export function FarmQRCode({ farmId, farmName, size = 256 }: FarmQRCodeProps) {
 
           {/* 액션 버튼들 */}
           <div className="space-y-3">
-            <Button
-              onClick={handleDownload}
-              className="w-full h-12 sm:h-10 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white shadow-lg hover:shadow-xl transition-all duration-200 text-sm sm:text-base"
-            >
-              <Download className="h-4 w-4 mr-2" />
-              {BUTTONS.QR_CODE_DOWNLOAD}
-            </Button>
+            {/* 모바일에서는 공유 버튼, 데스크톱에서는 다운로드 버튼 */}
+            {isMobile && supportsShare ? (
+              <Button
+                onClick={handleShare}
+                className="w-full h-12 sm:h-10 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-lg hover:shadow-xl transition-all duration-200 text-sm sm:text-base"
+              >
+                <Share2 className="h-4 w-4 mr-2" />
+                {BUTTONS.QR_CODE_SHARE}
+              </Button>
+            ) : (
+              <Button
+                onClick={handleDownload}
+                className="w-full h-12 sm:h-10 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white shadow-lg hover:shadow-xl transition-all duration-200 text-sm sm:text-base"
+              >
+                <Download className="h-4 w-4 mr-2" />
+                {BUTTONS.QR_CODE_DOWNLOAD}
+              </Button>
+            )}
 
             <div className="flex flex-col sm:flex-row gap-2">
               <Button
@@ -125,7 +105,7 @@ export function FarmQRCode({ farmId, farmName, size = 256 }: FarmQRCodeProps) {
                 className="flex-1 h-12 sm:h-10 bg-white hover:bg-emerald-50 border-emerald-200 hover:border-emerald-300 transition-all duration-200 text-sm"
               >
                 <Copy className="h-4 w-4 mr-2" />
-                {copied ? "복사됨!" : "URL 복사"}
+                {copied ? BUTTONS.QR_CODE_COPY_SUCCESS : BUTTONS.QR_CODE_COPY}
               </Button>
               <Button
                 variant="outline"
@@ -133,7 +113,7 @@ export function FarmQRCode({ farmId, farmName, size = 256 }: FarmQRCodeProps) {
                 className="flex-1 h-12 sm:h-10 bg-white hover:bg-emerald-50 border-emerald-200 hover:border-emerald-300 transition-all duration-200 text-sm"
               >
                 <ExternalLink className="h-4 w-4 mr-2" />
-                링크 열기
+                {BUTTONS.QR_CODE_OPEN_LINK}
               </Button>
             </div>
           </div>
@@ -141,10 +121,10 @@ export function FarmQRCode({ farmId, farmName, size = 256 }: FarmQRCodeProps) {
           {/* URL 표시 영역 */}
           <div className="bg-slate-50 rounded-lg p-3 sm:p-4 border border-slate-200">
             <div className="text-xs font-medium text-slate-600 mb-2">
-              방문자 등록 링크
+              {LABELS.QR_CODE_LINK_TITLE}
             </div>
             <div className="text-xs text-slate-500 break-all leading-relaxed">
-              {qrUrl}
+              {`${window.location.origin}/visit/${farmId}`}
             </div>
             <div className="text-xs text-muted-foreground mt-2 text-center">
               {LABELS.QR_CODE_SCAN_INFO}

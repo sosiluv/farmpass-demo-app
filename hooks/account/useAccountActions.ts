@@ -1,10 +1,10 @@
 import { useRouter } from "next/navigation";
 import { devLog } from "@/lib/utils/logging/dev-logger";
-import { useAuthActions } from "@/hooks/useAuthActions";
+import { useAuthActions } from "@/hooks/auth/useAuthActions";
 import type { Profile } from "@/lib/types";
 import type { PasswordFormData, CompanyFormData } from "@/lib/types/account";
 import { useAccountMutations } from "@/lib/hooks/query/use-account-mutations";
-import { useUnifiedImageUpload } from "@/hooks/useUnifiedImageUpload";
+import { useUnifiedImageUpload } from "@/hooks/media/useUnifiedImageUpload";
 import { getAuthErrorMessage } from "@/lib/utils/validation/validation";
 import type { ProfileFormData } from "@/lib/types/account";
 

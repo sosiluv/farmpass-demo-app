@@ -5,7 +5,7 @@ import { farmsKeys } from "@/lib/hooks/query/query-keys";
 import { useAuth } from "@/components/providers/auth-provider";
 import type { FarmMembers } from "@/lib/types";
 import { apiClient } from "@/lib/utils/data/api-client";
-import { useSupabaseRealtime } from "@/hooks/useSupabaseRealtime";
+import { useSupabaseRealtime } from "@/hooks/notification/useSupabaseRealtime";
 import { useMemo } from "react";
 
 /**
