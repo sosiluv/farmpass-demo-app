@@ -103,7 +103,7 @@ export async function POST(request: NextRequest) {
       // 서버 사이드 호출인 경우 시스템 사용자로 처리
       user = {
         id: undefined,
-        email: process.env.ENV_COMPANY_EMAIL || "k331502@nate.com",
+        email: "system@samwon114.com",
       };
       devLog.log("푸시 알림 API: 서버 사이드 호출 감지, 인증 우회");
     }

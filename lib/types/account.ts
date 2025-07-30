@@ -67,3 +67,26 @@ export interface SecuritySectionProps {
   loading: boolean;
   onPasswordChange: (data: PasswordFormData) => Promise<void>;
 }
+
+// ===========================================
+// 소셜 계정 연동 관련 타입
+// ===========================================
+
+/**
+ * 소셜 계정 연동 정보 타입 (Supabase Auth Identities 기반)
+ */
+export interface SocialIdentity {
+  id: string;
+  user_id: string;
+  identity_id: string;
+  provider: string;
+  identity_data:
+    | {
+        email?: string;
+        name?: string;
+        avatar_url?: string;
+      }
+    | undefined;
+  created_at: string;
+  last_sign_in_at: string;
+}

@@ -5,7 +5,19 @@ import { devLog } from "@/lib/utils/logging/dev-logger";
 export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url);
   const code = searchParams.get("code");
+  const error = searchParams.get("error");
+  const error_code = searchParams.get("error_code");
   const next = searchParams.get("next") ?? "/admin/account?tab=profile";
+
+  // OAuth 에러가 있는 경우 먼저 처리
+  if (error) {
+    devLog.error("OAuth 에러 발생:", { error, error_code });
+    return NextResponse.redirect(
+      `${origin}/admin/account?tab=profile&error=link_failed&message=${encodeURIComponent(
+        error_code || error || "소셜 계정 연동 중 오류가 발생했습니다."
+      )}`
+    );
+  }
 
   if (code) {
     const supabase = await createClient();
@@ -33,7 +45,7 @@ export async function GET(request: Request) {
         devLog.error("세션 확인 실패:", sessionError);
         return NextResponse.redirect(
           `${origin}/admin/account?tab=profile&error=link_failed&message=${encodeURIComponent(
-            "세션 확인에 실패했습니다."
+            sessionError?.message || "세션 확인에 실패했습니다."
           )}`
         );
       }
@@ -51,8 +63,12 @@ export async function GET(request: Request) {
         redirectUrl = `${origin}${next}`;
       }
 
-      // 성공 메시지 추가
+      // 성공 메시지 추가 (provider 정보 포함)
+      const provider = searchParams.get("provider");
       redirectUrl += "&success=linked";
+      if (provider) {
+        redirectUrl += `&provider=${provider}`;
+      }
 
       // 세션 설정 완료를 위한 짧은 지연
       await new Promise((resolve) => setTimeout(resolve, 100));
@@ -62,7 +78,9 @@ export async function GET(request: Request) {
       devLog.error("소셜 계정 연동 콜백 처리 중 예외 발생:", error);
       return NextResponse.redirect(
         `${origin}/admin/account?tab=profile&error=link_failed&message=${encodeURIComponent(
-          "계정 연동 중 오류가 발생했습니다."
+          error instanceof Error
+            ? error.message
+            : "계정 연동 중 오류가 발생했습니다."
         )}`
       );
     }
@@ -70,7 +88,7 @@ export async function GET(request: Request) {
 
   return NextResponse.redirect(
     `${origin}/admin/account?tab=profile&error=link_failed&message=${encodeURIComponent(
-      "유효하지 않은 연동 요청입니다."
+      "OAuth 인증 코드가 없습니다. 소셜 로그인을 다시 시도해주세요."
     )}`
   );
 }

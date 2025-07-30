@@ -102,7 +102,7 @@ export function FarmQRCode({ farmId, farmName, size = 256 }: FarmQRCodeProps) {
               <Button
                 variant="outline"
                 onClick={handleCopyUrl}
-                className="flex-1 h-12 sm:h-10 bg-white hover:bg-emerald-50 border-emerald-200 hover:border-emerald-300 transition-all duration-200 text-sm"
+                className="flex-1 h-12 sm:h-10 bg-background hover:bg-accent border-border hover:border-border/80 transition-all duration-200 text-sm text-foreground"
               >
                 <Copy className="h-4 w-4 mr-2" />
                 {copied ? BUTTONS.QR_CODE_COPY_SUCCESS : BUTTONS.QR_CODE_COPY}
@@ -110,7 +110,7 @@ export function FarmQRCode({ farmId, farmName, size = 256 }: FarmQRCodeProps) {
               <Button
                 variant="outline"
                 onClick={handleOpenUrl}
-                className="flex-1 h-12 sm:h-10 bg-white hover:bg-emerald-50 border-emerald-200 hover:border-emerald-300 transition-all duration-200 text-sm"
+                className="flex-1 h-12 sm:h-10 bg-background hover:bg-accent border-border hover:border-border/80 transition-all duration-200 text-sm text-foreground"
               >
                 <ExternalLink className="h-4 w-4 mr-2" />
                 {BUTTONS.QR_CODE_OPEN_LINK}

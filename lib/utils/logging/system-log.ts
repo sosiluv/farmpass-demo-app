@@ -146,8 +146,7 @@ async function createLog(
     let currentUserId = context.userId;
     let userEmail = context.email;
     if (!currentUserId || !userEmail) {
-      userEmail =
-        userEmail || process.env.ENV_COMPANY_EMAIL || "k331502@nate.com";
+      userEmail = userEmail || "system@samwon114.com";
     }
     let clientIP = context.ip;
     if (!clientIP) {

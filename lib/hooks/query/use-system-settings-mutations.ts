@@ -39,27 +39,6 @@ export function useSaveSystemSettingsMutation() {
 }
 
 /**
- * 시스템 설정 캐시 무효화 Mutation Hook
- */
-export function useInvalidateSystemSettingsCacheMutation() {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: async (): Promise<{ success: boolean }> => {
-      await apiClient("/api/settings/invalidate-cache", {
-        method: "POST",
-        context: "시스템 설정 캐시 무효화",
-      });
-      return { success: true };
-    },
-    onSuccess: () => {
-      // React Query 캐시도 무효화
-      queryClient.invalidateQueries({ queryKey: settingsKeys.all });
-    },
-  });
-}
-
-/**
  * 시스템 정리 작업 실행 Mutation Hook
  */
 export function useExecuteCleanupMutation() {
@@ -88,23 +67,17 @@ export function useExecuteCleanupMutation() {
  */
 export function useSystemSettingsMutations() {
   const saveSettings = useSaveSystemSettingsMutation();
-  const invalidateCache = useInvalidateSystemSettingsCacheMutation();
   const executeCleanup = useExecuteCleanupMutation();
 
   return {
     saveSettings,
-    invalidateCache,
     executeCleanup,
 
     // 편의 메서드들
     saveSettingsAsync: saveSettings.mutateAsync,
-    invalidateCacheAsync: invalidateCache.mutateAsync,
     executeCleanupAsync: executeCleanup.mutateAsync,
 
     // 로딩 상태
-    isLoading:
-      saveSettings.isPending ||
-      invalidateCache.isPending ||
-      executeCleanup.isPending,
+    isLoading: saveSettings.isPending || executeCleanup.isPending,
   };
 }

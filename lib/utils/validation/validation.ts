@@ -325,6 +325,16 @@ export function getAuthErrorMessage(
     "error sending recovery email": {
       message: "이메일 전송 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.",
     },
+    // 소셜 계정 연동 관련
+    identity_already_exists: {
+      message: "이미 다른 계정에 연동된 소셜 계정입니다.",
+    },
+    identity_not_found: {
+      message: "연동할 소셜 계정을 찾을 수 없습니다.",
+    },
+    email_conflict_identity_not_deletable: {
+      message: "이메일이 연결된 소셜 계정은 삭제할 수 없습니다.",
+    },
     // Farm 관련
     farm_not_found: { message: "농장을 찾을 수 없습니다." },
     farm_fetch_error: { message: "농장 정보 조회 중 오류가 발생했습니다." },

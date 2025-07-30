@@ -26,20 +26,10 @@ export function useSettingsSaver({
     showInfo("설정 저장 시작", "설정을 저장하는 중입니다...");
 
     try {
-      // 1. 설정 저장 (React Query mutation 사용)
+      // 1. 설정 저장 (React Query mutation이 자동으로 캐시 무효화 처리)
       const result = await systemMutations.saveSettingsAsync(localSettings);
 
-      // 2. 캐시 무효화 (React Query mutation 사용)
-      try {
-        await systemMutations.invalidateCacheAsync();
-      } catch (cacheError) {
-        showWarning(
-          "캐시 무효화 실패",
-          "설정은 저장되었지만 캐시 갱신에 실패했습니다."
-        );
-      }
-
-      // 3. 데이터 갱신
+      // 2. 데이터 갱신 (React Query 캐시가 이미 업데이트됨)
       await refetch();
 
       // 4. UI 상태 업데이트
