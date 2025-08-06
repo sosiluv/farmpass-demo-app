@@ -125,7 +125,7 @@ export const PLACEHOLDERS = {
   FARM_ADDRESS: "주소 검색을 통해 주소를 입력해주세요",
   FARM_DETAILED_ADDRESS: "상세 주소를 입력하세요 (예: 101동 1234호)",
   MANAGER_NAME: "이름을 입력하세요",
-  MANAGER_PHONE: "숫자만 입력 가능합니다",
+  MANAGER_PHONE: "하이픈(-) 없이 숫자만 입력해주세요",
   DESCRIPTION: "농장에 대한 설명을 입력하세요",
   // 구성원 추가
   MEMBER_EMAIL_PLACEHOLDER: "이메일 주소 입력 (최소 2글자)",

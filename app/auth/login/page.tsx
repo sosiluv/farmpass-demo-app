@@ -4,7 +4,6 @@ import type React from "react";
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
@@ -13,8 +12,6 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Mail, Lock, Loader2 } from "lucide-react";
 import { motion } from "framer-motion";
 import { useCommonToast } from "@/lib/utils/notification/toast-messages";
 import { devLog } from "@/lib/utils/logging/dev-logger";
@@ -29,17 +26,9 @@ import {
   loginFormSchema,
   type LoginFormData,
 } from "@/lib/utils/validation/auth-validation";
+import { Form, FormField } from "@/components/ui/form";
+import { EmailField, PasswordField, AuthButton } from "@/components/auth";
 import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
-import {
-  LABELS,
-  PLACEHOLDERS,
   PAGE_HEADER,
   BUTTONS,
   PAGE_LOADING,
@@ -47,13 +36,15 @@ import {
 } from "@/lib/constants/auth";
 import { createClient } from "@/lib/supabase/client";
 import { useAuthActions } from "@/hooks/auth/useAuthActions";
-import { useSubscriptionManager } from "@/hooks/notification/useSubscriptionManager";
+import { useNotificationService } from "@/hooks/notification/useNotificationService";
 import { SocialLoginButton } from "@/components/common/SocialLoginButton";
 import { useLoginForm } from "@/hooks/auth/useLoginForm";
 
 export default function LoginPage() {
   const {
     loading,
+    checkingSession,
+    setSessionChecked,
     kakaoLoading,
     setKakaoLoading,
     googleLoading,
@@ -68,7 +59,7 @@ export default function LoginPage() {
   const router = useRouter();
   const { showInfo } = useCommonToast();
   const { signOut } = useAuthActions();
-  const { cleanupSubscription } = useSubscriptionManager();
+  const { handleUnsubscription } = useNotificationService();
 
   const form = useForm<LoginFormData>({
     resolver: zodResolver(loginFormSchema),
@@ -103,31 +94,32 @@ export default function LoginPage() {
 
               // 세션은 있지만 유저 정보를 가져올 수 없으면 세션이 유효하지 않음
               if (error || !user) {
-                devLog.warn("세션은 있지만 유저 정보 검증 실패, 로그아웃 처리");
                 await signOut();
-                setRedirecting(true);
-                router.replace("/admin/dashboard");
+                setRedirecting(false); // 리다이렉트하지 않고 로그인 페이지에 머물기
+                setSessionChecked(); // 세션 확인 완료
                 return;
               }
 
-              // 유효한 세션이면 대시보드로 리다이렉트
+              // 유효한 세션이면 프로필과 약관 동의 상태를 확인한 후 리다이렉트
               setRedirecting(true);
-              router.replace("/admin/dashboard");
+              // 프로필과 약관 동의 상태 확인을 위해 profile-setup으로 리다이렉트
+              router.replace("/profile-setup");
               return;
             } catch (userError) {
-              devLog.warn("사용자 정보 검증 중 오류:", userError);
               setRedirecting(false);
+              setSessionChecked(); // 세션 확인 완료
               return;
             }
           }
+          // 세션이 없으면 세션 확인 완료
+          setSessionChecked();
         })();
 
         // 타임아웃과 함께 실행
         await Promise.race([sessionPromise, timeoutPromise]);
       } catch (error) {
         devLog.error("세션 확인 중 오류:", error);
-      } finally {
-        // setCheckingSession(false); // 이 부분은 useLoginForm에서 관리
+        setSessionChecked(); // 오류 발생 시에도 세션 확인 완료
       }
     };
 
@@ -143,7 +135,7 @@ export default function LoginPage() {
       // 세션 만료 시 브라우저 구독 해제 수행
       const handleSessionExpiredCleanup = async () => {
         try {
-          await cleanupSubscription();
+          await handleUnsubscription(); // 구독을 전달하지 않으면 내부에서 찾음
           devLog.log("[LOGIN] 세션 만료로 인한 구독 해제 완료");
         } catch (error) {
           devLog.error("[LOGIN] 세션 만료 시 구독 해제 실패:", error);
@@ -165,7 +157,7 @@ export default function LoginPage() {
     }
 
     checkSession();
-  }, [router, showInfo]);
+  }, [router, showInfo, signOut]);
 
   // 소셜 로그인 무한 로딩 방지
   useEffect(() => {
@@ -183,19 +175,17 @@ export default function LoginPage() {
     };
   }, []);
 
-  // 로딩 상태 표시 (세션 확인 중, 로그인 중, 또는 리다이렉트 중일 때)
-  if (loading || redirecting) {
+  // 로딩 상태 표시 (세션 확인 중 또는 리다이렉트 중일 때만)
+  if (checkingSession || redirecting) {
     return (
       <PageLoading
         text={
-          loading
-            ? BUTTONS.LOGIN_LOADING
-            : redirecting
-            ? PAGE_LOADING.REDIRECTING_TO_DASHBOARD
-            : PAGE_LOADING.CHECKING_SESSION
+          checkingSession
+            ? PAGE_LOADING.CHECKING_SESSION
+            : PAGE_LOADING.REDIRECTING_TO_DASHBOARD
         }
         subText={PAGE_LOADING.SUB_TEXT}
-        variant="gradient"
+        variant="lottie"
         fullScreen={true}
       />
     );
@@ -245,97 +235,61 @@ export default function LoginPage() {
                     control={form.control}
                     name="email"
                     render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="text-sm text-gray-800">
-                          {LABELS.EMAIL} <span className="text-red-500">*</span>
-                        </FormLabel>
-                        <div className="relative">
-                          <Mail className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                          <FormControl>
-                            <Input
-                              {...field}
-                              type="email"
-                              placeholder={PLACEHOLDERS.EMAIL}
-                              autoComplete="username"
-                              className="h-12 pl-10 input-focus"
-                              disabled={loading || redirecting}
-                            />
-                          </FormControl>
-                        </div>
-                        <FormMessage />
-                      </FormItem>
+                      <EmailField
+                        field={field}
+                        loading={loading || redirecting}
+                        autoComplete="username"
+                        showFormMessage={true}
+                      />
                     )}
                   />
                   <FormField
                     control={form.control}
                     name="password"
                     render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="text-sm text-gray-800">
-                          {LABELS.PASSWORD}{" "}
-                          <span className="text-red-500">*</span>
-                        </FormLabel>
-                        <div className="relative">
-                          <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                          <FormControl>
-                            <Input
-                              {...field}
-                              type="password"
-                              placeholder={PLACEHOLDERS.PASSWORD}
-                              autoComplete="current-password"
-                              className="h-12 pl-10 input-focus"
-                              disabled={loading || redirecting}
-                            />
-                          </FormControl>
-                        </div>
-                        <FormMessage />
-                      </FormItem>
+                      <PasswordField
+                        type="current"
+                        field={field}
+                        loading={loading || redirecting}
+                        showPasswordStrength={false}
+                      />
                     )}
                   />
                   {formError && (
                     <p className="text-sm text-red-500">{formError}</p>
                   )}
-                  <Button
-                    type="submit"
+                  <AuthButton
+                    type="login"
+                    loading={loading}
+                    redirecting={redirecting}
                     className="h-12 w-full"
-                    disabled={loading || redirecting}
-                  >
-                    {loading || redirecting ? (
-                      <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        {redirecting
-                          ? BUTTONS.REDIRECTING
-                          : BUTTONS.LOGIN_LOADING}
-                      </>
-                    ) : (
-                      BUTTONS.LOGIN_BUTTON
-                    )}
-                  </Button>
-                  <div className="flex items-center my-3">
+                  />
+                  <div className="flex items-center my-4">
                     <div className="flex-grow h-px bg-gray-200" />
                     <span className="mx-3 text-xs text-gray-400">또는</span>
                     <div className="flex-grow h-px bg-gray-200" />
                   </div>
                   {/* 소셜 로그인 버튼들 */}
-                  {SOCIAL_BUTTON_CONFIG.map((btn, idx) => {
-                    const loading =
-                      btn.provider === "kakao" ? kakaoLoading : googleLoading;
-                    const onClick =
-                      btn.provider === "kakao"
-                        ? handleKakaoLogin
-                        : handleGoogleLogin;
-                    const disabled = loading || redirecting;
-                    return (
-                      <>
+                  <div className="space-y-4">
+                    {SOCIAL_BUTTON_CONFIG.map((btn, idx) => {
+                      const loading =
+                        btn.provider === "kakao" ? kakaoLoading : googleLoading;
+                      const onClick =
+                        btn.provider === "kakao"
+                          ? handleKakaoLogin
+                          : handleGoogleLogin;
+                      const disabled = loading || redirecting;
+                      return (
                         <SocialLoginButton
+                          key={btn.provider}
                           {...btn}
                           loading={loading}
                           onClick={onClick}
                           disabled={disabled}
                         />
-                      </>
-                    );
-                  })}
+                      );
+                    })}
+                  </div>
                 </form>
               </Form>
             </CardContent>

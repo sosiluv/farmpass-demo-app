@@ -1,16 +1,16 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { Shield, Lock, Key } from "lucide-react";
+import { Key } from "lucide-react";
 import Link from "next/link";
 import { ERROR_LABELS } from "@/lib/constants/error";
+import { LottieLoading } from "@/components/ui/lottie-loading";
 
 interface AccessDeniedProps {
   title?: string;
   description?: string;
   requiredRole?: string;
   currentRole?: string;
-  showNavigation?: boolean;
 }
 
 export function AccessDenied({
@@ -18,19 +18,19 @@ export function AccessDenied({
   description = ERROR_LABELS.PERMISSION_ERROR_DESCRIPTION,
   requiredRole,
   currentRole,
-  showNavigation = true,
 }: AccessDeniedProps) {
   return (
-    <div className="flex items-center justify-center min-h-[500px] p-6">
+    <div className="flex items-center justify-center flex-1 p-6">
       <div className="text-center max-w-lg mx-auto">
-        {/* 세련된 권한 아이콘 */}
-        <div className="relative mb-8">
-          <div className="w-24 h-24 bg-gradient-to-br from-blue-100 to-indigo-100 rounded-2xl flex items-center justify-center mx-auto shadow-lg">
-            <Shield className="w-12 h-12 text-blue-600" />
-          </div>
-          {/* 잠금 표시 */}
-          <div className="absolute -top-2 -right-2 w-8 h-8 bg-orange-500 rounded-full flex items-center justify-center shadow-md">
-            <Lock className="w-4 h-4 text-white" />
+        {/* Error Lottie 애니메이션 */}
+        <div className="mb-8 flex justify-center">
+          <div className="w-48 h-48">
+            <LottieLoading
+              animationPath="/lottie/error.json"
+              size="lg"
+              showText={false}
+              fullScreen={false}
+            />
           </div>
         </div>
 

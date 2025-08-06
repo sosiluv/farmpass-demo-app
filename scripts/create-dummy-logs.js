@@ -151,7 +151,7 @@ async function createDummyLogs() {
       // 사용자 정보 (80% 확률로 관리자, 20% 확률로 NULL)
       const userId = Math.random() < 0.8 ? adminUser?.id : null;
       const userEmail =
-        Math.random() < 0.8 ? adminUser?.email : "system@farm.com";
+        Math.random() < 0.8 ? adminUser?.email : "admin@farm.com";
 
       // IP 주소 랜덤 생성
       const userIp = `192.168.${Math.floor(Math.random() * 255)}.${Math.floor(

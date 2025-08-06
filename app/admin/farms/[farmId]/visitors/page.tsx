@@ -13,9 +13,9 @@ import {
 } from "@/components/admin/visitors";
 import type { Farm } from "@/lib/types/farm";
 import { useCommonToast } from "@/lib/utils/notification/toast-messages";
-import { getAuthErrorMessage } from "@/lib/utils/validation/validation";
 import { AccessDenied } from "@/components/error/access-denied";
-import { LABELS, PAGE_HEADER } from "@/lib/constants/farms";
+import { AdminError } from "@/components/error/admin-error";
+import { PAGE_HEADER } from "@/lib/constants/farms";
 import { ERROR_CONFIGS } from "@/lib/constants/error";
 import { Users } from "lucide-react";
 
@@ -78,8 +78,7 @@ export default function FarmVisitorsPage() {
   // 에러 처리
   useEffect(() => {
     if (error) {
-      const authError = getAuthErrorMessage(error);
-      showError("오류", authError.message);
+      showError("오류", error.message);
     }
   }, [error, showError]);
 
@@ -162,14 +161,13 @@ export default function FarmVisitorsPage() {
   if (!currentFarm) {
     return (
       <div className="flex-1 space-y-4 p-4 sm:p-6 md:p-8">
-        <div className="text-center">
-          <h2 className="text-lg font-semibold text-gray-900">
-            농장을 찾을 수 없습니다
-          </h2>
-          <p className="mt-2 text-sm text-gray-600">
-            요청하신 농장이 존재하지 않거나 접근 권한이 없습니다.
-          </p>
-        </div>
+        <AdminError
+          title={ERROR_CONFIGS.LOADING.title}
+          description={ERROR_CONFIGS.LOADING.description}
+          error={new Error("Farm not found")}
+          reset={() => router.push("/admin/farms")}
+          isNotFound={true}
+        />
       </div>
     );
   }

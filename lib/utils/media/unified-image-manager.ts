@@ -6,9 +6,10 @@
 
 import { supabase } from "@/lib/supabase/client";
 import { devLog } from "@/lib/utils/logging/dev-logger";
-import { handleError } from "@/lib/utils/error";
+import { handleError, mapRawErrorToCode } from "@/lib/utils/error";
 import { UPLOAD_TYPE_CONFIGS, UploadType } from "@/lib/constants/upload";
 import { UploadResult, UploadError, UploadState } from "@/lib/types/upload";
+import { getErrorMessage } from "../error/errorUtil";
 
 export class UnifiedImageManager {
   private state: UploadState = {
@@ -181,9 +182,11 @@ export class UnifiedImageManager {
         });
 
       if (uploadError) {
+        const errorCode = mapRawErrorToCode(uploadError, "storage");
+        const message = getErrorMessage(errorCode);
         const error: UploadError = {
           code: "UPLOAD_FAILED",
-          message: `이미지 업로드 중 오류가 발생했습니다: ${uploadError.message}`,
+          message: `이미지 업로드 중 오류가 발생했습니다: ${message}`,
           details: uploadError,
         };
         this.state.error = error;
@@ -255,9 +258,11 @@ export class UnifiedImageManager {
           .remove([fileName]);
 
         if (error) {
+          const errorCode = mapRawErrorToCode(error, "storage");
+          const message = getErrorMessage(errorCode);
           const uploadError: UploadError = {
             code: "DELETE_FAILED",
-            message: `이미지 삭제 중 오류가 발생했습니다: ${error.message}`,
+            message: `이미지 삭제 중 오류가 발생했습니다: ${message}`,
             details: error,
           };
           this.state.error = uploadError;

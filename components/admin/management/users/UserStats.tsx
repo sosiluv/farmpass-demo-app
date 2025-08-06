@@ -43,19 +43,17 @@ export function UserStats({
   const statCards = generateUserManagementStats(userManagementStats);
 
   return (
-    <div className="mb-4">
-      <CommonStatsGrid>
-        {(statCards || []).map((card) => (
-          <StatCard
-            key={card.title}
-            title={card.title}
-            value={card.value}
-            description={card.description}
-            variant={card.variant}
-            trend={card.trend}
-          />
-        ))}
-      </CommonStatsGrid>
-    </div>
+    <CommonStatsGrid>
+      {(statCards || []).map((card) => (
+        <StatCard
+          key={card.title}
+          title={card.title}
+          value={card.value}
+          description={card.description}
+          variant={card.variant}
+          trend={card.trend}
+        />
+      ))}
+    </CommonStatsGrid>
   );
 }

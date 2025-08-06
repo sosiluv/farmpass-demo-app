@@ -3,7 +3,6 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "@/components/providers/auth-provider";
 import { devLog } from "@/lib/utils/logging/dev-logger";
-import { getNotificationErrorMessage } from "@/lib/utils/validation/validation";
 import {
   safeLocalStorageAccess,
   safeNotificationAccess,
@@ -207,7 +206,6 @@ export function useNotificationPermission() {
     if (!user) return;
 
     if (state.hasAsked && !state.isResubscribe) {
-      console.log("🚫 알림 권한 이미 처리됨 - 중복 실행 방지");
       return;
     }
 
@@ -273,11 +271,10 @@ export function useNotificationPermission() {
         isResubscribe: false,
       }));
     } catch (error) {
-      const notificationError = getNotificationErrorMessage(error);
       setLastMessage({
         type: "error",
         title: "오류 발생",
-        message: notificationError.message,
+        message: error instanceof Error ? error.message : "알 수 없는 오류",
       });
     }
   };
@@ -287,11 +284,9 @@ export function useNotificationPermission() {
     if (!user) return;
 
     if (state.hasAsked && !state.isResubscribe) {
-      console.log("🚫 알림 권한 이미 처리됨 - 중복 실행 방지");
       return;
     }
 
-    console.log("✅ 알림 권한 거부 처리 시작");
     const promptStorageKey = getPromptStorageKey(user.id);
     const safeLocalStorage = safeLocalStorageAccess();
     safeLocalStorage.setItem(promptStorageKey, Date.now().toString());

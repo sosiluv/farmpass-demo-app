@@ -1,21 +1,26 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createSystemLog, logApiError } from "@/lib/utils/logging/system-log";
+import { createSystemLog } from "@/lib/utils/logging/system-log";
 import { getSystemSettings } from "@/lib/cache/system-settings-cache";
 import webpush from "web-push";
 import { devLog } from "@/lib/utils/logging/dev-logger";
-import { getClientIP, getUserAgent } from "@/lib/server/ip-helpers";
 import { requireAuth } from "@/lib/server/auth-utils";
 import { prisma } from "@/lib/prisma";
 import type {
   SubscriptionCleanupOptions,
   SubscriptionCleanupResult,
 } from "@/lib/types/notification";
+import {
+  getErrorResultFromRawError,
+  makeErrorResponseFromResult,
+  throwBusinessError,
+} from "@/lib/utils/error/errorUtil";
+import { LOG_MESSAGES } from "@/lib/utils/logging/log-templates";
 
 // 만료된 푸시 구독 정리
 export async function POST(request: NextRequest) {
-  // IP, userAgent 추출
-  const clientIP = getClientIP(request);
-  const userAgent = getUserAgent(request);
+  let user = null;
+  let body: any = null;
+
   try {
     // 인증 확인
     const authResult = await requireAuth(false);
@@ -23,10 +28,10 @@ export async function POST(request: NextRequest) {
       return authResult.response!;
     }
 
-    const user = authResult.user;
+    user = authResult.user;
 
     // 요청 본문에서 검사 타입 확인
-    const body = (await request
+    body = (await request
       .json()
       .catch(() => ({}))) as SubscriptionCleanupOptions;
 
@@ -49,64 +54,81 @@ export async function POST(request: NextRequest) {
       let publicKey: string | undefined = envPublicKey;
       let privateKey: string | undefined = envPrivateKey;
       if (!publicKey || !privateKey) {
-        const settings = await getSystemSettings();
+        let settings;
+        try {
+          settings = await getSystemSettings();
+        } catch (queryError) {
+          throwBusinessError(
+            "GENERAL_QUERY_FAILED",
+            {
+              resourceType: "systemSettings",
+            },
+            queryError
+          );
+        }
         publicKey = publicKey || settings?.vapidPublicKey || undefined;
         privateKey = privateKey || settings?.vapidPrivateKey || undefined;
       }
       if (!publicKey || !privateKey) {
-        return NextResponse.json(
-          {
-            success: false,
-            error: "VAPID_KEY_REQUIRED_FOR_REALTIME",
-            message: "실시간 검사를 위해 VAPID 키가 필요합니다.",
-          },
-          { status: 500 }
-        );
+        throwBusinessError("VAPID_KEY_REQUIRED_FOR_REALTIME");
       }
       webpush.setVapidDetails("mailto:k331502@nate.com", publicKey, privateKey);
     }
 
     // 사용자의 모든 구독 조회 (삭제되지 않은 구독만)
-    const subscriptions = await prisma.push_subscriptions.findMany({
-      where: {
-        user_id: user.id,
-        deleted_at: null, // 삭제되지 않은 구독만
-      },
-    });
+    let subscriptions;
+    try {
+      subscriptions = await prisma.push_subscriptions.findMany({
+        where: {
+          user_id: user.id,
+          deleted_at: null, // 삭제되지 않은 구독만
+        },
+      });
+    } catch (queryError) {
+      throwBusinessError(
+        "GENERAL_QUERY_FAILED",
+        {
+          resourceType: "pushSubscription",
+        },
+        queryError
+      );
+    }
 
     if (!subscriptions || subscriptions.length === 0) {
-      // 정리할 구독 없음 로그
+      // 정리할 구독이 없는 경우
       await createSystemLog(
         "PUSH_SUBSCRIPTION_CLEANUP_NONE",
-        `정리할 구독이 없습니다. (방식: ${
-          realTimeCheck ? "realtime" : "basic"
-        })`,
+        LOG_MESSAGES.PUSH_SUBSCRIPTION_CLEANUP_NONE(),
         "info",
-        user.id,
-        "system",
-        "cleanup",
+        { id: user.id, email: user.email || "" },
+        "notification",
+        undefined,
         {
+          action_type: "push_notification_event",
+          event: "push_subscription_cleanup_none",
           user_id: user.id,
           user_email: user.email,
-          action_type: "push_notification_cleanup",
         },
-        user.email,
-        clientIP,
-        userAgent
+        request
       );
+
       return NextResponse.json({
+        success: true,
         message: "정리할 구독이 없습니다.",
-        cleanedCount: 0,
-        validCount: 0,
-        totalChecked: 0,
-        checkType: realTimeCheck ? "realtime" : "basic",
-        stats: {
-          failCountCleaned: 0,
-          inactiveCleaned: 0,
-          expiredCleaned: 0,
-          forceDeleted: 0,
-          oldSoftDeletedCleaned: 0,
-        },
+        result: {
+          message: "정리할 구독이 없습니다.",
+          cleanedCount: 0,
+          validCount: 0,
+          totalChecked: 0,
+          checkType: realTimeCheck ? "realtime" : "basic",
+          stats: {
+            failCountCleaned: 0,
+            inactiveCleaned: 0,
+            expiredCleaned: 0,
+            forceDeleted: 0,
+            oldSoftDeletedCleaned: 0,
+          },
+        } as SubscriptionCleanupResult,
       });
     }
 
@@ -129,20 +151,40 @@ export async function POST(request: NextRequest) {
         try {
           if (forceDelete) {
             // 강제 삭제
-            await prisma.push_subscriptions.delete({
-              where: { id: subscription.id },
-            });
+            try {
+              await prisma.push_subscriptions.delete({
+                where: { id: subscription.id },
+              });
+            } catch (deleteError) {
+              throwBusinessError(
+                "GENERAL_DELETE_FAILED",
+                {
+                  resourceType: "pushSubscription",
+                },
+                deleteError
+              );
+            }
             forceDeleted++;
           } else {
             // soft delete
-            await prisma.push_subscriptions.update({
-              where: { id: subscription.id },
-              data: {
-                is_active: false,
-                deleted_at: new Date(),
-                updated_at: new Date(),
-              },
-            });
+            try {
+              await prisma.push_subscriptions.update({
+                where: { id: subscription.id },
+                data: {
+                  is_active: false,
+                  deleted_at: new Date(),
+                  updated_at: new Date(),
+                },
+              });
+            } catch (updateError) {
+              throwBusinessError(
+                "GENERAL_UPDATE_FAILED",
+                {
+                  resourceType: "pushSubscription",
+                },
+                updateError
+              );
+            }
           }
           failCountCleaned++;
           cleanedCount++;
@@ -163,8 +205,9 @@ export async function POST(request: NextRequest) {
       const cutoffDate = new Date();
       cutoffDate.setDate(cutoffDate.getDate() - deleteAfterDays);
 
-      const oldSoftDeletedSubscriptions =
-        await prisma.push_subscriptions.findMany({
+      let oldSoftDeletedSubscriptions;
+      try {
+        oldSoftDeletedSubscriptions = await prisma.push_subscriptions.findMany({
           where: {
             user_id: user.id,
             deleted_at: {
@@ -173,13 +216,35 @@ export async function POST(request: NextRequest) {
             },
           },
         });
+      } catch (queryError) {
+        throwBusinessError(
+          "GENERAL_QUERY_FAILED",
+          {
+            resourceType: "pushSubscription",
+            operation: "find_old_soft_deleted_subscriptions",
+            userId: user.id,
+            cutoffDate: cutoffDate.toISOString(),
+          },
+          queryError
+        );
+      }
 
       for (const subscription of oldSoftDeletedSubscriptions) {
         try {
           // 완전 삭제 (이미 soft delete된 구독이므로)
-          await prisma.push_subscriptions.delete({
-            where: { id: subscription.id },
-          });
+          try {
+            await prisma.push_subscriptions.delete({
+              where: { id: subscription.id },
+            });
+          } catch (deleteError) {
+            throwBusinessError(
+              "GENERAL_DELETE_FAILED",
+              {
+                resourceType: "pushSubscription",
+              },
+              deleteError
+            );
+          }
           forceDeleted++;
           cleanedCount++;
           oldSoftDeletedCleaned++;
@@ -205,19 +270,39 @@ export async function POST(request: NextRequest) {
         try {
           if (forceDelete) {
             // 강제 삭제
-            await prisma.push_subscriptions.delete({
-              where: { id: subscription.id },
-            });
+            try {
+              await prisma.push_subscriptions.delete({
+                where: { id: subscription.id },
+              });
+            } catch (deleteError) {
+              throwBusinessError(
+                "GENERAL_DELETE_FAILED",
+                {
+                  resourceType: "pushSubscription",
+                },
+                deleteError
+              );
+            }
             forceDeleted++;
           } else {
             // soft delete
-            await prisma.push_subscriptions.update({
-              where: { id: subscription.id },
-              data: {
-                deleted_at: new Date(),
-                updated_at: new Date(),
-              },
-            });
+            try {
+              await prisma.push_subscriptions.update({
+                where: { id: subscription.id },
+                data: {
+                  deleted_at: new Date(),
+                  updated_at: new Date(),
+                },
+              });
+            } catch (updateError) {
+              throwBusinessError(
+                "GENERAL_UPDATE_FAILED",
+                {
+                  resourceType: "pushSubscription",
+                },
+                updateError
+              );
+            }
           }
           inactiveCleaned++;
           cleanedCount++;
@@ -263,19 +348,39 @@ export async function POST(request: NextRequest) {
             expiredCleaned++;
 
             if (forceDelete) {
-              await prisma.push_subscriptions.delete({
-                where: { id: subscription.id },
-              });
+              try {
+                await prisma.push_subscriptions.delete({
+                  where: { id: subscription.id },
+                });
+              } catch (deleteError) {
+                throwBusinessError(
+                  "GENERAL_DELETE_FAILED",
+                  {
+                    resourceType: "pushSubscription",
+                  },
+                  deleteError
+                );
+              }
               forceDeleted++;
             } else {
-              await prisma.push_subscriptions.update({
-                where: { id: subscription.id },
-                data: {
-                  is_active: false,
-                  deleted_at: new Date(),
-                  updated_at: new Date(),
-                },
-              });
+              try {
+                await prisma.push_subscriptions.update({
+                  where: { id: subscription.id },
+                  data: {
+                    is_active: false,
+                    deleted_at: new Date(),
+                    updated_at: new Date(),
+                  },
+                });
+              } catch (updateError) {
+                throwBusinessError(
+                  "GENERAL_UPDATE_FAILED",
+                  {
+                    resourceType: "pushSubscription",
+                  },
+                  updateError
+                );
+              }
             }
             continue;
           }
@@ -308,19 +413,39 @@ export async function POST(request: NextRequest) {
             expiredCleaned++;
 
             if (forceDelete) {
-              await prisma.push_subscriptions.delete({
-                where: { id: subscription.id },
-              });
+              try {
+                await prisma.push_subscriptions.delete({
+                  where: { id: subscription.id },
+                });
+              } catch (deleteError) {
+                throwBusinessError(
+                  "GENERAL_DELETE_FAILED",
+                  {
+                    resourceType: "pushSubscription",
+                  },
+                  deleteError
+                );
+              }
               forceDeleted++;
             } else {
-              await prisma.push_subscriptions.update({
-                where: { id: subscription.id },
-                data: {
-                  is_active: false,
-                  deleted_at: new Date(),
-                  updated_at: new Date(),
-                },
-              });
+              try {
+                await prisma.push_subscriptions.update({
+                  where: { id: subscription.id },
+                  data: {
+                    is_active: false,
+                    deleted_at: new Date(),
+                    updated_at: new Date(),
+                  },
+                });
+              } catch (updateError) {
+                throwBusinessError(
+                  "GENERAL_UPDATE_FAILED",
+                  {
+                    resourceType: "pushSubscription",
+                  },
+                  updateError
+                );
+              }
             }
             devLog.log(
               `만료된 구독 정리됨 (실시간 검사) (ID: ${subscription.id})`
@@ -343,19 +468,39 @@ export async function POST(request: NextRequest) {
             expiredCleaned++;
 
             if (forceDelete) {
-              await prisma.push_subscriptions.delete({
-                where: { id: subscription.id },
-              });
+              try {
+                await prisma.push_subscriptions.delete({
+                  where: { id: subscription.id },
+                });
+              } catch (deleteError) {
+                throwBusinessError(
+                  "GENERAL_DELETE_FAILED",
+                  {
+                    resourceType: "pushSubscription",
+                  },
+                  deleteError
+                );
+              }
               forceDeleted++;
             } else {
-              await prisma.push_subscriptions.update({
-                where: { id: subscription.id },
-                data: {
-                  is_active: false,
-                  deleted_at: new Date(),
-                  updated_at: new Date(),
-                },
-              });
+              try {
+                await prisma.push_subscriptions.update({
+                  where: { id: subscription.id },
+                  data: {
+                    is_active: false,
+                    deleted_at: new Date(),
+                    updated_at: new Date(),
+                  },
+                });
+              } catch (updateError) {
+                throwBusinessError(
+                  "GENERAL_UPDATE_FAILED",
+                  {
+                    resourceType: "pushSubscription",
+                  },
+                  updateError
+                );
+              }
             }
             continue;
           }
@@ -396,19 +541,39 @@ export async function POST(request: NextRequest) {
             expiredCleaned++;
 
             if (forceDelete) {
-              await prisma.push_subscriptions.delete({
-                where: { id: subscription.id },
-              });
+              try {
+                await prisma.push_subscriptions.delete({
+                  where: { id: subscription.id },
+                });
+              } catch (deleteError) {
+                throwBusinessError(
+                  "GENERAL_DELETE_FAILED",
+                  {
+                    resourceType: "pushSubscription",
+                  },
+                  deleteError
+                );
+              }
               forceDeleted++;
             } else {
-              await prisma.push_subscriptions.update({
-                where: { id: subscription.id },
-                data: {
-                  is_active: false,
-                  deleted_at: new Date(),
-                  updated_at: new Date(),
-                },
-              });
+              try {
+                await prisma.push_subscriptions.update({
+                  where: { id: subscription.id },
+                  data: {
+                    is_active: false,
+                    deleted_at: new Date(),
+                    updated_at: new Date(),
+                  },
+                });
+              } catch (updateError) {
+                throwBusinessError(
+                  "GENERAL_UPDATE_FAILED",
+                  {
+                    resourceType: "pushSubscription",
+                  },
+                  updateError
+                );
+              }
             }
           }
         } catch (error: any) {
@@ -420,19 +585,39 @@ export async function POST(request: NextRequest) {
           expiredCleaned++;
 
           if (forceDelete) {
-            await prisma.push_subscriptions.delete({
-              where: { id: subscription.id },
-            });
+            try {
+              await prisma.push_subscriptions.delete({
+                where: { id: subscription.id },
+              });
+            } catch (deleteError) {
+              throwBusinessError(
+                "GENERAL_DELETE_FAILED",
+                {
+                  resourceType: "pushSubscription",
+                },
+                deleteError
+              );
+            }
             forceDeleted++;
           } else {
-            await prisma.push_subscriptions.update({
-              where: { id: subscription.id },
-              data: {
-                is_active: false,
-                deleted_at: new Date(),
-                updated_at: new Date(),
-              },
-            });
+            try {
+              await prisma.push_subscriptions.update({
+                where: { id: subscription.id },
+                data: {
+                  is_active: false,
+                  deleted_at: new Date(),
+                  updated_at: new Date(),
+                },
+              });
+            } catch (updateError) {
+              throwBusinessError(
+                "GENERAL_UPDATE_FAILED",
+                {
+                  resourceType: "pushSubscription",
+                },
+                updateError
+              );
+            }
           }
         }
       }
@@ -442,62 +627,59 @@ export async function POST(request: NextRequest) {
     if (cleanedCount > 0) {
       await createSystemLog(
         "PUSH_SUBSCRIPTION_CLEANUP",
-        `푸시 구독이 정리되었습니다. 정리된 구독 수: ${cleanedCount} (방식: ${
-          realTimeCheck ? "realtime" : "basic"
-        }, 강제삭제: ${forceDelete})`,
+        LOG_MESSAGES.PUSH_SUBSCRIPTION_CLEANUP({
+          cleanedCount,
+          validCount,
+          totalChecked: subscriptions.length,
+          realTimeCheck,
+          forceDelete,
+          failCountThreshold,
+          cleanupInactive,
+          deleteAfterDays,
+        }),
         "info",
-        user.id,
-        "system",
-        "cleanup",
+        { id: user.id, email: user.email || "" },
+        "notification",
+        undefined,
         {
+          action_type: "push_notification_event",
+          event: "push_subscription_cleanup",
           user_id: user.id,
           user_email: user.email,
           cleanedCount,
           validCount,
           totalChecked: subscriptions.length,
-          checkType: realTimeCheck ? "realtime" : "basic",
+          realTimeCheck,
           forceDelete,
           failCountThreshold,
           cleanupInactive,
-          stats: {
-            failCountCleaned,
-            inactiveCleaned,
-            expiredCleaned,
-            forceDeleted,
-            oldSoftDeletedCleaned,
-          },
-          action_type: "push_notification_cleanup",
+          deleteAfterDays,
         },
-        user.email,
-        clientIP,
-        userAgent
+        request
       );
     } else {
       // 모든 구독이 유효한 경우도 로그
       await createSystemLog(
         "PUSH_SUBSCRIPTION_CLEANUP_ALL_VALID",
-        `모든 푸시 구독이 유효합니다. (방식: ${
-          realTimeCheck ? "realtime" : "basic"
-        }, 검사: ${subscriptions.length}, 유효: ${validCount})`,
+        LOG_MESSAGES.PUSH_SUBSCRIPTION_CLEANUP_ALL_VALID({
+          totalChecked: subscriptions.length,
+          validCount,
+          realTimeCheck,
+        }),
         "info",
-        user.id,
-        "system",
-        "cleanup",
+        { id: user.id, email: user.email || "" },
+        "notification",
+        undefined,
         {
+          action_type: "push_notification_event",
+          event: "push_subscription_cleanup_all_valid",
           user_id: user.id,
           user_email: user.email,
-          cleanedCount,
-          validCount,
           totalChecked: subscriptions.length,
-          checkType: realTimeCheck ? "realtime" : "basic",
-          forceDelete,
-          failCountThreshold,
-          cleanupInactive,
-          action_type: "push_notification_cleanup",
+          validCount,
+          realTimeCheck,
         },
-        user.email,
-        clientIP,
-        userAgent
+        request
       );
     }
 
@@ -523,26 +705,37 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json(result);
   } catch (error) {
-    devLog.error("구독 정리 API 오류:", error);
-    // API 에러 로그 기록 (logApiError 사용)
-    await logApiError(
-      "/api/push/subscription/cleanup",
-      "POST",
-      error instanceof Error ? error : String(error),
-      undefined, // userId
+    // 푸시 구독 정리 시스템 오류 로그
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    await createSystemLog(
+      "PUSH_SUBSCRIPTION_CLEANUP_FAILED",
+      LOG_MESSAGES.PUSH_SUBSCRIPTION_CLEANUP_FAILED(errorMessage),
+      "error",
+      user?.id ? { id: user.id, email: user.email || "" } : undefined,
+      "system",
+      undefined,
       {
-        ip: clientIP,
-        userAgent,
-      }
+        action_type: "push_notification_event",
+        event: "push_subscription_cleanup_failed",
+        error_message: errorMessage,
+        user_id: user?.id,
+        user_email: user?.email,
+        real_time_check: body?.realTimeCheck,
+        force_delete: body?.forceDelete,
+        fail_count_threshold: body?.failCountThreshold,
+        cleanup_inactive: body?.cleanupInactive,
+        delete_after_days: body?.deleteAfterDays,
+      },
+      request
     );
 
-    return NextResponse.json(
-      {
-        success: false,
-        error: "SUBSCRIPTION_CLEANUP_ERROR",
-        message: "구독 정리 중 서버 오류가 발생했습니다.",
-      },
-      { status: 500 }
-    );
+    // 비즈니스 에러 또는 시스템 에러를 표준화된 에러 코드로 매핑
+    const result = getErrorResultFromRawError(error, {
+      operation: "cleanup_push_subscriptions",
+    });
+
+    return NextResponse.json(makeErrorResponseFromResult(result), {
+      status: result.status,
+    });
   }
 }

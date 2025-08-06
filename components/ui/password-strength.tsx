@@ -148,9 +148,9 @@ export function PasswordStrength({ password }: PasswordStrengthProps) {
 
   return (
     <div className="space-y-2">
-      <div className="flex justify-between text-sm flex-col gap-1 sm:flex-row sm:items-center">
+      <div className="flex flex-col gap-2">
         <div
-          className="flex flex-wrap gap-1 min-w-0 max-w-full overflow-x-auto"
+          className="flex flex-wrap gap-1 min-w-0"
           style={{ rowGap: 4, columnGap: 4 }}
         >
           {requirements.map((req) => (
@@ -163,13 +163,30 @@ export function PasswordStrength({ password }: PasswordStrengthProps) {
               }`}
               style={{ minWidth: 40 }}
             >
-              {req.shortLabel}
-              {req.optional && LABELS.PASSWORD_STRENGTH_OPTIONAL}
+              <span className="hidden sm:inline">{req.shortLabel}</span>
+              <span className="sm:hidden">
+                {req.id === "length"
+                  ? "길이"
+                  : req.id === "number"
+                  ? "12345"
+                  : req.id === "uppercase"
+                  ? "ABCD"
+                  : req.id === "lowercase"
+                  ? "abcd"
+                  : req.id === "special"
+                  ? "#@!%^&"
+                  : req.shortLabel}
+              </span>
+              {req.optional && (
+                <span className="hidden sm:inline">
+                  {LABELS.PASSWORD_STRENGTH_OPTIONAL}
+                </span>
+              )}
             </span>
           ))}
         </div>
         <span
-          className={`text-sm font-medium ${getStrengthTextColor()} mt-1 sm:mt-0`}
+          className={`text-sm font-medium ${getStrengthTextColor()} text-left`}
         >
           {getStrengthText()}
         </span>

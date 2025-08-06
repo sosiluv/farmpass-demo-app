@@ -1,9 +1,13 @@
 import { createClient } from "@/lib/supabase/client";
 import { apiClient } from "@/lib/utils/data/api-client";
-import { handleError } from "@/lib/utils/error";
+import {
+  handleError,
+  mapRawErrorToCode,
+  getErrorMessage,
+} from "@/lib/utils/error/";
 import { devLog } from "@/lib/utils/logging/dev-logger";
 import { logout } from "@/lib/utils/auth/authService";
-import { useSubscriptionManager } from "@/hooks/notification/useSubscriptionManager";
+import { useNotificationService } from "@/hooks/notification/useNotificationService";
 import { useRef } from "react";
 /**
  * 로그인 액션 훅
@@ -42,12 +46,11 @@ export function useSignIn() {
       } = await supabase.auth.getSession();
 
       if (sessionError || !session) {
-        throw new Error("세션 정보를 가져올 수 없습니다.");
+        throw sessionError;
       }
 
       return { success: true, message: result.message };
     } catch (error) {
-      handleError(error, { context: "sign-in" });
       throw error;
     }
   };
@@ -59,7 +62,7 @@ export function useSignIn() {
  * 로그아웃 액션 훅
  */
 export function useSignOut() {
-  const { cleanupSubscription } = useSubscriptionManager();
+  const { handleUnsubscription } = useNotificationService();
   const isLoggingOutRef = useRef(false);
 
   const signOut = async (): Promise<{ success: boolean }> => {
@@ -81,7 +84,7 @@ export function useSignOut() {
       const logoutPromise = (async () => {
         // 구독 정리 (세션 정리 전에 수행)
         try {
-          await cleanupSubscription();
+          await handleUnsubscription(); // 구독을 전달하지 않으면 내부에서 찾음
           devLog.log("구독 정리 수행");
         } catch (error) {
           // 구독 정리 실패해도 로그아웃은 계속 진행
@@ -115,46 +118,6 @@ export function useSignOut() {
 }
 
 /**
- * 비밀번호 검증 액션 훅
- */
-export function useVerifyPassword() {
-  const supabase = createClient();
-
-  const verifyPassword = async ({
-    email,
-    password,
-  }: {
-    email: string;
-    password: string;
-  }): Promise<{ success: boolean; error?: string }> => {
-    try {
-      const { error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
-
-      if (error) {
-        return {
-          success: false,
-          error: error.message,
-        };
-      }
-
-      return { success: true };
-    } catch (error) {
-      handleError(error, { context: "verify-password" });
-
-      return {
-        success: false,
-        error: error instanceof Error ? error.message : String(error),
-      };
-    }
-  };
-
-  return { verifyPassword };
-}
-
-/**
  * 비밀번호 변경 액션 훅
  */
 export function useChangePassword() {
@@ -178,9 +141,11 @@ export function useChangePassword() {
         });
 
         if (verifyError) {
+          const errorCode = mapRawErrorToCode(verifyError, "auth");
+          const message = getErrorMessage(errorCode);
           return {
             success: false,
-            error: verifyError.message,
+            error: message,
           };
         }
       }
@@ -190,15 +155,18 @@ export function useChangePassword() {
       });
 
       if (error) {
-        return { success: false, error: error.message };
+        const errorCode = mapRawErrorToCode(error, "auth");
+        const message = getErrorMessage(errorCode);
+        return { success: false, error: message };
       }
 
       return { success: true };
     } catch (error) {
-      handleError(error, { context: "change-password" });
+      const errorCode = mapRawErrorToCode(error);
+      const message = getErrorMessage(errorCode);
       return {
         success: false,
-        error: error instanceof Error ? error.message : String(error),
+        error: message,
       };
     }
   };
@@ -212,13 +180,11 @@ export function useChangePassword() {
 export function useAuthActions() {
   const { signIn } = useSignIn();
   const { signOut } = useSignOut();
-  const { verifyPassword } = useVerifyPassword();
   const { changePassword } = useChangePassword();
 
   return {
     signIn,
     signOut,
-    verifyPassword,
     changePassword,
   };
 }

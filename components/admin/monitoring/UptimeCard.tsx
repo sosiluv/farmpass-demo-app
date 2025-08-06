@@ -4,6 +4,7 @@ import { Clock, Activity, Hash, Calendar, AlertCircle } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { LABELS, PAGE_HEADER } from "@/lib/constants/monitoring";
 import type { UptimeData } from "@/lib/types/monitoring";
+import { LottieLoading } from "@/components/ui/lottie-loading";
 
 interface UptimeCardProps extends UptimeData {}
 
@@ -36,7 +37,15 @@ export function UptimeCard({
             {PAGE_HEADER.UPTIME}
           </CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="flex flex-col items-center space-y-4">
+          <div className="w-24 h-24">
+            <LottieLoading
+              animationPath="/lottie/no_connection.json"
+              size="md"
+              showText={false}
+              fullScreen={false}
+            />
+          </div>
           <Alert>
             <AlertCircle className="h-4 w-4" />
             <AlertDescription>

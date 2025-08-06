@@ -3,14 +3,14 @@
 import { ProfileSection } from "./profile-section";
 import { CompanySection } from "./company-section";
 import { SecuritySection } from "./security-section";
+import { PrivacySection } from "./privacy-section";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { User2, Building2, Shield } from "lucide-react";
+import { User2, Building2, Shield, FileText } from "lucide-react";
 import { ErrorBoundary } from "@/components/error/error-boundary";
 import { ERROR_CONFIGS } from "@/lib/constants/error";
 import { LABELS } from "@/lib/constants/account";
 import { useAccountActions } from "@/hooks/account/useAccountActions";
 import { useCommonToast } from "@/lib/utils/notification/toast-messages";
-import { getAuthErrorMessage } from "@/lib/utils/validation/validation";
 import type { Profile } from "@/lib/types";
 import { useSearchParams, useRouter } from "next/navigation";
 import { useCallback, useMemo } from "react";
@@ -89,8 +89,11 @@ export function AccountTabs({ profile, userId }: AccountTabsProps) {
         );
       }
     } catch (error) {
-      const authError = getAuthErrorMessage(error);
-      showError("프로필 저장 실패", authError.message);
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : "알 수 없는 오류가 발생했습니다.";
+      showError("프로필 저장 실패", errorMessage);
     }
   };
 
@@ -111,8 +114,11 @@ export function AccountTabs({ profile, userId }: AccountTabsProps) {
         );
       }
     } catch (error) {
-      const authError = getAuthErrorMessage(error);
-      showError("회사 정보 저장 실패", authError.message);
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : "알 수 없는 오류가 발생했습니다.";
+      showError("회사 정보 저장 실패", errorMessage);
     }
   };
 
@@ -133,8 +139,11 @@ export function AccountTabs({ profile, userId }: AccountTabsProps) {
         );
       }
     } catch (error) {
-      const authError = getAuthErrorMessage(error);
-      showError("비밀번호 변경 실패", authError.message);
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : "알 수 없는 오류가 발생했습니다.";
+      showError("비밀번호 변경 실패", errorMessage);
     }
   };
 
@@ -149,7 +158,7 @@ export function AccountTabs({ profile, userId }: AccountTabsProps) {
           onValueChange={handleTabChange}
           className="space-y-6"
         >
-          <TabsList className="grid w-full grid-cols-3 h-auto">
+          <TabsList className="grid w-full grid-cols-4 h-auto">
             <TabsTrigger
               value="profile"
               className="flex flex-col items-center justify-center gap-0.5 p-1 sm:p-1.5 md:p-2 min-w-0"
@@ -180,6 +189,15 @@ export function AccountTabs({ profile, userId }: AccountTabsProps) {
                 {LABELS.TABS.SECURITY}
               </span>
             </TabsTrigger>
+            <TabsTrigger
+              value="privacy"
+              className="flex flex-col items-center justify-center gap-0.5 p-1 sm:p-1.5 md:p-2 min-w-0"
+            >
+              <FileText className="h-3.5 w-3.5 flex-shrink-0" />
+              <span className="text-[10px] sm:text-xs hidden sm:inline truncate">
+                {LABELS.TABS.PRIVACY}
+              </span>
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="profile">
@@ -207,6 +225,10 @@ export function AccountTabs({ profile, userId }: AccountTabsProps) {
               onPasswordChange={handlePasswordChangeWrapped}
               socialUserInfo={socialUserInfo}
             />
+          </TabsContent>
+
+          <TabsContent value="privacy">
+            <PrivacySection userId={userId} />
           </TabsContent>
         </Tabs>
       </div>

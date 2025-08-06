@@ -32,11 +32,11 @@ export function SubscriptionCleanupActions({
     try {
       await onCleanupRequest(true);
     } catch (error) {
-      console.error("구독 정리 테스트 실패:", error);
-      showError(
-        "정리 테스트 실패",
-        "구독 정리 테스트 중 오류가 발생했습니다. 다시 시도해주세요."
-      );
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : "알 수 없는 오류가 발생했습니다.";
+      showError("정리 테스트 실패", errorMessage);
     }
   };
 
@@ -44,11 +44,11 @@ export function SubscriptionCleanupActions({
     try {
       await onCleanupRequest(false);
     } catch (error) {
-      console.error("구독 정리 실패:", error);
-      showError(
-        "구독 정리 실패",
-        "구독 정리 중 오류가 발생했습니다. 다시 시도해주세요."
-      );
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : "알 수 없는 오류가 발생했습니다.";
+      showError("구독 정리 실패", errorMessage);
     }
   };
 

@@ -67,8 +67,8 @@ export async function generateMetadata(): Promise<Metadata> {
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
-  maximumScale: 1,
-  userScalable: false,
+  maximumScale: 5,
+  userScalable: true,
   viewportFit: "cover",
   themeColor: "#10b981",
 };
@@ -100,7 +100,12 @@ export default function RootLayout({
           `}
         </Script>
       </head>
-      <body className={cn(inter.className, "min-h-screen bg-background")}>
+      <body
+        className={cn(
+          inter.className,
+          "min-h-screen bg-background flex flex-col"
+        )}
+      >
         <ErrorBoundary
           title={ERROR_CONFIGS.GENERAL.title}
           description={ERROR_CONFIGS.GENERAL.description}

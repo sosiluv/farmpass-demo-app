@@ -13,16 +13,8 @@ export function BroadcastAlert() {
         </p>
         <ul className="text-sm sm:text-base list-disc list-inside space-y-1">
           <li>
-            <strong>{LABELS.BROADCAST_ALERT_NOTICE}</strong>{" "}
-            {LABELS.BROADCAST_ALERT_NOTICE_DESC}
-          </li>
-          <li>
-            <strong>{LABELS.BROADCAST_ALERT_EMERGENCY}</strong>{" "}
-            {LABELS.BROADCAST_ALERT_EMERGENCY_DESC}
-          </li>
-          <li>
-            <strong>{LABELS.BROADCAST_ALERT_MAINTENANCE}</strong>{" "}
-            {LABELS.BROADCAST_ALERT_MAINTENANCE_DESC}
+            <strong>{LABELS.BROADCAST_ALERT_SYSTEM}</strong>{" "}
+            {LABELS.BROADCAST_ALERT_SYSTEM_DESC}
           </li>
         </ul>
         <p className="text-sm sm:text-base mt-2">

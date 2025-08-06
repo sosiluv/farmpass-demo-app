@@ -297,3 +297,52 @@
 .animate-fade-in-left {
   animation: fadeInLeft 0.5s ease-out both;
 }
+
+/* Lottie Loading 애니메이션 */
+@keyframes loading-progress {
+  0% {
+    width: 0%;
+    transform: translateX(-100%);
+  }
+  50% {
+    width: 100%;
+    transform: translateX(-100%);
+  }
+  100% {
+    width: 100%;
+    transform: translateX(0%);
+  }
+}
+
+@keyframes fade-in-smooth {
+  0% {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes pulse-gentle {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
+}
+
+.animate-loading-progress {
+  animation: loading-progress 2s ease-in-out infinite;
+}
+
+.animate-fade-in-smooth {
+  animation: fade-in-smooth 0.6s ease-out;
+}
+
+.animate-pulse-gentle {
+  animation: pulse-gentle 2s ease-in-out infinite;
+}

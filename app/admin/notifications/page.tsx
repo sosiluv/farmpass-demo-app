@@ -15,7 +15,6 @@ import {
   SubscriptionGuideCard,
 } from "@/components/admin/notifications";
 import { useCommonToast } from "@/lib/utils/notification/toast-messages";
-import { getAuthErrorMessage } from "@/lib/utils/validation/validation";
 import type { NotificationSettings } from "@/lib/types/notification";
 import { FormSkeleton } from "@/components/common/skeletons/form-skeleton";
 import { PAGE_HEADER } from "@/lib/constants/notifications";
@@ -85,16 +84,14 @@ export default function NotificationsPage() {
   // 알림 설정 에러 처리
   useEffect(() => {
     if (settingsError) {
-      const authError = getAuthErrorMessage(settingsError);
-      showError("알림 설정 로드 실패", authError.message);
+      showError("알림 설정 로드 실패", settingsError.message);
     }
   }, [settingsError, showError]);
 
   // 농장 에러에 따른 토스트 처리
   useEffect(() => {
     if (farmsError) {
-      const authError = getAuthErrorMessage(farmsError);
-      showError("농장 정보 로드 실패", authError.message);
+      showError("농장 정보 로드 실패", farmsError.message);
     }
   }, [farmsError, showError]);
 

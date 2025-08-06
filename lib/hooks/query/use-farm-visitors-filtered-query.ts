@@ -20,6 +20,10 @@ import {
   createKSTDateRangeSimple,
 } from "@/lib/utils/datetime/date";
 import { useSupabaseRealtime } from "@/hooks/notification/useSupabaseRealtime";
+import {
+  mapRawErrorToCode,
+  getErrorMessage,
+} from "@/lib/utils/error/errorUtil";
 
 /**
  * React Query 기반 방문자 필터링 Hook
@@ -68,7 +72,9 @@ export function useFarmVisitorsWithFiltersQuery(
       const { data, error } = await query;
 
       if (error) {
-        throw new Error(`방문자 데이터 조회 실패: ${error.message}`);
+        const errorCode = mapRawErrorToCode(error, "db");
+        const message = getErrorMessage(errorCode);
+        throw new Error(message);
       }
 
       return data || [];
@@ -263,7 +269,9 @@ export function useVisitorPurposeOptionsQuery(farmId?: string | null) {
       const { data, error } = await query;
 
       if (error) {
-        throw new Error(`방문 목적 옵션 조회 실패: ${error.message}`);
+        const errorCode = mapRawErrorToCode(error, "db");
+        const message = getErrorMessage(errorCode);
+        throw new Error(message);
       }
 
       const purposes =

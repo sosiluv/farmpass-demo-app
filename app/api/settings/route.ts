@@ -1,50 +1,71 @@
 import { NextRequest, NextResponse } from "next/server";
+import { createSystemLog } from "@/lib/utils/logging/system-log";
+import { devLog } from "@/lib/utils/logging/dev-logger";
+import { LOG_MESSAGES } from "@/lib/utils/logging/log-templates";
+import { requireAuth } from "@/lib/server/auth-utils";
 import { prisma } from "@/lib/prisma";
-import crypto from "crypto";
 import { DEFAULT_SYSTEM_SETTINGS } from "@/lib/constants/defaults";
 import { invalidateSystemSettingsCache } from "@/lib/cache/system-settings-cache";
-import { createSystemLog, logApiError } from "@/lib/utils/logging/system-log";
-import { devLog } from "@/lib/utils/logging/dev-logger";
-import { getClientIP, getUserAgent } from "@/lib/server/ip-helpers";
-import { requireAuth } from "@/lib/server/auth-utils";
+import {
+  getErrorResultFromRawError,
+  makeErrorResponseFromResult,
+  throwBusinessError,
+} from "@/lib/utils/error/errorUtil";
 
 // 5분마다 재검증
 export const revalidate = 300;
 
 export async function GET(request: NextRequest) {
-  const clientIP = getClientIP(request);
-  const userAgent = getUserAgent(request);
-
   try {
-    const settings = await prisma.system_settings.findFirst();
+    let settings;
+    try {
+      settings = await prisma.system_settings.findFirst();
+    } catch (queryError) {
+      throwBusinessError(
+        "GENERAL_QUERY_FAILED",
+        {
+          resourceType: "systemSettings",
+        },
+        queryError
+      );
+    }
 
     if (!settings) {
       // 설정이 없으면 기본값으로 생성
-      const newSettings = await prisma.system_settings.create({
-        data: {
-          ...DEFAULT_SYSTEM_SETTINGS,
-          id: crypto.randomUUID(),
-          created_at: new Date(),
-          updated_at: new Date(),
-        },
-      });
+      let newSettings;
+      try {
+        newSettings = await prisma.system_settings.create({
+          data: {
+            ...DEFAULT_SYSTEM_SETTINGS,
+            id: crypto.randomUUID(),
+            created_at: new Date(),
+            updated_at: new Date(),
+          },
+        });
+      } catch (createError) {
+        throwBusinessError(
+          "GENERAL_CREATE_FAILED",
+          {
+            resourceType: "systemSettings",
+          },
+          createError
+        );
+      }
 
       // 초기화 이벤트 로깅 - 통합 로깅 시스템 사용
       await createSystemLog(
         "SETTINGS_INITIALIZE",
-        "시스템 설정이 초기화되었습니다",
+        LOG_MESSAGES.SYSTEM_SETTINGS_INITIALIZED(),
         "info",
         undefined,
         "system",
         undefined,
         {
-          settingsCount: Object.keys(DEFAULT_SYSTEM_SETTINGS).length,
-          method: "GET /api/settings",
-          action_type: "system_settings",
+          action_type: "system_settings_event",
+          event: "system_settings_initialized",
+          settings_count: Object.keys(DEFAULT_SYSTEM_SETTINGS).length,
         },
-        undefined, // userEmail
-        clientIP, // userIP
-        userAgent // userAgent
+        request
       );
 
       return NextResponse.json(newSettings, {
@@ -61,41 +82,23 @@ export async function GET(request: NextRequest) {
         "Cache-Control": "no-store",
       },
     });
-  } catch (error) {
-    devLog.error("Error fetching system settings:", error);
+  } catch (error: any) {
+    const result = getErrorResultFromRawError(error, {
+      operation: "get_system_settings",
+    });
+    const errorResponse = makeErrorResponseFromResult(result);
 
-    // 설정 조회 API 에러 로그
-    await logApiError(
-      "/api/settings",
-      "GET",
-      error instanceof Error ? error : String(error),
-      undefined,
-      {
-        ip: clientIP,
-        userAgent,
-      }
-    );
-
-    return NextResponse.json(
-      {
-        success: false,
-        error: "SYSTEM_SETTINGS_FETCH_FAILED",
-        message: "시스템 설정 조회에 실패했습니다.",
+    return NextResponse.json(errorResponse, {
+      status: result.status,
+      headers: {
+        "Content-Type": "application/json",
+        "Cache-Control": "no-store",
       },
-      {
-        status: 500,
-        headers: {
-          "Content-Type": "application/json",
-          "Cache-Control": "no-store",
-        },
-      }
-    );
+    });
   }
 }
 
 export async function PATCH(request: NextRequest) {
-  const clientIP = getClientIP(request);
-  const userAgent = getUserAgent(request);
   try {
     // 관리자 권한 인증 확인
     const authResult = await requireAuth(true);
@@ -106,35 +109,23 @@ export async function PATCH(request: NextRequest) {
     const user = authResult.user;
 
     const data = await request.json();
-    const settings = await prisma.system_settings.findFirst();
+    let settings;
+    try {
+      settings = await prisma.system_settings.findFirst();
+    } catch (queryError) {
+      throwBusinessError(
+        "GENERAL_QUERY_FAILED",
+        {
+          resourceType: "systemSettings",
+        },
+        queryError
+      );
+    }
 
     if (!settings) {
-      // 설정 PATCH 에러 (설정 없음) 로그
-      await logApiError(
-        "/api/settings",
-        "PATCH",
-        "Settings not found",
-        undefined,
-        {
-          ip: clientIP,
-          userAgent,
-        }
-      );
-
-      return NextResponse.json(
-        {
-          error: "SYSTEM_SETTINGS_NOT_FOUND",
-          success: false,
-          message: "시스템 설정을 찾을 수 없습니다.",
-        },
-        {
-          status: 404,
-          headers: {
-            "Content-Type": "application/json",
-            "Cache-Control": "no-store",
-          },
-        }
-      );
+      throwBusinessError("SYSTEM_SETTINGS_NOT_FOUND", {
+        operation: "update_system_settings",
+      });
     }
 
     // 변경된 필드 추적 (날짜 필드 제외)
@@ -152,36 +143,47 @@ export async function PATCH(request: NextRequest) {
       });
     });
 
-    const updatedSettings = await prisma.$transaction(async (tx: any) => {
-      // 설정 업데이트
-      const updated = await tx.system_settings.update({
-        where: { id: settings.id },
-        data,
-      });
+    let updatedSettings;
+    try {
+      updatedSettings = await prisma.$transaction(async (tx: any) => {
+        // 설정 업데이트
+        const updated = await tx.system_settings.update({
+          where: { id: settings.id },
+          data,
+        });
 
-      return updated;
-    });
+        return updated;
+      });
+    } catch (transactionError) {
+      throwBusinessError(
+        "GENERAL_UPDATE_FAILED",
+        {
+          resourceType: "systemSettings",
+        },
+        transactionError
+      );
+    }
 
     // 실제 변경된 필드가 있을 때만 로그 생성
     if (changedFields.length > 0) {
       // 전체 설정 변경 요약 로그
       await createSystemLog(
-        "SETTINGS_BULK_UPDATE",
-        `시스템 설정 일괄 업데이트: ${
-          changedFields.length
-        }개 필드 변경 (${changedFields.join(", ")})`,
+        "SETTINGS_BULK_UPDATED",
+        LOG_MESSAGES.SYSTEM_SETTINGS_BULK_UPDATED(
+          changedFields.length,
+          changedFields.join(", ")
+        ),
         "info",
-        user.id,
+        { id: user.id, email: user.email || "" },
         "system",
         undefined,
         {
+          action_type: "system_settings_event",
+          event: "system_settings_bulk_updated",
           updated_fields: Object.keys(data),
           changed_fields: changedFields,
-          action_type: "system_settings",
         },
-        user.email,
-        clientIP,
-        userAgent
+        request
       );
     }
 
@@ -209,48 +211,31 @@ export async function PATCH(request: NextRequest) {
       }
     );
   } catch (error) {
-    // 설정 PATCH 에러 (일반) 로그
-    await logApiError(
-      "/api/settings",
-      "PATCH",
-      error instanceof Error ? error : String(error),
-      undefined,
-      {
-        ip: clientIP,
-        userAgent,
-      }
-    );
-
     // 에러 로그 생성
+    const errorMessage = error instanceof Error ? error.message : String(error);
     await createSystemLog(
-      "SETTINGS_UPDATE_ERROR",
-      "시스템 설정 업데이트 실패",
+      "SETTINGS_UPDATE_FAILED",
+      LOG_MESSAGES.SETTINGS_UPDATE_FAILED(errorMessage),
       "error",
       undefined,
       "system",
       undefined,
       {
-        error_message: error instanceof Error ? error.message : String(error),
-        action_type: "system_settings",
-      },
-      undefined, // userEmail - 에러 상황에서는 user 정보가 없을 수 있음
-      clientIP,
-      userAgent
-    );
-
-    return NextResponse.json(
-      {
-        success: false,
-        error: "SYSTEM_SETTINGS_UPDATE_FAILED",
-        message: "시스템 설정 업데이트에 실패했습니다.",
-      },
-      {
-        status: 500,
-        headers: {
-          "Content-Type": "application/json",
-          "Cache-Control": "no-store",
-        },
+        action_type: "system_settings_event",
+        event: "system_settings_update_failed",
+        error_message: errorMessage,
       }
     );
+    const result = getErrorResultFromRawError(error, {
+      operation: "update_system_settings",
+    });
+    const errorResponse = makeErrorResponseFromResult(result);
+    return NextResponse.json(errorResponse, {
+      status: result.status,
+      headers: {
+        "Content-Type": "application/json",
+        "Cache-Control": "no-store",
+      },
+    });
   }
 }

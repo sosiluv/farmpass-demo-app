@@ -104,8 +104,7 @@ export function ProtectedRoute({
           subText={
             loadingTimeout ? "새로고침을 시도해보세요" : "잠시만 기다려주세요"
           }
-          variant="gradient"
-          fullScreen={true}
+          variant="lottie"
         />
         {loadingTimeout && (
           <div className="fixed bottom-8 left-1/2 transform -translate-x-1/2 z-50">
@@ -129,11 +128,7 @@ export function ProtectedRoute({
     return (
       <>
         {/* 로그인 페이지로 이동 중 로딩 UI */}
-        <PageLoading
-          text="로그인 페이지를 불러오는 중..."
-          variant="gradient"
-          fullScreen={true}
-        />
+        <PageLoading text="로그인 페이지를 불러오는 중..." variant="lottie" />
       </>
     );
   }

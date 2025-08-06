@@ -186,10 +186,8 @@ export const LABELS = {
     "활성화하면 사용자가 직접 알림을 닫아야 합니다.",
 
   BROADCAST_GUIDE_TITLE: "브로드캐스트 사용 가이드:",
-  BROADCAST_GUIDE_NOTICE: "• 공지사항: 일반적인 공지나 안내사항에 사용",
-  BROADCAST_GUIDE_EMERGENCY: "• 긴급 알림: 중요하고 긴급한 상황 전파에 사용",
-  BROADCAST_GUIDE_MAINTENANCE:
-    "• 유지보수 알림: 시스템 점검이나 업데이트 안내에 사용",
+  BROADCAST_GUIDE_SYSTEM:
+    "• 시스템 알림: 공지사항, 긴급 알림, 유지보수 알림을 포함한 모든 시스템 알림",
   BROADCAST_GUIDE_TITLE_TIP: "• 제목은 간결하고 명확하게 작성해주세요",
   BROADCAST_GUIDE_REVIEW: "• 발송 전 내용을 다시 한 번 확인해주세요",
 
@@ -197,14 +195,9 @@ export const LABELS = {
   BROADCAST_ALERT_WARNING: "주의:",
   BROADCAST_ALERT_DESCRIPTION:
     "이 기능은 선택한 알림 유형에 따라 해당 알림을 구독한 사용자에게만 메시지를 발송합니다.",
-  BROADCAST_ALERT_NOTICE: "공지사항:",
-  BROADCAST_ALERT_NOTICE_DESC:
-    "일반적인 공지나 안내사항을 구독한 사용자에게 전송",
-  BROADCAST_ALERT_EMERGENCY: "긴급 알림:",
-  BROADCAST_ALERT_EMERGENCY_DESC: "긴급 알림을 구독한 사용자에게 즉시 전송",
-  BROADCAST_ALERT_MAINTENANCE: "유지보수 알림:",
-  BROADCAST_ALERT_MAINTENANCE_DESC:
-    "시스템 점검이나 업데이트 알림을 구독한 사용자에게 전송",
+  BROADCAST_ALERT_SYSTEM: "시스템 알림:",
+  BROADCAST_ALERT_SYSTEM_DESC:
+    "공지사항, 긴급 알림, 유지보수 알림을 포함한 모든 시스템 알림이 전송됩니다.",
   BROADCAST_ALERT_SPAM_WARNING:
     "스팸성 메시지나 불필요한 알림은 사용자 경험을 해칠 수 있으니 신중하게 사용해주세요.",
 
@@ -419,13 +412,6 @@ export const PLACEHOLDERS = {
   VISIT_NOTIFICATION_TEMPLATE:
     "새로운 방문자가 등록되었습니다. 방문자: {방문자명}, 농장: {농장명}, 시간: {방문시간}",
 } as const;
-
-// 브로드캐스트 알림 유형 옵션
-export const BROADCAST_NOTIFICATION_TYPE_OPTIONS = [
-  { value: "notice", label: "공지사항" },
-  { value: "emergency", label: "긴급 알림" },
-  { value: "maintenance", label: "유지보수 알림" },
-] as const;
 
 // 로깅 레벨 옵션
 export const LOGGING_LEVEL_OPTIONS = [

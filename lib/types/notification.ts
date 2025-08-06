@@ -31,9 +31,7 @@ export interface NotificationSettings {
   user_id: string;
   notification_method: NotificationMethod;
   visitor_alerts: boolean;
-  emergency_alerts: boolean;
-  maintenance_alerts: boolean;
-  notice_alerts: boolean;
+  system_alerts: boolean;
   kakao_user_id: string | null;
   is_active: boolean;
   created_at: string;
@@ -50,7 +48,7 @@ export type SubscriptionStatus =
 export interface NotificationPayload {
   title: string;
   message: string;
-  notificationType?: "visitor" | "emergency" | "maintenance" | "notice";
+  notificationType?: "visitor" | "system";
   metadata?: Record<string, unknown>;
   target_user_ids?: string[];
   icon?: string;

@@ -3,14 +3,11 @@ import { Switch } from "@/components/ui/switch";
 import { NotificationSettings } from "@/lib/types/notification";
 import NotificationCardHeader from "./NotificationCardHeader";
 import { NOTIFICATION_TYPES, PAGE_HEADER } from "@/lib/constants/notifications";
-import { Bell, AlertTriangle, Wrench, Megaphone } from "lucide-react";
+import { Bell } from "lucide-react";
 
 // 아이콘 매핑
 const ICON_MAP = {
   Bell: Bell,
-  Megaphone: Megaphone,
-  AlertTriangle: AlertTriangle,
-  Wrench: Wrench,
 } as const;
 
 interface NotificationTypesCardProps {

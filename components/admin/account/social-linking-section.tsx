@@ -1,34 +1,99 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import { Link, Unlink, Loader2, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { useSocialLinkingQuery } from "@/lib/hooks/query/use-social-linking-query";
+import { useSocialLinkingCallback } from "@/lib/hooks/query/use-social-linking-callback";
+import { useCommonToast } from "@/lib/utils/notification/toast-messages";
+import {
+  SOCIAL_PROVIDERS,
+  PAGE_HEADER,
+  LABELS,
+  BUTTONS,
+} from "@/lib/constants/account";
 import AccountCardHeader from "./AccountCardHeader";
-import { useSocialLinking } from "@/hooks/account/useSocialLinking";
-import { SOCIAL_PROVIDERS } from "@/lib/constants/account";
 
 interface SocialLinkingSectionProps {
   userId: string;
 }
 
 export function SocialLinkingSection({ userId }: SocialLinkingSectionProps) {
+  const { showSuccess, showError, showInfo } = useCommonToast();
+
+  // OAuth 리다이렉트 후 로딩 상태 유지를 위한 별도 상태
+  const [linkingProvider, setLinkingProvider] = useState<string | null>(null);
+
+  // 콜백 처리
+  useSocialLinkingCallback();
+
+  // 쿼리 및 뮤테이션
   const {
     identities,
-    loading,
-    linkingLoading,
-    unlinkingLoading,
+    isLoading,
+    isLinking: rqIsLinking,
+    isUnlinking,
     canUnlink,
-    fetchIdentities,
-    handleLinkAccount,
-    handleUnlinkAccount,
-  } = useSocialLinking();
+    linkAccount,
+    unlinkAccount,
+    linkError,
+    unlinkError,
+  } = useSocialLinkingQuery();
 
+  // 실제 로딩 상태 (RQ + 수동 관리)
+  const isLinking = rqIsLinking || !!linkingProvider;
+
+  // 에러 처리
   useEffect(() => {
-    fetchIdentities();
-  }, [userId]);
+    if (linkError) {
+      showError("계정 연동 실패", linkError.message);
+      setLinkingProvider(null); // 에러 시 로딩 상태 해제
+    }
+    if (unlinkError) {
+      showError("계정 연동 해제 실패", unlinkError.message);
+    }
+  }, [linkError, unlinkError, showError]);
+
+  // 연동 해제 성공 처리 (isUnlinking이 false로 바뀔 때 감지)
+  const prevIsUnlinking = useRef(isUnlinking);
+  useEffect(() => {
+    if (prevIsUnlinking.current && !isUnlinking && !unlinkError) {
+      showSuccess("계정 연동 해제 완료", "소셜 계정 연동이 해제되었습니다.");
+    }
+    prevIsUnlinking.current = isUnlinking;
+  }, [isUnlinking, unlinkError, showSuccess]);
+
+  // 계정 목록이 업데이트되면 연동 로딩 상태 해제
+  useEffect(() => {
+    if (identities.length > 0 && linkingProvider) {
+      // 새로운 계정이 추가되었는지 확인
+      const hasNewAccount = identities.some(
+        (identity) => identity.provider === linkingProvider
+      );
+      if (hasNewAccount) {
+        setLinkingProvider(null);
+      }
+    }
+  }, [identities, linkingProvider]);
+
+  // 연동 시작 시 토스트 및 로딩 상태 설정
+  const handleLinkAccount = (provider: string) => {
+    showInfo("계정 연동 시작", `${provider} 계정을 연동하는 중입니다...`);
+    setLinkingProvider(provider); // 로딩 상태 설정
+    linkAccount(provider);
+  };
+
+  // 연동 해제 시작 시 토스트
+  const handleUnlinkAccount = (identity: any) => {
+    showInfo(
+      "계정 연동 해제 시작",
+      `${identity.provider} 계정 연동을 해제하는 중입니다...`
+    );
+    unlinkAccount(identity);
+  };
 
   return (
     <motion.div
@@ -39,21 +104,21 @@ export function SocialLinkingSection({ userId }: SocialLinkingSectionProps) {
       <Card>
         <AccountCardHeader
           icon={Link}
-          title="소셜 계정 연동"
-          description="다양한 소셜 계정을 연동하여 편리하게 로그인하세요"
+          title={PAGE_HEADER.SOCIAL_LINKING_TITLE}
+          description={PAGE_HEADER.SOCIAL_LINKING_DESCRIPTION}
         />
         <CardContent className="space-y-6">
           {/* 계정 연동 관리 */}
           <div className="space-y-3 sm:space-y-4">
             <h3 className="text-base sm:text-lg font-semibold">
-              계정 연동 관리
+              {LABELS.ACCOUNT_LINKING_MANAGEMENT}
             </h3>
 
-            {loading ? (
+            {isLoading ? (
               <div className="flex items-center justify-center py-6 sm:py-8">
                 <Loader2 className="h-5 w-5 sm:h-6 sm:w-6 animate-spin" />
                 <span className="ml-2 text-sm sm:text-base">
-                  계정 정보를 불러오는 중...
+                  {LABELS.LOADING_ACCOUNT_INFO}
                 </span>
               </div>
             ) : (
@@ -63,8 +128,8 @@ export function SocialLinkingSection({ userId }: SocialLinkingSectionProps) {
                     (identity) => identity.provider === provider.id
                   );
                   const isLinked = !!linkedIdentity;
-                  const isLoading = linkingLoading === provider.id;
-                  const isUnlinking = unlinkingLoading === linkedIdentity?.id;
+                  const isProviderLinking = isLinking; // 현재 연동 중인지
+                  const isProviderUnlinking = isUnlinking; // 현재 해제 중인지
 
                   return (
                     <div
@@ -97,7 +162,7 @@ export function SocialLinkingSection({ userId }: SocialLinkingSectionProps) {
                                 variant="secondary"
                                 className="text-xs flex-shrink-0"
                               >
-                                연동됨
+                                {LABELS.LINKED}
                               </Badge>
                             )}
                           </div>
@@ -108,10 +173,10 @@ export function SocialLinkingSection({ userId }: SocialLinkingSectionProps) {
                             <div className="text-xs text-muted-foreground space-y-1">
                               <p className="truncate">
                                 {linkedIdentity.identity_data?.email ||
-                                  "이메일 정보 없음"}
+                                  LABELS.EMAIL_INFO_UNAVAILABLE}
                               </p>
                               <p>
-                                연동일:{" "}
+                                {LABELS.LINKING_DATE}:{" "}
                                 {new Date(
                                   linkedIdentity.created_at
                                 ).toLocaleDateString()}
@@ -127,34 +192,40 @@ export function SocialLinkingSection({ userId }: SocialLinkingSectionProps) {
                             variant="outline"
                             size="sm"
                             onClick={() => handleUnlinkAccount(linkedIdentity!)}
-                            disabled={!canUnlink || isUnlinking}
+                            disabled={!canUnlink || isProviderUnlinking}
                             className="text-red-600 border-red-200 hover:bg-red-50 w-full sm:w-auto min-h-[40px] sm:min-h-[32px] text-sm"
                           >
-                            {isUnlinking ? (
+                            {isProviderUnlinking ? (
                               <Loader2 className="h-4 w-4 animate-spin" />
                             ) : (
                               <Unlink className="h-4 w-4" />
                             )}
                             <span className="ml-1 hidden sm:inline">
-                              연동 해제
+                              {BUTTONS.UNLINK_ACCOUNT}
                             </span>
-                            <span className="ml-1 sm:hidden">해제</span>
+                            <span className="ml-1 sm:hidden">
+                              {BUTTONS.UNLINK_ACCOUNT_MOBILE}
+                            </span>
                           </Button>
                         ) : (
                           <Button
                             onClick={() => handleLinkAccount(provider.id)}
-                            disabled={isLoading}
+                            disabled={isProviderLinking}
                             variant="outline"
                             size="sm"
                             className="w-full sm:w-auto min-h-[40px] sm:min-h-[32px] text-sm"
                           >
-                            {isLoading ? (
+                            {isProviderLinking ? (
                               <Loader2 className="h-4 w-4 animate-spin mr-2" />
                             ) : (
                               <Link className="h-4 w-4 mr-2" />
                             )}
-                            <span className="hidden sm:inline">연동하기</span>
-                            <span className="sm:hidden">연동</span>
+                            <span className="hidden sm:inline">
+                              {BUTTONS.LINK_ACCOUNT}
+                            </span>
+                            <span className="sm:hidden">
+                              {BUTTONS.LINK_ACCOUNT_MOBILE}
+                            </span>
                           </Button>
                         )}
                       </div>
@@ -171,10 +242,10 @@ export function SocialLinkingSection({ userId }: SocialLinkingSectionProps) {
                   <AlertCircle className="h-4 w-4 sm:h-5 sm:w-5 text-yellow-600 mt-0.5 flex-shrink-0" />
                   <div className="min-w-0">
                     <p className="text-xs sm:text-sm font-medium text-yellow-800">
-                      최소 1개의 로그인 방법을 유지해야 합니다
+                      {LABELS.MIN_LOGIN_METHOD_WARNING}
                     </p>
                     <p className="text-xs sm:text-sm text-yellow-700 mt-1">
-                      다른 계정을 연동한 후에 현재 계정을 해제할 수 있습니다.
+                      {LABELS.MIN_LOGIN_METHOD_DESCRIPTION}
                     </p>
                   </div>
                 </div>

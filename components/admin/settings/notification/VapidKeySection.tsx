@@ -13,7 +13,6 @@ import {
 } from "@/lib/constants/settings";
 import type { SystemSettings } from "@/lib/types/settings";
 import { useCommonToast } from "@/lib/utils/notification/toast-messages";
-import { getNotificationErrorMessage } from "@/lib/utils/validation/validation";
 import SettingsCardHeader from "../SettingsCardHeader";
 
 interface VapidKeySectionProps {
@@ -57,8 +56,11 @@ const VapidKeySection = React.memo(function VapidKeySection({
         showWarning("VAPID 키 생성 완료", result.warning);
       }
     } catch (error) {
-      const notificationError = getNotificationErrorMessage(error);
-      showError("VAPID 키 생성 실패", notificationError.message);
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : "알 수 없는 오류가 발생했습니다.";
+      showError("VAPID 키 생성 실패", errorMessage);
     }
   };
 

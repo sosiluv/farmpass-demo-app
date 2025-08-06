@@ -12,7 +12,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Loading } from "@/components/ui/loading";
+import { LottieLoadingCompact } from "@/components/ui/lottie-loading";
 import type { SubscriptionStatus } from "@/lib/types/notification";
 import type { Farm } from "@/lib/types";
 import { BUTTONS, LABELS } from "@/lib/constants/notifications";
@@ -34,13 +34,7 @@ interface StatusProps {
 
 export const CheckingStatus = () => (
   <div className="flex items-center justify-center py-12">
-    <Loading
-      text={LABELS.CHECKING_STATUS}
-      minHeight={120}
-      spinnerSize={28}
-      spinnerColor="text-primary"
-      className="py-6 w-full text-base sm:text-lg"
-    />
+    <LottieLoadingCompact text={LABELS.CHECKING_STATUS} size="md" />
   </div>
 );
 

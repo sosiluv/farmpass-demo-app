@@ -2,6 +2,7 @@
 
 import { useAuth } from "@/components/providers/auth-provider";
 import { useEffect, useState, useMemo, useCallback } from "react";
+import { useRouter } from "next/navigation";
 import { PageHeader } from "@/components/layout";
 import {
   DashboardSkeleton,
@@ -25,11 +26,17 @@ import { ERROR_CONFIGS } from "@/lib/constants/error";
 import { useFarmsQuery } from "@/lib/hooks/query/use-farms-query";
 import { useFarmVisitorsQuery } from "@/lib/hooks/query/use-farm-visitors-query";
 import { useProfileQuery } from "@/lib/hooks/query/use-profile-query";
+import { useUserConsentsQuery } from "@/lib/hooks/query/use-user-consents-query";
+import { isProfileComplete } from "@/lib/utils/auth/profile-utils";
 
 export default function DashboardPage() {
   const { state } = useAuth();
+  const router = useRouter();
   const userId = state.status === "authenticated" ? state.user.id : undefined;
-  const { data: profile } = useProfileQuery(userId);
+  const { data: profile, isLoading: profileLoading } = useProfileQuery(userId);
+  const { data: consentData, isLoading: consentLoading } = useUserConsentsQuery(
+    state.status === "authenticated"
+  );
 
   // React Query 100% 마이그레이션 완료 - 더 이상 Feature Flag 불필요
   const { farms: availableFarms, isLoading: farmsLoading } = useFarmsQuery();
@@ -37,19 +44,6 @@ export default function DashboardPage() {
   // profile에서 admin 여부 확인
   const isAdmin = profile?.account_type === "admin";
   const userLoading = state.status === "loading";
-
-  // 초기 농장 선택 - useMemo로 최적화
-  const initialSelectedFarm = useMemo(() => {
-    if (farmsLoading || availableFarms.length === 0) {
-      return "";
-    }
-
-    if (isAdmin) {
-      return "all"; // admin의 경우 기본값을 '전체 농장'으로 설정
-    } else {
-      return availableFarms[0]?.id || "";
-    }
-  }, [farmsLoading, availableFarms, isAdmin]);
 
   // selectedFarm 상태 관리 - 로딩 상태 고려
   const [selectedFarm, setSelectedFarm] = useState<string>("all");
@@ -64,6 +58,39 @@ export default function DashboardPage() {
   const { lastMessage, clearLastMessage } = useNotificationPermission();
 
   const { showWarning, showSuccess, showError } = useCommonToast();
+
+  // 약관 및 프로필 체크 - 직접 접근 시에도 체크
+  useEffect(() => {
+    // 인증되지 않은 경우 로그인 페이지로 리다이렉트
+    if (state.status === "unauthenticated") {
+      router.replace("/auth/login");
+      return;
+    }
+
+    // 로딩 중이면 대기
+    if (profileLoading || consentLoading) {
+      return;
+    }
+
+    // 프로필 완성도 및 약관 동의 상태 체크
+    if (!isProfileComplete(profile) || !consentData?.hasAllRequiredConsents) {
+      router.replace("/profile-setup");
+      return;
+    }
+
+    // 모든 체크 통과 - 초기화 완료
+    if (!isInitialized) {
+      setIsInitialized(true);
+    }
+  }, [
+    state.status,
+    profile,
+    consentData,
+    profileLoading,
+    consentLoading,
+    router,
+    isInitialized,
+  ]);
 
   // 초기화 완료 체크 - farms 로딩 완료 후 초기값 설정
   useEffect(() => {
@@ -108,19 +135,25 @@ export default function DashboardPage() {
   const isInitialLoading = useMemo(() => {
     return (
       userLoading ||
+      profileLoading ||
+      consentLoading ||
       (farmsLoading && availableFarms.length === 0) ||
       (visitorsLoading &&
         selectedFarm &&
         selectedFarm !== "" &&
-        visitors.length === 0)
+        visitors.length === 0) ||
+      !isInitialized
     );
   }, [
     userLoading,
+    profileLoading,
+    consentLoading,
     farmsLoading,
     availableFarms.length,
     visitorsLoading,
     selectedFarm,
     visitors.length,
+    isInitialized,
   ]);
 
   // 데이터 재페칭 함수
@@ -152,6 +185,7 @@ export default function DashboardPage() {
         description={ERROR_CONFIGS.TIMEOUT.description}
         retry={retry}
         error={new Error("Timeout: 데이터 로딩 10초 초과")}
+        isTimeout={true}
       />
     );
   }
@@ -225,6 +259,8 @@ export default function DashboardPage() {
 
         {/* 알림 권한 요청 다이얼로그는 DialogManager에서 관리하므로 제거 */}
       </>
+
+      {/* 재동의 Bottom Sheet 모달 */}
     </ErrorBoundary>
   );
 }

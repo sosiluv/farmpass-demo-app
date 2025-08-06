@@ -153,11 +153,14 @@ export function ProfileSection({
                   type="email"
                   value={formData.email}
                   onChange={handleInputChange}
-                  disabled={loading}
+                  disabled={true}
                   autoComplete="email"
                   placeholder={PLACEHOLDERS.EMAIL}
-                  className="text-sm sm:text-base"
+                  className="text-sm sm:text-base bg-gray-50"
                 />
+                <p className="text-xs text-muted-foreground">
+                  {LABELS.EMAIL_CHANGE_DISABLED}
+                </p>
               </div>
             </div>
 

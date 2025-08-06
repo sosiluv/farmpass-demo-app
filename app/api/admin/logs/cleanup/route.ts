@@ -1,17 +1,59 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { getSystemSettings } from "@/lib/cache/system-settings-cache";
-import { logApiError } from "@/lib/utils/logging/system-log";
-import { devLog } from "@/lib/utils/logging/dev-logger";
-import { getClientIP, getUserAgent } from "@/lib/server/ip-helpers";
 import { requireAuth } from "@/lib/server/auth-utils";
 import { prisma } from "@/lib/prisma";
+import { createSystemLog } from "@/lib/utils/logging/system-log";
+import { LOG_MESSAGES } from "@/lib/utils/logging/log-templates";
+import {
+  getErrorResultFromRawError,
+  mapRawErrorToCode,
+  makeErrorResponseFromResult,
+  throwBusinessError,
+} from "@/lib/utils/error/errorUtil";
+
+/**
+ * RPC 함수 실행을 위한 헬퍼 함수
+ * Supabase RPC 에러를 표준화된 에러로 변환
+ */
+async function executeRPC<T>(
+  rpcFunction: () => Promise<{ data: T; error: any }>
+): Promise<T> {
+  try {
+    const { data, error } = await rpcFunction();
+
+    if (error) {
+      // RPC 에러를 Supabase Database 에러로 처리
+      const errorCode = mapRawErrorToCode(error, "db");
+
+      // 에러에 컨텍스트 정보 추가
+      const enhancedError = {
+        ...error,
+        businessCode: errorCode,
+      };
+
+      throw enhancedError;
+    }
+
+    return data;
+  } catch (error: any) {
+    // 이미 처리된 에러는 그대로 던지기
+    if (error.businessCode) {
+      throw error;
+    }
+
+    // 예상치 못한 에러 처리
+    const errorCode = mapRawErrorToCode(error, "db");
+    const enhancedError = {
+      ...error,
+      businessCode: errorCode,
+    };
+
+    throw enhancedError;
+  }
+}
 
 export async function POST(request: NextRequest) {
-  // 요청 컨텍스트 정보 추출
-  const clientIP = getClientIP(request);
-  const userAgent = getUserAgent(request);
-
   try {
     // 관리자 권한 인증 확인
     const authResult = await requireAuth(true);
@@ -19,7 +61,6 @@ export async function POST(request: NextRequest) {
       return authResult.response!;
     }
 
-    const user = authResult.user;
     const supabase = await createClient();
 
     const body = await request.json();
@@ -28,56 +69,35 @@ export async function POST(request: NextRequest) {
     let result;
 
     if (type === "all") {
-      // 방문자 데이터 정리
+      // 방문자 데이터 정리 - RPC 에러 처리 개선
       let visitorData;
       try {
-        const { data, error: visitorError } = await supabase.rpc(
-          "auto_cleanup_expired_visitor_entries"
+        visitorData = await executeRPC(async () =>
+          supabase.rpc("auto_cleanup_expired_visitor_entries")
         );
-
-        if (visitorError) {
-          devLog.error("[LOG-CLEANUP] 방문자 데이터 정리 오류:", visitorError);
-          throw new Error(
-            `Visitor data cleanup failed: ${visitorError.message}`
-          );
-        }
-        visitorData = data;
-      } catch (visitorError: any) {
-        devLog.error(
-          "[LOG-CLEANUP] Visitor data cleanup failed:",
-          visitorError
-        );
-        return NextResponse.json(
+      } catch (error: any) {
+        throwBusinessError(
+          "GENERAL_CLEANUP_FAILED",
           {
-            success: false,
-            error: "VISITOR_CLEANUP_FAILED",
-            message: "방문자 데이터 정리에 실패했습니다.",
+            resourceType: "visitor",
           },
-          { status: 500 }
+          error
         );
       }
 
-      // 시스템 로그 정리
+      // 시스템 로그 정리 - RPC 에러 처리 개선
       let logData;
       try {
-        const { data, error: logError } = await supabase.rpc(
-          "auto_cleanup_expired_system_logs"
+        logData = await executeRPC(async () =>
+          supabase.rpc("auto_cleanup_expired_system_logs")
         );
-
-        if (logError) {
-          devLog.error("[LOG-CLEANUP] 시스템 로그 정리 오류:", logError);
-          throw new Error(`System log cleanup failed: ${logError.message}`);
-        }
-        logData = data;
-      } catch (logError: any) {
-        devLog.error("[LOG-CLEANUP] System log cleanup failed:", logError);
-        return NextResponse.json(
+      } catch (error: any) {
+        throwBusinessError(
+          "GENERAL_CLEANUP_FAILED",
           {
-            success: false,
-            error: "SYSTEM_LOG_CLEANUP_FAILED",
-            message: "시스템 로그 정리에 실패했습니다.",
+            resourceType: "systemLogs",
           },
-          { status: 500 }
+          error
         );
       }
 
@@ -86,42 +106,22 @@ export async function POST(request: NextRequest) {
         ...(Array.isArray(visitorData) ? visitorData : [visitorData]),
         ...(Array.isArray(logData) ? logData : [logData]),
       ];
-
-      devLog.log("[LOG-CLEANUP] 통합 정리 결과:", {
-        visitorData,
-        logData,
-        result,
-      });
     } else {
-      // 시스템 로그만 정리
-      let data;
+      // 시스템 로그만 정리 - RPC 에러 처리 개선
       try {
-        const { data: cleanupData, error } = await supabase.rpc(
-          "auto_cleanup_expired_system_logs"
+        result = await executeRPC(async () =>
+          supabase.rpc("auto_cleanup_expired_system_logs")
         );
-
-        devLog.log("[LOG-CLEANUP] 로그 정리 결과:", {
-          data: cleanupData,
-          error,
-        });
-
-        if (error) {
-          throw new Error(`System log cleanup failed: ${error.message}`);
-        }
-        data = cleanupData;
       } catch (error: any) {
-        devLog.error("[LOG-CLEANUP] System log cleanup failed:", error);
-        return NextResponse.json(
+        // RPC 에러를 비즈니스 에러로 throw
+        throwBusinessError(
+          "GENERAL_CLEANUP_FAILED",
           {
-            success: false,
-            error: "SYSTEM_LOG_CLEANUP_FAILED",
-            message: "시스템 로그 정리에 실패했습니다.",
+            resourceType: "systemLogs",
           },
-          { status: 500 }
+          error
         );
       }
-
-      result = data;
     }
 
     // 삭제된 개수 계산
@@ -136,7 +136,7 @@ export async function POST(request: NextRequest) {
     } else {
       // 시스템 로그만 정리인 경우
       if (result && typeof result === "object" && "deleted_count" in result) {
-        totalDeleted = result.deleted_count || 0;
+        totalDeleted = (result as any).deleted_count || 0;
       }
     }
 
@@ -146,36 +146,35 @@ export async function POST(request: NextRequest) {
       results: result,
     });
   } catch (error) {
-    devLog.error("[LOG-CLEANUP] 로그 정리 API 오류:", error);
-
-    // API 에러 로그 기록
-    await logApiError(
-      "/api/admin/logs/cleanup",
-      "POST",
-      error instanceof Error ? error : String(error),
+    // 시스템 에러 로그 기록
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    await createSystemLog(
+      "LOG_CLEANUP_FAILED",
+      LOG_MESSAGES.LOG_CLEANUP_FAILED(errorMessage),
+      "error",
+      undefined,
+      "system",
       undefined,
       {
-        ip: clientIP,
-        userAgent,
-      }
+        action_type: "admin_event",
+        event: "logs_cleanup_failed",
+        error_message: errorMessage,
+      },
+      request
     );
 
-    return NextResponse.json(
-      {
-        success: false,
-        error: "LOG_CLEANUP_FAILED",
-        message: "로그 정리에 실패했습니다.",
-      },
-      { status: 500 }
-    );
+    // 통합 에러 처리 - 비즈니스 에러와 시스템 에러를 모두 처리
+    const result = getErrorResultFromRawError(error, {
+      operation: "data_cleanup",
+    });
+
+    return NextResponse.json(makeErrorResponseFromResult(result), {
+      status: result.status,
+    });
   }
 }
 
 export async function GET(request: NextRequest) {
-  // 요청 컨텍스트 정보 추출
-  const clientIP = getClientIP(request);
-  const userAgent = getUserAgent(request);
-
   try {
     // 관리자 권한 인증 확인
     const authResult = await requireAuth(true);
@@ -198,28 +197,47 @@ export async function GET(request: NextRequest) {
       visitorCutoffDate.getDate() - effectiveVisitorRetentionDays
     );
 
-    // 만료된 로그 개수 조회
-    const expiredLogsCount = await prisma.system_logs.count({
-      where: {
-        created_at: {
-          lt: logCutoffDate,
+    // 만료된 로그 개수 조회 - Prisma 에러 처리 개선
+    let expiredLogsCount;
+    try {
+      expiredLogsCount = await prisma.system_logs.count({
+        where: {
+          created_at: {
+            lt: logCutoffDate,
+          },
         },
-      },
-    });
-
-    // 만료된 방문자 데이터 개수 조회
-    const expiredVisitorsCount = await prisma.visitor_entries.count({
-      where: {
-        visit_datetime: {
-          lt: visitorCutoffDate,
+      });
+    } catch (error: any) {
+      // Prisma 에러를 비즈니스 에러로 throw
+      throwBusinessError(
+        "GENERAL_QUERY_FAILED",
+        {
+          resourceType: "expiredData",
         },
-      },
-    });
+        error
+      );
+    }
 
-    devLog.log("[LOG-CLEANUP] 데이터 개수 조회 완료:", {
-      expiredLogsCount,
-      expiredVisitorsCount,
-    });
+    // 만료된 방문자 데이터 개수 조회 - Prisma 에러 처리 개선
+    let expiredVisitorsCount;
+    try {
+      expiredVisitorsCount = await prisma.visitor_entries.count({
+        where: {
+          visit_datetime: {
+            lt: visitorCutoffDate,
+          },
+        },
+      });
+    } catch (error: any) {
+      // Prisma 에러를 비즈니스 에러로 throw
+      throwBusinessError(
+        "GENERAL_QUERY_FAILED",
+        {
+          resourceType: "expiredData",
+        },
+        error
+      );
+    }
 
     const result = {
       settings: {
@@ -240,27 +258,28 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json(result);
   } catch (error) {
-    devLog.error("[LOG-CLEANUP] 정리 상태 조회 API 오류:", error);
-
-    // API 에러 로그 기록
-    await logApiError(
-      "/api/admin/logs/cleanup",
-      "GET",
-      error instanceof Error ? error : String(error),
+    // 시스템 에러 로그 기록
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    await createSystemLog(
+      "EXPIRED_COUNT_QUERY_FAILED",
+      LOG_MESSAGES.EXPIRED_COUNT_QUERY_FAILED(errorMessage),
+      "error",
+      undefined,
+      "system",
       undefined,
       {
-        ip: clientIP,
-        userAgent,
-      }
+        action_type: "admin_event",
+        event: "expired_count_query_failed",
+        error_message: errorMessage,
+      },
+      request
     );
 
-    return NextResponse.json(
-      {
-        success: false,
-        error: "CLEANUP_STATUS_QUERY_FAILED",
-        message: "정리 상태 조회에 실패했습니다.",
-      },
-      { status: 500 }
-    );
+    // 통합 에러 처리 - 비즈니스 에러와 시스템 에러를 모두 처리
+    const result = getErrorResultFromRawError(error);
+
+    return NextResponse.json(makeErrorResponseFromResult(result), {
+      status: result.status,
+    });
   }
 }

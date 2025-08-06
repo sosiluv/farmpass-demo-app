@@ -1,22 +1,13 @@
 import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Shield, Save, Lock } from "lucide-react";
+import { Shield, Save } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import {
-  Form,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormControl,
-  FormMessage,
-} from "@/components/ui/form";
+import { Form, FormField } from "@/components/ui/form";
+import { PasswordField } from "@/components/auth";
 import { Card, CardContent } from "@/components/ui/card";
-import { PasswordStrength } from "@/components/ui/password-strength";
 import { useCommonToast } from "@/lib/utils/notification/toast-messages";
 import { devLog } from "@/lib/utils/logging/dev-logger";
-import { getAuthErrorMessage } from "@/lib/utils/validation";
 import { usePasswordRules } from "@/lib/utils/validation/usePasswordRules";
 import {
   createChangePasswordFormSchema,
@@ -27,13 +18,8 @@ import type { PasswordFormData } from "@/lib/types/account";
 import { Loader2 } from "lucide-react";
 import AccountCardHeader from "./AccountCardHeader";
 import {
-  LABELS as AUTH_LABELS,
-  PLACEHOLDERS as AUTH_PLACEHOLDERS,
-} from "@/lib/constants/auth";
-import {
   BUTTONS,
   LABELS,
-  PLACEHOLDERS,
   PAGE_HEADER,
   SOCIAL_LOGIN_MESSAGES,
 } from "@/lib/constants/account";
@@ -100,9 +86,12 @@ export function PasswordSection({
       };
       await onPasswordChange(passwordData);
       form.reset();
-    } catch (error: any) {
-      const authError = getAuthErrorMessage(error);
-      showError("오류", authError.message);
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : "알 수 없는 오류가 발생했습니다.";
+      showError("오류", errorMessage);
     }
   };
 
@@ -174,26 +163,7 @@ export function PasswordSection({
               control={form.control}
               name="currentPassword"
               render={({ field }) => (
-                <FormItem>
-                  <FormLabel className="text-sm sm:text-base font-medium">
-                    {LABELS.CURRENT_PASSWORD}{" "}
-                    <span className="text-red-500">*</span>
-                  </FormLabel>
-                  <div className="relative">
-                    <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                    <FormControl>
-                      <Input
-                        {...field}
-                        type="password"
-                        placeholder={PLACEHOLDERS.CURRENT_PASSWORD_PLACEHOLDER}
-                        autoComplete="current-password"
-                        className="h-10 pl-10 text-sm sm:text-base"
-                        disabled={loading}
-                      />
-                    </FormControl>
-                  </div>
-                  <FormMessage />
-                </FormItem>
+                <PasswordField type="current" field={field} loading={loading} />
               )}
             />
 
@@ -201,27 +171,7 @@ export function PasswordSection({
               control={form.control}
               name="newPassword"
               render={({ field }) => (
-                <FormItem>
-                  <FormLabel className="text-sm sm:text-base font-medium">
-                    {AUTH_LABELS.PASSWORD}{" "}
-                    <span className="text-red-500">*</span>
-                  </FormLabel>
-                  <div className="relative">
-                    <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                    <FormControl>
-                      <Input
-                        {...field}
-                        type="password"
-                        placeholder={AUTH_PLACEHOLDERS.PASSWORD}
-                        autoComplete="new-password"
-                        className="h-10 pl-10 text-sm sm:text-base"
-                        disabled={loading}
-                      />
-                    </FormControl>
-                  </div>
-                  <FormMessage />
-                  <PasswordStrength password={field.value} />
-                </FormItem>
+                <PasswordField type="new" field={field} loading={loading} />
               )}
             />
 
@@ -229,26 +179,7 @@ export function PasswordSection({
               control={form.control}
               name="confirmPassword"
               render={({ field }) => (
-                <FormItem>
-                  <FormLabel className="text-sm sm:text-base font-medium">
-                    {AUTH_LABELS.CONFIRM_PASSWORD}{" "}
-                    <span className="text-red-500">*</span>
-                  </FormLabel>
-                  <div className="relative">
-                    <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                    <FormControl>
-                      <Input
-                        {...field}
-                        type="password"
-                        placeholder={AUTH_PLACEHOLDERS.CONFIRM_PASSWORD}
-                        autoComplete="new-password"
-                        className="h-10 pl-10 text-sm sm:text-base"
-                        disabled={loading}
-                      />
-                    </FormControl>
-                  </div>
-                  <FormMessage />
-                </FormItem>
+                <PasswordField type="confirm" field={field} loading={loading} />
               )}
             />
 

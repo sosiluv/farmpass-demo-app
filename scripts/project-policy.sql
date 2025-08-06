@@ -6,6 +6,11 @@ ADD CONSTRAINT fk_profiles_auth_users_id
 FOREIGN KEY (id) REFERENCES auth.users(id)
 ON DELETE CASCADE;
 
+ALTER TABLE system_logs 
+ADD CONSTRAINT system_logs_user_id_fkey 
+FOREIGN KEY (user_id) REFERENCES profiles(id) 
+ON DELETE SET NULL ON UPDATE NO ACTION;
+
 ALTER TABLE system_logs DROP CONSTRAINT system_logs_user_id_fkey;
 
 -- 인증된 사용자에게 테이블 접근 권한 부여

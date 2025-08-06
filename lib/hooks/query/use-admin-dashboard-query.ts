@@ -11,6 +11,10 @@ import {
 import { adminKeys } from "./query-keys";
 import { useSupabaseRealtime } from "@/hooks/notification/useSupabaseRealtime";
 import { useProfileQuery } from "@/lib/hooks/query/use-profile-query";
+import {
+  mapRawErrorToCode,
+  getErrorMessage,
+} from "@/lib/utils/error/errorUtil";
 
 // 클라이언트 전용 가드
 const isClient = typeof window !== "undefined";
@@ -95,10 +99,26 @@ export function useAdminDashboardQuery() {
         ]);
 
       // 에러 체크
-      if (usersResult.error) throw usersResult.error;
-      if (farmsResult.error) throw farmsResult.error;
-      if (visitorsResult.error) throw visitorsResult.error;
-      if (logsResult.error) throw logsResult.error;
+      if (usersResult.error) {
+        const errorCode = mapRawErrorToCode(usersResult.error, "db");
+        const message = getErrorMessage(errorCode);
+        throw new Error(message);
+      }
+      if (farmsResult.error) {
+        const errorCode = mapRawErrorToCode(farmsResult.error, "db");
+        const message = getErrorMessage(errorCode);
+        throw new Error(message);
+      }
+      if (visitorsResult.error) {
+        const errorCode = mapRawErrorToCode(visitorsResult.error, "db");
+        const message = getErrorMessage(errorCode);
+        throw new Error(message);
+      }
+      if (logsResult.error) {
+        const errorCode = mapRawErrorToCode(logsResult.error, "db");
+        const message = getErrorMessage(errorCode);
+        throw new Error(message);
+      }
 
       const users = usersResult.data || [];
       const farms = farmsResult.data || [];

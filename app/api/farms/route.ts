@@ -1,25 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createSystemLog } from "@/lib/utils/logging/system-log";
-import { devLog } from "@/lib/utils/logging/dev-logger";
-import {
-  PerformanceMonitor,
-  logApiPerformance,
-} from "@/lib/utils/logging/system-log";
-import { getClientIP, getUserAgent } from "@/lib/server/ip-helpers";
 import { requireAuth } from "@/lib/server/auth-utils";
 import { prisma } from "@/lib/prisma";
+import {
+  getErrorResultFromRawError,
+  makeErrorResponseFromResult,
+  throwBusinessError,
+} from "@/lib/utils/error/errorUtil";
+import { LOG_MESSAGES } from "@/lib/utils/logging/log-templates";
 
 export async function POST(request: NextRequest) {
-  // 성능 모니터링 시작
-  const performanceMonitor = new PerformanceMonitor("farm_creation_api", {
-    endpoint: "/api/farms",
-    method: "POST",
-  });
-
-  // 요청 컨텍스트 정보 추출
-  const clientIP = getClientIP(request);
-  const userAgent = getUserAgent(request);
-
   let user: any = null;
   let farmData: any = {};
   let statusCode = 200;
@@ -95,20 +85,19 @@ export async function POST(request: NextRequest) {
 
       // 농장 생성 로그
       await createSystemLog(
-        "FARM_CREATE",
-        `농장 생성: ${farmCreateData.farm_name} (${farm.id})`,
+        "FARM_CREATED",
+        LOG_MESSAGES.FARM_CREATED(farmCreateData.farm_name, farm.id),
         "info",
-        user.id,
+        { id: user.id, email: user.email || "" },
         "farm",
         farm.id,
         {
+          action_type: "farm_event",
+          event: "farm_created",
           farm_id: farm.id,
-          farm_data: farmCreateData,
-          action_type: "farm_management",
+          farm_name: farmCreateData.farm_name,
         },
-        user.email,
-        clientIP,
-        userAgent
+        request
       );
 
       statusCode = 201;
@@ -121,77 +110,52 @@ export async function POST(request: NextRequest) {
         { status: 201, headers: { "Cache-Control": "no-store" } }
       );
     } catch (error) {
-      statusCode = 500;
-      throw error;
+      throwBusinessError(
+        "GENERAL_CREATE_FAILED",
+        {
+          resourceType: "farm",
+        },
+        error
+      );
     }
   } catch (error) {
     statusCode = 500;
-
     // 농장 생성 실패 로그 기록
+    const errorMessage = error instanceof Error ? error.message : String(error);
     await createSystemLog(
       "FARM_CREATE_FAILED",
-      `농장 생성 실패: ${farmData.farm_name || "Unknown"} - ${
-        error instanceof Error ? error.message : "Unknown error"
-      }`,
+      LOG_MESSAGES.FARM_CREATE_FAILED(
+        farmData.farm_name || "Unknown",
+        errorMessage
+      ),
       "error",
-      user?.id,
+      user?.id ? { id: user.id, email: user.email || "" } : undefined,
       "farm",
       undefined,
       {
-        error_message: error instanceof Error ? error.message : "Unknown error",
-        farm_data: farmData,
-        action_type: "farm_management",
+        action_type: "farm_event",
+        event: "farm_create_failed",
+        error_message: errorMessage,
+        farm_name: farmData.farm_name || "Unknown",
       },
-      user?.email,
-      clientIP,
-      userAgent
-    ).catch((logError: any) =>
-      devLog.error("Failed to log farm creation error:", logError)
+      request
     );
 
-    return NextResponse.json(
-      {
-        success: false,
-        error: "FARM_CREATE_ERROR",
-        message: "농장 생성 중 오류가 발생했습니다.",
-      },
-      { status: 500, headers: { "Cache-Control": "no-store" } }
-    );
-  } finally {
-    // 성능 모니터링 종료 및 로깅
-    const duration = await performanceMonitor.finish(1000); // 1초 임계값
+    // 비즈니스 에러 또는 시스템 에러를 표준화된 에러 코드로 매핑
+    const result = getErrorResultFromRawError(error, {
+      operation: "farm_creation",
+      userId: user?.id,
+    });
 
-    // API 성능 로깅
-    await logApiPerformance(
-      {
-        endpoint: "/api/farms",
-        method: "POST",
-        duration_ms: duration,
-        status_code: statusCode,
-        response_size: 0, // 실제로는 응답 크기를 계산해야 함
-      },
-      user?.id,
-      {
-        ip: clientIP,
-        email: user?.email,
-        userAgent: userAgent,
-      }
-    );
+    return NextResponse.json(makeErrorResponseFromResult(result), {
+      status: result.status,
+    });
   }
 }
 
 export async function GET(request: NextRequest) {
-  // 성능 모니터링 시작
-  const performanceMonitor = new PerformanceMonitor("farm_list_api", {
-    endpoint: "/api/farms",
-    method: "GET",
-  });
-
-  // 요청 컨텍스트 정보 추출
-  const clientIP = getClientIP(request);
-  const userAgent = getUserAgent(request);
-
   let statusCode = 200;
+  let user: any = null;
 
   try {
     // 인증 확인
@@ -224,7 +188,13 @@ export async function GET(request: NextRequest) {
           },
         });
       } catch (adminFarmsError) {
-        throw adminFarmsError;
+        throwBusinessError(
+          "GENERAL_QUERY_FAILED",
+          {
+            resourceType: "farmList",
+          },
+          adminFarmsError
+        );
       }
     } else {
       // 일반 사용자는 접근 가능한 농장만 조회 - 한 번의 쿼리로 최적화
@@ -259,29 +229,35 @@ export async function GET(request: NextRequest) {
           },
         });
       } catch (userFarmsError) {
-        throw userFarmsError;
+        throwBusinessError(
+          "GENERAL_QUERY_FAILED",
+          {
+            resourceType: "farmList",
+          },
+          userFarmsError
+        );
       }
     }
 
     // 농장 목록 조회 로그 기록
     await createSystemLog(
       "FARM_READ",
-      `농장 목록 조회: ${farms?.length || 0}개 (${
+      LOG_MESSAGES.FARM_READ(
+        farms?.length || 0,
         isAdmin ? "관리자 전체 조회" : "접근 가능한 농장 조회"
-      })`,
+      ),
       "info",
-      user.id,
+      { id: user.id, email: user.email || "" },
       "farm",
       undefined,
       {
-        access_type: isAdmin ? "admin_all_farms" : "accessible_farms",
-        farm_count: farms?.length || 0,
-        user_email: user.email,
-        action_type: "farm_management",
+        action_type: "farm_event",
+        event: "farm_read",
+        count: farms?.length || 0,
+        is_admin: isAdmin,
+        email: user.email || "",
       },
-      user.email,
-      clientIP,
-      userAgent
+      request
     );
 
     return NextResponse.json(
@@ -290,54 +266,31 @@ export async function GET(request: NextRequest) {
     );
   } catch (error) {
     statusCode = 500;
-
     // 농장 목록 조회 실패 로그 기록
+    const errorMessage = error instanceof Error ? error.message : String(error);
     await createSystemLog(
       "FARM_READ_FAILED",
-      `농장 목록 조회 실패: ${
-        error instanceof Error ? error.message : "Unknown error"
-      }`,
+      LOG_MESSAGES.FARM_READ_FAILED(errorMessage),
       "error",
-      undefined,
+      user?.id ? { id: user.id, email: user.email || "" } : undefined,
       "farm",
       undefined,
       {
-        error_message: error instanceof Error ? error.message : "Unknown error",
-        action_type: "farm_management",
+        action_type: "farm_event",
+        event: "farm_read_failed",
+        error_message: errorMessage,
       },
-      undefined,
-      clientIP,
-      userAgent
-    ).catch((logError: any) =>
-      devLog.error("Failed to log farm fetch error:", logError)
+      request
     );
 
-    return NextResponse.json(
-      {
-        success: false,
-        error: "FARM_LIST_FETCH_ERROR",
-        message: "농장 목록 조회 중 오류가 발생했습니다.",
-      },
-      { status: 500, headers: { "Cache-Control": "no-store" } }
-    );
-  } finally {
-    // 성능 모니터링 종료 및 로깅
-    const duration = await performanceMonitor.finish(500); // 500ms 임계값
+    // 비즈니스 에러 또는 시스템 에러를 표준화된 에러 코드로 매핑
+    const result = getErrorResultFromRawError(error, {
+      operation: "farm_list_fetch",
+      userId: user?.id,
+    });
 
-    // API 성능 로깅
-    await logApiPerformance(
-      {
-        endpoint: "/api/farms",
-        method: "GET",
-        duration_ms: duration,
-        status_code: statusCode,
-        response_size: 0, // 실제로는 응답 크기를 계산해야 함
-      },
-      undefined,
-      {
-        ip: clientIP,
-        userAgent: userAgent,
-      }
-    );
+    return NextResponse.json(makeErrorResponseFromResult(result), {
+      status: result.status,
+    });
   }
 }

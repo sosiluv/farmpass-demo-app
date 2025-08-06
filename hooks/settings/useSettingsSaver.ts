@@ -1,6 +1,5 @@
 import { useCommonToast } from "@/lib/utils/notification/toast-messages";
 import { useSystemSettingsMutations } from "@/lib/hooks/query/use-system-settings-mutations";
-import { getAuthErrorMessage } from "@/lib/utils/validation/validation";
 import type { SystemSettings } from "@/lib/types/settings";
 
 interface UseSettingsSaverProps {
@@ -16,7 +15,7 @@ export function useSettingsSaver({
   refreshSystemModes,
   refetch,
 }: UseSettingsSaverProps) {
-  const { showInfo, showWarning, showSuccess, showError } = useCommonToast();
+  const { showInfo, showSuccess, showError } = useCommonToast();
   const systemMutations = useSystemSettingsMutations();
 
   const handleSaveAll = async (localSettings: SystemSettings) => {
@@ -41,8 +40,11 @@ export function useSettingsSaver({
 
       showSuccess("설정 저장 완료", result.message || "설정이 저장되었습니다.");
     } catch (error) {
-      const authError = getAuthErrorMessage(error);
-      showError("설정 저장 실패", authError.message);
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : "알 수 없는 오류가 발생했습니다.";
+      showError("설정 저장 실패", errorMessage);
     }
   };
 

@@ -18,8 +18,7 @@ import { useRouter } from "next/navigation";
 import { useCommonToast } from "@/lib/utils/notification/toast-messages";
 import { useAuthActions } from "@/hooks/auth/useAuthActions";
 import { apiClient } from "@/lib/utils/data/api-client";
-import { handleError } from "@/lib/utils/error/handleError";
-import { getAuthErrorMessage } from "@/lib/utils/validation/validation";
+import { handleError } from "@/lib/utils/error/";
 import AccountCardHeader from "./AccountCardHeader";
 
 export default function WithdrawSection({
@@ -56,10 +55,13 @@ export default function WithdrawSection({
         return;
       }
       setOpen(false);
-    } catch (error: any) {
+    } catch (error) {
       handleError(error, { context: "withdraw" });
-      const authError = getAuthErrorMessage(error);
-      showError("오류", authError.message);
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : "알 수 없는 오류가 발생했습니다.";
+      showError("오류", errorMessage);
     } finally {
       setLoading(false);
     }

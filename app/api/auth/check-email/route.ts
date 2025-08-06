@@ -1,30 +1,40 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { devLog } from "@/lib/utils/logging/dev-logger";
-import { logApiError } from "@/lib/utils/logging/system-log";
-import { getClientIP, getUserAgent } from "@/lib/server/ip-helpers";
+import { createSystemLog } from "@/lib/utils/logging/system-log";
+import { LOG_MESSAGES } from "@/lib/utils/logging/log-templates";
+import {
+  getErrorResultFromRawError,
+  makeErrorResponseFromResult,
+  throwBusinessError,
+} from "@/lib/utils/error/errorUtil";
 
 export async function GET(request: NextRequest) {
-  const clientIP = getClientIP(request);
-  const userAgent = getUserAgent(request);
   const email = request.nextUrl.searchParams.get("email");
 
   if (!email) {
-    return NextResponse.json(
-      {
-        success: false,
-        error: "USER_MISSING_EMAIL",
-        message: "이메일 주소가 필요합니다.",
-      },
-      { status: 400 }
-    );
+    throwBusinessError("MISSING_REQUIRED_FIELDS", {
+      missingFields: ["email"],
+      operation: "check_email",
+    });
   }
 
   try {
-    const existingUser = await prisma.profiles.findFirst({
-      where: { email: email },
-      select: { id: true },
-    });
+    let existingUser;
+    try {
+      existingUser = await prisma.profiles.findFirst({
+        where: { email: email },
+        select: { id: true },
+      });
+    } catch (error: any) {
+      throwBusinessError(
+        "GENERAL_QUERY_FAILED",
+        {
+          resourceType: "email",
+        },
+        error
+      );
+    }
 
     return NextResponse.json({
       success: true,
@@ -34,25 +44,32 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     devLog.error("Email check error:", error);
 
-    // API 에러 로깅
-    await logApiError(
-      "/api/auth/check-email",
-      "GET",
-      error instanceof Error ? error : String(error),
+    // 시스템 에러 로깅
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    await createSystemLog(
+      "EMAIL_CHECK_FAILED",
+      LOG_MESSAGES.EMAIL_CHECK_FAILED(errorMessage),
+      "error",
+      undefined,
+      "system",
       undefined,
       {
-        ip: clientIP,
-        userAgent,
-      }
+        action_type: "auth_event",
+        event: "email_check_failed",
+        error_message: errorMessage,
+        email: email,
+      },
+      request
     );
 
-    return NextResponse.json(
-      {
-        success: false,
-        error: "EMAIL_CHECK_ERROR",
-        message: "이메일 확인 중 오류가 발생했습니다.",
-      },
-      { status: 500 }
-    );
+    // 통합 에러 처리 - 비즈니스 에러와 시스템 에러를 모두 처리
+    const result = getErrorResultFromRawError(error, {
+      operation: "check_email",
+      email: email,
+    });
+
+    return NextResponse.json(makeErrorResponseFromResult(result), {
+      status: result.status,
+    });
   }
 }

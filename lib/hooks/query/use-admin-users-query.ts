@@ -7,6 +7,10 @@ import { adminKeys } from "./query-keys";
 import { useSupabaseRealtime } from "@/hooks/notification/useSupabaseRealtime";
 import { toDateString } from "@/lib/utils/datetime/date";
 import { useProfileQuery } from "@/lib/hooks/query/use-profile-query";
+import {
+  mapRawErrorToCode,
+  getErrorMessage,
+} from "@/lib/utils/error/errorUtil";
 
 // 클라이언트 전용 가드
 const isClient = typeof window !== "undefined";
@@ -54,7 +58,11 @@ export function useAdminUsersQuery() {
         .from("profiles")
         .select(`*, farm_members(role)`);
 
-      if (usersError) throw usersError;
+      if (usersError) {
+        const errorCode = mapRawErrorToCode(usersError, "db");
+        const message = getErrorMessage(errorCode);
+        throw new Error(message);
+      }
 
       const totalUsers = users?.length ?? 0;
       const activeUsers = users?.filter((u) => u.is_active).length ?? 0;
@@ -257,7 +265,11 @@ export function useAdminUsersListQuery() {
           )
         `);
 
-      if (usersError) throw usersError;
+      if (usersError) {
+        const errorCode = mapRawErrorToCode(usersError, "db");
+        const message = getErrorMessage(errorCode);
+        throw new Error(message);
+      }
 
       return users || [];
     },

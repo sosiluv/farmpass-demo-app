@@ -2,10 +2,8 @@ import { useCallback, useEffect, useState, useMemo } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useCommonToast } from "@/lib/utils/notification/toast-messages";
-import { devLog } from "@/lib/utils/logging/dev-logger";
 import { handleError } from "@/lib/utils/error";
 import { formatPhone } from "@/lib/utils/validation/validation";
-import { getAuthErrorMessage } from "@/lib/utils/validation/validation";
 import {
   User,
   Phone,
@@ -50,6 +48,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { AddressSearch } from "@/components/common/address-search";
+import { LottieLoadingCompact } from "@/components/ui/lottie-loading";
 import {
   VISIT_PURPOSE_OPTIONS,
   LABELS,
@@ -152,10 +151,12 @@ export function VisitorFormDialog({
       // 성공 시 다이얼로그 닫기
       onOpenChange(false);
     } catch (error) {
-      devLog.error("폼 제출 실패:", error);
       handleError(error, "방문자 폼 제출");
-      const authError = getAuthErrorMessage(error);
-      showError("폼 제출 실패", authError.message);
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : "알 수 없는 오류가 발생했습니다.";
+      showError("폼 제출 실패", errorMessage);
     } finally {
       setIsSubmitting(false);
     }
@@ -421,13 +422,13 @@ export function VisitorFormDialog({
           </DialogDescription>
         </DialogHeader>
 
-        {/* 외부 로딩 중에는 스피너만 표시하여 깜빡임 완전 방지 */}
+        {/* 외부 로딩 중에는 Lottie 애니메이션 표시하여 깜빡임 완전 방지 */}
         {isLoading && mode === "edit" ? (
           <div className="flex flex-col items-center justify-center py-12">
-            <div className="animate-spin h-10 w-10 border-4 border-gray-300 border-t-blue-600 rounded-full mb-4"></div>
-            <span className="text-gray-600 text-sm">
-              {LABELS.VISITOR_FORM_DIALOG_LOADING}
-            </span>
+            <LottieLoadingCompact
+              text={LABELS.VISITOR_FORM_DIALOG_LOADING}
+              size="md"
+            />
           </div>
         ) : (
           <Form {...form}>

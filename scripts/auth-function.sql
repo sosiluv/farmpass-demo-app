@@ -411,9 +411,7 @@ COMMENT ON COLUMN public.user_notification_settings.id IS '알림 설정 고유 
 COMMENT ON COLUMN public.user_notification_settings.user_id IS '사용자 ID (auth.users 테이블 참조)';
 COMMENT ON COLUMN public.user_notification_settings.notification_method IS '알림 방법: push, kakao';
 COMMENT ON COLUMN public.user_notification_settings.visitor_alerts IS '방문자 알림 활성화 여부';
-COMMENT ON COLUMN public.user_notification_settings.notice_alerts IS '공지사항 알림 활성화 여부';
-COMMENT ON COLUMN public.user_notification_settings.emergency_alerts IS '긴급 알림 활성화 여부';
-COMMENT ON COLUMN public.user_notification_settings.maintenance_alerts IS '시스템 알림 활성화 여부';
+COMMENT ON COLUMN public.user_notification_settings.system_alerts IS '시스템 알림 활성화 여부';
 COMMENT ON COLUMN public.user_notification_settings.kakao_user_id IS '카카오톡 사용자 ID';
 COMMENT ON COLUMN public.user_notification_settings.is_active IS '알림 설정 활성화 상태';
 COMMENT ON COLUMN public.user_notification_settings.created_at IS '생성 시간';

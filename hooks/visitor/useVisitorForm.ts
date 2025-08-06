@@ -221,8 +221,12 @@ export const useVisitorForm = (farmId: string, settings: VisitorSettings) => {
       setSelectedImageFile(null);
       // 토스트는 컴포넌트에서 처리
       return result; // <-- API 응답 반환
-    } catch (err) {
-      setError("방문자 등록에 실패했습니다");
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : "알 수 없는 오류가 발생했습니다.";
+      setError(errorMessage);
       // 에러는 apiClient에서 공통 처리됨
     } finally {
       setIsSubmitting(false);

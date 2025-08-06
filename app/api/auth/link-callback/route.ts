@@ -1,6 +1,10 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { devLog } from "@/lib/utils/logging/dev-logger";
+import {
+  mapRawErrorToCode,
+  getErrorMessage,
+} from "@/lib/utils/error/errorUtil";
 
 export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url);
@@ -8,13 +12,14 @@ export async function GET(request: Request) {
   const error = searchParams.get("error");
   const error_code = searchParams.get("error_code");
   const next = searchParams.get("next") ?? "/admin/account?tab=profile";
+  const errorObj = { code: error_code };
 
   // OAuth 에러가 있는 경우 먼저 처리
   if (error) {
-    devLog.error("OAuth 에러 발생:", { error, error_code });
+    const errorCode = mapRawErrorToCode(errorObj, "auth");
     return NextResponse.redirect(
       `${origin}/admin/account?tab=profile&error=link_failed&message=${encodeURIComponent(
-        error_code || error || "소셜 계정 연동 중 오류가 발생했습니다."
+        getErrorMessage(errorCode)
       )}`
     );
   }
@@ -28,9 +33,12 @@ export async function GET(request: Request) {
 
       if (error) {
         devLog.error("소셜 계정 연동 콜백 처리 실패:", error);
+
+        // Supabase Auth 에러를 표준화된 에러 코드로 매핑
+        const errorCode = mapRawErrorToCode(errorObj, "auth");
         return NextResponse.redirect(
           `${origin}/admin/account?tab=profile&error=link_failed&message=${encodeURIComponent(
-            error.message
+            getErrorMessage(errorCode)
           )}`
         );
       }
@@ -43,9 +51,12 @@ export async function GET(request: Request) {
 
       if (sessionError || !session) {
         devLog.error("세션 확인 실패:", sessionError);
+
+        // 세션 에러를 표준화된 에러 코드로 매핑
+        const errorCode = mapRawErrorToCode(sessionError, "auth");
         return NextResponse.redirect(
           `${origin}/admin/account?tab=profile&error=link_failed&message=${encodeURIComponent(
-            sessionError?.message || "세션 확인에 실패했습니다."
+            getErrorMessage(errorCode)
           )}`
         );
       }
@@ -76,11 +87,12 @@ export async function GET(request: Request) {
       return NextResponse.redirect(redirectUrl);
     } catch (error) {
       devLog.error("소셜 계정 연동 콜백 처리 중 예외 발생:", error);
+
+      // 시스템 에러를 표준화된 에러 코드로 매핑
+      const errorCode = mapRawErrorToCode(error);
       return NextResponse.redirect(
         `${origin}/admin/account?tab=profile&error=link_failed&message=${encodeURIComponent(
-          error instanceof Error
-            ? error.message
-            : "계정 연동 중 오류가 발생했습니다."
+          getErrorMessage(errorCode)
         )}`
       );
     }

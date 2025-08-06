@@ -2,8 +2,6 @@ import { useCallback } from "react";
 import { useCommonToast } from "@/lib/utils/notification/toast-messages";
 import { exportVisitorsCSV } from "@/lib/utils/data/csv-unified";
 import { toKSTDate, createKSTDateRange } from "@/lib/utils/datetime/date";
-import { getAuthErrorMessage } from "@/lib/utils/validation/validation";
-import { useAuth } from "@/components/providers/auth-provider";
 import type { VisitorsExportOptions } from "@/components/admin/management/exports/types";
 import type { Farm } from "@/lib/types";
 import type { VisitorWithFarm } from "@/lib/types/visitor";
@@ -28,8 +26,6 @@ export const useVisitorActions = ({
   allVisitors,
 }: UseVisitorActionsProps) => {
   const { showInfo, showWarning, showSuccess, showError } = useCommonToast();
-  const { state } = useAuth();
-  const user = state.status === "authenticated" ? state.user : null;
 
   // React Query Mutations
   const updateVisitorMutation = useUpdateVisitorMutation();
@@ -63,8 +59,11 @@ export const useVisitorActions = ({
           result.message || "방문자 정보가 성공적으로 수정되었습니다."
         );
       } catch (error) {
-        const authError = getAuthErrorMessage(error);
-        showError("방문자 정보 수정 실패", authError.message);
+        const errorMessage =
+          error instanceof Error
+            ? error.message
+            : "알 수 없는 오류가 발생했습니다.";
+        showError("방문자 정보 수정 실패", errorMessage);
       }
     },
     [updateVisitorMutation, showInfo, showWarning, showSuccess, showError]
@@ -89,8 +88,11 @@ export const useVisitorActions = ({
           result.message || "방문자가 성공적으로 삭제되었습니다."
         );
       } catch (error) {
-        const authError = getAuthErrorMessage(error);
-        showError("방문자 삭제 실패", authError.message);
+        const errorMessage =
+          error instanceof Error
+            ? error.message
+            : "알 수 없는 오류가 발생했습니다.";
+        showError("방문자 삭제 실패", errorMessage);
       }
     },
     [deleteVisitorMutation, showInfo, showWarning, showSuccess, showError]
@@ -162,8 +164,11 @@ export const useVisitorActions = ({
 
         showSuccess("내보내기 완료", "내보내기가 성공적으로 완료되었습니다.");
       } catch (error) {
-        const authError = getAuthErrorMessage(error);
-        showError("내보내기 실패", authError.message);
+        const errorMessage =
+          error instanceof Error
+            ? error.message
+            : "알 수 없는 오류가 발생했습니다.";
+        showError("내보내기 실패", errorMessage);
       }
     },
     [allVisitors, farms, isAdmin, showInfo, showSuccess, showError]

@@ -1,11 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createSystemLog, logApiError } from "@/lib/utils/logging/system-log";
+import { createSystemLog } from "@/lib/utils/logging/system-log";
 import { devLog } from "@/lib/utils/logging/dev-logger";
 import webpush from "web-push";
 import { getSystemSettings } from "@/lib/cache/system-settings-cache";
-import { getClientIP, getUserAgent } from "@/lib/server/ip-helpers";
 import { requireAuth } from "@/lib/server/auth-utils";
 import { prisma } from "@/lib/prisma";
+import {
+  getErrorResultFromRawError,
+  makeErrorResponseFromResult,
+  throwBusinessError,
+} from "@/lib/utils/error/errorUtil";
+import { LOG_MESSAGES } from "@/lib/utils/logging/log-templates";
 
 // VAPID 키 설정 초기화
 async function initializeVapidKeys() {
@@ -82,14 +87,13 @@ async function sendPushWithRetry(
 
 // 푸시 알림 발송
 export async function POST(request: NextRequest) {
-  const clientIP = getClientIP(request);
-  const userAgent = getUserAgent(request);
+  let user = null;
+  let body: any = null;
 
   try {
     // 서버 사이드 호출인지 확인
+    const userAgent = request.headers.get("user-agent") || "";
     const isServerSideCall = !userAgent || userAgent.includes("node-fetch");
-
-    let user = null;
 
     if (!isServerSideCall) {
       // 클라이언트 호출인 경우 관리자 권한 인증 확인
@@ -103,12 +107,12 @@ export async function POST(request: NextRequest) {
       // 서버 사이드 호출인 경우 시스템 사용자로 처리
       user = {
         id: undefined,
-        email: "system@samwon114.com",
+        email: "admin@samwon114.com",
       };
       devLog.log("푸시 알림 API: 서버 사이드 호출 감지, 인증 우회");
     }
 
-    const body = await request.json();
+    body = await request.json();
     const {
       title,
       message,
@@ -124,67 +128,57 @@ export async function POST(request: NextRequest) {
     if (!title || !message || !notificationType) {
       await createSystemLog(
         "PUSH_NOTIFICATION_INVALID_INPUT",
-        `푸시 알림 입력값 검증 실패 (필수값 누락). title: ${title}, message: ${message}, notificationType: ${notificationType}`,
+        LOG_MESSAGES.PUSH_NOTIFICATION_INVALID_INPUT(
+          `title: ${title}, message: ${message}, notificationType: ${notificationType}`
+        ),
         "warn",
-        user?.id,
+        user?.id ? { id: user.id, email: user.email || "" } : undefined,
         "system",
         "all",
         {
+          action_type: "push_notification_event",
+          event: "push_notification_invalid_input",
           user_id: user?.id,
           user_email: user?.email,
           title,
           message,
           notificationType,
           targetUserIds,
-          action_type: "push_notification",
         },
-        user?.email,
-        clientIP,
-        userAgent
+        request
       );
-      return NextResponse.json(
-        {
-          success: false,
-          error: "MISSING_REQUIRED_FIELDS",
-          message: "필수 입력 항목이 누락되었습니다.",
-        },
-        { status: 400 }
-      );
+      throwBusinessError("MISSING_REQUIRED_FIELDS", {
+        operation: "send_push_notification",
+        title,
+        message,
+        notificationType,
+      });
     }
 
-    if (
-      !["visitor", "emergency", "maintenance", "notice"].includes(
-        notificationType
-      )
-    ) {
+    if (!["visitor", "system"].includes(notificationType)) {
       await createSystemLog(
-        "PUSH_NOTIFICATION_INVALID_INPUT",
-        `푸시 알림 입력값 검증 실패 (잘못된 알림 유형). notificationType: ${notificationType}`,
+        "PUSH_NOTIFICATION_INVALID_TYPE",
+        LOG_MESSAGES.PUSH_NOTIFICATION_INVALID_TYPE(notificationType),
         "warn",
-        user?.id,
+        user?.id ? { id: user.id, email: user.email || "" } : undefined,
         "system",
         "all",
         {
+          action_type: "push_notification_event",
+          event: "push_notification_invalid_type",
           user_id: user?.id,
           user_email: user?.email,
           title,
           message,
           notificationType,
           targetUserIds,
-          action_type: "push_notification",
         },
-        user?.email,
-        clientIP,
-        userAgent
+        request
       );
-      return NextResponse.json(
-        {
-          success: false,
-          error: "INVALID_NOTIFICATION_TYPE",
-          message: "유효하지 않은 알림 유형입니다.",
-        },
-        { status: 400 }
-      );
+      throwBusinessError("INVALID_NOTIFICATION_TYPE", {
+        operation: "send_push_notification",
+        notificationType,
+      });
     }
 
     // 시스템 설정 및 아이콘/배지 설정
@@ -204,32 +198,26 @@ export async function POST(request: NextRequest) {
     if (!(await initializeVapidKeys())) {
       await createSystemLog(
         "PUSH_NOTIFICATION_VAPID_INIT_FAILED",
-        `VAPID 키 초기화 실패.`,
+        LOG_MESSAGES.PUSH_NOTIFICATION_VAPID_INIT_FAILED(),
         "error",
-        user?.id,
+        user?.id ? { id: user.id, email: user.email || "" } : undefined,
         "system",
         "all",
         {
+          action_type: "push_notification_event",
+          event: "push_notification_vapid_init_failed",
           user_id: user?.id,
           user_email: user?.email,
           title,
           message,
           notificationType,
           targetUserIds,
-          action_type: "push_notification",
         },
-        user?.email,
-        clientIP,
-        userAgent
+        request
       );
-      return NextResponse.json(
-        {
-          success: false,
-          error: "VAPID_KEYS_NOT_SET",
-          message: "VAPID 키가 설정되지 않았습니다.",
-        },
-        { status: 500 }
-      );
+      throwBusinessError("VAPID_KEYS_NOT_SET", {
+        operation: "send_push_notification",
+      });
     }
 
     // 구독자 조회
@@ -270,37 +258,35 @@ export async function POST(request: NextRequest) {
           foundSubscriptions: subscriptions.length,
         });
       }
-    } catch (error) {
+    } catch (error: any) {
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
       await createSystemLog(
         "PUSH_NOTIFICATION_SUBSCRIBER_FETCH_FAILED",
-        `푸시 구독자 조회 실패.`,
+        LOG_MESSAGES.PUSH_NOTIFICATION_SUBSCRIBER_FETCH_FAILED(errorMessage),
         "error",
-        user?.id,
+        user?.id ? { id: user.id, email: user.email || "" } : undefined,
         "system",
         "all",
         {
-          subscriptionError:
-            error instanceof Error ? error.message : String(error),
+          action_type: "push_notification_event",
+          event: "push_notification_subscriber_fetch_failed",
+          subscriptionError: errorMessage,
           user_id: user?.id,
           user_email: user?.email,
           title,
           message,
           notificationType,
           targetUserIds,
-          action_type: "push_notification",
         },
-        user?.email,
-        clientIP,
-        userAgent
+        request
       );
-      devLog.error("구독자 조회 오류:", error);
-      return NextResponse.json(
+      throwBusinessError(
+        "GENERAL_QUERY_FAILED",
         {
-          success: false,
-          error: "SUBSCRIBER_FETCH_FAILED",
-          message: "구독자 조회에 실패했습니다.",
+          resourceType: "pushSubscription",
         },
-        { status: 500 }
+        error
       );
     }
 
@@ -308,25 +294,22 @@ export async function POST(request: NextRequest) {
       // 구독자가 없는 경우 로그 기록
       await createSystemLog(
         "PUSH_NOTIFICATION_NO_SUBSCRIBERS",
-        `푸시 알림 발송 시도했으나 구독자가 없습니다. 알림 유형: ${notificationType}${
-          targetUserIds ? `, 대상 사용자: ${targetUserIds.length}명` : ""
-        }`,
+        LOG_MESSAGES.PUSH_NOTIFICATION_NO_SUBSCRIBERS(),
         "warn",
-        user.id,
+        user?.id ? { id: user.id, email: user.email || "" } : undefined,
         "system",
         "all",
         {
+          action_type: "push_notification_event",
+          event: "push_notification_no_subscribers",
           user_id: user?.id,
           user_email: user?.email,
           notification_type: notificationType,
           target_user_ids: targetUserIds,
           title,
           message,
-          action_type: "push_notification",
         },
-        user.email,
-        clientIP,
-        userAgent
+        request
       );
 
       return NextResponse.json(
@@ -356,35 +339,34 @@ export async function POST(request: NextRequest) {
         },
       });
     } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
       await createSystemLog(
         "PUSH_NOTIFICATION_SETTINGS_FETCH_FAILED",
-        `알림 설정 조회 실패.`,
+        LOG_MESSAGES.PUSH_NOTIFICATION_SETTINGS_FETCH_FAILED(errorMessage),
         "error",
-        user?.id,
+        user?.id ? { id: user.id, email: user.email || "" } : undefined,
         "system",
         "all",
         {
-          settingsError: error instanceof Error ? error.message : String(error),
+          action_type: "push_notification_event",
+          event: "push_notification_settings_fetch_failed",
+          settingsError: errorMessage,
           user_id: user?.id,
           user_email: user?.email,
           title,
           message,
           notificationType,
           targetUserIds,
-          action_type: "push_notification",
         },
-        user?.email,
-        clientIP,
-        userAgent
+        request
       );
-      devLog.error("알림 설정 조회 오류:", error);
-      return NextResponse.json(
+      throwBusinessError(
+        "GENERAL_QUERY_FAILED",
         {
-          success: false,
-          error: "NOTIFICATION_SETTINGS_FETCH_FAILED",
-          message: "알림 설정을 불러올 수 없습니다.",
+          resourceType: "notificationSettings",
         },
-        { status: 500 }
+        error
       );
     }
 
@@ -424,12 +406,17 @@ export async function POST(request: NextRequest) {
       // 알림 설정으로 인해 필터링된 경우 로그 기록
       await createSystemLog(
         "PUSH_NOTIFICATION_FILTERED_OUT",
-        `푸시 알림 발송 시도했으나 알림 설정으로 인해 모든 구독자가 필터링되었습니다. 전체 구독자: ${subscriptions.length}명, 알림 유형: ${notificationType}`,
+        LOG_MESSAGES.PUSH_NOTIFICATION_FILTERED_OUT(
+          subscriptions.length,
+          notificationType
+        ),
         "warn",
-        user.id,
+        user?.id ? { id: user.id, email: user.email || "" } : undefined,
         "system",
         "all",
         {
+          action_type: "push_notification_event",
+          event: "push_notification_filtered_out",
           user_id: user?.id,
           user_email: user?.email,
           notification_type: notificationType,
@@ -442,11 +429,8 @@ export async function POST(request: NextRequest) {
             total_settings: userIds.length,
             active_settings: notificationSettings?.length || 0,
           },
-          action_type: "push_notification",
         },
-        user.email,
-        clientIP,
-        userAgent
+        request
       );
 
       return NextResponse.json(
@@ -506,14 +490,24 @@ export async function POST(request: NextRequest) {
 
           // 성공 시 fail_count 초기화 및 last_used_at 업데이트
           if (result.success) {
-            await prisma.push_subscriptions.update({
-              where: { id: subscription.id },
-              data: {
-                fail_count: 0,
-                last_used_at: new Date(),
-                updated_at: new Date(),
-              },
-            });
+            try {
+              await prisma.push_subscriptions.update({
+                where: { id: subscription.id },
+                data: {
+                  fail_count: 0,
+                  last_used_at: new Date(),
+                  updated_at: new Date(),
+                },
+              });
+            } catch (updateError) {
+              throwBusinessError(
+                "GENERAL_UPDATE_FAILED",
+                {
+                  resourceType: "pushSubscription",
+                },
+                updateError
+              );
+            }
           }
 
           return {
@@ -538,7 +532,13 @@ export async function POST(request: NextRequest) {
               },
             });
           } catch (updateError) {
-            devLog.error("fail_count 업데이트 실패:", updateError);
+            throwBusinessError(
+              "GENERAL_UPDATE_FAILED",
+              {
+                resourceType: "pushSubscription",
+              },
+              updateError
+            );
           }
 
           // 410 Gone 에러이거나 fail_count가 5회 이상인 경우 구독 비활성화
@@ -559,7 +559,13 @@ export async function POST(request: NextRequest) {
                 })`
               );
             } catch (deactivateError) {
-              devLog.error("구독 비활성화 실패:", deactivateError);
+              throwBusinessError(
+                "GENERAL_UPDATE_FAILED",
+                {
+                  resourceType: "pushSubscription",
+                },
+                deactivateError
+              );
             }
           }
 
@@ -599,16 +605,18 @@ export async function POST(request: NextRequest) {
 
       await createSystemLog(
         "PUSH_NOTIFICATION_SEND_FAILED",
-        `푸시 알림 발송 중 ${failureCount}건 실패: ${Object.entries(
-          failureStats
-        )
-          .map(([type, count]) => `${type}: ${count}건`)
-          .join(", ")}`,
+        LOG_MESSAGES.PUSH_NOTIFICATION_SEND_FAILED(
+          `실패 ${failureCount}건: ${Object.entries(failureStats)
+            .map(([type, count]) => `${type}: ${count}건`)
+            .join(", ")}`
+        ),
         "warn",
-        user.id,
+        user?.id ? { id: user.id, email: user.email || "" } : undefined,
         "system",
         "all",
         {
+          action_type: "push_notification_event",
+          event: "push_notification_send_failed",
           notification_type: notificationType,
           user_id: user?.id,
           user_email: user?.email,
@@ -629,23 +637,22 @@ export async function POST(request: NextRequest) {
                 status_code: results.find((r) => !r.success)?.statusCode,
               }
             : null,
-          action_type: "push_notification",
         },
-        user.email,
-        clientIP,
-        userAgent
+        request
       );
     }
 
     // 시스템 로그 기록
     await createSystemLog(
       "PUSH_NOTIFICATION_SENT",
-      `푸시 알림이 발송되었습니다. 성공: ${successCount}, 실패: ${failureCount}`,
+      LOG_MESSAGES.PUSH_NOTIFICATION_SENT(successCount, failureCount),
       "info",
-      user.id,
+      user?.id ? { id: user.id, email: user.email || "" } : undefined,
       "system",
       "all",
       {
+        action_type: "push_notification_event",
+        event: "push_notification_sent",
         notification_type: notificationType,
         user_id: user?.id,
         user_email: user?.email,
@@ -668,11 +675,8 @@ export async function POST(request: NextRequest) {
           sound_enabled: settings?.pushSoundEnabled || false,
           vibrate_enabled: settings?.pushVibrateEnabled || false,
         },
-        action_type: "push_notification",
       },
-      user.email,
-      clientIP,
-      userAgent
+      request
     );
 
     return NextResponse.json(
@@ -700,27 +704,36 @@ export async function POST(request: NextRequest) {
       }
     );
   } catch (error) {
-    devLog.error("푸시 발송 API 오류:", error);
-
-    // API 에러 로그 기록
-    await logApiError(
-      "/api/push/send",
-      "POST",
-      error instanceof Error ? error : String(error),
-      undefined,
+    // 푸시 알림 발송 시스템 오류 로그
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    await createSystemLog(
+      "PUSH_NOTIFICATION_SYSTEM_ERROR",
+      LOG_MESSAGES.PUSH_NOTIFICATION_SYSTEM_ERROR(errorMessage),
+      "error",
+      user?.id ? { id: user.id, email: user.email || "" } : undefined,
+      "system",
+      "all",
       {
-        ip: clientIP,
-        userAgent,
-      }
-    );
-
-    return NextResponse.json(
-      {
-        success: false,
-        error: "INTERNAL_SERVER_ERROR",
-        message: "서버 오류가 발생했습니다.",
+        action_type: "push_notification_event",
+        event: "push_notification_system_error",
+        error_message: errorMessage,
+        user_id: user?.id,
+        user_email: user?.email,
+        title: body?.title,
+        message: body?.message,
+        notification_type: body?.notificationType,
+        target_user_ids: body?.targetUserIds,
       },
-      { status: 500 }
+      request
     );
+
+    // 비즈니스 에러 또는 시스템 에러를 표준화된 에러 코드로 매핑
+    const result = getErrorResultFromRawError(error, {
+      operation: "send_push_notification",
+    });
+
+    return NextResponse.json(makeErrorResponseFromResult(result), {
+      status: result.status,
+    });
   }
 }

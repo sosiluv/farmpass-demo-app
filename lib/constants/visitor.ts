@@ -237,7 +237,7 @@ export const LABELS = {
 // 플레이스홀더
 export const PLACEHOLDERS = {
   FULL_NAME: "이름을 입력하세요",
-  PHONE_NUMBER: "숫자만 입력 가능합니다",
+  PHONE_NUMBER: "하이픈(-) 없이 숫자만 입력해주세요",
   ADDRESS: "주소 검색 버튼을 클릭하여 주소를 입력하세요",
   CAR_PLATE: "12가3456 (선택사항)",
   VISIT_PURPOSE: "방문 목적을 선택하세요",

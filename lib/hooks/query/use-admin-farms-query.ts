@@ -7,8 +7,11 @@ import type { FarmStats } from "@/lib/types";
 import { supabase } from "@/lib/supabase/client";
 // 클라이언트 전용 가드
 const isClient = typeof window !== "undefined";
-import { useSupabaseRealtime } from "@/hooks/notification/useSupabaseRealtime";
 import { useProfileQuery } from "@/lib/hooks/query/use-profile-query";
+import {
+  mapRawErrorToCode,
+  getErrorMessage,
+} from "@/lib/utils/error/errorUtil";
 
 // 트렌드 계산 헬퍼 함수 - 첫 달 시작 시 0% 표시
 const calculateTrend = (current: number, previous: number): number => {
@@ -40,7 +43,11 @@ export function useAdminFarmsQuery() {
         .from("farms")
         .select("*");
 
-      if (farmsError) throw farmsError;
+      if (farmsError) {
+        const errorCode = mapRawErrorToCode(farmsError, "db");
+        const message = getErrorMessage(errorCode);
+        throw new Error(message);
+      }
 
       // 트렌드 계산을 위한 데이터
       const now = new Date();
@@ -176,7 +183,11 @@ export function useAdminFarmsListQuery() {
         profiles!farms_owner_id_fkey(name)
       `);
 
-      if (error) throw error;
+      if (error) {
+        const errorCode = mapRawErrorToCode(error, "db");
+        const message = getErrorMessage(errorCode);
+        throw new Error(message);
+      }
 
       // 모든 농장의 구성원 수를 한 번에 조회
       const farmIds = (data || []).map((farm) => farm.id);
@@ -186,10 +197,16 @@ export function useAdminFarmsListQuery() {
 
       if (farmIds.length > 0) {
         // 구성원 수 조회 (한 번의 API 호출)
-        const { data: memberData } = await supabase
+        const { data: memberData, error: memberError } = await supabase
           .from("farm_members")
           .select("farm_id")
           .in("farm_id", farmIds);
+
+        if (memberError) {
+          const errorCode = mapRawErrorToCode(memberError, "db");
+          const message = getErrorMessage(errorCode);
+          throw new Error(message);
+        }
 
         // 농장별 구성원 수 계산
         memberCounts = (memberData || []).reduce((acc, member) => {
@@ -201,11 +218,17 @@ export function useAdminFarmsListQuery() {
         const thirtyDaysAgo = new Date();
         thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
-        const { data: visitorData } = await supabase
+        const { data: visitorData, error: visitorError } = await supabase
           .from("visitor_entries")
           .select("farm_id")
           .in("farm_id", farmIds)
           .gte("visit_datetime", thirtyDaysAgo.toISOString());
+
+        if (visitorError) {
+          const errorCode = mapRawErrorToCode(visitorError, "db");
+          const message = getErrorMessage(errorCode);
+          throw new Error(message);
+        }
 
         // 농장별 방문자 수 계산
         visitorCounts = (visitorData || []).reduce((acc, visitor) => {

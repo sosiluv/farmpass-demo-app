@@ -2,9 +2,10 @@
 
 import { useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { RefreshCw, AlertCircle, Wifi } from "lucide-react";
+import { RefreshCw } from "lucide-react";
 import { devLog } from "@/lib/utils/logging/dev-logger";
 import { ERROR_LABELS } from "@/lib/constants/error";
+import { LottieLoading } from "@/components/ui/lottie-loading";
 
 interface AdminErrorProps {
   error: Error & { digest?: string };
@@ -12,7 +13,8 @@ interface AdminErrorProps {
   retry?: () => void;
   title?: string;
   description?: string;
-  showNavigation?: boolean;
+  isTimeout?: boolean;
+  isNotFound?: boolean;
 }
 
 export function AdminError({
@@ -21,7 +23,8 @@ export function AdminError({
   retry,
   title = ERROR_LABELS.GENERAL_ERROR_TITLE,
   description = ERROR_LABELS.GENERAL_ERROR_DESCRIPTION,
-  showNavigation = true,
+  isTimeout = false,
+  isNotFound = false,
 }: AdminErrorProps) {
   useEffect(() => {
     devLog.error("Admin component error:", error);
@@ -38,14 +41,22 @@ export function AdminError({
   };
 
   return (
-    <div className="flex items-center justify-center min-h-[500px] p-6">
+    <div className="flex items-center justify-center flex-1 p-6">
       <div className="text-center max-w-md w-full mx-auto">
-        <div className="relative mb-8">
-          <div className="w-24 h-24 bg-gradient-to-br from-amber-100 to-orange-100 rounded-2xl flex items-center justify-center mx-auto shadow-lg">
-            <AlertCircle className="w-12 h-12 text-amber-600" />
-          </div>
-          <div className="absolute -top-2 -right-2 w-8 h-8 bg-red-500 rounded-full flex items-center justify-center shadow-md">
-            <Wifi className="w-4 h-4 text-white" />
+        <div className="mb-8 flex justify-center">
+          <div className="w-48 h-48">
+            <LottieLoading
+              animationPath={
+                isTimeout
+                  ? "/lottie/timeout.json"
+                  : isNotFound
+                  ? "/lottie/no_result.json"
+                  : "/lottie/admin_error.json"
+              }
+              size="lg"
+              showText={false}
+              fullScreen={false}
+            />
           </div>
         </div>
 

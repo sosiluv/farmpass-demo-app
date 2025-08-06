@@ -1,5 +1,4 @@
 import { devLog } from "@/lib/utils/logging/dev-logger";
-import { getNotificationErrorMessage } from "@/lib/utils/validation/validation";
 import { safeNotificationAccess } from "@/lib/utils/browser/safari-compat";
 import { getDeviceInfo } from "@/lib/utils/browser/device-detection";
 
@@ -181,20 +180,20 @@ export function checkPushSupport(): {
 export function generateDeviceId(): string {
   try {
     const deviceInfo = getDeviceInfo();
-    const timestamp = Date.now();
 
-    // 더 정확한 디바이스 식별자 생성
+    // 더 정확한 디바이스 식별자 생성 (timestamp 제거로 일관성 확보)
     const deviceType = deviceInfo.isMobile
       ? "mobile"
       : deviceInfo.isTablet
       ? "tablet"
       : "desktop";
 
-    return `${deviceInfo.browser}_${deviceInfo.os}_${deviceType}_${timestamp}`;
+    // 브라우저, OS, 디바이스 타입만으로 일관된 device_id 생성
+    return `${deviceInfo.browser}_${deviceInfo.os}_${deviceType}`;
   } catch (error) {
     // 에러 발생 시 기본값 반환
     devLog.warn("디바이스 정보 생성 실패, 기본값 사용:", error);
-    return `device_${Date.now()}`;
+    return `device_unknown`;
   }
 }
 
@@ -298,11 +297,10 @@ export async function requestNotificationPermissionAndSubscribe(
     }
   } catch (error) {
     devLog.error("알림 권한 요청 및 구독 실패:", error);
-    const notificationError = getNotificationErrorMessage(error);
     return {
       success: false,
       error: "SUBSCRIPTION_FAILED",
-      message: notificationError.message,
+      message: error instanceof Error ? error.message : "알 수 없는 오류",
     };
   }
 }
@@ -342,6 +340,10 @@ export async function createSubscriptionFromExisting(
     const existingSubscription =
       await registration.pushManager.getSubscription();
 
+    console.log("options", options);
+    console.log("registration", registration);
+    console.log("existingSubscription", existingSubscription);
+
     if (!existingSubscription) {
       return {
         success: false,
@@ -368,11 +370,10 @@ export async function createSubscriptionFromExisting(
     };
   } catch (error) {
     devLog.error("기존 구독 사용 실패:", error);
-    const notificationError = getNotificationErrorMessage(error);
     return {
       success: false,
       error: "SUBSCRIPTION_FAILED",
-      message: notificationError.message,
+      message: error instanceof Error ? error.message : "알 수 없는 오류",
     };
   }
 }

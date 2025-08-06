@@ -17,8 +17,7 @@ import { ErrorBoundary } from "@/components/error/error-boundary";
 import { ERROR_CONFIGS } from "@/lib/constants/error";
 import { ResponsivePagination } from "@/components/common/responsive-pagination";
 import { useCommonToast } from "@/lib/utils/notification/toast-messages";
-import { getAuthErrorMessage } from "@/lib/utils/validation/validation";
-import { LABELS, PAGE_HEADER } from "@/lib/constants/visitor";
+import { PAGE_HEADER } from "@/lib/constants/visitor";
 import { Users } from "lucide-react";
 
 // React Query Hooks
@@ -77,8 +76,7 @@ export default function VisitorsPage() {
   // 에러 처리
   useEffect(() => {
     if (error) {
-      const authError = getAuthErrorMessage(error);
-      showError("오류", authError.message);
+      showError("오류", error.message);
     }
   }, [error, showError]);
 

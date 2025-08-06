@@ -8,6 +8,7 @@ import { CardSkeleton } from "@/components/common/skeletons";
 import { PAGE_HEADER } from "@/lib/constants/account";
 import { ERROR_CONFIGS } from "@/lib/constants/error";
 import { useProfileQuery } from "@/lib/hooks/query/use-profile-query";
+import { AdminError } from "@/components/error/admin-error";
 import { User } from "lucide-react";
 
 export default function AccountPage() {
@@ -33,7 +34,12 @@ export default function AccountPage() {
             className="grid-cols-1 md:grid-cols-2 lg:grid-cols-3"
           />
         ) : error ? (
-          <div className="text-red-500">프로필 로딩 실패: {error.message}</div>
+          <AdminError
+            title={PAGE_HEADER.PAGE_TITLE}
+            description={ERROR_CONFIGS.LOADING.description}
+            error={error}
+            reset={() => window.location.reload()}
+          />
         ) : !profile ? (
           <CardSkeleton
             count={3}

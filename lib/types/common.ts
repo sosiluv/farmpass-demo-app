@@ -65,6 +65,16 @@ export type SystemSetting = Tables["system_settings"]["Row"];
  */
 export type Notification = Tables["notifications"]["Row"];
 
+/**
+ * 약관 관리 타입
+ */
+export type TermManagement = Tables["terms_management"]["Row"];
+
+/**
+ * 사용자 동의 타입
+ */
+export type UserConsent = Tables["user_consents"]["Row"];
+
 // ===========================================
 // 공통 열거형 타입
 // ===========================================
@@ -73,6 +83,7 @@ export type LogLevel = Enums["LogLevel"];
 export type UserRole = "admin" | "owner" | "manager" | "viewer";
 export type AccountType = "admin" | "user";
 export type NotificationMethod = "push" | "kakao";
+export type TermType = "privacy" | "privacy_consent" | "terms" | "marketing";
 
 // ===========================================
 // 공통 유틸리티 타입

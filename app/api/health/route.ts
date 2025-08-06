@@ -2,11 +2,13 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { slackNotifier } from "@/lib/slack";
 import { devLog } from "@/lib/utils/logging/dev-logger";
+import { logMemoryUsage } from "@/lib/utils/logging/system-log";
+import { createSystemLog } from "@/lib/utils/logging/system-log";
+import { LOG_MESSAGES } from "@/lib/utils/logging/log-templates";
 import {
-  logMemoryUsage,
-  logSystemWarning,
-  logApiError,
-} from "@/lib/utils/logging/system-log";
+  getErrorResultFromRawError,
+  makeErrorResponseFromResult,
+} from "@/lib/utils/error/errorUtil";
 
 // package.json에서 버전 정보 가져오기
 const packageJson = require("../../../package.json");
@@ -88,10 +90,17 @@ export async function GET() {
       // =================================
       // 2. 핵심 기능 동작 확인
       // =================================
-      [farmCount, visitorCount] = await Promise.all([
-        prisma.farms.count(),
-        prisma.visitor_entries.count(),
-      ]);
+      try {
+        [farmCount, visitorCount] = await Promise.all([
+          prisma.farms.count(),
+          prisma.visitor_entries.count(),
+        ]);
+      } catch (queryError) {
+        devLog.error("Database count queries failed:", queryError);
+        // 헬스체크에서는 에러를 던지지 않고 기본값 사용
+        farmCount = 0;
+        visitorCount = 0;
+      }
     }
 
     // =================================
@@ -142,18 +151,20 @@ export async function GET() {
       totalCpuUsage > CPU_THRESHOLD
     ) {
       // 시스템 리소스 경고 로깅
-      await logSystemWarning(
+      await createSystemLog(
         "SYSTEM_RESOURCE_WARNING",
         `시스템 리소스 사용량이 높습니다. 메모리: ${Math.round(
           memoryUsage.heapUsed / 1024 / 1024
         )}MB/${Math.round(
           memoryUsage.heapTotal / 1024 / 1024
         )}MB, CPU: ${totalCpuUsage}%`,
+        "warn",
+        { id: "system", email: "admin@samwon114.com" },
+        "system",
+        undefined,
         {
-          ip: "health-check",
-          userAgent: "health-check",
-        },
-        {
+          action_type: "system_resource_event",
+          event: "system_resource_warning",
           memory_used_mb: Math.round(memoryUsage.heapUsed / 1024 / 1024),
           memory_total_mb: Math.round(memoryUsage.heapTotal / 1024 / 1024),
           memory_threshold_mb: Math.round(MEMORY_THRESHOLD / 1024 / 1024),
@@ -311,21 +322,22 @@ export async function GET() {
       }
     );
   } catch (error) {
-    // =================================
-    // 8. 오류 처리
-    // =================================
-    // 데이터베이스 연결 실패 등 문제 발생 시
-    devLog.error("Health check failed:", error);
-
-    // API 에러 로깅
-    await logApiError(
-      "/api/health",
-      "GET",
-      error instanceof Error ? error : String(error),
+    // 헬스 체크 시스템 오류 로그
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    await createSystemLog(
+      "HEALTH_CHECK_FAILED",
+      LOG_MESSAGES.HEALTH_CHECK_FAILED(errorMessage),
+      "error",
+      undefined,
+      "system",
       undefined,
       {
-        ip: "health-check",
-        userAgent: "health-check",
+        action_type: "health_check_event",
+        event: "health_check_failed",
+        error_message: errorMessage,
+        endpoint: "/api/health",
+        method: "GET",
+        response_time_ms: Date.now() - startTime,
       }
     );
 
@@ -333,8 +345,6 @@ export async function GET() {
     // 9. 시스템 오류 시 Slack 알림 (비동기 처리)
     // =================================
     const responseTime = Date.now() - startTime;
-    const errorMessage =
-      error instanceof Error ? error.message : "Unknown error";
 
     // 비동기로 처리하여 헬스체크 응답에 영향 없도록 함
     slackNotifier
@@ -352,30 +362,13 @@ export async function GET() {
         devLog.error("Slack 알림 전송 실패:", slackError);
       });
 
-    return NextResponse.json(
-      {
-        success: false,
-        error: "HEALTH_CHECK_FAILED",
-        message: "서버 상태 점검에 실패했습니다.",
-        errorDetails: errorMessage,
-        responseTime: `${responseTime}ms`,
-        services: {
-          database: "disconnected",
-          api: "error",
-          memory: "unknown",
-        },
-        status: "unhealthy",
-        timestamp: new Date().toISOString(),
-      },
-      {
-        status: 503,
-        headers: {
-          "Cache-Control": "no-cache, no-store, must-revalidate",
-          Pragma: "no-cache",
-          Expires: "0",
-          "Content-Type": "application/json",
-        },
-      }
-    );
+    // 비즈니스 에러 또는 시스템 에러를 표준화된 에러 코드로 매핑
+    const result = getErrorResultFromRawError(error, {
+      operation: "health_check",
+    });
+
+    return NextResponse.json(makeErrorResponseFromResult(result), {
+      status: result.status,
+    });
   }
 }

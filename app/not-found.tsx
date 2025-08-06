@@ -1,18 +1,21 @@
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { NOT_FOUND_LABELS } from "@/lib/constants/error";
+import { LottieLoading } from "@/components/ui/lottie-loading";
 
 export default function NotFound() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-50 flex items-center justify-center p-4">
       <div className="text-center max-w-md w-full mx-auto">
-        {/* 404 숫자 - 더 세련된 스타일 */}
-        <div className="relative mb-8">
-          <div className="font-black text-transparent bg-clip-text bg-gradient-to-r from-slate-200 to-slate-300 leading-none select-none text-[clamp(6rem,20vw,12rem)]">
-            {NOT_FOUND_LABELS.ERROR_CODE}
-          </div>
-          <div className="absolute inset-0 font-black text-slate-100 leading-none -z-10 blur-sm text-[clamp(6rem,20vw,12rem)]">
-            {NOT_FOUND_LABELS.ERROR_CODE}
+        {/* 404 Lottie 애니메이션 */}
+        <div className="mb-8 flex justify-center">
+          <div className="w-64 h-64">
+            <LottieLoading
+              animationPath="/lottie/404.json"
+              size="xl"
+              showText={false}
+              fullScreen={false}
+            />
           </div>
         </div>
 

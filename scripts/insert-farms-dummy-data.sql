@@ -506,7 +506,7 @@ BEGIN
             
             -- 사용자 정보 (80% 확률로 관리자, 20% 확률로 NULL)
             CASE WHEN RANDOM() < 0.8 THEN admin_user_id ELSE NULL END,
-            CASE WHEN RANDOM() < 0.8 THEN admin_email ELSE 'system@farm.com' END,
+            CASE WHEN RANDOM() < 0.8 THEN admin_email ELSE 'admin@farm.com' END,
             
             -- IP 주소 (랜덤 생성)
             '192.168.' || FLOOR(RANDOM() * 255) || '.' || FLOOR(RANDOM() * 255),

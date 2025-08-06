@@ -14,6 +14,7 @@ import {
 } from "@/lib/utils/system/rate-limit";
 import { clearServerAuthCookies } from "@/lib/utils/auth";
 import { MALICIOUS_PATTERNS } from "@/lib/constants/security-patterns";
+import { LOG_MESSAGES } from "@/lib/utils/logging/log-templates";
 
 const MIDDLEWARE_CONFIG = {
   // 🌐 공개 접근 가능한 경로들 (인증 불필요)
@@ -23,6 +24,7 @@ const MIDDLEWARE_CONFIG = {
     "/auth", // 인증 관련 (이메일 확인, 비밀번호 리셋 등)
     "/api/auth", // 인증 API (Supabase 인증)
     "/visit", // 방문자 페이지 (QR코드로 접근)
+    "/api/terms", // 약관 API (공개 약관 조회)
     "/api/settings", // 설정 API (공개 설정 조회)
     "/api/farms", // 농장 API (공개 농장 정보)
     "/maintenance", // 유지보수 페이지
@@ -262,13 +264,10 @@ export async function middleware(request: NextRequest) {
     if (!isAuthenticated && !isPublicPath && pathname.startsWith("/admin")) {
       await logSecurityError(
         "UNAUTHORIZED_ACCESS",
-        `관리자 페이지 무단 접근 시도: ${pathname}`,
+        LOG_MESSAGES.UNAUTHORIZED_ACCESS(pathname),
         undefined,
-        clientIP,
-        userAgent
-      ).catch((error) => {
-        devLog.error(`[MIDDLEWARE] Security logging error: ${error}`);
-      });
+        request
+      );
     }
 
     // 로그인 페이지로 리다이렉트 (세션 만료와 동일한 처리)
@@ -296,24 +295,22 @@ export async function middleware(request: NextRequest) {
           // 권한 없는 접근 시도 로그 (보안 감사용)
           await createSystemLog(
             "PERMISSION_ERROR",
-            `유지보수 모드 접근 권한 없음: 사용자 ${
-              user?.id || "anonymous"
-            }가 관리자 권한 없이 접근 시도`,
+            LOG_MESSAGES.MAINTENANCE_ACCESS_DENIED(
+              user?.id || "anonymous",
+              pathname
+            ),
             "warn",
-            user?.id,
+            user ? { id: user.id, email: user.email } : undefined,
             "system",
             undefined,
             {
+              action_type: "security_event",
+              event: "maintenance_mode_access_denied",
               is_admin: isAdmin,
-              pathname,
-              action_type: "maintenance_mode_access",
+              path: pathname,
             },
-            undefined,
-            clientIP,
-            userAgent
-          ).catch((error: any) => {
-            devLog.error(`[MIDDLEWARE] Permission logging error: ${error}`);
-          });
+            request
+          );
 
           // 유지보수 페이지로 리다이렉트
           const url = request.nextUrl.clone();
@@ -338,13 +335,10 @@ export async function middleware(request: NextRequest) {
       // Rate limit 초과 시 보안 로그 기록
       await logSecurityError(
         "RATE_LIMIT_EXCEEDED",
-        `IP ${clientIP}에서 API 요청 제한 초과: ${pathname}`,
-        user?.id,
-        clientIP,
-        userAgent
-      ).catch((error) => {
-        devLog.error(`[MIDDLEWARE] Rate limit logging error: ${error}`);
-      });
+        LOG_MESSAGES.RATE_LIMIT_EXCEEDED(clientIP, pathname),
+        user ? { id: user.id, email: user.email } : undefined,
+        request
+      );
 
       // 429 Too Many Requests 응답 반환
       const response = NextResponse.json(

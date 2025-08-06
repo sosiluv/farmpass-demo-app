@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
 import { Plus } from "lucide-react";
 import { BUTTONS, LABELS } from "@/lib/constants/farms";
+import { LottieLoading } from "@/components/ui/lottie-loading";
 
 interface EmptyFarmsStateProps {
   onAddClick: () => void;
@@ -18,8 +19,15 @@ export function EmptyFarmsState({ onAddClick }: EmptyFarmsStateProps) {
       <Card>
         <CardContent className="flex flex-col items-center justify-center py-12">
           <div className="text-center space-y-4">
-            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-primary/10">
-              <Plus className="h-8 w-8 text-primary" />
+            <div className="mx-auto mb-4">
+              <div className="w-48 h-48">
+                <LottieLoading
+                  animationPath="/lottie/no_result.json"
+                  size="lg"
+                  showText={false}
+                  fullScreen={false}
+                />
+              </div>
             </div>
             <div>
               <h3 className="text-lg font-semibold">

@@ -15,16 +15,9 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import {
-  Form,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormControl,
-  FormMessage,
-} from "@/components/ui/form";
-import { Leaf, Lock, AlertCircle, Key, Loader2 } from "lucide-react";
+import { Form, FormField } from "@/components/ui/form";
+import { Leaf, AlertCircle } from "lucide-react";
+import { PasswordField, AuthButton } from "@/components/auth";
 import { motion } from "framer-motion";
 import { useCommonToast } from "@/lib/utils/notification/toast-messages";
 import { devLog } from "@/lib/utils/logging/dev-logger";
@@ -32,7 +25,6 @@ import { supabase } from "@/lib/supabase/client";
 
 import { useAuthActions } from "@/hooks/auth/useAuthActions";
 import { ErrorBoundary } from "@/components/error/error-boundary";
-import { getAuthErrorMessage } from "@/lib/utils/validation";
 import { usePasswordRules } from "@/lib/utils/validation/usePasswordRules";
 import {
   createResetPasswordFormSchema,
@@ -40,14 +32,12 @@ import {
   type ResetPasswordFormData,
 } from "@/lib/utils/validation/auth-validation";
 
-import { PasswordStrength } from "@/components/ui/password-strength";
-import { Loading } from "@/components/ui/loading";
+import { LottieLoadingCompact } from "@/components/ui/lottie-loading";
+import { BUTTONS, LABELS, PAGE_HEADER } from "@/lib/constants/auth";
 import {
-  BUTTONS,
-  LABELS,
-  PAGE_HEADER,
-  PLACEHOLDERS,
-} from "@/lib/constants/auth";
+  getErrorMessage,
+  mapRawErrorToCode,
+} from "@/lib/utils/error/errorUtil";
 
 export default function ResetPasswordConfirmPage() {
   const [loading, setLoading] = useState(false);
@@ -123,16 +113,17 @@ export default function ResetPasswordConfirmPage() {
       }
 
       showSuccess("인증 성공", "새로운 비밀번호를 입력해주세요.");
-    } catch (error: any) {
-      const authError = getAuthErrorMessage(error);
-      setTokenError(authError.message);
-      showError("오류", authError.message);
+    } catch (error) {
+      // 매핑된 에러 코드와 메시지 사용
+      const code = mapRawErrorToCode(error);
+      const message = getErrorMessage(code);
 
-      if (authError.shouldRedirect && authError.redirectTo) {
-        setTimeout(() => {
-          router.push(authError.redirectTo!);
-        }, 2000);
-      }
+      setTokenError(message);
+      showError("오류", message);
+
+      setTimeout(() => {
+        router.push("/auth/reset-password");
+      }, 2000);
     } finally {
       setTokenLoading(false);
       processingRef.current = false;
@@ -168,16 +159,13 @@ export default function ResetPasswordConfirmPage() {
       setTimeout(() => {
         window.location.href = "/auth/login";
       }, 2000);
-    } catch (error: any) {
-      devLog.error("Password update error:", error);
+    } catch (error) {
       setLoading(false);
-      const authError = getAuthErrorMessage(error);
-      showError("오류", authError.message);
-      if (authError.shouldRedirect && authError.redirectTo) {
-        setTimeout(() => {
-          router.push(authError.redirectTo!);
-        }, 2000);
-      }
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : "알 수 없는 오류가 발생했습니다.";
+      showError("오류", errorMessage);
     }
   };
 
@@ -190,6 +178,7 @@ export default function ResetPasswordConfirmPage() {
             description={ERROR_CONFIGS.TIMEOUT.description}
             error={new Error("Token verification timeout")}
             retry={retry}
+            isTimeout={true}
           />
         </div>
       </div>
@@ -208,12 +197,7 @@ export default function ResetPasswordConfirmPage() {
           <Card className="border-none shadow-soft-lg">
             <CardHeader className="space-y-1 text-center">
               <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
-                <Loading
-                  spinnerSize={24}
-                  showText={false}
-                  minHeight="auto"
-                  className="text-primary"
-                />
+                <LottieLoadingCompact size="md" />
               </div>
               <CardTitle className="text-2xl">{LABELS.LINK_CHECKING}</CardTitle>
               <CardDescription>
@@ -238,7 +222,10 @@ export default function ResetPasswordConfirmPage() {
           <Card className="border-none shadow-soft-lg">
             <CardHeader className="space-y-1 text-center">
               <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-red-100">
-                <AlertCircle className="h-6 w-6 text-red-600" />
+                <LottieLoadingCompact
+                  animationPath="/lottie/admin_error.json"
+                  size="md"
+                />
               </div>
               <CardTitle className="text-2xl">
                 {LABELS.LINK_ERROR_TITLE}
@@ -293,72 +280,30 @@ export default function ResetPasswordConfirmPage() {
                     control={form.control}
                     name="password"
                     render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="text-sm text-gray-800">
-                          {LABELS.PASSWORD}{" "}
-                          <span className="text-red-500">*</span>
-                        </FormLabel>
-                        <div className="relative">
-                          <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                          <FormControl>
-                            <Input
-                              {...field}
-                              type="password"
-                              placeholder={PLACEHOLDERS.PASSWORD}
-                              autoComplete="new-password"
-                              className="h-12 pl-10 input-focus"
-                              disabled={loading}
-                            />
-                          </FormControl>
-                        </div>
-                        <FormMessage />
-                        <PasswordStrength password={field.value} />
-                      </FormItem>
+                      <PasswordField
+                        type="new"
+                        field={field}
+                        loading={loading}
+                        showPasswordStrength={true}
+                      />
                     )}
                   />
                   <FormField
                     control={form.control}
                     name="confirmPassword"
                     render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="text-sm text-gray-800">
-                          {LABELS.CONFIRM_PASSWORD}{" "}
-                          <span className="text-red-500">*</span>
-                        </FormLabel>
-                        <div className="relative">
-                          <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                          <FormControl>
-                            <Input
-                              {...field}
-                              type="password"
-                              placeholder={PLACEHOLDERS.CONFIRM_PASSWORD}
-                              autoComplete="new-password"
-                              className="h-12 pl-10 input-focus"
-                              disabled={loading}
-                            />
-                          </FormControl>
-                        </div>
-                        <FormMessage />
-                      </FormItem>
+                      <PasswordField
+                        type="confirm"
+                        field={field}
+                        loading={loading}
+                      />
                     )}
                   />
-                  <Button
-                    type="submit"
+                  <AuthButton
+                    type="reset-password-confirm"
+                    loading={loading}
                     className="h-12 w-full flex items-center justify-center"
-                    disabled={loading}
-                  >
-                    {loading ? (
-                      <>
-                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                        {BUTTONS.RESET_PASSWORD_CONFIRM_LOADING}
-                      </>
-                    ) : (
-                      <>
-                        <Key className="h-4 w-4 mr-2" />
-                        {BUTTONS.RESET_PASSWORD_CONFIRM_BUTTON}
-                      </>
-                    )}
-                  </Button>
+                  />
                 </form>
               </Form>
             </CardContent>

@@ -1,7 +1,6 @@
 "use client";
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { useAuth } from "@/components/providers/auth-provider";
 import { apiClient } from "@/lib/utils/data/api-client";
 import { createClient } from "@/lib/supabase/client";
 import { profileKeys } from "@/lib/hooks/query/query-keys";
@@ -11,6 +10,10 @@ import type {
   PasswordFormData,
 } from "@/lib/types/account";
 import { useAuthActions } from "@/hooks/auth/useAuthActions";
+import {
+  mapRawErrorToCode,
+  getErrorMessage,
+} from "@/lib/utils/error/errorUtil";
 
 /**
  * 프로필 정보 저장 Mutation Hook
@@ -142,14 +145,18 @@ export function useUpdateAvatarSeedMutation() {
         .select()
         .single();
 
-      if (error) throw error;
+      if (error) {
+        const errorCode = mapRawErrorToCode(error, "db");
+        const message = getErrorMessage(errorCode);
+        throw new Error(message);
+      }
 
       return {
         success: true,
         message: "아바타가 성공적으로 업데이트되었습니다.",
       };
     },
-    onSuccess: async (data, variables) => {
+    onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: profileKeys.all });
     },
   });

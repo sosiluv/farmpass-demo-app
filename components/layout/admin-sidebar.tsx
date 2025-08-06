@@ -37,6 +37,7 @@ import {
   Shield,
   Activity,
   Loader2,
+  FileText,
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -174,6 +175,12 @@ export function AdminSidebar() {
         title: LABELS.ADMIN_SIDEBAR_MONITORING,
         url: "/admin/monitoring",
         icon: Activity,
+        badge: null,
+      },
+      {
+        title: LABELS.ADMIN_SIDEBAR_TERMS_MANAGEMENT,
+        url: "/admin/terms",
+        icon: FileText,
         badge: null,
       },
     ];

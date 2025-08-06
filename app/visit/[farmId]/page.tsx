@@ -21,11 +21,11 @@ import { FarmInfoCard } from "@/components/visitor/FarmInfoCard";
 import { SuccessCard } from "@/components/visitor/SuccessCard";
 import { ErrorBoundary } from "@/components/error/error-boundary";
 import { ERROR_CONFIGS } from "@/lib/constants/error";
+import { AdminError } from "@/components/error/admin-error";
 import { useSystemSettingsQuery } from "@/lib/hooks/query/use-system-settings-query";
 import { useVisitorForm } from "@/hooks/visitor/useVisitorForm";
 import { VisitorForm } from "@/components/visitor/VisitorForm";
 import { useCommonToast } from "@/lib/utils/notification/toast-messages";
-import { getAuthErrorMessage } from "@/lib/utils/validation/validation";
 import { useEffect, useMemo } from "react";
 import { VisitorFormData } from "@/lib/utils/validation/visitor-validation";
 import type { VisitorSettings } from "@/lib/types/visitor";
@@ -91,24 +91,21 @@ export default function VisitPage() {
   // 에러 상태에 따른 토스트 처리
   useEffect(() => {
     if (error) {
-      const authError = getAuthErrorMessage(error);
-      showError("방문자 등록 오류", authError.message);
+      showError("방문자 등록 오류", error);
     }
   }, [error, showError]);
 
   // 농장 에러에 따른 토스트 처리
   useEffect(() => {
     if (farmError) {
-      const authError = getAuthErrorMessage(farmError);
-      showError("농장 정보 조회 실패", authError.message);
+      showError("농장 정보 조회 실패", farmError.message);
     }
   }, [farmError, showError]);
 
   // 설정 에러에 따른 토스트 처리
   useEffect(() => {
     if (settingsError) {
-      const authError = getAuthErrorMessage(settingsError);
-      showError("설정 로드 실패", authError.message);
+      showError("설정 로드 실패", settingsError.message);
     }
   }, [settingsError, showError]);
 
@@ -162,10 +159,23 @@ export default function VisitPage() {
   }
 
   if (!farm || farmError) {
-    throw new Error(
-      farmError
-        ? "농장 정보를 불러오는 중 오류가 발생했습니다."
-        : "요청하신 농장이 존재하지 않거나 접근할 수 없습니다."
+    const isNotFoundError = !farm && !farmError;
+    const errorMessage = farmError
+      ? "농장 정보를 불러오는 중 오류가 발생했습니다."
+      : "요청하신 농장이 존재하지 않거나 접근할 수 없습니다.";
+
+    return (
+      <AdminError
+        title={
+          isNotFoundError
+            ? ERROR_CONFIGS.NOT_FOUND.title
+            : ERROR_CONFIGS.LOADING.title
+        }
+        description={errorMessage}
+        error={farmError || new Error(errorMessage)}
+        isNotFound={isNotFoundError}
+        retry={() => window.location.reload()}
+      />
     );
   }
 

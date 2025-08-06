@@ -5,6 +5,10 @@ import { useAuth } from "@/components/providers/auth-provider";
 import { supabase } from "@/lib/supabase/client";
 import { adminKeys } from "./query-keys";
 import { useProfileQuery } from "@/lib/hooks/query/use-profile-query";
+import {
+  mapRawErrorToCode,
+  getErrorMessage,
+} from "@/lib/utils/error/errorUtil";
 
 // 클라이언트 전용 가드
 const isClient = typeof window !== "undefined";
@@ -55,7 +59,11 @@ export function useAdminLogsQuery() {
         .select("*")
         .order("created_at", { ascending: false });
 
-      if (logsError) throw logsError;
+      if (logsError) {
+        const errorCode = mapRawErrorToCode(logsError, "db");
+        const message = getErrorMessage(errorCode);
+        throw new Error(message);
+      }
 
       const totalLogs = logs?.length ?? 0;
       const infoLogs = logs?.filter((l) => l.level === "info").length ?? 0;

@@ -14,7 +14,7 @@ import {
   useDeleteNotificationsMutation,
   useLoadMoreNotifications,
 } from "@/lib/hooks/query/use-notifications-mutations";
-import { Loading } from "@/components/ui/loading";
+import { LottieLoadingCompact } from "@/components/ui/lottie-loading";
 import { BUTTONS, LABELS } from "@/lib/constants/common";
 import type { Notification } from "@/lib/types/notification";
 
@@ -125,12 +125,9 @@ export function RealtimeNotificationBell() {
         <div className="max-h-80 overflow-y-auto pr-2">
           {loading ? (
             <div className="p-8">
-              <Loading
+              <LottieLoadingCompact
                 text={LABELS.NOTIFICATION_LOADING_TEXT}
-                minHeight={120}
-                spinnerSize={24}
-                spinnerColor="text-blue-500"
-                className="py-4"
+                size="md"
               />
             </div>
           ) : notifications.length === 0 ? (

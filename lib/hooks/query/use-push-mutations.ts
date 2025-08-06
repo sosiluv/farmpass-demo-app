@@ -41,7 +41,7 @@ export const useSubscriptionStatusQuery = (enabled: boolean = true) => {
       return data.subscriptions || [];
     },
     enabled,
-    staleTime: 2 * 60 * 1000, // 2분간 fresh 유지
+    staleTime: 10 * 1000, // 10초간 fresh 유지 (빠른 동기화)
     retry: 1,
   });
 };

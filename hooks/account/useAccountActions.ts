@@ -5,7 +5,6 @@ import type { Profile } from "@/lib/types";
 import type { PasswordFormData, CompanyFormData } from "@/lib/types/account";
 import { useAccountMutations } from "@/lib/hooks/query/use-account-mutations";
 import { useUnifiedImageUpload } from "@/hooks/media/useUnifiedImageUpload";
-import { getAuthErrorMessage } from "@/lib/utils/validation/validation";
 import type { ProfileFormData } from "@/lib/types/account";
 
 interface UseAccountActionsProps {
@@ -54,8 +53,7 @@ export function useAccountActions({ profile, userId }: UseAccountActionsProps) {
           fileName: result.fileName,
         };
       }
-    } catch (error: any) {
-      devLog.error("프로필 이미지 업로드 실패:", error);
+    } catch (error) {
       throw error;
     }
   };
@@ -70,8 +68,7 @@ export function useAccountActions({ profile, userId }: UseAccountActionsProps) {
       await profileImageUpload.deleteImage();
 
       devLog.log(`[HANDLE_IMAGE_DELETE] Image deletion completed successfully`);
-    } catch (error: any) {
-      devLog.error("[HANDLE_IMAGE_DELETE] Failed:", error);
+    } catch (error) {
       throw error;
     }
   };
@@ -84,10 +81,12 @@ export function useAccountActions({ profile, userId }: UseAccountActionsProps) {
       const result = await accountMutations.updateProfileAsync(data);
       devLog.log("프로필 정보 저장 완료");
       return { success: true, message: result.message };
-    } catch (error: any) {
-      devLog.error("프로필 정보 저장 실패:", error);
-      const authError = getAuthErrorMessage(error);
-      return { success: false, error: authError.message };
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : "알 수 없는 오류가 발생했습니다.";
+      return { success: false, error: errorMessage };
     }
   };
 
@@ -99,10 +98,12 @@ export function useAccountActions({ profile, userId }: UseAccountActionsProps) {
       const result = await accountMutations.updateCompanyAsync(data);
       devLog.log("회사 정보 저장 완료");
       return { success: true, message: result.message };
-    } catch (error: any) {
-      devLog.error("회사 정보 저장 실패:", error);
-      const authError = getAuthErrorMessage(error);
-      return { success: false, error: authError.message };
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : "알 수 없는 오류가 발생했습니다.";
+      return { success: false, error: errorMessage };
     }
   };
 
@@ -122,10 +123,12 @@ export function useAccountActions({ profile, userId }: UseAccountActionsProps) {
       }, 2000); // 2초 후 로그아웃
 
       return { success: true };
-    } catch (error: any) {
-      devLog.error("비밀번호 변경 실패:", error);
-      const authError = getAuthErrorMessage(error);
-      return { success: false, error: authError.message };
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : "알 수 없는 오류가 발생했습니다.";
+      return { success: false, error: errorMessage };
     }
   };
 

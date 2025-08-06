@@ -6,26 +6,13 @@ import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
 import { Send, Loader2, MessageSquare } from "lucide-react";
-import {
-  LABELS,
-  PLACEHOLDERS,
-  BROADCAST_NOTIFICATION_TYPE_OPTIONS,
-  BUTTONS,
-} from "@/lib/constants/settings";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { LABELS, PLACEHOLDERS, BUTTONS } from "@/lib/constants/settings";
 
 interface BroadcastFormData {
   title: string;
   message: string;
   requireInteraction: boolean;
   url: string;
-  notificationType: "maintenance" | "emergency" | "notice";
 }
 
 interface BroadcastFormProps {
@@ -48,49 +35,6 @@ export function BroadcastForm({
 }: BroadcastFormProps) {
   return (
     <div className="space-y-6">
-      {/* 알림 유형 선택 */}
-      <div className="space-y-2">
-        <Label
-          htmlFor="notification-type"
-          className="text-sm sm:text-base font-medium"
-        >
-          {LABELS.BROADCAST_NOTIFICATION_TYPE}
-        </Label>
-        <Select
-          value={formData.notificationType}
-          onValueChange={(value) =>
-            onInputChange(
-              "notificationType",
-              value as "maintenance" | "emergency" | "notice"
-            )
-          }
-          disabled={isLoading || isSending}
-        >
-          <SelectTrigger
-            id="notification-type"
-            className="w-full text-sm sm:text-base"
-          >
-            <SelectValue
-              placeholder={PLACEHOLDERS.BROADCAST_NOTIFICATION_TYPE}
-            />
-          </SelectTrigger>
-          <SelectContent>
-            {BROADCAST_NOTIFICATION_TYPE_OPTIONS.map((type) => (
-              <SelectItem
-                key={type.value}
-                value={type.value}
-                className="text-sm sm:text-base"
-              >
-                {type.label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        <p className="text-sm sm:text-base text-muted-foreground">
-          {LABELS.BROADCAST_NOTIFICATION_TYPE_DESC}
-        </p>
-      </div>
-
       {/* 제목 입력 */}
       <div className="space-y-2">
         <Label
@@ -185,8 +129,7 @@ export function BroadcastForm({
             isLoading ||
             isSending ||
             !formData.title.trim() ||
-            !formData.message.trim() ||
-            !formData.notificationType
+            !formData.message.trim()
           }
           className="flex-1 text-sm sm:text-base"
         >
@@ -211,9 +154,6 @@ export function BroadcastForm({
           <div className="text-sm sm:text-base text-muted-foreground">
             <p className="font-medium mb-1">{LABELS.BROADCAST_GUIDE_TITLE}</p>
             <ul className="space-y-1 text-sm sm:text-base">
-              <li>{LABELS.BROADCAST_GUIDE_NOTICE}</li>
-              <li>{LABELS.BROADCAST_GUIDE_EMERGENCY}</li>
-              <li>{LABELS.BROADCAST_GUIDE_MAINTENANCE}</li>
               <li>{LABELS.BROADCAST_GUIDE_TITLE_TIP}</li>
               <li>{LABELS.BROADCAST_GUIDE_REVIEW}</li>
             </ul>

@@ -144,3 +144,57 @@ export const profileKeys = {
   all: ["profile"] as const,
   detail: (userId: string | undefined) => ["profile", userId] as const,
 };
+
+/**
+ * 소셜 연동 관련 Query Key Factory
+ */
+export const socialLinkingKeys = {
+  all: ["social-linking"] as const,
+  identities: () => [...socialLinkingKeys.all, "identities"] as const,
+  linkStatus: (provider: string) =>
+    [...socialLinkingKeys.all, "link-status", provider] as const,
+} as const;
+
+/**
+ * 약관 관리 관련 Query Key Factory
+ */
+export const termsKeys = {
+  all: ["terms"] as const,
+
+  // 관리자용 약관
+  admin: {
+    all: () => [...termsKeys.all, "admin"] as const,
+    list: (type?: string, isActive?: boolean) =>
+      [...termsKeys.all, "admin", "list", type, isActive] as const,
+    detail: (id: string) => [...termsKeys.all, "admin", "detail", id] as const,
+  },
+
+  // 공개 약관 (회원가입용)
+  public: {
+    all: () => [...termsKeys.all, "public"] as const,
+    list: (type?: string) =>
+      [...termsKeys.all, "public", "list", type] as const,
+  },
+
+  // 사용자 동의
+  consents: {
+    all: () => [...termsKeys.all, "consents"] as const,
+    list: (userId?: string, termType?: string, agreed?: boolean) =>
+      [...termsKeys.all, "consents", "list", userId, termType, agreed] as const,
+    user: (userId: string) =>
+      [...termsKeys.all, "consents", "user", userId] as const,
+  },
+} as const;
+
+/**
+ * 사용자 동의 관련 Query Key Factory
+ */
+export const userConsentsKeys = {
+  all: ["user-consents"] as const,
+
+  // 사용자 동의 상태 확인
+  check: () => [...userConsentsKeys.all, "check"] as const,
+
+  // 사용자 동의 업데이트
+  update: () => [...userConsentsKeys.all, "update"] as const,
+} as const;

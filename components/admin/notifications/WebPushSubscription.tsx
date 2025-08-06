@@ -18,7 +18,6 @@ import NotificationCardHeader from "./NotificationCardHeader";
 import { Zap } from "lucide-react";
 import { useCommonToast } from "@/lib/utils/notification/toast-messages";
 import { safeNotificationAccess } from "@/lib/utils/browser/safari-compat";
-import { getNotificationErrorMessage } from "@/lib/utils/validation/validation";
 import { PAGE_HEADER } from "@/lib/constants/notifications";
 
 interface WebPushSubscriptionProps {
@@ -72,26 +71,23 @@ export function WebPushSubscription({
 
   const initializeNotifications = async () => {
     try {
-      // Service Worker 등록
-      try {
-        const registration = await navigator.serviceWorker.register(
-          "/push-sw.js"
-        );
-        devLog.log("Service Worker 등록 성공:", registration);
-        await checkNotificationStatus();
-      } catch (error) {
-        devLog.error("Service Worker 등록 실패:", error);
-        setStatus("unsupported");
+      // 기존 서비스 워커 확인
+      let registration = await navigator.serviceWorker.getRegistration();
+
+      if (!registration) {
+        // 기존 서비스 워커가 없으면 새로 등록
+        registration = await navigator.serviceWorker.register("/push-sw.js");
       }
+
+      await checkNotificationStatus();
     } catch (error) {
-      devLog.error("알림 초기화 실패:", error);
+      devLog.error("❌ [DEBUG] 서비스 워커 초기화 실패:", error);
       setStatus("unsupported");
     }
   };
 
   const checkNotificationStatus = async () => {
     const safeNotification = safeNotificationAccess();
-    devLog.log("현재 권한 상태:", safeNotification.permission);
 
     // 브라우저 지원 여부 확인
     if (!safeNotification.isSupported) {
@@ -111,10 +107,13 @@ export function WebPushSubscription({
       case "granted":
         const registration = await navigator.serviceWorker.ready;
         const subscription = await registration.pushManager.getSubscription();
+
+        // 브라우저의 실제 구독 상태를 우선적으로 확인
         if (subscription) {
           setStatus("subscribed");
           // 구독된 농장 정보 로드
           const { subscriptions } = await getSubscriptionStatus();
+
           if (subscriptions?.length > 0) {
             const subscribedFarms = (subscriptions || [])
               .map((sub: any) => sub.farm)
@@ -131,10 +130,64 @@ export function WebPushSubscription({
             );
           }
         } else {
-          setStatus("granted");
+          // 브라우저에 구독이 없어도 서버 상태 확인
+          try {
+            const { subscriptions } = await getSubscriptionStatus();
+
+            if (subscriptions && subscriptions.length > 0) {
+              // 서버에 구독이 있으면 subscribed 상태로 설정 (새 구독 생성 방지)
+
+              // 브라우저에 구독이 없으면 복구 시도
+              if (!subscription) {
+                try {
+                  // 서버 구독이 있으면 브라우저 구독을 새로 생성
+
+                  await requestNotificationPermission();
+                } catch (error) {
+                  devLog.warn("⚠️ [DEBUG] 브라우저 구독 복구 실패:", error);
+                }
+              }
+
+              // 복구 성공 여부와 관계없이 subscribed 상태로 설정
+              setStatus("subscribed");
+              const subscribedFarms = (subscriptions || [])
+                .map((sub: any) => sub.farm)
+                .filter(Boolean);
+
+              setFarms((prevFarms) =>
+                (prevFarms || []).map((farm) => ({
+                  ...farm,
+                  isSubscribed: subscribedFarms.some(
+                    (subFarm: { id: string }) => subFarm.id === farm.id
+                  ),
+                }))
+              );
+            } else {
+              // 서버에도 구독이 없으면 granted 상태
+              devLog.log("❌ [DEBUG] 서버에도 구독 없음 - granted 상태 설정");
+              setStatus("granted");
+              setFarms((prevFarms) =>
+                (prevFarms || []).map((farm) => ({
+                  ...farm,
+                  isSubscribed: false,
+                }))
+              );
+            }
+          } catch (error) {
+            // 에러 발생 시 기본적으로 granted 상태
+            devLog.error("❌ [DEBUG] 서버 구독 조회 실패:", error);
+            setStatus("granted");
+            setFarms((prevFarms) =>
+              (prevFarms || []).map((farm) => ({
+                ...farm,
+                isSubscribed: false,
+              }))
+            );
+          }
         }
         break;
       default:
+        devLog.log("❓ [DEBUG] 기본 권한 상태:", safeNotification.permission);
         setStatus("granted");
     }
   };
@@ -164,9 +217,11 @@ export function WebPushSubscription({
         );
       }
     } catch (error) {
-      devLog.error("구독 해제 실패:", error);
-      const notificationError = getNotificationErrorMessage(error);
-      showError("구독 해제 실패", notificationError.message);
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : "알 수 없는 오류가 발생했습니다.";
+      showError("구독 해제 실패", errorMessage);
     }
   };
 

@@ -43,6 +43,13 @@ export const BUTTONS = {
   NOTIFICATION_LOADING: "로딩 중...",
   NOTIFICATION_MARK_ALL_READ: "모두 읽음 처리",
   NOTIFICATION_DELETE_ALL: "전체 삭제",
+
+  // 프로필 설정 관련
+  PROFILE_SETUP_GO_BACK: "뒤로가기",
+  PROFILE_SETUP_NEXT: "다음",
+  PROFILE_SETUP_CONSENT_TERMS: "약관 동의하기",
+  PROFILE_SETUP_PROCESSING: "처리 중...",
+  PROFILE_SETUP_SAVING: "저장 중...",
 } as const;
 
 // 헤더 메뉴 상수
@@ -79,6 +86,34 @@ export const FOOTER = {
     PRIVACY: "/privacy",
   },
 } as const;
+
+// 소셜 링크 상수
+export const SOCIAL_LINKS = [
+  {
+    href: "http://pf.kakao.com/_fQFhG",
+    title: "카카오톡 채널",
+    src: "/btn_kakao_ch.svg",
+    alt: "카카오톡 채널",
+  },
+  {
+    href: "https://blog.naver.com/k331502",
+    title: "블로그",
+    src: "/btn_blog.svg",
+    alt: "블로그",
+  },
+  {
+    href: "mailto:k331502@nate.com",
+    title: "이메일",
+    src: "/btn_mail.svg",
+    alt: "이메일",
+  },
+  {
+    href: "http://www.swkukorea.com/",
+    title: "홈페이지",
+    src: "/btn_homepage.svg",
+    alt: "홈페이지",
+  },
+] as const;
 
 // 공통 컴포넌트 라벨
 export const LABELS = {
@@ -266,6 +301,7 @@ export const LABELS = {
   ADMIN_SIDEBAR_NOTIFICATION_SETTINGS: "알림 설정",
   ADMIN_SIDEBAR_ACCOUNT_MANAGEMENT: "계정 관리",
   ADMIN_SIDEBAR_SYSTEM_MANAGEMENT: "시스템 관리",
+  ADMIN_SIDEBAR_TERMS_MANAGEMENT: "약관 관리",
   ADMIN_SIDEBAR_SYSTEM_SETTINGS: "시스템 설정",
   ADMIN_SIDEBAR_MONITORING: "모니터링",
 
@@ -291,6 +327,15 @@ export const LABELS = {
   NOTIFICATION_EMPTY: "알림이 없습니다.",
   NOTIFICATION_DETAIL_MODAL: "알림 상세 모달",
   NOTIFICATION_DELETE: "알림 삭제",
+
+  // 프로필 설정 관련
+  PROFILE_SETUP_LOADING_TEXT: "사용자 정보를 확인하는 중...",
+  PROFILE_SETUP_CONSENT_REQUIRED_TITLE: "약관 동의가 필요합니다",
+  PROFILE_SETUP_CONSENT_REQUIRED_DESC:
+    "서비스 이용을 위해 업데이트된 약관에 동의해주세요.",
+  PROFILE_SETUP_PROFILE_INPUT_TITLE: "프로필 정보 입력",
+  PROFILE_SETUP_PROFILE_INPUT_DESC:
+    "서비스 이용을 위해 추가 정보를 입력해주세요.",
 } as const;
 
 // 공통 컴포넌트 플레이스홀더

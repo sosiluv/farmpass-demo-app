@@ -3,10 +3,9 @@ import { Button } from "@/components/ui/button";
 import { useNotificationSettingsQuery } from "@/lib/hooks/query/use-notification-settings-query";
 import { useCommonToast } from "@/lib/utils/notification/toast-messages";
 import { useNotificationMutations } from "@/lib/hooks/query/use-notification-mutations";
-import { getNotificationErrorMessage } from "@/lib/utils/validation/validation";
 import { Save, Loader2 } from "lucide-react";
 import type { NotificationSettings } from "@/lib/types/notification";
-import { BUTTONS, LABELS } from "@/lib/constants/notifications";
+import { BUTTONS } from "@/lib/constants/notifications";
 
 interface NotificationSettingsActionsProps {
   hasUnsavedChanges?: boolean;
@@ -46,9 +45,11 @@ export function NotificationSettingsActions({
         onSaveComplete();
       }
     } catch (error) {
-      console.error("알림 설정 저장 오류:", error);
-      const notificationError = getNotificationErrorMessage(error);
-      showError("알림 설정 저장 실패", notificationError.message);
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : "알 수 없는 오류가 발생했습니다.";
+      showError("알림 설정 저장 실패", errorMessage);
     } finally {
       setSaving(false);
     }

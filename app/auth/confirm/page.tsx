@@ -7,7 +7,7 @@ import { useCommonToast } from "@/lib/utils/notification/toast-messages";
 import { useTimeout } from "@/hooks/system/useTimeout";
 import { AdminError } from "@/components/error/admin-error";
 import { ERROR_CONFIGS } from "@/lib/constants/error";
-import { LABELS, BUTTONS } from "@/lib/constants/auth";
+import { LABELS } from "@/lib/constants/auth";
 import {
   Card,
   CardContent,
@@ -15,14 +15,17 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { CheckCircle, AlertCircle, Mail } from "lucide-react";
+import { CheckCircle, AlertCircle } from "lucide-react";
+import { AuthButton } from "@/components/auth";
 import { motion } from "framer-motion";
 import { ErrorBoundary } from "@/components/error/error-boundary";
 import { Logo } from "@/components/common";
-import { Loading } from "@/components/ui/loading";
-import { getAuthErrorMessage } from "@/lib/utils/validation";
+import { LottieLoadingCompact } from "@/components/ui/lottie-loading";
 import { useAuthActions } from "@/hooks/auth/useAuthActions";
+import {
+  getErrorMessage,
+  mapRawErrorToCode,
+} from "@/lib/utils/error/errorUtil";
 
 export default function ConfirmPage() {
   const [loading, setLoading] = useState(true);
@@ -79,17 +82,17 @@ export default function ConfirmPage() {
       } else {
         throw new Error("이메일 인증 처리 중 오류가 발생했습니다.");
       }
-    } catch (error: any) {
-      const authError = getAuthErrorMessage(error);
-      setError(authError.message);
-      showError("인증 실패", authError.message);
+    } catch (error) {
+      // 매핑된 에러 코드와 메시지 사용
+      const code = mapRawErrorToCode(error, "auth");
+      const message = getErrorMessage(code);
 
-      // 리다이렉트가 필요한 경우
-      if (authError.shouldRedirect && authError.redirectTo) {
-        setTimeout(() => {
-          router.push(authError.redirectTo!);
-        }, 4000);
-      }
+      setError(message);
+      showError("인증 실패", message);
+
+      setTimeout(() => {
+        router.push("/auth/login");
+      }, 4000);
     } finally {
       setLoading(false);
       processingRef.current = false;
@@ -158,6 +161,7 @@ export default function ConfirmPage() {
             description={ERROR_CONFIGS.TIMEOUT.description}
             error={new Error("Email verification timeout")}
             retry={retry}
+            isTimeout={true}
           />
         </div>
       </div>
@@ -184,12 +188,7 @@ export default function ConfirmPage() {
             <CardHeader className="space-y-1 text-center">
               <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
                 {loading ? (
-                  <Loading
-                    spinnerSize={24}
-                    showText={false}
-                    minHeight="auto"
-                    className="text-primary"
-                  />
+                  <LottieLoadingCompact size="sm" />
                 ) : confirmed ? (
                   <CheckCircle className="h-6 w-6 text-green-600" />
                 ) : (
@@ -216,7 +215,7 @@ export default function ConfirmPage() {
               {loading && (
                 <div className="flex items-center justify-center py-8">
                   <p className="text-sm text-muted-foreground w-full text-center">
-                    이메일 인증을 확인 중입니다. 잠시만 기다려주세요...
+                    {LABELS.EMAIL_CONFIRMATION_PROCESSING_MESSAGE}
                   </p>
                 </div>
               )}
@@ -240,11 +239,12 @@ export default function ConfirmPage() {
                       )}
                     </p>
                   </div>
-                  <Button onClick={handleGoToLogin} className="w-full">
-                    {countdown > 0
-                      ? BUTTONS.EMAIL_CONFIRMATION_LOGIN_NOW
-                      : BUTTONS.EMAIL_CONFIRMATION_LOGIN}
-                  </Button>
+                  <AuthButton
+                    type="email-confirm"
+                    loading={false}
+                    onClick={handleGoToLogin}
+                    className="w-full"
+                  />
                 </div>
               )}
 
@@ -252,21 +252,20 @@ export default function ConfirmPage() {
                 <div className="space-y-4 text-center">
                   <p className="text-sm text-red-600">{error}</p>
                   <div className="space-y-2">
-                    <Button
+                    <AuthButton
+                      type="email-confirm"
+                      loading={false}
                       onClick={handleGoToLogin}
                       variant="outline"
                       className="w-full"
-                    >
-                      {BUTTONS.EMAIL_CONFIRMATION_GO_LOGIN}
-                    </Button>
-                    <Button
+                    />
+                    <AuthButton
+                      type="email-confirm"
+                      loading={false}
                       onClick={handleResendConfirmation}
                       variant="outline"
                       className="w-full"
-                    >
-                      <Mail className="mr-2 h-4 w-4" />
-                      {BUTTONS.EMAIL_CONFIRMATION_RESEND}
-                    </Button>
+                    />
                   </div>
                 </div>
               )}

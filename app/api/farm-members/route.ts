@@ -1,20 +1,20 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createSystemLog } from "@/lib/utils/logging/system-log";
-import { devLog } from "@/lib/utils/logging/dev-logger";
-import { getClientIP, getUserAgent } from "@/lib/server/ip-helpers";
 import { requireAuth } from "@/lib/server/auth-utils";
-import { logApiError, logSecurityError } from "@/lib/utils/logging/system-log";
+import { logSecurityError } from "@/lib/utils/logging/system-log";
 import { prisma } from "@/lib/prisma";
+import {
+  getErrorResultFromRawError,
+  makeErrorResponseFromResult,
+  throwBusinessError,
+} from "@/lib/utils/error/errorUtil";
+import { LOG_MESSAGES } from "@/lib/utils/logging/log-templates";
 
 // 동적 렌더링 강제
 export const dynamic = "force-dynamic";
 
 // GET - 여러 농장의 구성원 일괄 조회
 export async function GET(request: NextRequest) {
-  // 요청 컨텍스트 정보 추출
-  const clientIP = getClientIP(request);
-  const userAgent = getUserAgent(request);
-
   // 인증 확인
   const authResult = await requireAuth(false);
   if (!authResult.success || !authResult.user) {
@@ -29,14 +29,10 @@ export async function GET(request: NextRequest) {
     const farmIds = searchParams.get("farmIds");
 
     if (!farmIds || farmIds.length === 0) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: "MISSING_FARM_IDS",
-          message: "농장 ID가 필요합니다.",
-        },
-        { status: 400 }
-      );
+      throwBusinessError("MISSING_REQUIRED_FIELDS", {
+        missingFields: ["farmIds"],
+        operation: "bulk_member_fetch",
+      });
     }
 
     const farmIdArray = farmIds.split(",").filter(Boolean);
@@ -57,14 +53,12 @@ export async function GET(request: NextRequest) {
           },
         });
       } catch (accessError) {
-        devLog.error("Error checking farm access:", accessError);
-        return NextResponse.json(
+        throwBusinessError(
+          "GENERAL_QUERY_FAILED",
           {
-            success: false,
-            error: "FARM_ACCESS_CHECK_ERROR",
-            message: "농장 접근 권한 확인 중 오류가 발생했습니다.",
+            resourceType: "farm",
           },
-          { status: 500 }
+          accessError
         );
       }
 
@@ -80,14 +74,12 @@ export async function GET(request: NextRequest) {
           },
         });
       } catch (memberError) {
-        devLog.error("Error checking farm membership:", memberError);
-        return NextResponse.json(
+        throwBusinessError(
+          "GENERAL_QUERY_FAILED",
           {
-            success: false,
-            error: "FARM_MEMBER_ACCESS_CHECK_ERROR",
-            message: "농장 구성원 접근 권한 확인 중 오류가 발생했습니다.",
+            resourceType: "member",
           },
-          { status: 500 }
+          memberError
         );
       }
 
@@ -105,22 +97,20 @@ export async function GET(request: NextRequest) {
         // 권한 거부 보안 로그
         await logSecurityError(
           "FARM_MEMBER_ACCESS_DENIED",
-          `농장 구성원 조회 권한 거부: 사용자 ${
-            user.id
-          }가 농장 ${unauthorizedFarms.join(", ")}에 대한 접근 시도`,
-          user.id,
-          clientIP,
-          userAgent
+          LOG_MESSAGES.FARM_MEMBER_ACCESS_DENIED(
+            user.id,
+            unauthorizedFarms.join(", ")
+          ),
+          { id: user.id, email: user.email || "" },
+          request
         );
 
-        return NextResponse.json(
-          {
-            success: false,
-            error: "UNAUTHORIZED_FARMS",
-            message: "일부 농장에 대한 접근 권한이 없습니다.",
-          },
-          { status: 403 }
-        );
+        throwBusinessError("GENERAL_UNAUTHORIZED", {
+          resourceType: "farm",
+          operationType: "access",
+          multiple: true,
+          unauthorizedItems: unauthorizedFarms,
+        });
       }
     }
 
@@ -148,33 +138,29 @@ export async function GET(request: NextRequest) {
         },
       });
     } catch (membersError) {
-      devLog.error("Error fetching farm members:", membersError);
-      return NextResponse.json(
+      throwBusinessError(
+        "GENERAL_QUERY_FAILED",
         {
-          success: false,
-          error: "FARM_MEMBERS_FETCH_ERROR",
-          message: "농장 멤버 목록 조회 중 오류가 발생했습니다.",
+          resourceType: "memberList",
         },
-        { status: 500 }
+        membersError
       );
     }
 
     // 농장 구성원 일괄 조회 로그 기록
     await createSystemLog(
       "MEMBER_BULK_READ",
-      `농장 구성원 일괄 조회 성공: ${members?.length || 0}명`,
+      LOG_MESSAGES.MEMBER_BULK_READ(members?.length || 0),
       "info",
-      user.id,
+      { id: user.id, email: user.email || "" },
       "member",
       undefined,
       {
-        farm_ids: farmIdArray,
-        member_count: members?.length || 0,
-        action_type: "bulk_member_fetch",
+        action_type: "farm_event",
+        event: "member_bulk_read",
+        count: members?.length || 0,
       },
-      user.email,
-      clientIP,
-      userAgent
+      request
     );
 
     return NextResponse.json(
@@ -190,51 +176,31 @@ export async function GET(request: NextRequest) {
       }
     );
   } catch (error) {
-    devLog.error("Error in bulk farm members fetch:", error);
-
-    // API 에러 로깅
-    await logApiError(
-      "/api/farm-members",
-      "GET",
-      error instanceof Error ? error : String(error),
-      user.id,
+    // 실패 로그 기록
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    await createSystemLog(
+      "MEMBER_BULK_READ_FAILED",
+      LOG_MESSAGES.MEMBER_BULK_READ_FAILED(errorMessage),
+      "error",
+      { id: user.id, email: user.email || "" },
+      "member",
+      undefined,
       {
-        ip: clientIP,
-        userAgent,
-      }
-    );
-
-    // 실패 로그 기록 (error 레벨로 변경)
-    try {
-      await createSystemLog(
-        "MEMBER_BULK_READ_FAILED",
-        `농장 구성원 일괄 조회 실패: ${
-          error instanceof Error ? error.message : "Unknown error"
-        }`,
-        "error",
-        user.id,
-        "member",
-        undefined,
-        {
-          error_message:
-            error instanceof Error ? error.message : "Unknown error",
-          action_type: "bulk_member_fetch",
-        },
-        user.email,
-        clientIP,
-        userAgent
-      );
-    } catch (logError) {
-      devLog.error("Failed to log bulk member fetch error:", logError);
-    }
-
-    return NextResponse.json(
-      {
-        success: false,
-        error: "MEMBER_BULK_READ_FAILED",
-        message: "농장 멤버 일괄 조회에 실패했습니다.",
+        action_type: "farm_event",
+        event: "member_bulk_read_failed",
+        error_message: errorMessage,
       },
-      { status: 500 }
+      request
     );
+
+    // 비즈니스 에러 또는 시스템 에러를 표준화된 에러 코드로 매핑
+    const result = getErrorResultFromRawError(error, {
+      operation: "bulk_member_fetch",
+      userId: user.id,
+    });
+
+    return NextResponse.json(makeErrorResponseFromResult(result), {
+      status: result.status,
+    });
   }
 }

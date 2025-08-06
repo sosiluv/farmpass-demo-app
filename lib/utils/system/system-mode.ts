@@ -1,6 +1,10 @@
 import { getSystemSettings } from "@/lib/cache/system-settings-cache";
 import { createClient } from "@/lib/supabase/server";
 import { devLog } from "@/lib/utils/logging/dev-logger";
+import {
+  mapRawErrorToCode,
+  getErrorMessage,
+} from "@/lib/utils/error/errorUtil";
 
 /**
  * 🚀 성능 최적화 캐시 관리
@@ -95,11 +99,21 @@ const SystemCache = {
   async fetchAdminStatusFromDB(userId: string): Promise<boolean> {
     try {
       const supabase = await createClient();
-      const { data: profile } = await supabase
+      const { data: profile, error: profileError } = await supabase
         .from("profiles")
         .select("account_type")
         .eq("id", userId)
         .single();
+
+      if (profileError) {
+        const errorCode = mapRawErrorToCode(profileError, "db");
+        const message = getErrorMessage(errorCode);
+        devLog.error(
+          "[SYSTEM-MODE] Failed to fetch admin status from DB:",
+          message
+        );
+        return false;
+      }
 
       const isAdmin = profile?.account_type === "admin";
       devLog.log(
@@ -107,9 +121,11 @@ const SystemCache = {
       );
       return isAdmin;
     } catch (error) {
+      const errorCode = mapRawErrorToCode(error);
+      const message = getErrorMessage(errorCode);
       devLog.error(
         "[SYSTEM-MODE] Failed to fetch admin status from DB:",
-        error
+        message
       );
       return false;
     }

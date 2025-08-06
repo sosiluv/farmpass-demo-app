@@ -149,6 +149,7 @@ export const createRegistrationFormSchema = (passwordRules: any) =>
         .refine((phone) => validatePhone(phone), {
           message: ERROR_MESSAGES.INVALID_PHONE,
         }),
+      // 약관 동의는 bottom sheet 모달에서 처리하므로 폼 스키마에서 제거
     })
     .refine((data) => data.password === data.confirmPassword, {
       message: ERROR_MESSAGES.PASSWORD_MISMATCH,

@@ -5,6 +5,10 @@ import { devLog } from "@/lib/utils/logging/dev-logger";
 import { supabase } from "@/lib/supabase/client";
 import { formatTimeAgo } from "@/lib/utils/datetime/date";
 import { getDeviceInfo } from "@/lib/utils/browser/device-detection";
+import {
+  mapRawErrorToCode,
+  getErrorMessage,
+} from "@/lib/utils/error/errorUtil";
 import AccountCardHeader from "./AccountCardHeader";
 import { LABELS, PAGE_HEADER } from "@/lib/constants/account";
 
@@ -46,7 +50,11 @@ export function LoginActivitySection({ profile }: LoginActivitySectionProps) {
         .order("created_at", { ascending: false })
         .limit(5);
 
-      if (error) throw error;
+      if (error) {
+        const errorCode = mapRawErrorToCode(error, "db");
+        const message = getErrorMessage(errorCode);
+        throw new Error(message);
+      }
 
       const activities: LoginActivity[] = [];
 
@@ -94,7 +102,9 @@ export function LoginActivitySection({ profile }: LoginActivitySectionProps) {
 
       setLoginActivity(activities);
     } catch (error) {
-      devLog.error("Failed to load login activity:", error);
+      const errorCode = mapRawErrorToCode(error);
+      const message = getErrorMessage(errorCode);
+      devLog.error("Failed to load login activity:", message);
     }
   };
 

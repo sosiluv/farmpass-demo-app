@@ -1,16 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createSystemLog } from "@/lib/utils/logging/system-log";
-import { devLog } from "@/lib/utils/logging/dev-logger";
 import { requireAuth } from "@/lib/server/auth-utils";
-import { getClientIP, getUserAgent } from "@/lib/server/ip-helpers";
-import { logApiError } from "@/lib/utils/logging/system-log";
 import { prisma } from "@/lib/prisma";
+import {
+  getErrorResultFromRawError,
+  makeErrorResponseFromResult,
+  throwBusinessError,
+} from "@/lib/utils/error/errorUtil";
+import { LOG_MESSAGES } from "@/lib/utils/logging/log-templates";
 
 // PATCH: 프로필 정보 수정
 export async function PATCH(request: NextRequest) {
-  const clientIP = getClientIP(request);
-  const userAgent = getUserAgent(request);
-
   // 인증 확인
   const authResult = await requireAuth(false);
   if (!authResult.success || !authResult.user) {
@@ -22,31 +22,40 @@ export async function PATCH(request: NextRequest) {
   try {
     const data = await request.json();
 
-    await prisma.profiles.update({
-      where: {
-        id: user.id,
-      },
-      data: {
-        ...data,
-        updated_at: new Date(),
-      },
-    });
+    try {
+      await prisma.profiles.update({
+        where: {
+          id: user.id,
+        },
+        data: {
+          ...data,
+          updated_at: new Date(),
+        },
+      });
+    } catch (updateError) {
+      throwBusinessError(
+        "GENERAL_UPDATE_FAILED",
+        {
+          resourceType: "profile",
+        },
+        updateError
+      );
+    }
 
     await createSystemLog(
-      "PROFILE_UPDATE",
-      `프로필 정보 수정: ${Object.keys(data).length}개 필드 수정`,
+      "PROFILE_UPDATED",
+      LOG_MESSAGES.PROFILE_UPDATED(user.email || user.id),
       "info",
-      user.id,
+      { id: user.id, email: user.email || "" },
       "user",
       user.id,
       {
+        action_type: "profile_event",
+        event: "profile_updated",
         target_user_id: user.id,
         updated_fields: Object.keys(data),
-        action_type: "profile_info_update",
       },
-      user.email,
-      clientIP,
-      userAgent
+      request
     );
     return NextResponse.json(
       {
@@ -60,47 +69,31 @@ export async function PATCH(request: NextRequest) {
       }
     );
   } catch (error) {
-    devLog.error("[API] PROFILE_UPDATE 실패:", error);
-
-    // API 에러 로깅
-    await logApiError(
-      "/api/profile",
-      "PATCH",
-      error instanceof Error ? error : String(error),
-      user?.id,
-      {
-        ip: clientIP,
-        userAgent,
-      }
-    );
-
+    const errorMessage = error instanceof Error ? error.message : String(error);
     await createSystemLog(
       "PROFILE_UPDATE_FAILED",
-      `프로필 정보 수정 실패: ${
-        error instanceof Error ? error.message : String(error)
-      }`,
+      LOG_MESSAGES.PROFILE_UPDATE_FAILED(user?.id || "unknown", errorMessage),
       "error",
-      user?.id,
+      user?.id ? { id: user.id, email: user.email || "" } : undefined,
       "user",
       user?.id,
       {
-        error_message: error instanceof Error ? error.message : String(error),
+        action_type: "profile_event",
+        event: "profile_update_failed",
+        error_message: errorMessage,
         target_user_id: user?.id,
-        action_type: "profile_info_update",
       },
-      user?.email,
-      clientIP,
-      userAgent
-    ).catch((logError: any) =>
-      devLog.error("[API] PROFILE_UPDATE 로그 실패:", logError)
+      request
     );
-    return NextResponse.json(
-      {
-        success: false,
-        error: "PROFILE_UPDATE_FAILED",
-        message: "프로필 정보 수정에 실패했습니다.",
-      },
-      { status: 500, headers: { "Cache-Control": "no-store" } }
-    );
+
+    // 비즈니스 에러 또는 시스템 에러를 표준화된 에러 코드로 매핑
+    const result = getErrorResultFromRawError(error, {
+      operation: "update_profile",
+      userId: user?.id,
+    });
+
+    return NextResponse.json(makeErrorResponseFromResult(result), {
+      status: result.status,
+    });
   }
 }

@@ -1,16 +1,9 @@
 "use client";
 
-import {
-  createContext,
-  useContext,
-  useEffect,
-  useReducer,
-  useState,
-} from "react";
+import { createContext, useContext, useEffect, useReducer } from "react";
 import { Session, User } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/client";
 import { devLog } from "@/lib/utils/logging/dev-logger";
-import { useSubscriptionManager } from "@/hooks/notification/useSubscriptionManager";
 import { useQueryClient } from "@tanstack/react-query";
 import {
   profileKeys,
@@ -67,9 +60,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [state, dispatch] = useReducer(authReducer, { status: "initializing" });
   const supabase = createClient();
 
-  // 구독 관리 훅 사용 - Lazy Loading으로 최적화
-  const { switchSubscription } = useSubscriptionManager();
-
   // React Query 캐시 정리를 위한 queryClient
   const queryClient = useQueryClient();
 
@@ -122,10 +112,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               session,
               user: session.user,
             });
-            // ✅ 최초 세션 로드 시에도 구독 전환 시도
-            switchSubscription(session.user.id).catch((error) => {
-              devLog.error("구독 전환 실패:", error);
-            });
+            // ✅ 기존 구독 유지 (불필요한 전환 제거)
+            devLog.log("✅ [DEBUG] 기존 구독 유지 - 전환 불필요");
           } catch (userError) {
             devLog.warn("사용자 정보 검증 중 오류:", userError);
             if (mounted) {

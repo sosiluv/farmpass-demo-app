@@ -20,10 +20,12 @@ import {
   UseImageUploadReturn,
 } from "@/lib/types/upload";
 import { useSystemSettingsQuery } from "@/lib/hooks/query/use-system-settings-query";
-import { getImageUploadErrorMessage } from "@/lib/utils/validation/validation";
-import { handleError } from "@/lib/utils/error/handleError";
 import { profileKeys } from "@/lib/hooks/query/query-keys";
 import { useQueryClient } from "@tanstack/react-query";
+import {
+  mapRawErrorToCode,
+  getErrorMessage,
+} from "@/lib/utils/error/errorUtil";
 
 export interface UseUnifiedImageUploadOptions {
   uploadType: UploadType;
@@ -91,7 +93,6 @@ export function useUnifiedImageUpload(
   const handleUploadError = useCallback(
     (error: UploadError) => {
       updateState({ error, loading: false });
-      const imageError = getImageUploadErrorMessage(error);
 
       // 에러 타입에 따른 제목 생성
       const errorTitle = (() => {
@@ -101,7 +102,7 @@ export function useUnifiedImageUpload(
         return "이미지 업로드 실패";
       })();
 
-      showError(errorTitle, imageError.message);
+      showError(errorTitle, error.message);
       onError?.(error);
       devLog.error("이미지 업로드 에러:", error);
     },
@@ -202,7 +203,9 @@ export function useUnifiedImageUpload(
           .maybeSingle();
 
         if (error) {
-          throw error;
+          const errorCode = mapRawErrorToCode(error, "db");
+          const message = getErrorMessage(errorCode);
+          throw new Error(message);
         }
 
         // 캐시 버스터가 적용된 URL 반환
@@ -213,7 +216,6 @@ export function useUnifiedImageUpload(
         return { data, cacheBustedUrl };
       } catch (error) {
         devLog.error("DB 업데이트 실패:", error);
-        handleError(error, { context: `db-update-${dbTable}-${dbId}` });
         throw error;
       }
     },
@@ -234,15 +236,14 @@ export function useUnifiedImageUpload(
         .maybeSingle();
 
       if (error) {
-        throw error;
+        const errorCode = mapRawErrorToCode(error, "db");
+        const message = getErrorMessage(errorCode);
+        throw new Error(message);
       }
 
       return (data as any)?.[dbField] || null;
     } catch (error) {
       devLog.error("현재 파일 URL 조회 실패:", error);
-      handleError(error, {
-        context: `get-current-file-url-${dbTable}-${dbId}`,
-      });
       return null;
     }
   }, [dbTable, dbId, dbField]);
@@ -349,7 +350,9 @@ export function useUnifiedImageUpload(
             .maybeSingle();
 
           if (error) {
-            throw error;
+            const errorCode = mapRawErrorToCode(error, "db");
+            const message = getErrorMessage(errorCode);
+            throw new Error(message);
           }
 
           // 콜백 호출

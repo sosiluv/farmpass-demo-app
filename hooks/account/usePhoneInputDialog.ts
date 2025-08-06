@@ -37,11 +37,15 @@ export function usePhoneInputDialog() {
           title: "저장 완료",
           message: "휴대폰번호가 저장되었습니다.",
         });
-      } catch (error: any) {
+      } catch (error) {
+        const errorMessage =
+          error instanceof Error
+            ? error.message
+            : "알 수 없는 오류가 발생했습니다.";
         setLastMessage({
           type: "error",
           title: "오류",
-          message: error?.message || "저장 중 오류가 발생했습니다.",
+          message: errorMessage,
         });
       }
     },

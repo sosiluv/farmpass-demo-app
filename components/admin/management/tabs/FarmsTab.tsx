@@ -43,6 +43,7 @@ export function FarmsTab() {
         description={ERROR_CONFIGS.TIMEOUT.description}
         retry={retry}
         error={new Error("Timeout: 데이터 로딩 10초 초과")}
+        isTimeout={true}
       />
     );
   }

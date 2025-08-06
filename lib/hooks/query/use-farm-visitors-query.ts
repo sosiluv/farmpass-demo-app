@@ -20,6 +20,10 @@ import {
   toKSTDate,
 } from "@/lib/utils/datetime/date";
 import { useSupabaseRealtime } from "@/hooks/notification/useSupabaseRealtime";
+import {
+  mapRawErrorToCode,
+  getErrorMessage,
+} from "@/lib/utils/error/errorUtil";
 
 /**
  * React Query 기반 Farm Visitors Hook - 간단한 버전부터 시작
@@ -46,7 +50,9 @@ export function useFarmVisitorsQuery(farmId: string | null) {
       const { data, error } = await query;
 
       if (error) {
-        throw new Error(`방문자 데이터 조회 실패: ${error.message}`);
+        const errorCode = mapRawErrorToCode(error, "db");
+        const message = getErrorMessage(errorCode);
+        throw new Error(message);
       }
 
       return data || [];

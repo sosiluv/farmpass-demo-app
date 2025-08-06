@@ -13,8 +13,6 @@ import { StatsSkeleton, TableSkeleton } from "@/components/common/skeletons";
 import { AdminError } from "@/components/error/admin-error";
 import { ERROR_CONFIGS } from "@/lib/constants/error";
 import { useDataFetchTimeout } from "@/hooks/system/useTimeout";
-import { getAuthErrorMessage } from "@/lib/utils/validation/validation";
-
 // React Query Hooks
 import { useFarmsQuery } from "@/lib/hooks/query/use-farms-query";
 import { useFarmMembersQuery } from "@/lib/hooks/query/use-farm-members-query";
@@ -103,9 +101,12 @@ export default function MembersPage({ params }: PageProps) {
           role,
         });
         showSuccess("구성원 추가 완료", result.message);
-      } catch (error: any) {
-        const authError = getAuthErrorMessage(error);
-        showError("구성원 추가 실패", authError.message);
+      } catch (error) {
+        const errorMessage =
+          error instanceof Error
+            ? error.message
+            : "알 수 없는 오류가 발생했습니다.";
+        showError("구성원 추가 실패", errorMessage);
         throw error;
       }
     },
@@ -123,9 +124,12 @@ export default function MembersPage({ params }: PageProps) {
           role: newRole,
         });
         showSuccess("권한 변경 완료", result.message);
-      } catch (error: any) {
-        const authError = getAuthErrorMessage(error);
-        showError("권한 변경 실패", authError.message);
+      } catch (error) {
+        const errorMessage =
+          error instanceof Error
+            ? error.message
+            : "알 수 없는 오류가 발생했습니다.";
+        showError("권한 변경 실패", errorMessage);
       }
     },
     [farmId, updateMemberRoleMutation, showInfo, showSuccess, showError]
@@ -144,9 +148,12 @@ export default function MembersPage({ params }: PageProps) {
       setDeleteDialogOpen(false);
       setMemberToDelete(null);
       showSuccess("구성원 삭제 완료", result.message);
-    } catch (error: any) {
-      const authError = getAuthErrorMessage(error);
-      showError("구성원 삭제 실패", authError.message);
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : "알 수 없는 오류가 발생했습니다.";
+      showError("구성원 삭제 실패", errorMessage);
     }
   }, [
     farmId,
@@ -170,6 +177,7 @@ export default function MembersPage({ params }: PageProps) {
         description={ERROR_CONFIGS.TIMEOUT.description}
         retry={retry}
         error={new Error("Timeout: 데이터 로딩 10초 초과")}
+        isTimeout={true}
       />
     );
   }
@@ -199,6 +207,7 @@ export default function MembersPage({ params }: PageProps) {
           description={ERROR_CONFIGS.NOT_FOUND.description}
           error={new Error("Farm not found or access denied")}
           retry={retry}
+          isNotFound={true}
         />
       );
     }

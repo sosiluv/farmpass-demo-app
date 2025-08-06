@@ -129,100 +129,101 @@ export default function SettingsPage() {
           unsavedChanges={unsavedChanges}
           onSave={handleSave}
         />
+        <div className="space-y-6">
+          <Tabs
+            defaultValue="general"
+            className="space-y-6"
+            value={activeTab}
+            onValueChange={setActiveTab}
+          >
+            <TabsList className="grid w-full grid-cols-5 h-auto">
+              <TabsTrigger
+                value="general"
+                className="flex flex-col items-center justify-center gap-0.5 p-1 sm:p-1.5 md:p-2 min-w-0"
+              >
+                <Settings className="h-3.5 w-3.5 flex-shrink-0" />
+                <span className="text-[10px] sm:text-xs hidden sm:inline truncate">
+                  {LABELS.TABS.GENERAL}
+                </span>
+              </TabsTrigger>
+              <TabsTrigger
+                value="security"
+                className="flex flex-col items-center justify-center gap-0.5 p-1 sm:p-1.5 md:p-2 min-w-0"
+              >
+                <Shield className="h-3.5 w-3.5 flex-shrink-0" />
+                <span className="text-[10px] sm:text-xs hidden sm:inline truncate">
+                  {LABELS.TABS.SECURITY}
+                </span>
+              </TabsTrigger>
+              <TabsTrigger
+                value="visitor"
+                className="flex flex-col items-center justify-center gap-0.5 p-1 sm:p-1.5 md:p-2 min-w-0"
+              >
+                <UserCheck className="h-3.5 w-3.5 flex-shrink-0" />
+                <span className="text-[10px] sm:text-xs hidden sm:inline truncate">
+                  {LABELS.TABS.VISITOR}
+                </span>
+              </TabsTrigger>
+              <TabsTrigger
+                value="notifications"
+                className="flex flex-col items-center justify-center gap-0.5 p-1 sm:p-1.5 md:p-2 min-w-0"
+              >
+                <Bell className="h-3.5 w-3.5 flex-shrink-0" />
+                <span className="text-[10px] sm:text-xs hidden sm:inline truncate">
+                  {LABELS.TABS.NOTIFICATIONS}
+                </span>
+              </TabsTrigger>
+              <TabsTrigger
+                value="system"
+                className="flex flex-col items-center justify-center gap-0.5 p-1 sm:p-1.5 md:p-2 min-w-0"
+              >
+                <Terminal className="h-3.5 w-3.5 flex-shrink-0" />
+                <span className="text-[10px] sm:text-xs hidden sm:inline truncate">
+                  {LABELS.TABS.SYSTEM}
+                </span>
+              </TabsTrigger>
+            </TabsList>
+            <TabsContent value="general">
+              <GeneralTab
+                settings={localSettings}
+                onSettingChange={handleSettingChange}
+                loading={saving}
+              />
+            </TabsContent>
 
-        <Tabs
-          defaultValue="general"
-          className="w-full"
-          value={activeTab}
-          onValueChange={setActiveTab}
-        >
-          <TabsList className="grid w-full grid-cols-5 h-auto">
-            <TabsTrigger
-              value="general"
-              className="flex flex-col items-center justify-center gap-0.5 p-1 sm:p-1.5 md:p-2 min-w-0"
-            >
-              <Settings className="h-3.5 w-3.5 flex-shrink-0" />
-              <span className="text-[10px] sm:text-xs hidden sm:inline truncate">
-                {LABELS.TABS.GENERAL}
-              </span>
-            </TabsTrigger>
-            <TabsTrigger
-              value="security"
-              className="flex flex-col items-center justify-center gap-0.5 p-1 sm:p-1.5 md:p-2 min-w-0"
-            >
-              <Shield className="h-3.5 w-3.5 flex-shrink-0" />
-              <span className="text-[10px] sm:text-xs hidden sm:inline truncate">
-                {LABELS.TABS.SECURITY}
-              </span>
-            </TabsTrigger>
-            <TabsTrigger
-              value="visitor"
-              className="flex flex-col items-center justify-center gap-0.5 p-1 sm:p-1.5 md:p-2 min-w-0"
-            >
-              <UserCheck className="h-3.5 w-3.5 flex-shrink-0" />
-              <span className="text-[10px] sm:text-xs hidden sm:inline truncate">
-                {LABELS.TABS.VISITOR}
-              </span>
-            </TabsTrigger>
-            <TabsTrigger
-              value="notifications"
-              className="flex flex-col items-center justify-center gap-0.5 p-1 sm:p-1.5 md:p-2 min-w-0"
-            >
-              <Bell className="h-3.5 w-3.5 flex-shrink-0" />
-              <span className="text-[10px] sm:text-xs hidden sm:inline truncate">
-                {LABELS.TABS.NOTIFICATIONS}
-              </span>
-            </TabsTrigger>
-            <TabsTrigger
-              value="system"
-              className="flex flex-col items-center justify-center gap-0.5 p-1 sm:p-1.5 md:p-2 min-w-0"
-            >
-              <Terminal className="h-3.5 w-3.5 flex-shrink-0" />
-              <span className="text-[10px] sm:text-xs hidden sm:inline truncate">
-                {LABELS.TABS.SYSTEM}
-              </span>
-            </TabsTrigger>
-          </TabsList>
-          <TabsContent value="general">
-            <GeneralTab
-              settings={localSettings}
-              onSettingChange={handleSettingChange}
-              loading={saving}
-            />
-          </TabsContent>
+            <TabsContent value="security">
+              <SecurityTab
+                settings={localSettings}
+                onUpdate={handleSettingChange}
+                isLoading={loading}
+              />
+            </TabsContent>
 
-          <TabsContent value="security">
-            <SecurityTab
-              settings={localSettings}
-              onUpdate={handleSettingChange}
-              isLoading={loading}
-            />
-          </TabsContent>
+            <TabsContent value="visitor">
+              <VisitorTab
+                settings={localSettings}
+                onUpdate={handleSettingChange}
+                isLoading={loading}
+              />
+            </TabsContent>
 
-          <TabsContent value="visitor">
-            <VisitorTab
-              settings={localSettings}
-              onUpdate={handleSettingChange}
-              isLoading={loading}
-            />
-          </TabsContent>
+            <TabsContent value="notifications">
+              <NotificationTab
+                settings={localSettings}
+                onUpdate={handleSettingChange}
+                isLoading={loading}
+              />
+            </TabsContent>
 
-          <TabsContent value="notifications">
-            <NotificationTab
-              settings={localSettings}
-              onUpdate={handleSettingChange}
-              isLoading={loading}
-            />
-          </TabsContent>
-
-          <TabsContent value="system">
-            <SystemTab
-              settings={localSettings}
-              onUpdate={handleSettingChange}
-              isLoading={loading}
-            />
-          </TabsContent>
-        </Tabs>
+            <TabsContent value="system">
+              <SystemTab
+                settings={localSettings}
+                onUpdate={handleSettingChange}
+                isLoading={loading}
+              />
+            </TabsContent>
+          </Tabs>
+        </div>
       </div>
     </ErrorBoundary>
   );

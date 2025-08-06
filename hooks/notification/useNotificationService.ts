@@ -1,6 +1,5 @@
 import { useState, useCallback } from "react";
 import { devLog } from "@/lib/utils/logging/dev-logger";
-import { getNotificationErrorMessage } from "@/lib/utils/validation/validation";
 import {
   requestNotificationPermissionAndSubscribe,
   createSubscriptionFromExisting,
@@ -33,23 +32,53 @@ export function useNotificationService() {
   const saveNotificationSettingsMutation =
     useSaveNotificationSettingsMutation();
 
-  const {
-    vapidKey,
-    isLoading: vapidKeyLoading,
-    error: vapidKeyError,
-  } = useVapidKeyEffective();
+  const { vapidKey } = useVapidKeyEffective();
 
   // 구독 해제 - React Query 사용
   const handleUnsubscription = async (
-    subscription: PushSubscription,
+    subscription?: PushSubscription,
     farmId?: string
   ) => {
     try {
       setIsLoading(true);
 
-      // 구독 해제 Mutation 사용 (알림 설정 업데이트 포함)
+      let currentSubscription = subscription;
+
+      // 구독이 전달되지 않은 경우 브라우저에서 찾기
+      if (!currentSubscription) {
+        if ("serviceWorker" in navigator && "PushManager" in window) {
+          try {
+            const registration = await navigator.serviceWorker.ready;
+            const browserSubscription =
+              await registration.pushManager.getSubscription();
+            currentSubscription = browserSubscription || undefined;
+          } catch (error) {
+            devLog.warn("브라우저 구독 조회 실패:", error);
+          }
+        }
+      }
+
+      // 구독이 없으면 적절한 응답 반환
+      if (!currentSubscription) {
+        setLastMessage({
+          type: "success",
+          title: "구독 해제 완료",
+          message: "구독이 존재하지 않습니다.",
+        });
+        return { success: true, message: "구독이 존재하지 않습니다." };
+      }
+
+      // 1. 브라우저 구독 해제
+      try {
+        await currentSubscription.unsubscribe();
+      } catch (browserError) {
+        devLog.warn("⚠️ [DEBUG] 브라우저 구독 해제 실패:", browserError);
+        // 브라우저 해제 실패해도 서버 해제는 계속 진행
+      }
+
+      // 2. 서버 구독 해제 Mutation 사용 (알림 설정 업데이트 포함)
       const result = await deleteSubscriptionMutation.mutateAsync({
-        endpoint: subscription.endpoint,
+        endpoint: currentSubscription.endpoint,
         forceDelete: false, // 수동 구독 해제는 인증 사용
         options: {
           updateSettings: true, // 알림 설정 페이지에서는 설정 업데이트
@@ -63,11 +92,10 @@ export function useNotificationService() {
       });
       return result;
     } catch (error) {
-      const notificationError = getNotificationErrorMessage(error);
       setLastMessage({
         type: "error",
         title: "구독 해제 실패",
-        message: notificationError.message,
+        message: error instanceof Error ? error.message : "알 수 없는 오류",
       });
       throw error;
     } finally {
@@ -91,11 +119,10 @@ export function useNotificationService() {
       return { subscriptions: subscriptionData };
     } catch (error) {
       devLog.error("구독 상태 조회 실패:", error);
-      const notificationError = getNotificationErrorMessage(error);
       setLastMessage({
         type: "error",
         title: "구독 상태 조회 실패",
-        message: notificationError.message,
+        message: error instanceof Error ? error.message : "알 수 없는 오류",
       });
       return { subscriptions: [] };
     } finally {
@@ -123,11 +150,10 @@ export function useNotificationService() {
       return result;
     } catch (error) {
       devLog.error("구독 정리 실패:", error);
-      const notificationError = getNotificationErrorMessage(error);
       setLastMessage({
         type: "error",
         title: "구독 정리 실패",
-        message: notificationError.message,
+        message: error instanceof Error ? error.message : "알 수 없는 오류",
       });
       throw error;
     } finally {
@@ -192,11 +218,10 @@ export function useNotificationService() {
       }
     } catch (error) {
       devLog.error("알림 권한 요청 실패:", error);
-      const notificationError = getNotificationErrorMessage(error);
       setLastMessage({
         type: "error",
         title: "알림 설정 실패",
-        message: notificationError.message,
+        message: error instanceof Error ? error.message : "알 수 없는 오류",
       });
       return false;
     } finally {
@@ -243,11 +268,10 @@ export function useNotificationService() {
       }
     } catch (error) {
       devLog.error("재구독 실패:", error);
-      const notificationError = getNotificationErrorMessage(error);
       setLastMessage({
         type: "error",
         title: "재구독 실패",
-        message: notificationError.message,
+        message: error instanceof Error ? error.message : "알 수 없는 오류",
       });
       return false;
     } finally {

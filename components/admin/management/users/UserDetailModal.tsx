@@ -14,7 +14,6 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { useCommonToast } from "@/lib/utils/notification/toast-messages";
 import { useResetLoginAttemptsMutation } from "@/lib/hooks/query/use-auth-mutations";
-import { getAuthErrorMessage } from "@/lib/utils/validation/validation";
 import { generateInitials, getAvatarUrl } from "@/lib/utils/media/avatar";
 import { BUTTONS, LABELS, PAGE_HEADER } from "@/lib/constants/management";
 import { Loader2, LockOpen } from "lucide-react";
@@ -89,8 +88,11 @@ export function UserDetailModal({ user, open, onClose }: UserDetailModalProps) {
       }
       onClose();
     } catch (error) {
-      const authError = getAuthErrorMessage(error);
-      showError("계정 잠금 해제 실패", authError.message);
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : "알 수 없는 오류가 발생했습니다.";
+      showError("계정 잠금 해제 실패", errorMessage);
     } finally {
       setLoading(false);
     }

@@ -4,6 +4,10 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase/client";
 import { adminKeys } from "./query-keys";
 import type { SystemLog } from "@/lib/types/system";
+import {
+  mapRawErrorToCode,
+  getErrorMessage,
+} from "@/lib/utils/error/errorUtil";
 
 /**
  * 시스템 로그 리스트 조회 Hook
@@ -19,9 +23,9 @@ export function useSystemLogsQuery() {
         .limit(5000); // 최대 5000개 로그만 가져오기
 
       if (error) {
-        throw new Error(
-          `로그를 불러오는 중 오류가 발생했습니다: ${error.message}`
-        );
+        const errorCode = mapRawErrorToCode(error, "db");
+        const message = getErrorMessage(errorCode);
+        throw new Error(message);
       }
 
       return data || [];
