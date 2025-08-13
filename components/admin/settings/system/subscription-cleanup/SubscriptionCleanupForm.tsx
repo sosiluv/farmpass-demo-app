@@ -61,9 +61,6 @@ export function SubscriptionCleanupForm({
             ))}
           </SelectContent>
         </Select>
-        <p className="text-sm sm:text-base text-muted-foreground">
-          {LABELS.SUBSCRIPTION_CLEANUP_DAYS_DESC}
-        </p>
       </div>
 
       {/* 실패 횟수 임계값 */}
@@ -98,20 +95,14 @@ export function SubscriptionCleanupForm({
             ))}
           </SelectContent>
         </Select>
-        <p className="text-sm sm:text-base text-muted-foreground">
-          {LABELS.SUBSCRIPTION_FAIL_COUNT_DESC}
-        </p>
       </div>
 
       {/* 비활성 구독 정리 */}
       <div className="flex items-center justify-between">
         <div className="space-y-0.5">
           <Label className="text-sm sm:text-base font-medium">
-            {LABELS.SUBSCRIPTION_CLEANUP_INACTIVE}
+            {LABELS.SUBSCRIPTION_CLEANUP_INACTIVE_SETTING}
           </Label>
-          <p className="text-sm sm:text-base text-muted-foreground">
-            {LABELS.SUBSCRIPTION_CLEANUP_INACTIVE_DESC}
-          </p>
         </div>
         <Switch
           checked={settings.subscriptionCleanupInactive || false}
@@ -128,9 +119,6 @@ export function SubscriptionCleanupForm({
           <Label className="text-sm sm:text-base font-medium">
             {LABELS.SUBSCRIPTION_FORCE_DELETE_SETTING}
           </Label>
-          <p className="text-sm sm:text-base text-muted-foreground">
-            {LABELS.SUBSCRIPTION_FORCE_DELETE_DESC}
-          </p>
         </div>
         <Switch
           checked={settings.subscriptionForceDelete || false}

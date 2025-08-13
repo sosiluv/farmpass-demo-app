@@ -1,19 +1,10 @@
 import { Button } from "@/components/ui/button";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
 import { useCommonToast } from "@/lib/utils/notification/toast-messages";
 import { RotateCcw, Trash2, AlertTriangle, Loader2 } from "lucide-react";
+import { useState, useCallback } from "react";
 import type { SystemSettings } from "@/lib/types/settings";
 import { BUTTONS, LABELS, PAGE_HEADER } from "@/lib/constants/settings";
+import { WarningConfirmSheet } from "@/components/ui/confirm-sheet";
 
 interface SubscriptionCleanupActionsProps {
   settings: SystemSettings;
@@ -27,6 +18,7 @@ export function SubscriptionCleanupActions({
   onCleanupRequest,
 }: SubscriptionCleanupActionsProps) {
   const { showError } = useCommonToast();
+  const [cleanupOpen, setCleanupOpen] = useState(false);
 
   const handleTestCleanup = async () => {
     try {
@@ -40,9 +32,10 @@ export function SubscriptionCleanupActions({
     }
   };
 
-  const handleRealCleanup = async () => {
+  const handleRealCleanup = useCallback(async () => {
     try {
       await onCleanupRequest(false);
+      setCleanupOpen(false);
     } catch (error) {
       const errorMessage =
         error instanceof Error
@@ -50,7 +43,7 @@ export function SubscriptionCleanupActions({
           : "알 수 없는 오류가 발생했습니다.";
       showError("구독 정리 실패", errorMessage);
     }
-  };
+  }, [onCleanupRequest, showError]);
 
   return (
     <div className="flex flex-col sm:flex-row gap-3">
@@ -60,113 +53,66 @@ export function SubscriptionCleanupActions({
         onClick={handleTestCleanup}
         disabled={isLoading}
       >
-        <RotateCcw className="h-4 w-4 mr-2" />
-        {BUTTONS.SUBSCRIPTION_CLEANUP_TEST_BUTTON}
+        {isLoading ? (
+          <>
+            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+            {BUTTONS.SUBSCRIPTION_CLEANUP_TEST_BUTTON}
+          </>
+        ) : (
+          <>
+            <RotateCcw className="h-4 w-4 mr-2" />
+            {BUTTONS.SUBSCRIPTION_CLEANUP_TEST_BUTTON}
+          </>
+        )}
       </Button>
 
-      <AlertDialog>
-        <AlertDialogTrigger asChild>
-          <Button
-            variant="destructive"
-            className="flex-1 text-sm sm:text-base"
-            disabled={isLoading}
-          >
-            {isLoading ? (
-              <>
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                {BUTTONS.SUBSCRIPTION_CLEANUP_BUTTON}
-              </>
-            ) : (
-              <>
-                <Trash2 className="h-4 w-4 mr-2" />
-                {BUTTONS.SUBSCRIPTION_CLEANUP_BUTTON}
-              </>
-            )}
-          </Button>
-        </AlertDialogTrigger>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle className="text-base sm:text-lg md:text-xl">
-              {PAGE_HEADER.SUBSCRIPTION_CLEANUP_CONFIRM_TITLE}
-            </AlertDialogTitle>
-            <AlertDialogDescription asChild>
-              <div>
-                <div className="text-sm sm:text-base mb-3">
-                  {PAGE_HEADER.SUBSCRIPTION_CLEANUP_CONFIRM_DESC}
-                </div>
-                <div className="bg-red-50 border border-red-200 rounded-lg p-3">
-                  <div className="flex items-start gap-2">
-                    <AlertTriangle className="h-4 w-4 text-red-500 mt-0.5 flex-shrink-0" />
-                    <div className="text-sm sm:text-base text-red-700">
-                      <div className="font-medium mb-1">
-                        {LABELS.SUBSCRIPTION_CLEANUP_CONDITIONS_TITLE}
-                      </div>
-                      <ul className="list-disc list-inside space-y-1 text-sm sm:text-base">
-                        <li>
-                          {LABELS.SUBSCRIPTION_CLEANUP_FAIL_COUNT.replace(
-                            "{count}",
-                            (
-                              settings.subscriptionFailCountThreshold || 5
-                            ).toString()
-                          )}
-                        </li>
-                        <li>
-                          {LABELS.SUBSCRIPTION_CLEANUP_INACTIVE.replace(
-                            "{status}",
-                            settings.subscriptionCleanupInactive
-                              ? LABELS.SUBSCRIPTION_CLEANUP_CLEAN
-                              : LABELS.SUBSCRIPTION_CLEANUP_MAINTAIN
-                          )}
-                        </li>
-                        <li>
-                          {LABELS.SUBSCRIPTION_CLEANUP_FORCE_DELETE.replace(
-                            "{status}",
-                            settings.subscriptionForceDelete
-                              ? LABELS.SUBSCRIPTION_CLEANUP_ENABLED
-                              : LABELS.SUBSCRIPTION_CLEANUP_DISABLED
-                          )}
-                        </li>
-                        <li>
-                          {LABELS.SUBSCRIPTION_CLEANUP_AUTO_DELETE.replace(
-                            "{days}",
-                            (settings.subscriptionCleanupDays || 30).toString()
-                          )}
-                        </li>
-                        <li>{LABELS.SUBSCRIPTION_CLEANUP_IRRECOVERABLE}</li>
-                      </ul>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel
-              disabled={isLoading}
-              className="text-sm sm:text-base"
-            >
-              {BUTTONS.CLEANUP_CANCEL}
-            </AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleRealCleanup}
-              disabled={isLoading}
-              className="bg-red-600 hover:bg-red-700 text-sm sm:text-base"
-            >
-              {isLoading ? (
-                <>
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  {BUTTONS.CLEANUP_CLEANING}
-                </>
-              ) : (
-                <>
-                  <Trash2 className="h-4 w-4 mr-2" />
-                  {BUTTONS.CLEANUP_DELETE}
-                </>
-              )}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <Button
+        variant="destructive"
+        className="flex-1 text-sm sm:text-base"
+        disabled={isLoading}
+        onClick={() => setCleanupOpen(true)}
+      >
+        {isLoading ? (
+          <>
+            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+            {BUTTONS.SUBSCRIPTION_CLEANUP_BUTTON}
+          </>
+        ) : (
+          <>
+            <Trash2 className="h-4 w-4 mr-2" />
+            {BUTTONS.SUBSCRIPTION_CLEANUP_BUTTON}
+          </>
+        )}
+      </Button>
+
+      {/* 구독 정리 확인 시트 */}
+      <WarningConfirmSheet
+        open={cleanupOpen}
+        onOpenChange={setCleanupOpen}
+        onConfirm={handleRealCleanup}
+        isLoading={isLoading}
+        title={PAGE_HEADER.SUBSCRIPTION_CLEANUP_CONFIRM_TITLE}
+        description={PAGE_HEADER.SUBSCRIPTION_CLEANUP_CONFIRM_DESC}
+        warningMessage={`${
+          LABELS.SUBSCRIPTION_CLEANUP_CONDITIONS_TITLE
+        }\n• ${LABELS.SUBSCRIPTION_CLEANUP_FAIL_COUNT.replace(
+          "{count}",
+          (settings.subscriptionFailCountThreshold || 5).toString()
+        )}\n• ${LABELS.SUBSCRIPTION_CLEANUP_INACTIVE.replace(
+          "{status}",
+          settings.subscriptionCleanupInactive
+            ? LABELS.SUBSCRIPTION_CLEANUP_CLEAN
+            : LABELS.SUBSCRIPTION_CLEANUP_MAINTAIN
+        )}\n• ${LABELS.SUBSCRIPTION_CLEANUP_FORCE_DELETE.replace(
+          "{status}",
+          settings.subscriptionForceDelete
+            ? LABELS.SUBSCRIPTION_CLEANUP_ENABLED
+            : LABELS.SUBSCRIPTION_CLEANUP_DISABLED
+        )}\n• ${LABELS.SUBSCRIPTION_CLEANUP_AUTO_DELETE.replace(
+          "{days}",
+          (settings.subscriptionCleanupDays || 30).toString()
+        )}\n• ${LABELS.SUBSCRIPTION_CLEANUP_IRRECOVERABLE}`}
+      />
     </div>
   );
 }

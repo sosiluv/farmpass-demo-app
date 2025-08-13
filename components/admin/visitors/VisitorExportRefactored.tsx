@@ -1,12 +1,12 @@
 import { useState } from "react";
 import {
-  ExportDialogWrapper,
+  ExportSheetWrapper,
   ExportActions,
   DateRangeSection,
   FilterSection,
   OptionsSection,
   SummarySection,
-  useExportDialog,
+  useExportSheet,
 } from "@/components/admin/management/exports";
 import { Farm } from "@/lib/types";
 import {
@@ -54,7 +54,7 @@ export function VisitorExportRefactored({
     return { isValid: true };
   };
 
-  const { isOpen, setIsOpen, isExporting, handleExport } = useExportDialog({
+  const { isOpen, setIsOpen, isExporting, handleExport } = useExportSheet({
     onExport,
     validateOptions,
     successMessage: "방문자 데이터가 성공적으로 내보내졌습니다.",
@@ -90,14 +90,14 @@ export function VisitorExportRefactored({
   };
 
   return (
-    <ExportDialogWrapper
+    <ExportSheetWrapper
       open={isOpen}
       onOpenChange={setIsOpen}
       title={LABELS.VISITOR_EXPORT_TITLE}
       description={LABELS.VISITOR_EXPORT_DESC}
       buttonText={LABELS.VISITOR_EXPORT_BUTTON}
     >
-      <div className="space-y-3 sm:space-y-4 md:space-y-6">
+      <div className="space-y-4">
         <DateRangeSection
           startDate={startDate}
           endDate={endDate}
@@ -189,6 +189,6 @@ export function VisitorExportRefactored({
         onExport={() => handleExport(exportOptions)}
         onReset={resetOptions}
       />
-    </ExportDialogWrapper>
+    </ExportSheetWrapper>
   );
 }

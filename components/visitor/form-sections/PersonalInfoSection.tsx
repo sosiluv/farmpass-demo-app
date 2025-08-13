@@ -21,7 +21,7 @@ export const PersonalInfoSection = ({
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-6">
       {/* 이름 */}
-      <TextField form={form} name="fullName" icon={User} required={true} />
+      <TextField form={form} name="visitor_name" icon={User} required={true} />
 
       {/* 연락처 */}
       {settings.requireVisitorContact && (
@@ -32,7 +32,7 @@ export const PersonalInfoSection = ({
       <AddressField
         form={form}
         required={true}
-        defaultDetailedAddress={formData.detailedAddress}
+        defaultDetailedAddress={formData.detailed_address}
       />
     </div>
   );

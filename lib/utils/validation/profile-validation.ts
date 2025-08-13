@@ -20,7 +20,7 @@ export const emailSchema = z
     message: ERROR_MESSAGES.INVALID_EMAIL,
   });
 
-export const phoneNumberSchema = z
+export const phoneSchema = z
   .string()
   .min(1, ERROR_MESSAGES.REQUIRED_PHONE)
   .refine((phone) => validatePhone(phone), {
@@ -30,5 +30,11 @@ export const phoneNumberSchema = z
 export const profileSchema = z.object({
   name: nameSchema,
   email: emailSchema,
-  phoneNumber: phoneNumberSchema,
+  phone: phoneSchema,
+  // 선택 필드들: 폼에서 사용되므로 스키마에 포함
+  position: z.string().nullable().optional(),
+  department: z.string().nullable().optional(),
+  bio: z.string().nullable().optional(),
 });
+
+export type ProfileFormData = z.infer<typeof profileSchema>;

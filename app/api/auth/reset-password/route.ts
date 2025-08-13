@@ -9,20 +9,26 @@ import {
   throwBusinessError,
 } from "@/lib/utils/error/errorUtil";
 import { LOG_MESSAGES } from "@/lib/utils/logging/log-templates";
+import type { ResetPasswordRequestFormData } from "@/lib/utils/validation/auth-validation";
+import { resetPasswordRequestFormSchema } from "@/lib/utils/validation/auth-validation";
 
 export async function POST(request: NextRequest) {
   let email: string | undefined;
 
   try {
-    const { email: requestEmail } = await request.json();
-    email = requestEmail;
+    const body: ResetPasswordRequestFormData = await request.json();
 
-    if (!email) {
-      throwBusinessError("MISSING_REQUIRED_FIELDS", {
-        missingFields: ["email"],
-        operation: "reset_password",
+    // ZOD 스키마로 검증
+    const validation = resetPasswordRequestFormSchema.safeParse(body);
+    if (!validation.success) {
+      throwBusinessError("INVALID_FORM_DATA", {
+        errors: validation.error.errors,
+        formType: "user",
       });
     }
+
+    const { email: validatedEmail } = validation.data;
+    email = validatedEmail;
 
     // 서버용 Supabase 클라이언트 생성
     const supabase = await createClient();

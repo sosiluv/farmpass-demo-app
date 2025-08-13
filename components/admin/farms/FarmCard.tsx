@@ -1,8 +1,7 @@
 import React from "react";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { motion } from "framer-motion";
-import type { Farm } from "@/lib/types/farm";
-import type { FarmMembers } from "@/lib/types";
+import type { Farm, FarmMember } from "@/lib/types/common";
 import {
   FarmCardHeader,
   FarmCardActions,
@@ -16,7 +15,13 @@ interface FarmCardProps {
   isOwner: boolean;
   onEdit: (farm: Farm) => void;
   onDelete: (farmId: string) => void;
-  membersData?: FarmMembers;
+  membersData?: Array<
+    FarmMember & {
+      profiles: {
+        name: string;
+      };
+    }
+  >;
 }
 
 export const FarmCard = React.memo(function FarmCard({

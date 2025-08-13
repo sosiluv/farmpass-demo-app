@@ -9,14 +9,16 @@ import {
   throwBusinessError,
 } from "@/lib/utils/error/errorUtil";
 import { LOG_MESSAGES } from "@/lib/utils/logging/log-templates";
+import {
+  farmFormSchema,
+  type FarmFormValues,
+} from "@/lib/utils/validation/farm-validation";
 
 export async function GET(
   request: NextRequest,
   { params }: { params: { farmId: string } }
 ) {
   try {
-    devLog.log("🔍 농장 정보 조회 시작:", { farmId: params.farmId });
-
     // Prisma를 사용하여 RLS 우회
     let farm;
     try {
@@ -72,7 +74,7 @@ export async function PUT(
   { params }: { params: { farmId: string } }
 ) {
   let user: any = null;
-  let farmData: any = {};
+  let farmData: FarmFormValues | null = null;
 
   try {
     // 인증 확인
@@ -83,7 +85,18 @@ export async function PUT(
 
     const user = authResult.user;
     const isAdmin = authResult.isAdmin || false;
-    farmData = await request.json();
+
+    const requestData: FarmFormValues = await request.json();
+
+    // ZOD 스키마로 검증
+    const validation = farmFormSchema.safeParse(requestData);
+    if (!validation.success) {
+      throwBusinessError("INVALID_FORM_DATA", {
+        errors: validation.error.errors,
+        formType: "farm",
+      });
+    }
+    farmData = validation.data;
 
     // Verify ownership (관리자가 아닌 경우에만 소유권 확인)
     if (!isAdmin) {

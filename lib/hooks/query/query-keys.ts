@@ -44,16 +44,8 @@ export const farmsKeys = {
       ? ([...farmsKeys.all, "list", { filters }] as const)
       : ([...farmsKeys.all, "list"] as const),
 
-  // 농장 멤버
-  farmMembers: (farmId: string) =>
-    [...farmsKeys.all, "members", farmId] as const,
-
   // 농장 정보
   info: (farmId: string) => [...farmsKeys.all, "info", farmId] as const,
-
-  // 농장 멤버 미리보기
-  farmMembersPreview: (farmIds: string[]) =>
-    [...farmsKeys.all, "farmMembersPreview", ...farmIds.sort()] as const,
 } as const;
 
 /**
@@ -63,8 +55,9 @@ export const adminKeys = {
   // 모든 관리자 쿼리
   all: ["admin"] as const,
 
-  // 대시보드 통계
-  dashboard: () => [...adminKeys.all, "dashboard"] as const,
+  // 대시보드 통계 (선택 농장 필터 포함)
+  dashboard: (farmId?: string) =>
+    [...adminKeys.all, "dashboard", farmId ?? "all"] as const,
 
   // 농장 관리
   farms: {

@@ -1,17 +1,9 @@
 import { MemberCard } from "./MemberCard";
 import { LABELS } from "@/lib/constants/farms";
-
-interface Member {
-  id: string;
-  representative_name: string;
-  email: string;
-  role: string;
-  profile_image_url?: string | null;
-  avatar_seed?: string | null;
-}
+import type { MemberWithProfile } from "@/lib/types/farm";
 
 interface MembersListProps {
-  members: Member[];
+  members: MemberWithProfile[];
   canManageMembers: boolean;
   onDelete: (id: string) => void;
   onRoleChange: (memberId: string, newRole: "manager" | "viewer") => void;

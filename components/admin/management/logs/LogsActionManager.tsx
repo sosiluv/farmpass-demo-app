@@ -1,6 +1,6 @@
 import { useCommonToast } from "@/lib/utils/notification/toast-messages";
 import { useDeleteLogsMutation } from "@/lib/hooks/query/use-logs-mutations";
-import type { SystemLog } from "@/lib/types/system";
+import type { SystemLog } from "@/lib/types/common";
 
 interface LogsActionManagerProps {
   logs: SystemLog[];

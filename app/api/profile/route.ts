@@ -8,6 +8,11 @@ import {
   throwBusinessError,
 } from "@/lib/utils/error/errorUtil";
 import { LOG_MESSAGES } from "@/lib/utils/logging/log-templates";
+import type { ProfileFormData } from "@/lib/utils/validation/profile-validation";
+import type { CompanyFormData } from "@/lib/utils/validation/company-validation";
+import { Prisma } from "@prisma/client";
+import { profileSchema } from "@/lib/utils/validation/profile-validation";
+import { companyFormSchema } from "@/lib/utils/validation/company-validation";
 
 // PATCH: 프로필 정보 수정
 export async function PATCH(request: NextRequest) {
@@ -20,17 +25,105 @@ export async function PATCH(request: NextRequest) {
   const user = authResult.user;
 
   try {
-    const data = await request.json();
+    const data: Partial<ProfileFormData & CompanyFormData> =
+      await request.json();
 
+    // Zod 스키마 검증
+    const profileData: Partial<ProfileFormData> = {};
+    const companyData: Partial<CompanyFormData> = {};
+
+    // ProfileFormData 필드들 분리 및 검증
+    if (data.name !== undefined) profileData.name = data.name;
+    if (data.email !== undefined) profileData.email = data.email;
+    if (data.phone !== undefined) profileData.phone = data.phone;
+    if (data.position !== undefined) profileData.position = data.position;
+    if (data.department !== undefined) profileData.department = data.department;
+    if (data.bio !== undefined) profileData.bio = data.bio;
+
+    // CompanyFormData 필드들 분리 및 검증
+    if (data.companyName !== undefined)
+      companyData.companyName = data.companyName;
+    if (data.companyAddress !== undefined)
+      companyData.companyAddress = data.companyAddress;
+    if (data.businessType !== undefined)
+      companyData.businessType = data.businessType;
+    if (data.company_description !== undefined)
+      companyData.company_description = data.company_description;
+    if (data.establishment_date !== undefined)
+      companyData.establishment_date = data.establishment_date;
+    if (data.employee_count !== undefined)
+      companyData.employee_count = data.employee_count;
+    if (data.company_website !== undefined)
+      companyData.company_website = data.company_website;
+
+    // ProfileFormData 스키마 검증 (필드가 있는 경우에만)
+    if (Object.keys(profileData).length > 0) {
+      const profileValidation = profileSchema.partial().safeParse(profileData);
+      if (!profileValidation.success) {
+        throwBusinessError("INVALID_FORM_DATA", {
+          errors: profileValidation.error.errors,
+          formType: "profile",
+        });
+      }
+    }
+
+    // CompanyFormData 스키마 검증 (필드가 있는 경우에만)
+    if (Object.keys(companyData).length > 0) {
+      const companyValidation = companyFormSchema
+        .partial()
+        .safeParse(companyData);
+      if (!companyValidation.success) {
+        throwBusinessError("INVALID_FORM_DATA", {
+          errors: companyValidation.error.errors,
+          formType: "company",
+        });
+      }
+    }
+
+    // Prisma 스키마에 맞게 데이터 변환
+    const updateData: Prisma.profilesUpdateInput = {
+      updated_at: new Date(),
+    };
+
+    // ProfileFormData 필드들 변환
+    if (data.name !== undefined) updateData.name = data.name;
+    if (data.email !== undefined) updateData.email = data.email;
+    if (data.phone !== undefined) updateData.phone = data.phone;
+    if (data.position !== undefined) updateData.position = data.position;
+    if (data.department !== undefined) updateData.department = data.department;
+    if (data.bio !== undefined) updateData.bio = data.bio;
+
+    // CompanyFormData 필드들 변환
+    if (data.companyName !== undefined)
+      updateData.company_name = data.companyName;
+    if (data.companyAddress !== undefined)
+      updateData.company_address = data.companyAddress;
+    if (data.businessType !== undefined)
+      updateData.business_type = data.businessType;
+    if (data.company_description !== undefined)
+      updateData.company_description = data.company_description;
+    if (data.company_website !== undefined)
+      updateData.company_website = data.company_website;
+
+    // 타입 변환이 필요한 필드들
+    if (data.employee_count !== undefined) {
+      updateData.employee_count = data.employee_count
+        ? parseInt(data.employee_count)
+        : null;
+    }
+
+    if (data.establishment_date !== undefined) {
+      updateData.establishment_date = data.establishment_date
+        ? new Date(data.establishment_date)
+        : null;
+    }
+    console.log("[ProfileSetup] 프로필 업데이트 데이터:", updateData);
     try {
       await prisma.profiles.update({
         where: {
           id: user.id,
         },
-        data: {
-          ...data,
-          updated_at: new Date(),
-        },
+        data: updateData,
       });
     } catch (updateError) {
       throwBusinessError(

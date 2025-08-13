@@ -3,8 +3,17 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiClient } from "@/lib/utils/data/api-client";
 import { termsKeys } from "@/lib/hooks/query/query-keys";
-import { UpdateTermRequest, ActivateTermRequest } from "@/lib/types/terms";
 import { TermManagement, UserConsent, TermType } from "@/lib/types/common";
+
+// 약관 요청 타입 (이 파일에서만 사용하므로 인라인 정의)
+interface UpdateTermRequest {
+  id: string;
+  title?: string;
+  content?: string;
+  version?: string;
+  is_active?: boolean;
+  is_draft?: boolean;
+}
 
 /**
  * 관리자용 약관 목록 조회 훅
@@ -154,9 +163,10 @@ export function useActivateTermMutation() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (
-      activateData: ActivateTermRequest
-    ): Promise<{ term: TermManagement; message: string }> => {
+    mutationFn: async (activateData: {
+      termId: string;
+      activate: boolean;
+    }): Promise<{ term: TermManagement; message: string }> => {
       const response = await apiClient("/api/admin/terms/activate", {
         method: "POST",
         body: JSON.stringify(activateData),

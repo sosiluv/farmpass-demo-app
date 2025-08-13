@@ -2,6 +2,7 @@
 
 import { useCleanupStatusQuery } from "./use-cleanup-query";
 import { useExecuteCleanupMutation } from "./use-cleanup-mutations";
+import type { CleanupResult } from "@/lib/types/system";
 
 /**
  * 정리 관리자 통합 Hook
@@ -16,7 +17,9 @@ export function useCleanupManager() {
 
   const executeCleanupMutation = useExecuteCleanupMutation();
 
-  const executeCleanup = async (type: "system_logs" | "all") => {
+  const executeCleanup = async (
+    type: "system_logs" | "all"
+  ): Promise<CleanupResult> => {
     try {
       const result = await executeCleanupMutation.mutateAsync({ type });
       return result;

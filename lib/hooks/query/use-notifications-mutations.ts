@@ -4,8 +4,15 @@ import { useAuthenticatedMutation } from "@/lib/hooks/query-utils";
 import { apiClient } from "@/lib/utils/data/api-client";
 import { notificationKeys } from "./query-keys";
 import { useQueryClient } from "@tanstack/react-query";
-import type { NotificationsResponse } from "@/lib/types/notification";
+import type { Notification } from "@/lib/types/common";
 
+interface NotificationsResponse {
+  notifications: Notification[];
+  total: number;
+  page: number;
+  totalPages: number;
+  pageSize: number;
+}
 /**
  * 알림 읽음 처리 Hook
  */

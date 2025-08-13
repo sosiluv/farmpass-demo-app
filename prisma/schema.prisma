@@ -126,10 +126,10 @@ model profiles {
   farms                      farms[]
   notifications              notifications[]
   push_subscriptions         push_subscriptions[]
+  terms_management           terms_management[]
   user_consents              user_consents[]
   user_notification_settings user_notification_settings?
   visitor_entries            visitor_entries[]
-  terms_management           terms_management[]
 
   @@index([account_type], map: "idx_profiles_account_type")
   @@index([created_at], map: "idx_profiles_created_at")
@@ -175,7 +175,7 @@ model visitor_entries {
   updated_at         DateTime  @default(now()) @db.Timestamptz(6)
   profile_photo_url  String?
   farms              farms     @relation(fields: [farm_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
-  profiles           profiles? @relation(fields: [registered_by], references: [id], onDelete: SetNull, onUpdate: NoAction)
+  profiles           profiles? @relation(fields: [registered_by], references: [id], onUpdate: NoAction)
 
   @@index([created_at], map: "idx_visitor_entries_created_at")
   @@index([farm_id], map: "idx_visitor_entries_farm_id")
@@ -211,11 +211,11 @@ model user_notification_settings {
   user_id             String   @unique @db.Uuid
   notification_method String   @db.VarChar(20)
   visitor_alerts      Boolean  @default(true)
-  system_alerts       Boolean  @default(true)
   kakao_user_id       String?  @db.VarChar(100)
   is_active           Boolean  @default(false)
   created_at          DateTime @default(now()) @db.Timestamptz(6)
   updated_at          DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+  system_alerts       Boolean  @default(true)
   profiles            profiles @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
 }
 
@@ -236,18 +236,18 @@ model notifications {
 }
 
 model terms_management {
-  id           String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  type         String    
-  title        String
-  content      String
-  version      String
-  is_active    Boolean   @default(false)
-  is_draft     Boolean   @default(true)
-  published_at DateTime? @db.Timestamptz(6)
-  created_by   String?   @db.Uuid
-  created_at   DateTime  @default(now()) @db.Timestamptz(6)
-  updated_at   DateTime  @default(now()) @db.Timestamptz(6)
-  profiles     profiles? @relation(fields: [created_by], references: [id], onDelete: SetNull, onUpdate: NoAction)
+  id            String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  type          String
+  title         String
+  content       String
+  version       String
+  is_active     Boolean         @default(false)
+  is_draft      Boolean         @default(true)
+  published_at  DateTime?       @db.Timestamptz(6)
+  created_by    String?         @db.Uuid
+  created_at    DateTime        @default(now()) @db.Timestamptz(6)
+  updated_at    DateTime        @default(now()) @db.Timestamptz(6)
+  profiles      profiles?       @relation(fields: [created_by], references: [id], onUpdate: NoAction)
   user_consents user_consents[]
 
   @@unique([type, version])
@@ -257,15 +257,15 @@ model terms_management {
 }
 
 model user_consents {
-  id           String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  user_id      String    @db.Uuid
-  term_id      String    @db.Uuid
-  agreed       Boolean   @default(false)
-  agreed_at    DateTime? @db.Timestamptz(6)
-  created_at   DateTime  @default(now()) @db.Timestamptz(6)
-  updated_at   DateTime  @default(now()) @db.Timestamptz(6)
-  profiles     profiles  @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  id               String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id          String           @db.Uuid
+  agreed           Boolean          @default(false)
+  agreed_at        DateTime?        @db.Timestamptz(6)
+  created_at       DateTime         @default(now()) @db.Timestamptz(6)
+  updated_at       DateTime         @default(now()) @db.Timestamptz(6)
+  term_id          String           @db.Uuid
   terms_management terms_management @relation(fields: [term_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  profiles         profiles         @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
   @@unique([user_id, term_id])
   @@index([user_id], map: "idx_user_consents_user_id")

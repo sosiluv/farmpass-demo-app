@@ -25,7 +25,7 @@ export const BUTTONS = {
   NO_ACCOUNT: "계정이 없으신가요?",
   HAS_ACCOUNT: "이미 계정이 있으신가요?",
   FORGOT_PASSWORD: "비밀번호를 잊으셨나요?",
-  BACK_TO_LOGIN: "로그인으로 돌아가기",
+  BACK_TO_LOGIN: "로그인 페이지로 돌아가기",
 
   LOGIN_LOADING: "로그인 중...",
   REDIRECTING: "이동 중...",

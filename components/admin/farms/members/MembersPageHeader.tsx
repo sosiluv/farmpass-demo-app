@@ -1,6 +1,6 @@
 import { Users } from "lucide-react";
 import { PageHeader } from "@/components/layout";
-import { AddMemberDialog } from "./AddMemberDialog";
+import { AddMemberSheet } from "./AddMemberSheet";
 import { PAGE_HEADER } from "@/lib/constants/farms";
 
 interface Farm {
@@ -28,7 +28,7 @@ export function MembersPageHeader({
       )}
       icon={Users}
       actions={
-        <AddMemberDialog
+        <AddMemberSheet
           canManageMembers={canManageMembers}
           onAddMember={onAddMember}
           farmId={farm.id}

@@ -6,24 +6,22 @@ import { useAuth } from "@/components/providers/auth-provider";
 import {
   MembersPageHeader,
   MembersList,
-  DeleteMemberDialog,
 } from "@/components/admin/farms/members";
+import { DeleteConfirmSheet } from "@/components/ui/confirm-sheet";
 import { ErrorBoundary } from "@/components/error/error-boundary";
-import { StatsSkeleton, TableSkeleton } from "@/components/common/skeletons";
+import { StatsSkeleton, TableSkeleton } from "@/components/ui/skeleton";
 import { AdminError } from "@/components/error/admin-error";
 import { ERROR_CONFIGS } from "@/lib/constants/error";
 import { useDataFetchTimeout } from "@/hooks/system/useTimeout";
-// React Query Hooks
 import { useFarmsQuery } from "@/lib/hooks/query/use-farms-query";
-import { useFarmMembersQuery } from "@/lib/hooks/query/use-farm-members-query";
 import { useProfileQuery } from "@/lib/hooks/query/use-profile-query";
 
-// React Query Mutations
 import {
   useInviteMemberMutation,
   useUpdateMemberRoleMutation,
   useRemoveMemberMutation,
 } from "@/lib/hooks/query/use-farm-member-mutations";
+import { LABELS } from "@/lib/constants/farms";
 
 interface PageProps {
   params: {
@@ -39,8 +37,7 @@ export default function MembersPage({ params }: PageProps) {
   const { showInfo, showSuccess, showError } = useCommonToast();
 
   // React Query Hooks
-  const farmsQuery = useFarmsQuery();
-  const membersQuery = useFarmMembersQuery(farmId);
+  const farmsQuery = useFarmsQuery(profile?.id, true); // 멤버 정보 포함해서 조회
 
   // React Query Mutations
   const inviteMemberMutation = useInviteMemberMutation();
@@ -49,8 +46,19 @@ export default function MembersPage({ params }: PageProps) {
 
   // 데이터 선택
   const farms = farmsQuery.farms || [];
-  const members = membersQuery.members || [];
-  const membersLoading = membersQuery.loading;
+  const currentFarm = farms.find((f) => f.id === farmId);
+
+  // farm_members를 MemberWithProfile 형식으로 변환
+  const members =
+    currentFarm?.farm_members?.map((member) => ({
+      ...member,
+      representative_name: member.profiles.name,
+      email: member.profiles.email,
+      profile_image_url: member.profiles.profile_image_url,
+      avatar_seed: member.profiles.avatar_seed,
+    })) || [];
+
+  const membersLoading = farmsQuery.loading;
   const farmsLoading = farmsQuery.loading;
 
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -61,7 +69,6 @@ export default function MembersPage({ params }: PageProps) {
     membersLoading || farmsLoading,
     () => {
       farmsQuery.refetch();
-      membersQuery.refetch();
     },
     { timeout: 10000 }
   );
@@ -232,11 +239,19 @@ export default function MembersPage({ params }: PageProps) {
           onRoleChange={handleRoleChange}
         />
 
-        <DeleteMemberDialog
+        <DeleteConfirmSheet
           open={deleteDialogOpen}
           onOpenChange={setDeleteDialogOpen}
           onConfirm={handleDelete}
           isLoading={removeMemberMutation.isPending}
+          title={LABELS.REMOVE_MEMBER_TITLE}
+          description={LABELS.REMOVE_MEMBER_DESCRIPTION}
+          itemName={
+            memberToDelete
+              ? members.find((m) => m.id === memberToDelete)
+                  ?.representative_name
+              : LABELS.MEMBERS
+          }
         />
       </div>
     </ErrorBoundary>

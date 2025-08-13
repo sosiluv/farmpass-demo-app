@@ -6,7 +6,6 @@ import { apiClient } from "@/lib/utils/data/api-client";
 import { notificationKeys } from "./query-keys";
 import { useSupabaseRealtime } from "@/hooks/notification/useSupabaseRealtime";
 import type {
-  Notification,
   NotificationsResponse,
   NotificationsFilters,
 } from "@/lib/types/notification";
@@ -67,8 +66,7 @@ export function useNotificationsQuery(filters: NotificationsFilters = {}) {
 
   return {
     // 데이터
-    notifications: (notificationsQuery.data?.notifications ||
-      []) as Notification[],
+    notifications: notificationsQuery.data?.notifications || [],
     total: notificationsQuery.data?.total || 0,
     page: notificationsQuery.data?.page || 1,
     totalPages: notificationsQuery.data?.totalPages || 1,

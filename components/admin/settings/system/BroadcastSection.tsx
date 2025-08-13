@@ -7,7 +7,7 @@ import { Send } from "lucide-react";
 import { useCommonToast } from "@/lib/utils/notification/toast-messages";
 import { useBroadcastMutation } from "@/lib/hooks/query/use-broadcast-mutations";
 import SettingsCardHeader from "../SettingsCardHeader";
-import { BroadcastForm, BroadcastAlert, BroadcastResult } from "./broadcast";
+import { BroadcastForm, BroadcastResult } from "./broadcast";
 import { PAGE_HEADER } from "@/lib/constants/settings";
 
 interface BroadcastSectionProps {
@@ -127,7 +127,6 @@ export default function BroadcastSection({ isLoading }: BroadcastSectionProps) {
           description={PAGE_HEADER.BROADCAST_SECTION_DESC}
         />
         <CardContent className="space-y-6">
-          <BroadcastAlert />
           <BroadcastForm
             formData={formData}
             onInputChange={handleInputChange}

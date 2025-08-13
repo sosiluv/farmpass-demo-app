@@ -2,11 +2,26 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { createClient } from "@/lib/supabase/client";
 import { devLog } from "@/lib/utils/logging/dev-logger";
 import { socialLinkingKeys } from "./query-keys";
-import type { SocialIdentity } from "@/lib/types/account";
 import {
   mapRawErrorToCode,
   getErrorMessage,
 } from "@/lib/utils/error/errorUtil";
+
+interface SocialIdentity {
+  id: string;
+  user_id: string;
+  identity_id: string;
+  provider: string;
+  identity_data:
+    | {
+        email?: string;
+        name?: string;
+        avatar_url?: string;
+      }
+    | undefined;
+  created_at: string;
+  last_sign_in_at: string;
+}
 
 const supabase = createClient();
 

@@ -44,6 +44,8 @@ ALTER TABLE public.system_logs ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.push_subscriptions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.user_notification_settings ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.notifications ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.terms_management ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.user_consents ENABLE ROW LEVEL SECURITY;
 
 -- =================================
 -- 관리자 확인 함수 (RLS 우회 방식)
@@ -275,6 +277,55 @@ COMMENT ON POLICY "Users can manage own notification settings" ON public.user_no
 
 COMMENT ON POLICY "Admins can manage all notification settings" ON public.user_notification_settings IS 
 '관리자는 모든 알림 설정에 대한 전체 권한을 가짐';
+
+-- =================================
+-- terms_management 테이블 정책
+-- =================================
+
+-- 관리자는 모든 약관 관리에 대한 전체 권한
+CREATE POLICY "Admins can manage all terms" ON public.terms_management
+  FOR ALL
+  USING (public.is_system_admin())
+  WITH CHECK (public.is_system_admin());
+
+-- 인증된 사용자는 활성화된 약관만 조회 가능
+CREATE POLICY "Users can view active terms" ON public.terms_management
+  FOR SELECT
+  USING (
+    auth.uid() IS NOT NULL AND is_active = true
+  );
+
+COMMENT ON POLICY "Admins can manage all terms" ON public.terms_management IS 
+'약관 관리는 관리자만 생성, 조회, 수정, 삭제할 수 있음';
+
+COMMENT ON POLICY "Users can view active terms" ON public.terms_management IS 
+'인증된 사용자는 활성화된 약관만 조회할 수 있음';
+
+-- =================================
+-- user_consents 테이블 정책
+-- =================================
+
+-- 사용자는 자신의 동의 정보만 조회/수정 가능
+CREATE POLICY "Users can manage own consents" ON public.user_consents
+  FOR ALL
+  USING (
+    auth.uid() IS NOT NULL AND user_id = auth.uid()
+  )
+  WITH CHECK (
+    auth.uid() IS NOT NULL AND user_id = auth.uid()
+  );
+
+-- 관리자는 모든 사용자 동의 정보에 대한 전체 권한
+CREATE POLICY "Admins can manage all consents" ON public.user_consents
+  FOR ALL
+  USING (public.is_system_admin())
+  WITH CHECK (public.is_system_admin());
+
+COMMENT ON POLICY "Users can manage own consents" ON public.user_consents IS 
+'사용자는 자신의 동의 정보만 조회/수정할 수 있음';
+
+COMMENT ON POLICY "Admins can manage all consents" ON public.user_consents IS 
+'관리자는 모든 사용자 동의 정보에 대한 전체 권한을 가짐';
 
 
 

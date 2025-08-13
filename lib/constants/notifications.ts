@@ -79,7 +79,7 @@ export const LABELS = {
   FARM_COUNT: "{count}개 농장",
   NOTIFICATION_RECEIVING: "알림 수신 중",
 
-  // NotificationPermissionDialog
+  // NotificationPermission
   ALLOW_NOTIFICATIONS: "알림을 허용하시겠어요?",
   RESUBSCRIBE_NOTIFICATIONS: "알림을 다시 구독하시겠어요?",
   ALLOW_DESCRIPTION: "농장 관리에 필요한 중요한 알림을 놓치지 마세요",

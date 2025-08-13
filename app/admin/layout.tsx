@@ -2,15 +2,20 @@
 
 import type React from "react";
 import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
-import { AdminSidebar, Header, MobileMenuButton } from "@/components/layout";
+import {
+  AdminSidebar,
+  Header,
+  MobileMenuButton,
+  EdgeSwipeArea,
+} from "@/components/layout";
 import { ProtectedRoute } from "@/components/providers/protected-route";
 import { MaintenanceBanner } from "@/components/maintenance";
 import { ErrorBoundary } from "@/components/error/error-boundary";
 import { ERROR_CONFIGS } from "@/lib/constants/error";
-import { ThemeProvider } from "@/components/common/theme-provider";
+import { ThemeProvider } from "@/components/providers/theme-provider";
 import { DialogManager } from "@/components/common/DialogManager";
 import { AuthProvider } from "@/components/providers/auth-provider";
-import { PWAUpdater } from "@/components/common/pwa-updater";
+import { PWAUpdater } from "@/components/providers/pwa-updater";
 
 export default function AdminLayout({
   children,
@@ -41,6 +46,8 @@ export default function AdminLayout({
                 {/* </main> */}
               </SidebarInset>
               <MobileMenuButton />
+              {/* 화면 가장자리에서 스와이프로 사이드바 열기 */}
+              <EdgeSwipeArea />
               {/* Admin 페이지에서만 알림 권한 다이얼로그 관리 */}
               <DialogManager />
             </SidebarProvider>

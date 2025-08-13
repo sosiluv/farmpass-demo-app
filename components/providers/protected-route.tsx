@@ -3,7 +3,7 @@
 import { useAuth } from "@/components/providers/auth-provider";
 import { useRouter } from "next/navigation";
 import { useEffect, useState, useRef } from "react";
-import { Loader2, RefreshCw } from "lucide-react";
+import { RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { BUTTONS } from "@/lib/constants/common";
 import { useProfileQuery } from "@/lib/hooks/query/use-profile-query";
@@ -22,6 +22,11 @@ export function ProtectedRoute({
   redirectTo = "/auth/login",
 }: ProtectedRouteProps) {
   const { state } = useAuth();
+  const isAuthenticated = state.status === "authenticated";
+  const isAdmin =
+    state.status === "authenticated" && state.user?.app_metadata?.isAdmin;
+  const isLoading = state.status === "loading";
+  const isInitializing = state.status === "initializing";
   const userId = state.status === "authenticated" ? state.user.id : undefined;
   const { data: profile } = useProfileQuery(userId);
   const router = useRouter();
@@ -34,11 +39,7 @@ export function ProtectedRoute({
 
   useEffect(() => {
     // 인증되지 않은 경우 로그아웃 처리 후 리다이렉트
-    if (
-      state.status === "unauthenticated" &&
-      !isLoggingOut.current &&
-      !hasRedirected.current
-    ) {
+    if (!isAuthenticated && !isLoggingOut.current && !hasRedirected.current) {
       const handleUnauthenticated = async () => {
         if (isLoggingOut.current) return; // 이미 처리 중이면 스킵
 
@@ -60,21 +61,16 @@ export function ProtectedRoute({
     }
 
     // 관리자 권한이 필요한데 권한이 없는 경우
-    if (
-      requireAdmin &&
-      state.status === "authenticated" &&
-      (!profile || profile.account_type !== "admin") &&
-      !hasRedirected.current
-    ) {
+    if (requireAdmin && isAuthenticated && !isAdmin && !hasRedirected.current) {
       hasRedirected.current = true;
       router.push("/unauthorized");
       return;
     }
-  }, [state.status, requireAdmin, redirectTo, router, profile, signOut]);
+  }, [isAuthenticated, isAdmin, redirectTo, router, profile, signOut]);
 
   // 로딩 타임아웃 처리 (10초)
   useEffect(() => {
-    if (state.status === "loading" || state.status === "initializing") {
+    if (isLoading || isInitializing) {
       const timeout = setTimeout(() => {
         setLoadingTimeout(true);
       }, 5000);
@@ -83,17 +79,17 @@ export function ProtectedRoute({
     } else {
       setLoadingTimeout(false);
     }
-  }, [state.status]);
+  }, [isLoading, isInitializing]);
 
   // 앱 초기화 중이거나 로딩 중일 때
-  if (state.status === "initializing" || state.status === "loading") {
+  if (isInitializing || isLoading) {
     let loadingText = "페이지를 불러오는 중...";
 
     if (loadingTimeout) {
       loadingText = "로딩이 지연되고 있습니다. 네트워크 상태를 확인해주세요.";
-    } else if (state.status === "initializing") {
+    } else if (isInitializing) {
       loadingText = "시스템을 초기화하는 중...";
-    } else if (state.status === "loading") {
+    } else if (isLoading) {
       loadingText = "인증 정보를 확인하는 중...";
     }
 
@@ -105,6 +101,7 @@ export function ProtectedRoute({
             loadingTimeout ? "새로고침을 시도해보세요" : "잠시만 기다려주세요"
           }
           variant="lottie"
+          fullScreen={true}
         />
         {loadingTimeout && (
           <div className="fixed bottom-8 left-1/2 transform -translate-x-1/2 z-50">
@@ -124,21 +121,21 @@ export function ProtectedRoute({
   }
 
   // 인증되지 않은 경우 (리다이렉트 처리됨)
-  if (state.status === "unauthenticated") {
+  if (!isAuthenticated) {
     return (
       <>
         {/* 로그인 페이지로 이동 중 로딩 UI */}
-        <PageLoading text="로그인 페이지를 불러오는 중..." variant="lottie" />
+        <PageLoading
+          text="로그인 페이지를 불러오는 중..."
+          variant="lottie"
+          fullScreen={true}
+        />
       </>
     );
   }
 
   // 권한 부족 (리다이렉트 처리됨)
-  if (
-    requireAdmin &&
-    state.status === "authenticated" &&
-    (!profile || profile.account_type !== "admin")
-  ) {
+  if (requireAdmin && isAuthenticated && !isAdmin) {
     return null;
   }
 

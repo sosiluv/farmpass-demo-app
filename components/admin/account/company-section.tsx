@@ -15,11 +15,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { AddressSearch } from "@/components/common/address-search";
+import { AddressSearch } from "@/components/ui/address-search";
 import { ErrorBoundary } from "@/components/error/error-boundary";
 import { ERROR_CONFIGS } from "@/lib/constants/error";
 import { useAccountForm } from "@/hooks/account/useAccountForm";
-import type { CompanySectionProps, CompanyFormData } from "@/lib/types/account";
+import type { CompanyFormData } from "@/lib/utils/validation/company-validation";
+import { companyFormSchema } from "@/lib/utils/validation/company-validation";
+import type { Profile } from "@/lib/types/common";
+import { useCommonToast } from "@/lib/utils/notification/toast-messages";
 import AccountCardHeader from "./AccountCardHeader";
 import {
   EMPLOYEE_COUNT_OPTIONS,
@@ -30,11 +33,18 @@ import {
   PAGE_HEADER,
 } from "@/lib/constants/account";
 
+interface CompanySectionProps {
+  profile: Profile;
+  loading: boolean;
+  onSave: (data: CompanyFormData) => Promise<void>;
+}
+
 export function CompanySection({
   profile,
   loading,
   onSave,
 }: CompanySectionProps) {
+  const { showError } = useCommonToast();
   // 폼 데이터 관리 - 안정화된 initialData
   const initialData = useMemo<CompanyFormData>(
     () => ({
@@ -65,6 +75,14 @@ export function CompanySection({
 
   const handleSave = async () => {
     if (!hasChanges || loading) return;
+
+    const result = companyFormSchema.safeParse(formData);
+    if (!result.success) {
+      const firstError =
+        result.error.errors[0]?.message || "입력값을 확인하세요.";
+      showError("회사 정보 저장 실패", firstError);
+      return;
+    }
 
     try {
       await onSave(formData);

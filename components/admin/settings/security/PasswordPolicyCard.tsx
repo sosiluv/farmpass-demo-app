@@ -97,9 +97,6 @@ export default function PasswordPolicyCard({
               >
                 {LABELS.PASSWORD_SPECIAL_CHAR}
               </Label>
-              <p className="text-sm sm:text-base text-muted-foreground">
-                {LABELS.PASSWORD_SPECIAL_CHAR_DESC}
-              </p>
             </div>
             <Switch
               id="passwordRequireSpecialChar"
@@ -118,9 +115,6 @@ export default function PasswordPolicyCard({
               >
                 {LABELS.PASSWORD_NUMBER}
               </Label>
-              <p className="text-sm sm:text-base text-muted-foreground">
-                {LABELS.PASSWORD_NUMBER_DESC}
-              </p>
             </div>
             <Switch
               id="passwordRequireNumber"
@@ -139,9 +133,6 @@ export default function PasswordPolicyCard({
               >
                 {LABELS.PASSWORD_UPPERCASE}
               </Label>
-              <p className="text-sm sm:text-base text-muted-foreground">
-                {LABELS.PASSWORD_UPPERCASE_DESC}
-              </p>
             </div>
             <Switch
               id="passwordRequireUpperCase"
@@ -160,9 +151,6 @@ export default function PasswordPolicyCard({
               >
                 {LABELS.PASSWORD_LOWERCASE}
               </Label>
-              <p className="text-sm sm:text-base text-muted-foreground">
-                {LABELS.PASSWORD_LOWERCASE_DESC}
-              </p>
             </div>
             <Switch
               id="passwordRequireLowerCase"

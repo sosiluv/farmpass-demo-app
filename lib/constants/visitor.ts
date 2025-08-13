@@ -16,10 +16,10 @@ export const PAGE_HEADER = {
 } as const;
 
 export const BUTTONS = {
-  VISITOR_FORM_DIALOG_CANCEL: "취소",
-  VISITOR_FORM_DIALOG_CREATE_BUTTON: "등록",
-  VISITOR_FORM_DIALOG_EDIT_BUTTON: "수정",
-  VISITOR_FORM_DIALOG_PROCESSING: "처리 중...",
+  VISITOR_FORM_SHEET_CANCEL: "취소",
+  VISITOR_FORM_SHEET_CREATE_BUTTON: "등록",
+  VISITOR_FORM_SHEET_EDIT_BUTTON: "수정",
+  VISITOR_FORM_SHEET_PROCESSING: "처리 중...",
 
   EXPORT_ACTIONS_RESET: "초기화",
   EXPORT_ACTIONS_EXPORTING: "내보내는 중...",
@@ -89,8 +89,7 @@ export const LABELS = {
   VISITOR_TABLE_DISINFECTION_STATUS: "방역",
   VISITOR_TABLE_DEFAULT_PURPOSE: "기타",
   VISITOR_TABLE_DETAILS_TITLE: "방문자 상세 정보",
-  VISITOR_TABLE_DETAILS_DESC:
-    "방문자의 기본 정보, 방문 정보, 방역 상태 등을 확인합니다.",
+  VISITOR_TABLE_DETAILS_DESC: "방문자의 방문 정보, 방역 상태 등을 확인합니다.",
   // 활성 필터 태그 라벨
   ACTIVE_FILTERS_LABEL: "활성 필터:",
   ACTIVE_FILTERS_SEARCH: '검색: "{searchTerm}"',
@@ -140,7 +139,6 @@ export const LABELS = {
   QUICK_FILTERS_MONTH: "30일",
   QUICK_FILTERS_ALL: "전체",
   // 방문자 상세 모달 라벨
-  VISITOR_DETAIL_TITLE: "방문자 상세 정보",
   VISITOR_DETAIL_BASIC_INFO: "기본 정보",
   VISITOR_DETAIL_CONTACT: "연락처",
   VISITOR_DETAIL_ADDRESS: "주소",
@@ -167,12 +165,12 @@ export const LABELS = {
   VISITOR_FARM_SELECTOR_ALL_FARMS: "전체 농장",
   VISITOR_FARM_SELECTOR_FARM_NOT_FOUND: "농장을 찾을 수 없음",
 
-  // VisitorFormDialog
-  VISITOR_FORM_DIALOG_CREATE_TITLE: "방문자 등록",
-  VISITOR_FORM_DIALOG_EDIT_TITLE: "방문자 정보 수정",
-  VISITOR_FORM_DIALOG_CREATE_DESC: "새로운 방문자를 등록합니다.",
-  VISITOR_FORM_DIALOG_EDIT_DESC: "방문자 정보를 수정합니다.",
-  VISITOR_FORM_DIALOG_LOADING: "데이터를 불러오는 중...",
+  // VisitorFormSheet
+  VISITOR_FORM_SHEET_CREATE_TITLE: "방문자 등록",
+  VISITOR_FORM_SHEET_EDIT_TITLE: "방문자 정보 수정",
+  VISITOR_FORM_SHEET_CREATE_DESC: "새로운 방문자를 등록합니다.",
+  VISITOR_FORM_SHEET_EDIT_DESC: "방문자 정보를 수정합니다.",
+  VISITOR_FORM_SHEET_LOADING: "데이터를 불러오는 중...",
 
   // VisitorStats
   VISITOR_STATS_TOTAL_VISITORS: "총 방문자",

@@ -225,7 +225,6 @@ export async function apiClient(input: RequestInfo, init?: ApiClientOptions) {
       if (!isLoginApi && !skipAuthRefresh) {
         const refreshSuccess = await refreshToken();
         if (refreshSuccess) {
-          console.log("토큰 갱신 후 요청 재시도:", input);
           return apiClient(input, { ...init, skipAuthRefresh: true });
         }
       }

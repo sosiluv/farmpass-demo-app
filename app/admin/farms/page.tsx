@@ -5,24 +5,24 @@ import React, { useState } from "react";
 import { useFarmMutations } from "@/lib/hooks/query/use-farm-mutations";
 import { useAuth } from "@/components/providers/auth-provider";
 import { useCommonToast } from "@/lib/utils/notification/toast-messages";
-import { Farm } from "@/lib/types/farm";
+import { Farm } from "@/lib/types/common";
 import { FarmsList } from "@/components/admin/farms/FarmsList";
 import { FarmsPageHeader } from "@/components/admin/farms/FarmsPageHeader";
 import { EmptyFarmsState } from "@/components/admin/farms/EmptyFarmsState";
-import { DeleteConfirmDialog } from "@/components/admin/farms/DeleteConfirmDialog";
+import { DeleteConfirmSheet } from "@/components/ui/confirm-sheet";
 import { Input } from "@/components/ui/input";
-import { StatsSkeleton, TableSkeleton } from "@/components/common/skeletons";
+import { StatsSkeleton, TableSkeleton } from "@/components/ui/skeleton";
 import { ErrorBoundary } from "@/components/error/error-boundary";
 import { ERROR_CONFIGS } from "@/lib/constants/error";
 import { LABELS, PLACEHOLDERS } from "@/lib/constants/farms";
-import { ResponsivePagination } from "@/components/common/responsive-pagination";
+import { ResponsivePagination } from "@/components/ui/responsive-pagination";
 import type { FarmFormValues } from "@/lib/utils/validation";
 import { useProfileQuery } from "@/lib/hooks/query/use-profile-query";
 import { useFarmsQuery } from "@/lib/hooks/query/use-farms-query";
 
 export default function FarmsPage() {
   const { showInfo, showSuccess, showError } = useCommonToast();
-  const [dialogOpen, setDialogOpen] = useState(false);
+  const [sheetOpen, setSheetOpen] = useState(false);
   const [editingFarm, setEditingFarm] = useState<Farm | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [farmToDelete, setFarmToDelete] = useState<string | null>(null);
@@ -32,8 +32,7 @@ export default function FarmsPage() {
   const userId = state.status === "authenticated" ? state.user.id : undefined;
   const { data: profile } = useProfileQuery(userId);
 
-  // useFarmsContext 대신 useFarmsQuery 직접 사용
-  const { farms, isLoading, error } = useFarmsQuery(profile?.id);
+  const { farms, isLoading, error } = useFarmsQuery(profile?.id, true);
 
   const {
     createFarmAsync,
@@ -57,12 +56,12 @@ export default function FarmsPage() {
 
   const handleAddClick = () => {
     setEditingFarm(null);
-    setDialogOpen(true);
+    setSheetOpen(true);
   };
 
   const handleEdit = (farm: Farm) => {
     setEditingFarm(farm);
-    setDialogOpen(true);
+    setSheetOpen(true);
   };
 
   const handleDelete = (farmId: string) => {
@@ -84,7 +83,7 @@ export default function FarmsPage() {
         const result = await createFarmAsync(values);
         showSuccess("농장 등록 완료", result.message);
       }
-      setDialogOpen(false);
+      setSheetOpen(false);
       setEditingFarm(null);
     } catch (error) {
       const errorMessage =
@@ -144,8 +143,8 @@ export default function FarmsPage() {
     return (
       <div className="flex-1 space-y-4 md:space-y-6 px-4 md:px-6 lg:px-8 pt-3 pb-4 md:pb-6 lg:pb-8">
         <FarmsPageHeader
-          dialogOpen={false}
-          onDialogOpenChange={() => {}}
+          sheetOpen={false}
+          onSheetOpenChange={() => {}}
           editingFarm={null}
           onSubmit={async () => {}}
           onAddClick={() => {}}
@@ -165,8 +164,8 @@ export default function FarmsPage() {
     >
       <div className="flex-1 space-y-4 md:space-y-6 px-4 md:px-6 lg:px-8 pt-3 pb-4 md:pb-6 lg:pb-8">
         <FarmsPageHeader
-          dialogOpen={dialogOpen}
-          onDialogOpenChange={setDialogOpen}
+          sheetOpen={sheetOpen}
+          onSheetOpenChange={setSheetOpen}
           editingFarm={editingFarm}
           onSubmit={handleSubmit}
           onAddClick={handleAddClick}
@@ -219,11 +218,18 @@ export default function FarmsPage() {
           </ResponsivePagination>
         )}
 
-        <DeleteConfirmDialog
+        <DeleteConfirmSheet
           open={deleteDialogOpen}
           onOpenChange={setDeleteDialogOpen}
           onConfirm={handleConfirmDelete}
           isLoading={isDeleting}
+          title={LABELS.DELETE_FARM_CONFIRM_TITLE}
+          description={LABELS.DELETE_FARM_CONFIRM_DESCRIPTION}
+          itemName={
+            farmToDelete
+              ? farms.find((f) => f.id === farmToDelete)?.farm_name
+              : LABELS.FARM_NAME
+          }
         />
       </div>
     </ErrorBoundary>

@@ -16,7 +16,7 @@ import {
 } from "@/lib/hooks/query/use-notifications-mutations";
 import { LottieLoadingCompact } from "@/components/ui/lottie-loading";
 import { BUTTONS, LABELS } from "@/lib/constants/common";
-import type { Notification } from "@/lib/types/notification";
+import type { Notification } from "@/lib/types/common";
 
 function getNotificationId(n: Notification) {
   return `${n.created_at}_${n.title}_${n.message}`;

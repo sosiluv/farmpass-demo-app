@@ -24,20 +24,10 @@ import {
 } from "@/lib/utils/error/errorUtil";
 import { LOG_MESSAGES } from "@/lib/utils/logging/log-templates";
 import { getClientIP } from "@/lib/server/ip-helpers";
-
-interface VisitorData {
-  fullName: string;
-  phoneNumber: string;
-  address: string;
-  detailedAddress: string;
-  carPlateNumber: string;
-  visitPurpose: string;
-  disinfectionCheck: boolean;
-  notes: string;
-  consentGiven: boolean;
-  profile_photo_url?: string | null;
-  dataRetentionDays?: number;
-}
+import {
+  createVisitorFormSchema,
+  type VisitorFormData,
+} from "@/lib/utils/validation/visitor-validation";
 
 // 농장 멤버들에게 푸시 알림 발송 함수
 async function sendVisitorNotificationToFarmMembers(
@@ -188,22 +178,27 @@ export async function POST(
   }
 
   const farmId = params.farmId;
-  let visitorData: VisitorData | undefined;
+  let visitorData: VisitorFormData | undefined;
   let farm: { id: string; farm_name: string; owner_id: string } | null = null;
 
   try {
-    const requestData = await request.json();
-    if (!requestData || typeof requestData !== "object") {
-      throwBusinessError("INVALID_REQUEST_DATA", {
-        operation: "visitor_registration",
-      });
-    }
-    visitorData = requestData as VisitorData;
-    const cookieStore = cookies();
-
-    // 시스템 설정 조회 (캐시 무효화 후 조회)
+    // 시스템 설정 조회 (ZOD 스키마 생성을 위해 먼저 조회)
     invalidateSystemSettingsCache();
     const settings = await getSystemSettings();
+
+    const requestData: VisitorFormData = await request.json();
+
+    // ZOD 스키마로 검증
+    const visitorSchema = createVisitorFormSchema(settings);
+    const validation = visitorSchema.safeParse(requestData);
+    if (!validation.success) {
+      throwBusinessError("INVALID_FORM_DATA", {
+        errors: validation.error.errors,
+        formType: "visitor",
+      });
+    }
+    visitorData = validation.data;
+    const cookieStore = cookies();
 
     // 기존 세션 토큰 확인
     const sessionToken = cookieStore.get("visitor_session")?.value;
@@ -294,18 +289,6 @@ export async function POST(
       });
     }
 
-    // 필수 필드 검증
-    if (!visitorData.fullName?.trim()) {
-      throwBusinessError("MISSING_REQUIRED_FIELDS", {
-        missingFields: ["name"],
-        operation: "visitor_registration",
-      });
-    }
-
-    if (!visitorData.consentGiven) {
-      throwBusinessError("CONSENT_NOT_GIVEN");
-    }
-
     // 오늘 방문자 수 체크 (일일 제한)
     const today = new Date();
     today.setHours(0, 0, 0, 0);
@@ -339,7 +322,7 @@ export async function POST(
           todayCount,
           settings.maxVisitorsPerDay,
           farm.farm_name,
-          visitorData.fullName
+          visitorData.visitor_name
         ),
         "warn",
         undefined,
@@ -352,7 +335,7 @@ export async function POST(
           farm_name: farm.farm_name,
           count: todayCount,
           maxVisitorsPerDay: settings.maxVisitorsPerDay,
-          visitor_name: visitorData.fullName,
+          visitor_name: visitorData.visitor_name,
         },
         request
       );
@@ -370,18 +353,18 @@ export async function POST(
     const visitorCreateData = {
       farm_id: farmId,
       visit_datetime: new Date(),
-      visitor_name: visitorData!.fullName.trim(),
-      visitor_phone: visitorData!.phoneNumber?.trim() || "",
-      visitor_address: `${visitorData!.address?.trim() || ""}${
-        visitorData!.detailedAddress?.trim()
-          ? " " + visitorData!.detailedAddress.trim()
+      visitor_name: visitorData!.visitor_name.trim(),
+      visitor_phone: visitorData!.visitor_phone?.trim() || "",
+      visitor_address: `${visitorData!.visitor_address?.trim() || ""}${
+        visitorData!.detailed_address?.trim()
+          ? " " + visitorData!.detailed_address.trim()
           : ""
       }`,
-      vehicle_number: visitorData!.carPlateNumber?.trim() || null,
-      visitor_purpose: visitorData!.visitPurpose?.trim() || null,
-      disinfection_check: visitorData!.disinfectionCheck || false,
+      vehicle_number: visitorData!.vehicle_number?.trim() || null,
+      visitor_purpose: visitorData!.visitor_purpose?.trim() || null,
+      disinfection_check: visitorData!.disinfection_check || false,
       notes: visitorData!.notes?.trim() || null,
-      consent_given: visitorData!.consentGiven,
+      consent_given: visitorData!.consent_given,
       profile_photo_url: visitorData!.profile_photo_url || null,
       session_token: newSessionToken,
     };
@@ -486,7 +469,7 @@ export async function POST(
     await createSystemLog(
       "VISITOR_CREATE_FAILED",
       LOG_MESSAGES.VISITOR_CREATE_FAILED(
-        visitorData?.fullName || "알 수 없음",
+        visitorData?.visitor_name || "알 수 없음",
         farmId,
         errorMessage
       ),
@@ -500,7 +483,7 @@ export async function POST(
         error_message: errorMessage,
         farm_id: farmId,
         farm_name: farm?.farm_name,
-        visitor_name: visitorData?.fullName || "알 수 없음",
+        visitor_name: visitorData?.visitor_name || "알 수 없음",
         visitor_data: visitorData,
       },
       request

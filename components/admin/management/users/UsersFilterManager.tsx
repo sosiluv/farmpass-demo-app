@@ -1,14 +1,17 @@
 import { useState, useMemo } from "react";
-import type { Profile } from "@/lib/types";
 import type { UserFilters } from "./UserFilters";
+import { type UserProfileWithFarmMembers } from "@/lib/hooks/query/use-admin-users-query";
 
 interface UsersFilterManagerProps {
-  users: Profile[];
+  users: UserProfileWithFarmMembers[];
   children: (data: {
     filters: UserFilters;
     setFilters: (filters: UserFilters) => void;
-    filterFn: (user: Profile) => boolean;
-    sortFn: (a: Profile, b: Profile) => number;
+    filterFn: (user: UserProfileWithFarmMembers) => boolean;
+    sortFn: (
+      a: UserProfileWithFarmMembers,
+      b: UserProfileWithFarmMembers
+    ) => number;
   }) => React.ReactNode;
 }
 
@@ -24,7 +27,7 @@ export function UsersFilterManager({
 
   // 필터링 함수
   const filterFn = useMemo(() => {
-    return (user: Profile) => {
+    return (user: UserProfileWithFarmMembers) => {
       if (filters.search) {
         const searchLower = filters.search.toLowerCase();
         const nameMatch = user.name?.toLowerCase().includes(searchLower);
@@ -51,7 +54,7 @@ export function UsersFilterManager({
 
   // 정렬 함수 (관리자 우선, 같은 역할 내에서는 최신 가입순)
   const sortFn = useMemo(() => {
-    return (a: Profile, b: Profile) => {
+    return (a: UserProfileWithFarmMembers, b: UserProfileWithFarmMembers) => {
       // 관리자가 일반 사용자보다 우선
       if (a.account_type === "admin" && b.account_type !== "admin") {
         return -1;

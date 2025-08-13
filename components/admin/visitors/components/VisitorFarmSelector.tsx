@@ -6,7 +6,7 @@ import {
 } from "@/components/ui/select";
 import { Building2 } from "lucide-react";
 import { getFarmTypeInfo } from "@/lib/constants/farm-types";
-import type { Farm } from "@/lib/types/visitor";
+import type { Farm } from "@/lib/types/common";
 import { LABELS } from "@/lib/constants/visitor";
 
 interface VisitorFarmSelectorProps {

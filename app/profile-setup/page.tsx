@@ -5,8 +5,8 @@ import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useAuth } from "@/components/providers/auth-provider";
+import { useAuthActions } from "@/hooks/auth/useAuthActions";
 import { useProfileQuery } from "@/lib/hooks/query/use-profile-query";
-import { useUserConsentsQuery } from "@/lib/hooks/query/use-user-consents-query";
 import { useUpdateProfileMutation } from "@/lib/hooks/query/use-account-mutations";
 import { useUpdateUserConsentsMutation } from "@/lib/hooks/query/use-user-consents-query";
 import { Button } from "@/components/ui/button";
@@ -15,6 +15,7 @@ import {
   Card,
   CardContent,
   CardDescription,
+  CardFooter,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
@@ -22,21 +23,24 @@ import { PageLoading } from "@/components/ui/loading";
 import { ErrorBoundary } from "@/components/error/error-boundary";
 import { ERROR_CONFIGS } from "@/lib/constants/error";
 import { useCommonToast } from "@/lib/utils/notification/toast-messages";
-import { ArrowLeft, Loader2 } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { useRegistrationStore } from "@/store/use-registration-store";
 import { TermsConsentSheet, NameField, PhoneField } from "@/components/auth";
 import { isProfileComplete } from "@/lib/utils/auth/profile-utils";
 import {
   nameSchema,
-  phoneNumberSchema,
+  phoneSchema,
 } from "@/lib/utils/validation/profile-validation";
 import { BUTTONS, LABELS } from "@/lib/constants/common";
 import * as z from "zod";
+import { motion } from "framer-motion";
+import { Logo } from "@/components/common/logo";
+import Link from "next/link";
 
 // 프로필 폼 스키마
 const profileFormSchema = z.object({
   name: nameSchema,
-  phoneNumber: phoneNumberSchema,
+  phone: phoneSchema,
 });
 
 type ProfileFormData = z.infer<typeof profileFormSchema>;
@@ -45,6 +49,7 @@ export default function ProfileSetupPage() {
   const { state } = useAuth();
   const router = useRouter();
   const { showSuccess, showError } = useCommonToast();
+  const { signOut } = useAuthActions();
 
   const [isLoading, setIsLoading] = useState(false);
   const [showConsentSheet, setShowConsentSheet] = useState(false);
@@ -61,16 +66,13 @@ export default function ProfileSetupPage() {
   const { data: profileData, isLoading: profileLoading } = useProfileQuery(
     state.status === "authenticated" ? state.user.id : undefined
   );
-  const { data: consentData, isLoading: consentLoading } = useUserConsentsQuery(
-    state.status === "authenticated"
-  );
 
   // React Hook Form 설정
   const form = useForm<ProfileFormData>({
     resolver: zodResolver(profileFormSchema),
     defaultValues: {
       name: "",
-      phoneNumber: "",
+      phone: "",
     },
   });
 
@@ -82,51 +84,27 @@ export default function ProfileSetupPage() {
     }
 
     // 로딩 중이면 대기
-    if (profileLoading || consentLoading) {
+    if (profileLoading) {
       return;
-    }
-
-    // 이미 프로필이 완성된 경우
-    if (profileData && isProfileComplete(profileData)) {
-      // 약관 동의 상태 확인
-      if (consentData?.hasAllRequiredConsents) {
-        // 프로필과 약관 모두 완료된 경우 대시보드로 리다이렉트
-        router.replace("/admin/dashboard");
-        return;
-      } else {
-        // 프로필은 완성되었지만 약관 동의가 필요한 경우
-        // 약관 동의 시트를 바로 표시
-        setShowConsentSheet(true);
-        setIsInitialized(true);
-        return;
-      }
     }
 
     // 기존 프로필 데이터가 있으면 폼에 설정
     if (profileData) {
       form.reset({
         name: profileData.name || "",
-        phoneNumber: profileData.phone || "",
+        phone: profileData.phone || "",
       });
     }
 
     setIsInitialized(true);
-  }, [
-    state.status,
-    profileData,
-    consentData,
-    profileLoading,
-    consentLoading,
-    router,
-    form,
-  ]);
+  }, [state.status, profileData, profileLoading, router, form]);
 
   // 프로필 저장 (메모리에만 저장하고 약관 동의 시트 띄우기)
   const handleSubmit = async (data: ProfileFormData) => {
     // 메모리에 프로필 정보 저장
     setProfile({
       name: data.name.trim(),
-      phoneNumber: data.phoneNumber.trim(),
+      phone: data.phone.trim(),
     });
 
     // 약관 동의 시트 띄우기
@@ -148,13 +126,16 @@ export default function ProfileSetupPage() {
         marketingConsent,
       });
 
-      // 1. 프로필 정보 저장 (프로필이 미완성인 경우에만)
-      if (!profileData || !isProfileComplete(profileData)) {
-        const formData = form.getValues();
-        await updateProfileMutation.mutateAsync({
+      // 1. 프로필 정보 저장 (사용자가 입력한 정보가 있는 경우)
+      const formData = form.getValues();
+      const hasProfileChanges = formData.name.trim() || formData.phone.trim();
+
+      if (hasProfileChanges) {
+        const updateData = {
           name: formData.name.trim(),
-          phoneNumber: formData.phoneNumber.trim(),
-        });
+          phone: formData.phone.trim(),
+        };
+        await updateProfileMutation.mutateAsync(updateData);
       }
 
       // 2. 약관 동의 정보 저장
@@ -169,9 +150,9 @@ export default function ProfileSetupPage() {
 
       showSuccess(
         "완료",
-        profileData && isProfileComplete(profileData)
-          ? "약관 동의가 성공적으로 저장되었습니다."
-          : "프로필 정보와 약관 동의가 성공적으로 저장되었습니다."
+        hasProfileChanges
+          ? "프로필 정보와 약관 동의가 성공적으로 저장되었습니다."
+          : "약관 동의가 성공적으로 저장되었습니다."
       );
 
       // 대시보드로 리다이렉트
@@ -189,21 +170,26 @@ export default function ProfileSetupPage() {
   };
 
   // 뒤로가기 처리
-  const handleGoBack = () => {
-    router.back();
+  const handleGoBack = async () => {
+    try {
+      // 약관 동의 시트가 열려있으면 먼저 닫기
+      if (showConsentSheet) {
+        setShowConsentSheet(false);
+        return;
+      }
+
+      // 로그아웃 처리 후 로그인 페이지로 리다이렉트
+      await signOut();
+      router.replace("/auth/login");
+    } catch (error) {
+      console.error("로그아웃 실패:", error);
+      // 로그아웃 실패 시에도 로그인 페이지로 리다이렉트
+      router.replace("/auth/login");
+    }
   };
 
   // 로딩 중이거나 인증 확인 중인 경우
-  if (
-    state.status === "loading" ||
-    profileLoading ||
-    consentLoading ||
-    !isInitialized ||
-    // 프로필과 약관이 모두 완료된 경우도 로딩 상태로 처리하여 깜빡임 방지
-    (profileData &&
-      isProfileComplete(profileData) &&
-      consentData?.hasAllRequiredConsents)
-  ) {
+  if (state.status === "loading" || profileLoading || !isInitialized) {
     return (
       <PageLoading
         text={LABELS.PROFILE_SETUP_LOADING_TEXT}
@@ -219,27 +205,23 @@ export default function ProfileSetupPage() {
       description={ERROR_CONFIGS.LOADING.description}
     >
       <div className="flex min-h-screen items-center justify-center bg-gradient-farm p-4">
-        <div className="w-full max-w-md">
-          {/* 뒤로가기 버튼 */}
-          <div className="mb-6">
-            <Button
-              variant="ghost"
-              onClick={handleGoBack}
-              className="text-gray-600 hover:text-gray-900 hover:bg-gray-100"
-            >
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              {BUTTONS.PROFILE_SETUP_GO_BACK}
-            </Button>
-          </div>
-
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+          className="w-full max-w-md"
+        >
           {/* 프로필이 완성된 경우 약관 동의 안내 */}
           {profileData && isProfileComplete(profileData) ? (
-            <Card className="shadow-lg">
-              <CardHeader className="text-center">
-                <CardTitle className="text-2xl font-bold text-gray-900">
+            <Card className="border-none shadow-soft-lg">
+              <CardHeader className="space-y-1 text-center">
+                <div className="mx-auto mb-4 flex justify-center">
+                  <Logo size="xl" />
+                </div>
+                <CardTitle className="text-2xl">
                   {LABELS.PROFILE_SETUP_CONSENT_REQUIRED_TITLE}
                 </CardTitle>
-                <CardDescription className="text-gray-600">
+                <CardDescription>
                   {LABELS.PROFILE_SETUP_CONSENT_REQUIRED_DESC}
                 </CardDescription>
               </CardHeader>
@@ -259,14 +241,28 @@ export default function ProfileSetupPage() {
                   )}
                 </Button>
               </CardContent>
+              <CardFooter className="flex justify-center">
+                <p className="text-sm text-muted-foreground">
+                  <Link
+                    href="#"
+                    onClick={handleGoBack}
+                    className="font-medium text-primary hover:underline"
+                  >
+                    {BUTTONS.PROFILE_SETUP_GO_BACK}
+                  </Link>
+                </p>
+              </CardFooter>
             </Card>
           ) : (
-            <Card className="shadow-lg">
-              <CardHeader className="text-center">
-                <CardTitle className="text-2xl font-bold text-gray-900">
+            <Card className="border-none shadow-soft-lg">
+              <CardHeader className="space-y-1 text-center">
+                <div className="mx-auto mb-4 flex justify-center">
+                  <Logo size="xl" />
+                </div>
+                <CardTitle className="text-2xl">
                   {LABELS.PROFILE_SETUP_PROFILE_INPUT_TITLE}
                 </CardTitle>
-                <CardDescription className="text-gray-600">
+                <CardDescription>
                   {LABELS.PROFILE_SETUP_PROFILE_INPUT_DESC}
                 </CardDescription>
               </CardHeader>
@@ -288,7 +284,7 @@ export default function ProfileSetupPage() {
                     {/* 연락처 입력 */}
                     <FormField
                       control={form.control}
-                      name="phoneNumber"
+                      name="phone"
                       render={({ field }) => (
                         <PhoneField field={field} loading={isLoading} />
                       )}
@@ -298,7 +294,7 @@ export default function ProfileSetupPage() {
                     <Button
                       type="submit"
                       disabled={isLoading || !form.formState.isValid}
-                      className="w-full h-12 text-base font-semibold bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 shadow-lg hover:shadow-xl transition-all duration-200 rounded-xl"
+                      className="h-12 w-full flex items-center justify-center"
                     >
                       {isLoading
                         ? BUTTONS.PROFILE_SETUP_SAVING
@@ -307,6 +303,17 @@ export default function ProfileSetupPage() {
                   </form>
                 </Form>
               </CardContent>
+              <CardFooter className="flex flex-col">
+                <div className="mt-2 text-center text-sm">
+                  <Link
+                    href="#"
+                    onClick={handleGoBack}
+                    className="text-primary hover:underline"
+                  >
+                    {BUTTONS.PROFILE_SETUP_GO_BACK}
+                  </Link>
+                </div>
+              </CardFooter>
             </Card>
           )}
 
@@ -322,7 +329,7 @@ export default function ProfileSetupPage() {
                 : "register"
             }
           />
-        </div>
+        </motion.div>
       </div>
     </ErrorBoundary>
   );

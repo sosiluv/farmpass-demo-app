@@ -4,15 +4,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiClient } from "@/lib/utils/data";
 import { devLog } from "@/lib/utils/logging/dev-logger";
 import { settingsKeys, adminKeys } from "./query-keys";
-
-interface CleanupResult {
-  success: boolean;
-  message: string;
-  results: {
-    visitor: { deleted: number; total: number };
-    profile: { deleted: number; total: number };
-  };
-}
+import type { CleanupResult } from "@/lib/types/system";
 
 /**
  * Orphan 파일 정리 Mutation Hook

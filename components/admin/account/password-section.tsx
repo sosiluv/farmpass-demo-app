@@ -14,7 +14,6 @@ import {
   createDefaultChangePasswordFormSchema,
   type ChangePasswordFormData,
 } from "@/lib/utils/validation/auth-validation";
-import type { PasswordFormData } from "@/lib/types/account";
 import { Loader2 } from "lucide-react";
 import AccountCardHeader from "./AccountCardHeader";
 import {
@@ -29,7 +28,7 @@ interface PasswordSectionProps {
     email?: string;
   } | null;
   loading: boolean;
-  onPasswordChange: (data: PasswordFormData) => Promise<void>;
+  onPasswordChange: (data: ChangePasswordFormData) => Promise<void>;
   socialUserInfo?: {
     isSocialUser: boolean;
     socialProvider: string;
@@ -78,13 +77,7 @@ export function PasswordSection({
 
   const handlePasswordChange = async (data: ChangePasswordFormData) => {
     try {
-      // 기존 로직 사용
-      const passwordData: PasswordFormData = {
-        currentPassword: data.currentPassword,
-        newPassword: data.newPassword,
-        confirmPassword: data.confirmPassword,
-      };
-      await onPasswordChange(passwordData);
+      await onPasswordChange(data);
       form.reset();
     } catch (error) {
       const errorMessage =

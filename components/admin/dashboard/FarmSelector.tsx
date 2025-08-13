@@ -5,7 +5,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import type { Farm } from "@/lib/types/farm";
+import type { Farm } from "@/lib/types/common";
 import { LABELS, PLACEHOLDERS } from "@/lib/constants/dashboard";
 
 interface FarmSelectorProps {
@@ -21,10 +21,19 @@ export function FarmSelector({
   availableFarms,
   isAdmin,
 }: FarmSelectorProps) {
+  const isDisabled = !isAdmin && (availableFarms?.length ?? 0) === 0;
+
   return (
     <div className="flex flex-col gap-1 sm:gap-1.5">
-      <Select value={selectedFarm} onValueChange={onFarmChange}>
-        <SelectTrigger className="w-full sm:w-[250px] md:w-[280px] h-8 sm:h-9 md:h-10 text-sm">
+      <Select
+        value={selectedFarm}
+        onValueChange={onFarmChange}
+        disabled={isDisabled}
+      >
+        <SelectTrigger
+          className="w-full sm:w-[250px] md:w-[280px] h-8 sm:h-9 md:h-10 text-sm"
+          disabled={isDisabled}
+        >
           <SelectValue placeholder={PLACEHOLDERS.FARM_SELECT} />
         </SelectTrigger>
         <SelectContent>

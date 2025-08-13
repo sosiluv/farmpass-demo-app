@@ -8,11 +8,14 @@ import {
   throwBusinessError,
 } from "@/lib/utils/error/errorUtil";
 import { LOG_MESSAGES } from "@/lib/utils/logging/log-templates";
+import {
+  farmFormSchema,
+  type FarmFormValues,
+} from "@/lib/utils/validation/farm-validation";
 
 export async function POST(request: NextRequest) {
   let user: any = null;
-  let farmData: any = {};
-  let statusCode = 200;
+  let farmData: FarmFormValues | null = null;
 
   try {
     // 인증 확인
@@ -23,34 +26,28 @@ export async function POST(request: NextRequest) {
 
     user = authResult.user;
 
-    const {
-      farm_name,
-      farm_address,
-      farm_detailed_address,
-      farm_type,
-      description,
-      manager_name,
-      manager_phone,
-    } = await request.json();
+    const requestData: FarmFormValues = await request.json();
 
-    farmData = {
-      farm_name,
-      farm_type,
-      farm_address,
-      manager_name,
-      manager_phone,
-    };
+    // ZOD 스키마로 검증
+    const validation = farmFormSchema.safeParse(requestData);
+    if (!validation.success) {
+      throwBusinessError("INVALID_FORM_DATA", {
+        errors: validation.error.errors,
+        formType: "farm",
+      });
+    }
+    farmData = validation.data;
 
     // Start a transaction
     let farm;
     const farmCreateData = {
-      farm_name: farm_name.trim(),
-      farm_address: farm_address.trim(),
-      farm_detailed_address: farm_detailed_address?.trim() || null,
-      farm_type,
-      description: description?.trim() || null,
-      manager_name: manager_name?.trim(),
-      manager_phone: manager_phone?.trim(),
+      farm_name: farmData.farm_name.trim(),
+      farm_address: farmData.farm_address.trim(),
+      farm_detailed_address: farmData.farm_detailed_address?.trim() || null,
+      farm_type: farmData.farm_type,
+      description: farmData.description?.trim() || null,
+      manager_name: farmData.manager_name?.trim(),
+      manager_phone: farmData.manager_phone?.trim(),
       owner_id: user.id,
     };
 
@@ -100,12 +97,11 @@ export async function POST(request: NextRequest) {
         request
       );
 
-      statusCode = 201;
       return NextResponse.json(
         {
           farm,
           success: true,
-          message: `${farm_name}이 등록되었습니다.`,
+          message: `${farmCreateData.farm_name}이 등록되었습니다.`,
         },
         { status: 201, headers: { "Cache-Control": "no-store" } }
       );
@@ -119,13 +115,12 @@ export async function POST(request: NextRequest) {
       );
     }
   } catch (error) {
-    statusCode = 500;
     // 농장 생성 실패 로그 기록
     const errorMessage = error instanceof Error ? error.message : String(error);
     await createSystemLog(
       "FARM_CREATE_FAILED",
       LOG_MESSAGES.FARM_CREATE_FAILED(
-        farmData.farm_name || "Unknown",
+        farmData?.farm_name || "Unknown",
         errorMessage
       ),
       "error",
@@ -136,7 +131,7 @@ export async function POST(request: NextRequest) {
         action_type: "farm_event",
         event: "farm_create_failed",
         error_message: errorMessage,
-        farm_name: farmData.farm_name || "Unknown",
+        farm_name: farmData?.farm_name || "Unknown",
       },
       request
     );
@@ -154,7 +149,6 @@ export async function POST(request: NextRequest) {
 }
 
 export async function GET(request: NextRequest) {
-  let statusCode = 200;
   let user: any = null;
 
   try {
@@ -166,6 +160,10 @@ export async function GET(request: NextRequest) {
 
     const user = authResult.user;
     const isAdmin = authResult.isAdmin || false;
+
+    // 쿼리 파라미터 확인
+    const { searchParams } = new URL(request.url);
+    const includeMembers = searchParams.get("include") === "members";
 
     let farms;
 
@@ -182,6 +180,25 @@ export async function GET(request: NextRequest) {
                 email: true,
               },
             },
+            // 멤버 정보 포함
+            ...(includeMembers && {
+              farm_members: {
+                include: {
+                  profiles: {
+                    select: {
+                      id: true,
+                      name: true,
+                      email: true,
+                      profile_image_url: true,
+                      avatar_seed: true,
+                    },
+                  },
+                },
+                where: {
+                  is_active: true,
+                },
+              },
+            }),
           },
           orderBy: {
             created_at: "desc",
@@ -223,6 +240,25 @@ export async function GET(request: NextRequest) {
                 email: true,
               },
             },
+            // 멤버 정보 포함
+            ...(includeMembers && {
+              farm_members: {
+                include: {
+                  profiles: {
+                    select: {
+                      id: true,
+                      name: true,
+                      email: true,
+                      profile_image_url: true,
+                      avatar_seed: true,
+                    },
+                  },
+                },
+                where: {
+                  is_active: true,
+                },
+              },
+            }),
           },
           orderBy: {
             created_at: "desc",
@@ -265,7 +301,6 @@ export async function GET(request: NextRequest) {
       { headers: { "Cache-Control": "no-store" } }
     );
   } catch (error) {
-    statusCode = 500;
     // 농장 목록 조회 실패 로그 기록
     const errorMessage = error instanceof Error ? error.message : String(error);
     await createSystemLog(

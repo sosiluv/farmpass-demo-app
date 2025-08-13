@@ -12,7 +12,21 @@ export function SubscriptionCleanupSuccessMessage({
     return null;
   }
 
-  const { cleanedCount, validCount, totalChecked, stats } = lastCleanupResult;
+  const {
+    cleanedCount = 0,
+    validCount = 0,
+    totalChecked = 0,
+    stats = {},
+  } = lastCleanupResult;
+
+  // stats 객체가 undefined일 경우를 대비한 안전한 처리
+  const safeStats = (stats || {}) as {
+    failCountCleaned?: number;
+    inactiveCleaned?: number;
+    expiredCleaned?: number;
+    forceDeleted?: number;
+    oldSoftDeletedCleaned?: number;
+  };
 
   if (cleanedCount === 0) {
     return (
@@ -26,7 +40,7 @@ export function SubscriptionCleanupSuccessMessage({
         <p className="text-sm sm:text-base text-green-600 mt-1">
           {LABELS.SUBSCRIPTION_CLEANUP_ALL_VALID_DESC.replace(
             "{count}",
-            totalChecked.toString()
+            (totalChecked || 0).toString()
           )}
         </p>
       </div>
@@ -45,7 +59,7 @@ export function SubscriptionCleanupSuccessMessage({
         <p>
           {LABELS.SUBSCRIPTION_CLEANUP_SUCCESS_DESC.replace(
             "{count}",
-            cleanedCount.toString()
+            (cleanedCount || 0).toString()
           )}
         </p>
         <div className="bg-green-100 rounded p-2 mt-2">
@@ -53,43 +67,43 @@ export function SubscriptionCleanupSuccessMessage({
             {LABELS.SUBSCRIPTION_CLEANUP_DETAILS_TITLE}
           </p>
           <ul className="space-y-0.5 text-sm sm:text-base">
-            {stats.failCountCleaned > 0 && (
+            {(safeStats.failCountCleaned || 0) > 0 && (
               <li>
                 {LABELS.SUBSCRIPTION_CLEANUP_FAIL_COUNT_CLEANED.replace(
                   "{count}",
-                  stats.failCountCleaned.toString()
+                  (safeStats.failCountCleaned || 0).toString()
                 )}
               </li>
             )}
-            {stats.inactiveCleaned > 0 && (
+            {(safeStats.inactiveCleaned || 0) > 0 && (
               <li>
                 {LABELS.SUBSCRIPTION_CLEANUP_INACTIVE_CLEANED.replace(
                   "{count}",
-                  stats.inactiveCleaned.toString()
+                  (safeStats.inactiveCleaned || 0).toString()
                 )}
               </li>
             )}
-            {stats.expiredCleaned > 0 && (
+            {(safeStats.expiredCleaned || 0) > 0 && (
               <li>
                 {LABELS.SUBSCRIPTION_CLEANUP_EXPIRED_CLEANED.replace(
                   "{count}",
-                  stats.expiredCleaned.toString()
+                  (safeStats.expiredCleaned || 0).toString()
                 )}
               </li>
             )}
-            {stats.forceDeleted > 0 && (
+            {(safeStats.forceDeleted || 0) > 0 && (
               <li>
                 {LABELS.SUBSCRIPTION_CLEANUP_FORCE_DELETED.replace(
                   "{count}",
-                  stats.forceDeleted.toString()
+                  (safeStats.forceDeleted || 0).toString()
                 )}
               </li>
             )}
-            {stats.oldSoftDeletedCleaned > 0 && (
+            {(safeStats.oldSoftDeletedCleaned || 0) > 0 && (
               <li>
                 {LABELS.SUBSCRIPTION_CLEANUP_OLD_SOFT_DELETED.replace(
                   "{count}",
-                  stats.oldSoftDeletedCleaned.toString()
+                  (safeStats.oldSoftDeletedCleaned || 0).toString()
                 )}
               </li>
             )}
@@ -97,8 +111,8 @@ export function SubscriptionCleanupSuccessMessage({
           <p className="mt-1 text-sm sm:text-base opacity-75">
             {LABELS.SUBSCRIPTION_CLEANUP_SUMMARY.replace(
               "{valid}",
-              validCount.toString()
-            ).replace("{total}", totalChecked.toString())}
+              (validCount || 0).toString()
+            ).replace("{total}", (totalChecked || 0).toString())}
           </p>
         </div>
       </div>

@@ -47,14 +47,19 @@ export function useNotificationService() {
       // 구독이 전달되지 않은 경우 브라우저에서 찾기
       if (!currentSubscription) {
         if ("serviceWorker" in navigator && "PushManager" in window) {
-          try {
-            const registration = await navigator.serviceWorker.ready;
-            const browserSubscription =
-              await registration.pushManager.getSubscription();
-            currentSubscription = browserSubscription || undefined;
-          } catch (error) {
-            devLog.warn("브라우저 구독 조회 실패:", error);
-          }
+          const existingRegistration =
+            await navigator.serviceWorker.getRegistration();
+          const registration =
+            existingRegistration ??
+            ((await Promise.race([
+              navigator.serviceWorker.ready,
+              new Promise((_, reject) =>
+                setTimeout(() => reject("서비스워커 Timeout"), 3000)
+              ),
+            ])) as ServiceWorkerRegistration);
+          const browserSubscription =
+            await registration.pushManager.getSubscription();
+          currentSubscription = browserSubscription || undefined;
         }
       }
 
@@ -69,12 +74,7 @@ export function useNotificationService() {
       }
 
       // 1. 브라우저 구독 해제
-      try {
-        await currentSubscription.unsubscribe();
-      } catch (browserError) {
-        devLog.warn("⚠️ [DEBUG] 브라우저 구독 해제 실패:", browserError);
-        // 브라우저 해제 실패해도 서버 해제는 계속 진행
-      }
+      await currentSubscription.unsubscribe();
 
       // 2. 서버 구독 해제 Mutation 사용 (알림 설정 업데이트 포함)
       const result = await deleteSubscriptionMutation.mutateAsync({

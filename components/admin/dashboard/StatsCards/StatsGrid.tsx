@@ -1,6 +1,18 @@
 import { StatCard } from "./StatCard";
-import type { DashboardStats } from "@/lib/types/statistics";
 import { LABELS } from "@/lib/constants/dashboard";
+
+interface DashboardStats {
+  totalVisitors: number;
+  todayVisitors: number;
+  weeklyVisitors: number;
+  disinfectionRate: number;
+  trends: {
+    totalVisitorsTrend: string;
+    todayVisitorsTrend: string;
+    weeklyVisitorsTrend: string;
+    disinfectionTrend: string;
+  };
+}
 
 interface StatsGridProps {
   stats: DashboardStats;

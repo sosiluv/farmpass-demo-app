@@ -10,6 +10,7 @@ import {
   farmsKeys,
   notificationKeys,
   visitorsKeys,
+  adminKeys,
 } from "@/lib/hooks/query/query-keys";
 
 // 통합된 인증 상태 정의
@@ -70,6 +71,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       queryClient.invalidateQueries({ queryKey: farmsKeys.all });
       queryClient.invalidateQueries({ queryKey: notificationKeys.all });
       queryClient.invalidateQueries({ queryKey: visitorsKeys.all });
+      queryClient.invalidateQueries({ queryKey: adminKeys.all });
     }
   }, [
     state.status,

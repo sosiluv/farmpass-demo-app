@@ -18,12 +18,11 @@ export type ErrorType = "auth" | "storage" | "realtime" | "db" | "prisma";
  * const prismaError = new Error("Unique constraint failed");
  * prismaError.code = "P2002";
  * const code = mapRawErrorToCode(prismaError, "prisma");
- * console.log(code); // "PRISMA_UNIQUE_CONSTRAINT"
+
  *
  * // Supabase Auth 에러 변환
  * const authError = { code: "invalid_credentials" };
  * const code = mapRawErrorToCode(authError, "auth");
- * console.log(code); // "SUPABASE_INVALID_CREDENTIALS"
  *
  * // 자동 타입 감지
  * const code = mapRawErrorToCode(error); // 모든 타입을 순차적으로 확인
@@ -31,7 +30,6 @@ export type ErrorType = "auth" | "storage" | "realtime" | "db" | "prisma";
  * // 비즈니스 로직 에러
  * const businessError = { businessCode: "CUSTOM_ERROR" };
  * const code = mapRawErrorToCode(businessError);
- * console.log(code); // "CUSTOM_ERROR"
  * ```
  */
 export function mapRawErrorToCode(error: any, type?: ErrorType): ErrorCode {

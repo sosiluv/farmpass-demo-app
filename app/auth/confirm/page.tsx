@@ -19,7 +19,7 @@ import { CheckCircle, AlertCircle } from "lucide-react";
 import { AuthButton } from "@/components/auth";
 import { motion } from "framer-motion";
 import { ErrorBoundary } from "@/components/error/error-boundary";
-import { Logo } from "@/components/common";
+import { Logo } from "@/components/common/logo";
 import { LottieLoadingCompact } from "@/components/ui/lottie-loading";
 import { useAuthActions } from "@/hooks/auth/useAuthActions";
 import {

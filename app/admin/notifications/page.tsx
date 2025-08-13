@@ -15,18 +15,15 @@ import {
   SubscriptionGuideCard,
 } from "@/components/admin/notifications";
 import { useCommonToast } from "@/lib/utils/notification/toast-messages";
-import type { NotificationSettings } from "@/lib/types/notification";
-import { FormSkeleton } from "@/components/common/skeletons/form-skeleton";
+import type { UserNotificationSetting } from "@/lib/types/common";
+import { FormSkeleton } from "@/components/ui/skeleton";
 import { PAGE_HEADER } from "@/lib/constants/notifications";
 import { useFarmsQuery } from "@/lib/hooks/query/use-farms-query";
-import { useProfileQuery } from "@/lib/hooks/query/use-profile-query";
 import { Bell } from "lucide-react";
 
 export default function NotificationsPage() {
   const { state } = useAuth();
-  const user = state.status === "authenticated" ? state.user : null;
   const userId = state.status === "authenticated" ? state.user.id : undefined;
-  const { data: profile } = useProfileQuery(userId);
 
   // useFarmsContext 대신 useFarmsQuery 사용
   const {
@@ -34,7 +31,7 @@ export default function NotificationsPage() {
     isLoading: farmsLoading,
     error: farmsError,
     refetch: refetchFarms,
-  } = useFarmsQuery(profile?.id);
+  } = useFarmsQuery(userId);
 
   const [isSubscribed, setIsSubscribed] = useState(false);
   const {
@@ -47,7 +44,7 @@ export default function NotificationsPage() {
   // 시스템 설정 페이지처럼 로컬 상태 관리
   const [unsavedChanges, setUnsavedChanges] = useState(false);
   const [localSettings, setLocalSettings] =
-    useState<NotificationSettings | null>(null);
+    useState<UserNotificationSetting | null>(null);
 
   // settings가 로드되면 localSettings 업데이트
   useEffect(() => {
@@ -58,9 +55,9 @@ export default function NotificationsPage() {
   }, [settings]);
 
   // 설정 변경 핸들러
-  const handleSettingChange = <K extends keyof NotificationSettings>(
+  const handleSettingChange = <K extends keyof UserNotificationSetting>(
     key: K,
-    value: NotificationSettings[K]
+    value: UserNotificationSetting[K]
   ) => {
     if (!localSettings) return;
 
@@ -76,10 +73,10 @@ export default function NotificationsPage() {
 
   // 농장 데이터 로드
   useEffect(() => {
-    if (user?.id && !farmsLoading && farms.length === 0) {
+    if (userId && !farmsLoading && farms.length === 0) {
       refetchFarms();
     }
-  }, [user?.id, refetchFarms, farmsLoading, farms.length, showInfo]);
+  }, [userId, refetchFarms, farmsLoading, farms.length, showInfo]);
 
   // 알림 설정 에러 처리
   useEffect(() => {

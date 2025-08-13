@@ -18,19 +18,20 @@ import { useAuth } from "@/components/providers/auth-provider";
 
 interface AccountTabsProps {
   profile: Profile;
-  userId: string;
 }
 
-export function AccountTabs({ profile, userId }: AccountTabsProps) {
+export function AccountTabs({ profile }: AccountTabsProps) {
   const { showInfo, showSuccess, showError } = useCommonToast();
   const searchParams = useSearchParams();
   const router = useRouter();
   const { state } = useAuth();
+  const isAuthenticated = state.status === "authenticated";
+  const userId = isAuthenticated ? state.user.id : undefined;
   const defaultTab = searchParams.get("tab") || "profile";
 
   // 소셜 로그인 사용자 감지
   const socialUserInfo = useMemo(() => {
-    if (state.status === "authenticated" && state.user) {
+    if (isAuthenticated && state.user) {
       const provider = state.user.app_metadata?.provider;
       return {
         isSocialUser: provider && provider !== "email",

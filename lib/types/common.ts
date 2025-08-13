@@ -27,23 +27,11 @@ export type Profile = Tables["profiles"]["Row"];
  * 농장 기본 타입
  */
 export type Farm = Tables["farms"]["Row"];
-// // 확장 필드 예시 (필요시 별도 타입으로 확장)
-// owner?: {
-//   id: string;
-//   name: string;
-//   email: string;
-// };
 
 /**
  * 농장 멤버 기본 타입
  */
 export type FarmMember = Tables["farm_members"]["Row"];
-// // 확장 필드 예시 (필요시 별도 타입으로 확장)
-// users?: {
-//   id: string;
-//   name: string;
-//   email: string;
-// };
 
 /**
  * 방문자 기본 타입
@@ -64,6 +52,12 @@ export type SystemSetting = Tables["system_settings"]["Row"];
  * 알림 타입
  */
 export type Notification = Tables["notifications"]["Row"];
+
+/**
+ * 사용자 알림 설정 타입
+ */
+export type UserNotificationSetting =
+  Tables["user_notification_settings"]["Row"];
 
 /**
  * 약관 관리 타입

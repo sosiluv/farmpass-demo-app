@@ -8,7 +8,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { Building2, Eye } from "lucide-react";
+import { Eye } from "lucide-react";
 import { formatDateTime } from "@/lib/utils/datetime/date";
 import {
   getFarmTypeLabel,
@@ -17,24 +17,22 @@ import {
 } from "@/lib/constants/farm-types";
 import { LABELS } from "@/lib/constants/management";
 import { useState } from "react";
-import { FarmDetailModal } from "./FarmDetailModal";
-import type { Database } from "@/lib/types/supabase";
+import { FarmDetailSheet } from "./FarmDetailSheet";
 import { CommonListWrapper } from "../shared/CommonListWrapper";
+import type { Farm } from "@/lib/types/common";
 
-type Farm = Database["public"]["Tables"]["farms"]["Row"];
-
-interface ExtendedFarm extends Farm {
+type FarmWithExtras = Farm & {
   owner_name: string;
   member_count: number;
   visitor_count: number;
-}
+};
 
 interface FarmListProps {
-  farms: ExtendedFarm[];
+  farms: FarmWithExtras[];
 }
 
 export function FarmList({ farms }: FarmListProps) {
-  const [selectedFarm, setSelectedFarm] = useState<ExtendedFarm | null>(null);
+  const [selectedFarm, setSelectedFarm] = useState<FarmWithExtras | null>(null);
 
   return (
     <>
@@ -43,7 +41,7 @@ export function FarmList({ farms }: FarmListProps) {
           <CommonListItem
             key={farm.id}
             avatar={
-              <Avatar className="h-8 w-8 sm:h-12 sm:w-12 lg:h-14 lg:w-14 xl:h-16 xl:w-16 flex-shrink-0">
+              <Avatar className="h-8 w-8 sm:h-12 sm:w-12 lg:h-14 lg:w-14 xl:h-16 xl:w-16 flex-shrink-0 rounded-full bg-gray-50 flex items-center justify-center">
                 <AvatarFallback className="bg-blue-100 dark:bg-blue-900 flex items-center justify-center w-full h-full">
                   {(() => {
                     const Icon = getFarmTypeIcon(farm.farm_type || undefined);
@@ -54,15 +52,13 @@ export function FarmList({ farms }: FarmListProps) {
                 </AvatarFallback>
               </Avatar>
             }
-            primary={farm.farm_name}
+            primary={<span className="text-lg">{farm.farm_name}</span>}
             secondary={
-              <span className="text-xs sm:text-sm lg:text-base xl:text-lg text-muted-foreground">
-                {farm.farm_address}
-              </span>
+              <span className="text-muted-foreground">{farm.farm_address}</span>
             }
             meta={
-              <span className="text-xs sm:text-sm lg:text-base xl:text-lg text-muted-foreground">
-                {`${farm.manager_name || LABELS.UNASSIGNED} / ${formatDateTime(
+              <span className="text-xs sm:text-sm lg:text-base text-muted-foreground">
+                {`${farm.owner_name || LABELS.UNASSIGNED} / ${formatDateTime(
                   farm.created_at
                 )}`}
               </span>
@@ -72,7 +68,7 @@ export function FarmList({ farms }: FarmListProps) {
                 <Badge
                   className={`${getFarmTypeColor(
                     farm.farm_type
-                  )} text-[10px] sm:text-xs px-1.5 sm:px-2 py-0.5 sm:py-1`}
+                  )} text-xs sm:text-sm px-2 sm:px-3 py-1 sm:py-1.5`}
                 >
                   <div className="flex items-center gap-0.5 sm:gap-1">
                     {(() => {
@@ -92,10 +88,10 @@ export function FarmList({ farms }: FarmListProps) {
                       <Button
                         variant="ghost"
                         size="icon"
-                        className="h-8 w-8 sm:h-12 sm:w-12 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 flex-shrink-0"
+                        className="h-10 w-10 sm:h-12 sm:w-12 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 flex-shrink-0"
                         onClick={() => setSelectedFarm(farm)}
                       >
-                        <Eye className="h-4 w-4 sm:h-6 sm:w-6 text-muted-foreground" />
+                        <Eye className="h-5 w-5 sm:h-6 sm:w-6 text-muted-foreground" />
                       </Button>
                     </TooltipTrigger>
                     <TooltipContent>
@@ -109,9 +105,9 @@ export function FarmList({ farms }: FarmListProps) {
         ))}
       </CommonListWrapper>
 
-      <FarmDetailModal
+      <FarmDetailSheet
         farm={selectedFarm}
-        isOpen={!!selectedFarm}
+        open={!!selectedFarm}
         onClose={() => setSelectedFarm(null)}
       />
     </>

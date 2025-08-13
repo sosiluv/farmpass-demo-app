@@ -16,7 +16,7 @@
  */
 "use client";
 import { useParams } from "next/navigation";
-import { FormSkeleton } from "@/components/common/skeletons";
+import { FormSkeleton } from "@/components/ui/skeleton";
 import { FarmInfoCard } from "@/components/visitor/FarmInfoCard";
 import { SuccessCard } from "@/components/visitor/SuccessCard";
 import { ErrorBoundary } from "@/components/error/error-boundary";

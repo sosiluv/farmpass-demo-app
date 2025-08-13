@@ -98,10 +98,7 @@ export const LOG_MESSAGES = {
     farmName: string
   ) =>
     `농장 멤버 제거: ${memberName} (${memberEmail}) - ${role} 역할 (농장: ${farmName})`,
-  MEMBER_READ: (count: number, farmId: string) =>
-    `농장 멤버 조회: ${count}명 (농장 ID: ${farmId})`,
-  MEMBER_READ_FAILED: (farmId: string, errorMessage: string) =>
-    `농장 멤버 조회 실패: ${errorMessage} (농장 ID: ${farmId})`,
+
   MEMBER_CREATE_FAILED: (farmId: string, errorMessage: string) =>
     `농장 멤버 추가 실패: ${errorMessage} (농장 ID: ${farmId})`,
   MEMBER_UPDATE_FAILED: (
@@ -116,13 +113,6 @@ export const LOG_MESSAGES = {
     errorMessage: string
   ) =>
     `농장 멤버 제거 실패: ${errorMessage} (멤버 ID: ${memberId}, 농장 ID: ${farmId})`,
-
-  // 농장 구성원 관련
-  FARM_MEMBER_ACCESS_DENIED: (userId: string, farmIds: string) =>
-    `농장 구성원 조회 권한 거부: 사용자 ${userId}가 농장 ${farmIds}에 대한 접근 시도`,
-  MEMBER_BULK_READ: (count: number) => `농장 구성원 일괄 조회 성공: ${count}명`,
-  MEMBER_BULK_READ_FAILED: (errorMessage: string) =>
-    `농장 구성원 일괄 조회 실패: ${errorMessage}`,
 
   // 인증 관련
   LOGIN_SUCCESS: (email: string) => `로그인 성공: ${email}`,

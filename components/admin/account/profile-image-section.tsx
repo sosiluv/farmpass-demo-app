@@ -6,7 +6,7 @@ import { ImageUpload } from "@/components/ui/image-upload";
 import { useAvatarSeedManager } from "@/hooks/account/useAvatarSeedManager";
 import { devLog } from "@/lib/utils/logging/dev-logger";
 import { LABELS } from "@/lib/constants/account";
-import type { Profile } from "@/lib/types/account";
+import type { Profile } from "@/lib/types/common";
 
 interface ProfileImageSectionProps {
   profile: Profile | null;

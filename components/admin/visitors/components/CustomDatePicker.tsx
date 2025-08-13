@@ -24,7 +24,6 @@ export function CustomDatePicker({
   customEndDate,
   onCustomStartDateChange,
   onCustomEndDateChange,
-  onClearCustomDates,
 }: CustomDatePickerProps) {
   return (
     <div className="flex items-center space-x-2 sm:space-x-3">

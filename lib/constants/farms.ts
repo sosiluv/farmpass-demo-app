@@ -94,8 +94,7 @@ export const LABELS = {
   VIEWER_TITLE: "조회자",
   // 농장 삭제 확인
   DELETE_FARM_CONFIRM_TITLE: "농장 삭제 확인",
-  DELETE_FARM_CONFIRM_DESCRIPTION:
-    "정말로 이 농장을 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.",
+  DELETE_FARM_CONFIRM_DESCRIPTION: "정말로 이 농장을 삭제하시겠습니까?",
 
   // 빈 농장 상태
   NO_REGISTERED_FARMS: "등록된 농장이 없습니다",

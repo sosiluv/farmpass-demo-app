@@ -2,7 +2,7 @@ import { CheckCircle } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Logo } from "@/components/common";
+import { Logo } from "@/components/common/logo";
 import { formatDateTime } from "@/lib/utils/datetime/date";
 import { BUTTONS, LABELS } from "@/lib/constants/visitor";
 

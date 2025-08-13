@@ -1,11 +1,8 @@
 import { downloadAdvancedCSV } from "@/lib/utils/data/csv-unified";
 import { getLogCategory } from "@/lib/utils/logging/system-log";
-import {
-  formatDateTime,
-  createKSTDateRange,
-  toKSTDate,
-} from "@/lib/utils/datetime/date";
-import type { SystemLog } from "@/lib/types/system";
+import { getKSTDayBoundsUTC } from "@/lib/utils/datetime/date";
+import { formatInTimeZone } from "date-fns-tz";
+import type { SystemLog } from "@/lib/types/common";
 import type { LogsExportOptions } from "../exports";
 import { devLog } from "@/lib/utils/logging/dev-logger";
 import { LABELS } from "@/lib/constants/management";
@@ -24,27 +21,21 @@ export function LogsExportManager({ logs, children }: LogsExportManagerProps) {
       // 필터링된 로그에서 내보내기 옵션에 따라 데이터 생성
       let exportLogs = [...logs];
 
-      // 추가 필터링 - KST 기준
+      // 추가 필터링 - KST 기준 (LogsFilterManager와 동일한 경계 계산 사용)
       if (options.startDate || options.endDate) {
         exportLogs = exportLogs.filter((log) => {
-          // 로그의 created_at을 KST로 변환
-          const logDate = new Date(log.created_at);
-          const kstLogDate = toKSTDate(logDate);
+          const logInstant = new Date(log.created_at);
 
           if (options.startDate) {
-            // 시작 날짜를 KST 기준 00:00:00으로 설정
-            const startDateKST = createKSTDateRange(options.startDate, false);
-            if (kstLogDate < startDateKST) {
-              return false;
-            }
+            const { startUTC } = getKSTDayBoundsUTC(
+              new Date(options.startDate)
+            );
+            if (logInstant < startUTC) return false;
           }
 
           if (options.endDate) {
-            // 종료 날짜를 KST 기준 23:59:59로 설정
-            const endDateKST = createKSTDateRange(options.endDate, true);
-            if (kstLogDate > endDateKST) {
-              return false;
-            }
+            const { endUTC } = getKSTDayBoundsUTC(new Date(options.endDate));
+            if (logInstant > endUTC) return false;
           }
 
           return true;
@@ -67,7 +58,11 @@ export function LogsExportManager({ logs, children }: LogsExportManagerProps) {
         const row: Record<string, any> = {};
 
         if (options.includeBasic) {
-          row[LABELS.TIME] = formatDateTime(log.created_at);
+          row[LABELS.TIME] = formatInTimeZone(
+            new Date(log.created_at),
+            "Asia/Seoul",
+            "yyyy-MM-dd HH:mm:ss"
+          );
           row[LABELS.LEVEL] = log.level?.toUpperCase() || LABELS.UNKNOWN;
           row[LABELS.ACTION] = log.action || "";
           row[LABELS.MESSAGE] = log.message || "";

@@ -2,6 +2,7 @@
 
 import { useOrphanFilesStatusQuery } from "./use-orphan-files-query";
 import { useCleanupOrphanFilesMutation } from "./use-orphan-files-mutations";
+import type { CleanupResult } from "@/lib/types/system";
 
 /**
  * Orphan 파일 관리자 통합 Hook
@@ -16,7 +17,7 @@ export function useOrphanFilesManager() {
 
   const cleanupOrphanFilesMutation = useCleanupOrphanFilesMutation();
 
-  const executeCleanup = async () => {
+  const executeCleanup = async (): Promise<CleanupResult> => {
     try {
       const result = await cleanupOrphanFilesMutation.mutateAsync();
       return result;

@@ -10,7 +10,7 @@ import {
 } from "@/components/ui/tooltip";
 import { formatDateTime } from "@/lib/utils/datetime/date";
 import { LABELS } from "@/lib/constants/management";
-import { SystemLog } from "@/lib/types/system";
+import { SystemLog } from "@/lib/types/common";
 import { CommonListWrapper } from "../shared/CommonListWrapper";
 
 interface LogListProps {
@@ -121,7 +121,7 @@ export function LogList({ logs, onShowDetails, onDeleteLog }: LogListProps) {
               <Badge
                 className={`${getLogLevelColor(
                   log.level
-                )} text-[10px] sm:text-xs px-1.5 sm:px-2 py-0.5 sm:py-1`}
+                )} text-xs sm:text-sm px-2 sm:px-3 py-1 sm:py-1.5`}
               >
                 {getLogLevelText(log.level)}
               </Badge>
@@ -134,10 +134,10 @@ export function LogList({ logs, onShowDetails, onDeleteLog }: LogListProps) {
                       <Button
                         variant="ghost"
                         size="icon"
-                        className="h-8 w-8 sm:h-12 sm:w-12 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 flex-shrink-0"
+                        className="h-10 w-10 sm:h-12 sm:w-12 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 flex-shrink-0"
                         onClick={() => onShowDetails(log)}
                       >
-                        <Eye className="h-4 w-4 sm:h-6 sm:w-6 text-muted-foreground" />
+                        <Eye className="h-5 w-5 sm:h-6 sm:w-6 text-muted-foreground" />
                       </Button>
                     </TooltipTrigger>
                     <TooltipContent>

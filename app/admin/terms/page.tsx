@@ -31,8 +31,7 @@ import { ErrorBoundary } from "@/components/error/error-boundary";
 import { AccessDenied } from "@/components/error/access-denied";
 import { useAuth } from "@/components/providers/auth-provider";
 import { ERROR_CONFIGS } from "@/lib/constants/error";
-import { useProfileQuery } from "@/lib/hooks/query/use-profile-query";
-import { TermsSkeleton } from "@/components/common/skeletons";
+import { TermsSkeleton } from "@/components/ui/skeleton";
 import { CommonPageWrapper } from "@/components/admin/management/shared/CommonPageWrapper";
 import TermsCardHeader from "@/components/admin/terms/TermsCardHeader";
 import { markdownComponents } from "@/lib/utils/markdown/markdown-components";
@@ -49,13 +48,13 @@ const MDEditor = dynamic(() => import("@uiw/react-md-editor"), { ssr: false });
 
 export default function TermsManagementPage() {
   const { state } = useAuth();
-  const userId = state.status === "authenticated" ? state.user.id : undefined;
-  const { data: profile, isLoading: profileLoading } = useProfileQuery(userId);
+  const isAdmin =
+    state.status === "authenticated" && state.user?.app_metadata?.isAdmin;
+  const isLoading = state.status === "loading";
 
   // 비즈니스 로직 훅 사용
   const {
     activeTab,
-    isLoading,
     isPreviewMode,
     localContent,
     selectedVersion,
@@ -72,7 +71,7 @@ export default function TermsManagementPage() {
     setIsPreviewMode,
   } = useTermsManagement();
 
-  if (profileLoading || termsLoading) {
+  if (termsLoading || isLoading) {
     return (
       <div className="flex-1 space-y-4 md:space-y-6 px-4 md:px-6 lg:px-8 pt-3 pb-4 md:pb-6 lg:pb-8">
         <PageHeader
@@ -86,7 +85,7 @@ export default function TermsManagementPage() {
   }
 
   // admin 권한 체크
-  if (!profile || profile.account_type !== "admin") {
+  if (!isAdmin) {
     return (
       <AccessDenied
         title={ERROR_CONFIGS.PERMISSION.title}

@@ -1,57 +1,16 @@
-import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { RoleBadge, UserRole } from "@/components/user/role-badge";
 import { QuickActionButtons } from "@/components/user/quick-action-buttons";
-import { useState } from "react";
-import { ImagePreviewDialog } from "@/components/common/ImagePreviewDialog";
-import { generateInitials, getAvatarUrl } from "@/lib/utils/media/avatar";
-import { LABELS } from "@/lib/constants/farms";
-
-// 역할별 아바타 스타일 설정
-function getRoleStyles(role: string): {
-  bgColor: string;
-  textColor: string;
-  borderColor: string;
-} {
-  switch (role) {
-    case "owner":
-      return {
-        bgColor: "bg-purple-50",
-        textColor: "text-purple-700",
-        borderColor: "border-purple-200",
-      };
-    case "manager":
-      return {
-        bgColor: "bg-blue-50",
-        textColor: "text-blue-700",
-        borderColor: "border-blue-200",
-      };
-    case "viewer":
-      return {
-        bgColor: "bg-green-50",
-        textColor: "text-green-700",
-        borderColor: "border-green-200",
-      };
-    default:
-      return {
-        bgColor: "bg-gray-50",
-        textColor: "text-gray-700",
-        borderColor: "border-gray-200",
-      };
-  }
-}
-
-interface Member {
-  id: string;
-  representative_name: string;
-  email: string;
-  role: string;
-  profile_image_url?: string | null;
-  avatar_seed?: string | null;
-  name?: string | null;
-}
+import { ZoomableImage } from "@/components/ui/zoomable-image";
+import {
+  generateInitials,
+  getAvatarUrl,
+  getAvatarColor,
+} from "@/lib/utils/media/avatar";
+import type { MemberWithProfile } from "@/lib/types/farm";
 
 interface MemberCardProps {
-  member: Member;
+  member: MemberWithProfile;
   canManageMembers: boolean;
   onDelete: (id: string) => void;
   onRoleChange: (memberId: string, newRole: "manager" | "viewer") => void;
@@ -63,21 +22,12 @@ export function MemberCard({
   onDelete,
   onRoleChange,
 }: MemberCardProps) {
-  const roleStyles = getRoleStyles(member.role);
-  const [previewOpen, setPreviewOpen] = useState(false);
   return (
     <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-3 sm:p-4 border rounded-lg hover:bg-accent/5 transition-colors gap-3 sm:gap-4">
       {/* 모바일: 세로 레이아웃, 태블릿+: 가로 레이아웃 */}
       <div className="flex items-center gap-3 sm:gap-4 min-w-0 flex-1">
-        <Avatar
-          className={`h-10 w-10 sm:h-12 sm:w-12 border-2 ${
-            roleStyles.borderColor
-          } ${roleStyles.bgColor} flex-shrink-0 ${
-            member.profile_image_url ? "cursor-pointer" : ""
-          }`}
-          onClick={() => member.profile_image_url && setPreviewOpen(true)}
-        >
-          <AvatarImage
+        {member.profile_image_url ? (
+          <ZoomableImage
             src={getAvatarUrl(
               {
                 ...member,
@@ -86,42 +36,40 @@ export function MemberCard({
               { size: 128 }
             )}
             alt={member.representative_name}
-            className="object-cover"
+            title={`${member.representative_name} 프로필`}
+            className="h-8 w-8 sm:h-12 sm:w-12 lg:h-14 lg:w-14 xl:h-16 xl:w-16 flex-shrink-0 rounded-full bg-gray-50 flex items-center justify-center"
+            shape="circle"
+            size="md"
           />
-          <AvatarFallback
-            className={`font-medium text-xs sm:text-sm ${roleStyles.textColor}`}
-          >
-            {generateInitials(member.representative_name)}
-          </AvatarFallback>
-        </Avatar>
-        <ImagePreviewDialog
-          src={member.profile_image_url || ""}
-          alt={member.representative_name}
-          open={previewOpen}
-          onOpenChange={setPreviewOpen}
-          caption={member.representative_name}
-        />
+        ) : (
+          <Avatar className="h-8 w-8 sm:h-12 sm:w-12 lg:h-14 lg:w-14 xl:h-16 xl:w-16 flex-shrink-0 rounded-full bg-gray-50 flex items-center justify-center">
+            <AvatarImage
+              src={getAvatarUrl(member, { size: 128 })}
+              alt={member.representative_name || "User"}
+            />
+            <AvatarFallback
+              className={`${getAvatarColor(
+                member.representative_name
+              )} text-white`}
+            >
+              {generateInitials(member.representative_name)}
+            </AvatarFallback>
+          </Avatar>
+        )}
 
         <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-1 sm:gap-2">
-            <span className="font-medium text-sm sm:text-base truncate">
-              {member.representative_name}
-              {member.role === "owner" && (
-                <span className="ml-2 text-xs sm:text-sm text-purple-600 font-normal">
-                  {LABELS.FARM_OWNER}
-                </span>
-              )}
-            </span>
-            <RoleBadge role={member.role as UserRole} />
+          <div className="font-medium truncate">
+            {member.representative_name}
           </div>
-          <div className="text-xs sm:text-sm text-muted-foreground truncate">
+          <div className="text-sm text-muted-foreground truncate">
             {member.email}
           </div>
         </div>
       </div>
 
-      {/* 액션 버튼 */}
-      <div className="flex justify-end sm:justify-start flex-shrink-0">
+      {/* 배지와 액션 버튼 */}
+      <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
+        <RoleBadge role={member.role as UserRole} />
         <QuickActionButtons
           memberRole={member.role as UserRole}
           memberId={member.id}

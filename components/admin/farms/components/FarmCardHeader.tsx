@@ -12,7 +12,7 @@ import {
   getFarmTypeColor,
 } from "@/lib/constants/farm-types";
 import { LABELS } from "@/lib/constants/farms";
-import type { Farm } from "@/lib/types/farm";
+import type { Farm } from "@/lib/types/common";
 
 interface FarmCardHeaderProps {
   farm: Farm;

@@ -75,27 +75,15 @@ export function LottieLoading({
   if (loading || error || !animationData) {
     return (
       <div className={containerClasses}>
-        <div
-          className={cn("flex items-center justify-center", sizeClasses[size])}
-        >
-          {error ? (
-            // 에러 시 심플한 스피너
-            <div className="w-16 h-16 border-4 border-primary/30 border-t-primary rounded-full animate-spin" />
-          ) : (
-            // 로딩 중 스켈레톤
-            <div
-              className={cn(
-                "bg-secondary/50 rounded-lg animate-pulse",
-                sizeClasses[size]
-              )}
-            />
-          )}
+        {/* 로딩 중 또는 에러 시 스피너 */}
+        <div className="w-16 h-16 flex items-center justify-center">
+          <div className="w-16 h-16 border-4 border-primary/30 border-t-primary rounded-full animate-spin" />
         </div>
 
         {showText && (
           <div className="text-center">
             <p className="text-lg font-medium text-foreground/80">
-              {loading ? "애니메이션을 불러오는 중..." : text}
+              {text}
               {dots}
             </p>
             {subText && (
@@ -141,11 +129,6 @@ export function LottieLoading({
           )}
         </div>
       )}
-
-      {/* 선택적 진행률 바 */}
-      <div className="w-64 h-1 bg-secondary rounded-full overflow-hidden">
-        <div className="h-full bg-gradient-to-r from-primary/50 to-primary rounded-full animate-loading-progress" />
-      </div>
     </div>
   );
 }

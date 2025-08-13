@@ -3,20 +3,7 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiClient } from "@/lib/utils/data/api-client";
 import { farmsKeys } from "@/lib/hooks/query/query-keys";
-import type { FarmMember } from "@/lib/types";
-
-export interface InviteMemberRequest {
-  farm_id: string;
-  email: string;
-  role: "owner" | "manager" | "viewer";
-  message?: string;
-}
-
-export interface UpdateMemberRoleRequest {
-  farm_id: string;
-  member_id: string;
-  role: "owner" | "manager" | "viewer";
-}
+import type { FarmMember, AddMemberData, UpdateMemberData } from "@/lib/types";
 
 /**
  * 멤버 초대 Mutation Hook
@@ -26,7 +13,7 @@ export function useInviteMemberMutation() {
 
   return useMutation({
     mutationFn: async (
-      data: InviteMemberRequest
+      data: { farm_id: string } & AddMemberData
     ): Promise<{ member: FarmMember; message: string }> => {
       // 기존 Zustand store와 동일한 API 엔드포인트 사용
       const response = await apiClient(`/api/farms/${data.farm_id}/members`, {
@@ -37,14 +24,9 @@ export function useInviteMemberMutation() {
       return { member: response.member, message: response.message };
     },
     onSuccess: (newMember, variables) => {
-      // 농장 멤버 목록 쿼리 무효화
+      // 농장 관련 모든 쿼리 무효화 (멤버 변경으로 인한 영향)
       queryClient.invalidateQueries({
-        queryKey: farmsKeys.farmMembers(variables.farm_id),
-      });
-
-      // 농장 정보 무효화 (멤버 변경으로 인한 영향)
-      queryClient.invalidateQueries({
-        queryKey: farmsKeys.info(variables.farm_id),
+        queryKey: farmsKeys.all,
       });
     },
   });
@@ -58,7 +40,7 @@ export function useUpdateMemberRoleMutation() {
 
   return useMutation({
     mutationFn: async (
-      data: UpdateMemberRoleRequest
+      data: { farm_id: string; member_id: string } & UpdateMemberData
     ): Promise<{ message: string; member: FarmMember }> => {
       const response = await apiClient(
         `/api/farms/${data.farm_id}/members/${data.member_id}`,
@@ -71,14 +53,9 @@ export function useUpdateMemberRoleMutation() {
       return response;
     },
     onSuccess: (result, variables) => {
-      // 농장 멤버 목록 쿼리 무효화
+      // 농장 관련 모든 쿼리 무효화 (멤버 역할 변경으로 인한 영향)
       queryClient.invalidateQueries({
-        queryKey: farmsKeys.farmMembers(variables.farm_id),
-      });
-
-      // 농장 정보 무효화 (멤버 역할 변경으로 인한 영향)
-      queryClient.invalidateQueries({
-        queryKey: farmsKeys.info(variables.farm_id),
+        queryKey: farmsKeys.all,
       });
     },
   });
@@ -108,14 +85,9 @@ export function useRemoveMemberMutation() {
       return { success: response.success, message: response.message };
     },
     onSuccess: (result, variables) => {
-      // 농장 멤버 목록 쿼리 무효화
+      // 농장 관련 모든 쿼리 무효화 (멤버 제거로 인한 영향)
       queryClient.invalidateQueries({
-        queryKey: farmsKeys.farmMembers(variables.farmId),
-      });
-
-      // 농장 정보 무효화 (멤버 제거로 인한 영향)
-      queryClient.invalidateQueries({
-        queryKey: farmsKeys.info(variables.farmId),
+        queryKey: farmsKeys.all,
       });
     },
   });

@@ -160,7 +160,7 @@ export function LoginActivitySection({ profile }: LoginActivitySectionProps) {
         </div>
 
         <div className="space-y-4">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-2 sm:space-y-0">
+          <div className="flex flex-row items-center justify-between">
             <div className="space-y-1">
               <div className="font-medium text-sm sm:text-base">
                 {LABELS.LAST_LOGIN}
@@ -174,7 +174,7 @@ export function LoginActivitySection({ profile }: LoginActivitySectionProps) {
             <Clock className="h-5 w-5 text-muted-foreground flex-shrink-0" />
           </div>
 
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-2 sm:space-y-0">
+          <div className="flex flex-row items-center justify-between">
             <div className="space-y-1">
               <div className="font-medium text-sm sm:text-base">
                 {LABELS.PASSWORD_CHANGE}
@@ -188,7 +188,7 @@ export function LoginActivitySection({ profile }: LoginActivitySectionProps) {
             <History className="h-5 w-5 text-muted-foreground flex-shrink-0" />
           </div>
 
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-2 sm:space-y-0">
+          <div className="flex flex-row items-center justify-between">
             <div className="space-y-1">
               <div className="font-medium text-sm sm:text-base">
                 {LABELS.LOGIN_COUNT}
@@ -200,7 +200,7 @@ export function LoginActivitySection({ profile }: LoginActivitySectionProps) {
             <CheckCircle2 className="h-5 w-5 text-muted-foreground flex-shrink-0" />
           </div>
 
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-2 sm:space-y-0">
+          <div className="flex flex-row items-center justify-between">
             <div className="space-y-1">
               <div className="font-medium text-sm sm:text-base">
                 {LABELS.ACCOUNT_STATUS}

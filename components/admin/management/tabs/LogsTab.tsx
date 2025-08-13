@@ -3,38 +3,43 @@
 import React from "react";
 import { useState } from "react";
 import { FileText } from "lucide-react";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Skeleton } from "@/components/ui/skeleton";
+// Removed inline error/loading UI handled by LogsDataManager
 import { useAdminLogsQuery } from "@/lib/hooks/query/use-admin-logs-query";
-import { StatsSkeleton, TableSkeleton } from "@/components/common/skeletons";
+import { StatsSkeleton, TableSkeleton } from "@/components/ui/skeleton";
 
-import type { SystemLog } from "@/lib/types/system";
-import { formatDateTime } from "@/lib/utils/datetime/date";
+import type { SystemLog } from "@/lib/types/common";
+import { formatInTimeZone } from "date-fns-tz";
 import {
   LogStats,
   LogList,
-  LogDetailModal,
+  LogDetailSheet,
   LogCategoryFilters,
   LogFilterStatus,
   LogManagementButtons,
   LogEmptyState,
-  LogsDataManager,
   LogsFilterManager,
   LogsActionManager,
   LogsExportManager,
 } from "../logs";
 import { LogsExportRefactored } from "../exports";
-import { CommonPageWrapper } from "../shared/CommonPageWrapper";
-import { ResponsivePagination } from "@/components/common/responsive-pagination";
+import { CommonPageWrapper, CommonResultsSummary } from "../shared";
+import { ResponsivePagination } from "@/components/ui/responsive-pagination";
 import { LogFilters } from "../logs";
 import { ErrorBoundary } from "@/components/error/error-boundary";
 import { AdminError } from "@/components/error/admin-error";
 import { ERROR_CONFIGS } from "@/lib/constants/error";
 import { useDataFetchTimeout } from "@/hooks/system/useTimeout";
 import { LABELS } from "@/lib/constants/management";
+import { formatDateTime } from "@/lib/utils/datetime/date";
 
 export function LogsTab() {
-  const { data: stats, isLoading: loading, refetch } = useAdminLogsQuery();
+  const {
+    data,
+    isLoading: loading,
+    error,
+    refetch,
+    dataUpdatedAt,
+  } = useAdminLogsQuery();
   const [selectedLog, setSelectedLog] = useState<SystemLog | null>(null);
 
   // 타임아웃 관리
@@ -71,202 +76,157 @@ export function LogsTab() {
     );
   }
 
-  if (!stats) return;
+  if (error) {
+    return (
+      <AdminError
+        title={ERROR_CONFIGS.LOADING.title}
+        description={ERROR_CONFIGS.LOADING.description}
+        retry={refetch}
+        error={error as Error}
+      />
+    );
+  }
+
+  if (!data) return null;
+  const stats = data.stats;
+  const logs = (data as any).logs as SystemLog[];
 
   return (
     <ErrorBoundary
       title={ERROR_CONFIGS.LOADING.title}
       description={ERROR_CONFIGS.LOADING.description}
     >
-      <LogsDataManager>
-        {({ logs, isLoading, error, lastUpdate, refetch }) => (
-          <LogsFilterManager logs={logs}>
+      <LogsFilterManager logs={logs}>
+        {({
+          filters,
+          setFilters,
+          categoryFilters,
+          setCategoryFilters,
+          levelFilters,
+          setLevelFilters,
+          filteredLogs,
+        }) => (
+          <LogsActionManager logs={logs} refetch={refetch}>
             {({
-              filters,
-              setFilters,
-              categoryFilters,
-              setCategoryFilters,
-              levelFilters,
-              setLevelFilters,
-              filteredLogs,
+              handleDeleteLog,
+              handleDeleteAllLogs,
+              handleDeleteOldLogs,
+              isLoading: logsActionLoading,
             }) => (
-              <LogsActionManager logs={logs} refetch={refetch}>
-                {({
-                  handleDeleteLog,
-                  handleDeleteAllLogs,
-                  handleDeleteOldLogs,
-                  isLoading: logsActionLoading,
-                }) => (
-                  <LogsExportManager logs={filteredLogs}>
-                    {({ handleLogsExport }) => {
-                      // 빈 데이터 상태 처리
-                      const showEmptyState =
-                        !isLoading && filteredLogs.length === 0;
+              <LogsExportManager logs={filteredLogs}>
+                {({ handleLogsExport }) => {
+                  const showEmptyState = filteredLogs.length === 0;
 
-                      // 에러 상태 처리
-                      if (error) {
-                        return (
-                          <Alert variant="destructive">
-                            <AlertDescription>
-                              로그를 불러오는 중 오류가 발생했습니다: {error}
-                            </AlertDescription>
-                          </Alert>
-                        );
-                      }
+                  return (
+                    <CommonPageWrapper>
+                      <div className="space-y-4">
+                        <LogStats stats={stats} />
 
-                      // 로딩 상태 처리
-                      if (isLoading) {
-                        return (
-                          <CommonPageWrapper>
-                            <div className="space-y-4">
-                              <Skeleton className="h-8 w-full" />
-                              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                                {Array.from({ length: 4 }).map((_, i) => (
-                                  <Skeleton key={i} className="h-24 w-full" />
-                                ))}
-                              </div>
-                              <Skeleton className="h-64 w-full" />
+                        {/* 로그 관리 섹션 */}
+                        <div className="space-y-4">
+                          {/* 헤더 */}
+                          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3">
+                            <div>
+                              <h3 className="flex items-center gap-2 text-lg font-semibold">
+                                <FileText className="h-5 w-5" />
+                                {LABELS.SYSTEM_LOGS_TAB}
+                              </h3>
+                              <p className="text-sm text-muted-foreground mt-1">
+                                {LABELS.SYSTEM_LOGS_TAB_DESC}
+                              </p>
                             </div>
-                          </CommonPageWrapper>
-                        );
-                      }
-
-                      return (
-                        <CommonPageWrapper>
-                          <div className="space-y-2 sm:space-y-4">
-                            <LogStats stats={stats} />
-
-                            {/* 로그 관리 섹션 */}
-                            <div className="space-y-4">
-                              {/* 헤더 */}
-                              <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3">
-                                <div>
-                                  <h3 className="flex items-center gap-2 text-lg font-semibold">
-                                    <FileText className="h-5 w-5" />
-                                    {LABELS.SYSTEM_LOGS_TAB}
-                                  </h3>
-                                  <p className="text-sm text-muted-foreground mt-1">
-                                    {LABELS.SYSTEM_LOGS_TAB_DESC}
-                                  </p>
-                                </div>
-                                <div className="flex flex-col lg:flex-row lg:items-center gap-2 lg:gap-4">
-                                  <div className="text-sm text-muted-foreground">
-                                    {LABELS.LAST_UPDATE_TAB.replace(
-                                      "{datetime}",
-                                      formatDateTime(lastUpdate)
-                                    )}
-                                  </div>
-                                  <LogsExportRefactored
-                                    logs={filteredLogs}
-                                    onExport={handleLogsExport}
-                                  />
-                                </div>
+                            <div className="flex flex-col lg:flex-row lg:items-center gap-2 lg:gap-4">
+                              <div className="text-sm text-muted-foreground">
+                                {LABELS.LAST_UPDATE_TAB.replace(
+                                  "{datetime}",
+                                  formatDateTime(new Date(dataUpdatedAt))
+                                )}
                               </div>
-
-                              {/* 필터들 */}
-                              <div className="space-y-2 sm:space-y-4">
-                                <LogFilters
-                                  filters={filters}
-                                  onFiltersChange={setFilters}
-                                  levelFilters={levelFilters}
-                                  onLevelFiltersChange={setLevelFilters}
-                                  onCategoryFiltersChange={setCategoryFilters}
-                                />
-                                <LogCategoryFilters
-                                  categoryFilters={categoryFilters}
-                                  onCategoryFiltersChange={setCategoryFilters}
-                                />
-                                <LogFilterStatus
-                                  totalCount={logs.length}
-                                  filteredCount={filteredLogs.length}
-                                  categoryFilters={categoryFilters}
-                                  filters={filters}
-                                  levelFilters={levelFilters}
-                                  onClearAllFilters={() => {
-                                    setFilters({
-                                      search: "",
-                                      level: undefined,
-                                      startDate: undefined,
-                                      endDate: undefined,
-                                    });
-                                    setLevelFilters(["all"]);
-                                    setCategoryFilters(["all"]);
-                                  }}
-                                />
-                              </div>
-
-                              {/* 관리 버튼 */}
-                              <LogManagementButtons
-                                logsCount={logs.length}
-                                onDeleteOldLogs={handleDeleteOldLogs}
-                                onDeleteAllLogs={handleDeleteAllLogs}
-                                isLoading={logsActionLoading}
+                              <LogsExportRefactored
+                                logs={filteredLogs}
+                                onExport={handleLogsExport}
                               />
-
-                              {/* 로그 목록 */}
-                              {showEmptyState ? (
-                                <LogEmptyState filters={filters} />
-                              ) : (
-                                <ResponsivePagination
-                                  data={filteredLogs}
-                                  itemsPerPage={30} // 데스크톱 기준 30개 (로그는 더 많이 표시)
-                                >
-                                  {({
-                                    paginatedData,
-                                    totalItems,
-                                    isLoadingMore,
-                                    hasMore,
-                                  }) => (
-                                    <>
-                                      {/* 결과 요약 카드 - 모바일 가독성 개선 */}
-                                      <div className="bg-card border rounded-lg p-3 sm:p-4">
-                                        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-                                          <div className="flex items-center gap-2">
-                                            <div className="w-2 h-2 bg-primary rounded-full"></div>
-                                            <span className="text-sm sm:text-base font-medium text-foreground">
-                                              {LABELS.TOTAL_LOGS_COUNT.replace(
-                                                "{count}",
-                                                totalItems.toString()
-                                              )}
-                                            </span>
-                                          </div>
-                                          {totalItems > 0 && (
-                                            <div className="text-xs sm:text-sm text-muted-foreground">
-                                              {paginatedData.length}개 표시 중
-                                            </div>
-                                          )}
-                                        </div>
-                                      </div>
-
-                                      {/* 로그 목록 */}
-                                      <LogList
-                                        logs={paginatedData}
-                                        onShowDetails={(log) =>
-                                          setSelectedLog(log)
-                                        }
-                                        onDeleteLog={handleDeleteLog}
-                                      />
-                                    </>
-                                  )}
-                                </ResponsivePagination>
-                              )}
                             </div>
                           </div>
-                          <LogDetailModal
-                            log={selectedLog}
-                            isOpen={!!selectedLog}
-                            onClose={() => setSelectedLog(null)}
+
+                          {/* 필터들 */}
+                          <div className="space-y-4">
+                            <LogFilters
+                              filters={filters}
+                              onFiltersChange={setFilters}
+                              levelFilters={levelFilters}
+                              onLevelFiltersChange={setLevelFilters}
+                            />
+                            <LogCategoryFilters
+                              categoryFilters={categoryFilters}
+                              onCategoryFiltersChange={setCategoryFilters}
+                            />
+                            <LogFilterStatus
+                              totalCount={logs.length}
+                              filteredCount={filteredLogs.length}
+                              categoryFilters={categoryFilters}
+                              filters={filters}
+                              levelFilters={levelFilters}
+                              onClearAllFilters={() => {
+                                setFilters({
+                                  search: "",
+                                  level: undefined,
+                                  startDate: undefined,
+                                  endDate: undefined,
+                                });
+                                setLevelFilters(["all"]);
+                                setCategoryFilters(["all"]);
+                              }}
+                            />
+                          </div>
+
+                          {/* 관리 버튼 */}
+                          <LogManagementButtons
+                            logsCount={logs.length}
+                            onDeleteOldLogs={handleDeleteOldLogs}
+                            onDeleteAllLogs={handleDeleteAllLogs}
+                            isLoading={logsActionLoading}
                           />
-                        </CommonPageWrapper>
-                      );
-                    }}
-                  </LogsExportManager>
-                )}
-              </LogsActionManager>
+
+                          {/* 로그 목록 */}
+                          {showEmptyState ? (
+                            <LogEmptyState filters={filters} />
+                          ) : (
+                            <ResponsivePagination
+                              data={filteredLogs}
+                              itemsPerPage={30}
+                            >
+                              {({ paginatedData, totalItems }) => (
+                                <>
+                                  <CommonResultsSummary
+                                    totalItems={totalItems}
+                                    displayedItems={paginatedData.length}
+                                    summaryText={LABELS.TOTAL_LOGS_COUNT}
+                                  />
+                                  <LogList
+                                    logs={paginatedData}
+                                    onShowDetails={(log) => setSelectedLog(log)}
+                                    onDeleteLog={handleDeleteLog}
+                                  />
+                                </>
+                              )}
+                            </ResponsivePagination>
+                          )}
+                        </div>
+                      </div>
+                      <LogDetailSheet
+                        log={selectedLog}
+                        open={!!selectedLog}
+                        onClose={() => setSelectedLog(null)}
+                      />
+                    </CommonPageWrapper>
+                  );
+                }}
+              </LogsExportManager>
             )}
-          </LogsFilterManager>
+          </LogsActionManager>
         )}
-      </LogsDataManager>
+      </LogsFilterManager>
     </ErrorBoundary>
   );
 }

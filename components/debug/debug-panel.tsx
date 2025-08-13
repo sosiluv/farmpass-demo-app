@@ -18,7 +18,10 @@ import { useDebugLogs } from "@/hooks/debug/use-debug-logs";
 import { SystemInfoSection } from "./system-info-section";
 import { PerformanceInfoSection } from "./performance-info-section";
 import { DebugLogsSection } from "./debug-logs-section";
-import type { DebugPanelProps } from "@/lib/types/debug";
+
+interface DebugPanelProps {
+  show: boolean;
+}
 
 export function DebugPanel({ show }: DebugPanelProps) {
   const [isOpen, setIsOpen] = useState(false);

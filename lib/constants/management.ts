@@ -141,8 +141,8 @@ export const LABELS = {
   SYSTEM_INFO_DESC: "레벨, 카테고리",
   METADATA: "메타데이터",
   METADATA_DESC: "상세 정보, 컨텍스트",
-  // 농장 관리
 
+  // 농장 관리
   OWNER_INFO: "소유자 정보",
   MANAGER_INFO: "관리자 정보",
   NO_INFO: "정보 없음",
@@ -150,8 +150,9 @@ export const LABELS = {
   MEMBERS: "구성원",
   FARM_DESCRIPTION: "농장 설명",
   DETAIL_INFO_VIEW: "상세 정보 보기",
-  // 농장 필터
+  NO_FARM_INFO: "농장 정보가 없습니다.",
 
+  // 농장 필터
   SUSPENDED: "정지",
   // 농장 목록
   UNASSIGNED: "미지정",
@@ -326,6 +327,7 @@ export const LABELS = {
 
   // 단위 표시
   COUNT_UNIT: "{count}건",
+  DISPLAYED_ITEMS_COUNT: "{count}개 표시 중",
 
   // 권한 확인
   CHECKING_PERMISSION: "권한을 확인하는 중...",

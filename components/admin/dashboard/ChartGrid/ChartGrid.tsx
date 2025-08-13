@@ -1,4 +1,4 @@
-import { ChartCard } from "@/components/common/ChartCard";
+import { ChartCard } from "@/components/admin/management/dashboard/ChartCard";
 import { VisitorTrendChart } from "@/components/charts/visitor-trend-chart";
 import { VisitorPurposeChart } from "@/components/charts/visitor-purpose-chart";
 import { VisitorTimeChart } from "@/components/charts/visitor-time-chart";

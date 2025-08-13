@@ -15,7 +15,7 @@ import {
 } from "@/components/ui/select";
 import { Building2, Users } from "lucide-react";
 import { getFarmTypeIcon, getFarmTypeLabel } from "@/lib/constants/farm-types";
-import type { Farm } from "@/lib/types/farm";
+import type { Farm } from "@/lib/types/common";
 import { getFarmTypeInfo } from "@/lib/constants/farm-types";
 import { LABELS } from "@/lib/constants/visitor";
 

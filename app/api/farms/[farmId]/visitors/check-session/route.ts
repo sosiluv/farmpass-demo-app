@@ -121,13 +121,13 @@ export async function GET(
         return NextResponse.json({
           isFirstVisit: false,
           lastVisit: {
-            visitDateTime: lastVisit.visit_datetime,
-            visitorName: lastVisit.visitor_name,
-            visitorPhone: lastVisit.visitor_phone,
-            visitorAddress: lastVisit.visitor_address,
-            vehicleNumber: lastVisit.vehicle_number,
-            visitPurpose: lastVisit.visitor_purpose,
-            profilePhotoUrl: lastVisit.profile_photo_url,
+            visit_datetime: lastVisit.visit_datetime,
+            visitor_name: lastVisit.visitor_name,
+            visitor_phone: lastVisit.visitor_phone,
+            visitor_address: lastVisit.visitor_address,
+            vehicle_number: lastVisit.vehicle_number,
+            visitor_purpose: lastVisit.visitor_purpose,
+            profile_photo_url: lastVisit.profile_photo_url,
           },
           sessionInfo: {
             remainingHours: 0,
@@ -160,13 +160,13 @@ export async function GET(
     return NextResponse.json({
       isFirstVisit: false,
       lastVisit: {
-        visitDateTime: lastVisit.visit_datetime,
-        visitorName: lastVisit.visitor_name,
-        visitorPhone: lastVisit.visitor_phone,
-        visitorAddress: lastVisit.visitor_address,
-        vehicleNumber: lastVisit.vehicle_number,
-        visitPurpose: lastVisit.visitor_purpose,
-        profilePhotoUrl: lastVisit.profile_photo_url,
+        visit_datetime: lastVisit.visit_datetime,
+        visitor_name: lastVisit.visitor_name,
+        visitor_phone: lastVisit.visitor_phone,
+        visitor_address: lastVisit.visitor_address,
+        vehicle_number: lastVisit.vehicle_number,
+        visitor_purpose: lastVisit.visitor_purpose,
+        profile_photo_url: lastVisit.profile_photo_url,
       },
       sessionInfo: {
         remainingHours,

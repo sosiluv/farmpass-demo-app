@@ -4,7 +4,7 @@ import { AccountTabs } from "@/components/admin/account/account-tabs";
 import { useAuth } from "@/components/providers/auth-provider";
 import { PageHeader } from "@/components/layout";
 import { ErrorBoundary } from "@/components/error/error-boundary";
-import { CardSkeleton } from "@/components/common/skeletons";
+import { CardSkeleton } from "@/components/ui/skeleton";
 import { PAGE_HEADER } from "@/lib/constants/account";
 import { ERROR_CONFIGS } from "@/lib/constants/error";
 import { useProfileQuery } from "@/lib/hooks/query/use-profile-query";
@@ -46,7 +46,7 @@ export default function AccountPage() {
             className="grid-cols-1 md:grid-cols-2 lg:grid-cols-3"
           />
         ) : (
-          <AccountTabs profile={profile} userId={state.user.id} />
+          <AccountTabs profile={profile} />
         )}
       </div>
     </ErrorBoundary>

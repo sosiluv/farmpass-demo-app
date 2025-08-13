@@ -18,18 +18,18 @@ export function EmptyFarmsState({ onAddClick }: EmptyFarmsStateProps) {
     >
       <Card>
         <CardContent className="flex flex-col items-center justify-center py-12">
-          <div className="text-center space-y-4">
-            <div className="mx-auto mb-4">
+          <div className="flex flex-col items-center space-y-6">
+            <div className="flex justify-center">
               <div className="w-48 h-48">
                 <LottieLoading
                   animationPath="/lottie/no_result.json"
-                  size="lg"
+                  size="md"
                   showText={false}
                   fullScreen={false}
                 />
               </div>
             </div>
-            <div>
+            <div className="text-center space-y-2">
               <h3 className="text-lg font-semibold">
                 {LABELS.NO_REGISTERED_FARMS}
               </h3>

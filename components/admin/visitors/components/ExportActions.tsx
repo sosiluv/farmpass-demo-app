@@ -1,6 +1,6 @@
 import { Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { DialogFooter } from "@/components/ui/dialog";
+import { CommonSheetFooter } from "@/components/ui/sheet-common";
 import { BUTTONS, LABELS } from "@/lib/constants/visitor";
 
 interface ExportActionsProps {
@@ -17,32 +17,24 @@ export function ExportActions({
   onReset,
 }: ExportActionsProps) {
   return (
-    <DialogFooter className="flex flex-col sm:flex-row gap-2 sm:gap-3 pt-4">
-      <Button
-        variant="outline"
-        onClick={onReset}
-        disabled={isExporting}
-        className="w-full sm:w-auto h-8 sm:h-9 text-sm sm:text-base"
-      >
-        {BUTTONS.EXPORT_ACTIONS_RESET}
-      </Button>
-      <Button
-        onClick={onExport}
-        disabled={isExporting || !canExport}
-        className="w-full sm:w-auto h-8 sm:h-9 text-sm sm:text-base bg-primary hover:bg-primary/90"
-      >
-        {isExporting ? (
-          <>
-            <div className="animate-spin rounded-full h-3 w-3 border-2 border-white border-t-transparent mr-2" />
-            {BUTTONS.EXPORT_ACTIONS_EXPORTING}
-          </>
+    <CommonSheetFooter
+      onCancel={onReset}
+      onConfirm={onExport}
+      cancelText={BUTTONS.EXPORT_ACTIONS_RESET}
+      confirmText={
+        isExporting
+          ? BUTTONS.EXPORT_ACTIONS_EXPORTING
+          : BUTTONS.EXPORT_ACTIONS_CSV_DOWNLOAD
+      }
+      isLoading={isExporting}
+      disabled={isExporting || !canExport}
+      confirmIcon={
+        isExporting ? (
+          <div className="animate-spin rounded-full h-3 w-3 border-2 border-white border-t-transparent mr-2" />
         ) : (
-          <>
-            <Download className="h-3 w-3 mr-2" />
-            {BUTTONS.EXPORT_ACTIONS_CSV_DOWNLOAD}
-          </>
-        )}
-      </Button>
-    </DialogFooter>
+          <Download className="h-3 w-3 mr-2" />
+        )
+      }
+    />
   );
 }

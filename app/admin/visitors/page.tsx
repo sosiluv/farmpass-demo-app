@@ -1,10 +1,10 @@
 "use client";
 
 import { useAuth } from "@/components/providers/auth-provider";
-import { StatsSkeleton, TableSkeleton } from "@/components/common/skeletons";
-import { useVisitorFiltersStore } from "@/lib/hooks/query/use-visitor-filters";
+import { StatsSkeleton, TableSkeleton } from "@/components/ui/skeleton";
+import { useVisitorFiltersStore } from "@/store/use-visitor-filters-store";
 import {
-  VisitorTable,
+  VisitorTableSheet,
   VisitorFilters,
   VisitorStats,
   VisitorExportRefactored,
@@ -15,7 +15,7 @@ import { useVisitorActions } from "@/hooks/visitor/useVisitorActions";
 import { generateVisitorPageStats } from "@/lib/utils/data/common-stats";
 import { ErrorBoundary } from "@/components/error/error-boundary";
 import { ERROR_CONFIGS } from "@/lib/constants/error";
-import { ResponsivePagination } from "@/components/common/responsive-pagination";
+import { ResponsivePagination } from "@/components/ui/responsive-pagination";
 import { useCommonToast } from "@/lib/utils/notification/toast-messages";
 import { PAGE_HEADER } from "@/lib/constants/visitor";
 import { Users } from "lucide-react";
@@ -36,8 +36,8 @@ import { useProfileQuery } from "@/lib/hooks/query/use-profile-query";
 export default function VisitorsPage() {
   const { state } = useAuth();
   const userId = state.status === "authenticated" ? state.user.id : undefined;
-  const { data: profile } = useProfileQuery(userId);
-  const isAdmin = profile?.account_type === "admin";
+  const isAdmin =
+    state.status === "authenticated" && state.user?.app_metadata?.isAdmin;
   const { showError } = useCommonToast();
 
   // React Query Hooks - useFarmsContext 대신 useFarmsQuery 사용
@@ -45,7 +45,7 @@ export default function VisitorsPage() {
     farms,
     isLoading: farmsLoading,
     error: farmsError,
-  } = useFarmsQuery(profile?.id);
+  } = useFarmsQuery(userId);
 
   // 필터 Store
   const {
@@ -91,7 +91,7 @@ export default function VisitorsPage() {
   const { handleEdit, handleDelete, handleExport } = useVisitorActions({
     farms: farms, // 변환 없이 그대로 전달
     isAdmin,
-    profileId: profile?.id,
+    profileId: userId,
     allVisitors: allVisitors,
   });
 
@@ -213,7 +213,6 @@ export default function VisitorsPage() {
           onClearFilters={resetFilters}
           showFarmFilter={true}
           showAllOption={true}
-          isAdmin={isAdmin}
         />
 
         {/* 방문자 테이블 (페이징 적용) */}
@@ -223,7 +222,7 @@ export default function VisitorsPage() {
           sortFn={sortFn}
         >
           {({ paginatedData, isLoadingMore, hasMore }) => (
-            <VisitorTable
+            <VisitorTableSheet
               visitors={paginatedData}
               showFarmColumn={isAdmin || farms.length > 1} // 관리자이거나 농장이 여러 개인 경우 농장 컬럼 표시
               loading={loading}

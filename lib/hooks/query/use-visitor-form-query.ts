@@ -7,14 +7,14 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiClient } from "@/lib/utils/data";
 import { devLog } from "@/lib/utils/logging/dev-logger";
 import type { VisitorFormData } from "@/lib/utils/validation/visitor-validation";
-import type { Farm as VisitorFarm } from "@/lib/types/visitor";
+import type { Farm } from "@/lib/types/common";
 import { visitorsKeys, farmsKeys } from "@/lib/hooks/query/query-keys";
 
 // 농장 정보 조회 (Query)
 export const useFarmInfoQuery = (farmId: string) => {
   return useQuery({
     queryKey: farmsKeys.info(farmId),
-    queryFn: async (): Promise<VisitorFarm> => {
+    queryFn: async (): Promise<Farm> => {
       devLog.log(`[QUERY] 농장 정보 조회 시작: ${farmId}`);
 
       const result = await apiClient(`/api/farms/${farmId}`, {
@@ -22,15 +22,7 @@ export const useFarmInfoQuery = (farmId: string) => {
         context: "농장 정보 조회",
       });
 
-      const farmData: VisitorFarm = {
-        id: result.farm.id,
-        farm_name: result.farm.farm_name,
-        farm_address: result.farm.farm_address,
-        manager_name: result.farm.manager_name || "",
-        manager_phone: result.farm.manager_phone || "",
-        farm_type: result.farm.farm_type || undefined,
-        owner_id: result.farm.owner_id,
-      };
+      const farmData: Farm = result.farm;
 
       return farmData;
     },

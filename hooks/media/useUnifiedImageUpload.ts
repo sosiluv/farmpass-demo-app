@@ -13,14 +13,13 @@ import {
   UnifiedImageManager,
 } from "@/lib/utils/media/unified-image-manager";
 import { UploadType } from "@/lib/constants/upload";
-import {
+import type {
   UploadResult,
   UploadError,
   UploadState,
-  UseImageUploadReturn,
 } from "@/lib/types/upload";
 import { useSystemSettingsQuery } from "@/lib/hooks/query/use-system-settings-query";
-import { profileKeys } from "@/lib/hooks/query/query-keys";
+import { profileKeys, farmsKeys } from "@/lib/hooks/query/query-keys";
 import { useQueryClient } from "@tanstack/react-query";
 import {
   mapRawErrorToCode,
@@ -40,6 +39,17 @@ export interface UseUnifiedImageUploadOptions {
   onSuccess?: (result: UploadResult) => void;
   // settings context refetch 옵션 추가
   refetchSettings?: boolean;
+}
+
+export interface UseImageUploadReturn {
+  state: UploadState;
+  loading: boolean;
+  progress: number;
+  error: UploadError | null;
+  result: UploadResult | null;
+  uploadImage: (file: File) => Promise<UploadResult | void>;
+  deleteImage: () => Promise<void>;
+  reset: () => void;
 }
 
 export function useUnifiedImageUpload(
@@ -140,9 +150,8 @@ export function useUnifiedImageUpload(
       if (uploadType === "profile") {
         try {
           await queryClient.invalidateQueries({ queryKey: profileKeys.all });
-          devLog.log("프로필 캐시 무효화 완료");
         } catch (error) {
-          devLog.error("프로필 캐시 무효화 실패:", error);
+          devLog.error("캐시 무효화 실패:", error);
         }
       }
 
@@ -389,9 +398,8 @@ export function useUnifiedImageUpload(
       if (uploadType === "profile") {
         try {
           await queryClient.invalidateQueries({ queryKey: profileKeys.all });
-          devLog.log("프로필 캐시 무효화 완료 (삭제 후)");
         } catch (error) {
-          devLog.error("프로필 캐시 무효화 실패 (삭제 후):", error);
+          devLog.error("캐시 무효화 실패 (삭제 후):", error);
         }
       }
 
@@ -399,7 +407,6 @@ export function useUnifiedImageUpload(
       if (refetchSettings) {
         try {
           await refetchSettingsContext();
-          devLog.log("Settings context refetch 완료 (삭제 후)");
         } catch (error) {
           devLog.error("Settings context refetch 실패 (삭제 후):", error);
         }

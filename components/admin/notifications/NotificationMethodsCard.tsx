@@ -3,7 +3,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import NotificationCardHeader from "./NotificationCardHeader";
 import { BellRing, MessageSquare } from "lucide-react";
 import NotificationTypeCard from "@/components/admin/notifications/NotificationTypeCard";
-import type { NotificationSettings } from "@/lib/types/notification";
+import type { UserNotificationSetting } from "@/lib/types/common";
 import { LABELS, PAGE_HEADER } from "@/lib/constants/notifications";
 
 // 알림 방식 옵션
@@ -25,10 +25,10 @@ const notificationTypeOptions = [
 ];
 
 interface NotificationMethodsCardProps {
-  settings: NotificationSettings | null;
-  onSettingChange: <K extends keyof NotificationSettings>(
+  settings: UserNotificationSetting | null;
+  onSettingChange: <K extends keyof UserNotificationSetting>(
     key: K,
-    value: NotificationSettings[K]
+    value: UserNotificationSetting[K]
   ) => void;
 }
 

@@ -5,29 +5,14 @@
  */
 
 import { apiClient } from "@/lib/utils/data/api-client";
+import { SECURITY_DEFAULTS } from "@/lib/constants/defaults";
+import type { PasswordRules } from "@/lib/types/settings";
 
 /**
  * 전화번호 정규식 패턴
  * 010, 011, 016, 017, 018, 019로 시작하는 한국 휴대폰 번호 형식
  */
 export const PHONE_PATTERN = /^01([0|1|6|7|8|9])-?([0-9]{3,4})-?([0-9]{4})$/;
-
-// 기본 비밀번호 규칙 (보수적인 설정)
-export const DEFAULT_PASSWORD_RULES = {
-  passwordMinLength: 6, // 일반적인 보안 기준
-  passwordRequireSpecialChar: true, // 더 강력한 보안을 위해
-  passwordRequireNumber: true, // 더 강력한 보안을 위해
-  passwordRequireUpperCase: true, // 더 강력한 보안을 위해
-  passwordRequireLowerCase: true, // 더 강력한 보안을 위해
-} as const;
-
-interface PasswordRules {
-  passwordMinLength: number;
-  passwordRequireSpecialChar: boolean;
-  passwordRequireNumber: boolean;
-  passwordRequireUpperCase: boolean;
-  passwordRequireLowerCase: boolean;
-}
 
 // 타입 내보내기
 export type { PasswordRules };
@@ -38,24 +23,23 @@ export type { PasswordRules };
  */
 export const extractPasswordRules = (settings: any): PasswordRules => {
   if (!settings) {
-    return DEFAULT_PASSWORD_RULES;
+    return SECURITY_DEFAULTS;
   }
 
   return {
     passwordMinLength:
-      settings.passwordMinLength || DEFAULT_PASSWORD_RULES.passwordMinLength,
+      settings.passwordMinLength || SECURITY_DEFAULTS.passwordMinLength,
     passwordRequireSpecialChar:
       settings.passwordRequireSpecialChar ??
-      DEFAULT_PASSWORD_RULES.passwordRequireSpecialChar,
+      SECURITY_DEFAULTS.passwordRequireSpecialChar,
     passwordRequireNumber:
-      settings.passwordRequireNumber ??
-      DEFAULT_PASSWORD_RULES.passwordRequireNumber,
+      settings.passwordRequireNumber ?? SECURITY_DEFAULTS.passwordRequireNumber,
     passwordRequireUpperCase:
       settings.passwordRequireUpperCase ??
-      DEFAULT_PASSWORD_RULES.passwordRequireUpperCase,
+      SECURITY_DEFAULTS.passwordRequireUpperCase,
     passwordRequireLowerCase:
       settings.passwordRequireLowerCase ??
-      DEFAULT_PASSWORD_RULES.passwordRequireLowerCase,
+      SECURITY_DEFAULTS.passwordRequireLowerCase,
   };
 };
 

@@ -8,6 +8,10 @@ import {
   throwBusinessError,
 } from "@/lib/utils/error/errorUtil";
 import { LOG_MESSAGES } from "@/lib/utils/logging/log-templates";
+import {
+  updateVisitorFormSchema,
+  type VisitorSheetFormData,
+} from "@/lib/utils/validation/visitor-validation";
 
 export async function PUT(
   request: NextRequest,
@@ -15,7 +19,7 @@ export async function PUT(
 ) {
   const { farmId, visitorId } = params;
 
-  let updateData: any = {};
+  let updateData: VisitorSheetFormData;
 
   // 인증 확인
   const authResult = await requireAuth(false);
@@ -26,29 +30,31 @@ export async function PUT(
   const user = authResult.user;
 
   try {
-    updateData = await request.json();
+    const requestData: VisitorSheetFormData = await request.json();
 
-    // 필수 필드 검증
-    if (
-      !updateData.visitor_name?.trim() ||
-      !updateData.visitor_phone?.trim() ||
-      !updateData.visitor_address?.trim()
-    ) {
-      throwBusinessError("MISSING_REQUIRED_FIELDS", {
-        operation: "update_visitor",
-        visitorId: visitorId,
-        farmId: farmId,
+    // ZOD 스키마로 검증
+    const validation = updateVisitorFormSchema.safeParse(requestData);
+    if (!validation.success) {
+      throwBusinessError("INVALID_FORM_DATA", {
+        errors: validation.error.errors,
+        formType: "visitor",
       });
     }
+    updateData = validation.data;
 
     const visitorUpdateData = {
       visitor_name: updateData.visitor_name.trim(),
       visitor_phone: updateData.visitor_phone.trim(),
-      visitor_address: updateData.visitor_address.trim(),
-      visitor_purpose: updateData.visitor_purpose?.trim() || null,
-      vehicle_number: updateData.vehicle_number?.trim() || null,
-      notes: updateData.notes?.trim() || null,
-      disinfection_check: updateData.disinfection_check || false,
+      visitor_address: `${updateData.visitor_address.trim()}${
+        updateData.detailed_address?.trim()
+          ? " " + updateData.detailed_address.trim()
+          : ""
+      }`,
+      visitor_purpose: updateData.visitor_purpose || null,
+      vehicle_number: updateData.vehicle_number || null,
+      notes: updateData.notes || null,
+      disinfection_check: updateData.disinfection_check,
+      consent_given: updateData.consent_given,
       updated_at: new Date(),
     };
 

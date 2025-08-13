@@ -10,6 +10,9 @@ import {
 } from "@/lib/utils/error/errorUtil";
 import { LOG_MESSAGES } from "@/lib/utils/logging/log-templates";
 import { prisma } from "@/lib/prisma";
+import { getSystemSettings } from "@/lib/cache/system-settings-cache";
+import type { RegistrationFormData } from "@/lib/utils/validation/auth-validation";
+import { createRegistrationFormSchema } from "@/lib/utils/validation/auth-validation";
 
 // Turnstile 검증 함수
 async function verifyTurnstile(token: string, request: NextRequest) {
@@ -57,43 +60,57 @@ async function verifyTurnstile(token: string, request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json();
+    const body: RegistrationFormData & {
+      turnstileToken: string;
+      privacyConsent: boolean;
+      termsConsent: boolean;
+      marketingConsent: boolean;
+    } = await request.json();
 
-    // 클라이언트에서 이미 검증된 데이터를 그대로 사용
-    const {
-      email,
-      password,
-      name,
-      phone,
-      turnstileToken,
-      privacyConsent,
-      termsConsent,
-      marketingConsent,
-    } = body;
-
-    const validatedData = {
-      email,
-      password,
-      name,
-      phone,
-      turnstileToken,
-      privacyConsent,
-      termsConsent,
-      marketingConsent,
+    // 시스템 설정에서 비밀번호 규칙 가져오기
+    const settings = await getSystemSettings();
+    const passwordRules = {
+      passwordMinLength: settings.passwordMinLength,
+      passwordRequireSpecialChar: settings.passwordRequireSpecialChar,
+      passwordRequireNumber: settings.passwordRequireNumber,
+      passwordRequireUpperCase: settings.passwordRequireUpperCase,
+      passwordRequireLowerCase: settings.passwordRequireLowerCase,
     };
 
+    // ZOD 스키마로 검증 (RegistrationFormData 부분만)
+    const registrationSchema = createRegistrationFormSchema(passwordRules);
+    const {
+      turnstileToken,
+      privacyConsent,
+      termsConsent,
+      marketingConsent,
+      ...registrationData
+    } = body;
+
+    const validation = registrationSchema.safeParse(registrationData);
+    console.log("validation", validation);
+    if (!validation.success) {
+      throwBusinessError("INVALID_FORM_DATA", {
+        errors: validation.error.errors,
+        formType: "user",
+      });
+    }
+
+    // 검증된 데이터 사용
+    const { email, password, name, phone } = validation.data;
+
     // 캡차 인증 확인 (내부 함수 사용)
-    await verifyTurnstile(validatedData.turnstileToken, request);
+    await verifyTurnstile(turnstileToken, request);
 
     // Supabase Auth를 통한 사용자 생성
     const supabase = await createClient();
     const { data: authData, error: authError } = await supabase.auth.signUp({
-      email: validatedData.email,
-      password: validatedData.password,
+      email: email,
+      password: password,
       options: {
         data: {
-          name: validatedData.name,
-          phone: validatedData.phone,
+          name: name,
+          phone: phone,
         },
       },
     });
@@ -104,7 +121,7 @@ export async function POST(request: NextRequest) {
       // 회원가입 실패 로그 기록 - 템플릿 활용
       await createSystemLog(
         "USER_CREATE_FAILED",
-        LOG_MESSAGES.USER_CREATE_FAILED(validatedData.email, authError.message),
+        LOG_MESSAGES.USER_CREATE_FAILED(email, authError.message),
         "error",
         undefined,
         "user",
@@ -113,14 +130,14 @@ export async function POST(request: NextRequest) {
           action_type: "auth_event",
           event: "user_create_failed",
           error_message: authError.message,
-          email: validatedData.email,
+          email: email,
         },
         request
       );
 
       const result = getErrorResultFromRawError(authError, {
         operation: "register",
-        email: validatedData.email,
+        email: email,
       });
 
       return NextResponse.json(makeErrorResponseFromResult(result), {
@@ -139,7 +156,7 @@ export async function POST(request: NextRequest) {
       where: {
         is_active: true,
         type: {
-          in: ["privacy", "terms", "marketing"],
+          in: ["privacy_consent", "terms", "marketing"],
         },
       },
       select: {
@@ -156,8 +173,8 @@ export async function POST(request: NextRequest) {
     const now = new Date();
 
     // 필수 약관 동의 저장
-    if (validatedData.privacyConsent) {
-      const privacyTermId = termIdMap.get("privacy");
+    if (privacyConsent) {
+      const privacyTermId = termIdMap.get("privacy_consent");
       if (privacyTermId) {
         consentRecords.push({
           user_id: authData.user.id,
@@ -168,7 +185,7 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    if (validatedData.termsConsent) {
+    if (termsConsent) {
       const termsTermId = termIdMap.get("terms");
       if (termsTermId) {
         consentRecords.push({
@@ -181,7 +198,7 @@ export async function POST(request: NextRequest) {
     }
 
     // 선택적 마케팅 동의 저장
-    if (validatedData.marketingConsent) {
+    if (marketingConsent) {
       const marketingTermId = termIdMap.get("marketing");
       if (marketingTermId) {
         consentRecords.push({
@@ -213,20 +230,20 @@ export async function POST(request: NextRequest) {
     // 회원가입 성공 로그 기록 - 템플릿 활용
     await createSystemLog(
       "USER_CREATED",
-      LOG_MESSAGES.USER_CREATED(validatedData.name, validatedData.email),
+      LOG_MESSAGES.USER_CREATED(name, email),
       "info",
-      { id: authData.user.id, email: validatedData.email },
+      { id: authData.user.id, email: email },
       "user",
       authData.user.id,
       {
         event: "user_created",
         user_id: authData.user.id,
-        email: validatedData.email,
-        name: validatedData.name,
-        phone: validatedData.phone,
-        privacy_consent: validatedData.privacyConsent,
-        terms_consent: validatedData.termsConsent,
-        marketing_consent: validatedData.marketingConsent,
+        email: email,
+        name: name,
+        phone: phone,
+        privacy_consent: privacyConsent,
+        terms_consent: termsConsent,
+        marketing_consent: marketingConsent,
       },
       request
     );
@@ -237,8 +254,8 @@ export async function POST(request: NextRequest) {
         message: "회원가입이 완료되었습니다. 이메일 인증 후 로그인해주세요.",
         user: {
           id: authData.user.id,
-          email: validatedData.email,
-          name: validatedData.name,
+          email: email,
+          name: name,
         },
       },
       { status: 201 }

@@ -1,12 +1,12 @@
 import { useState } from "react";
 import {
-  ExportDialogWrapper,
+  ExportSheetWrapper,
   ExportActions,
   FilterSection,
   OptionsSection,
   SummarySection,
-  useExportDialog,
-} from "./index";
+  useExportSheet,
+} from "@/components/admin/management/exports";
 import { FARM_TYPE_LABELS } from "@/lib/constants/farm-types";
 import { BUTTONS, LABELS, PAGE_HEADER } from "@/lib/constants/management";
 
@@ -56,7 +56,7 @@ export function FarmsExportRefactored({ farms, onExport }: FarmsExportProps) {
   };
 
   // 공통 훅 사용
-  const { isOpen, setIsOpen, isExporting, handleExport } = useExportDialog({
+  const { isOpen, setIsOpen, isExporting, handleExport } = useExportSheet({
     onExport,
     validateOptions,
     successMessage: "농장 데이터가 성공적으로 내보내졌습니다.",
@@ -101,14 +101,14 @@ export function FarmsExportRefactored({ farms, onExport }: FarmsExportProps) {
   ];
 
   return (
-    <ExportDialogWrapper
+    <ExportSheetWrapper
       open={isOpen}
       onOpenChange={setIsOpen}
       title={PAGE_HEADER.FARMS_EXPORT_TITLE}
       description={PAGE_HEADER.FARMS_EXPORT_DESCRIPTION}
       buttonText={BUTTONS.FARMS_EXPORT_BUTTON}
     >
-      <div className="space-y-3 sm:space-y-4 md:space-y-6">
+      <div className="space-y-4">
         {/* 필터 설정 */}
         <FilterSection
           title={LABELS.FILTER_SETTINGS}
@@ -199,6 +199,6 @@ export function FarmsExportRefactored({ farms, onExport }: FarmsExportProps) {
         onExport={() => handleExport(exportOptions)}
         onReset={resetOptions}
       />
-    </ExportDialogWrapper>
+    </ExportSheetWrapper>
   );
 }

@@ -17,7 +17,7 @@ import { useCommonToast } from "@/lib/utils/notification/toast-messages";
 import { devLog } from "@/lib/utils/logging/dev-logger";
 import { ErrorBoundary } from "@/components/error/error-boundary";
 import { ERROR_CONFIGS } from "@/lib/constants/error";
-import { Logo } from "@/components/common";
+import { Logo } from "@/components/common/logo";
 import { PageLoading } from "@/components/ui/loading";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -37,7 +37,7 @@ import {
 import { createClient } from "@/lib/supabase/client";
 import { useAuthActions } from "@/hooks/auth/useAuthActions";
 import { useNotificationService } from "@/hooks/notification/useNotificationService";
-import { SocialLoginButton } from "@/components/common/SocialLoginButton";
+import { SocialLoginButton } from "@/components/ui/social-login-button";
 import { useLoginForm } from "@/hooks/auth/useLoginForm";
 
 export default function LoginPage() {
@@ -102,8 +102,7 @@ export default function LoginPage() {
 
               // 유효한 세션이면 프로필과 약관 동의 상태를 확인한 후 리다이렉트
               setRedirecting(true);
-              // 프로필과 약관 동의 상태 확인을 위해 profile-setup으로 리다이렉트
-              router.replace("/profile-setup");
+
               return;
             } catch (userError) {
               setRedirecting(false);
@@ -220,7 +219,7 @@ export default function LoginPage() {
               <div className="mx-auto mb-4 flex justify-center">
                 <Logo size="xl" />
               </div>
-              <CardTitle className="text-3xl">
+              <CardTitle className="text-2xl">
                 {PAGE_HEADER.LOGIN_TITLE}
               </CardTitle>
               <CardDescription>{PAGE_HEADER.LOGIN_DESCRIPTION}</CardDescription>

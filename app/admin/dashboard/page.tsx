@@ -14,17 +14,14 @@ import { useNotificationPermission } from "@/hooks/notification/useNotificationP
 import { useCommonToast } from "@/lib/utils/notification/toast-messages";
 import { BarChart3, TrendingUp } from "lucide-react";
 import { ErrorBoundary } from "@/components/error/error-boundary";
-import { calculateUnifiedChartData } from "@/lib/utils/data/common-stats";
 import { devLog } from "@/lib/utils/logging/dev-logger";
 import { AdminError } from "@/components/error/admin-error";
 import { useMultipleLoadingTimeout } from "@/hooks/system/useTimeout";
-import { InstallGuide } from "@/components/common/InstallGuide";
+import { InstallGuideSheet } from "@/components/common/InstallGuide/InstallGuideSheet";
 import { LABELS, PAGE_HEADER } from "@/lib/constants/dashboard";
 import { ERROR_CONFIGS } from "@/lib/constants/error";
-
-// React Query Hooks (100% 마이그레이션 완료)
 import { useFarmsQuery } from "@/lib/hooks/query/use-farms-query";
-import { useFarmVisitorsQuery } from "@/lib/hooks/query/use-farm-visitors-query";
+import { useAdminDashboardStatsQuery } from "@/lib/hooks/query/use-admin-dashboard-query";
 import { useProfileQuery } from "@/lib/hooks/query/use-profile-query";
 import { useUserConsentsQuery } from "@/lib/hooks/query/use-user-consents-query";
 import { isProfileComplete } from "@/lib/utils/auth/profile-utils";
@@ -38,7 +35,6 @@ export default function DashboardPage() {
     state.status === "authenticated"
   );
 
-  // React Query 100% 마이그레이션 완료 - 더 이상 Feature Flag 불필요
   const { farms: availableFarms, isLoading: farmsLoading } = useFarmsQuery();
 
   // profile에서 admin 여부 확인
@@ -92,14 +88,14 @@ export default function DashboardPage() {
     isInitialized,
   ]);
 
-  // 초기화 완료 체크 - farms 로딩 완료 후 초기값 설정
+  // 초기화 완료 체크 - farms 로딩 완료 후 초기값 설정 (농장 0건이어도 초기화 진행)
   useEffect(() => {
-    if (!isInitialized && !farmsLoading && availableFarms.length > 0) {
-      const initialFarm = isAdmin ? "all" : availableFarms[0]?.id || "all";
-      setSelectedFarm(initialFarm);
-      setIsInitialized(true);
-      devLog.log(`Initialization completed. Selected farm: ${initialFarm}`);
-    }
+    if (isInitialized) return;
+    if (farmsLoading) return;
+    const initialFarm = isAdmin ? "all" : availableFarms[0]?.id || "all";
+    setSelectedFarm(initialFarm);
+    setIsInitialized(true);
+    devLog.log(`Initialization completed. Selected farm: ${initialFarm}`);
   }, [farmsLoading, availableFarms, isAdmin, isInitialized]);
 
   // 알림 메시지 처리
@@ -116,20 +112,13 @@ export default function DashboardPage() {
 
   const memoizedSelectedFarm = isInitialized ? selectedFarm : null;
 
-  // React Query 방문자 Hook (100% 마이그레이션 완료)
+  // 단일 통합 집계 API 호출(선택 농장 반영)
   const {
-    loading: visitorsLoading,
-    visitors,
-    dashboardStats,
-    visitorTrend,
-    refetch: refetchVisitors,
-  } = useFarmVisitorsQuery(memoizedSelectedFarm);
-
-  // 통합 차트 데이터 계산 - useMemo로 최적화
-  const chartData = useMemo(
-    () => calculateUnifiedChartData(visitors),
-    [visitors]
-  );
+    data: adminStats,
+    isLoading: adminLoading,
+    error,
+    refetch,
+  } = useAdminDashboardStatsQuery(memoizedSelectedFarm || undefined);
 
   // 초기 로딩 상태 최적화 - 데이터가 있으면 스켈레톤 숨김
   const isInitialLoading = useMemo(() => {
@@ -138,10 +127,7 @@ export default function DashboardPage() {
       profileLoading ||
       consentLoading ||
       (farmsLoading && availableFarms.length === 0) ||
-      (visitorsLoading &&
-        selectedFarm &&
-        selectedFarm !== "" &&
-        visitors.length === 0) ||
+      adminLoading ||
       !isInitialized
     );
   }, [
@@ -150,20 +136,18 @@ export default function DashboardPage() {
     consentLoading,
     farmsLoading,
     availableFarms.length,
-    visitorsLoading,
-    selectedFarm,
-    visitors.length,
+    adminLoading,
     isInitialized,
   ]);
 
   // 데이터 재페칭 함수
   const handleDataRefetch = useCallback(() => {
-    refetchVisitors?.();
-  }, [refetchVisitors]);
+    refetch?.();
+  }, [refetch]);
 
   // 다중 로딩 상태 타임아웃 관리
   const { timeoutReached, retry } = useMultipleLoadingTimeout(
-    [visitorsLoading, farmsLoading],
+    [adminLoading, farmsLoading],
     handleDataRefetch,
     { timeout: 10000 }
   );
@@ -190,14 +174,25 @@ export default function DashboardPage() {
     );
   }
 
-  if (isInitialLoading) {
+  if (error) {
+    return (
+      <AdminError
+        title={ERROR_CONFIGS.LOADING.title}
+        description={ERROR_CONFIGS.LOADING.description}
+        retry={refetch}
+        error={error as Error}
+      />
+    );
+  }
+
+  if (isInitialLoading && !adminStats) {
     return (
       <div className="flex-1 space-y-6 sm:space-y-8 lg:space-y-10 px-4 md:px-6 lg:px-8 pt-3 pb-4 md:pb-6 lg:pb-8">
         <PageHeader
           title={PAGE_HEADER.PAGE_TITLE}
           description={PAGE_HEADER.PAGE_DESCRIPTION}
           icon={BarChart3}
-          actions={<InstallGuide />}
+          actions={<InstallGuideSheet />}
         />
         <DashboardSkeleton />
       </div>
@@ -217,7 +212,7 @@ export default function DashboardPage() {
               title={PAGE_HEADER.PAGE_TITLE}
               description={PAGE_HEADER.PAGE_DESCRIPTION}
               icon={BarChart3}
-              actions={<InstallGuide />}
+              actions={<InstallGuideSheet />}
             />
           </div>
 
@@ -238,7 +233,22 @@ export default function DashboardPage() {
               />
             </div>
             {/* 기존 StatsGrid 디자인 유지 */}
-            <StatsGrid stats={dashboardStats} />
+            <StatsGrid
+              stats={
+                adminStats?.dashboardStats || {
+                  totalVisitors: 0,
+                  todayVisitors: 0,
+                  weeklyVisitors: 0,
+                  disinfectionRate: 0,
+                  trends: {
+                    totalVisitorsTrend: "데이터 없음",
+                    todayVisitorsTrend: "데이터 없음",
+                    weeklyVisitorsTrend: "데이터 없음",
+                    disinfectionTrend: "데이터 없음",
+                  },
+                }
+              }
+            />
           </section>
 
           {/* 차트 섹션 */}
@@ -248,16 +258,14 @@ export default function DashboardPage() {
               <span>{LABELS.DETAILED_ANALYSIS}</span>
             </div>
             <ChartGrid
-              visitorTrend={visitorTrend}
-              purposeStats={chartData.purposeStats}
-              timeStats={chartData.timeStats}
-              regionStats={chartData.regionStats}
-              weekdayStats={chartData.weekdayStats}
+              visitorTrend={adminStats?.visitorTrend || []}
+              purposeStats={adminStats?.purposeStats || []}
+              timeStats={adminStats?.timeStats || []}
+              regionStats={adminStats?.regionStats || []}
+              weekdayStats={adminStats?.weekdayStats || []}
             />
           </section>
         </div>
-
-        {/* 알림 권한 요청 다이얼로그는 DialogManager에서 관리하므로 제거 */}
       </>
 
       {/* 재동의 Bottom Sheet 모달 */}

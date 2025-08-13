@@ -5,23 +5,8 @@ import { Progress } from "./progress";
 import { useSystemSettingsQuery } from "@/lib/hooks/query/use-system-settings-query";
 import { devLog } from "@/lib/utils/logging/dev-logger";
 import { LABELS } from "@/lib/constants/common";
-
-interface PasswordRules {
-  passwordMinLength: number;
-  passwordRequireSpecialChar: boolean;
-  passwordRequireNumber: boolean;
-  passwordRequireUpperCase: boolean;
-  passwordRequireLowerCase: boolean;
-}
-
-// 기본 비밀번호 규칙 (보수적인 설정)
-const DEFAULT_PASSWORD_RULES: PasswordRules = {
-  passwordMinLength: 6,
-  passwordRequireSpecialChar: true,
-  passwordRequireNumber: true,
-  passwordRequireUpperCase: true,
-  passwordRequireLowerCase: true,
-};
+import { SECURITY_DEFAULTS } from "@/lib/constants/defaults";
+import type { PasswordRules } from "@/lib/types/settings";
 
 interface PasswordStrengthProps {
   password: string;
@@ -36,7 +21,7 @@ export function PasswordStrength({ password }: PasswordStrengthProps) {
       devLog.warn(
         "System settings not available, using default password rules"
       );
-      return DEFAULT_PASSWORD_RULES;
+      return SECURITY_DEFAULTS;
     }
 
     return {

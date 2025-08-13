@@ -8,6 +8,7 @@ import {
   throwBusinessError,
 } from "@/lib/utils/error/errorUtil";
 import { LOG_MESSAGES } from "@/lib/utils/logging/log-templates";
+import type { UpdateMemberData } from "@/lib/types/farm";
 
 // PUT - 농장 멤버 역할 변경
 export async function PUT(
@@ -24,7 +25,8 @@ export async function PUT(
     }
 
     const user = authResult.user;
-    const { role } = await request.json();
+    const updateData: UpdateMemberData = await request.json();
+    const { role } = updateData;
 
     // 농장 소유권 또는 관리자 권한 확인
     let farm;
@@ -196,6 +198,7 @@ export async function PUT(
 
     return NextResponse.json(
       {
+        success: true,
         message: `${(memberToUpdate.profiles as any)?.name}의 역할이 ${
           oldRole === "manager" ? "관리자" : "조회자"
         }에서 ${role === "manager" ? "관리자" : "조회자"}로 변경되었습니다.`,
@@ -425,6 +428,7 @@ export async function DELETE(
 
     return NextResponse.json(
       {
+        success: true,
         message: `${(memberToRemove.profiles as any)?.name || "구성원"}이(가) ${
           memberToRemove.role === "manager" ? "관리자" : "조회자"
         } 역할에서 제거되었습니다.`,

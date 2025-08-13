@@ -1,6 +1,6 @@
 "use client";
 
-import { Logo } from "@/components/common";
+import { Logo } from "@/components/common/logo";
 import { FOOTER, SOCIAL_LINKS } from "@/lib/constants/common";
 import Image from "next/image";
 

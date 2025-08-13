@@ -5,6 +5,10 @@ import {
   mapRawErrorToCode,
   getErrorMessage,
 } from "@/lib/utils/error/errorUtil";
+import { prisma } from "@/lib/prisma";
+import { createSystemLog } from "@/lib/utils/logging/system-log";
+import { LOG_MESSAGES } from "@/lib/utils/logging/log-templates";
+import { getUserConsentStatus } from "@/lib/utils/consent/consentUtil";
 
 export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url);
@@ -46,17 +50,65 @@ export async function GET(request: Request) {
           )}`
         );
       }
-      // 리다이렉트 URL 결정
+      // 프로필 로그인 시간/카운트 업데이트 및 로그인 성공 로그 기록
+      try {
+        const authedUser = session.user;
+        const userEmail = authedUser?.email || undefined;
+        if (userEmail) {
+          // last_login_at, login_count 업데이트
+          await prisma.profiles.update({
+            where: { email: userEmail },
+            data: {
+              last_login_at: new Date(),
+              login_count: { increment: 1 },
+            },
+          });
+        }
+
+        // 시스템 로그 기록 (provider 포함)
+        const provider = searchParams.get("provider");
+        await createSystemLog(
+          "LOGIN_SUCCESS",
+          LOG_MESSAGES.LOGIN_SUCCESS(userEmail || "unknown"),
+          "info",
+          { id: authedUser.id, email: userEmail || "unknown" },
+          "auth",
+          undefined,
+          {
+            action_type: "auth_event",
+            event: "login_success",
+            email: userEmail,
+            provider,
+          }
+        );
+      } catch (logErr) {
+        devLog.warn("[OAuth] 로그인 후 로그/프로필 업데이트 실패:", logErr);
+      }
+
+      // 약관 동의 상태 확인
+      let redirectUrl: string;
+      try {
+        const consentData = await getUserConsentStatus(session.user.id);
+
+        if (consentData.hasAllRequiredConsents) {
+          // 모든 약관 동의가 완료된 경우 대시보드로 이동
+          redirectUrl = `${origin}/admin/dashboard`;
+        } else {
+          // 약관 동의가 필요한 경우 프로필 설정 페이지로 이동
+          redirectUrl = `${origin}/profile-setup`;
+        }
+      } catch (consentError) {
+        devLog.warn("[OAuth] 약관 동의 상태 확인 실패:", consentError);
+        // 에러 발생 시 기본적으로 프로필 설정 페이지로 이동
+        redirectUrl = `${origin}/profile-setup`;
+      }
+
+      // 환경별 리다이렉트 URL 조정
       const forwardedHost = request.headers.get("x-forwarded-host");
       const isLocalEnv = process.env.NODE_ENV === "development";
 
-      let redirectUrl: string;
-      if (isLocalEnv) {
-        redirectUrl = `${origin}/profile-setup`;
-      } else if (forwardedHost) {
-        redirectUrl = `https://${forwardedHost}/profile-setup`;
-      } else {
-        redirectUrl = `${origin}/profile-setup`;
+      if (!isLocalEnv && forwardedHost) {
+        redirectUrl = redirectUrl.replace(origin, `https://${forwardedHost}`);
       }
 
       // 세션 설정 완료를 위한 짧은 지연 (선택사항)

@@ -102,7 +102,7 @@ export async function GET(request: NextRequest) {
     latestActiveTerms.push(...Array.from(typeMap.values()));
 
     // 필수 약관 타입들
-    const requiredTypes = ["privacy", "terms"];
+    const requiredTypes = ["privacy_consent", "terms"];
 
     // 누락된 동의 확인
     const missingConsents: Array<{
@@ -141,7 +141,7 @@ export async function GET(request: NextRequest) {
         type: consent.terms_management.type,
         title: consent.terms_management.title,
         version: consent.terms_management.version,
-        agreedAt: consent.agreed_at,
+        agreed_at: consent.agreed_at,
       })),
     });
   } catch (error) {

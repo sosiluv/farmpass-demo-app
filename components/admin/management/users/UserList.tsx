@@ -1,5 +1,5 @@
 import { CommonListItem } from "../shared/CommonListItem";
-import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -10,32 +10,30 @@ import {
 } from "@/components/ui/tooltip";
 import { Eye } from "lucide-react";
 import { formatDateTime } from "@/lib/utils/datetime/date";
-import { Profile } from "@/lib/types";
 import { useState } from "react";
-import { UserDetailModal } from "./UserDetailModal";
+import { UserDetailSheet } from "./UserDetailSheet";
 import { CommonListWrapper } from "../shared/CommonListWrapper";
-import { ImagePreviewDialog } from "@/components/common/ImagePreviewDialog";
-import { generateInitials, getAvatarUrl } from "@/lib/utils/media/avatar";
+import { ZoomableImage } from "@/components/ui/zoomable-image";
+import {
+  generateInitials,
+  getAvatarUrl,
+  getAvatarColor,
+} from "@/lib/utils/media/avatar";
 import { LABELS } from "@/lib/constants/management";
+import { useAuth } from "@/components/providers/auth-provider";
+import { type UserProfileWithFarmMembers } from "@/lib/hooks/query/use-admin-users-query";
 
 interface UserListProps {
-  users: Profile[];
-  onUserClick: (user: Profile) => void;
+  users: UserProfileWithFarmMembers[];
+  onUserClick: (user: UserProfileWithFarmMembers) => void;
 }
 
-export function UserList({ users, onUserClick }: UserListProps) {
-  const [selectedUser, setSelectedUser] = useState<Profile | null>(null);
-  const [previewOpen, setPreviewOpen] = useState(false);
-  const [previewUrl, setPreviewUrl] = useState<string>("");
-  const [previewAlt, setPreviewAlt] = useState<string>("");
-
-  const handleAvatarClick = (user: Profile) => {
-    if (user.profile_image_url) {
-      setPreviewUrl(user.profile_image_url);
-      setPreviewAlt(user.name || "User");
-      setPreviewOpen(true);
-    }
-  };
+export function UserList({ users }: UserListProps) {
+  const { state } = useAuth();
+  const isAdmin =
+    state.status === "authenticated" && state.user?.app_metadata?.isAdmin;
+  const [selectedUser, setSelectedUser] =
+    useState<UserProfileWithFarmMembers | null>(null);
 
   const getRoleColor = (accountType: string) => {
     switch (accountType) {
@@ -54,30 +52,6 @@ export function UserList({ users, onUserClick }: UserListProps) {
       : "bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200";
   };
 
-  const getAvatarColor = (name: string) => {
-    const colors = [
-      "bg-red-500",
-      "bg-green-500",
-      "bg-blue-500",
-      "bg-yellow-500",
-      "bg-purple-500",
-      "bg-pink-500",
-      "bg-indigo-500",
-      "bg-orange-500",
-      "bg-teal-500",
-      "bg-cyan-500",
-    ];
-
-    if (!name) return "bg-gray-500";
-
-    let hash = 0;
-    for (let i = 0; i < name.length; i++) {
-      hash = name.charCodeAt(i) + ((hash << 5) - hash);
-    }
-    const index = Math.abs(hash) % colors.length;
-    return colors[index];
-  };
-
   return (
     <>
       <CommonListWrapper>
@@ -85,32 +59,35 @@ export function UserList({ users, onUserClick }: UserListProps) {
           <CommonListItem
             key={user.id}
             avatar={
-              <Avatar
-                className="h-8 w-8 sm:h-12 sm:w-12 lg:h-14 lg:w-14 xl:h-16 xl:w-16 flex-shrink-0"
-                onClick={() => handleAvatarClick(user)}
-                style={{
-                  cursor: user.profile_image_url ? "pointer" : undefined,
-                }}
-              >
-                <AvatarImage
+              user.profile_image_url ? (
+                <ZoomableImage
                   src={getAvatarUrl(user, { size: 128 })}
                   alt={user.name || "User"}
+                  title={`${user.name} 프로필`}
+                  className="h-8 w-8 sm:h-12 sm:w-12 lg:h-14 lg:w-14 xl:h-16 xl:w-16 flex-shrink-0 rounded-full bg-gray-50 flex items-center justify-center"
+                  shape="circle"
+                  size="md"
                 />
-                <AvatarFallback
-                  className={`${getAvatarColor(user.name)} text-white text-sm`}
-                >
-                  {generateInitials(user.name)}
-                </AvatarFallback>
-              </Avatar>
+              ) : (
+                <Avatar className="h-8 w-8 sm:h-12 sm:w-12 lg:h-14 lg:w-14 xl:h-16 xl:w-16 flex-shrink-0 rounded-full bg-gray-50 flex items-center justify-center">
+                  <AvatarImage
+                    src={getAvatarUrl(user, { size: 128 })}
+                    alt={user.name || "User"}
+                  />
+                  <AvatarFallback
+                    className={`${getAvatarColor(user.name)} text-white`}
+                  >
+                    {generateInitials(user.name)}
+                  </AvatarFallback>
+                </Avatar>
+              )
             }
-            primary={user.name}
+            primary={<span className="text-lg">{user.name}</span>}
             secondary={
-              <span className="text-xs sm:text-sm lg:text-base xl:text-lg text-muted-foreground">
-                {user.email}
-              </span>
+              <span className="text-muted-foreground">{user.email}</span>
             }
             meta={
-              <span className="text-xs sm:text-sm lg:text-base xl:text-lg text-muted-foreground">
+              <span className="text-xs sm:text-sm lg:text-base text-muted-foreground">
                 {user.last_login_at
                   ? `${LABELS.LAST_ACCESS} ${formatDateTime(
                       user.last_login_at
@@ -122,17 +99,17 @@ export function UserList({ users, onUserClick }: UserListProps) {
               <div className="flex flex-col gap-1">
                 <Badge
                   className={`${getRoleColor(
-                    user.account_type
-                  )} text-[10px] sm:text-xs px-1.5 sm:px-2 py-0.5 sm:py-1`}
+                    isAdmin ? "admin" : "user"
+                  )} text-xs sm:text-sm px-2 sm:px-3 py-1 sm:py-1.5`}
                 >
-                  {user.account_type === "admin"
+                  {isAdmin
                     ? LABELS.SYSTEM_ADMIN_USER
                     : LABELS.GENERAL_USER_DETAIL}
                 </Badge>
                 <Badge
                   className={`${getStatusColor(
                     user.is_active
-                  )} text-[10px] sm:text-xs px-1.5 sm:px-2 py-0.5 sm:py-1`}
+                  )} text-xs sm:text-sm px-2 sm:px-3 py-1 sm:py-1.5`}
                 >
                   {user.is_active ? LABELS.ACTIVE_CSV : LABELS.INACTIVE_CSV}
                 </Badge>
@@ -146,10 +123,10 @@ export function UserList({ users, onUserClick }: UserListProps) {
                       <Button
                         variant="ghost"
                         size="icon"
-                        className="h-8 w-8 sm:h-12 sm:w-12 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 flex-shrink-0"
+                        className="h-10 w-10 sm:h-12 sm:w-12 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 flex-shrink-0"
                         onClick={() => setSelectedUser(user)}
                       >
-                        <Eye className="h-4 w-4 sm:h-6 sm:w-6 text-muted-foreground" />
+                        <Eye className="h-5 w-5 sm:h-6 sm:w-6 text-muted-foreground" />
                       </Button>
                     </TooltipTrigger>
                     <TooltipContent>
@@ -168,17 +145,10 @@ export function UserList({ users, onUserClick }: UserListProps) {
         )}
       </CommonListWrapper>
 
-      <UserDetailModal
+      <UserDetailSheet
         user={selectedUser}
         open={selectedUser !== null}
         onClose={() => setSelectedUser(null)}
-      />
-      <ImagePreviewDialog
-        src={previewUrl}
-        alt={previewAlt}
-        open={previewOpen}
-        onOpenChange={setPreviewOpen}
-        caption={previewAlt}
       />
     </>
   );

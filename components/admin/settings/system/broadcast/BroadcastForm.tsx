@@ -146,20 +146,6 @@ export function BroadcastForm({
           )}
         </Button>
       </div>
-
-      {/* 도움말 */}
-      <div className="rounded-lg border p-4">
-        <div className="flex items-start gap-2">
-          <MessageSquare className="h-4 w-4 text-muted-foreground mt-0.5" />
-          <div className="text-sm sm:text-base text-muted-foreground">
-            <p className="font-medium mb-1">{LABELS.BROADCAST_GUIDE_TITLE}</p>
-            <ul className="space-y-1 text-sm sm:text-base">
-              <li>{LABELS.BROADCAST_GUIDE_TITLE_TIP}</li>
-              <li>{LABELS.BROADCAST_GUIDE_REVIEW}</li>
-            </ul>
-          </div>
-        </div>
-      </div>
     </div>
   );
 }

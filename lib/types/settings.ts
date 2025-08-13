@@ -1,5 +1,13 @@
 import type { LogLevel } from "./common";
 
+export interface PasswordRules {
+  passwordMinLength: number;
+  passwordRequireSpecialChar: boolean;
+  passwordRequireNumber: boolean;
+  passwordRequireUpperCase: boolean;
+  passwordRequireLowerCase: boolean;
+}
+
 export interface SystemSettings {
   id: string;
   created_at: string;

@@ -1,6 +1,6 @@
 import { Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { Logo } from "@/components/common";
+import { Logo } from "@/components/common/logo";
 import { LottieLoading } from "./lottie-loading";
 
 interface LoadingProps {

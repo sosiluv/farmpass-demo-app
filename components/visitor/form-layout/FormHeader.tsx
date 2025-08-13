@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { CardDescription, CardTitle } from "@/components/ui/card";
-import { Logo } from "@/components/common";
+import { Logo } from "@/components/common/logo";
 import { LABELS, PAGE_HEADER } from "@/lib/constants/visitor";
 
 interface FormHeaderProps {

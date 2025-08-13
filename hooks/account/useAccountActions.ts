@@ -2,14 +2,15 @@ import { useRouter } from "next/navigation";
 import { devLog } from "@/lib/utils/logging/dev-logger";
 import { useAuthActions } from "@/hooks/auth/useAuthActions";
 import type { Profile } from "@/lib/types";
-import type { PasswordFormData, CompanyFormData } from "@/lib/types/account";
+import type { ChangePasswordFormData } from "@/lib/utils/validation/auth-validation";
+import type { CompanyFormData } from "@/lib/utils/validation/company-validation";
 import { useAccountMutations } from "@/lib/hooks/query/use-account-mutations";
 import { useUnifiedImageUpload } from "@/hooks/media/useUnifiedImageUpload";
-import type { ProfileFormData } from "@/lib/types/account";
+import type { ProfileFormData } from "@/lib/utils/validation/profile-validation";
 
 interface UseAccountActionsProps {
   profile: Profile;
-  userId: string;
+  userId: string | undefined;
 }
 
 interface SaveResult {
@@ -109,7 +110,7 @@ export function useAccountActions({ profile, userId }: UseAccountActionsProps) {
 
   // 비밀번호 변경 (React Query mutation 사용)
   const handlePasswordChange = async (
-    data: PasswordFormData
+    data: ChangePasswordFormData
   ): Promise<SaveResult> => {
     try {
       await accountMutations.changePasswordAsync(data);

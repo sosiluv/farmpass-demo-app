@@ -3,7 +3,7 @@
 import { useAuthenticatedQuery } from "@/lib/hooks/query-utils";
 import { apiClient } from "@/lib/utils/data/api-client";
 import { settingsKeys } from "./query-keys";
-import type { NotificationSettings } from "@/lib/types/notification";
+import type { UserNotificationSetting } from "@/lib/types/common";
 
 /**
  * React Query 기반 Notification Settings Hook
@@ -12,13 +12,13 @@ import type { NotificationSettings } from "@/lib/types/notification";
 export function useNotificationSettingsQuery(options?: { enabled?: boolean }) {
   return useAuthenticatedQuery(
     settingsKeys.notifications(),
-    async () => {
+    async (): Promise<UserNotificationSetting> => {
       const response = await apiClient("/api/notifications/settings", {
         method: "GET",
         context: "알림 설정 조회",
       });
 
-      return response as NotificationSettings;
+      return response;
     },
     {
       enabled: options?.enabled !== false,

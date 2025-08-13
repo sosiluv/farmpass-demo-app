@@ -1,9 +1,13 @@
+"use client";
+
 import React from "react";
-import { Input } from "@/components/ui/input";
+import ReactDatePicker from "react-datepicker";
+import "react-datepicker/dist/react-datepicker.css";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Calendar } from "lucide-react";
 import { LABELS } from "@/lib/constants/management";
+import { formatDate } from "@/lib/utils/datetime/date";
 
 interface DateRangeSectionProps {
   startDate: string;
@@ -32,33 +36,50 @@ export function DateRangeSection({
   return (
     <Card className={`border ${colorClasses[color]}`}>
       <CardHeader className="pb-1.5 sm:pb-2 md:pb-3">
-        <CardTitle className="flex items-center space-x-1.5 sm:space-x-2 text-sm sm:text-base md:text-lg">
+        <CardTitle className="flex items-center space-x-1.5 text-base md:text-lg">
           <Calendar className="h-3 w-3 sm:h-4 sm:w-4" />
           <span>{title}</span>
         </CardTitle>
       </CardHeader>
-      <CardContent className="space-y-2 sm:space-y-3 pt-0">
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3">
-          <div className="space-y-1 sm:space-y-1.5">
-            <Label className="text-xs sm:text-sm md:text-base font-medium">
+      <CardContent className="space-y-2 pt-0">
+        <div className="grid grid-cols-2 gap-3">
+          <div className="space-y-1.5">
+            <Label className="text-sm md:text-base font-medium">
               {LABELS.START_DATE}
             </Label>
-            <Input
-              type="date"
-              value={startDate}
-              onChange={(e) => onStartDateChange(e.target.value)}
-              className="h-7 sm:h-8 md:h-9 text-xs sm:text-sm md:text-base"
+            <ReactDatePicker
+              selected={startDate ? new Date(startDate) : null}
+              onChange={(date) =>
+                onStartDateChange(date ? formatDate(date as Date) : "")
+              }
+              selectsStart
+              startDate={startDate ? new Date(startDate) : null}
+              endDate={endDate ? new Date(endDate) : null}
+              dateFormat="yyyy-MM-dd"
+              placeholderText="YYYY-MM-DD"
+              popperPlacement="bottom-start"
+              popperClassName="z-[60]"
+              className="h-12 w-full rounded-md border px-3 text-sm md:text-base"
             />
           </div>
-          <div className="space-y-1 sm:space-y-1.5">
-            <Label className="text-xs sm:text-sm md:text-base font-medium">
+          <div className="space-y-1.5">
+            <Label className="text-sm md:text-base font-medium">
               {LABELS.END_DATE}
             </Label>
-            <Input
-              type="date"
-              value={endDate}
-              onChange={(e) => onEndDateChange(e.target.value)}
-              className="h-7 sm:h-8 md:h-9 text-xs sm:text-sm md:text-base"
+            <ReactDatePicker
+              selected={endDate ? new Date(endDate) : null}
+              onChange={(date) =>
+                onEndDateChange(date ? formatDate(date as Date) : "")
+              }
+              selectsEnd
+              startDate={startDate ? new Date(startDate) : null}
+              endDate={endDate ? new Date(endDate) : null}
+              minDate={startDate ? new Date(startDate) : undefined}
+              dateFormat="yyyy-MM-dd"
+              placeholderText="YYYY-MM-DD"
+              popperPlacement="bottom-start"
+              popperClassName="z-[60]"
+              className="h-12 w-full rounded-md border px-3 text-sm md:text-base"
             />
           </div>
         </div>

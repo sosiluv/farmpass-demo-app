@@ -19,9 +19,8 @@ import { ErrorBoundary } from "@/components/error/error-boundary";
 import { ERROR_CONFIGS } from "@/lib/constants/error";
 import { formatPhone } from "@/lib/utils/validation/validation";
 import { useAccountForm } from "@/hooks/account/useAccountForm";
-import type { ProfileSectionProps, ProfileFormData } from "@/lib/types/account";
-import AccountCardHeader from "./AccountCardHeader";
 import { devLog } from "@/lib/utils/logging/dev-logger";
+import AccountCardHeader from "./AccountCardHeader";
 import {
   BUTTONS,
   LABELS,
@@ -33,6 +32,18 @@ import { profileSchema } from "@/lib/utils/validation/profile-validation";
 import { useCommonToast } from "@/lib/utils/notification/toast-messages";
 import { SocialLinkingSection } from "./social-linking-section";
 import { ProfileImageSection } from "./profile-image-section";
+import type { ProfileFormData } from "@/lib/utils/validation/profile-validation";
+import type { Profile } from "@/lib/types/common";
+
+interface ProfileSectionProps {
+  profile: Profile;
+  loading: boolean;
+  onSave: (data: ProfileFormData) => Promise<void>;
+  onImageUpload: (
+    file: File | null
+  ) => Promise<{ publicUrl: string; fileName: string } | void>;
+  onImageDelete: () => Promise<void>;
+}
 
 export function ProfileSection({
   profile,
@@ -48,7 +59,7 @@ export function ProfileSection({
     () => ({
       name: profile?.name || "",
       email: profile?.email || "",
-      phoneNumber: profile?.phone || "",
+      phone: profile?.phone || "",
       position: profile?.position || "",
       department: profile?.department || "",
       bio: profile?.bio || "",
@@ -71,7 +82,7 @@ export function ProfileSection({
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
   ) => {
     const { name, value } = e.target;
-    const processedValue = name === "phoneNumber" ? formatPhone(value) : value;
+    const processedValue = name === "phone" ? formatPhone(value) : value;
     handleChange(name as keyof ProfileFormData, processedValue);
   };
 
@@ -167,16 +178,16 @@ export function ProfileSection({
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-2">
                 <Label
-                  htmlFor="phoneNumber"
+                  htmlFor="phone"
                   className="text-sm sm:text-base font-medium"
                 >
                   {LABELS.PHONE_NUMBER}
                 </Label>
                 <Input
-                  id="phoneNumber"
-                  name="phoneNumber"
+                  id="phone"
+                  name="phone"
                   type="tel"
-                  value={formData.phoneNumber || ""}
+                  value={formData.phone || ""}
                   onChange={handleInputChange}
                   disabled={loading}
                   maxLength={13}

@@ -2,16 +2,16 @@
 
 import { useState, useEffect, useMemo } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { StatsSkeleton, TableSkeleton } from "@/components/common/skeletons";
+import { StatsSkeleton, TableSkeleton } from "@/components/ui/skeleton";
 import { PageHeader } from "@/components/layout";
 import { useAuth } from "@/components/providers/auth-provider";
 import {
   VisitorFilters,
   VisitorStats,
   VisitorExportRefactored,
-  VisitorTable,
+  VisitorTableSheet,
 } from "@/components/admin/visitors";
-import type { Farm } from "@/lib/types/farm";
+import type { Farm } from "@/lib/types/common";
 import { useCommonToast } from "@/lib/utils/notification/toast-messages";
 import { AccessDenied } from "@/components/error/access-denied";
 import { AdminError } from "@/components/error/admin-error";
@@ -20,23 +20,21 @@ import { ERROR_CONFIGS } from "@/lib/constants/error";
 import { Users } from "lucide-react";
 
 // Zustand Store 사용
-import { useVisitorFiltersStore } from "@/lib/hooks/query/use-visitor-filters";
+import { useVisitorFiltersStore } from "@/store/use-visitor-filters-store";
 import { useVisitorActions } from "@/hooks/visitor/useVisitorActions";
 import { generateFarmVisitorPageStats } from "@/lib/utils/data/common-stats";
 import { ErrorBoundary } from "@/components/error/error-boundary";
-import { ResponsivePagination } from "@/components/common/responsive-pagination";
+import { ResponsivePagination } from "@/components/ui/responsive-pagination";
 
 // React Query Hooks
 import { useFarmsQuery } from "@/lib/hooks/query/use-farms-query";
 import { useFarmVisitorsWithFiltersQuery } from "@/lib/hooks/query/use-farm-visitors-filtered-query";
-import { useProfileQuery } from "@/lib/hooks/query/use-profile-query";
 
 export default function FarmVisitorsPage() {
   const params = useParams();
   const router = useRouter();
   const { state } = useAuth();
   const userId = state.status === "authenticated" ? state.user.id : undefined;
-  const { data: profile } = useProfileQuery(userId);
   const farmId = (params as any).farmId as string; // useParams()는 항상 객체 반환
   const { showError } = useCommonToast();
 
@@ -86,7 +84,7 @@ export default function FarmVisitorsPage() {
   const { handleEdit, handleDelete, handleExport } = useVisitorActions({
     farms: farms, // map 변환 없이 그대로 전달
     isAdmin: false,
-    profileId: profile?.id,
+    profileId: userId,
     allVisitors: allVisitors, // map 변환 없이 그대로 전달
   });
 
@@ -249,7 +247,6 @@ export default function FarmVisitorsPage() {
           onClearFilters={resetFilters}
           showFarmFilter={true}
           showAllOption={false}
-          isAdmin={false}
         />
 
         {/* 방문자 테이블 (페이징 적용) */}
@@ -259,7 +256,7 @@ export default function FarmVisitorsPage() {
           sortFn={sortFn}
         >
           {({ paginatedData, isLoadingMore, hasMore }) => (
-            <VisitorTable
+            <VisitorTableSheet
               visitors={paginatedData}
               showFarmColumn={false}
               loading={loading}

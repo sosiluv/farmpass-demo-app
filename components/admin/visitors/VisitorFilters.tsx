@@ -11,10 +11,9 @@ import {
   Building2,
   Calendar as CalendarIcon,
 } from "lucide-react";
-import { useState, useMemo, useCallback, memo } from "react";
+import { useState, useMemo, memo } from "react";
 import { cn } from "@/lib/utils";
 import { BUTTONS, LABELS } from "@/lib/constants/visitor";
-import type { Farm } from "@/lib/types/visitor";
 import {
   SearchInput,
   ResultCounter,
@@ -23,6 +22,7 @@ import {
   CustomDatePicker,
   ActiveFilterTags,
 } from "./components";
+import type { Farm } from "@/lib/types/common";
 
 interface VisitorFiltersProps {
   searchTerm: string;
@@ -43,7 +43,6 @@ interface VisitorFiltersProps {
   onClearCustomDates?: () => void;
   showFarmFilter?: boolean;
   showAllOption?: boolean;
-  isAdmin?: boolean;
   disableFarmRemoval?: boolean;
 }
 
@@ -66,7 +65,6 @@ export const VisitorFilters = memo(function VisitorFilters({
   onClearCustomDates,
   showFarmFilter = true,
   showAllOption = true,
-  isAdmin = false,
   disableFarmRemoval,
 }: VisitorFiltersProps) {
   const [isAdvancedOpen, setIsAdvancedOpen] = useState(true);
@@ -99,7 +97,7 @@ export const VisitorFilters = memo(function VisitorFilters({
       <Collapsible
         open={isAdvancedOpen}
         onOpenChange={setIsAdvancedOpen}
-        className="space-y-2 sm:space-y-4"
+        className="space-y-4"
       >
         <CollapsibleTrigger asChild>
           <Button

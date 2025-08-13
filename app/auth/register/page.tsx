@@ -29,7 +29,7 @@ import {
   createDefaultRegistrationFormSchema,
   type RegistrationFormData,
 } from "@/lib/utils/validation/auth-validation";
-import { Logo } from "@/components/common";
+import { Logo } from "@/components/common/logo";
 import { BUTTONS, PAGE_HEADER } from "@/lib/constants/auth";
 import {
   EmailField,
@@ -129,19 +129,16 @@ export default function RegisterPage() {
   }, []);
 
   // 메모이제이션된 회원가입 핸들러
-  const handleRegister = useCallback(
-    async (data: RegistrationFormData) => {
-      // 캡차 인증 확인
-      if (!turnstileToken) {
-        setTurnstileError("캡차 인증을 완료해주세요.");
-        return;
-      }
+  const handleRegister = useCallback(async () => {
+    // 캡차 인증 확인
+    if (!turnstileToken) {
+      setTurnstileError("캡차 인증을 완료해주세요.");
+      return;
+    }
 
-      // 약관 동의 bottom sheet 모달 표시
-      setShowConsentSheet(true);
-    },
-    [turnstileToken]
-  );
+    // 약관 동의 bottom sheet 모달 표시
+    setShowConsentSheet(true);
+  }, [turnstileToken]);
 
   // 약관 동의 후 실제 회원가입 처리
   const handleConsentSubmit = useCallback(
@@ -167,6 +164,7 @@ export default function RegisterPage() {
           body: JSON.stringify({
             email: formData.email,
             password: formData.password,
+            confirmPassword: formData.confirmPassword,
             name: formData.name,
             phone: formData.phone,
             turnstileToken: turnstileToken,
@@ -239,7 +237,7 @@ export default function RegisterPage() {
               <div className="mx-auto mb-4 flex justify-center">
                 <Logo size="xl" />
               </div>
-              <CardTitle className="text-3xl">
+              <CardTitle className="text-2xl">
                 {PAGE_HEADER.REGISTER_TITLE}
               </CardTitle>
               <CardDescription>
@@ -325,16 +323,16 @@ export default function RegisterPage() {
                 </form>
               </Form>
             </CardContent>
-            <CardFooter className="flex justify-center">
-              <p className="text-sm text-muted-foreground">
+            <CardFooter className="flex flex-col">
+              <div className="mt-2 text-center text-sm">
                 {BUTTONS.HAS_ACCOUNT}{" "}
                 <Link
                   href="/auth/login"
-                  className="font-medium text-primary hover:underline"
+                  className="text-primary hover:underline"
                 >
                   {BUTTONS.LOGIN_BUTTON}
                 </Link>
-              </p>
+              </div>
             </CardFooter>
           </Card>
         </motion.div>

@@ -2,7 +2,7 @@
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiClient } from "@/lib/utils/data/api-client";
-import type { NotificationSettings } from "@/lib/types/notification";
+import type { UserNotificationSetting } from "@/lib/types/common";
 import {
   notificationKeys,
   settingsKeys,
@@ -17,9 +17,9 @@ export function useSaveNotificationSettingsMutation() {
 
   return useMutation({
     mutationFn: async (
-      settings: Partial<NotificationSettings>
+      settings: Partial<UserNotificationSetting>
     ): Promise<
-      { success: boolean; message?: string } & NotificationSettings
+      { success: boolean; message?: string } & UserNotificationSetting
     > => {
       const response = await apiClient("/api/notifications/settings", {
         method: "PUT",
@@ -118,7 +118,7 @@ export function useUpdateNotificationStatusMutation() {
   return useMutation({
     mutationFn: async (data: {
       is_active: boolean;
-    }): Promise<NotificationSettings> => {
+    }): Promise<UserNotificationSetting> => {
       const response = await apiClient("/api/notifications/settings", {
         method: "PUT",
         body: JSON.stringify(data),

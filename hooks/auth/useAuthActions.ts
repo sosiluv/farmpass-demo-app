@@ -21,7 +21,15 @@ export function useSignIn() {
   }: {
     email: string;
     password: string;
-  }): Promise<{ success: boolean; message?: string }> => {
+  }): Promise<{
+    success: boolean;
+    message?: string;
+    consent?: {
+      hasAllRequiredConsents: boolean;
+      requiredTermsCount: number;
+      agreedTermsCount: number;
+    };
+  }> => {
     try {
       // 새로운 통합 로그인 API 사용
       const result = await apiClient("/api/auth/login", {
@@ -49,7 +57,11 @@ export function useSignIn() {
         throw sessionError;
       }
 
-      return { success: true, message: result.message };
+      return {
+        success: true,
+        message: result.message,
+        consent: result.consent,
+      };
     } catch (error) {
       throw error;
     }

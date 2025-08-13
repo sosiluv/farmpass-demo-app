@@ -4,21 +4,8 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/components/providers/auth-provider";
 import { apiClient } from "@/lib/utils/data/api-client";
 import { farmsKeys, visitorsKeys } from "@/lib/hooks/query/query-keys";
-import type { Farm } from "@/lib/types/farm";
-
-export interface CreateFarmRequest {
-  farm_name: string;
-  farm_type?: string;
-  farm_address: string;
-  farm_detailed_address?: string;
-  manager_name?: string;
-  manager_phone?: string;
-  description?: string;
-}
-
-export interface UpdateFarmRequest extends Partial<CreateFarmRequest> {
-  id: string;
-}
+import type { Farm } from "@/lib/types/common";
+import type { FarmFormValues } from "@/lib/utils/validation/farm-validation";
 
 /**
  * 농장 생성 Mutation Hook
@@ -26,10 +13,11 @@ export interface UpdateFarmRequest extends Partial<CreateFarmRequest> {
 export function useCreateFarmMutation() {
   const queryClient = useQueryClient();
   const { state } = useAuth();
+  const userId = state.status === "authenticated" ? state.user.id : undefined;
 
   return useMutation({
     mutationFn: async (
-      data: CreateFarmRequest
+      data: FarmFormValues
     ): Promise<{ farm: Farm; message: string }> => {
       const response = await apiClient("/api/farms", {
         method: "POST",
@@ -40,8 +28,6 @@ export function useCreateFarmMutation() {
     },
     onSuccess: (newFarm, variables) => {
       // 사용자의 농장 목록 쿼리 무효화
-      const userId =
-        state.status === "authenticated" ? state.user?.id : undefined;
       queryClient.invalidateQueries({ queryKey: farmsKeys.list({ userId }) });
     },
   });
@@ -53,10 +39,11 @@ export function useCreateFarmMutation() {
 export function useUpdateFarmMutation() {
   const queryClient = useQueryClient();
   const { state } = useAuth();
+  const userId = state.status === "authenticated" ? state.user.id : undefined;
 
   return useMutation({
     mutationFn: async (
-      data: UpdateFarmRequest
+      data: FarmFormValues & { id: string }
     ): Promise<{ farm: Farm; message: string }> => {
       const response = await apiClient(`/api/farms/${data.id}`, {
         method: "PUT",
@@ -67,8 +54,6 @@ export function useUpdateFarmMutation() {
     },
     onSuccess: (updatedFarm, variables) => {
       // 사용자의 농장 목록 쿼리 무효화
-      const userId =
-        state.status === "authenticated" ? state.user?.id : undefined;
       queryClient.invalidateQueries({ queryKey: farmsKeys.list({ userId }) });
     },
   });
@@ -80,6 +65,7 @@ export function useUpdateFarmMutation() {
 export function useDeleteFarmMutation() {
   const queryClient = useQueryClient();
   const { state } = useAuth();
+  const userId = state.status === "authenticated" ? state.user.id : undefined;
 
   return useMutation({
     mutationFn: async (
@@ -93,8 +79,6 @@ export function useDeleteFarmMutation() {
     },
     onSuccess: (result, farmId) => {
       // 1. 사용자의 농장 목록 쿼리 무효화
-      const userId =
-        state.status === "authenticated" ? state.user?.id : undefined;
 
       // 2. 농장 목록에서 삭제된 농장 제거 (즉시 반영)
       queryClient.setQueryData(
@@ -114,8 +98,6 @@ export function useDeleteFarmMutation() {
     onError: (error: Error, farmId) => {
       // 404 에러인 경우 (농장이 이미 삭제된 경우) 캐시에서 제거
       if ((error as any).error === "FARM_NOT_FOUND") {
-        const userId =
-          state.status === "authenticated" ? state.user?.id : undefined;
         queryClient.setQueryData(
           farmsKeys.list({ userId }),
           (oldData: Farm[] | undefined) => {

@@ -32,7 +32,7 @@ export const useVapidKeyQuery = (options?: { enabled?: boolean }) => {
 export const useSubscriptionStatusQuery = (enabled: boolean = true) => {
   return useQuery({
     queryKey: pushKeys.status(),
-    queryFn: async () => {
+    queryFn: async (): Promise<PushSubscription[]> => {
       const data = await apiClient("/api/push/subscription", {
         method: "GET",
         context: "구독 상태 조회",

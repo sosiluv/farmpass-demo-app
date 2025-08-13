@@ -8,7 +8,7 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-import { Mail, Loader2 } from "lucide-react";
+import { Mail } from "lucide-react";
 import { Loading } from "@/components/ui/loading";
 import { LABELS, PLACEHOLDERS } from "@/lib/constants/auth";
 
@@ -33,7 +33,7 @@ export const EmailField = memo(
     showFormMessage = true,
   }: EmailFieldProps) => (
     <FormItem>
-      <FormLabel className="text-sm text-gray-800">
+      <FormLabel className="text-gray-800">
         {LABELS.EMAIL} <span className="text-red-500">*</span>
       </FormLabel>
       <div className="relative">
@@ -64,7 +64,7 @@ export const EmailField = memo(
         )}
       </div>
       {showFormMessage && <FormMessage />}
-      {error && <p className="text-sm text-red-500">{error}</p>}
+      {error && <p className="text-red-500">{error}</p>}
     </FormItem>
   )
 );

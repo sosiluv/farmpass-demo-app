@@ -5,8 +5,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { MapPin, Phone, Users, Building2 } from "lucide-react";
-import type { Farm } from "@/lib/types/farm";
-import { LABELS } from "@/lib/constants/farms";
+import type { Farm } from "@/lib/types/common";
 
 interface FarmCardDetailsProps {
   farm: Farm;

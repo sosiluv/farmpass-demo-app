@@ -31,7 +31,7 @@ export const ImageSection = ({
         id="visitor-image-upload"
         onUpload={onImageUpload}
         onDelete={onImageDelete ? () => onImageDelete("") : undefined}
-        currentImage={uploadedImageUrl || formData.profilePhotoUrl || null}
+        currentImage={uploadedImageUrl || formData.profile_photo_url || null}
         required={settings.requireVisitorPhoto}
         avatarSize="lg"
         hideGuidelines={true}

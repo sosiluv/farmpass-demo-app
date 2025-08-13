@@ -10,21 +10,17 @@ import {
 import { useCreateSubscriptionMutation } from "@/lib/hooks/query/use-push-mutations";
 import { requestNotificationPermissionAndSubscribe } from "@/lib/utils/notification/push-subscription";
 import { useVapidKeyEffective } from "@/hooks/auth/useVapidKey";
-import { useProfileQuery } from "@/lib/hooks/query/use-profile-query";
 
 interface NotificationPermissionState {
   hasAsked: boolean;
   permission: NotificationPermission | "unsupported";
-  showDialog: boolean;
+  showSheet: boolean;
   isResubscribe: boolean; // 재구독 여부 구분
 }
 
 export function useNotificationPermission() {
   const { state: authState } = useAuth();
   const user = authState.status === "authenticated" ? authState.user : null;
-  const userId =
-    authState.status === "authenticated" ? authState.user.id : undefined;
-  const { data: profile } = useProfileQuery(userId);
 
   const createSubscriptionMutation = useCreateSubscriptionMutation();
 
@@ -37,7 +33,7 @@ export function useNotificationPermission() {
   const [state, setState] = useState<NotificationPermissionState>({
     hasAsked: false,
     permission: "default" as NotificationPermission | "unsupported",
-    showDialog: false,
+    showSheet: false,
     isResubscribe: false,
   });
 
@@ -69,7 +65,7 @@ export function useNotificationPermission() {
 
   // 로그인 후 알림 권한 상태 확인
   useEffect(() => {
-    if (!user || !profile) {
+    if (!user) {
       return;
     }
 
@@ -90,7 +86,7 @@ export function useNotificationPermission() {
         setState({
           hasAsked: true,
           permission: "denied",
-          showDialog: false,
+          showSheet: false,
           isResubscribe: false,
         });
         return;
@@ -106,7 +102,7 @@ export function useNotificationPermission() {
           setState({
             hasAsked: true,
             permission: currentPermission,
-            showDialog: false,
+            showSheet: false,
             isResubscribe: false,
           });
           return;
@@ -119,13 +115,13 @@ export function useNotificationPermission() {
                 setState({
                   hasAsked: true,
                   permission: currentPermission,
-                  showDialog: false,
+                  showSheet: false,
                   isResubscribe: false,
                 });
                 return;
               }
               setState((prev) => {
-                if (prev.showDialog) {
+                if (prev.showSheet) {
                   return prev;
                 }
                 return {
@@ -134,7 +130,7 @@ export function useNotificationPermission() {
                   permission: currentPermission as
                     | NotificationPermission
                     | "unsupported",
-                  showDialog: true,
+                  showSheet: true,
                   isResubscribe: true,
                 };
               });
@@ -143,7 +139,7 @@ export function useNotificationPermission() {
             setState({
               hasAsked: true,
               permission: currentPermission,
-              showDialog: false,
+              showSheet: false,
               isResubscribe: false,
             });
           }
@@ -156,7 +152,7 @@ export function useNotificationPermission() {
         setState({
           hasAsked: true,
           permission: currentPermission,
-          showDialog: false,
+          showSheet: false,
           isResubscribe: false,
         });
         return;
@@ -167,7 +163,7 @@ export function useNotificationPermission() {
         if (canReAsk) {
           timeoutId = setTimeout(() => {
             setState((prev) => {
-              if (prev.showDialog) {
+              if (prev.showSheet) {
                 return prev;
               }
               return {
@@ -176,7 +172,7 @@ export function useNotificationPermission() {
                 permission: currentPermission as
                   | NotificationPermission
                   | "unsupported",
-                showDialog: true,
+                showSheet: true,
                 isResubscribe: false,
               };
             });
@@ -185,7 +181,7 @@ export function useNotificationPermission() {
           setState({
             hasAsked: true,
             permission: currentPermission,
-            showDialog: false,
+            showSheet: false,
             isResubscribe: false,
           });
         }
@@ -199,7 +195,7 @@ export function useNotificationPermission() {
         clearTimeout(timeoutId);
       }
     };
-  }, [user?.id, profile?.id]);
+  }, [user?.id]);
 
   // 알림 허용 처리 - 공통 로직 사용
   const handleAllow = async () => {
@@ -267,7 +263,7 @@ export function useNotificationPermission() {
         ...prev,
         hasAsked: true,
         permission: result.success ? "granted" : "denied",
-        showDialog: false,
+        showSheet: false,
         isResubscribe: false,
       }));
     } catch (error) {
@@ -294,7 +290,7 @@ export function useNotificationPermission() {
     setState((prev) => ({
       ...prev,
       hasAsked: true,
-      showDialog: false,
+      showSheet: false,
       isResubscribe: false,
     }));
 
@@ -309,22 +305,22 @@ export function useNotificationPermission() {
     });
   };
 
-  // 다이얼로그 닫기
-  const closeDialog = () => {
+  // 시트 닫기
+  const closeSheet = () => {
     setState((prev) => ({
       ...prev,
-      showDialog: false,
+      showSheet: false,
     }));
   };
 
   return {
-    showDialog: state.showDialog,
+    showSheet: state.showSheet,
     permission: state.permission,
     hasAsked: state.hasAsked,
     isResubscribe: state.isResubscribe,
     handleAllow,
     handleDeny,
-    closeDialog,
+    closeSheet,
     lastMessage,
     clearLastMessage: () => setLastMessage(null),
   };

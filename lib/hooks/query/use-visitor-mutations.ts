@@ -3,25 +3,7 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiClient } from "@/lib/utils/data/api-client";
 import { visitorsKeys, adminKeys } from "@/lib/hooks/query/query-keys";
-import type { VisitorEntry } from "@/lib/types";
-
-export interface CreateVisitorRequest {
-  farm_id: string;
-  visitor_name: string;
-  visitor_phone: string;
-  visitor_address: string;
-  visitor_purpose?: string;
-  vehicle_number?: string;
-  notes?: string;
-  disinfection_check: boolean;
-  consent_given: boolean;
-  visit_datetime?: string;
-}
-
-export interface UpdateVisitorRequest extends Partial<CreateVisitorRequest> {
-  id: string;
-  farm_id: string; // farm_id 필수로 추가
-}
+import type { VisitorSheetFormData } from "@/lib/utils/validation/visitor-validation";
 
 /**
  * 방문자 수정 Mutation Hook
@@ -31,8 +13,8 @@ export function useUpdateVisitorMutation() {
 
   return useMutation({
     mutationFn: async (
-      data: UpdateVisitorRequest
-    ): Promise<{ success: boolean; message?: string } & VisitorEntry> => {
+      data: VisitorSheetFormData
+    ): Promise<{ success: boolean; message?: string }> => {
       const response = await apiClient(
         `/api/farms/${data.farm_id}/visitors/${data.id}`,
         {
@@ -43,7 +25,7 @@ export function useUpdateVisitorMutation() {
       );
       return response;
     },
-    onSuccess: (updatedVisitor, variables) => {
+    onSuccess: () => {
       // 해당 농장의 방문자 목록 무효화
       queryClient.invalidateQueries({ queryKey: visitorsKeys.all });
 
@@ -69,7 +51,6 @@ export function useDeleteVisitorMutation() {
     }): Promise<{
       success: boolean;
       message?: string;
-      visitor?: VisitorEntry;
     }> => {
       const response = await apiClient(
         `/api/farms/${farmId}/visitors/${visitorId}`,

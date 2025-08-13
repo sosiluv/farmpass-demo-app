@@ -4,13 +4,13 @@ import { useNotificationSettingsQuery } from "@/lib/hooks/query/use-notification
 import { useCommonToast } from "@/lib/utils/notification/toast-messages";
 import { useNotificationMutations } from "@/lib/hooks/query/use-notification-mutations";
 import { Save, Loader2 } from "lucide-react";
-import type { NotificationSettings } from "@/lib/types/notification";
+import type { UserNotificationSetting } from "@/lib/types/common";
 import { BUTTONS } from "@/lib/constants/notifications";
 
 interface NotificationSettingsActionsProps {
   hasUnsavedChanges?: boolean;
   onSaveComplete?: () => void;
-  currentSettings?: NotificationSettings | null;
+  currentSettings?: UserNotificationSetting | null;
 }
 
 export function NotificationSettingsActions({

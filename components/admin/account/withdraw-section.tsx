@@ -1,17 +1,6 @@
 import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import {
-  AlertDialog,
-  AlertDialogTrigger,
-  AlertDialogContent,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogCancel,
-  AlertDialogAction,
-} from "@/components/ui/alert-dialog";
 import { AlertTriangle, Loader2 } from "lucide-react";
 import { PAGE_HEADER, BUTTONS, LABELS } from "@/lib/constants/account";
 import { useRouter } from "next/navigation";
@@ -20,6 +9,7 @@ import { useAuthActions } from "@/hooks/auth/useAuthActions";
 import { apiClient } from "@/lib/utils/data/api-client";
 import { handleError } from "@/lib/utils/error/";
 import AccountCardHeader from "./AccountCardHeader";
+import { DeleteConfirmSheet } from "@/components/ui/confirm-sheet";
 
 export default function WithdrawSection({
   onWithdraw,
@@ -76,67 +66,39 @@ export default function WithdrawSection({
       />
       <CardContent className="space-y-6">
         <div className="flex items-center justify-between">
-          <AlertDialog open={open} onOpenChange={setOpen}>
-            <AlertDialogTrigger asChild>
-              <Button
-                variant="destructive"
-                disabled={loading}
-                className="text-sm sm:text-base"
-              >
-                {loading ? (
-                  <>
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                    {BUTTONS.WITHDRAW}
-                  </>
-                ) : (
-                  <>
-                    <AlertTriangle className="h-4 w-4 mr-2" />
-                    {BUTTONS.WITHDRAW}
-                  </>
-                )}
-              </Button>
-            </AlertDialogTrigger>
-            <AlertDialogContent>
-              <AlertDialogHeader>
-                <AlertDialogTitle className="text-base sm:text-lg">
-                  {LABELS.WITHDRAW_DIALOG_TITLE}
-                </AlertDialogTitle>
-                <AlertDialogDescription className="text-sm sm:text-base">
-                  {LABELS.WITHDRAW_DIALOG_DESC}
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel
-                  disabled={loading}
-                  className="text-sm sm:text-base"
-                >
-                  {BUTTONS.WITHDRAW_CANCEL}
-                </AlertDialogCancel>
-                <AlertDialogAction
-                  onClick={handleWithdraw}
-                  disabled={loading}
-                  className="bg-destructive text-white hover:bg-destructive/90 text-sm sm:text-base"
-                >
-                  {loading ? (
-                    <>
-                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                      {BUTTONS.WITHDRAWING}
-                    </>
-                  ) : (
-                    <>
-                      <AlertTriangle className="h-4 w-4 mr-2" />
-                      {BUTTONS.WITHDRAW_CONFIRM}
-                    </>
-                  )}
-                </AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
+          <Button
+            variant="destructive"
+            disabled={loading}
+            className="text-sm sm:text-base"
+            onClick={() => setOpen(true)}
+          >
+            {loading ? (
+              <>
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                {BUTTONS.WITHDRAW}
+              </>
+            ) : (
+              <>
+                <AlertTriangle className="h-4 w-4 mr-2" />
+                {BUTTONS.WITHDRAW}
+              </>
+            )}
+          </Button>
         </div>
         {error && (
           <div className="text-sm sm:text-base text-red-500">{error}</div>
         )}
       </CardContent>
+
+      <DeleteConfirmSheet
+        open={open}
+        onOpenChange={setOpen}
+        onConfirm={handleWithdraw}
+        isLoading={loading}
+        title={LABELS.WITHDRAW_DIALOG_TITLE}
+        description={LABELS.WITHDRAW_DIALOG_DESC}
+        itemName={LABELS.WITHDRAW_ACCOUNT}
+      />
     </Card>
   );
 }

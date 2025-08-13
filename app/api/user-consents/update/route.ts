@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAuth } from "@/lib/server/auth-utils";
 import { prisma } from "@/lib/prisma";
-import { devLog } from "@/lib/utils/logging/dev-logger";
 import {
   getErrorResultFromRawError,
   makeErrorResponseFromResult,
@@ -98,7 +97,7 @@ export async function POST(request: NextRequest) {
 
     // 개인정보 처리방침 동의
     const privacyTerm = latestActiveTerms.find(
-      (term) => term.type === "privacy"
+      (term) => term.type === "privacy_consent"
     );
     if (privacyTerm && privacyConsent) {
       consentRecords.push({
@@ -171,9 +170,9 @@ export async function POST(request: NextRequest) {
       success: true,
       message: "약관 동의가 업데이트되었습니다",
       consents: consentRecords.map((record) => ({
-        termId: record.term_id,
+        term_id: record.term_id,
         agreed: record.agreed,
-        agreedAt: record.agreed_at,
+        agreed_at: record.agreed_at,
       })),
     });
   } catch (error) {

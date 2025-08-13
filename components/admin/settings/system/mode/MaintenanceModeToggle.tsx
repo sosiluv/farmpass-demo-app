@@ -32,9 +32,6 @@ export function MaintenanceModeToggle({
             </Badge>
           )}
         </div>
-        <p className="text-sm sm:text-base text-muted-foreground">
-          {LABELS.MAINTENANCE_MODE_DESC}
-        </p>
         {maintenanceMode && (
           <div className="flex items-center gap-1 text-sm sm:text-base text-red-600 mt-1">
             <AlertTriangle className="h-3 w-3" />

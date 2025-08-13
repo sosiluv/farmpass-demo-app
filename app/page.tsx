@@ -12,7 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import { ArrowRight, ChevronRight } from "lucide-react";
 import Link from "next/link";
 import { features, steps } from "./home-data";
-import { Logo } from "@/components/common";
+import { Logo } from "@/components/common/logo";
 
 // 클라이언트 컴포넌트로 변경
 export default function HomePage() {

@@ -19,14 +19,7 @@ import { devLog } from "@/lib/utils/logging/dev-logger";
 import { PAGE_HEADER, LABELS } from "@/lib/constants/account";
 
 interface PrivacySectionProps {
-  userId: string;
-}
-
-interface UserConsent {
-  type: string;
-  title: string;
-  version: string;
-  agreedAt: string;
+  userId: string | undefined;
 }
 
 export function PrivacySection({ userId }: PrivacySectionProps) {
@@ -42,7 +35,7 @@ export function PrivacySection({ userId }: PrivacySectionProps) {
 
   // 마케팅 동의 상태 확인
   const marketingConsent = consents?.find(
-    (consent: UserConsent) => consent.type === "marketing"
+    (consent) => consent.type === "marketing"
   );
   const hasMarketingConsent = !!marketingConsent;
 
@@ -142,7 +135,7 @@ export function PrivacySection({ userId }: PrivacySectionProps) {
         <CardContent className="space-y-4">
           {consents && consents.length > 0 ? (
             <div className="space-y-3">
-              {consents.map((consent: UserConsent, index: number) => (
+              {consents.map((consent, index: number) => (
                 <div
                   key={`${consent.type}-${index}`}
                   className="flex items-center justify-between p-3 border rounded-lg"
@@ -158,7 +151,7 @@ export function PrivacySection({ userId }: PrivacySectionProps) {
                           {LABELS.CONSENT_OPTIONAL}
                         </span>
                       )}
-                      {(consent.type === "privacy" ||
+                      {(consent.type === "privacy_consent" ||
                         consent.type === "terms") && (
                         <span className="text-xs px-2 py-1 bg-green-100 text-green-800 rounded">
                           {LABELS.CONSENT_REQUIRED}
@@ -166,7 +159,7 @@ export function PrivacySection({ userId }: PrivacySectionProps) {
                       )}
                     </div>
                     <p className="text-xs text-muted-foreground">
-                      {LABELS.CONSENT_DATE(consent.agreedAt)}
+                      {LABELS.CONSENT_DATE(consent.agreed_at || undefined)}
                     </p>
                   </div>
                   <div className="text-sm">

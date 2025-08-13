@@ -29,7 +29,3 @@ export interface DebugInfo {
   windowSize?: string;
   pixelRatio?: number;
 }
-
-export interface DebugPanelProps {
-  show: boolean;
-}

@@ -7,8 +7,7 @@ import {
   useCreateTermMutation,
   useDeleteTermMutation,
 } from "@/lib/hooks/query/use-terms-query";
-import { TermType } from "@/lib/types/terms";
-import { TermManagement } from "@/lib/types/common";
+import { TermType, TermManagement } from "@/lib/types/common";
 
 export function useTermsManagement() {
   const { showSuccess, showError } = useCommonToast();

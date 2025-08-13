@@ -12,6 +12,7 @@ import {
   Smartphone,
 } from "lucide-react";
 import { BUTTONS, LABELS, PAGE_HEADER } from "@/lib/constants/settings";
+import SettingsCardHeader from "../SettingsCardHeader";
 
 export function DocumentationSection() {
   const documentationLinks = [
@@ -69,16 +70,13 @@ export function DocumentationSection() {
       transition={{ duration: 0.5, delay: 0.3 }}
     >
       <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <BookOpen className="h-5 w-5 text-blue-600" />
-            {PAGE_HEADER.DOCUMENTATION_SECTION_TITLE}
-          </CardTitle>
-        </CardHeader>
+        <SettingsCardHeader
+          icon={BookOpen}
+          title={PAGE_HEADER.DOCUMENTATION_SECTION_TITLE}
+          description={PAGE_HEADER.DOCUMENTATION_SECTION_DESC}
+        />
         <CardContent className="space-y-4">
-          <p className="text-sm sm:text-base text-muted-foreground">
-            {PAGE_HEADER.DOCUMENTATION_SECTION_DESC}
-          </p>
+          {/* 이하 기존 CardContent 내용 유지 */}
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {(documentationLinks || []).map((doc) => (
@@ -116,22 +114,6 @@ export function DocumentationSection() {
                 </Card>
               </motion.div>
             ))}
-          </div>
-
-          <div className="mt-4 p-3 bg-blue-50 rounded-lg">
-            <div className="flex items-start gap-2">
-              <BookOpen className="h-4 w-4 text-blue-600 mt-0.5 flex-shrink-0" />
-              <div className="text-sm sm:text-base text-blue-700">
-                <p className="font-medium mb-1">
-                  {LABELS.DOCUMENTATION_USAGE_TIP}
-                </p>
-                <ul className="space-y-0.5 text-sm sm:text-base">
-                  <li>{LABELS.DOCUMENTATION_TIP_1}</li>
-                  <li>{LABELS.DOCUMENTATION_TIP_2}</li>
-                  <li>{LABELS.DOCUMENTATION_TIP_3}</li>
-                </ul>
-              </div>
-            </div>
           </div>
         </CardContent>
       </Card>

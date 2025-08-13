@@ -12,16 +12,16 @@ import { AccessDenied } from "@/components/error/access-denied";
 import { useAuth } from "@/components/providers/auth-provider";
 import { LABELS, PAGE_HEADER } from "@/lib/constants/management";
 import { ERROR_CONFIGS } from "@/lib/constants/error";
-import { useProfileQuery } from "@/lib/hooks/query/use-profile-query";
-import { CardSkeleton } from "@/components/common/skeletons";
+import { CardSkeleton } from "@/components/ui/skeleton";
 
 export default function SystemManagementPage() {
   const { state } = useAuth();
-  const userId = state.status === "authenticated" ? state.user.id : undefined;
-  const { data: profile, isLoading: profileLoading } = useProfileQuery(userId);
+  const isAdmin =
+    state.status === "authenticated" && state.user?.app_metadata?.isAdmin;
+  const isLoading = state.status === "loading";
 
   // 프로필 로딩 중일 때는 스켈레톤 표시
-  if (profileLoading) {
+  if (isLoading) {
     return (
       <div className="flex-1 space-y-4 md:space-y-6 px-4 md:px-6 lg:px-8 pt-3 pb-4 md:pb-6 lg:pb-8">
         <PageHeader
@@ -33,9 +33,8 @@ export default function SystemManagementPage() {
       </div>
     );
   }
-
   // admin 권한 체크
-  if (!profile || profile.account_type !== "admin") {
+  if (!isAdmin) {
     return (
       <AccessDenied
         title={ERROR_CONFIGS.PERMISSION.title}

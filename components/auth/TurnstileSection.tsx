@@ -1,7 +1,7 @@
 "use client";
 
 import { memo } from "react";
-import { Turnstile } from "@/components/common";
+import { Turnstile } from "./turnstile";
 import { LABELS } from "@/lib/constants/auth";
 
 interface TurnstileSectionProps {

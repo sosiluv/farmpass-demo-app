@@ -26,11 +26,11 @@ export const PhoneField = <T extends FieldValues = any>({
   return (
     <FormField
       control={form.control}
-      name={"phoneNumber" as Path<T>}
+      name={"visitor_phone" as Path<T>}
       render={({ field }) => (
         <FormItem className={`space-y-2 sm:space-y-2 ${className}`}>
           <FormLabel
-            htmlFor="visitor-phoneNumber"
+            htmlFor="visitor-visitor_phone"
             className="flex items-center gap-2 font-semibold text-gray-800 text-sm"
           >
             <Phone className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
@@ -42,8 +42,8 @@ export const PhoneField = <T extends FieldValues = any>({
           <FormControl>
             <Input
               {...field}
-              id="visitor-phoneNumber"
-              name="phoneNumber"
+              id="visitor-visitor_phone"
+              name="visitor_phone"
               type="tel"
               onChange={(e) => {
                 const formattedPhone = formatPhone(e.target.value);

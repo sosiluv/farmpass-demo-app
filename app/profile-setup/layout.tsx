@@ -3,7 +3,7 @@
 import type React from "react";
 import { ErrorBoundary } from "@/components/error/error-boundary";
 import { ERROR_CONFIGS } from "@/lib/constants/error";
-import { ThemeProvider } from "@/components/common/theme-provider";
+import { ThemeProvider } from "@/components/providers/theme-provider";
 import { AuthProvider } from "@/components/providers/auth-provider";
 
 export default function ProfileSetupLayout({

@@ -35,8 +35,6 @@ export const BUTTONS = {
   ADDRESS_SEARCH_BUTTON: "주소 검색",
 
   REFRESH_BUTTON: "새로고침",
-  PHONE_INPUT_SAVE: "저장",
-  PHONE_INPUT_LOADING: "저장중...",
 
   // 알림 관련
   NOTIFICATION_LOAD_MORE: "더보기",
@@ -45,7 +43,7 @@ export const BUTTONS = {
   NOTIFICATION_DELETE_ALL: "전체 삭제",
 
   // 프로필 설정 관련
-  PROFILE_SETUP_GO_BACK: "뒤로가기",
+  PROFILE_SETUP_GO_BACK: "로그인 페이지로 돌아가기",
   PROFILE_SETUP_NEXT: "다음",
   PROFILE_SETUP_CONSENT_TERMS: "약관 동의하기",
   PROFILE_SETUP_PROCESSING: "처리 중...",
@@ -268,8 +266,8 @@ export const LABELS = {
 
   // InstallGuide.tsx
 
-  INSTALL_GUIDE_DIALOG_TITLE: "PWA 설치 가이드",
-  INSTALL_GUIDE_DIALOG_DESCRIPTION:
+  INSTALL_GUIDE_SHEET_TITLE: "PWA 설치 가이드",
+  INSTALL_GUIDE_SHEET_DESCRIPTION:
     "현재 플랫폼에 맞는 PWA 설치 방법을 안내합니다.",
 
   // InstallPrompt.tsx
@@ -318,8 +316,6 @@ export const LABELS = {
   MOBILE_HEADER_SYSTEM_ADMIN: "시스템 관리자",
   MOBILE_HEADER_FARM_COUNT: "{count}개 농장",
   MOBILE_HEADER_FARM_REGISTRATION_NEEDED: "농장 등록 필요",
-  PHONE_INPUT_TITLE: "휴대폰번호 입력",
-  PHONE_INPUT_DESCRIPTION: "서비스 이용을 위해 휴대폰번호를 입력해주세요.",
 
   // 알림 관련
   NOTIFICATION_TITLE: "실시간 알림",

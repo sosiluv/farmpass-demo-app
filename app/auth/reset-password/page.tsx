@@ -16,7 +16,7 @@ import {
 import { Form, FormField } from "@/components/ui/form";
 import { motion } from "framer-motion";
 import { useCommonToast } from "@/lib/utils/notification/toast-messages";
-import { Logo } from "@/components/common";
+import { Logo } from "@/components/common/logo";
 import { apiClient } from "@/lib/utils/data";
 import { resetPasswordRequestFormSchema } from "@/lib/utils/validation/auth-validation";
 import type { ResetPasswordRequestFormData } from "@/lib/utils/validation/auth-validation";

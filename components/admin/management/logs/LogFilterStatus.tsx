@@ -115,7 +115,7 @@ export function LogFilterStatus({
   }
 
   return (
-    <div className="flex flex-wrap items-center gap-2 sm:gap-3 p-3 sm:p-4 bg-gradient-to-r from-slate-50 to-gray-50 rounded-lg border border-slate-200">
+    <div className="flex flex-wrap items-center gap-2 p-4 bg-gradient-to-r from-slate-50 to-gray-50 rounded-lg border border-slate-200">
       <div className="flex items-center space-x-1 sm:space-x-2">
         <span className="text-xs sm:text-sm font-medium text-gray-700">
           {LABELS.ACTIVE_FILTERS}

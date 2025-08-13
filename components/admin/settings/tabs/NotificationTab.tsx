@@ -15,7 +15,11 @@ import {
 import { ErrorBoundary } from "@/components/error/error-boundary";
 import { ERROR_CONFIGS } from "@/lib/constants/error";
 import type { SystemSettings } from "@/lib/types/settings";
-import { WebPushConfiguration } from "../notification";
+import {
+  VapidKeySection,
+  NotificationIconSection,
+  NotificationBehaviorSection,
+} from "../notification";
 import SettingsCardHeader from "../SettingsCardHeader";
 import {
   previewVisitTemplate,
@@ -23,6 +27,7 @@ import {
 } from "@/lib/utils/notification/notification-template";
 import { useCommonToast } from "@/lib/utils/notification/toast-messages";
 import { handleError } from "@/lib/utils/error";
+import { useSystemNotificationSettings } from "@/hooks/settings/useNotificationSettings";
 
 interface NotificationTabProps {
   settings: SystemSettings;
@@ -39,6 +44,11 @@ const NotificationTab = React.memo(function NotificationTab({
   isLoading,
 }: NotificationTabProps) {
   const { showError, showSuccess } = useCommonToast();
+  const { handleGenerateVapidKeys } = useSystemNotificationSettings({
+    settings,
+    onUpdate,
+    isLoading,
+  });
 
   // 템플릿 미리보기 함수
   const handlePreviewTemplate = useCallback(() => {
@@ -119,10 +129,20 @@ const NotificationTab = React.memo(function NotificationTab({
         </Card>
 
         {/* 웹푸시 상세 설정 */}
-        <WebPushConfiguration
+
+        <NotificationBehaviorSection settings={settings} onUpdate={onUpdate} />
+
+        <VapidKeySection
           settings={settings}
           onUpdate={onUpdate}
+          onGenerateKeys={handleGenerateVapidKeys}
           isLoading={isLoading}
+        />
+
+        <NotificationIconSection
+          settings={settings}
+          onUpdate={onUpdate}
+          loading={isLoading}
         />
       </div>
     </ErrorBoundary>

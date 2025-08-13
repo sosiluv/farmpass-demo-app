@@ -3,6 +3,27 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiClient } from "@/lib/utils/data/api-client";
 import { userConsentsKeys } from "@/lib/hooks/query/query-keys";
+import type { UserConsent } from "@/lib/types/common";
+
+/**
+ * 사용자 동의 상태 확인 API 응답 타입
+ */
+interface UserConsentsCheckResponse {
+  success: boolean;
+  hasAllRequiredConsents: boolean;
+  missingConsents: Array<{
+    type: string;
+    title: string;
+    version: string;
+    termId: string;
+  }>;
+  userConsents: Array<{
+    type: string;
+    title: string;
+    version: string;
+    agreed_at: string | null;
+  }>;
+}
 
 /**
  * 사용자 동의 상태 확인 훅
@@ -10,7 +31,7 @@ import { userConsentsKeys } from "@/lib/hooks/query/query-keys";
 export function useUserConsentsQuery(enabled: boolean = true) {
   return useQuery({
     queryKey: userConsentsKeys.check(),
-    queryFn: async () => {
+    queryFn: async (): Promise<UserConsentsCheckResponse> => {
       const response = await apiClient("/api/user-consents/check", {
         method: "GET",
         context: "사용자 동의 상태 확인",
@@ -34,7 +55,7 @@ export function useUpdateUserConsentsMutation() {
       privacyConsent: boolean;
       termsConsent: boolean;
       marketingConsent?: boolean;
-    }): Promise<{ consents: any[]; message: string }> => {
+    }): Promise<{ consents: UserConsent[]; message: string }> => {
       const response = await apiClient("/api/user-consents/update", {
         method: "POST",
         body: JSON.stringify(data),

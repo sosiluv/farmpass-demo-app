@@ -2,10 +2,7 @@
  * 알림 관련 타입 정의
  */
 
-import type { NotificationMethod, Notification } from "./common";
-
-// Re-export common types
-export type { NotificationMethod, Notification } from "./common";
+import type { Notification } from "./common";
 
 // ===========================================
 // 알림 기본 타입
@@ -26,37 +23,12 @@ export interface NotificationsFilters {
   type?: string;
 }
 
-export interface NotificationSettings {
-  id: string;
-  user_id: string;
-  notification_method: NotificationMethod;
-  visitor_alerts: boolean;
-  system_alerts: boolean;
-  kakao_user_id: string | null;
-  is_active: boolean;
-  created_at: string;
-  updated_at: string;
-}
-
 export type SubscriptionStatus =
   | "checking"
   | "unsupported"
   | "denied"
   | "granted"
   | "subscribed";
-
-export interface NotificationPayload {
-  title: string;
-  message: string;
-  notificationType?: "visitor" | "system";
-  metadata?: Record<string, unknown>;
-  target_user_ids?: string[];
-  icon?: string;
-  badge?: string;
-  tag?: string;
-  data?: Record<string, any>;
-  test?: boolean;
-}
 
 // ===========================================
 // 푸시 구독 관련 타입

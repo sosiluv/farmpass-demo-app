@@ -6,35 +6,34 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-import { AddressSearch } from "@/components/common/address-search";
-import type { UseFormReturn } from "react-hook-form";
-import type { VisitorFormData } from "@/lib/utils/validation/visitor-validation";
+import { AddressSearch } from "@/components/ui/address-search";
+import type { UseFormReturn, FieldValues, Path } from "react-hook-form";
 import { LABELS } from "@/lib/constants/visitor";
 import { MapPin } from "lucide-react";
 
-interface AddressFieldProps {
-  form: UseFormReturn<VisitorFormData>;
+interface AddressFieldProps<T extends FieldValues = any> {
+  form: UseFormReturn<T>;
   required?: boolean;
   className?: string;
   defaultDetailedAddress?: string;
 }
 
-export const AddressField = ({
+export const AddressField = <T extends FieldValues = any>({
   form,
   required = false,
   className = "",
   defaultDetailedAddress,
-}: AddressFieldProps) => {
+}: AddressFieldProps<T>) => {
   return (
     <FormField
       control={form.control}
-      name="address"
+      name={"visitor_address" as Path<T>}
       render={({ field }) => (
         <FormItem
           className={`space-y-2 sm:space-y-2 md:col-span-2 ${className}`}
         >
           <FormLabel
-            htmlFor="visitor-address"
+            htmlFor="visitor-visitor_address"
             className="flex items-center gap-2 font-semibold text-gray-800 text-sm"
           >
             <MapPin className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
@@ -47,7 +46,7 @@ export const AddressField = ({
             <AddressSearch
               onSelect={(address, detailedAddress) => {
                 field.onChange(address);
-                form.setValue("detailedAddress", detailedAddress);
+                (form as any).setValue("detailed_address", detailedAddress);
               }}
               defaultDetailedAddress={defaultDetailedAddress}
             />
@@ -61,10 +60,10 @@ export const AddressField = ({
                 </div>
                 <div className="text-gray-600 mt-1">
                   {field.value}
-                  {form.watch("detailedAddress") && (
+                  {(form as any).watch("detailed_address") && (
                     <span className="text-blue-600">
                       {" "}
-                      {form.watch("detailedAddress")}
+                      {(form as any).watch("detailed_address")}
                     </span>
                   )}
                 </div>

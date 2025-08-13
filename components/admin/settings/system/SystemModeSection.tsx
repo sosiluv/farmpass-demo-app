@@ -1,21 +1,13 @@
 import { Card, CardContent } from "@/components/ui/card";
-import { Separator } from "@/components/ui/separator";
-import { Button } from "@/components/ui/button";
 import { Settings } from "lucide-react";
 import type { SystemSettings } from "@/lib/types/settings";
-import { useState } from "react";
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "@/components/ui/collapsible";
 import SettingsCardHeader from "../SettingsCardHeader";
 import {
   DebugModeToggle,
   MaintenanceModeToggle,
   MaintenanceSettings,
 } from "./mode";
-import { BUTTONS, PAGE_HEADER } from "@/lib/constants/settings";
+import { PAGE_HEADER } from "@/lib/constants/settings";
 
 interface SystemModeSectionProps {
   settings: SystemSettings;
@@ -31,8 +23,6 @@ export function SystemModeSection({
   onUpdate,
   isLoading,
 }: SystemModeSectionProps) {
-  const [showMaintenanceSettings, setShowMaintenanceSettings] = useState(false);
-
   const handleMaintenanceModeChange = (checked: boolean) => {
     onUpdate("maintenanceMode", checked);
 
@@ -59,36 +49,16 @@ export function SystemModeSection({
           onUpdate={(value) => onUpdate("debugMode", value)}
           isLoading={isLoading}
         />
-        <Separator />
-        <div className="space-y-3">
-          <MaintenanceModeToggle
-            maintenanceMode={settings.maintenanceMode}
-            onUpdate={handleMaintenanceModeChange}
-            isLoading={isLoading}
-          />
-          <Collapsible
-            open={showMaintenanceSettings}
-            onOpenChange={setShowMaintenanceSettings}
-          >
-            <CollapsibleTrigger asChild>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="w-full justify-start text-sm sm:text-base"
-              >
-                <Settings className="h-4 w-4 mr-2" />
-                {BUTTONS.SYSTEM_MODE_MAINTENANCE_DETAILS}
-              </Button>
-            </CollapsibleTrigger>
-            <CollapsibleContent className="space-y-4 pt-2">
-              <MaintenanceSettings
-                settings={settings}
-                onUpdate={onUpdate}
-                isLoading={isLoading}
-              />
-            </CollapsibleContent>
-          </Collapsible>
-        </div>
+        <MaintenanceModeToggle
+          maintenanceMode={settings.maintenanceMode}
+          onUpdate={handleMaintenanceModeChange}
+          isLoading={isLoading}
+        />
+        <MaintenanceSettings
+          settings={settings}
+          onUpdate={onUpdate}
+          isLoading={isLoading}
+        />
       </CardContent>
     </Card>
   );

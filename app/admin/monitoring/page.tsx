@@ -1,8 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
-import { CardSkeleton } from "@/components/common/skeletons";
-import { useRouter } from "next/navigation";
+import { CardSkeleton } from "@/components/ui/skeleton";
 import { useAuth } from "@/components/providers/auth-provider";
 import { AccessDenied } from "@/components/error/access-denied";
 import { PageHeader } from "@/components/layout";
@@ -20,10 +18,9 @@ import {
   useMonitoringAnalyticsQuery,
   useMonitoringErrorsQuery,
 } from "@/lib/hooks/query/use-monitoring-query";
-import { PAGE_HEADER, LABELS } from "@/lib/constants/monitoring";
+import { PAGE_HEADER } from "@/lib/constants/monitoring";
 import { ERROR_CONFIGS } from "@/lib/constants/error";
 import { ErrorBoundary } from "@/components/error/error-boundary";
-import { useProfileQuery } from "@/lib/hooks/query/use-profile-query";
 import { Activity } from "lucide-react";
 
 // 카드별 로딩/에러/데이터 렌더링 유틸
@@ -46,12 +43,12 @@ export default function MonitoringDashboard() {
   const errors = useMonitoringErrorsQuery();
 
   const { state } = useAuth();
-  const userId = state.status === "authenticated" ? state.user.id : undefined;
-  const { data: profile, isLoading: profileLoading } = useProfileQuery(userId);
-  const isAdmin = profile?.account_type === "admin";
+  const isAdmin =
+    state.status === "authenticated" && state.user?.app_metadata?.isAdmin;
+  const isLoading = state.status === "loading";
 
   // 프로필 로딩 중일 때는 스켈레톤 표시
-  if (profileLoading) {
+  if (isLoading) {
     return (
       <div className="flex-1 space-y-4 md:space-y-6 px-4 md:px-6 lg:px-8 pt-3 pb-4 md:pb-6 lg:pb-8">
         <PageHeader
@@ -63,7 +60,6 @@ export default function MonitoringDashboard() {
       </div>
     );
   }
-
   // 권한이 없는 경우(기존 유지)
   if (!isAdmin) {
     return (

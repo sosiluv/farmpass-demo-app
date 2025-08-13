@@ -92,9 +92,10 @@ export const LABELS = {
   ACCOUNT_STATUS: "계정 상태",
   ACTIVE: "활성화",
   INACTIVE: "비활성화",
-  WITHDRAW_DIALOG_TITLE: "정말로 회원탈퇴 하시겠습니까?",
-  WITHDRAW_DIALOG_DESC:
-    "이 작업은 되돌릴 수 없습니다. 계정 및 모든 데이터가 영구적으로 삭제됩니다.",
+  WITHDRAW_DIALOG_TITLE: "회원탈퇴",
+  WITHDRAW_DIALOG_DESC: "정말로 회원탈퇴 하시겠습니까?",
+  WITHDRAW_ACCOUNT: "계정",
+
   // 소셜 로그인
   SOCIAL_LOGIN_ACCOUNT: "소셜 로그인 계정",
   SOCIAL_PASSWORD_CHANGE_GUIDE:

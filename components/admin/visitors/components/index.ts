@@ -1,4 +1,4 @@
-export { VisitorDetailModal } from "./VisitorDetailModal";
+export { VisitorDetailSheet } from "./VisitorDetailSheet";
 export { FarmSelector } from "./FarmSelector";
 export { VisitorActionMenu } from "./VisitorActionMenu";
 export { VisitorAvatar } from "./VisitorAvatar";

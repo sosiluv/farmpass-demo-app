@@ -1,7 +1,6 @@
 // Farm Members Management Components
 export { MemberCard } from "./MemberCard";
-export { AddMemberDialog } from "./AddMemberDialog";
-export { DeleteMemberDialog } from "./DeleteMemberDialog";
+export { AddMemberSheet } from "./AddMemberSheet";
 export { MembersList } from "./MembersList";
 export { MembersPageHeader } from "./MembersPageHeader";
 

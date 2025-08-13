@@ -3,20 +3,17 @@
 import { memo, useState } from "react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
+import { Sheet } from "@/components/ui/sheet";
 import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetHeader,
-  SheetTitle,
-} from "@/components/ui/sheet";
+  CommonSheetHeader,
+  CommonSheetContent,
+} from "@/components/ui/sheet-common";
 import { ExternalLink, Loader2 } from "lucide-react";
 import { usePublicTermsQuery } from "@/lib/hooks/query/use-terms-query";
 import { useUpdateUserConsentsMutation } from "@/lib/hooks/query/use-user-consents-query";
 import { useCommonToast } from "@/lib/utils/notification/toast-messages";
-import { TermManagement } from "@/lib/types/common";
-import { TermsModal } from "./TermsModal";
-import { TermType } from "@/lib/types/terms";
+import { TermManagement, TermType } from "@/lib/types/common";
+import { TermsSheet } from "./TermsSheet";
 import { PAGE_HEADER, LABELS, BUTTONS } from "@/lib/constants/terms";
 
 interface TermsConsentSheetProps {
@@ -130,23 +127,15 @@ export const TermsConsentSheet = memo(
     return (
       <>
         <Sheet open={open} onOpenChange={onOpenChange}>
-          <SheetContent
+          <CommonSheetContent
             side="bottom"
-            className="max-h-[85vh] sm:max-h-[80vh] overflow-hidden rounded-t-[20px] rounded-b-[20px] sm:rounded-t-[24px] sm:rounded-b-[24px] border-t-2 border-primary/20 mb-4 flex flex-col mx-2"
+            showHandle={true}
+            enableDragToClose={true}
+            dragDirection="vertical"
+            dragThreshold={50}
+            onClose={() => onOpenChange(false)}
           >
-            {/* 상단 핸들 바 - 스와이프 가능 */}
-            <div className="flex justify-center mb-4 pt-2">
-              <div className="w-16 h-1.5 bg-gray-300 rounded-full cursor-grab active:cursor-grabbing touch-manipulation"></div>
-            </div>
-
-            <SheetHeader className="text-center pb-4 sm:pb-6 border-b border-gray-100 px-4">
-              <SheetTitle className="text-xl sm:text-2xl font-bold text-gray-900">
-                {title}
-              </SheetTitle>
-              <SheetDescription className="text-sm sm:text-base text-gray-600 mt-2">
-                {description}
-              </SheetDescription>
-            </SheetHeader>
+            <CommonSheetHeader title={title} description={description} />
 
             <div className="flex-1 overflow-y-auto py-2 sm:py-3 px-4">
               {termsLoading ? (
@@ -352,11 +341,11 @@ export const TermsConsentSheet = memo(
                 </div>
               )}
             </div>
-          </SheetContent>
+          </CommonSheetContent>
         </Sheet>
 
         {/* 약관 모달 */}
-        <TermsModal
+        <TermsSheet
           isOpen={modalOpen}
           onClose={() => setModalOpen(false)}
           termType={selectedTermType}

@@ -1,13 +1,13 @@
 import { Building2 } from "lucide-react";
 import { PageHeader } from "@/components/layout";
-import { FarmFormDialog } from "./FarmFormDialog";
-import type { Farm } from "@/lib/types/farm";
+import { FarmFormSheet } from "./FarmFormSheet";
+import type { Farm } from "@/lib/types/common";
 import type { FarmFormValues } from "@/lib/utils/validation";
 import { PAGE_HEADER } from "@/lib/constants/farms";
 
 interface FarmsPageHeaderProps {
-  dialogOpen: boolean;
-  onDialogOpenChange: (open: boolean) => void;
+  sheetOpen: boolean;
+  onSheetOpenChange: (open: boolean) => void;
   editingFarm: Farm | null;
   onSubmit: (values: FarmFormValues) => Promise<void>;
   onAddClick: () => void;
@@ -15,8 +15,8 @@ interface FarmsPageHeaderProps {
 }
 
 export function FarmsPageHeader({
-  dialogOpen,
-  onDialogOpenChange,
+  sheetOpen,
+  onSheetOpenChange,
   editingFarm,
   onSubmit,
   onAddClick,
@@ -28,9 +28,9 @@ export function FarmsPageHeader({
       description={PAGE_HEADER.FARMS_PAGE_DESCRIPTION}
       icon={Building2}
       actions={
-        <FarmFormDialog
-          open={dialogOpen}
-          onOpenChange={onDialogOpenChange}
+        <FarmFormSheet
+          open={sheetOpen}
+          onOpenChange={onSheetOpenChange}
           editingFarm={editingFarm}
           onSubmit={onSubmit}
           onAddClick={onAddClick}

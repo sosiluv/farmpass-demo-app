@@ -340,10 +340,6 @@ export async function createSubscriptionFromExisting(
     const existingSubscription =
       await registration.pushManager.getSubscription();
 
-    console.log("options", options);
-    console.log("registration", registration);
-    console.log("existingSubscription", existingSubscription);
-
     if (!existingSubscription) {
       return {
         success: false,

@@ -4,12 +4,15 @@ import { prisma } from "@/lib/prisma";
 import { getSystemSettings } from "@/lib/cache/system-settings-cache";
 import { createSystemLog } from "@/lib/utils/logging/system-log";
 import { devLog } from "@/lib/utils/logging/dev-logger";
+import { getUserConsentStatus } from "@/lib/utils/consent/consentUtil";
 import {
   getErrorResultFromRawError,
   makeErrorResponseFromResult,
   throwBusinessError,
 } from "@/lib/utils/error/errorUtil";
 import { LOG_MESSAGES } from "@/lib/utils/logging/log-templates";
+import type { LoginFormData } from "@/lib/utils/validation/auth-validation";
+import { loginFormSchema } from "@/lib/utils/validation/auth-validation";
 
 // 동적 렌더링 강제
 export const dynamic = "force-dynamic";
@@ -277,16 +280,19 @@ export async function POST(request: NextRequest) {
   let email: string | undefined;
 
   try {
-    const body = await request.json();
-    email = body.email;
-    const { password } = body;
+    const body: LoginFormData = await request.json();
 
-    if (!email || !password) {
-      throwBusinessError("MISSING_REQUIRED_FIELDS", {
-        missingFields: ["email", "password"],
-        operation: "login",
+    // ZOD 스키마로 검증
+    const validation = loginFormSchema.safeParse(body);
+    if (!validation.success) {
+      throwBusinessError("INVALID_FORM_DATA", {
+        errors: validation.error.errors,
+        formType: "user",
       });
     }
+
+    const { email: validatedEmail, password } = validation.data;
+    email = validatedEmail;
 
     // 1. 로그인 시도 횟수 확인과 Supabase 인증을 병렬로 처리
     const supabase = await createClient();
@@ -359,6 +365,9 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // 약관 동의 상태 조회
+    const consentData = await getUserConsentStatus(user!.id);
+
     // 로그인 성공 로그 기록 (백그라운드에서 처리)
     setTimeout(async () => {
       try {
@@ -384,7 +393,9 @@ export async function POST(request: NextRequest) {
     // Supabase 기본 쿠키 사용 (중복 쿠키 설정 제거)
     const response = NextResponse.json({
       success: true,
-      message: "로그인에 성공했습니다. 대시보드로 이동합니다.",
+      message: consentData.hasAllRequiredConsents
+        ? "로그인에 성공했습니다. 대시보드로 이동합니다."
+        : "로그인에 성공했습니다. 프로필 설정 페이지로 이동합니다.",
       user: {
         id: user?.id,
         email: user?.email,
@@ -396,6 +407,7 @@ export async function POST(request: NextRequest) {
         expires_at: session!.expires_at,
       },
       remainingAttempts: attempts.maxAttempts,
+      consent: consentData, // 약관 동의 상태 추가
     });
 
     return response;

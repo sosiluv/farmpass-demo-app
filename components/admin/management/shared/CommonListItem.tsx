@@ -25,16 +25,16 @@ export function CommonListItem({
         </div>
       )}
       <div className="min-w-0 flex-1 space-y-1 sm:space-y-1.5">
-        <div className="font-semibold text-sm sm:text-base lg:text-lg xl:text-xl truncate min-w-0 max-w-[200px] sm:max-w-[300px] lg:max-w-[400px] xl:max-w-[500px] 2xl:max-w-[600px]">
+        <div className="font-semibold text-sm sm:text-base lg:text-lg xl:text-xl truncate min-w-0 max-w-[190px] sm:max-w-[300px] lg:max-w-[400px] xl:max-w-[500px] 2xl:max-w-[600px]">
           {primary}
         </div>
         {secondary && (
-          <div className="text-xs sm:text-sm lg:text-base xl:text-lg text-muted-foreground min-w-0 max-w-[250px] sm:max-w-[350px] lg:max-w-[450px] xl:max-w-[550px] 2xl:max-w-[650px] break-words">
+          <div className="text-xs sm:text-sm lg:text-base xl:text-lg text-muted-foreground min-w-0 max-w-[190px] sm:max-w-[350px] lg:max-w-[450px] xl:max-w-[550px] 2xl:max-w-[650px] break-words">
             {secondary}
           </div>
         )}
         {meta && (
-          <div className="text-xs sm:text-sm lg:text-base xl:text-lg text-muted-foreground min-w-0 max-w-[280px] sm:max-w-[380px] lg:max-w-[480px] xl:max-w-[580px] 2xl:max-w-[680px] break-words">
+          <div className="text-xs sm:text-sm lg:text-base xl:text-lg text-muted-foreground min-w-0 max-w-[190px] sm:max-w-[380px] lg:max-w-[480px] xl:max-w-[580px] 2xl:max-w-[680px] break-words">
             {meta}
           </div>
         )}

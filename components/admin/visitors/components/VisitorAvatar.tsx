@@ -1,5 +1,10 @@
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { getAvatarUrl, generateInitials } from "@/lib/utils/media/avatar";
+import { ZoomableImage } from "@/components/ui/zoomable-image";
+import {
+  getAvatarUrl,
+  generateInitials,
+  getAvatarColor,
+} from "@/lib/utils/media/avatar";
 
 interface VisitorAvatarProps {
   name: string;
@@ -40,19 +45,33 @@ export function VisitorAvatar({
 }: VisitorAvatarProps) {
   return (
     <div className={`relative ${className || ""}`} onClick={onClick}>
-      <Avatar
-        className={`${sizeClasses[size]} border-2 border-white shadow-sm`}
-      >
-        <AvatarImage
+      {imageUrl ? (
+        <ZoomableImage
           src={getAvatarUrl(
             { profile_image_url: imageUrl, name },
             { size: 128 }
           )}
+          alt={name}
+          title={`${name} 프로필`}
+          className="border-2 border-white shadow-sm"
+          shape="circle"
+          size={size}
         />
-        <AvatarFallback className="bg-gradient-to-br from-blue-100 to-blue-200 text-blue-700 font-semibold">
-          {generateInitials(name)}
-        </AvatarFallback>
-      </Avatar>
+      ) : (
+        <Avatar
+          className={`${sizeClasses[size]} border-2 border-white shadow-sm`}
+        >
+          <AvatarImage
+            src={getAvatarUrl(
+              { profile_image_url: imageUrl, name },
+              { size: 128 }
+            )}
+          />
+          <AvatarFallback className={`${getAvatarColor(name)} text-white`}>
+            {generateInitials(name)}
+          </AvatarFallback>
+        </Avatar>
+      )}
       {showStatus && (
         <div
           className={`absolute ${statusSizeClasses[size]} bg-white rounded-full flex items-center justify-center shadow-sm border`}

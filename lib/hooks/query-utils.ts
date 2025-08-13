@@ -16,6 +16,7 @@ export function useAuthenticatedQuery<TData = unknown, TError = Error>(
   options?: Omit<UseQueryOptions<TData, TError>, "queryKey" | "queryFn">
 ) {
   const { state } = useAuth();
+  const isAuthenticated = state.status === "authenticated";
 
   return useQuery({
     queryKey,
@@ -25,7 +26,7 @@ export function useAuthenticatedQuery<TData = unknown, TError = Error>(
     gcTime: 10 * 60 * 1000, // 10분간 캐시 유지
     refetchOnWindowFocus: false, // 윈도우 포커스시 자동 refetch 안함
     ...options,
-    enabled: state.status === "authenticated" && (options?.enabled ?? true),
+    enabled: isAuthenticated && (options?.enabled ?? true),
     retry: (failureCount, error) => {
       // 인증 에러는 재시도 안함
       if (

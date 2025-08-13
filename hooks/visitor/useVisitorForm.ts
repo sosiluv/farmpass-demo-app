@@ -14,16 +14,16 @@ import {
 } from "@/lib/hooks/query/use-visitor-form-query";
 
 const initialFormData: VisitorFormData = {
-  fullName: "",
-  phoneNumber: "",
-  address: "",
-  detailedAddress: "",
-  carPlateNumber: "",
-  visitPurpose: "",
-  disinfectionCheck: false,
+  visitor_name: "",
+  visitor_phone: "",
+  visitor_address: "",
+  detailed_address: "",
+  vehicle_number: "",
+  visitor_purpose: "",
+  disinfection_check: false,
   notes: "",
-  profilePhoto: null,
-  consentGiven: false,
+  profile_photo_url: null,
+  consent_given: false,
 };
 
 export const useVisitorForm = (farmId: string, settings: VisitorSettings) => {
@@ -77,18 +77,18 @@ export const useVisitorForm = (farmId: string, settings: VisitorSettings) => {
         // 이전 방문 정보로 폼 초기화 (항상 실행)
         setFormData({
           ...initialFormData,
-          fullName: lastVisit.visitorName,
-          phoneNumber: lastVisit.visitorPhone || "",
-          address: lastVisit.visitorAddress,
-          detailedAddress: lastVisit.visitorDetailedAddress || "",
-          carPlateNumber: lastVisit.carPlateNumber || "",
-          visitPurpose: lastVisit.visitPurpose || "",
-          profilePhotoUrl: lastVisit.profilePhotoUrl || "",
+          visitor_name: lastVisit.visitor_name,
+          visitor_phone: lastVisit.visitor_phone || "",
+          visitor_address: lastVisit.visitor_address,
+          detailed_address: lastVisit.detailed_address || "",
+          vehicle_number: lastVisit.vehicle_number || "",
+          visitor_purpose: lastVisit.visitor_purpose || "",
+          profile_photo_url: lastVisit.profile_photo_url || "",
         });
 
         // 이전 이미지 URL이 있으면 uploadedImageUrl에도 설정
-        if (lastVisit.profilePhotoUrl) {
-          setUploadedImageUrl(lastVisit.profilePhotoUrl);
+        if (lastVisit.profile_photo_url) {
+          setUploadedImageUrl(lastVisit.profile_photo_url);
         }
 
         // 재방문 허용 시간이 남아있다면 에러 메시지 설정 (폼은 여전히 사용 가능)
@@ -150,7 +150,7 @@ export const useVisitorForm = (farmId: string, settings: VisitorSettings) => {
       setSelectedImageFile(null);
       setFormData((prev) => ({
         ...prev,
-        profilePhotoUrl: "",
+        profile_photo_url: null,
       }));
     }
   };
@@ -182,10 +182,10 @@ export const useVisitorForm = (farmId: string, settings: VisitorSettings) => {
         try {
           // 기존 이미지가 있고 새 이미지를 업로드하는 경우, 기존 이미지 삭제
           if (
-            formData.profilePhotoUrl &&
-            !formData.profilePhotoUrl.startsWith("blob:")
+            formData.profile_photo_url &&
+            !formData.profile_photo_url.startsWith("blob:")
           ) {
-            await deleteImageFromStorage(formData.profilePhotoUrl);
+            await deleteImageFromStorage(formData.profile_photo_url);
           }
 
           // 새 이미지 업로드 (기존 hook 사용)
@@ -202,10 +202,10 @@ export const useVisitorForm = (farmId: string, settings: VisitorSettings) => {
       }
       // 2. 기존 이미지가 있으면 그대로 사용 (blob이 아닌 경우만)
       else if (
-        formData.profilePhotoUrl &&
-        !formData.profilePhotoUrl.startsWith("blob:")
+        formData.profile_photo_url &&
+        !formData.profile_photo_url.startsWith("blob:")
       ) {
-        profile_photo_url = formData.profilePhotoUrl;
+        profile_photo_url = formData.profile_photo_url;
       }
 
       // 방문자 등록 (React Query Mutation 사용)

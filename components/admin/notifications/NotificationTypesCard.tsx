@@ -1,6 +1,6 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
-import { NotificationSettings } from "@/lib/types/notification";
+import type { UserNotificationSetting } from "@/lib/types/common";
 import NotificationCardHeader from "./NotificationCardHeader";
 import { NOTIFICATION_TYPES, PAGE_HEADER } from "@/lib/constants/notifications";
 import { Bell } from "lucide-react";
@@ -11,10 +11,10 @@ const ICON_MAP = {
 } as const;
 
 interface NotificationTypesCardProps {
-  settings: NotificationSettings | null;
-  onSettingChange: <K extends keyof NotificationSettings>(
+  settings: UserNotificationSetting | null;
+  onSettingChange: <K extends keyof UserNotificationSetting>(
     key: K,
-    value: NotificationSettings[K]
+    value: UserNotificationSetting[K]
   ) => void;
 }
 
@@ -23,7 +23,7 @@ export function NotificationTypesCard({
   onSettingChange,
 }: NotificationTypesCardProps) {
   // 토글 핸들러 - 부모에 변경사항 알림
-  const handleToggle = (key: keyof NotificationSettings, value: boolean) => {
+  const handleToggle = (key: keyof UserNotificationSetting, value: boolean) => {
     onSettingChange(key, value);
   };
 

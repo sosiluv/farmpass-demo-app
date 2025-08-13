@@ -4,6 +4,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiClient } from "@/lib/utils/data";
 import { devLog } from "@/lib/utils/logging/dev-logger";
 import { settingsKeys, adminKeys } from "./query-keys";
+import type { CleanupResult } from "@/lib/types/system";
 
 /**
  * 정리 작업 실행 Mutation Hook
@@ -14,7 +15,7 @@ export function useExecuteCleanupMutation() {
   return useMutation({
     mutationFn: async (data: {
       type: "system_logs" | "all";
-    }): Promise<{ success: boolean; message: string; results: any }> => {
+    }): Promise<CleanupResult> => {
       devLog.log("[MUTATION] 정리 작업 시작:", data.type);
 
       const result = await apiClient("/api/admin/logs/cleanup", {
@@ -29,7 +30,7 @@ export function useExecuteCleanupMutation() {
       devLog.log("[MUTATION] 정리 작업 완료:", result);
       return result;
     },
-    onSuccess: (result, variables) => {
+    onSuccess: () => {
       // 정리 상태 쿼리 무효화
       queryClient.invalidateQueries({
         queryKey: settingsKeys.cleanup.status(),

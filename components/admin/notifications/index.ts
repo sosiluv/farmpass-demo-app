@@ -2,5 +2,5 @@
 export { NotificationTypesCard } from "./NotificationTypesCard";
 export { NotificationSettingsActions } from "./NotificationSettingsActions";
 export { default as SubscriptionGuideCard } from "./SubscriptionGuideCard";
-export { default as NotificationPermissionDialog } from "./NotificationPermissionDialog";
+export { default as NotificationPermissionSheet } from "./NotificationPermissionSheet";
 export { WebPushSubscription } from "./WebPushSubscription";

@@ -1,11 +1,7 @@
 import * as z from "zod";
-import {
-  validateEmail,
-  validateName,
-  validatePhone,
-  DEFAULT_PASSWORD_RULES,
-} from "./validation";
+import { validateEmail, validateName, validatePhone } from "./validation";
 import { ERROR_MESSAGES } from "@/lib/constants/auth";
+import { SECURITY_DEFAULTS } from "@/lib/constants/defaults";
 
 // Zod용 비밀번호 복잡성 검증 함수
 const validatePasswordComplexity = (password: string, rules: any) => {
@@ -219,13 +215,13 @@ export const resetPasswordRequestFormSchema = z.object({
  * 기본 스키마 생성 함수들 (스키마 로드 실패 시 사용)
  */
 export const createDefaultRegistrationFormSchema = () =>
-  createRegistrationFormSchema(DEFAULT_PASSWORD_RULES);
+  createRegistrationFormSchema(SECURITY_DEFAULTS);
 
 export const createDefaultResetPasswordFormSchema = () =>
-  createResetPasswordFormSchema(DEFAULT_PASSWORD_RULES);
+  createResetPasswordFormSchema(SECURITY_DEFAULTS);
 
 export const createDefaultChangePasswordFormSchema = () =>
-  createChangePasswordFormSchema(DEFAULT_PASSWORD_RULES);
+  createChangePasswordFormSchema(SECURITY_DEFAULTS);
 
 // 타입 정의
 export type RegistrationFormData = z.infer<

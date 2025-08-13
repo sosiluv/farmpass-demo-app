@@ -46,29 +46,20 @@ export const ERROR_MAP: Record<string, ErrorInfo> = {
     message: (params: Record<string, any>) => {
       const missingFields = params.missingFields || [];
       const fieldLabels = {
-        name: "이름",
         email: "이메일",
-        password: "비밀번호",
-        phone: "전화번호",
-        address: "주소",
-        farm: "농장",
-        notification: "알림",
-        visitor: "방문자",
-        member: "구성원",
-        consent: "개인정보 동의",
         turnstile: "캡차 토큰",
-        farmIds: "농장 ID",
-        notificationIds: "알림 ID",
-        visitorIds: "방문자 ID",
-        memberIds: "구성원 ID",
-        termId: "약관 ID",
-        consentId: "동의 ID",
         privacyConsent: "개인정보 처리방침 동의",
         termsConsent: "이용약관 동의",
         type: "약관 타입",
-        title: "약관 제목",
+        title: "제목",
+        message: "메시지",
+        notificationType: "알림 유형",
         content: "약관 내용",
         version: "약관 버전",
+        termId: "약관 ID",
+        consentId: "동의 ID",
+        notificationIds: "알림 ID",
+        farmIds: "농장 ID",
       };
 
       const translatedFields = missingFields.map(
@@ -81,6 +72,40 @@ export const ERROR_MAP: Record<string, ErrorInfo> = {
       } else {
         return `다음 항목을 입력해주세요: ${translatedFields.join(", ")}`;
       }
+    },
+    status: 400,
+  },
+
+  INVALID_FORM_DATA: {
+    message: (params: Record<string, any>) => {
+      const errors = params.errors || [];
+      const formType = params.formType || "form";
+
+      const formTypeLabels = {
+        profile: "프로필",
+        company: "회사 정보",
+        farm: "농장",
+        visitor: "방문자",
+        user: "사용자",
+        form: "폼",
+      };
+
+      const translatedFormType =
+        formTypeLabels[formType as keyof typeof formTypeLabels] || formType;
+
+      if (errors.length === 0) {
+        return `${translatedFormType} 데이터가 올바르지 않습니다.`;
+      }
+
+      const errorMessages = errors.map((error: any) => {
+        const field = error.path?.join(".") || error.field || "알 수 없는 필드";
+        const message = error.message || "유효하지 않은 값";
+        return `${field}: ${message}`;
+      });
+
+      return `${translatedFormType} 데이터가 올바르지 않습니다. ${errorMessages.join(
+        ", "
+      )}`;
     },
     status: 400,
   },
@@ -293,6 +318,7 @@ export const ERROR_MAP: Record<string, ErrorInfo> = {
         visitor: "방문자 정보",
         farm: "농장 정보",
         farmList: "농장 목록",
+        farmsStats: "농장 통계",
         member: "구성원 정보",
         memberList: "구성원 목록",
         notificationList: "알림 목록",
@@ -307,6 +333,18 @@ export const ERROR_MAP: Record<string, ErrorInfo> = {
         terms: "약관 정보",
         consent: "동의 정보",
         info: "정보",
+        dashboardTotals: "대시보드 통계",
+        todayVisitors: "오늘 방문자",
+        logsLevelToday: "로그 통계",
+        farmTypeDistribution: "농장 유형 분포",
+        userRoleDistribution: "사용자 역할 분포",
+        farmRegionDistribution: "농장 지역 분포",
+        monthlyAggregations: "월별 집계",
+        recentActiveUsers: "최근 활동 사용자",
+        recentActivities: "최근 활동",
+        trendAggregations: "추세 집계",
+        logsAggregations: "로그 통계",
+        logsList: "로그 목록",
       };
 
       const translatedResource =

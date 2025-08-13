@@ -4,7 +4,7 @@ import { format } from "date-fns";
 import { ko } from "date-fns/locale";
 import { getFarmTypeInfo } from "@/lib/constants/farm-types";
 import { BUTTONS, LABELS, DATE_RANGE_OPTIONS } from "@/lib/constants/visitor";
-import type { Farm } from "@/lib/types/visitor";
+import type { Farm } from "@/lib/types/common";
 
 interface ActiveFilterTagsProps {
   searchTerm: string;

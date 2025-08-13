@@ -430,4 +430,32 @@ COMMENT ON COLUMN public.notifications.read IS '읽음 여부';
 COMMENT ON COLUMN public.notifications.created_at IS '생성 시각';
 COMMENT ON COLUMN public.notifications.updated_at IS '수정 시각(읽음 처리 등)';
 
+-- =================================
+-- 새로 추가된 테이블들 주석 (실제 스키마 기반)
+-- =================================
+
+-- 약관 관리 테이블 주석
+COMMENT ON TABLE public.terms_management IS '시스템 약관 및 정책을 관리하는 테이블';
+COMMENT ON COLUMN public.terms_management.id IS '약관 고유 ID';
+COMMENT ON COLUMN public.terms_management.type IS '약관 유형 (terms_of_service, privacy_policy 등)';
+COMMENT ON COLUMN public.terms_management.title IS '약관 제목';
+COMMENT ON COLUMN public.terms_management.content IS '약관 내용';
+COMMENT ON COLUMN public.terms_management.version IS '약관 버전';
+COMMENT ON COLUMN public.terms_management.is_active IS '약관 활성화 상태';
+COMMENT ON COLUMN public.terms_management.is_draft IS '초안 여부';
+COMMENT ON COLUMN public.terms_management.published_at IS '발행일';
+COMMENT ON COLUMN public.terms_management.created_by IS '약관 생성자 ID (profiles 테이블 참조)';
+COMMENT ON COLUMN public.terms_management.created_at IS '생성 시간';
+COMMENT ON COLUMN public.terms_management.updated_at IS '수정 시간';
+
+-- 사용자 동의 테이블 주석
+COMMENT ON TABLE public.user_consents IS '사용자별 약관 동의 정보를 저장하는 테이블';
+COMMENT ON COLUMN public.user_consents.id IS '동의 기록 고유 ID';
+COMMENT ON COLUMN public.user_consents.user_id IS '동의한 사용자 ID (profiles 테이블 참조)';
+COMMENT ON COLUMN public.user_consents.agreed IS '동의 여부';
+COMMENT ON COLUMN public.user_consents.agreed_at IS '동의 시간';
+COMMENT ON COLUMN public.user_consents.created_at IS '생성 시간';
+COMMENT ON COLUMN public.user_consents.updated_at IS '수정 시간';
+COMMENT ON COLUMN public.user_consents.term_id IS '동의한 약관 ID (terms_management 테이블 참조)';
+
 

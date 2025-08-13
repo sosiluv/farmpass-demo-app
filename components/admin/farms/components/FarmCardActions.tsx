@@ -1,7 +1,7 @@
 import { Button } from "@/components/ui/button";
-import { FarmQRCode } from "../farm-qr-code";
-import { Edit, Trash2, Users, QrCode } from "lucide-react";
-import type { Farm } from "@/lib/types/farm";
+import { FarmQRCodeSheet } from "../FarmQRCodeSheet";
+import { Edit, Trash2, Users } from "lucide-react";
+import type { Farm } from "@/lib/types/common";
 import Link from "next/link";
 import { BUTTONS, LABELS } from "@/lib/constants/farms";
 
@@ -23,7 +23,7 @@ export function FarmCardActions({
       {/* 첫 번째 줄: 주요 액션 */}
       <div className="flex gap-2">
         {/* QR 코드 버튼 - 더 세련된 디자인 */}
-        <FarmQRCode farmId={farm.id} farmName={farm.farm_name} />
+        <FarmQRCodeSheet farmId={farm.id} farmName={farm.farm_name} />
 
         {/* 구성원 버튼 - 더 세련된 디자인 */}
         <Button

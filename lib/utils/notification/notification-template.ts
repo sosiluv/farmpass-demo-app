@@ -1,4 +1,4 @@
-import { formatDateTime, toKSTDateString } from "../datetime/date";
+import { formatDateTime } from "../datetime/date";
 
 export interface VisitTemplateData {
   방문자명: string;
@@ -62,23 +62,13 @@ export function createVisitTemplateData(
   return {
     방문자명: visitorData.visitor_name,
     농장명: farmName,
-    방문날짜: formatDateTime(kstDateTime, {
-      year: "numeric",
-      month: "2-digit",
-      day: "2-digit",
-    }),
-    방문시간: formatDateTime(kstDateTime, {
-      hour: "2-digit",
-      minute: "2-digit",
-    }),
+    방문날짜: formatDateTime(kstDateTime, "yyyy.MM.dd"),
+    방문시간: formatDateTime(kstDateTime, "HH:mm"),
     방문목적: visitorData.visitor_purpose || undefined,
     연락처: visitorData.visitor_phone || undefined,
     차량번호: visitorData.vehicle_number || undefined,
     방역상태: visitorData.disinfection_check ? "완료" : "미완료",
-    등록시간: formatDateTime(new Date(), {
-      hour: "2-digit",
-      minute: "2-digit",
-    }),
+    등록시간: formatDateTime(new Date(), "HH:mm"),
   };
 }
 

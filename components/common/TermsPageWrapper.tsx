@@ -4,7 +4,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { usePublicTermsQuery } from "@/lib/hooks/query/use-terms-query";
 import ReactMarkdown from "react-markdown";
 import { markdownComponents } from "@/lib/utils/markdown/markdown-components";
-import { TermType } from "@/lib/types/terms";
+import { TermType } from "@/lib/types/common";
 import { ErrorBoundary } from "@/components/error/error-boundary";
 import { AdminError } from "@/components/error/admin-error";
 import { ERROR_CONFIGS } from "@/lib/constants/error";
@@ -100,23 +100,17 @@ export function TermsPageWrapper({
     >
       <div className="flex-1 bg-background py-10">
         <section className="prose prose-h1:font-bold prose-h2:font-bold prose-h2:mt-6 prose-h2:mb-2 bg-white rounded-xl shadow-md p-8 max-w-4xl mx-auto border border-gray-100 break-all">
-          {/* 제목 추가 */}
-          {title && (
-            <div className="mb-8 pb-6 border-b border-gray-200">
-              {/* 뒤로가기 버튼 */}
-              <div className="mb-4">
-                <Button
-                  variant="ghost"
-                  onClick={handleGoBack}
-                  className="text-gray-600 hover:text-gray-900 hover:bg-gray-100"
-                >
-                  <ArrowLeft className="h-4 w-4 mr-2" />
-                  {BUTTONS.GO_BACK}
-                </Button>
-              </div>
-              <h1 className="text-3xl font-bold text-gray-900">{title}</h1>
-            </div>
-          )}
+          {/* 뒤로가기 버튼 */}
+          <div className="mb-4">
+            <Button
+              variant="ghost"
+              onClick={handleGoBack}
+              className="text-gray-600 hover:text-gray-900 hover:bg-gray-100"
+            >
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              {BUTTONS.GO_BACK}
+            </Button>
+          </div>
 
           <div className="markdown-content">
             <ReactMarkdown components={markdownComponents}>

@@ -9,7 +9,7 @@ interface TempRegistrationData {
   };
   profile?: {
     name: string;
-    phoneNumber: string;
+    phone: string;
   };
 }
 

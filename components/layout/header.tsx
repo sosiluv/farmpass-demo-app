@@ -1,6 +1,7 @@
 "use client";
 
-import { Logo, ThemeToggle } from "@/components/common";
+import { Logo } from "@/components/common/logo";
+import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { RealtimeNotificationBell } from "@/components/common/RealtimeNotificationBell";
 import { useSidebar } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
@@ -16,16 +17,21 @@ import {
 import { useAuth } from "@/components/providers/auth-provider";
 import { useAuthActions } from "@/hooks/auth/useAuthActions";
 import { useProfileQuery } from "@/lib/hooks/query/use-profile-query";
-import { generateInitials, getAvatarUrl } from "@/lib/utils/media/avatar";
-import { User, Settings, LogOut, Lock, Building2 } from "lucide-react";
+import {
+  generateInitials,
+  getAvatarColor,
+  getAvatarUrl,
+} from "@/lib/utils/media/avatar";
+import { User, LogOut, Lock, Building2 } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
 import { HEADER_MENU, BUTTONS } from "@/lib/constants/common";
 
 export function Header() {
   const { toggleSidebar } = useSidebar();
-  const { state } = useAuth();
   const { signOut } = useAuthActions();
+  const { state } = useAuth();
+  const isAuthenticated = state.status === "authenticated";
   const userId = state.status === "authenticated" ? state.user.id : undefined;
   const { data: profile } = useProfileQuery(userId);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
@@ -70,7 +76,7 @@ export function Header() {
         <RealtimeNotificationBell />
 
         {/* 사용자 프로필 메뉴 */}
-        {state.status === "authenticated" && profile && (
+        {isAuthenticated && profile && (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button
@@ -82,7 +88,9 @@ export function Header() {
                     src={getAvatarUrl(profile, { size: 128 })}
                     alt={profile.name || "User"}
                   />
-                  <AvatarFallback className="bg-primary text-primary-foreground text-xs sm:text-sm">
+                  <AvatarFallback
+                    className={`${getAvatarColor(profile.name)} text-white`}
+                  >
                     {generateInitials(profile.name)}
                   </AvatarFallback>
                 </Avatar>
