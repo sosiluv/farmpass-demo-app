@@ -6,7 +6,6 @@ import { useEffect, useState, useRef } from "react";
 import { RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { BUTTONS } from "@/lib/constants/common";
-import { useProfileQuery } from "@/lib/hooks/query/use-profile-query";
 import { PageLoading } from "@/components/ui/loading";
 import { useAuthActions } from "@/hooks/auth/useAuthActions";
 
@@ -21,15 +20,8 @@ export function ProtectedRoute({
   requireAdmin = false,
   redirectTo = "/auth/login",
 }: ProtectedRouteProps) {
-  const { state } = useAuth();
-  const isAuthenticated = state.status === "authenticated";
-  const isAdmin =
-    state.status === "authenticated" && state.user?.app_metadata?.isAdmin;
-  const isLoading = state.status === "loading";
-  const isInitializing = state.status === "initializing";
-  const userId = state.status === "authenticated" ? state.user.id : undefined;
-  const { data: profile } = useProfileQuery(userId);
   const router = useRouter();
+  const { isAdmin, isLoading, isInitializing, isUnauthenticated } = useAuth();
   const [loadingTimeout, setLoadingTimeout] = useState(false);
   const { signOut } = useAuthActions();
 
@@ -39,7 +31,7 @@ export function ProtectedRoute({
 
   useEffect(() => {
     // 인증되지 않은 경우 로그아웃 처리 후 리다이렉트
-    if (!isAuthenticated && !isLoggingOut.current && !hasRedirected.current) {
+    if (isUnauthenticated && !isLoggingOut.current && !hasRedirected.current) {
       const handleUnauthenticated = async () => {
         if (isLoggingOut.current) return; // 이미 처리 중이면 스킵
 
@@ -61,12 +53,17 @@ export function ProtectedRoute({
     }
 
     // 관리자 권한이 필요한데 권한이 없는 경우
-    if (requireAdmin && isAuthenticated && !isAdmin && !hasRedirected.current) {
+    if (
+      requireAdmin &&
+      isUnauthenticated &&
+      !isAdmin &&
+      !hasRedirected.current
+    ) {
       hasRedirected.current = true;
       router.push("/unauthorized");
       return;
     }
-  }, [isAuthenticated, isAdmin, redirectTo, router, profile, signOut]);
+  }, [isUnauthenticated, isAdmin, redirectTo, router, signOut]);
 
   // 로딩 타임아웃 처리 (10초)
   useEffect(() => {
@@ -121,7 +118,7 @@ export function ProtectedRoute({
   }
 
   // 인증되지 않은 경우 (리다이렉트 처리됨)
-  if (!isAuthenticated) {
+  if (isUnauthenticated) {
     return (
       <>
         {/* 로그인 페이지로 이동 중 로딩 UI */}
@@ -135,7 +132,7 @@ export function ProtectedRoute({
   }
 
   // 권한 부족 (리다이렉트 처리됨)
-  if (requireAdmin && isAuthenticated && !isAdmin) {
+  if (requireAdmin && isUnauthenticated && !isAdmin) {
     return null;
   }
 

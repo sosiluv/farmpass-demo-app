@@ -38,7 +38,6 @@ export function FarmQRCodeSheet({
       <SheetTrigger asChild>
         <Button
           variant="outline"
-          size="sm"
           className="flex-1 min-w-0 bg-gradient-to-r from-emerald-50 to-teal-50 border-emerald-200 hover:from-emerald-100 hover:to-teal-100 hover:border-emerald-300 transition-all duration-200 group"
         >
           <QrCode className="h-4 w-4 mr-2 text-emerald-600 group-hover:text-emerald-700 transition-colors" />
@@ -91,7 +90,7 @@ export function FarmQRCodeSheet({
             {isMobile && supportsShare ? (
               <Button
                 onClick={handleShare}
-                className="w-full h-12 sm:h-10 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-lg hover:shadow-xl transition-all duration-200 text-sm sm:text-base"
+                className="w-full h-12 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-lg hover:shadow-xl transition-all duration-200 text-sm sm:text-base"
               >
                 <Share2 className="h-4 w-4 mr-2" />
                 {BUTTONS.QR_CODE_SHARE}
@@ -99,7 +98,7 @@ export function FarmQRCodeSheet({
             ) : (
               <Button
                 onClick={handleDownload}
-                className="w-full h-12 sm:h-10 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white shadow-lg hover:shadow-xl transition-all duration-200 text-sm sm:text-base"
+                className="w-full h-12 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white shadow-lg hover:shadow-xl transition-all duration-200 text-sm sm:text-base"
               >
                 <Download className="h-4 w-4 mr-2" />
                 {BUTTONS.QR_CODE_DOWNLOAD}
@@ -110,7 +109,7 @@ export function FarmQRCodeSheet({
               <Button
                 variant="outline"
                 onClick={handleCopyUrl}
-                className="flex-1 h-12 sm:h-10 bg-background hover:bg-accent border-border hover:border-border/80 transition-all duration-200 text-sm text-foreground"
+                className="flex-1 h-12 bg-background hover:bg-accent border-border hover:border-border/80 transition-all duration-200 text-sm text-foreground"
               >
                 <Copy className="h-4 w-4 mr-2" />
                 {copied ? BUTTONS.QR_CODE_COPY_SUCCESS : BUTTONS.QR_CODE_COPY}
@@ -118,7 +117,7 @@ export function FarmQRCodeSheet({
               <Button
                 variant="outline"
                 onClick={handleOpenUrl}
-                className="flex-1 h-12 sm:h-10 bg-background hover:bg-accent border-border hover:border-border/80 transition-all duration-200 text-sm text-foreground"
+                className="flex-1 h-12 bg-background hover:bg-accent border-border hover:border-border/80 transition-all duration-200 text-sm text-foreground"
               >
                 <ExternalLink className="h-4 w-4 mr-2" />
                 {BUTTONS.QR_CODE_OPEN_LINK}
@@ -128,13 +127,13 @@ export function FarmQRCodeSheet({
 
           {/* URL 표시 영역 */}
           <div className="bg-slate-50 rounded-lg p-3 sm:p-4 border border-slate-200">
-            <div className="text-xs font-medium text-slate-600 mb-2">
+            <div className="text-sm font-medium text-slate-600 mb-2">
               {LABELS.QR_CODE_LINK_TITLE}
             </div>
-            <div className="text-xs text-slate-500 break-all leading-relaxed">
+            <div className="text-sm text-slate-500 break-all leading-relaxed">
               {`${window.location.origin}/visit/${farmId}`}
             </div>
-            <div className="text-xs text-muted-foreground mt-2 text-center">
+            <div className="text-sm text-muted-foreground mt-2 text-center">
               {LABELS.QR_CODE_SCAN_INFO}
             </div>
           </div>

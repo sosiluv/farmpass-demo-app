@@ -60,7 +60,7 @@ export function FarmMembersPreview({ membersData }: FarmMembersPreviewProps) {
               </div>
               <div className="text-center">
                 <div className="text-sm font-medium">{LABELS.NO_MEMBERS}</div>
-                <div className="text-xs text-muted-foreground mt-1">
+                <div className="text-sm text-muted-foreground mt-1">
                   {LABELS.ADD_MEMBERS_SUGGESTION}
                 </div>
               </div>
@@ -110,7 +110,7 @@ export function FarmMembersPreview({ membersData }: FarmMembersPreviewProps) {
                 <Users className="h-4 w-4 text-blue-600" />
               </div>
               <div>
-                <div className="text-xs text-blue-600">
+                <div className="text-sm text-blue-600">
                   {LABELS.MEMBERS_COUNT.replace(
                     "{count}",
                     memberCount.toString()

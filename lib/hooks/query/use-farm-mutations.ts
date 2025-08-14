@@ -12,8 +12,7 @@ import type { FarmFormValues } from "@/lib/utils/validation/farm-validation";
  */
 export function useCreateFarmMutation() {
   const queryClient = useQueryClient();
-  const { state } = useAuth();
-  const userId = state.status === "authenticated" ? state.user.id : undefined;
+  const { userId } = useAuth();
 
   return useMutation({
     mutationFn: async (
@@ -38,8 +37,7 @@ export function useCreateFarmMutation() {
  */
 export function useUpdateFarmMutation() {
   const queryClient = useQueryClient();
-  const { state } = useAuth();
-  const userId = state.status === "authenticated" ? state.user.id : undefined;
+  const { userId } = useAuth();
 
   return useMutation({
     mutationFn: async (
@@ -64,8 +62,7 @@ export function useUpdateFarmMutation() {
  */
 export function useDeleteFarmMutation() {
   const queryClient = useQueryClient();
-  const { state } = useAuth();
-  const userId = state.status === "authenticated" ? state.user.id : undefined;
+  const { userId } = useAuth();
 
   return useMutation({
     mutationFn: async (

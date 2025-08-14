@@ -47,7 +47,7 @@ export default function HomePage() {
             </p>
 
             <div className="flex flex-col items-center justify-center gap-4 sm:flex-row">
-              <Button asChild size="lg" className="btn-hover min-w-[160px]">
+              <Button asChild size="lg" className="min-w-[160px]">
                 <Link href="/auth/register">
                   시작하기
                   <ArrowRight className="ml-2 h-4 w-4" />
@@ -57,7 +57,7 @@ export default function HomePage() {
                 asChild
                 variant="outline"
                 size="lg"
-                className="btn-hover min-w-[160px]"
+                className="min-w-[160px]"
               >
                 <Link href="/auth/login">관리자 로그인</Link>
               </Button>
@@ -159,7 +159,7 @@ export default function HomePage() {
                 asChild
                 size="lg"
                 variant="secondary"
-                className="btn-hover min-w-[160px]"
+                className="min-w-[160px]"
               >
                 <Link href="/auth/register">
                   무료로 시작하기

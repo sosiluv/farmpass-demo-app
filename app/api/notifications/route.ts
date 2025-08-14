@@ -39,7 +39,7 @@ export async function GET(request: NextRequest) {
         queryError
       );
     }
-    console.log("notifications", notifications);
+
     return NextResponse.json({
       notifications,
       total,

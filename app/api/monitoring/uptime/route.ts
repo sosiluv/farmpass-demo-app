@@ -79,7 +79,7 @@ export async function GET(request: NextRequest) {
       "error",
       user?.id ? { id: user.id, email: user.email || "" } : undefined,
       "system",
-      undefined,
+      "monitoring_uptime",
       {
         action_type: "monitoring_event",
         event: "uptime_check_failed",

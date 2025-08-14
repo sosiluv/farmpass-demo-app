@@ -305,17 +305,17 @@ async function cleanupVisitorOrphans(supabase: any) {
 }
 
 export async function POST(request: NextRequest) {
-  const supabase = await createClient();
-
-  // 인증 및 권한 확인 (admin만 접근 가능)
-  const authResult = await requireAuth(true);
-  if (!authResult.success || !authResult.user) {
-    return authResult.response!;
-  }
-
-  const user = authResult.user;
-
+  let user = null;
   try {
+    const supabase = await createClient();
+
+    // 인증 및 권한 확인 (admin만 접근 가능)
+    const authResult = await requireAuth(true);
+    if (!authResult.success || !authResult.user) {
+      return authResult.response!;
+    }
+    user = authResult.user;
+
     let totalDeleted = 0;
     const results = {
       visitor: { deleted: 0, total: 0, db_orphan_updated: 0, db_total: 0 },
@@ -352,9 +352,9 @@ export async function POST(request: NextRequest) {
         profileOrphanResult.dbOrphanUpdated
       ),
       "info",
-      { id: user.id, email: user.email || "" },
+      user?.id ? { id: user.id, email: user.email || "" } : undefined,
       "system",
-      undefined,
+      "orphan_files_cleanup",
       {
         action_type: "admin_event",
         event: "orphan_files_cleanup",
@@ -379,9 +379,9 @@ export async function POST(request: NextRequest) {
       "ORPHAN_FILE_CLEANUP_ERROR",
       LOG_MESSAGES.ORPHAN_FILES_CLEANUP_FAILED(errorMessage),
       "error",
-      { id: user.id, email: user.email || "" },
+      user?.id ? { id: user.id, email: user.email || "" } : undefined,
       "system",
-      undefined,
+      "orphan_files_cleanup",
       {
         action_type: "admin_event",
         event: "orphan_file_cleanup_failed",

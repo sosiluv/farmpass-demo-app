@@ -42,10 +42,7 @@ export default function MonitoringDashboard() {
   const analytics = useMonitoringAnalyticsQuery();
   const errors = useMonitoringErrorsQuery();
 
-  const { state } = useAuth();
-  const isAdmin =
-    state.status === "authenticated" && state.user?.app_metadata?.isAdmin;
-  const isLoading = state.status === "loading";
+  const { isAdmin, isLoading } = useAuth();
 
   // 프로필 로딩 중일 때는 스켈레톤 표시
   if (isLoading) {

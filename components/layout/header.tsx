@@ -30,9 +30,7 @@ import { HEADER_MENU, BUTTONS } from "@/lib/constants/common";
 export function Header() {
   const { toggleSidebar } = useSidebar();
   const { signOut } = useAuthActions();
-  const { state } = useAuth();
-  const isAuthenticated = state.status === "authenticated";
-  const userId = state.status === "authenticated" ? state.user.id : undefined;
+  const { userId, isAuthenticated } = useAuth();
   const { data: profile } = useProfileQuery(userId);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
 

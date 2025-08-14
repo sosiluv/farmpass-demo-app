@@ -10,16 +10,12 @@ import {
 
 // GET: 약관 목록 조회
 export async function GET(request: NextRequest) {
-  let user: any = null;
-
   try {
     // 인증 확인
     const authResult = await requireAuth(true); // 관리자만 접근
     if (!authResult.success || !authResult.user) {
       return authResult.response!;
     }
-
-    user = authResult.user;
 
     const { searchParams } = new URL(request.url);
     const type = searchParams.get("type");
@@ -71,8 +67,7 @@ export async function GET(request: NextRequest) {
 
 // POST: 새 약관 생성
 export async function POST(request: NextRequest) {
-  let user: any = null;
-  let termData: any = {};
+  let user = null;
 
   try {
     // 인증 확인
@@ -101,12 +96,6 @@ export async function POST(request: NextRequest) {
         validTypes,
       });
     }
-
-    termData = {
-      type,
-      title,
-      version,
-    };
 
     // 동일한 타입과 버전이 이미 존재하는지 확인
     let existingTerm;
@@ -191,16 +180,12 @@ export async function POST(request: NextRequest) {
 
 // PUT: 약관 수정
 export async function PUT(request: NextRequest) {
-  let user: any = null;
-
   try {
     // 인증 확인
     const authResult = await requireAuth(true); // 관리자만 접근
     if (!authResult.success || !authResult.user) {
       return authResult.response!;
     }
-
-    user = authResult.user;
 
     const body = await request.json();
     const { id, ...updateData } = body;
@@ -322,16 +307,12 @@ export async function PUT(request: NextRequest) {
 
 // DELETE: 약관 삭제
 export async function DELETE(request: NextRequest) {
-  let user: any = null;
-
   try {
     // 인증 확인
     const authResult = await requireAuth(true); // 관리자만 접근
     if (!authResult.success || !authResult.user) {
       return authResult.response!;
     }
-
-    user = authResult.user;
 
     const { searchParams } = new URL(request.url);
     const id = searchParams.get("id");

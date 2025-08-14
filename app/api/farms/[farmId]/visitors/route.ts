@@ -93,7 +93,6 @@ async function sendVisitorNotificationToFarmMembers(
     }
 
     if (!farmMembersWithNotifications?.length) {
-      devLog.log("푸시 알림을 받을 농장 멤버가 없습니다.");
       return;
     }
 
@@ -124,8 +123,6 @@ async function sendVisitorNotificationToFarmMembers(
             `멤버 ${member.email}에게 푸시 알림 발송 실패:`,
             await response.text()
           );
-        } else {
-          devLog.log(`멤버 ${member.email}에게 푸시 알림 발송 성공`);
         }
       } catch (error) {
         devLog.error(`멤버 ${member.email}에게 푸시 알림 발송 중 오류:`, error);
@@ -327,7 +324,7 @@ export async function POST(
         "warn",
         undefined,
         "visitor",
-        undefined,
+        farmId,
         {
           action_type: "visitor_event",
           event: "visitor_daily_limit_exceeded",
@@ -476,7 +473,7 @@ export async function POST(
       "error",
       undefined,
       "visitor",
-      undefined,
+      farmId,
       {
         action_type: "visitor_event",
         event: "visitor_create_failed",

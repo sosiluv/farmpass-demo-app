@@ -13,9 +13,8 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { LottieLoadingCompact } from "@/components/ui/lottie-loading";
-import type { SubscriptionStatus } from "@/lib/types/notification";
-import type { Farm } from "@/lib/types";
 import { BUTTONS, LABELS } from "@/lib/constants/notifications";
+import type { Farm } from "@/lib/types";
 
 // 알림 상태 표시용 Farm 타입 (최소한의 정보만 포함)
 interface NotificationFarm extends Pick<Farm, "id" | "farm_name"> {
@@ -85,7 +84,11 @@ export const DeniedStatus = ({ onAllow }: StatusProps) => (
       <br />
       {LABELS.PERMISSION_INSTRUCTION}
     </p>
-    <Button onClick={onAllow} variant="outline" className="min-w-40">
+    <Button
+      onClick={onAllow}
+      variant="outline"
+      className="text-sm sm:text-base"
+    >
       <Shield className="mr-2 h-4 w-4" />
       {BUTTONS.CHECK_PERMISSION_AGAIN}
     </Button>
@@ -114,7 +117,7 @@ export const GrantedStatus = ({ isLoading, onAllow }: StatusProps) => (
         <Button
           onClick={onAllow}
           disabled={isLoading}
-          className="min-w-40 h-10"
+          className="text-sm sm:text-base"
         >
           {isLoading ? (
             <>
@@ -259,23 +262,3 @@ export const SubscribedStatus = ({
     )}
   </div>
 );
-
-export const renderNotificationStatus = (
-  status: SubscriptionStatus,
-  props: StatusProps
-) => {
-  switch (status) {
-    case "checking":
-      return <CheckingStatus />;
-    case "unsupported":
-      return <UnsupportedStatus />;
-    case "denied":
-      return <DeniedStatus {...props} />;
-    case "granted":
-      return <GrantedStatus {...props} />;
-    case "subscribed":
-      return <SubscribedStatus {...props} />;
-    default:
-      return null;
-  }
-};

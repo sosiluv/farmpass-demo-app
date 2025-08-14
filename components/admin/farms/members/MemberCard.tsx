@@ -44,7 +44,14 @@ export function MemberCard({
         ) : (
           <Avatar className="h-8 w-8 sm:h-12 sm:w-12 lg:h-14 lg:w-14 xl:h-16 xl:w-16 flex-shrink-0 rounded-full bg-gray-50 flex items-center justify-center">
             <AvatarImage
-              src={getAvatarUrl(member, { size: 128 })}
+              src={getAvatarUrl(
+                {
+                  name: member.representative_name,
+                  profile_image_url: member.profile_image_url,
+                  avatar_seed: member.avatar_seed,
+                },
+                { size: 128 }
+              )}
               alt={member.representative_name || "User"}
             />
             <AvatarFallback

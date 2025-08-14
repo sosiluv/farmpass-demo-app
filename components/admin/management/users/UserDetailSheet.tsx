@@ -27,9 +27,7 @@ interface UserDetailSheetProps {
 export function UserDetailSheet({ user, open, onClose }: UserDetailSheetProps) {
   const [loading, setLoading] = useState(false);
   const { showSuccess, showError, showInfo, showWarning } = useCommonToast();
-  const { state } = useAuth();
-  const isAdmin =
-    state.status === "authenticated" && state.user?.app_metadata?.isAdmin;
+  const { isAdmin } = useAuth();
 
   const getRoleColor = (accountType: string) => {
     switch (accountType) {

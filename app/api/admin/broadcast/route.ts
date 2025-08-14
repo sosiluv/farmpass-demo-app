@@ -9,6 +9,7 @@ import {
 import { LOG_MESSAGES } from "@/lib/utils/logging/log-templates";
 
 export async function POST(request: NextRequest) {
+  let user = null;
   try {
     // 관리자 권한 인증 확인
     const authResult = await requireAuth(true);
@@ -16,7 +17,7 @@ export async function POST(request: NextRequest) {
       return authResult.response!;
     }
 
-    const user = authResult.user;
+    user = authResult.user;
 
     const body = await request.json();
     const {
@@ -87,9 +88,9 @@ export async function POST(request: NextRequest) {
         result.sentCount
       ),
       "info",
-      { id: user.id, email: user.email || "" },
+      user?.id ? { id: user.id, email: user.email || "" } : undefined,
       "system",
-      "all",
+      "broadcast_notification",
       {
         action_type: "admin_event",
         event: "broadcast_notification_sent",
@@ -113,9 +114,9 @@ export async function POST(request: NextRequest) {
       "BROADCAST_NOTIFICATION_FAILED",
       LOG_MESSAGES.BROADCAST_NOTIFICATION_FAILED(result.detail),
       "error",
-      undefined,
+      user?.id ? { id: user.id, email: user.email || "" } : undefined,
       "system",
-      "all",
+      "broadcast_notification",
       {
         action_type: "admin_event",
         event: "broadcast_notification_failed",

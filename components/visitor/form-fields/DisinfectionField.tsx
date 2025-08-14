@@ -27,7 +27,7 @@ export const DisinfectionField = <T extends FieldValues = any>({
       render={({ field }) => (
         <FormItem className={className}>
           <FormControl>
-            <div className="flex items-center space-x-2 sm:space-x-3 p-2.5 sm:p-3 bg-green-50 border border-green-200 rounded-lg mb-3 sm:mb-4 mt-2">
+            <div className="flex items-center space-x-2 p-3 bg-green-50 border border-green-200 rounded-lg mb-3 sm:mb-4 mt-2">
               <Checkbox
                 id="visitor-disinfection_check"
                 name="disinfection_check"
@@ -42,9 +42,9 @@ export const DisinfectionField = <T extends FieldValues = any>({
               />
               <Label
                 htmlFor="visitor-disinfection_check"
-                className="flex items-center gap-1.5 sm:gap-2 font-medium text-sm sm:text-base"
+                className="flex items-center gap-2 font-medium text-sm"
               >
-                <Shield className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-green-600" />
+                <Shield className="h-4 w-4 text-green-600" />
                 {LABELS.DISINFECTION}
               </Label>
             </div>

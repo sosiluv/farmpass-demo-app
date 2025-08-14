@@ -18,14 +18,12 @@ import type { VisitorsExportOptions } from "@/components/admin/management/export
 
 interface VisitorExportProps {
   farms: Farm[];
-  isAdmin?: boolean;
   onExport: (options: VisitorsExportOptions) => Promise<void>;
   hideFarmFilter?: boolean;
 }
 
 export function VisitorExportRefactored({
   farms,
-  isAdmin = false,
   onExport,
   hideFarmFilter = false,
 }: VisitorExportProps) {

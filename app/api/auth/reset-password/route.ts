@@ -14,6 +14,7 @@ import { resetPasswordRequestFormSchema } from "@/lib/utils/validation/auth-vali
 
 export async function POST(request: NextRequest) {
   let email: string | undefined;
+  let userData;
 
   try {
     const body: ResetPasswordRequestFormData = await request.json();
@@ -34,8 +35,6 @@ export async function POST(request: NextRequest) {
     const supabase = await createClient();
 
     // profiles 테이블에서 사용자 정보 가져오기
-    let userData;
-
     try {
       userData = await prisma.profiles.findUnique({
         where: { email },
@@ -64,7 +63,7 @@ export async function POST(request: NextRequest) {
         "error",
         userData?.id ? { id: userData.id, email: email } : undefined,
         "auth",
-        undefined,
+        userData?.id,
         {
           action_type: "auth_event",
           event: "password_reset_request_failed",
@@ -91,7 +90,7 @@ export async function POST(request: NextRequest) {
       "info",
       userData?.id ? { id: userData.id, email: email } : undefined,
       "auth",
-      undefined,
+      userData?.id,
       {
         action_type: "auth_event",
         event: "password_reset",
@@ -117,9 +116,9 @@ export async function POST(request: NextRequest) {
         errorMessage
       ),
       "error",
-      undefined,
+      userData?.id ? { id: userData.id, email: email || "unknown" } : undefined,
       "auth",
-      undefined,
+      userData?.id,
       {
         action_type: "auth_event",
         event: "password_reset_system_error",

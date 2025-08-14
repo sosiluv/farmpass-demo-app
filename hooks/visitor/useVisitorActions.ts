@@ -150,7 +150,7 @@ export const useVisitorActions = ({
       try {
         const selectedFarm = farms.find((f) => f.id === options.farmFilter);
 
-        await exportVisitorsCSV(dataToExport, {
+        exportVisitorsCSV(dataToExport, {
           includeBasic: options.includeBasic,
           includeContact: options.includeContact,
           includeVisit: options.includeVisit,

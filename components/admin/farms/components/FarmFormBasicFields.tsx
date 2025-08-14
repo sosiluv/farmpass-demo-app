@@ -40,7 +40,7 @@ export function FarmFormBasicFields({ form }: FarmFormBasicFieldsProps) {
               <Input
                 placeholder={PLACEHOLDERS.FARM_NAME}
                 {...field}
-                className="h-10 sm:h-12 text-sm"
+                className="text-sm sm:text-base"
               />
             </FormControl>
             <FormMessage />
@@ -65,7 +65,7 @@ export function FarmFormBasicFields({ form }: FarmFormBasicFieldsProps) {
                 <SelectTrigger
                   id="farm-type-select"
                   name="farm_type"
-                  className="h-10 sm:h-12 text-sm"
+                  className="h-12 text-sm sm:text-base"
                 >
                   <SelectValue placeholder={PLACEHOLDERS.FARM_TYPE} />
                 </SelectTrigger>

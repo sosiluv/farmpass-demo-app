@@ -25,13 +25,10 @@ import { type UserProfileWithFarmMembers } from "@/lib/hooks/query/use-admin-use
 
 interface UserListProps {
   users: UserProfileWithFarmMembers[];
-  onUserClick: (user: UserProfileWithFarmMembers) => void;
 }
 
 export function UserList({ users }: UserListProps) {
-  const { state } = useAuth();
-  const isAdmin =
-    state.status === "authenticated" && state.user?.app_metadata?.isAdmin;
+  const { isAdmin } = useAuth();
   const [selectedUser, setSelectedUser] =
     useState<UserProfileWithFarmMembers | null>(null);
 

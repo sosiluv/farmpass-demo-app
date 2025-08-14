@@ -266,7 +266,7 @@ export function ProfileSection({
               <Button
                 onClick={handleSave}
                 disabled={loading || !hasChanges}
-                className="flex items-center gap-2 text-sm sm:text-base"
+                className="text-sm sm:text-base"
               >
                 {loading ? (
                   <>

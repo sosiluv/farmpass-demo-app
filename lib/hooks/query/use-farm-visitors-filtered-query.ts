@@ -35,8 +35,7 @@ import {
 export function useFarmVisitorsWithFiltersQuery(
   filters: Partial<VisitorFilters> = {}
 ) {
-  const { state } = useAuth();
-  const isAuthenticated = state.status === "authenticated";
+  const { isAuthenticated } = useAuth();
   const supabase = createClient();
 
   // 쿼리 키 - farmId 변경 시 새로운 쿼리 실행
@@ -267,48 +266,4 @@ export function useFarmVisitorsWithFiltersQuery(
     // 액션
     refetch: visitorsQuery.refetch,
   };
-}
-
-/**
- * 방문자 목적 옵션 조회 Hook
- */
-export function useVisitorPurposeOptionsQuery(farmId?: string | null) {
-  const { state } = useAuth();
-  const isAuthenticated = state.status === "authenticated";
-  const supabase = createClient();
-
-  return useAuthenticatedQuery(
-    ["visitorPurposeOptions", farmId || "all"],
-    async (): Promise<string[]> => {
-      let query = supabase
-        .from("visitor_entries")
-        .select("visitor_purpose")
-        .not("visitor_purpose", "is", null);
-
-      if (farmId) {
-        query = query.eq("farm_id", farmId);
-      }
-
-      const { data, error } = await query;
-
-      if (error) {
-        const errorCode = mapRawErrorToCode(error, "db");
-        const message = getErrorMessage(errorCode);
-        throw new Error(message);
-      }
-
-      const purposes =
-        data
-          ?.map((item) => item.visitor_purpose)
-          .filter((purpose): purpose is string => purpose !== null)
-          .filter((purpose, index, arr) => arr.indexOf(purpose) === index)
-          .sort() || [];
-
-      return purposes;
-    },
-    {
-      enabled: isAuthenticated,
-      staleTime: 10 * 60 * 1000, // 10분
-    }
-  );
 }

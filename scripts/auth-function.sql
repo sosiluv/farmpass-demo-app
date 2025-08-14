@@ -242,21 +242,6 @@ CREATE TRIGGER tr_handle_session_event
 
 -----------------------------------------------------------------------------------------------------------------------
 
--- CREATE OR REPLACE FUNCTION public.handle_profile_delete_on_user_delete()
--- RETURNS TRIGGER AS $$
--- BEGIN
---   DELETE FROM public.profiles WHERE id = OLD.id;
---   RETURN OLD;
--- END;
--- $$ LANGUAGE plpgsql SECURITY DEFINER;
-
--- DROP TRIGGER IF EXISTS tr_handle_profile_delete_on_user_delete ON auth.users;
--- CREATE TRIGGER tr_handle_profile_delete_on_user_delete
---   AFTER DELETE ON auth.users
---   FOR EACH ROW
---   EXECUTE FUNCTION public.handle_profile_delete_on_user_delete();
-
-
 
 -- 사용자 프로필 테이블 주석
 COMMENT ON TABLE public.profiles IS '사용자 프로필 정보를 저장하는 테이블';

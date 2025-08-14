@@ -7,14 +7,22 @@ import { InstallPrompt } from "./InstallGuide/InstallPrompt";
 import { useNotificationPermission } from "@/hooks/notification/useNotificationPermission";
 import { usePWAInstall } from "@/components/providers/pwa-provider";
 import { useFarmsQuery } from "@/lib/hooks/query/use-farms-query";
+import { useNotificationStore } from "@/store/use-notification-store";
 
 export function DialogManager() {
   const { currentSheet, isVisible, removeSheet, addSheet, queue } =
     useSheetQueue();
 
   const installInfo = usePWAInstall();
-  const { showSheet, handleAllow, handleDeny, closeSheet, isResubscribe } =
-    useNotificationPermission();
+
+  // Zustand 스토어에서 직접 상태 가져오기
+  const { showSheet, isResubscribe } = useNotificationStore();
+
+  // useNotificationPermission에서 핸들러만 가져오기
+  const { handleAllow, handleDeny, closeSheet } = useNotificationPermission();
+
+  // 공통 스토어 사용
+  const { updateSubscriptionStatus } = useNotificationStore();
 
   // 농장 데이터 가져오기
   const { farms } = useFarmsQuery();
@@ -87,6 +95,8 @@ export function DialogManager() {
             }}
             onAllow={async () => {
               await currentSheet.data.handleAllow();
+              // 공통 스토어 상태 업데이트
+              updateSubscriptionStatus("subscribed", true);
               removeSheet(currentSheet.id);
             }}
             onDeny={() => {
@@ -112,5 +122,5 @@ export function DialogManager() {
     }
   };
 
-  return <>{renderCurrentSheet()}</>;
+  return renderCurrentSheet();
 }

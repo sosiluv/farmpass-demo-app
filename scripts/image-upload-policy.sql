@@ -10,12 +10,8 @@ INSERT INTO storage.buckets (id, name, public) VALUES ('profiles', 'profiles', f
 --------------------------------------------------
 -- 3. INSERT 정책 (파일 업로드)
 --------------------------------------------------
+
 DROP POLICY IF EXISTS "프로필/시스템 이미지 업로드 정책" ON storage.objects;
-DROP POLICY IF EXISTS "프로필 이미지 조회 정책" ON storage.objects;
-DROP POLICY IF EXISTS "프로필/시스템 이미지 수정 정책" ON storage.objects;
-DROP POLICY IF EXISTS "프로필/시스템 이미지 삭제 정책" ON storage.objects;
-
-
 CREATE POLICY "프로필/시스템 이미지 업로드 정책" ON storage.objects
 FOR INSERT TO authenticated
 WITH CHECK (
@@ -26,10 +22,7 @@ WITH CHECK (
         -- systems 폴더는 관리자만 업로드 가능
         OR (
             (storage.foldername(name))[1] = 'systems'
-            AND EXISTS (
-                SELECT 1 FROM public.profiles
-                WHERE id = auth.uid() AND account_type = 'admin'
-            )
+            AND (auth.jwt() ->> 'app_metadata')::jsonb ->> 'isAdmin' = 'true'
         )
     )
 );
@@ -38,7 +31,7 @@ WITH CHECK (
 -- 4. SELECT 정책 (파일 조회)
 --------------------------------------------------
 
-
+DROP POLICY IF EXISTS "프로필 이미지 조회 정책" ON storage.objects;
 CREATE POLICY "프로필 이미지 조회 정책" ON storage.objects
 FOR SELECT TO authenticated  -- 인증된 사용자만 조회 가능
 USING (
@@ -49,10 +42,7 @@ USING (
         (auth.uid())::text = (storage.foldername(name))[1]
         OR
         -- 관리자이거나
-        EXISTS (
-            SELECT 1 FROM public.profiles
-            WHERE id = auth.uid() AND account_type = 'admin'
-        )
+        (auth.jwt() ->> 'app_metadata')::jsonb ->> 'isAdmin' = 'true'
         OR
         -- 같은 농장의 구성원인 경우
         EXISTS (
@@ -70,7 +60,7 @@ USING (
 -- 5. UPDATE 정책 (파일 수정)
 --------------------------------------------------
 
-
+DROP POLICY IF EXISTS "프로필/시스템 이미지 수정 정책" ON storage.objects;
 CREATE POLICY "프로필/시스템 이미지 수정 정책" ON storage.objects
 FOR UPDATE TO authenticated
 USING (
@@ -79,10 +69,7 @@ USING (
         (auth.uid())::text = (storage.foldername(name))[1]
         OR (
             (storage.foldername(name))[1] = 'systems'
-            AND EXISTS (
-                SELECT 1 FROM public.profiles
-                WHERE id = auth.uid() AND account_type = 'admin'
-            )
+            AND (auth.jwt() ->> 'app_metadata')::jsonb ->> 'isAdmin' = 'true'
         )
     )
 )
@@ -92,10 +79,7 @@ WITH CHECK (
         (auth.uid())::text = (storage.foldername(name))[1]
         OR (
             (storage.foldername(name))[1] = 'systems'
-            AND EXISTS (
-                SELECT 1 FROM public.profiles
-                WHERE id = auth.uid() AND account_type = 'admin'
-            )
+            AND (auth.jwt() ->> 'app_metadata')::jsonb ->> 'isAdmin' = 'true'
         )
     )
     AND COALESCE((metadata->>'size')::int, 0) <= 5 * 1024 * 1024
@@ -106,7 +90,7 @@ WITH CHECK (
 -- 6. DELETE 정책 (파일 삭제)
 --------------------------------------------------
 
-
+DROP POLICY IF EXISTS "프로필/시스템 이미지 삭제 정책" ON storage.objects;
 CREATE POLICY "프로필/시스템 이미지 삭제 정책" ON storage.objects
 FOR DELETE TO authenticated
 USING (
@@ -115,16 +99,10 @@ USING (
         (auth.uid())::text = (storage.foldername(name))[1]
         OR (
             (storage.foldername(name))[1] = 'systems'
-            AND EXISTS (
-                SELECT 1 FROM public.profiles
-                WHERE id = auth.uid() AND account_type = 'admin'
-            )
+            AND (auth.jwt() ->> 'app_metadata')::jsonb ->> 'isAdmin' = 'true'
         )
         OR
-        EXISTS (
-            SELECT 1 FROM public.profiles
-            WHERE id = auth.uid() AND account_type = 'admin'
-        )
+        (auth.jwt() ->> 'app_metadata')::jsonb ->> 'isAdmin' = 'true'
     )
 );
 
@@ -135,13 +113,9 @@ CREATE BUCKET IF NOT EXISTS "visitor-photos";
 ALTER BUCKET "visitor-photos"
 SET public = true;
 
--- 기존 정책 삭제 (있다면)
-DROP POLICY IF EXISTS "방문자 이미지 업로드 정책" ON storage.objects;
-DROP POLICY IF EXISTS "방문자 이미지 조회 정책" ON storage.objects;
-DROP POLICY IF EXISTS "방문자 이미지 삭제 정책" ON storage.objects;
-DROP POLICY IF EXISTS "방문자 이미지 업데이트 정책" ON storage.objects;
 
 -- 업로드 정책 생성
+DROP POLICY IF EXISTS "방문자 이미지 업로드 정책" ON storage.objects;
 CREATE POLICY "방문자 이미지 업로드 정책"
 ON storage.objects
 FOR INSERT
@@ -151,6 +125,7 @@ WITH CHECK (
 );
 
 -- 조회 정책 생성
+DROP POLICY IF EXISTS "방문자 이미지 조회 정책" ON storage.objects;
 CREATE POLICY "방문자 이미지 조회 정책"
 ON storage.objects
 FOR SELECT
@@ -158,6 +133,7 @@ TO public
 USING (bucket_id::text = 'visitor-photos'::text);
 
 -- 삭제 정책 생성
+DROP POLICY IF EXISTS "방문자 이미지 삭제 정책" ON storage.objects;
 CREATE POLICY "방문자 이미지 삭제 정책"
 ON storage.objects
 FOR DELETE
@@ -165,6 +141,7 @@ TO public
 USING (bucket_id::text = 'visitor-photos'::text);
 
 -- 업데이트 정책 생성
+DROP POLICY IF EXISTS "방문자 이미지 업데이트 정책" ON storage.objects;
 CREATE POLICY "방문자 이미지 업데이트 정책"
 ON storage.objects
 FOR UPDATE

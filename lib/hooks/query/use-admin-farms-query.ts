@@ -31,10 +31,7 @@ export interface AdminFarmsResponse {
  * 관리자 농장 통계 데이터를 조회합니다.
  */
 export function useAdminFarmsQuery() {
-  const { state } = useAuth();
-  const user = state.status === "authenticated" ? state.user : null;
-  const isAdmin =
-    state.status === "authenticated" && state.user?.app_metadata?.isAdmin;
+  const { user, isAdmin } = useAuth();
 
   const farmsQuery = useAuthenticatedQuery(
     adminKeys.farms.stats(),

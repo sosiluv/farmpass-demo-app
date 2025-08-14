@@ -1,3 +1,8 @@
+-- 특정 이메일을 가진 사용자에게 관리자 권한 부여
+UPDATE auth.users 
+SET raw_app_meta_data = raw_app_meta_data || '{"isAdmin": true}'::jsonb
+WHERE email = 'admin@swkorea.com';
+
 ALTER TABLE public.profiles
 DROP CONSTRAINT fk_profiles_auth_users_id;
 
@@ -59,9 +64,10 @@ DECLARE
     result BOOLEAN;
 BEGIN
     -- RLS를 우회하여 직접 조회 (SECURITY DEFINER로 인해 RLS 무시)
-    SELECT account_type = 'admin'
+    -- JWT 토큰의 app_metadata에서 isAdmin 확인
+    SELECT (raw_app_meta_data ->> 'isAdmin')::boolean
     INTO result
-    FROM public.profiles
+    FROM auth.users
     WHERE id = auth.uid();
     
     RETURN COALESCE(result, FALSE);
@@ -73,7 +79,7 @@ END;
 $$;
 
 COMMENT ON FUNCTION public.is_system_admin() IS 
-'RLS를 우회하여 profiles.account_type으로 관리자 확인. 재귀 방지 및 실시간 권한 변경 지원';
+'RLS를 우회하여 auth.users.raw_app_meta_data.isAdmin으로 관리자 확인. 재귀 방지 및 실시간 권한 변경 지원';
 
 -- =================================
 -- farms row 접근 가능 여부 함수 (무한 재귀 방지)

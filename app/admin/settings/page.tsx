@@ -31,12 +31,7 @@ export default function SettingsPage() {
   } = useSystemSettingsQuery();
 
   const { refreshSystemModes } = useSystemMode();
-  const { state } = useAuth();
-  const user = state.status === "authenticated" ? state.user : null;
-  const isAdmin =
-    state.status === "authenticated" && state.user?.app_metadata?.isAdmin;
-  const isLoading = state.status === "loading";
-
+  const { user, isAdmin, isLoading } = useAuth();
   const [unsavedChanges, setUnsavedChanges] = useState(false);
   const [activeTab, setActiveTab] = useState("general");
   const [localSettings, setLocalSettings] = useState<SystemSettings | null>(

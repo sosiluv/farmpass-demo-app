@@ -20,10 +20,10 @@ import { FormSkeleton } from "@/components/ui/skeleton";
 import { PAGE_HEADER } from "@/lib/constants/notifications";
 import { useFarmsQuery } from "@/lib/hooks/query/use-farms-query";
 import { Bell } from "lucide-react";
+import { useNotificationStore } from "@/store/use-notification-store";
 
 export default function NotificationsPage() {
-  const { state } = useAuth();
-  const userId = state.status === "authenticated" ? state.user.id : undefined;
+  const { userId } = useAuth();
 
   // useFarmsContext 대신 useFarmsQuery 사용
   const {
@@ -33,7 +33,9 @@ export default function NotificationsPage() {
     refetch: refetchFarms,
   } = useFarmsQuery(userId);
 
-  const [isSubscribed, setIsSubscribed] = useState(false);
+  // 공통 스토어에서 isSubscribed 상태 사용
+  const { isSubscribed } = useNotificationStore();
+
   const {
     data: settings,
     error: settingsError,
@@ -130,10 +132,7 @@ export default function NotificationsPage() {
             transition={{ duration: 0.3 }}
             layout
           >
-            <WebPushSubscription
-              farms={farmData}
-              onSubscriptionStatusChange={setIsSubscribed}
-            />
+            <WebPushSubscription farms={farmData} />
           </motion.div>
 
           <AnimatePresence mode="wait">

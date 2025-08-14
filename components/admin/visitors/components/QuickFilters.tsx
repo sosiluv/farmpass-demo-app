@@ -58,7 +58,7 @@ export function QuickFilters({
             size="sm"
             onClick={() => onDateRangeChange(filter.value)}
             className={cn(
-              "flex items-center gap-1 sm:gap-2 whitespace-nowrap transition-all duration-200 h-8 sm:h-9 md:h-10 px-3 sm:px-4 md:px-5 text-xs sm:text-sm md:text-base font-medium min-w-fit",
+              "flex items-center gap-1 sm:gap-2 whitespace-nowrap transition-all duration-200 h-8 sm:h-9 md:h-10 px-2 sm:px-3 md:px-4 text-xs sm:text-sm md:text-base font-medium min-w-fit",
               isActive
                 ? `${filter.bgColor} ${filter.textColor} border-2 ${filter.borderColor} shadow-md hover:shadow-lg transform hover:scale-105 dark:bg-slate-800 dark:text-slate-100 dark:border-slate-500`
                 : "border-gray-200 dark:border-slate-600 hover:border-gray-300 dark:hover:border-slate-400 bg-white/90 dark:bg-slate-800 hover:bg-white dark:hover:bg-slate-700 shadow-sm hover:shadow-md transform hover:scale-105 dark:text-slate-100"

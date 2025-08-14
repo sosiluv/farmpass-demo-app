@@ -28,7 +28,7 @@ export async function GET(
         "info",
         undefined,
         "visitor",
-        undefined,
+        farmId,
         {
           action_type: "visitor_event",
           event: "visitor_session_not_found",
@@ -75,7 +75,7 @@ export async function GET(
         "info",
         undefined,
         "visitor",
-        undefined,
+        farmId,
         {
           action_type: "visitor_event",
           event: "visitor_record_not_found",
@@ -105,7 +105,7 @@ export async function GET(
         "info",
         undefined,
         "visitor",
-        undefined,
+        farmId,
         {
           action_type: "visitor_event",
           event: "visitor_session_expired",
@@ -146,7 +146,7 @@ export async function GET(
       "info",
       undefined,
       "visitor",
-      undefined,
+      farmId,
       {
         action_type: "visitor_event",
         event: "visitor_session_valid",
@@ -177,18 +177,18 @@ export async function GET(
     const errorMessage = error instanceof Error ? error.message : String(error);
     await createSystemLog(
       "VISITOR_SESSION_CHECK_ERROR",
-      LOG_MESSAGES.VISITOR_SESSION_CHECK_ERROR(params.farmId, errorMessage),
+      LOG_MESSAGES.VISITOR_SESSION_CHECK_ERROR(farmId, errorMessage),
       "error",
       undefined,
       "visitor",
-      undefined,
+      farmId,
       {
         action_type: "visitor_event",
         event: "visitor_session_check_error",
         error_message: errorMessage,
         endpoint: "/api/farms/[farmId]/visitors/check-session",
         method: "GET",
-        farm_id: params.farmId,
+        farm_id: farmId,
       },
       request
     );
@@ -196,7 +196,7 @@ export async function GET(
     // 비즈니스 에러 또는 시스템 에러를 표준화된 에러 코드로 매핑
     const result = getErrorResultFromRawError(error, {
       operation: "check_visitor_session",
-      farmId: params.farmId,
+      farmId: farmId,
     });
 
     return NextResponse.json(makeErrorResponseFromResult(result), {

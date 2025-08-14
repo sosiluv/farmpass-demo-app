@@ -11,6 +11,7 @@ import {
 import { LOG_MESSAGES } from "@/lib/utils/logging/log-templates";
 
 export async function POST(request: NextRequest) {
+  let user = null;
   try {
     // 관리자 권한 인증 확인
     const authResult = await requireAuth(true);
@@ -18,7 +19,7 @@ export async function POST(request: NextRequest) {
       return authResult.response!;
     }
 
-    const user = authResult.user;
+    user = authResult.user;
 
     const body = await request.json();
     const { action, logId, beforeCount } = body;
@@ -125,9 +126,9 @@ export async function POST(request: NextRequest) {
       "LOG_CLEANUP",
       LOG_MESSAGES.LOG_CLEANUP(user.email || "", result.count || 1),
       "info",
-      { id: user.id, email: user.email || "" },
+      user?.id ? { id: user.id, email: user.email || "" } : undefined,
       "system",
-      undefined,
+      "logs_cleanup",
       {
         action_type: "admin_event",
         event: "log_cleanup",
@@ -136,8 +137,6 @@ export async function POST(request: NextRequest) {
       },
       request
     );
-
-    devLog.log("[LOG-DELETE] 로그 삭제 작업 완료:", result);
 
     // 작업 유형에 따른 구체적인 메시지 생성
     let successMessage = "";
@@ -172,9 +171,9 @@ export async function POST(request: NextRequest) {
       "LOG_CLEANUP_FAILED",
       LOG_MESSAGES.LOG_CLEANUP_FAILED(errorMessage),
       "error",
-      undefined,
+      user?.id ? { id: user.id, email: user.email || "" } : undefined,
       "system",
-      undefined,
+      "logs_cleanup",
       {
         action_type: "admin_event",
         event: "log_cleanup_failed",

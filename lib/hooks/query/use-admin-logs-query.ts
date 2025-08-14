@@ -46,10 +46,7 @@ export interface AdminLogsResponse {
 }
 
 export function useAdminLogsQuery() {
-  const { state } = useAuth();
-  const user = state.status === "authenticated" ? state.user : null;
-  const isAdmin =
-    state.status === "authenticated" && state.user?.app_metadata?.isAdmin;
+  const { user, isAdmin } = useAuth();
 
   const logsQuery = useAuthenticatedQuery(
     adminKeys.logs.stats(),

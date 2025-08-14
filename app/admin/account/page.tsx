@@ -12,8 +12,7 @@ import { AdminError } from "@/components/error/admin-error";
 import { User } from "lucide-react";
 
 export default function AccountPage() {
-  const { state } = useAuth();
-  const userId = state.status === "authenticated" ? state.user.id : undefined;
+  const { userId, isAuthenticated } = useAuth();
   const { data: profile, isLoading, error } = useProfileQuery(userId);
 
   return (
@@ -28,7 +27,7 @@ export default function AccountPage() {
           icon={User}
         />
 
-        {state.status !== "authenticated" || isLoading ? (
+        {!isAuthenticated || isLoading ? (
           <CardSkeleton
             count={3}
             className="grid-cols-1 md:grid-cols-2 lg:grid-cols-3"

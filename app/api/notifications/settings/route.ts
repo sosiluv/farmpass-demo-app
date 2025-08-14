@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createSystemLog } from "@/lib/utils/logging/system-log";
-import { devLog } from "@/lib/utils/logging/dev-logger";
 import { requireAuth } from "@/lib/server/auth-utils";
 import { prisma } from "@/lib/prisma";
 import {
@@ -15,18 +14,15 @@ export const dynamic = "force-dynamic";
 
 // GET: 알림 설정 조회
 export async function GET(request: NextRequest) {
+  let user = null;
   try {
-    devLog.log("[API] /api/notifications/settings GET 요청 시작");
-
     // 인증 확인
     const authResult = await requireAuth(false);
     if (!authResult.success || !authResult.user) {
       return authResult.response!;
     }
 
-    const user = authResult.user;
-
-    devLog.log("사용자 ID:", user.id);
+    user = authResult.user;
 
     let settings;
     try {
@@ -46,7 +42,6 @@ export async function GET(request: NextRequest) {
     }
 
     if (!settings) {
-      devLog.log("알림 설정이 없음, 기본값 반환");
       return NextResponse.json(
         {
           id: null,
@@ -67,7 +62,6 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    devLog.log("알림 설정 조회 성공:", settings);
     return NextResponse.json(settings, {
       headers: {
         "Cache-Control": "no-store",
@@ -80,9 +74,9 @@ export async function GET(request: NextRequest) {
       "NOTIFICATION_SETTINGS_QUERY_FAILED",
       LOG_MESSAGES.NOTIFICATION_SETTINGS_QUERY_FAILED(errorMessage),
       "error",
-      undefined,
+      user?.id ? { id: user.id, email: user.email || "" } : undefined,
       "notification",
-      undefined,
+      user?.id,
       {
         action_type: "notification_event",
         event: "notification_settings_query_failed",
@@ -104,6 +98,7 @@ export async function GET(request: NextRequest) {
 
 // PUT: 알림 설정 업데이트
 export async function PUT(request: NextRequest) {
+  let user = null;
   try {
     // 인증 확인
     const authResult = await requireAuth(false);
@@ -111,7 +106,7 @@ export async function PUT(request: NextRequest) {
       return authResult.response!;
     }
 
-    const user = authResult.user;
+    user = authResult.user;
 
     const body = await request.json();
     let existingSettings;
@@ -191,7 +186,7 @@ export async function PUT(request: NextRequest) {
       "info",
       { id: user.id, email: user.email || "" },
       "notification",
-      undefined,
+      user?.id,
       {
         user_id: user.id,
         updated_fields: Object.keys(result),
@@ -215,9 +210,9 @@ export async function PUT(request: NextRequest) {
       "NOTIFICATION_SETTINGS_UPDATE_FAILED",
       LOG_MESSAGES.NOTIFICATION_SETTINGS_UPDATE_FAILED(errorMessage),
       "error",
-      undefined,
+      user?.id ? { id: user.id, email: user.email || "" } : undefined,
       "notification",
-      undefined,
+      user?.id,
       {
         action_type: "notification_event",
         event: "notification_settings_update_failed",

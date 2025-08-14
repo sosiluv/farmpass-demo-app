@@ -15,8 +15,6 @@ export const useFarmInfoQuery = (farmId: string) => {
   return useQuery({
     queryKey: farmsKeys.info(farmId),
     queryFn: async (): Promise<Farm> => {
-      devLog.log(`[QUERY] 농장 정보 조회 시작: ${farmId}`);
-
       const result = await apiClient(`/api/farms/${farmId}`, {
         method: "GET",
         context: "농장 정보 조회",
@@ -40,8 +38,6 @@ export const useVisitorSessionQuery = (
   return useQuery({
     queryKey: visitorsKeys.session(farmId),
     queryFn: async () => {
-      devLog.log(`[QUERY] 세션 체크 시작: ${farmId}`);
-
       const data = await apiClient(
         `/api/farms/${farmId}/visitors/check-session`,
         {
@@ -66,8 +62,6 @@ export const useDailyVisitorCountQuery = (
   return useQuery({
     queryKey: visitorsKeys.dailyCount(farmId),
     queryFn: async () => {
-      devLog.log(`[QUERY] 일일 방문자 수 조회: ${farmId}`);
-
       const data = await apiClient(
         `/api/farms/${farmId}/visitors/count-today`,
         {
@@ -98,8 +92,6 @@ export const useCreateVisitorMutation = () => {
       visitorData: VisitorFormData;
       profilePhotoUrl?: string | null;
     }): Promise<{ message?: string; visitor?: any }> => {
-      devLog.log(`[MUTATION] 방문자 등록 시작: ${farmId}`);
-
       const result = await apiClient(`/api/farms/${farmId}/visitors`, {
         method: "POST",
         headers: {
@@ -112,7 +104,6 @@ export const useCreateVisitorMutation = () => {
         context: "방문자 등록",
       });
 
-      devLog.log(`[MUTATION] 방문자 등록 완료: ${farmId}`);
       return result;
     },
     onSuccess: (result, { farmId }) => {
@@ -120,8 +111,6 @@ export const useCreateVisitorMutation = () => {
       queryClient.invalidateQueries({ queryKey: visitorsKeys.all });
       // 농장 정보 무효화
       queryClient.invalidateQueries({ queryKey: farmsKeys.info(farmId) });
-
-      devLog.log("[MUTATION] 방문자 등록 캐시 무효화 완료");
     },
   });
 };

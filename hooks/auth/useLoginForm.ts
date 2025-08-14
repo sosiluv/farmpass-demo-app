@@ -3,7 +3,6 @@ import { useRouter } from "next/navigation";
 import { useCommonToast } from "@/lib/utils/notification/toast-messages";
 import { createClient } from "@/lib/supabase/client";
 import { useAuthActions } from "@/hooks/auth/useAuthActions";
-import { useRegistrationStore } from "@/store/use-registration-store";
 import type { LoginFormData } from "@/lib/utils/validation/auth-validation";
 
 export function useLoginForm() {
@@ -17,9 +16,6 @@ export function useLoginForm() {
   const router = useRouter();
   const { showInfo, showSuccess, showError } = useCommonToast();
   const { signIn } = useAuthActions();
-
-  // Zustand store 사용
-  const { hasConsents } = useRegistrationStore();
 
   // 세션 체크 완료 시 호출할 함수
   const setSessionChecked = () => {
@@ -42,7 +38,7 @@ export function useLoginForm() {
       showSuccess("로그인 성공", result.message || "로그인에 성공했습니다.");
 
       // 약관 동의 상태에 따라 리다이렉트
-      if (!result.consent?.hasAllRequiredConsents && !hasConsents()) {
+      if (!result.consent?.hasAllRequiredConsents) {
         // 약관 동의가 필요한 경우
         router.replace("/profile-setup");
       } else {

@@ -92,7 +92,11 @@ export function FarmFormSheet({
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetTrigger asChild>
-        <Button onClick={onAddClick} disabled={submitting || isLoading}>
+        <Button
+          onClick={onAddClick}
+          disabled={submitting || isLoading}
+          className="text-sm sm:text-base"
+        >
           <Plus className="mr-2 h-4 w-4" />
           {BUTTONS.ADD_FARM_BUTTON}
         </Button>

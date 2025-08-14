@@ -73,7 +73,7 @@ export async function GET(request: Request) {
           "info",
           { id: authedUser.id, email: userEmail || "unknown" },
           "auth",
-          undefined,
+          authedUser.id,
           {
             action_type: "auth_event",
             event: "login_success",

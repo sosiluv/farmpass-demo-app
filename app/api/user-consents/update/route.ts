@@ -9,7 +9,7 @@ import {
 
 // POST: 사용자 동의 업데이트
 export async function POST(request: NextRequest) {
-  let user: any = null;
+  let user = null;
 
   try {
     // 인증 확인

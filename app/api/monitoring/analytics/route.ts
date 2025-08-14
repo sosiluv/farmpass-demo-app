@@ -158,7 +158,7 @@ export async function GET(request: NextRequest) {
       "error",
       user?.id ? { id: user.id, email: user.email || "" } : undefined,
       "system",
-      undefined,
+      "monitoring_analytics",
       {
         action_type: "monitoring_event",
         event: "analytics_check_failed",

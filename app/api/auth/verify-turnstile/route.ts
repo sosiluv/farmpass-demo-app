@@ -40,12 +40,6 @@ export async function POST(request: NextRequest) {
 
     const verificationResult = await verificationResponse.json();
 
-    devLog.log("Turnstile verification result:", {
-      success: verificationResult.success,
-      errorCodes: verificationResult["error-codes"],
-      clientIP,
-    });
-
     if (!verificationResult.success) {
       // 검증 실패 로그
       const errorMessage = `Turnstile verification failed: ${verificationResult[

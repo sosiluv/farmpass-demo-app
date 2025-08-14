@@ -206,15 +206,6 @@ export class UnifiedImageManager {
         data: { publicUrl },
       } = supabase.storage.from(config.bucket).getPublicUrl(data.path);
 
-      // 파비콘인 경우 CORS 헤더 확인
-      if (this.uploadType === "favicon") {
-        devLog.log("파비콘 업로드 완료:", {
-          fileName: data.path,
-          publicUrl,
-          bucket: config.bucket,
-        });
-      }
-
       const result: UploadResult = {
         publicUrl,
         fileName: data.path,

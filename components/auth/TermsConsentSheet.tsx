@@ -10,8 +10,6 @@ import {
 } from "@/components/ui/sheet-common";
 import { ExternalLink, Loader2 } from "lucide-react";
 import { usePublicTermsQuery } from "@/lib/hooks/query/use-terms-query";
-import { useUpdateUserConsentsMutation } from "@/lib/hooks/query/use-user-consents-query";
-import { useCommonToast } from "@/lib/utils/notification/toast-messages";
 import { TermManagement, TermType } from "@/lib/types/common";
 import { TermsSheet } from "./TermsSheet";
 import { PAGE_HEADER, LABELS, BUTTONS } from "@/lib/constants/terms";
@@ -34,25 +32,21 @@ export const TermsConsentSheet = memo(
     open,
     onOpenChange,
     onConsent,
-    onComplete,
     loading = false,
     mode = "register",
   }: TermsConsentSheetProps) => {
     const [privacyConsent, setPrivacyConsent] = useState(false);
     const [termsConsent, setTermsConsent] = useState(false);
     const [marketingConsent, setMarketingConsent] = useState(false);
-    const [internalLoading, setInternalLoading] = useState(false);
     const [modalOpen, setModalOpen] = useState(false);
     const [selectedTermType, setSelectedTermType] =
       useState<TermType>("privacy_consent");
 
     // 약관 데이터 조회
     const { data: termsData, isLoading: termsLoading } = usePublicTermsQuery();
-    const { showSuccess, showError } = useCommonToast();
-    const updateConsentMutation = useUpdateUserConsentsMutation();
 
-    // 실제 로딩 상태 (외부 또는 내부)
-    const isLoading = loading || internalLoading;
+    // 로딩 상태 (외부에서 전달받은 값만 사용)
+    const isLoading = loading;
 
     // 전체 동의 상태 계산
     const allConsent = privacyConsent && termsConsent && marketingConsent;
@@ -75,32 +69,9 @@ export const TermsConsentSheet = memo(
         return; // 필수 약관 동의가 없으면 처리하지 않음
       }
 
-      if (mode === "reconsent") {
-        // 재동의 모드: 내부에서 API 호출
-        setInternalLoading(true);
-        try {
-          const result = await updateConsentMutation.mutateAsync({
-            privacyConsent,
-            termsConsent,
-            marketingConsent,
-          });
-          showSuccess("동의 완료", result.message);
-          onComplete?.();
-          onOpenChange(false);
-        } catch (error) {
-          const errorMessage =
-            error instanceof Error
-              ? error.message
-              : "동의 처리 중 오류가 발생했습니다.";
-          showError("동의 실패", errorMessage);
-        } finally {
-          setInternalLoading(false);
-        }
-      } else {
-        // 회원가입 모드: 부모에게 콜백
-        if (onConsent) {
-          onConsent(privacyConsent, termsConsent, marketingConsent);
-        }
+      // mode와 관계없이 항상 onConsent 콜백 호출
+      if (onConsent) {
+        onConsent(privacyConsent, termsConsent, marketingConsent);
       }
     };
 
@@ -349,6 +320,17 @@ export const TermsConsentSheet = memo(
           isOpen={modalOpen}
           onClose={() => setModalOpen(false)}
           termType={selectedTermType}
+          onConsent={() => {
+            // 약관 모달에서 동의하기 버튼 클릭 시 해당 체크박스 자동 체크
+            if (selectedTermType === "privacy_consent") {
+              setPrivacyConsent(true);
+            } else if (selectedTermType === "terms") {
+              setTermsConsent(true);
+            } else if (selectedTermType === "marketing") {
+              setMarketingConsent(true);
+            }
+            setModalOpen(false);
+          }}
         />
       </>
     );

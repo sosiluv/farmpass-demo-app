@@ -73,7 +73,7 @@ export async function PUT(
   request: NextRequest,
   { params }: { params: { farmId: string } }
 ) {
-  let user: any = null;
+  let user = null;
   let farmData: FarmFormValues | null = null;
 
   try {
@@ -83,7 +83,7 @@ export async function PUT(
       return authResult.response!;
     }
 
-    const user = authResult.user;
+    user = authResult.user;
     const isAdmin = authResult.isAdmin || false;
 
     const requestData: FarmFormValues = await request.json();
@@ -265,9 +265,7 @@ export async function DELETE(
   request: NextRequest,
   { params }: { params: { farmId: string } }
 ) {
-  let user: any = null;
-  let existingFarm: any = null;
-  let isAdmin = false;
+  let user = null;
 
   try {
     // 인증 확인
@@ -276,7 +274,7 @@ export async function DELETE(
       return authResult.response!;
     }
 
-    const user = authResult.user;
+    user = authResult.user;
     const isAdmin = authResult.isAdmin || false;
 
     // Verify ownership and get farm info for logging

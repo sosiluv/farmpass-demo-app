@@ -1,6 +1,12 @@
 "use client";
 
-import { createContext, useContext, useEffect, useReducer } from "react";
+import {
+  createContext,
+  useContext,
+  useEffect,
+  useReducer,
+  useMemo,
+} from "react";
 import { Session, User } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/client";
 import { devLog } from "@/lib/utils/logging/dev-logger";
@@ -53,6 +59,13 @@ function authReducer(state: AuthState, action: AuthAction): AuthState {
 
 interface AuthContextType {
   state: AuthState;
+  isAdmin: boolean;
+  user: User | undefined;
+  userId: string | undefined;
+  isAuthenticated: boolean;
+  isUnauthenticated: boolean;
+  isLoading: boolean;
+  isInitializing: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -114,8 +127,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               session,
               user: session.user,
             });
-            // ✅ 기존 구독 유지 (불필요한 전환 제거)
-            devLog.log("✅ [DEBUG] 기존 구독 유지 - 전환 불필요");
           } catch (userError) {
             devLog.warn("사용자 정보 검증 중 오류:", userError);
             if (mounted) {
@@ -194,9 +205,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, [state.status]);
 
-  const value = {
-    state,
-  };
+  const value = useMemo(
+    () => ({
+      state,
+      isAdmin:
+        state.status === "authenticated" &&
+        state.user?.app_metadata?.isAdmin === true,
+      user: state.status === "authenticated" ? state.user : undefined,
+      userId: state.status === "authenticated" ? state.user.id : undefined,
+      isAuthenticated: state.status === "authenticated",
+      isUnauthenticated: state.status === "unauthenticated",
+      isLoading: state.status === "loading",
+      isInitializing: state.status === "initializing",
+    }),
+    [state]
+  );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }

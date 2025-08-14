@@ -54,12 +54,15 @@ async function executeRPC<T>(
 }
 
 export async function POST(request: NextRequest) {
+  let user = null;
   try {
     // 관리자 권한 인증 확인
     const authResult = await requireAuth(true);
     if (!authResult.success || !authResult.user) {
       return authResult.response!;
     }
+
+    user = authResult.user;
 
     const supabase = await createClient();
 
@@ -152,9 +155,9 @@ export async function POST(request: NextRequest) {
       "LOG_CLEANUP_FAILED",
       LOG_MESSAGES.LOG_CLEANUP_FAILED(errorMessage),
       "error",
-      undefined,
+      user?.id ? { id: user.id, email: user.email || "" } : undefined,
       "system",
-      undefined,
+      "logs_cleanup",
       {
         action_type: "admin_event",
         event: "logs_cleanup_failed",
@@ -175,12 +178,15 @@ export async function POST(request: NextRequest) {
 }
 
 export async function GET(request: NextRequest) {
+  let user = null;
   try {
     // 관리자 권한 인증 확인
     const authResult = await requireAuth(true);
     if (!authResult.success || !authResult.user) {
       return authResult.response!;
     }
+
+    user = authResult.user;
 
     // 시스템 설정 조회
     const settings = await getSystemSettings();
@@ -264,9 +270,9 @@ export async function GET(request: NextRequest) {
       "EXPIRED_COUNT_QUERY_FAILED",
       LOG_MESSAGES.EXPIRED_COUNT_QUERY_FAILED(errorMessage),
       "error",
-      undefined,
+      user?.id ? { id: user.id, email: user.email || "" } : undefined,
       "system",
-      undefined,
+      "logs_cleanup",
       {
         action_type: "admin_event",
         event: "expired_count_query_failed",

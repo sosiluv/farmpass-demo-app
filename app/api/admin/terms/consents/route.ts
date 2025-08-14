@@ -10,7 +10,7 @@ import {
 
 // GET: 사용자 동의 목록 조회
 export async function GET(request: NextRequest) {
-  let user: any = null;
+  let user = null;
 
   try {
     // 인증 확인
@@ -86,7 +86,7 @@ export async function GET(request: NextRequest) {
 
 // POST: 사용자 동의 철회 (관리자용)
 export async function POST(request: NextRequest) {
-  let user: any = null;
+  let user = null;
 
   try {
     // 인증 확인

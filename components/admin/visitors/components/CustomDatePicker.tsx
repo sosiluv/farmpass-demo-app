@@ -26,25 +26,27 @@ export function CustomDatePicker({
   onCustomEndDateChange,
 }: CustomDatePickerProps) {
   return (
-    <div className="flex items-center space-x-2 sm:space-x-3">
+    <div className="flex items-center space-x-3 w-full">
       <Popover>
         <PopoverTrigger asChild>
           <Button
             variant="outline"
             className={cn(
-              "h-9 sm:h-10 md:h-11 border-slate-200 dark:border-slate-600 focus:border-indigo-400 dark:focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 dark:focus:ring-indigo-900 transition-all duration-300 bg-white/90 dark:bg-slate-800 backdrop-blur-sm text-xs sm:text-sm md:text-base shadow-sm hover:shadow-md dark:text-slate-100 dark:placeholder:text-slate-400 dark:disabled:text-slate-500",
+              "flex-1 h-10 border-slate-200 dark:border-slate-600 focus:border-indigo-400 dark:focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 dark:focus:ring-indigo-900 transition-all duration-300 bg-white/90 dark:bg-slate-800 backdrop-blur-sm text-sm md:text-base shadow-sm hover:shadow-md dark:text-slate-100 dark:placeholder:text-slate-400 dark:disabled:text-slate-500 min-w-0 justify-start",
               customStartDate &&
                 "border-indigo-400 dark:border-indigo-500 bg-indigo-50 dark:bg-indigo-900"
             )}
           >
-            <CalendarIcon className="h-3 w-3 sm:h-4 sm:w-4 mr-2 text-indigo-600 dark:text-indigo-300" />
-            {customStartDate ? (
-              format(customStartDate, "yyyy-MM-dd", { locale: ko })
-            ) : (
-              <span className="dark:text-slate-400">
-                {LABELS.CUSTOM_DATE_PICKER_START_DATE}
-              </span>
-            )}
+            <CalendarIcon className="h-4 w-4 text-indigo-600 dark:text-indigo-300 flex-shrink-0" />
+            <span className="truncate">
+              {customStartDate ? (
+                format(customStartDate, "yyyy-MM-dd", { locale: ko })
+              ) : (
+                <span className="dark:text-slate-400">
+                  {LABELS.CUSTOM_DATE_PICKER_START_DATE}
+                </span>
+              )}
+            </span>
           </Button>
         </PopoverTrigger>
         <PopoverContent className="w-auto p-0" align="start">
@@ -58,26 +60,26 @@ export function CustomDatePicker({
         </PopoverContent>
       </Popover>
 
-      <span className="text-gray-500 text-xs sm:text-sm">~</span>
-
       <Popover>
         <PopoverTrigger asChild>
           <Button
             variant="outline"
             className={cn(
-              "h-9 sm:h-10 md:h-11 border-slate-200 dark:border-slate-600 focus:border-indigo-400 dark:focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 dark:focus:ring-indigo-900 transition-all duration-300 bg-white/90 dark:bg-slate-800 backdrop-blur-sm text-xs sm:text-sm md:text-base shadow-sm hover:shadow-md dark:text-slate-100 dark:placeholder:text-slate-400 dark:disabled:text-slate-500",
+              "flex-1 h-10 border-slate-200 dark:border-slate-600 focus:border-indigo-400 dark:focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 dark:focus:ring-indigo-900 transition-all duration-300 bg-white/90 dark:bg-slate-800 backdrop-blur-sm text-sm md:text-base shadow-sm hover:shadow-md dark:text-slate-100 dark:placeholder:text-slate-400 dark:disabled:text-slate-500 min-w-0 justify-start",
               customEndDate &&
                 "border-indigo-400 dark:border-indigo-500 bg-indigo-50 dark:bg-indigo-900"
             )}
           >
-            <CalendarIcon className="h-3 w-3 sm:h-4 sm:w-4 mr-2 text-indigo-600 dark:text-indigo-300" />
-            {customEndDate ? (
-              format(customEndDate, "yyyy-MM-dd", { locale: ko })
-            ) : (
-              <span className="dark:text-slate-400">
-                {LABELS.CUSTOM_DATE_PICKER_END_DATE}
-              </span>
-            )}
+            <CalendarIcon className="h-4 w-4 text-indigo-600 dark:text-indigo-300 flex-shrink-0" />
+            <span className="truncate">
+              {customEndDate ? (
+                format(customEndDate, "yyyy-MM-dd", { locale: ko })
+              ) : (
+                <span className="dark:text-slate-400">
+                  {LABELS.CUSTOM_DATE_PICKER_END_DATE}
+                </span>
+              )}
+            </span>
           </Button>
         </PopoverTrigger>
         <PopoverContent className="w-auto p-0" align="start">

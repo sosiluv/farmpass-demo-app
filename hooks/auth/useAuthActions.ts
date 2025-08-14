@@ -14,6 +14,7 @@ import { useRef } from "react";
  */
 export function useSignIn() {
   const supabase = createClient();
+  const { requestNotificationPermission } = useNotificationService();
 
   const signIn = async ({
     email,
@@ -57,6 +58,14 @@ export function useSignIn() {
         throw sessionError;
       }
 
+      // 로그인 성공 후 알림 자동 복구 시도
+      try {
+        await requestNotificationPermission();
+      } catch (error) {
+        // 알림 복구 실패해도 로그인은 성공으로 처리
+        devLog.error("로그인 후 알림 자동 복구 실패:", error);
+      }
+
       return {
         success: true,
         message: result.message,
@@ -94,13 +103,13 @@ export function useSignOut() {
 
       // 로그아웃 작업들을 병렬로 실행하고 타임아웃 적용
       const logoutPromise = (async () => {
-        // 구독 정리 (세션 정리 전에 수행)
+        // 구독 상태 보존 (완전 삭제하지 않고 비활성화)
         try {
-          await handleUnsubscription(); // 구독을 전달하지 않으면 내부에서 찾음
-          devLog.log("구독 정리 수행");
+          // 로그아웃 시에는 구독을 완전히 삭제하지 않고 비활성화만 수행
+          await handleUnsubscription(false);
         } catch (error) {
-          // 구독 정리 실패해도 로그아웃은 계속 진행
-          devLog.error("구독 정리 실패:", error);
+          // 구독 상태 보존 실패해도 로그아웃은 계속 진행
+          devLog.error("구독 상태 보존 실패:", error);
         }
         // 기존 logout 유틸리티 함수 사용
         await logout(false);

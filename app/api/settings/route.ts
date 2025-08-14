@@ -59,7 +59,7 @@ export async function GET(request: NextRequest) {
         "info",
         undefined,
         "system",
-        undefined,
+        newSettings.id,
         {
           action_type: "system_settings_event",
           event: "system_settings_initialized",
@@ -99,6 +99,7 @@ export async function GET(request: NextRequest) {
 }
 
 export async function PATCH(request: NextRequest) {
+  let user = null;
   try {
     // 관리자 권한 인증 확인
     const authResult = await requireAuth(true);
@@ -106,7 +107,7 @@ export async function PATCH(request: NextRequest) {
       return authResult.response!;
     }
 
-    const user = authResult.user;
+    user = authResult.user;
 
     const data = await request.json();
     let settings;
@@ -134,14 +135,6 @@ export async function PATCH(request: NextRequest) {
         !["created_at", "updated_at"].includes(key) &&
         settings[key as keyof typeof settings] !== data[key]
     );
-
-    Object.keys(data).forEach((key) => {
-      devLog.log(`${key}:`, {
-        current: settings[key as keyof typeof settings],
-        new: data[key],
-        isDifferent: settings[key as keyof typeof settings] !== data[key],
-      });
-    });
 
     let updatedSettings;
     try {
@@ -176,7 +169,7 @@ export async function PATCH(request: NextRequest) {
         "info",
         { id: user.id, email: user.email || "" },
         "system",
-        undefined,
+        settings.id,
         {
           action_type: "system_settings_event",
           event: "system_settings_bulk_updated",
@@ -217,9 +210,9 @@ export async function PATCH(request: NextRequest) {
       "SETTINGS_UPDATE_FAILED",
       LOG_MESSAGES.SETTINGS_UPDATE_FAILED(errorMessage),
       "error",
-      undefined,
+      user?.id ? { id: user.id, email: user.email || "" } : undefined,
       "system",
-      undefined,
+      "system_settings",
       {
         action_type: "system_settings_event",
         event: "system_settings_update_failed",

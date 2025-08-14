@@ -312,12 +312,6 @@ export const LOG_MESSAGES = {
     userAgent: string
   ) => `404 핸들러 보안 차단: ${pathname} (IP: ${ip}, UA: ${userAgent})`,
 
-  // IP 주소 관련
-  IP_ADDRESS_QUERY: (ip: string) => `클라이언트 정보 조회: IP ${ip}`,
-  IP_ADDRESS_QUERY_FAILED: (errorMessage: string) =>
-    `클라이언트 정보 조회 실패: ${errorMessage}`,
-  USER_INFO_FETCH_FAILED: () => "사용자 정보 조회에 실패했습니다.",
-
   // 모니터링 관련
   ERROR_LOGS_CHECK_FAILED: (errorMessage: string) =>
     `에러 로그 조회 실패: ${errorMessage}`,

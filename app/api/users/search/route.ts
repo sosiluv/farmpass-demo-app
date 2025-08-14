@@ -14,17 +14,17 @@ import {
 export const dynamic = "force-dynamic";
 
 export async function GET(request: NextRequest) {
-  // 인증 확인
-  const authResult = await requireAuth(false);
-  if (!authResult.success || !authResult.user) {
-    return authResult.response!;
-  }
-
-  const user = authResult.user;
-  const isAdmin = authResult.isAdmin || false;
-
+  let user = null;
   try {
     const { searchParams } = new URL(request.url);
+    // 인증 확인
+    const authResult = await requireAuth(false);
+    if (!authResult.success || !authResult.user) {
+      return authResult.response!;
+    }
+
+    user = authResult.user;
+    const isAdmin = authResult.isAdmin || false;
     const query = searchParams.get("q");
     const farmId = searchParams.get("farmId");
 
@@ -95,7 +95,7 @@ export async function GET(request: NextRequest) {
             "warn",
             { id: user.id, email: user.email || "" },
             "user",
-            undefined,
+            user?.id,
             {
               action_type: "user_search_event",
               event: "user_search_unauthorized",
@@ -190,7 +190,7 @@ export async function GET(request: NextRequest) {
       "info",
       { id: user.id, email: user.email || "" },
       "user",
-      undefined,
+      user?.id,
       {
         action_type: "user_search_event",
         event: "user_search",
@@ -219,7 +219,7 @@ export async function GET(request: NextRequest) {
           "error",
           { id: user.id, email: user.email || "" },
           "user",
-          undefined,
+          user?.id,
           {
             action_type: "user_search_event",
             event: "user_search_failed",

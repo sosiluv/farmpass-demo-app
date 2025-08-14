@@ -58,7 +58,6 @@ const AddMemberEmailFieldComponent = ({
         {field.value && (
           <Button
             variant="ghost"
-            size="sm"
             onClick={() => field.onChange("")}
             className="absolute right-3 top-1/2 transform -translate-y-1/2 h-5 w-5 sm:h-6 sm:w-6 p-0 hover:bg-gray-100 rounded-full transition-all duration-200"
           >

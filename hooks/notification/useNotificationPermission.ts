@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useAuth } from "@/components/providers/auth-provider";
+import { useNotificationStore } from "@/store/use-notification-store";
 import { devLog } from "@/lib/utils/logging/dev-logger";
 import {
   safeLocalStorageAccess,
@@ -11,37 +12,27 @@ import { useCreateSubscriptionMutation } from "@/lib/hooks/query/use-push-mutati
 import { requestNotificationPermissionAndSubscribe } from "@/lib/utils/notification/push-subscription";
 import { useVapidKeyEffective } from "@/hooks/auth/useVapidKey";
 
-interface NotificationPermissionState {
-  hasAsked: boolean;
-  permission: NotificationPermission | "unsupported";
-  showSheet: boolean;
-  isResubscribe: boolean; // 재구독 여부 구분
-}
-
 export function useNotificationPermission() {
-  const { state: authState } = useAuth();
-  const user = authState.status === "authenticated" ? authState.user : null;
-
+  const { user } = useAuth();
   const createSubscriptionMutation = useCreateSubscriptionMutation();
 
-  // 토스트 대신 메시지 상태만 반환
+  // 메시지 상태 복구
   const [lastMessage, setLastMessage] = useState<{
     type: "success" | "error" | "info";
     title: string;
     message: string;
   } | null>(null);
-  const [state, setState] = useState<NotificationPermissionState>({
-    hasAsked: false,
-    permission: "default" as NotificationPermission | "unsupported",
-    showSheet: false,
-    isResubscribe: false,
-  });
 
+  // Zustand 스토어 사용
   const {
-    vapidKey,
-    isLoading: vapidKeyLoading,
-    error: vapidKeyError,
-  } = useVapidKeyEffective();
+    hasAsked,
+    isResubscribe,
+    setNotificationState,
+    setPermission,
+    updateSubscriptionStatus,
+  } = useNotificationStore();
+
+  const { vapidKey } = useVapidKeyEffective();
 
   // 로컬스토리지 키 (통합)
   const getPromptStorageKey = (userId: string) =>
@@ -83,7 +74,7 @@ export function useNotificationPermission() {
 
       // 브라우저에서 알림을 지원하지 않는 경우
       if (!safeNotification.isSupported) {
-        setState({
+        setNotificationState({
           hasAsked: true,
           permission: "denied",
           showSheet: false,
@@ -99,12 +90,13 @@ export function useNotificationPermission() {
 
         if (hasSubscription) {
           // 구독도 있고 권한도 있음 - 정상 상태
-          setState({
+          setNotificationState({
             hasAsked: true,
             permission: currentPermission,
             showSheet: false,
             isResubscribe: false,
           });
+          updateSubscriptionStatus("subscribed", true);
           return;
         } else {
           // 권한은 있지만 구독이 없음 - 재구독 필요
@@ -112,31 +104,26 @@ export function useNotificationPermission() {
             timeoutId = setTimeout(async () => {
               const hasSubscriptionNow = await checkBrowserSubscription();
               if (hasSubscriptionNow) {
-                setState({
+                setNotificationState({
                   hasAsked: true,
                   permission: currentPermission,
                   showSheet: false,
                   isResubscribe: false,
                 });
+                updateSubscriptionStatus("subscribed", true);
                 return;
               }
-              setState((prev) => {
-                if (prev.showSheet) {
-                  return prev;
-                }
-                return {
-                  ...prev,
-                  hasAsked: false,
-                  permission: currentPermission as
-                    | NotificationPermission
-                    | "unsupported",
-                  showSheet: true,
-                  isResubscribe: true,
-                };
+              setNotificationState({
+                hasAsked: false,
+                permission: currentPermission as
+                  | NotificationPermission
+                  | "unsupported",
+                showSheet: true,
+                isResubscribe: true,
               });
             }, 6000);
           } else {
-            setState({
+            setNotificationState({
               hasAsked: true,
               permission: currentPermission,
               showSheet: false,
@@ -149,12 +136,13 @@ export function useNotificationPermission() {
 
       // 권한이 거부된 경우 - 더 이상 요청하지 않음 (브라우저에서 재설정 필요)
       if (currentPermission === "denied") {
-        setState({
+        setNotificationState({
           hasAsked: true,
           permission: currentPermission,
           showSheet: false,
           isResubscribe: false,
         });
+        updateSubscriptionStatus("denied", false);
         return;
       }
 
@@ -162,23 +150,17 @@ export function useNotificationPermission() {
       if (currentPermission === "default") {
         if (canReAsk) {
           timeoutId = setTimeout(() => {
-            setState((prev) => {
-              if (prev.showSheet) {
-                return prev;
-              }
-              return {
-                ...prev,
-                hasAsked: false,
-                permission: currentPermission as
-                  | NotificationPermission
-                  | "unsupported",
-                showSheet: true,
-                isResubscribe: false,
-              };
+            setNotificationState({
+              hasAsked: false,
+              permission: currentPermission as
+                | NotificationPermission
+                | "unsupported",
+              showSheet: true,
+              isResubscribe: false,
             });
           }, 2000);
         } else {
-          setState({
+          setNotificationState({
             hasAsked: true,
             permission: currentPermission,
             showSheet: false,
@@ -195,13 +177,13 @@ export function useNotificationPermission() {
         clearTimeout(timeoutId);
       }
     };
-  }, [user?.id]);
+  }, [user?.id, setNotificationState, updateSubscriptionStatus]);
 
   // 알림 허용 처리 - 공통 로직 사용
   const handleAllow = async () => {
     if (!user) return;
 
-    if (state.hasAsked && !state.isResubscribe) {
+    if (hasAsked && !isResubscribe) {
       return;
     }
 
@@ -224,7 +206,7 @@ export function useNotificationPermission() {
             deviceId,
             options: {
               ...options,
-              isResubscribe: state.isResubscribe,
+              isResubscribe,
               updateSettings: true,
             },
           });
@@ -232,13 +214,13 @@ export function useNotificationPermission() {
       );
 
       if (result.success) {
-        const messageText = state.isResubscribe
+        const messageText = isResubscribe
           ? "알림 구독이 다시 설정되었습니다."
           : "중요한 농장 관리 알림을 받으실 수 있습니다.";
 
         setLastMessage({
           type: "success",
-          title: state.isResubscribe ? "알림 재구독 완료" : "알림 허용됨",
+          title: isResubscribe ? "알림 재구독 완료" : "알림 허용됨",
           message: result.message || messageText,
         });
       } else {
@@ -259,13 +241,15 @@ export function useNotificationPermission() {
       const safeLocalStorage = safeLocalStorageAccess();
       safeLocalStorage.setItem(promptStorageKey, Date.now().toString());
 
-      setState((prev) => ({
-        ...prev,
+      // 스토어 상태 업데이트
+      setNotificationState({
         hasAsked: true,
-        permission: result.success ? "granted" : "denied",
+        permission: "granted",
         showSheet: false,
         isResubscribe: false,
-      }));
+      });
+      updateSubscriptionStatus("subscribed", true);
+      setPermission("granted");
     } catch (error) {
       setLastMessage({
         type: "error",
@@ -279,7 +263,7 @@ export function useNotificationPermission() {
   const handleDeny = () => {
     if (!user) return;
 
-    if (state.hasAsked && !state.isResubscribe) {
+    if (hasAsked && !isResubscribe) {
       return;
     }
 
@@ -287,14 +271,13 @@ export function useNotificationPermission() {
     const safeLocalStorage = safeLocalStorageAccess();
     safeLocalStorage.setItem(promptStorageKey, Date.now().toString());
 
-    setState((prev) => ({
-      ...prev,
+    setNotificationState({
       hasAsked: true,
       showSheet: false,
       isResubscribe: false,
-    }));
+    });
 
-    const messageText = state.isResubscribe
+    const messageText = isResubscribe
       ? "알림 재구독을 건너뛰었습니다. 설정 페이지에서 언제든지 다시 구독할 수 있습니다."
       : "언제든지 설정 페이지에서 알림을 활성화할 수 있습니다.";
 
@@ -307,17 +290,12 @@ export function useNotificationPermission() {
 
   // 시트 닫기
   const closeSheet = () => {
-    setState((prev) => ({
-      ...prev,
+    setNotificationState({
       showSheet: false,
-    }));
+    });
   };
 
   return {
-    showSheet: state.showSheet,
-    permission: state.permission,
-    hasAsked: state.hasAsked,
-    isResubscribe: state.isResubscribe,
     handleAllow,
     handleDeny,
     closeSheet,

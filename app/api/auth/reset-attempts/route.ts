@@ -15,7 +15,7 @@ export const dynamic = "force-dynamic";
 
 export async function POST(request: NextRequest) {
   let email: string | undefined;
-
+  let user = null;
   try {
     // 관리자 권한 인증 확인
     const authResult = await requireAuth(true);
@@ -23,9 +23,9 @@ export async function POST(request: NextRequest) {
       return authResult.response!;
     }
 
-    const user = authResult.user;
+    user = authResult.user;
 
-    const { email: requestEmail, reason } = await request.json();
+    const { email: requestEmail } = await request.json();
     email = requestEmail;
 
     if (!email) {
@@ -86,7 +86,7 @@ export async function POST(request: NextRequest) {
       "info",
       { id: currentProfile.id, email: email },
       "auth",
-      undefined,
+      currentProfile.id,
       {
         action_type: "auth_event",
         event: "login_attempts_reset",
@@ -109,9 +109,11 @@ export async function POST(request: NextRequest) {
       "LOGIN_ATTEMPTS_RESET_ERROR",
       LOG_MESSAGES.LOGIN_ATTEMPTS_RESET_ERROR(email || "unknown", errorMessage),
       "error",
-      undefined,
+      user
+        ? { id: user.id, email: user.email || email || "unknown" }
+        : undefined,
       "auth",
-      undefined,
+      user?.id || email || "reset_attempts_system_error",
       {
         action_type: "auth_event",
         event: "login_attempts_reset_error",

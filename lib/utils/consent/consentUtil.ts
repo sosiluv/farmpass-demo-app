@@ -10,7 +10,7 @@ export async function getUserConsentStatus(userId: string) {
     const activeTermsWithConsents = await prisma.terms_management.findMany({
       where: {
         is_active: true,
-        type: { in: ["privacy_consent", "terms_of_service"] },
+        type: { in: ["privacy_consent", "terms"] },
       },
       select: {
         id: true,

@@ -86,23 +86,8 @@ export async function checkSystemAdmin(
       user = authResult.user;
     }
 
-    // 프로필에서 account_type 확인
-    const { data: profile, error: profileError } = await supabase
-      .from("profiles")
-      .select("account_type")
-      .eq("id", user.id)
-      .single();
-
-    if (profileError) {
-      const result = getErrorResultFromRawError(profileError);
-      return {
-        isAdmin: false,
-        user,
-        error: result.code,
-      };
-    }
-
-    const isAdmin = profile?.account_type === "admin";
+    // app_metadata에서 isAdmin 확인
+    const isAdmin = user.app_metadata?.isAdmin === true;
 
     return { isAdmin, user };
   } catch (error) {

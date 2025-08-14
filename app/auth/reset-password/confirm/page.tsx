@@ -98,9 +98,6 @@ export default function ResetPasswordConfirmPage() {
     setTokenProcessed(true);
 
     try {
-      devLog.log("token:", token);
-      devLog.log("type:", type);
-
       await new Promise((resolve) => setTimeout(resolve, 1000));
 
       const { error } = await supabase.auth.verifyOtp({

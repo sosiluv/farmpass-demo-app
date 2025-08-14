@@ -27,6 +27,7 @@ export const BUTTONS = {
   CONSENT_RECONSENT: "동의하고 계속하기",
   PROCESSING_REGISTER: "회원가입 중...",
   PROCESSING_RECONSENT: "처리 중...",
+  TERMS_CONFIRM: "동의하기",
 
   // 약관 페이지 버튼
   GO_BACK: "뒤로가기",

@@ -10,11 +10,11 @@ import {
   Loader2,
   AlertTriangle,
   Trash2,
-  X,
   CheckCircle,
   AlertCircle,
 } from "lucide-react";
 import { ReactNode } from "react";
+import { LottieLoadingCompact } from "@/components/ui/lottie-loading";
 
 export interface ConfirmSheetProps {
   open: boolean;
@@ -41,6 +41,7 @@ const variantConfig = {
     warningText: "text-red-800",
     warningIconBg: "bg-red-100",
     warningIconColor: "text-red-600",
+    animationPath: "/lottie/destructive.json",
   },
   warning: {
     icon: AlertTriangle,
@@ -50,6 +51,7 @@ const variantConfig = {
     warningText: "text-yellow-800",
     warningIconBg: "bg-yellow-100",
     warningIconColor: "text-yellow-600",
+    animationPath: "/lottie/warning.json",
   },
   info: {
     icon: AlertCircle,
@@ -59,6 +61,7 @@ const variantConfig = {
     warningText: "text-blue-800",
     warningIconBg: "bg-blue-100",
     warningIconColor: "text-blue-600",
+    animationPath: "/lottie/info.json",
   },
   success: {
     icon: CheckCircle,
@@ -68,6 +71,7 @@ const variantConfig = {
     warningText: "text-green-800",
     warningIconBg: "bg-green-100",
     warningIconColor: "text-green-600",
+    animationPath: "/lottie/success.json",
   },
 };
 
@@ -109,6 +113,14 @@ export function ConfirmSheet({
         className="max-h-[85vh] min-h-[300px] w-[calc(100vw-2rem)] max-w-lg mx-auto overflow-y-auto p-0 gap-0 overflow-hidden"
       >
         <CommonSheetHeader title={title} description={description} />
+
+        {/* 로띠 애니메이션 */}
+        <div className="flex justify-center py-6">
+          <LottieLoadingCompact
+            animationPath={config.animationPath}
+            size="md"
+          />
+        </div>
 
         {/* 경고 메시지 */}
         {warningMessage && (

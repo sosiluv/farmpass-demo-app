@@ -35,7 +35,7 @@ export function FarmFormManagerFields({ form }: FarmFormManagerFieldsProps) {
                 <Input
                   placeholder={PLACEHOLDERS.MANAGER_NAME}
                   {...field}
-                  className="h-10 sm:h-12 text-sm"
+                  className="text-sm sm:text-base"
                 />
               </FormControl>
               <FormMessage />
@@ -57,7 +57,7 @@ export function FarmFormManagerFields({ form }: FarmFormManagerFieldsProps) {
                   type="tel"
                   placeholder={PLACEHOLDERS.MANAGER_PHONE}
                   {...field}
-                  className="h-10 sm:h-12 text-sm"
+                  className="text-sm sm:text-base"
                   onChange={(e) => {
                     const formattedPhone = formatPhone(e.target.value);
                     field.onChange(formattedPhone);

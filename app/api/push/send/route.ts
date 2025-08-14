@@ -26,7 +26,11 @@ async function initializeVapidKeys() {
       undefined;
 
     if (publicKey && privateKey) {
-      webpush.setVapidDetails("mailto:k331502@nate.com", publicKey, privateKey);
+      webpush.setVapidDetails(
+        "mailto:admin@samwon1141.com",
+        publicKey,
+        privateKey
+      );
       return true;
     }
     return false;
@@ -106,10 +110,9 @@ export async function POST(request: NextRequest) {
     } else {
       // 서버 사이드 호출인 경우 시스템 사용자로 처리
       user = {
-        id: undefined,
-        email: "admin@samwon114.com",
+        id: "00000000-0000-0000-0000-000000000000",
+        email: "system@samwon114.com",
       };
-      devLog.log("푸시 알림 API: 서버 사이드 호출 감지, 인증 우회");
     }
 
     body = await request.json();
@@ -134,7 +137,7 @@ export async function POST(request: NextRequest) {
         "warn",
         user?.id ? { id: user.id, email: user.email || "" } : undefined,
         "system",
-        "all",
+        "push_notification",
         {
           action_type: "push_notification_event",
           event: "push_notification_invalid_input",
@@ -162,7 +165,7 @@ export async function POST(request: NextRequest) {
         "warn",
         user?.id ? { id: user.id, email: user.email || "" } : undefined,
         "system",
-        "all",
+        "push_notification",
         {
           action_type: "push_notification_event",
           event: "push_notification_invalid_type",
@@ -202,7 +205,7 @@ export async function POST(request: NextRequest) {
         "error",
         user?.id ? { id: user.id, email: user.email || "" } : undefined,
         "system",
-        "all",
+        "push_notification",
         {
           action_type: "push_notification_event",
           event: "push_notification_vapid_init_failed",
@@ -223,13 +226,6 @@ export async function POST(request: NextRequest) {
     // 구독자 조회
     let subscriptions;
 
-    // 디버깅: 쿼리 조건 확인
-    devLog.log("구독자 조회 조건:", {
-      hasTargetUserIds: !!targetUserIds?.length,
-      targetUserIdsCount: targetUserIds?.length || 0,
-      notificationType,
-    });
-
     try {
       if (targetUserIds?.length > 0) {
         // 특정 사용자들에게만 발송 (활성 구독만)
@@ -242,10 +238,6 @@ export async function POST(request: NextRequest) {
             deleted_at: null, // 삭제되지 않은 구독만
           },
         });
-        devLog.log("특정 사용자 대상 쿼리 실행:", {
-          targetUserIds,
-          foundSubscriptions: subscriptions.length,
-        });
       } else {
         // 브로드캐스트: 모든 활성 구독자에게 발송
         subscriptions = await prisma.push_subscriptions.findMany({
@@ -253,9 +245,6 @@ export async function POST(request: NextRequest) {
             is_active: true, // 활성 구독만
             deleted_at: null, // 삭제되지 않은 구독만
           },
-        });
-        devLog.log("브로드캐스트 쿼리 실행", {
-          foundSubscriptions: subscriptions.length,
         });
       }
     } catch (error: any) {
@@ -267,7 +256,7 @@ export async function POST(request: NextRequest) {
         "error",
         user?.id ? { id: user.id, email: user.email || "" } : undefined,
         "system",
-        "all",
+        "push_notification",
         {
           action_type: "push_notification_event",
           event: "push_notification_subscriber_fetch_failed",
@@ -298,7 +287,7 @@ export async function POST(request: NextRequest) {
         "warn",
         user?.id ? { id: user.id, email: user.email || "" } : undefined,
         "system",
-        "all",
+        "push_notification",
         {
           action_type: "push_notification_event",
           event: "push_notification_no_subscribers",
@@ -347,7 +336,7 @@ export async function POST(request: NextRequest) {
         "error",
         user?.id ? { id: user.id, email: user.email || "" } : undefined,
         "system",
-        "all",
+        "push_notification",
         {
           action_type: "push_notification_event",
           event: "push_notification_settings_fetch_failed",
@@ -382,16 +371,11 @@ export async function POST(request: NextRequest) {
 
       // 알림 설정이 없는 경우 기본적으로 알림 발송하지 않음
       if (!userSettings) {
-        devLog.log(
-          "알림 설정 없음, 기본값으로 발송하지 않음:",
-          subscription.user_id
-        );
         return false;
       }
 
       // 알림 설정이 있고 비활성화된 경우에만 제외
       if (userSettings.is_active === false) {
-        devLog.log("알림 설정 명시적으로 비활성화됨:", subscription.user_id);
         return false;
       }
 
@@ -413,7 +397,7 @@ export async function POST(request: NextRequest) {
         "warn",
         user?.id ? { id: user.id, email: user.email || "" } : undefined,
         "system",
-        "all",
+        "push_notification",
         {
           action_type: "push_notification_event",
           event: "push_notification_filtered_out",
@@ -476,13 +460,6 @@ export async function POST(request: NextRequest) {
     const sendPromises = filteredSubscriptions.map(
       async (subscription: any) => {
         try {
-          devLog.log("푸시 알림 발송 시도:", {
-            subscriptionId: subscription.id,
-            user_id: subscription.user_id,
-            endpoint: subscription.endpoint,
-            currentFailCount: subscription.fail_count || 0,
-          });
-
           const result = await sendPushWithRetry(
             subscription,
             JSON.stringify(notificationPayload)
@@ -552,12 +529,6 @@ export async function POST(request: NextRequest) {
                   updated_at: new Date(),
                 },
               });
-
-              devLog.log(
-                `구독 비활성화됨 (ID: ${subscription.id}, 이유: ${
-                  error.statusCode === 410 ? "410_GONE" : "FAIL_COUNT_EXCEEDED"
-                })`
-              );
             } catch (deactivateError) {
               throwBusinessError(
                 "GENERAL_UPDATE_FAILED",
@@ -613,7 +584,7 @@ export async function POST(request: NextRequest) {
         "warn",
         user?.id ? { id: user.id, email: user.email || "" } : undefined,
         "system",
-        "all",
+        "push_notification",
         {
           action_type: "push_notification_event",
           event: "push_notification_send_failed",
@@ -649,7 +620,7 @@ export async function POST(request: NextRequest) {
       "info",
       user?.id ? { id: user.id, email: user.email || "" } : undefined,
       "system",
-      "all",
+      "push_notification",
       {
         action_type: "push_notification_event",
         event: "push_notification_sent",
@@ -712,7 +683,7 @@ export async function POST(request: NextRequest) {
       "error",
       user?.id ? { id: user.id, email: user.email || "" } : undefined,
       "system",
-      "all",
+      "push_notification",
       {
         action_type: "push_notification_event",
         event: "push_notification_system_error",

@@ -24,8 +24,6 @@ export function SystemMonitor() {
           devLog.error("[SYSTEM_MONITOR] 리소스 체크 실패:", error);
         });
       }, 5 * 60 * 1000); // 5분
-
-      devLog.log("[SYSTEM_MONITOR] 시스템 리소스 모니터링 시작 (5분 간격)");
     };
 
     // 컴포넌트 마운트 시 모니터링 시작
@@ -35,7 +33,6 @@ export function SystemMonitor() {
     return () => {
       if (intervalId) {
         clearInterval(intervalId);
-        devLog.log("[SYSTEM_MONITOR] 시스템 리소스 모니터링 중지");
       }
     };
   }, []);

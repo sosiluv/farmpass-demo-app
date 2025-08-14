@@ -25,8 +25,17 @@ export async function GET(request: NextRequest) {
 
   // 요청 컨텍스트 정보 추출
   const clientIP = getClientIP(request);
+  let user = null;
 
   try {
+    // 인증 확인
+    const authResult = await requireAuth(false);
+    if (!authResult.success || !authResult.user) {
+      return authResult.response!;
+    }
+
+    user = authResult.user;
+    const isAdmin = authResult.isAdmin || false;
     // 🚦 방문자 조회 전용 Rate Limiting 체크
     // IP당 1분에 10회 방문자 조회 제한
     const rateLimitResult = visitorRegistrationRateLimiter.checkLimit(clientIP);
@@ -36,7 +45,7 @@ export async function GET(request: NextRequest) {
       await logSecurityError(
         "RATE_LIMIT_EXCEEDED",
         LOG_MESSAGES.RATE_LIMIT_EXCEEDED(clientIP, "/api/visitors"),
-        undefined,
+        user?.id ? { id: user.id, email: user.email || "" } : undefined,
         request
       );
 
@@ -61,17 +70,6 @@ export async function GET(request: NextRequest) {
 
       return response;
     }
-
-    devLog.log("🔍 [API] Prisma 클라이언트 준비 완료");
-
-    // 인증 확인
-    const authResult = await requireAuth(false);
-    if (!authResult.success || !authResult.user) {
-      return authResult.response!;
-    }
-
-    const user = authResult.user;
-    const isAdmin = authResult.isAdmin || false;
 
     // 관리자가 아니거나 includeAllFarms가 false인 경우 권한 제한
     let whereCondition: any = {};
@@ -114,7 +112,7 @@ export async function GET(request: NextRequest) {
           "warn",
           { id: user.id, email: user.email || "" },
           "visitor",
-          undefined,
+          user?.id,
           {
             action_type: "visitor_event",
             event: "visitor_access_denied",
@@ -134,9 +132,6 @@ export async function GET(request: NextRequest) {
       whereCondition.farm_id = {
         in: farmIds,
       };
-      devLog.log("🔍 [API] 농장 ID 필터 적용", { farmIds });
-    } else {
-      devLog.log("🔍 [API] 관리자 전체 조회 모드");
     }
 
     let visitorData;
@@ -178,7 +173,7 @@ export async function GET(request: NextRequest) {
       "info",
       { id: user.id, email: user.email || "" },
       "visitor",
-      undefined,
+      user?.id,
       {
         action_type: "visitor_event",
         event: "visitor_access",
@@ -203,9 +198,9 @@ export async function GET(request: NextRequest) {
       "VISITOR_QUERY_FAILED",
       LOG_MESSAGES.VISITOR_QUERY_FAILED(errorMessage),
       "error",
-      undefined,
+      user?.id ? { id: user.id, email: user.email || "" } : undefined,
       "visitor",
-      undefined,
+      user?.id,
       {
         action_type: "visitor_event",
         event: "visitor_query_failed",
@@ -336,7 +331,7 @@ export async function POST(request: NextRequest) {
       "error",
       undefined,
       "visitor",
-      undefined,
+      data.id,
       {
         action_type: "visitor_event",
         event: "visitor_created",

@@ -57,8 +57,6 @@ export function PrivacySection({ userId }: PrivacySectionProps) {
           ? "마케팅 정보 수신에 동의하셨습니다."
           : "마케팅 정보 수신을 거부하셨습니다."
       );
-
-      devLog.log("마케팅 동의 변경 완료:", { userId, agreed });
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : "설정 변경에 실패했습니다.";

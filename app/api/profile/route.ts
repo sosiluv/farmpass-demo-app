@@ -117,7 +117,7 @@ export async function PATCH(request: NextRequest) {
         ? new Date(data.establishment_date)
         : null;
     }
-    console.log("[ProfileSetup] 프로필 업데이트 데이터:", updateData);
+
     try {
       await prisma.profiles.update({
         where: {

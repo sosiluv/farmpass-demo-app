@@ -43,12 +43,14 @@ async function verifyTurnstile(token: string, request: NextRequest) {
       "error",
       undefined,
       "system",
-      undefined,
+      "turnstile_verification", // Turnstile 검증 작업을 resourceId로 사용
       {
         action_type: "auth_event",
         event: "turnstile_verification_failed",
         error_codes: errorCodes,
-      }
+        client_ip: clientIP,
+      },
+      request
     );
     throwBusinessError("TURNSTILE_VERIFICATION_FAILED", {
       operation: "register",
@@ -59,6 +61,9 @@ async function verifyTurnstile(token: string, request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
+  let email: string | undefined;
+  let user: any = null; // user 정보를 저장할 변수 추가
+
   try {
     const body: RegistrationFormData & {
       turnstileToken: string;
@@ -88,7 +93,7 @@ export async function POST(request: NextRequest) {
     } = body;
 
     const validation = registrationSchema.safeParse(registrationData);
-    console.log("validation", validation);
+
     if (!validation.success) {
       throwBusinessError("INVALID_FORM_DATA", {
         errors: validation.error.errors,
@@ -97,7 +102,8 @@ export async function POST(request: NextRequest) {
     }
 
     // 검증된 데이터 사용
-    const { email, password, name, phone } = validation.data;
+    const { email: validatedEmail, password, name, phone } = validation.data;
+    email = validatedEmail; // email 변수에 저장
 
     // 캡차 인증 확인 (내부 함수 사용)
     await verifyTurnstile(turnstileToken, request);
@@ -123,9 +129,9 @@ export async function POST(request: NextRequest) {
         "USER_CREATE_FAILED",
         LOG_MESSAGES.USER_CREATE_FAILED(email, authError.message),
         "error",
-        undefined,
+        { id: "00000000-0000-0000-0000-000000000000", email: email },
         "user",
-        undefined,
+        email, // 이메일을 resourceId로 사용
         {
           action_type: "auth_event",
           event: "user_create_failed",
@@ -150,6 +156,8 @@ export async function POST(request: NextRequest) {
         resourceType: "user",
       });
     }
+
+    user = authData.user; // user 변수에 저장
 
     // 활성화된 약관 조회
     const activeTerms = await prisma.terms_management.findMany({
@@ -177,7 +185,7 @@ export async function POST(request: NextRequest) {
       const privacyTermId = termIdMap.get("privacy_consent");
       if (privacyTermId) {
         consentRecords.push({
-          user_id: authData.user.id,
+          user_id: user.id,
           term_id: privacyTermId,
           agreed: true,
           agreed_at: now,
@@ -189,7 +197,7 @@ export async function POST(request: NextRequest) {
       const termsTermId = termIdMap.get("terms");
       if (termsTermId) {
         consentRecords.push({
-          user_id: authData.user.id,
+          user_id: user.id,
           term_id: termsTermId,
           agreed: true,
           agreed_at: now,
@@ -202,7 +210,7 @@ export async function POST(request: NextRequest) {
       const marketingTermId = termIdMap.get("marketing");
       if (marketingTermId) {
         consentRecords.push({
-          user_id: authData.user.id,
+          user_id: user.id,
           term_id: marketingTermId,
           agreed: true,
           agreed_at: now,
@@ -232,12 +240,13 @@ export async function POST(request: NextRequest) {
       "USER_CREATED",
       LOG_MESSAGES.USER_CREATED(name, email),
       "info",
-      { id: authData.user.id, email: email },
+      { id: user.id, email: email },
       "user",
-      authData.user.id,
+      user.id,
       {
+        action_type: "auth_event", // action_type 추가
         event: "user_created",
-        user_id: authData.user.id,
+        user_id: user.id,
         email: email,
         name: name,
         phone: phone,
@@ -253,7 +262,7 @@ export async function POST(request: NextRequest) {
         success: true,
         message: "회원가입이 완료되었습니다. 이메일 인증 후 로그인해주세요.",
         user: {
-          id: authData.user.id,
+          id: user.id,
           email: email,
           name: name,
         },
@@ -269,13 +278,18 @@ export async function POST(request: NextRequest) {
       "USER_CREATE_SYSTEM_ERROR",
       LOG_MESSAGES.USER_CREATE_SYSTEM_ERROR(errorMessage),
       "error",
-      undefined,
+      user
+        ? { id: user.id, email: user.email || email || "unknown" }
+        : undefined, // user 정보가 있으면 사용
       "user",
-      undefined,
+      user?.id || email || "registration_system_error", // user ID 또는 email을 resourceId로 사용
       {
         action_type: "auth_event",
         event: "user_create_system_error",
         error_message: errorMessage,
+        user_id: user?.id, // 추가된 user ID
+        user_email: user?.email, // 추가된 user email
+        email: email || "unknown", // 원본 이메일
       },
       request
     );

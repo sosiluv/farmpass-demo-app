@@ -24,15 +24,15 @@ export function FarmCardDetails({ farm }: FarmCardDetailsProps) {
                   <MapPin className="h-3.5 w-3.5 text-blue-600" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <div className="text-xs font-medium text-blue-700 mb-1">
+                  <div className="text-sm font-medium text-blue-700 mb-1">
                     주소
                   </div>
-                  <div className="text-sm text-slate-700 leading-relaxed">
+                  <div className="text-base text-slate-700 leading-relaxed">
                     {farm.farm_address}
                     {farm.farm_detailed_address && (
                       <>
                         <br />
-                        <span className="text-xs text-slate-500 mt-1 block">
+                        <span className="text-base text-slate-500 mt-1 block">
                           {farm.farm_detailed_address}
                         </span>
                       </>
@@ -64,10 +64,10 @@ export function FarmCardDetails({ farm }: FarmCardDetailsProps) {
                 <Users className="h-3.5 w-3.5 text-emerald-600" />
               </div>
               <div className="flex-1 min-w-0">
-                <div className="text-xs font-medium text-emerald-700 mb-1">
+                <div className="text-sm font-medium text-emerald-700 mb-1">
                   관리자
                 </div>
-                <div className="text-sm text-slate-700 font-medium">
+                <div className="text-base text-slate-700 font-medium">
                   {farm.manager_name}
                 </div>
               </div>
@@ -80,10 +80,10 @@ export function FarmCardDetails({ farm }: FarmCardDetailsProps) {
                 <Phone className="h-3.5 w-3.5 text-purple-600" />
               </div>
               <div className="flex-1 min-w-0">
-                <div className="text-xs font-medium text-purple-700 mb-1">
+                <div className="text-sm font-medium text-purple-700 mb-1">
                   연락처
                 </div>
-                <div className="text-sm text-slate-700 font-medium">
+                <div className="text-base text-slate-700 font-medium">
                   {farm.manager_phone}
                 </div>
               </div>
@@ -103,11 +103,11 @@ export function FarmCardDetails({ farm }: FarmCardDetailsProps) {
                     <Building2 className="h-3.5 w-3.5 text-amber-600" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <div className="text-xs font-medium text-amber-700 mb-1">
+                    <div className="text-sm font-medium text-amber-700 mb-1">
                       설명
                     </div>
                     <div
-                      className="text-sm text-slate-700 leading-relaxed"
+                      className="text-base text-slate-700 leading-relaxed"
                       style={{
                         display: "-webkit-box",
                         WebkitLineClamp: 2,
@@ -125,7 +125,7 @@ export function FarmCardDetails({ farm }: FarmCardDetailsProps) {
           <TooltipContent side="top" className="max-w-xs">
             <div className="space-y-1">
               <p className="font-medium">농장 설명</p>
-              <p className="text-sm whitespace-pre-wrap">
+              <p className="text-base whitespace-pre-wrap">
                 {farm.description || "설명이 없습니다"}
               </p>
             </div>

@@ -9,10 +9,7 @@ import { monitoringKeys } from "./query-keys";
  * 분리된 모니터링 API용 React Query 훅들
  */
 export function useMonitoringHealthQuery() {
-  const { state } = useAuth();
-  const user = state.status === "authenticated" ? state.user : null;
-  const isAdmin =
-    state.status === "authenticated" && state.user?.app_metadata?.isAdmin;
+  const { user, isAdmin } = useAuth();
 
   return useAuthenticatedQuery(
     monitoringKeys.health(),
@@ -33,10 +30,7 @@ export function useMonitoringHealthQuery() {
 }
 
 export function useMonitoringUptimeQuery() {
-  const { state } = useAuth();
-  const user = state.status === "authenticated" ? state.user : null;
-  const isAdmin =
-    state.status === "authenticated" && state.user?.app_metadata?.isAdmin;
+  const { user, isAdmin } = useAuth();
 
   return useAuthenticatedQuery(
     monitoringKeys.uptime(),
@@ -57,10 +51,7 @@ export function useMonitoringUptimeQuery() {
 }
 
 export function useMonitoringAnalyticsQuery() {
-  const { state } = useAuth();
-  const user = state.status === "authenticated" ? state.user : null;
-  const isAdmin =
-    state.status === "authenticated" && state.user?.app_metadata?.isAdmin;
+  const { user, isAdmin } = useAuth();
 
   return useAuthenticatedQuery(
     monitoringKeys.analytics(),
@@ -81,10 +72,7 @@ export function useMonitoringAnalyticsQuery() {
 }
 
 export function useMonitoringErrorsQuery() {
-  const { state } = useAuth();
-  const user = state.status === "authenticated" ? state.user : null;
-  const isAdmin =
-    state.status === "authenticated" && state.user?.app_metadata?.isAdmin;
+  const { user, isAdmin } = useAuth();
 
   return useAuthenticatedQuery(
     monitoringKeys.errors(),

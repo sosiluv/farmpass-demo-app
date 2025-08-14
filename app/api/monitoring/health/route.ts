@@ -45,7 +45,7 @@ export async function GET(request: NextRequest) {
       "error",
       user?.id ? { id: user.id, email: user.email || "" } : undefined,
       "system",
-      undefined,
+      "monitoring_health",
       {
         action_type: "monitoring_event",
         event: "health_check_failed",

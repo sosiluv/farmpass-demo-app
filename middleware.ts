@@ -300,9 +300,9 @@ export async function middleware(request: NextRequest) {
               pathname
             ),
             "warn",
-            user ? { id: user.id, email: user.email } : undefined,
+            user,
             "system",
-            undefined,
+            pathname, // 요청 경로를 resourceId로 사용
             {
               action_type: "security_event",
               event: "maintenance_mode_access_denied",

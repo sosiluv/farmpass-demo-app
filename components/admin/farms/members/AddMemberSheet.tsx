@@ -110,7 +110,7 @@ export function AddMemberSheet({
   return (
     <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
       <SheetTrigger asChild>
-        <Button disabled={!canManageMembers}>
+        <Button className="text-sm sm:text-base" disabled={!canManageMembers}>
           <UserPlus className="mr-2 h-4 w-4" />
           <span className="hidden sm:inline">{BUTTONS.ADD_MEMBER}</span>
           <span className="sm:hidden">{BUTTONS.ADD_MEMBER_SHORT}</span>
@@ -161,9 +161,9 @@ export function AddMemberSheet({
           isLoading={isAddingMember}
           confirmIcon={
             isAddingMember ? (
-              <Loader2 className="h-5 w-5 mr-2 sm:mr-3 animate-spin" />
+              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
             ) : (
-              <UserPlus className="h-5 w-5 mr-2 sm:mr-3" />
+              <UserPlus className="h-4 w-4 mr-2" />
             )
           }
         />

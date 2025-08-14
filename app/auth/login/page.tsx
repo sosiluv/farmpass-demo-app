@@ -102,6 +102,7 @@ export default function LoginPage() {
 
               // 유효한 세션이면 프로필과 약관 동의 상태를 확인한 후 리다이렉트
               setRedirecting(true);
+              router.replace("/admin/dashboard");
 
               return;
             } catch (userError) {

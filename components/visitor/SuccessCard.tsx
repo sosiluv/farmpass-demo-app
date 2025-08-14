@@ -52,7 +52,7 @@ export const SuccessCard = () => {
               onClick={() => {
                 window.open("http://www.swkukorea.com/", "_blank");
               }}
-              className="w-full h-10 sm:h-11 text-sm sm:text-base"
+              className="w-full h-12 text-sm sm:text-base"
             >
               {BUTTONS.SUCCESS_CARD_VIEW_COMPANY}
             </Button>

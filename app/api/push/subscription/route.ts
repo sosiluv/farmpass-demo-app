@@ -199,7 +199,7 @@ export async function POST(request: NextRequest) {
       "info",
       { id: user.id, email: user.email || "" },
       "system",
-      newSubscription.id,
+      newSubscription.endpoint,
       {
         action_type: "push_notification_event",
         event: "push_subscription_created",
@@ -231,7 +231,7 @@ export async function POST(request: NextRequest) {
       "error",
       user?.id ? { id: user.id, email: user.email || "" } : undefined,
       "system",
-      undefined,
+      body?.subscription?.endpoint || "unknown_endpoint", // endpoint를 resourceId로 사용
       {
         action_type: "push_notification_event",
         event: "push_subscription_create_failed",
@@ -342,11 +342,6 @@ export async function GET(request: NextRequest) {
               continue; // 이 구독은 건너뛰고 다음 구독으로
             }
           } catch (error: any) {
-            devLog.log(
-              `구독 유효성 검사 실패 (ID: ${subscription.id}):`,
-              error.message
-            );
-
             // 만료된 구독으로 간주하고 삭제
             expiredCount++;
             try {
@@ -364,8 +359,6 @@ export async function GET(request: NextRequest) {
                 deleteError
               );
             }
-
-            devLog.log(`만료된 구독 삭제됨 (ID: ${subscription.id})`);
           }
         }
       } else {
@@ -409,7 +402,7 @@ export async function GET(request: NextRequest) {
       "error",
       user?.id ? { id: user.id, email: user.email || "" } : undefined,
       "system",
-      undefined,
+      user?.id || "unknown_user", // user ID를 resourceId로 사용
       {
         action_type: "push_notification_event",
         event: "push_subscription_read_failed",
@@ -434,6 +427,7 @@ export async function GET(request: NextRequest) {
 // 푸시 구독 해제
 export async function DELETE(request: NextRequest) {
   let body: any = null;
+  let user = null;
 
   try {
     body = await request.json();
@@ -447,8 +441,6 @@ export async function DELETE(request: NextRequest) {
 
     // forceDelete가 true인 경우 (특수한 경우에만 사용) 인증 없이 endpoint로만 삭제
     if (forceDelete) {
-      devLog.log(`강제 구독 해제: endpoint ${endpoint}의 모든 구독 삭제`);
-
       try {
         // 강제 삭제 시에는 실제 삭제 (soft delete 아님)
         const deletedSubscriptions = await prisma.push_subscriptions.deleteMany(
@@ -459,17 +451,13 @@ export async function DELETE(request: NextRequest) {
           }
         );
 
-        devLog.log(
-          `강제 삭제 완료: ${deletedSubscriptions.count}개 구독 삭제됨`
-        );
-
         await createSystemLog(
           "PUSH_SUBSCRIPTION_FORCE_DELETED",
           LOG_MESSAGES.PUSH_SUBSCRIPTION_FORCE_DELETED(endpoint),
           "info",
           undefined,
           "notification",
-          undefined,
+          endpoint, // endpoint를 resourceId로 사용
           {
             action_type: "push_notification_event",
             event: "push_subscription_force_deleted",
@@ -501,7 +489,7 @@ export async function DELETE(request: NextRequest) {
       return authResult.response!;
     }
 
-    const user = authResult.user;
+    user = authResult.user;
 
     // 구독 정보 조회 (soft delete 전에 정보 확인)
     let existingSubscriptions;
@@ -530,10 +518,6 @@ export async function DELETE(request: NextRequest) {
     }
 
     // 구독 soft delete (전체 구독 해제)
-    devLog.log(
-      `구독 해제: endpoint ${endpoint}의 ${existingSubscriptions.length}개 구독 soft delete`
-    );
-
     let updateResult;
     try {
       updateResult = await prisma.push_subscriptions.updateMany({
@@ -572,7 +556,6 @@ export async function DELETE(request: NextRequest) {
             updated_at: new Date(),
           },
         });
-        devLog.log(`사용자 ${user.id}의 알림 설정 비활성화 완료`);
       } catch (updateError) {
         throwBusinessError(
           "GENERAL_UPDATE_FAILED",
@@ -623,9 +606,9 @@ export async function DELETE(request: NextRequest) {
       "PUSH_SUBSCRIPTION_DELETE_FAILED",
       LOG_MESSAGES.PUSH_SUBSCRIPTION_DELETE_FAILED(errorMessage),
       "error",
-      undefined,
+      user?.id ? { id: user.id, email: user.email || "" } : undefined,
       "system",
-      undefined,
+      body?.endpoint || "unknown_endpoint", // endpoint를 resourceId로 사용
       {
         action_type: "push_notification_event",
         event: "push_subscription_delete_failed",

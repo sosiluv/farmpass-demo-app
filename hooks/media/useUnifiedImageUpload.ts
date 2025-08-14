@@ -144,7 +144,6 @@ export function useUnifiedImageUpload(
 
       showSuccess("이미지 업로드 완료", successMessage);
       onSuccess?.(result);
-      devLog.log("이미지 업로드 성공:", result);
 
       // 프로필 이미지 업로드인 경우 프로필 캐시 무효화
       if (uploadType === "profile") {
@@ -159,7 +158,6 @@ export function useUnifiedImageUpload(
       if (refetchSettings) {
         try {
           await refetchSettingsContext();
-          devLog.log("Settings context refetch 완료");
         } catch (error) {
           devLog.error("Settings context refetch 실패:", error);
         }
@@ -298,6 +296,7 @@ export function useUnifiedImageUpload(
         await handleSuccess(result);
         return result;
       } catch (error) {
+        console.log("error", error);
         const uploadError: UploadError = {
           code: "UPLOAD_FAILED",
           message:
@@ -392,7 +391,6 @@ export function useUnifiedImageUpload(
       })();
 
       showSuccess("이미지 삭제 완료", deleteSuccessMessage);
-      devLog.log("이미지 삭제 완료");
 
       // 프로필 이미지 삭제인 경우 프로필 캐시 무효화
       if (uploadType === "profile") {

@@ -18,9 +18,9 @@ export async function GET(request: NextRequest) {
       operation: "check_email",
     });
   }
+  let existingUser = null;
 
   try {
-    let existingUser;
     try {
       existingUser = await prisma.profiles.findFirst({
         where: { email: email },
@@ -50,9 +50,9 @@ export async function GET(request: NextRequest) {
       "EMAIL_CHECK_FAILED",
       LOG_MESSAGES.EMAIL_CHECK_FAILED(errorMessage),
       "error",
-      undefined,
+      { id: "", email: email }, // 시스템 사용자로 처리
       "system",
-      undefined,
+      email, // 이메일을 resourceId로 사용
       {
         action_type: "auth_event",
         event: "email_check_failed",

@@ -310,10 +310,7 @@ export function VisitorTableSheet({
       <div className="hidden xl:block">
         <div className="w-full overflow-x-auto rounded-lg border border-gray-200 bg-white shadow-sm">
           <Table className="table-fixed min-w-[900px]">
-            <VisitorTableHeader
-              showFarmColumn={showFarmColumn}
-              isAdmin={isAdmin}
-            />
+            <VisitorTableHeader showFarmColumn={showFarmColumn} />
             <TableBody>
               {(visitors || []).map((visitor, index) => (
                 <VisitorTableRow

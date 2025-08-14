@@ -45,7 +45,6 @@ export const BUTTONS = {
   WITHDRAW_CANCEL: "취소",
 
   // 소셜 연동 버튼
-  LINK_ACCOUNT: "연동하기",
   LINK_ACCOUNT_MOBILE: "연동",
   UNLINK_ACCOUNT: "연동 해제",
   UNLINK_ACCOUNT_MOBILE: "해제",
@@ -103,7 +102,6 @@ export const LABELS = {
   SECURITY_INFO_MANAGED: "보안 정보는 해당 서비스에서 관리됩니다",
 
   // 소셜 연동 섹션
-  ACCOUNT_LINKING_MANAGEMENT: "계정 연동 관리",
   LINKED: "연동됨",
   LINKING_DATE: "연동일",
   EMAIL_INFO_UNAVAILABLE: "이메일 정보 없음",

@@ -15,7 +15,8 @@ export async function POST(
   request: NextRequest,
   { params }: { params: { farmId: string } }
 ) {
-  let user: any = null;
+  let user = null;
+  let newMember;
 
   try {
     // 인증된 사용자 확인
@@ -143,7 +144,6 @@ export async function POST(
     }
 
     // 새 멤버 추가 + 알림 insert 트랜잭션 처리
-    let newMember;
     try {
       newMember = await prisma.$transaction(async (tx: any) => {
         const createdMember = await tx.farm_members.create({
@@ -165,7 +165,7 @@ export async function POST(
             farm_id: params.farmId,
             farm_name: farm.farm_name,
             role,
-            invited_by: user.email,
+            invited_by: user!.email,
           },
           link: `/admin/farms/${params.farmId}/members`,
         };
@@ -173,7 +173,7 @@ export async function POST(
         await tx.notifications.createMany({
           data: [
             { ...notificationData, user_id: userToAdd.id },
-            { ...notificationData, user_id: user.id },
+            { ...notificationData, user_id: user!.id },
           ],
         });
         return createdMember;
@@ -252,7 +252,7 @@ export async function POST(
       "error",
       user?.id ? { id: user.id, email: user.email || "" } : undefined,
       "member",
-      undefined,
+      newMember.id,
       {
         action_type: "farm_event",
         event: "member_create_failed",

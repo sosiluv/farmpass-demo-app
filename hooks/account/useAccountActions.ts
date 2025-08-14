@@ -32,9 +32,6 @@ export function useAccountActions({ profile, userId }: UseAccountActionsProps) {
     dbId: profile.id,
     dbField: "profile_image_url",
     refetchSettings: true, // settings context 즉시 갱신
-    onUpdate: (data) => {
-      devLog.log("프로필 이미지 DB 업데이트 완료:", data);
-    },
   });
 
   // 이미지 업로드 함수 (통합 시스템 사용)
@@ -45,10 +42,7 @@ export function useAccountActions({ profile, userId }: UseAccountActionsProps) {
 
     try {
       const result = await profileImageUpload.uploadImage(file);
-
       if (result) {
-        devLog.log("프로필 이미지 업로드 완료:", result);
-
         return {
           publicUrl: result.publicUrl,
           fileName: result.fileName,
@@ -62,13 +56,7 @@ export function useAccountActions({ profile, userId }: UseAccountActionsProps) {
   // 이미지 삭제 함수 (통합 시스템 사용)
   const handleImageDelete = async (): Promise<void> => {
     try {
-      devLog.log(
-        `[HANDLE_IMAGE_DELETE] Starting image deletion for user: ${userId}`
-      );
-
       await profileImageUpload.deleteImage();
-
-      devLog.log(`[HANDLE_IMAGE_DELETE] Image deletion completed successfully`);
     } catch (error) {
       throw error;
     }
@@ -80,7 +68,6 @@ export function useAccountActions({ profile, userId }: UseAccountActionsProps) {
   ): Promise<SaveResult> => {
     try {
       const result = await accountMutations.updateProfileAsync(data);
-      devLog.log("프로필 정보 저장 완료");
       return { success: true, message: result.message };
     } catch (error) {
       const errorMessage =
@@ -97,7 +84,6 @@ export function useAccountActions({ profile, userId }: UseAccountActionsProps) {
   ): Promise<SaveResult> => {
     try {
       const result = await accountMutations.updateCompanyAsync(data);
-      devLog.log("회사 정보 저장 완료");
       return { success: true, message: result.message };
     } catch (error) {
       const errorMessage =
@@ -114,8 +100,6 @@ export function useAccountActions({ profile, userId }: UseAccountActionsProps) {
   ): Promise<SaveResult> => {
     try {
       await accountMutations.changePasswordAsync(data);
-
-      devLog.log("비밀번호 변경 완료");
 
       // 비밀번호 변경 성공 후 자동 로그아웃
       setTimeout(async () => {

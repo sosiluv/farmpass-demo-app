@@ -17,7 +17,7 @@ prisma.$connect().catch(async (error) => {
     "error",
     undefined,
     "system",
-    undefined,
+    "database_connection",
     {
       error_message: error instanceof Error ? error.message : String(error),
       action_type: "database_connection",

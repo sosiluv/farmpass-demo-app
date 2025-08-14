@@ -31,15 +31,14 @@ import { useFarmsQuery } from "@/lib/hooks/query/use-farms-query";
 import { useFarmVisitorsWithFiltersQuery } from "@/lib/hooks/query/use-farm-visitors-filtered-query";
 
 export default function FarmVisitorsPage() {
-  const params = useParams();
-  const router = useRouter();
-  const { state } = useAuth();
-  const userId = state.status === "authenticated" ? state.user.id : undefined;
-  const farmId = (params as any).farmId as string; // useParams()는 항상 객체 반환
   const { showError } = useCommonToast();
+  const router = useRouter();
+  const params = useParams();
+  const { userId, isAdmin } = useAuth();
+  const farmId = (params as any).farmId as string; // useParams()는 항상 객체 반환
 
   // React Query Hooks
-  const farmsQuery = useFarmsQuery();
+  const farmsQuery = useFarmsQuery(userId);
 
   // 필터 Store
   const {
@@ -83,7 +82,7 @@ export default function FarmVisitorsPage() {
   // 방문자 액션 훅
   const { handleEdit, handleDelete, handleExport } = useVisitorActions({
     farms: farms, // map 변환 없이 그대로 전달
-    isAdmin: false,
+    isAdmin: isAdmin,
     profileId: userId,
     allVisitors: allVisitors, // map 변환 없이 그대로 전달
   });
@@ -201,7 +200,6 @@ export default function FarmVisitorsPage() {
           actions={
             <VisitorExportRefactored
               farms={farms} // map 변환 없이 그대로 전달
-              isAdmin={false}
               onExport={handleExport}
             />
           }
@@ -260,7 +258,7 @@ export default function FarmVisitorsPage() {
               visitors={paginatedData}
               showFarmColumn={false}
               loading={loading}
-              isAdmin={false}
+              isAdmin={isAdmin}
               onEdit={handleEdit}
               onDelete={handleDelete}
             />

@@ -5,17 +5,19 @@ import { Sheet, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 import { CommonSheetContent } from "@/components/ui/sheet-common";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
+import { Button } from "@/components/ui/button";
 import { Shield, FileText, Mail, Loader2 } from "lucide-react";
 import { usePublicTermsQuery } from "@/lib/hooks/query/use-terms-query";
 import { TermType } from "@/lib/types/common";
 import ReactMarkdown from "react-markdown";
 import { markdownComponents } from "@/lib/utils/markdown/markdown-components";
-import { LABELS, TERM_TYPE_CONFIG } from "@/lib/constants/terms";
+import { BUTTONS, LABELS, TERM_TYPE_CONFIG } from "@/lib/constants/terms";
 
 interface TermsSheetProps {
   isOpen: boolean;
   onClose: () => void;
   termType: TermType;
+  onConsent?: () => void;
 }
 
 // 아이콘 문자열을 실제 컴포넌트로 매핑
@@ -25,7 +27,12 @@ const iconMap = {
   Mail,
 };
 
-export function TermsSheet({ isOpen, onClose, termType }: TermsSheetProps) {
+export function TermsSheet({
+  isOpen,
+  onClose,
+  termType,
+  onConsent,
+}: TermsSheetProps) {
   const [content, setContent] = useState<string>("");
 
   // 약관 데이터 조회
@@ -103,6 +110,16 @@ export function TermsSheet({ isOpen, onClose, termType }: TermsSheetProps) {
               {LABELS.TERMS_NOT_AVAILABLE}
             </div>
           )}
+        </div>
+
+        {/* 하단 확인 버튼 */}
+        <div className="border-t border-gray-100 pt-4 px-6 pb-6">
+          <Button
+            onClick={onConsent || onClose}
+            className="w-full h-12 text-base font-semibold bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 shadow-lg hover:shadow-xl transition-all duration-200 rounded-xl"
+          >
+            {BUTTONS.TERMS_CONFIRM}
+          </Button>
         </div>
       </CommonSheetContent>
     </Sheet>

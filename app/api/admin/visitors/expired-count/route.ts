@@ -25,7 +25,7 @@ export async function GET(request: NextRequest) {
         "error",
         undefined,
         "visitor",
-        undefined,
+        "expired_count",
         {
           action_type: "visitor_event",
           event: "expired_count_invalid_params",
@@ -77,7 +77,7 @@ export async function GET(request: NextRequest) {
       "error",
       undefined,
       "visitor",
-      undefined,
+      "expired_count",
       {
         action_type: "visitor_event",
         event: "expired_count_query_failed",

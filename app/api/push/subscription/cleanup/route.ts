@@ -102,7 +102,7 @@ export async function POST(request: NextRequest) {
         "info",
         { id: user.id, email: user.email || "" },
         "notification",
-        undefined,
+        "push_subscription_cleanup",
         {
           action_type: "push_notification_event",
           event: "push_subscription_cleanup_none",
@@ -188,9 +188,6 @@ export async function POST(request: NextRequest) {
           }
           failCountCleaned++;
           cleanedCount++;
-          devLog.log(
-            `fail_count 임계값 초과로 정리됨 (ID: ${subscription.id}, fail_count: ${subscription.fail_count})`
-          );
         } catch (error) {
           devLog.error(
             `fail_count 기반 정리 실패 (ID: ${subscription.id}):`,
@@ -248,9 +245,6 @@ export async function POST(request: NextRequest) {
           forceDeleted++;
           cleanedCount++;
           oldSoftDeletedCleaned++;
-          devLog.log(
-            `오래된 soft delete 구독 완전 삭제됨 (ID: ${subscription.id}, deleted_at: ${subscription.deleted_at})`
-          );
         } catch (error) {
           devLog.error(
             `오래된 soft delete 구독 삭제 실패 (ID: ${subscription.id}):`,
@@ -306,7 +300,6 @@ export async function POST(request: NextRequest) {
           }
           inactiveCleaned++;
           cleanedCount++;
-          devLog.log(`비활성 구독 정리됨 (ID: ${subscription.id})`);
         } catch (error) {
           devLog.error(
             `비활성 구독 정리 실패 (ID: ${subscription.id}):`,
@@ -343,7 +336,6 @@ export async function POST(request: NextRequest) {
         try {
           // 구독 정보가 완전한지 확인
           if (!subscription.p256dh || !subscription.auth) {
-            devLog.log(`구독 키 정보 불완전 (ID: ${subscription.id})`);
             cleanedCount++;
             expiredCleaned++;
 
@@ -400,13 +392,7 @@ export async function POST(request: NextRequest) {
           );
 
           validCount++;
-          devLog.log(`구독 유효함 (실시간 검사) (ID: ${subscription.id})`);
         } catch (error: any) {
-          devLog.log(
-            `구독 만료 감지 (실시간 검사) (ID: ${subscription.id}):`,
-            error.statusCode
-          );
-
           // 410 Gone 에러 또는 기타 만료 관련 오류인 경우 정리
           if (error.statusCode === 410 || error.statusCode === 400) {
             cleanedCount++;
@@ -447,9 +433,6 @@ export async function POST(request: NextRequest) {
                 );
               }
             }
-            devLog.log(
-              `만료된 구독 정리됨 (실시간 검사) (ID: ${subscription.id})`
-            );
           }
         }
       }
@@ -463,7 +446,6 @@ export async function POST(request: NextRequest) {
             !subscription.p256dh ||
             !subscription.auth
           ) {
-            devLog.log(`구독 정보 불완전 (ID: ${subscription.id})`);
             cleanedCount++;
             expiredCleaned++;
 
@@ -524,19 +506,8 @@ export async function POST(request: NextRequest) {
               return url.hostname === domain;
             });
 
-            if (!isValidDomain) {
-              devLog.log(
-                `알 수 없는 푸시 서비스 도메인 (ID: ${subscription.id}): ${url.hostname}`
-              );
-            }
-
             validCount++;
-            devLog.log(`구독 유효함 (기본 검사) (ID: ${subscription.id})`);
           } catch (urlError) {
-            devLog.log(
-              `잘못된 엔드포인트 URL (ID: ${subscription.id}):`,
-              subscription.endpoint
-            );
             cleanedCount++;
             expiredCleaned++;
 
@@ -577,10 +548,6 @@ export async function POST(request: NextRequest) {
             }
           }
         } catch (error: any) {
-          devLog.log(
-            `구독 검사 실패 (기본 검사) (ID: ${subscription.id}):`,
-            error.message
-          );
           cleanedCount++;
           expiredCleaned++;
 
@@ -640,7 +607,7 @@ export async function POST(request: NextRequest) {
         "info",
         { id: user.id, email: user.email || "" },
         "notification",
-        undefined,
+        "push_subscription_cleanup",
         {
           action_type: "push_notification_event",
           event: "push_subscription_cleanup",
@@ -669,7 +636,7 @@ export async function POST(request: NextRequest) {
         "info",
         { id: user.id, email: user.email || "" },
         "notification",
-        undefined,
+        "push_subscription_cleanup",
         {
           action_type: "push_notification_event",
           event: "push_subscription_cleanup_all_valid",
@@ -713,7 +680,7 @@ export async function POST(request: NextRequest) {
       "error",
       user?.id ? { id: user.id, email: user.email || "" } : undefined,
       "system",
-      undefined,
+      "push_subscription_cleanup",
       {
         action_type: "push_notification_event",
         event: "push_subscription_cleanup_failed",

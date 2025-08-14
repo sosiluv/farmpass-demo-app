@@ -79,18 +79,19 @@ async function getAllStorageFiles(
 }
 
 export async function GET(request: NextRequest) {
-  const supabase = await createClient();
-
-  // 인증 및 권한 확인 (admin만 접근 가능)
-  const authResult = await requireAuth(true);
-  if (!authResult.success || !authResult.user) {
-    return authResult.response!;
-  }
-
+  let user = null;
   try {
     // 방문자 orphan 파일 체크
     let usedVisitorUrls;
     let visitorDbError = null;
+    const supabase = await createClient();
+    // 인증 및 권한 확인 (admin만 접근 가능)
+    const authResult = await requireAuth(true);
+    if (!authResult.success || !authResult.user) {
+      return authResult.response!;
+    }
+
+    user = authResult.user;
 
     try {
       usedVisitorUrls = await prisma.visitor_entries.findMany({
@@ -252,9 +253,9 @@ export async function GET(request: NextRequest) {
       "ORPHAN_FILES_CHECK_FAILED",
       LOG_MESSAGES.ORPHAN_FILES_CHECK_FAILED(errorMessage),
       "error",
-      undefined,
+      user?.id ? { id: user.id, email: user.email || "" } : undefined,
       "system",
-      undefined,
+      "check_orphan_files",
       {
         action_type: "admin_event",
         event: "orphan_files_check_failed",

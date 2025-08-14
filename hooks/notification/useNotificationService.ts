@@ -1,9 +1,6 @@
 import { useState, useCallback } from "react";
 import { devLog } from "@/lib/utils/logging/dev-logger";
-import {
-  requestNotificationPermissionAndSubscribe,
-  createSubscriptionFromExisting,
-} from "@/lib/utils/notification/push-subscription";
+import { requestNotificationPermissionAndSubscribe } from "@/lib/utils/notification/push-subscription";
 
 // React Query Hooks
 import {
@@ -13,6 +10,7 @@ import {
   useSubscriptionStatusQuery,
 } from "@/lib/hooks/query/use-push-mutations";
 import { useSaveNotificationSettingsMutation } from "@/lib/hooks/query/use-notification-mutations";
+import { useNotificationSettingsQuery } from "@/lib/hooks/query/use-notification-settings-query";
 import { useVapidKeyEffective } from "@/hooks/auth/useVapidKey";
 
 export function useNotificationService() {
@@ -23,21 +21,22 @@ export function useNotificationService() {
     message: string;
   } | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-
-  // React Query Hooks - Lazy Loading으로 최적화
   const { refetch: refetchSubscriptions } = useSubscriptionStatusQuery(false); // 수동으로 조회할 때만 사용
   const createSubscriptionMutation = useCreateSubscriptionMutation();
   const deleteSubscriptionMutation = useDeleteSubscriptionMutation();
   const cleanupSubscriptionsMutation = useCleanupSubscriptionsMutation();
   const saveNotificationSettingsMutation =
     useSaveNotificationSettingsMutation();
+  const { data: notificationSettings } = useNotificationSettingsQuery({
+    enabled: true,
+  });
 
   const { vapidKey } = useVapidKeyEffective();
 
   // 구독 해제 - React Query 사용
   const handleUnsubscription = async (
-    subscription?: PushSubscription,
-    farmId?: string
+    updateSettings: boolean = true,
+    subscription?: PushSubscription
   ) => {
     try {
       setIsLoading(true);
@@ -76,12 +75,12 @@ export function useNotificationService() {
       // 1. 브라우저 구독 해제
       await currentSubscription.unsubscribe();
 
-      // 2. 서버 구독 해제 Mutation 사용 (알림 설정 업데이트 포함)
+      // 2. 서버 구독 해제 Mutation 사용
       const result = await deleteSubscriptionMutation.mutateAsync({
         endpoint: currentSubscription.endpoint,
         forceDelete: false, // 수동 구독 해제는 인증 사용
         options: {
-          updateSettings: true, // 알림 설정 페이지에서는 설정 업데이트
+          updateSettings: updateSettings,
         },
       });
 
@@ -134,7 +133,6 @@ export function useNotificationService() {
   const cleanupSubscriptions = async () => {
     try {
       setIsLoading(true);
-      devLog.log("[NOTIFICATION] 구독 정리 시작");
 
       // 구독 정리 Mutation 사용
       const result = await cleanupSubscriptionsMutation.mutateAsync({
@@ -175,6 +173,17 @@ export function useNotificationService() {
         return false;
       }
 
+      // 1. 알림 설정 확인 (React Query로 이미 조회된 데이터 사용)
+      if (!notificationSettings?.is_active) {
+        setLastMessage({
+          type: "error",
+          title: "재구독 실패",
+          message:
+            "알림 설정이 비활성화되어 있습니다. 설정에서 알림을 활성화한 후 다시 시도해주세요.",
+        });
+        return false;
+      }
+
       // 공통 로직 사용 (알림 설정 페이지용)
       const result = await requestNotificationPermissionAndSubscribe(
         async () => vapidKey,
@@ -188,18 +197,15 @@ export function useNotificationService() {
               updateSettings: true, // 알림 설정 페이지에서는 설정 업데이트
             },
           });
-
           // 구독 성공 시 is_active를 true로 설정
           if (mutationResult.success) {
             await saveNotificationSettingsMutation.mutateAsync({
               is_active: true,
             });
           }
-
           return mutationResult;
         }
       );
-
       // 결과에 따른 메시지 설정
       if (result.success) {
         setLastMessage({
@@ -227,57 +233,12 @@ export function useNotificationService() {
     } finally {
       setIsLoading(false);
     }
-  }, [vapidKey, createSubscriptionMutation, saveNotificationSettingsMutation]);
-
-  // 기존 구독으로 재구독 (권한 요청 없음)
-  const resubscribeFromExisting = useCallback(async () => {
-    setIsLoading(true);
-    try {
-      const result = await createSubscriptionFromExisting(
-        async (subscription, deviceId, options) => {
-          return await createSubscriptionMutation.mutateAsync({
-            subscription: subscription as PushSubscription,
-            deviceId,
-            options: {
-              ...options,
-              isResubscribe: true,
-              updateSettings: true,
-            },
-          });
-        },
-        {
-          isResubscribe: true,
-          updateSettings: true,
-        }
-      );
-
-      if (result.success) {
-        setLastMessage({
-          type: "success",
-          title: "재구독 성공",
-          message: result.message || "알림 재구독이 완료되었습니다",
-        });
-        return true;
-      } else {
-        setLastMessage({
-          type: "error",
-          title: "재구독 실패",
-          message: result.message || "재구독 중 오류가 발생했습니다.",
-        });
-        return false;
-      }
-    } catch (error) {
-      devLog.error("재구독 실패:", error);
-      setLastMessage({
-        type: "error",
-        title: "재구독 실패",
-        message: error instanceof Error ? error.message : "알 수 없는 오류",
-      });
-      return false;
-    } finally {
-      setIsLoading(false);
-    }
-  }, [createSubscriptionMutation]);
+  }, [
+    vapidKey,
+    createSubscriptionMutation,
+    saveNotificationSettingsMutation,
+    notificationSettings,
+  ]);
 
   return {
     isLoading,
@@ -285,7 +246,6 @@ export function useNotificationService() {
     getSubscriptionStatus,
     cleanupSubscriptions,
     requestNotificationPermission,
-    resubscribeFromExisting,
     lastMessage,
     clearLastMessage: () => setLastMessage(null),
   };

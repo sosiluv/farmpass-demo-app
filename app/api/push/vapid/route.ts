@@ -34,7 +34,7 @@ export async function POST(request: NextRequest) {
       "info",
       { id: user.id, email: user.email || "" },
       "system",
-      undefined,
+      "push_notification",
       {
         action_type: "push_notification_event",
         event: "vapid_key_created",
@@ -63,7 +63,7 @@ export async function POST(request: NextRequest) {
       "error",
       user?.id ? { id: user.id, email: user.email || "" } : undefined,
       "system",
-      undefined,
+      "push_notification",
       {
         action_type: "push_notification_event",
         event: "vapid_key_create_failed",
@@ -112,7 +112,7 @@ export async function GET(request: NextRequest) {
         "warn",
         undefined,
         "system",
-        undefined,
+        "push_notification",
         {
           action_type: "push_notification_event",
           event: "vapid_key_not_configured",
@@ -132,7 +132,7 @@ export async function GET(request: NextRequest) {
       "info",
       undefined,
       "system",
-      undefined,
+      "push_notification",
       {
         action_type: "push_notification_event",
         event: "vapid_key_configured",
@@ -152,7 +152,7 @@ export async function GET(request: NextRequest) {
       "error",
       undefined,
       "system",
-      undefined,
+      "push_notification",
       {
         action_type: "push_notification_event",
         event: "vapid_key_fetch_failed",

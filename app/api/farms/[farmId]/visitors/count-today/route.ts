@@ -75,7 +75,7 @@ export async function GET(
         "warn",
         undefined,
         "visitor",
-        undefined,
+        farmId,
         {
           action_type: "visitor_event",
           event: "visitor_daily_limit_warning",
@@ -98,7 +98,7 @@ export async function GET(
       "error",
       undefined,
       "visitor",
-      undefined,
+      params.farmId,
       {
         action_type: "visitor_event",
         event: "visitor_count_query_failed",

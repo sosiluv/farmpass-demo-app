@@ -14,7 +14,6 @@ import { useNotificationPermission } from "@/hooks/notification/useNotificationP
 import { useCommonToast } from "@/lib/utils/notification/toast-messages";
 import { BarChart3, TrendingUp } from "lucide-react";
 import { ErrorBoundary } from "@/components/error/error-boundary";
-import { devLog } from "@/lib/utils/logging/dev-logger";
 import { AdminError } from "@/components/error/admin-error";
 import { useMultipleLoadingTimeout } from "@/hooks/system/useTimeout";
 import { InstallGuideSheet } from "@/components/common/InstallGuide/InstallGuideSheet";
@@ -27,19 +26,15 @@ import { useUserConsentsQuery } from "@/lib/hooks/query/use-user-consents-query"
 import { isProfileComplete } from "@/lib/utils/auth/profile-utils";
 
 export default function DashboardPage() {
-  const { state } = useAuth();
   const router = useRouter();
-  const userId = state.status === "authenticated" ? state.user.id : undefined;
+  const { userId, isAdmin, isAuthenticated, isUnauthenticated, isLoading } =
+    useAuth();
   const { data: profile, isLoading: profileLoading } = useProfileQuery(userId);
-  const { data: consentData, isLoading: consentLoading } = useUserConsentsQuery(
-    state.status === "authenticated"
-  );
+  const { data: consentData, isLoading: consentLoading } =
+    useUserConsentsQuery(isAuthenticated);
 
   const { farms: availableFarms, isLoading: farmsLoading } = useFarmsQuery();
-
-  // profile에서 admin 여부 확인
-  const isAdmin = profile?.account_type === "admin";
-  const userLoading = state.status === "loading";
+  const userLoading = isLoading;
 
   // selectedFarm 상태 관리 - 로딩 상태 고려
   const [selectedFarm, setSelectedFarm] = useState<string>("all");
@@ -58,7 +53,7 @@ export default function DashboardPage() {
   // 약관 및 프로필 체크 - 직접 접근 시에도 체크
   useEffect(() => {
     // 인증되지 않은 경우 로그인 페이지로 리다이렉트
-    if (state.status === "unauthenticated") {
+    if (isUnauthenticated) {
       router.replace("/auth/login");
       return;
     }
@@ -79,7 +74,7 @@ export default function DashboardPage() {
       setIsInitialized(true);
     }
   }, [
-    state.status,
+    isUnauthenticated,
     profile,
     consentData,
     profileLoading,
@@ -95,7 +90,6 @@ export default function DashboardPage() {
     const initialFarm = isAdmin ? "all" : availableFarms[0]?.id || "all";
     setSelectedFarm(initialFarm);
     setIsInitialized(true);
-    devLog.log(`Initialization completed. Selected farm: ${initialFarm}`);
   }, [farmsLoading, availableFarms, isAdmin, isInitialized]);
 
   // 알림 메시지 처리

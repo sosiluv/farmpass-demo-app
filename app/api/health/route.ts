@@ -9,6 +9,7 @@ import {
   getErrorResultFromRawError,
   makeErrorResponseFromResult,
 } from "@/lib/utils/error/errorUtil";
+import { requireAuth } from "@/lib/server/auth-utils";
 
 // package.json에서 버전 정보 가져오기
 const packageJson = require("../../../package.json");
@@ -59,8 +60,13 @@ const CPU_THRESHOLD = parseInt(process.env.CPU_THRESHOLD || "80");
  */
 export async function GET() {
   const startTime = Date.now();
-
+  let user = null;
   try {
+    const authResult = await requireAuth(true); // admin 권한 필수
+    if (!authResult.success || !authResult.user) {
+      return authResult.response!;
+    }
+    user = authResult.user;
     // =================================
     // 1. 데이터베이스 연결 확인 (타임아웃 적용)
     // =================================
@@ -74,7 +80,6 @@ export async function GET() {
       process.env.NODE_ENV !== "production" &&
       process.env.NEXT_PHASE === "phase-production-build"
     ) {
-      devLog.log("Skipping database check during build phase");
     } else {
       await Promise.race([
         prisma.$queryRaw`SELECT 1`,
@@ -159,9 +164,9 @@ export async function GET() {
           memoryUsage.heapTotal / 1024 / 1024
         )}MB, CPU: ${totalCpuUsage}%`,
         "warn",
-        { id: "system", email: "admin@samwon114.com" },
+        user?.id ? { id: user.id, email: user.email || "" } : undefined,
         "system",
-        undefined,
+        "system_resource",
         {
           action_type: "system_resource_event",
           event: "system_resource_warning",
@@ -328,9 +333,9 @@ export async function GET() {
       "HEALTH_CHECK_FAILED",
       LOG_MESSAGES.HEALTH_CHECK_FAILED(errorMessage),
       "error",
-      undefined,
+      user?.id ? { id: user.id, email: user.email || "" } : undefined,
       "system",
-      undefined,
+      "system_resource",
       {
         action_type: "health_check_event",
         event: "health_check_failed",

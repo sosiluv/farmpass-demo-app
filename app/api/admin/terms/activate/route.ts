@@ -10,7 +10,7 @@ import {
 
 // POST: 약관 활성화/비활성화
 export async function POST(request: NextRequest) {
-  let user: any = null;
+  let user = null;
 
   try {
     // 인증 확인

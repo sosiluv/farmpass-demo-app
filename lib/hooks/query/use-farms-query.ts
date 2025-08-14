@@ -25,16 +25,16 @@ interface FarmWithMembers extends Farm {
  * 기존 use-farms.ts의 API 호출 방식과 동일하게 구현
  */
 export function useFarmsQuery(userId?: string, includeMembers?: boolean) {
-  const { state } = useAuth();
+  const { userId: authUserId, isAuthenticated } = useAuth();
 
   // 현재 사용자 ID 결정 (매개변수 또는 인증된 사용자)
   const targetUserId = React.useMemo(() => {
     if (userId) return userId;
-    if (state.status === "authenticated") {
-      return state.user?.id;
+    if (isAuthenticated) {
+      return authUserId;
     }
     return undefined;
-  }, [userId, state]);
+  }, [userId, isAuthenticated]);
 
   // 농장 목록 쿼리 - 새로운 Query Key 체계 사용
   const farmsQuery = useAuthenticatedQuery(
@@ -55,7 +55,7 @@ export function useFarmsQuery(userId?: string, includeMembers?: boolean) {
       return farms || [];
     },
     {
-      enabled: state.status === "authenticated" && !!targetUserId,
+      enabled: isAuthenticated && !!targetUserId,
       staleTime: 15 * 60 * 1000, // 15분 캐싱 (농장 데이터는 자주 변경되지 않음)
       gcTime: 30 * 60 * 1000, // 30분간 캐시 유지
       refetchOnWindowFocus: false, // 윈도우 포커스 시 refetch 비활성화

@@ -110,10 +110,6 @@ export function SocialLinkingSection({ userId }: SocialLinkingSectionProps) {
         <CardContent className="space-y-6">
           {/* 계정 연동 관리 */}
           <div className="space-y-3 sm:space-y-4">
-            <h3 className="text-base sm:text-lg font-semibold">
-              {LABELS.ACCOUNT_LINKING_MANAGEMENT}
-            </h3>
-
             {isLoading ? (
               <div className="flex items-center justify-center py-6 sm:py-8">
                 <Loader2 className="h-5 w-5 sm:h-6 sm:w-6 animate-spin" />
@@ -193,7 +189,7 @@ export function SocialLinkingSection({ userId }: SocialLinkingSectionProps) {
                             size="sm"
                             onClick={() => handleUnlinkAccount(linkedIdentity!)}
                             disabled={!canUnlink || isProviderUnlinking}
-                            className="text-red-600 border-red-200 hover:bg-red-50 w-full sm:w-auto min-h-[40px] sm:min-h-[32px] text-sm"
+                            className="text-red-600 border-red-200 hover:bg-red-50 w-full text-sm sm:text-base"
                           >
                             {isProviderUnlinking ? (
                               <Loader2 className="h-4 w-4 animate-spin" />
@@ -213,19 +209,14 @@ export function SocialLinkingSection({ userId }: SocialLinkingSectionProps) {
                             disabled={isProviderLinking}
                             variant="outline"
                             size="sm"
-                            className="w-full sm:w-auto min-h-[40px] sm:min-h-[32px] text-sm"
+                            className="w-full text-sm sm:text-base"
                           >
                             {isProviderLinking ? (
                               <Loader2 className="h-4 w-4 animate-spin mr-2" />
                             ) : (
                               <Link className="h-4 w-4 mr-2" />
                             )}
-                            <span className="hidden sm:inline">
-                              {BUTTONS.LINK_ACCOUNT}
-                            </span>
-                            <span className="sm:hidden">
-                              {BUTTONS.LINK_ACCOUNT_MOBILE}
-                            </span>
+                            <span>{BUTTONS.LINK_ACCOUNT_MOBILE}</span>
                           </Button>
                         )}
                       </div>

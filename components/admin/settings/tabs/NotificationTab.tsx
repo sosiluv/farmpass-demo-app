@@ -117,10 +117,9 @@ const NotificationTab = React.memo(function NotificationTab({
                 <Button
                   onClick={handlePreviewTemplate}
                   variant="outline"
-                  size="sm"
                   className="flex items-center gap-1 text-sm sm:text-base"
                 >
-                  <Eye className="h-3 w-3" />
+                  <Eye className="h-4 w-4 mr-2" />
                   {BUTTONS.TEMPLATE_PREVIEW_BUTTON}
                 </Button>
               </div>

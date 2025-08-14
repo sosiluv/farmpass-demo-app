@@ -25,7 +25,7 @@ export function InstallGuideSheet() {
   return (
     <Sheet open={isOpen} onOpenChange={setIsOpen}>
       <SheetTrigger asChild>
-        <Button variant="outline" size="sm" className="gap-2">
+        <Button variant="outline" className="text-sm sm:text-base">
           <Download className="w-4 h-4" />
           {BUTTONS.INSTALL_GUIDE_BUTTON_TEXT}
         </Button>

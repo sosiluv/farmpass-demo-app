@@ -1,5 +1,7 @@
 "use client";
 
+import Link from "next/link";
+import * as z from "zod";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
@@ -24,7 +26,7 @@ import { ErrorBoundary } from "@/components/error/error-boundary";
 import { ERROR_CONFIGS } from "@/lib/constants/error";
 import { useCommonToast } from "@/lib/utils/notification/toast-messages";
 import { Loader2 } from "lucide-react";
-import { useRegistrationStore } from "@/store/use-registration-store";
+
 import { TermsConsentSheet, NameField, PhoneField } from "@/components/auth";
 import { isProfileComplete } from "@/lib/utils/auth/profile-utils";
 import {
@@ -32,10 +34,9 @@ import {
   phoneSchema,
 } from "@/lib/utils/validation/profile-validation";
 import { BUTTONS, LABELS } from "@/lib/constants/common";
-import * as z from "zod";
+import { LottieLoadingCompact } from "@/components/ui/lottie-loading";
 import { motion } from "framer-motion";
 import { Logo } from "@/components/common/logo";
-import Link from "next/link";
 
 // 프로필 폼 스키마
 const profileFormSchema = z.object({
@@ -46,7 +47,7 @@ const profileFormSchema = z.object({
 type ProfileFormData = z.infer<typeof profileFormSchema>;
 
 export default function ProfileSetupPage() {
-  const { state } = useAuth();
+  const { userId, isUnauthenticated, isLoading: isAuthLoading } = useAuth();
   const router = useRouter();
   const { showSuccess, showError } = useCommonToast();
   const { signOut } = useAuthActions();
@@ -55,17 +56,13 @@ export default function ProfileSetupPage() {
   const [showConsentSheet, setShowConsentSheet] = useState(false);
   const [isInitialized, setIsInitialized] = useState(false);
 
-  // Zustand store 사용
-  const { setProfile, setConsents, clearData } = useRegistrationStore();
-
   // Mutation 훅들
   const updateProfileMutation = useUpdateProfileMutation();
   const updateConsentMutation = useUpdateUserConsentsMutation();
 
   // 사용자 상태 확인
-  const { data: profileData, isLoading: profileLoading } = useProfileQuery(
-    state.status === "authenticated" ? state.user.id : undefined
-  );
+  const { data: profileData, isLoading: profileLoading } =
+    useProfileQuery(userId);
 
   // React Hook Form 설정
   const form = useForm<ProfileFormData>({
@@ -78,7 +75,7 @@ export default function ProfileSetupPage() {
 
   useEffect(() => {
     // 인증되지 않은 경우 로그인 페이지로 리다이렉트
-    if (state.status === "unauthenticated") {
+    if (isUnauthenticated) {
       router.replace("/auth/login");
       return;
     }
@@ -97,16 +94,10 @@ export default function ProfileSetupPage() {
     }
 
     setIsInitialized(true);
-  }, [state.status, profileData, profileLoading, router, form]);
+  }, [isUnauthenticated, profileData, profileLoading, router, form]);
 
-  // 프로필 저장 (메모리에만 저장하고 약관 동의 시트 띄우기)
+  // 프로필 저장 후 약관 동의 시트 띄우기
   const handleSubmit = async (data: ProfileFormData) => {
-    // 메모리에 프로필 정보 저장
-    setProfile({
-      name: data.name.trim(),
-      phone: data.phone.trim(),
-    });
-
     // 약관 동의 시트 띄우기
     setShowConsentSheet(true);
   };
@@ -119,18 +110,14 @@ export default function ProfileSetupPage() {
   ) => {
     setIsLoading(true);
     try {
-      // 약관 동의 정보를 메모리에 저장
-      setConsents({
-        privacyConsent,
-        termsConsent,
-        marketingConsent,
-      });
-
-      // 1. 프로필 정보 저장 (사용자가 입력한 정보가 있는 경우)
+      // 1. 프로필 정보 저장 (사용자가 입력한 정보가 있는 경우에만)
       const formData = form.getValues();
       const hasProfileChanges = formData.name.trim() || formData.phone.trim();
+      const isProfileAlreadyComplete =
+        profileData && isProfileComplete(profileData);
 
-      if (hasProfileChanges) {
+      // 프로필이 이미 완성되어 있거나 새로 입력된 정보가 있는 경우에만 업데이트
+      if (!isProfileAlreadyComplete && hasProfileChanges) {
         const updateData = {
           name: formData.name.trim(),
           phone: formData.phone.trim(),
@@ -139,21 +126,20 @@ export default function ProfileSetupPage() {
       }
 
       // 2. 약관 동의 정보 저장
-      await updateConsentMutation.mutateAsync({
+      const consentResult = await updateConsentMutation.mutateAsync({
         privacyConsent,
         termsConsent,
         marketingConsent,
       });
 
-      // 3. 임시 데이터 삭제
-      clearData();
-
-      showSuccess(
-        "완료",
-        hasProfileChanges
+      // 서버에서 내려오는 메시지 사용
+      const successMessage =
+        consentResult?.message ||
+        (!isProfileAlreadyComplete && hasProfileChanges
           ? "프로필 정보와 약관 동의가 성공적으로 저장되었습니다."
-          : "약관 동의가 성공적으로 저장되었습니다."
-      );
+          : "약관 동의가 성공적으로 저장되었습니다.");
+
+      showSuccess("완료", successMessage);
 
       // 대시보드로 리다이렉트
       setTimeout(() => {
@@ -189,7 +175,7 @@ export default function ProfileSetupPage() {
   };
 
   // 로딩 중이거나 인증 확인 중인 경우
-  if (state.status === "loading" || profileLoading || !isInitialized) {
+  if (isAuthLoading || profileLoading || !isInitialized) {
     return (
       <PageLoading
         text={LABELS.PROFILE_SETUP_LOADING_TEXT}
@@ -226,10 +212,16 @@ export default function ProfileSetupPage() {
                 </CardDescription>
               </CardHeader>
               <CardContent className="text-center">
+                <div className="mx-auto mb-4 flex justify-center">
+                  <LottieLoadingCompact
+                    animationPath="/lottie/consent.json"
+                    size="lg"
+                  />
+                </div>
                 <Button
                   onClick={() => setShowConsentSheet(true)}
                   disabled={isLoading}
-                  className="w-full h-12 text-base font-semibold bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 shadow-lg hover:shadow-xl transition-all duration-200 rounded-xl"
+                  className="h-12 w-full flex items-center justify-center"
                 >
                   {isLoading ? (
                     <>
@@ -267,6 +259,12 @@ export default function ProfileSetupPage() {
                 </CardDescription>
               </CardHeader>
               <CardContent>
+                <div className="mx-auto mb-4 flex justify-center">
+                  <LottieLoadingCompact
+                    animationPath="/lottie/consent.json"
+                    size="lg"
+                  />
+                </div>
                 <Form {...form}>
                   <form
                     onSubmit={form.handleSubmit(handleSubmit)}

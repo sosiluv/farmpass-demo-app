@@ -102,7 +102,7 @@ export function DocumentationSection() {
                         <Button
                           variant="outline"
                           size="sm"
-                          className="w-full text-sm sm:text-base"
+                          className="text-sm sm:text-base"
                           onClick={() => handleDocumentClick(doc.href)}
                         >
                           <ExternalLink className="h-3 w-3 mr-1" />

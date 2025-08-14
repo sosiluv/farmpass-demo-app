@@ -50,11 +50,8 @@ import { useProfileQuery } from "@/lib/hooks/query/use-profile-query";
 import { useFarmsQuery } from "@/lib/hooks/query/use-farms-query";
 
 export function AdminSidebar() {
-  const { state } = useAuth();
-  const isAdmin =
-    state.status === "authenticated" && state.user?.app_metadata?.isAdmin;
-  const userId = state.status === "authenticated" ? state.user.id : undefined;
   const { signOut } = useAuthActions();
+  const { isAdmin, userId } = useAuth();
   const { data: profile, isLoading: profileLoading } = useProfileQuery(userId);
   const { farms } = useFarmsQuery(userId);
   const { data: settings } = useSystemSettingsQuery();

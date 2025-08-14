@@ -10,7 +10,7 @@ import {
 
 // GET: 사용자 동의 상태 확인
 export async function GET(request: NextRequest) {
-  let user: any = null;
+  let user = null;
 
   try {
     // 인증 확인

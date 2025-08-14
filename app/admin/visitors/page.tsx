@@ -23,7 +23,6 @@ import { Users } from "lucide-react";
 // React Query Hooks
 import { useFarmsQuery } from "@/lib/hooks/query/use-farms-query";
 import { useFarmVisitorsWithFiltersQuery } from "@/lib/hooks/query/use-farm-visitors-filtered-query";
-import { useProfileQuery } from "@/lib/hooks/query/use-profile-query";
 
 /**
  * 방문자 기록 조회 페이지
@@ -34,10 +33,7 @@ import { useProfileQuery } from "@/lib/hooks/query/use-profile-query";
  * - 일반 사용자: 소유/관리하는 농장만 접근 가능
  */
 export default function VisitorsPage() {
-  const { state } = useAuth();
-  const userId = state.status === "authenticated" ? state.user.id : undefined;
-  const isAdmin =
-    state.status === "authenticated" && state.user?.app_metadata?.isAdmin;
+  const { userId, isAdmin } = useAuth();
   const { showError } = useCommonToast();
 
   // React Query Hooks - useFarmsContext 대신 useFarmsQuery 사용
@@ -164,7 +160,6 @@ export default function VisitorsPage() {
           actions={
             <VisitorExportRefactored
               farms={farms} // 변환 없이 그대로 전달
-              isAdmin={isAdmin}
               onExport={handleExport}
             />
           }

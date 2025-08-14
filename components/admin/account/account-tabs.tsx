@@ -24,15 +24,13 @@ export function AccountTabs({ profile }: AccountTabsProps) {
   const { showInfo, showSuccess, showError } = useCommonToast();
   const searchParams = useSearchParams();
   const router = useRouter();
-  const { state } = useAuth();
-  const isAuthenticated = state.status === "authenticated";
-  const userId = isAuthenticated ? state.user.id : undefined;
+  const { user, isAuthenticated } = useAuth();
   const defaultTab = searchParams.get("tab") || "profile";
 
   // 소셜 로그인 사용자 감지
   const socialUserInfo = useMemo(() => {
-    if (isAuthenticated && state.user) {
-      const provider = state.user.app_metadata?.provider;
+    if (isAuthenticated && user) {
+      const provider = user.app_metadata?.provider;
       return {
         isSocialUser: provider && provider !== "email",
         socialProvider: provider || "",
@@ -46,7 +44,7 @@ export function AccountTabs({ profile }: AccountTabsProps) {
       allProviders: [],
       socialProviders: [],
     };
-  }, [state]) as {
+  }, [user]) as {
     isSocialUser: boolean;
     socialProvider: string;
     allProviders: string[];
@@ -60,7 +58,7 @@ export function AccountTabs({ profile }: AccountTabsProps) {
     handleProfileSave,
     handleCompanySave,
     handlePasswordChange,
-  } = useAccountActions({ profile, userId });
+  } = useAccountActions({ profile, userId: user?.id });
 
   // 탭 변경 핸들러
   const handleTabChange = useCallback(
@@ -229,7 +227,7 @@ export function AccountTabs({ profile }: AccountTabsProps) {
           </TabsContent>
 
           <TabsContent value="privacy">
-            <PrivacySection userId={userId} />
+            <PrivacySection userId={user?.id} />
           </TabsContent>
         </Tabs>
       </div>

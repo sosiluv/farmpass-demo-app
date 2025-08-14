@@ -14,8 +14,9 @@ import {
 } from "@/lib/utils/validation/farm-validation";
 
 export async function POST(request: NextRequest) {
-  let user: any = null;
+  let user = null;
   let farmData: FarmFormValues | null = null;
+  let farm;
 
   try {
     // 인증 확인
@@ -39,7 +40,6 @@ export async function POST(request: NextRequest) {
     farmData = validation.data;
 
     // Start a transaction
-    let farm;
     const farmCreateData = {
       farm_name: farmData.farm_name.trim(),
       farm_address: farmData.farm_address.trim(),
@@ -59,7 +59,7 @@ export async function POST(request: NextRequest) {
         await tx.farm_members.create({
           data: {
             farm_id: createdFarm.id,
-            user_id: user.id,
+            user_id: user!.id,
             role: "owner",
           },
         });
@@ -126,7 +126,7 @@ export async function POST(request: NextRequest) {
       "error",
       user?.id ? { id: user.id, email: user.email || "" } : undefined,
       "farm",
-      undefined,
+      farm!.id,
       {
         action_type: "farm_event",
         event: "farm_create_failed",
@@ -149,7 +149,8 @@ export async function POST(request: NextRequest) {
 }
 
 export async function GET(request: NextRequest) {
-  let user: any = null;
+  let user = null;
+  let farms;
 
   try {
     // 인증 확인
@@ -158,14 +159,12 @@ export async function GET(request: NextRequest) {
       return authResult.response!;
     }
 
-    const user = authResult.user;
+    user = authResult.user;
     const isAdmin = authResult.isAdmin || false;
 
     // 쿼리 파라미터 확인
     const { searchParams } = new URL(request.url);
     const includeMembers = searchParams.get("include") === "members";
-
-    let farms;
 
     // admin인 경우 모든 농장을 조회, 아닌 경우 접근 가능한 농장 조회
     if (isAdmin) {
@@ -285,7 +284,7 @@ export async function GET(request: NextRequest) {
       "info",
       { id: user.id, email: user.email || "" },
       "farm",
-      undefined,
+      "farm_list",
       {
         action_type: "farm_event",
         event: "farm_read",
@@ -309,7 +308,7 @@ export async function GET(request: NextRequest) {
       "error",
       user?.id ? { id: user.id, email: user.email || "" } : undefined,
       "farm",
-      undefined,
+      farms!.id,
       {
         action_type: "farm_event",
         event: "farm_read_failed",

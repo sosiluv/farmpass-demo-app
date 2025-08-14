@@ -40,9 +40,7 @@ export function useSupabaseRealtime({
   filterRef.current = filter;
 
   // farms 데이터를 직접 가져오기 (Context 사용 안함)
-  const { state } = useAuth();
-  const currentUserId =
-    state.status === "authenticated" ? state.user.id : undefined;
+  const { userId } = useAuth();
 
   useEffect(() => {
     const id = callbackId.current;
@@ -54,7 +52,7 @@ export function useSupabaseRealtime({
 
     if (!globalSubscribed) {
       globalSubscribed = true;
-      setupGlobalSubscriptions(farms, currentUserId);
+      setupGlobalSubscriptions(farms, userId);
     }
 
     return () => {
@@ -64,7 +62,7 @@ export function useSupabaseRealtime({
         cleanupGlobalSubscriptions();
       }
     };
-  }, [table, farms, currentUserId]);
+  }, [table, farms, userId]);
 }
 
 // 전역 이벤트 핸들러

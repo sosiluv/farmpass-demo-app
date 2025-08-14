@@ -17,7 +17,6 @@ import { ERROR_CONFIGS } from "@/lib/constants/error";
 import { LABELS, PLACEHOLDERS } from "@/lib/constants/farms";
 import { ResponsivePagination } from "@/components/ui/responsive-pagination";
 import type { FarmFormValues } from "@/lib/utils/validation";
-import { useProfileQuery } from "@/lib/hooks/query/use-profile-query";
 import { useFarmsQuery } from "@/lib/hooks/query/use-farms-query";
 
 export default function FarmsPage() {
@@ -28,11 +27,9 @@ export default function FarmsPage() {
   const [farmToDelete, setFarmToDelete] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
 
-  const { state } = useAuth();
-  const userId = state.status === "authenticated" ? state.user.id : undefined;
-  const { data: profile } = useProfileQuery(userId);
+  const { userId, isAdmin } = useAuth();
 
-  const { farms, isLoading, error } = useFarmsQuery(profile?.id, true);
+  const { farms, isLoading } = useFarmsQuery(userId, true);
 
   const {
     createFarmAsync,
@@ -132,11 +129,11 @@ export default function FarmsPage() {
 
   const isOwner = React.useCallback(
     (farm: Farm) => {
-      if (!profile) return false;
+      if (!userId) return false;
       // 관리자이거나 농장 소유자인 경우
-      return profile.account_type === "admin" || farm.owner_id === profile.id;
+      return isAdmin || farm.owner_id === userId;
     },
-    [profile]
+    [isAdmin, userId]
   );
 
   if (isLoading) {
@@ -180,7 +177,7 @@ export default function FarmsPage() {
               placeholder={PLACEHOLDERS.SEARCH}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="h-9 sm:h-10 lg:h-11 xl:h-12 w-full text-xs sm:text-sm placeholder:text-sm sm:placeholder:text-base"
+              className="text-sm sm:text-base"
             />
           </div>
         </div>

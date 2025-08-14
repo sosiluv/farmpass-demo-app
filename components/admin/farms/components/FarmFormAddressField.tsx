@@ -70,7 +70,7 @@ export function FarmFormAddressField({ form }: FarmFormAddressFieldProps) {
                           placeholder={PLACEHOLDERS.FARM_DETAILED_ADDRESS}
                           {...detailField}
                           value={detailField.value || ""}
-                          className="h-10 sm:h-12 text-sm"
+                          className="text-sm sm:text-base"
                         />
                       </FormControl>
                       <FormMessage />

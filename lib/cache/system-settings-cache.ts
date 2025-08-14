@@ -38,19 +38,12 @@ export class SystemSettingsCache {
    */
   private async fetchFromAPI(): Promise<SystemSettings> {
     try {
-      if (process.env.NODE_ENV === "development") {
-        devLog.log("[CACHE] Fetching settings from API");
-      }
-
       // 서버 사이드에서는 직접 데이터베이스 조회
       if (typeof window === "undefined") {
         const { prisma } = await import("@/lib/prisma");
         const settings = await prisma.system_settings.findFirst();
 
         if (settings) {
-          if (process.env.NODE_ENV === "development") {
-            devLog.log("[CACHE] Settings fetched from database directly");
-          }
           return {
             ...settings,
             created_at: settings.created_at.toISOString(),
@@ -83,19 +76,9 @@ export class SystemSettingsCache {
           context: "시스템 설정 조회",
         });
 
-        // ✅ 캐시 데이터 새로고침 성공 로그 (개발 환경에서만)
-        if (process.env.NODE_ENV === "development") {
-          devLog.log("[CACHE] Settings refreshed successfully");
-        }
-
         return settings as SystemSettings;
       }
     } catch (error) {
-      if (process.env.NODE_ENV === "development") {
-        devLog.error("시스템 설정 조회 실패:", error);
-        devLog.error("Failed to refresh settings cache, using defaults");
-      }
-
       return {
         ...DEFAULT_SYSTEM_SETTINGS,
         id: "temp-default",
@@ -120,23 +103,11 @@ export class SystemSettingsCache {
 
     // 캐시가 유효하고 강제 새로고침이 필요없는 경우 - 캐시 히트
     if (cached && !isStale && !forceRefresh) {
-      // ✅ 캐시 히트 로그 (개발 환경에서만)
-      if (process.env.NODE_ENV === "development") {
-        devLog.log("[CACHE] Settings cache hit");
-      }
       return cached;
     }
 
     // 캐시 미스 또는 만료 - 새 데이터 필요
     if (!cached || isStale) {
-      // ⚠️ 캐시 미스 로그 (개발 환경에서만)
-      if (process.env.NODE_ENV === "development") {
-        devLog.warn(
-          `[CACHE] Settings cache miss: ${
-            !cached ? "no cache" : "cache expired"
-          }`
-        );
-      }
     }
 
     // 2. 이미 진행 중인 요청이 있다면 해당 Promise 반환
@@ -154,9 +125,6 @@ export class SystemSettingsCache {
       // 캐시가 있다면 캐시 반환 후 백그라운드에서 업데이트
       if (cached) {
         this.loading.then(async () => {
-          if (process.env.NODE_ENV === "development") {
-            devLog.log("[CACHE] Background refresh completed");
-          }
           // 백그라운드 업데이트 완료
         });
         return cached;
@@ -174,9 +142,6 @@ export class SystemSettingsCache {
    * 캐시 무효화
    */
   invalidateCache(): void {
-    if (process.env.NODE_ENV === "development") {
-      devLog.log("[CACHE] Cache invalidated");
-    }
     this.lastInvalidation = Date.now();
     this.cache = null;
     this.cacheTime = 0;

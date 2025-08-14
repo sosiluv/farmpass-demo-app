@@ -159,13 +159,7 @@ export function UsersTab() {
                           />
 
                           {/* 사용자 목록 */}
-                          <UserList
-                            users={paginatedData}
-                            onUserClick={(user) => {
-                              // 사용자 클릭 시 처리 로직
-                              devLog.log("User clicked:", user);
-                            }}
-                          />
+                          <UserList users={paginatedData} />
                         </>
                       )}
                     </ResponsivePagination>

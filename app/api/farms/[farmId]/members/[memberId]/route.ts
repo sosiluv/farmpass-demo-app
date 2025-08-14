@@ -15,7 +15,7 @@ export async function PUT(
   request: NextRequest,
   { params }: { params: { farmId: string; memberId: string } }
 ) {
-  let user: any = null;
+  let user = null;
 
   try {
     // 인증 확인
@@ -24,7 +24,7 @@ export async function PUT(
       return authResult.response!;
     }
 
-    const user = authResult.user;
+    user = authResult.user;
     const updateData: UpdateMemberData = await request.json();
     const { role } = updateData;
 
@@ -256,7 +256,7 @@ export async function DELETE(
   request: NextRequest,
   { params }: { params: { farmId: string; memberId: string } }
 ) {
-  let user: any = null;
+  let user = null;
 
   try {
     // 인증 확인
@@ -265,7 +265,7 @@ export async function DELETE(
       return authResult.response!;
     }
 
-    const user = authResult.user;
+    user = authResult.user;
 
     // 농장 소유권 또는 관리자 권한 확인
     let farm;

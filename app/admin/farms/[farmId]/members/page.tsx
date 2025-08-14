@@ -30,11 +30,10 @@ interface PageProps {
 }
 
 export default function MembersPage({ params }: PageProps) {
-  const farmId = params.farmId as string;
-  const { state } = useAuth();
-  const userId = state.status === "authenticated" ? state.user.id : undefined;
-  const { data: profile } = useProfileQuery(userId);
   const { showInfo, showSuccess, showError } = useCommonToast();
+  const { userId, isAdmin } = useAuth();
+  const { data: profile } = useProfileQuery(userId);
+  const farmId = params.farmId as string;
 
   // React Query Hooks
   const farmsQuery = useFarmsQuery(profile?.id, true); // 멤버 정보 포함해서 조회
@@ -79,7 +78,7 @@ export default function MembersPage({ params }: PageProps) {
   const canManageMembers = useCallback(() => {
     if (!profile || !farm) return false;
     // 시스템 관리자인 경우 모든 농장의 구성원 관리 가능
-    if (profile.account_type == "admin") return true;
+    if (isAdmin) return true;
     // 농장 소유자이거나 농장 관리자인 경우
     return (
       farm.owner_id === profile.id ||

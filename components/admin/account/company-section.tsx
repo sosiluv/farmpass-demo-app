@@ -290,7 +290,7 @@ export function CompanySection({
               <Button
                 onClick={handleSave}
                 disabled={loading || !hasChanges}
-                className="btn-hover text-sm sm:text-base"
+                className="text-sm sm:text-base"
               >
                 {loading ? (
                   <>

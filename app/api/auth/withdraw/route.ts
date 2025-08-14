@@ -10,14 +10,14 @@ import { LOG_MESSAGES } from "@/lib/utils/logging/log-templates";
 import { createServiceRoleClient } from "@/lib/supabase/service-role";
 
 export async function POST(request: NextRequest) {
-  // 인증 및 권한 확인 (본인만 가능)
-  const authResult = await requireAuth(false);
-  if (!authResult.success || !authResult.user) {
-    return authResult.response!;
-  }
-  const user = authResult.user;
-
+  let user = null;
   try {
+    // 인증 및 권한 확인 (본인만 가능)
+    const authResult = await requireAuth(false);
+    if (!authResult.success || !authResult.user) {
+      return authResult.response!;
+    }
+    user = authResult.user;
     // 1. auth.users에서 유저 삭제 (서비스 롤 키 사용)
     const serviceRoleSupabase = createServiceRoleClient();
     const { error } = await serviceRoleSupabase.auth.admin.deleteUser(user.id);
@@ -27,9 +27,9 @@ export async function POST(request: NextRequest) {
         "WITHDRAW_FAILED",
         LOG_MESSAGES.WITHDRAW_FAILED(user.email || "unknown", error.message),
         "error",
-        { id: user.id, email: user.email || "" },
+        { id: user?.id, email: user?.email || "" },
         "user",
-        undefined,
+        user.id,
         {
           action_type: "auth_event",
           event: "withdraw_failed",
@@ -53,9 +53,9 @@ export async function POST(request: NextRequest) {
       "WITHDRAW_SUCCESS",
       LOG_MESSAGES.WITHDRAW_SUCCESS(user.email || "unknown"),
       "info",
-      { id: user.id, email: user.email || "" },
+      { id: user?.id, email: user?.email || "" },
       "user",
-      undefined,
+      user.id,
       {
         action_type: "auth_event",
         event: "withdraw_success",
@@ -71,11 +71,11 @@ export async function POST(request: NextRequest) {
     const errorMessage = error instanceof Error ? error.message : String(error);
     await createSystemLog(
       "WITHDRAW_FAILED",
-      LOG_MESSAGES.WITHDRAW_FAILED(user.email || "unknown", errorMessage),
+      LOG_MESSAGES.WITHDRAW_FAILED(user?.email || "unknown", errorMessage),
       "error",
-      { id: user.id, email: user.email || "" },
+      user?.id ? { id: user?.id, email: user?.email || "" } : undefined,
       "user",
-      undefined,
+      user?.id,
       {
         action_type: "auth_event",
         event: "withdraw_failed",
@@ -85,7 +85,7 @@ export async function POST(request: NextRequest) {
     // 비즈니스 에러 또는 시스템 에러를 표준화된 에러 코드로 매핑
     const result = getErrorResultFromRawError(error, {
       operation: "withdraw",
-      userId: user.id,
+      userId: user?.id,
     });
 
     return NextResponse.json(makeErrorResponseFromResult(result), {

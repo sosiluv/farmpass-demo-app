@@ -47,10 +47,7 @@ import {
 const MDEditor = dynamic(() => import("@uiw/react-md-editor"), { ssr: false });
 
 export default function TermsManagementPage() {
-  const { state } = useAuth();
-  const isAdmin =
-    state.status === "authenticated" && state.user?.app_metadata?.isAdmin;
-  const isLoading = state.status === "loading";
+  const { isAdmin, isLoading } = useAuth();
 
   // 비즈니스 로직 훅 사용
   const {

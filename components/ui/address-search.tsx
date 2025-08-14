@@ -7,6 +7,7 @@ import { Sheet, SheetTrigger } from "@/components/ui/sheet";
 import {
   CommonSheetHeader,
   CommonSheetContent,
+  CommonSheetFooter,
 } from "@/components/ui/sheet-common";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -135,24 +136,16 @@ export function AddressSearch({
                 className="h-10 sm:h-11 text-sm"
               />
             </div>
-            <div className="flex flex-col sm:flex-row justify-end gap-2 sm:gap-3 pt-4">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => setIsAddressSelected(false)}
-                className="h-10 sm:h-11 text-sm flex-1 sm:flex-none"
-              >
-                {BUTTONS.ADDRESS_SEARCH_RESEARCH}
-              </Button>
-              <Button
-                type="button"
-                onClick={handleConfirm}
-                className="h-10 sm:h-11 text-sm flex-1 sm:flex-none"
-              >
-                {BUTTONS.ADDRESS_SEARCH_CONFIRM}
-              </Button>
-            </div>
           </div>
+        )}
+
+        {isAddressSelected && (
+          <CommonSheetFooter
+            onCancel={() => setIsAddressSelected(false)}
+            onConfirm={handleConfirm}
+            cancelText={BUTTONS.ADDRESS_SEARCH_RESEARCH}
+            confirmText={BUTTONS.ADDRESS_SEARCH_CONFIRM}
+          />
         )}
       </CommonSheetContent>
     </Sheet>

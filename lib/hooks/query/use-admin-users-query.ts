@@ -48,10 +48,7 @@ export interface AdminUsersResponse {
  * 관리자 사용자 통계 데이터를 조회합니다.
  */
 export function useAdminUsersQuery() {
-  const { state } = useAuth();
-  const user = state.status === "authenticated" ? state.user : null;
-  const isAdmin =
-    state.status === "authenticated" && state.user?.app_metadata?.isAdmin;
+  const { user, isAdmin } = useAuth();
 
   const usersQuery = useAuthenticatedQuery(
     adminKeys.users.stats(),

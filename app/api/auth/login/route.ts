@@ -96,7 +96,7 @@ async function checkLoginAttempts(
           "info",
           { id: user.id, email: email },
           "auth",
-          undefined,
+          user.id, // 사용자 ID를 resourceId로 사용
           {
             action_type: "auth_event",
             event: "account_unlocked",
@@ -208,7 +208,7 @@ async function incrementLoginAttempts(
       "error",
       { id: profile.id, email: email },
       "auth",
-      undefined,
+      profile.id, // 사용자 ID를 resourceId로 사용
       {
         action_type: "auth_event",
         event: "login_failed",
@@ -230,7 +230,7 @@ async function incrementLoginAttempts(
         "warn",
         { id: profile.id, email: email },
         "auth",
-        undefined,
+        profile.id, // 사용자 ID를 resourceId로 사용
         {
           action_type: "auth_event",
           event: "suspicious_login_attempts",
@@ -254,7 +254,7 @@ async function incrementLoginAttempts(
         "warn",
         { id: profile.id, email: email },
         "auth",
-        undefined,
+        profile.id, // 사용자 ID를 resourceId로 사용
         {
           action_type: "auth_event",
           event: "account_locked",
@@ -278,6 +278,7 @@ async function incrementLoginAttempts(
 
 export async function POST(request: NextRequest) {
   let email: string | undefined;
+  let user = null;
 
   try {
     const body: LoginFormData = await request.json();
@@ -311,9 +312,11 @@ export async function POST(request: NextRequest) {
     }
 
     const {
-      data: { user, session },
+      data: { user: authUser, session },
       error,
     } = authResult;
+
+    user = authUser; // user 정보 저장
 
     // 3. 로그인 결과에 따른 처리
     if (error) {
@@ -377,7 +380,7 @@ export async function POST(request: NextRequest) {
           "info",
           { id: user!.id, email: email! },
           "auth",
-          undefined,
+          user!.id, // 사용자 ID를 resourceId로 사용
           {
             action_type: "auth_event",
             event: "login_success",
@@ -420,14 +423,15 @@ export async function POST(request: NextRequest) {
       "LOGIN_SYSTEM_ERROR",
       LOG_MESSAGES.LOGIN_SYSTEM_ERROR(errorMessage),
       "error",
-      undefined,
+      user?.id ? { id: user.id, email: user.email || "" } : undefined,
       "system",
-      undefined,
+      user?.id, // user ID 또는 email을 resourceId로 사용
       {
         action_type: "auth_event",
         event: "login_system_error",
         error_message: errorMessage,
-        email: email || "unknown",
+        user_id: user?.id,
+        user_email: user?.email,
       },
       request
     );

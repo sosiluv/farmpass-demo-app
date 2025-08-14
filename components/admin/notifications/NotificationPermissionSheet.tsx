@@ -214,7 +214,7 @@ export default function NotificationPermissionSheet({
               <Button
                 onClick={handleAllow}
                 disabled={isAllowing}
-                className="w-full h-10 sm:h-12 text-sm sm:text-base font-semibold bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 shadow-lg hover:shadow-xl transition-all duration-200"
+                className="w-full sm:h-12 text-sm sm:text-base font-semibold bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 shadow-lg hover:shadow-xl transition-all duration-200"
               >
                 {isAllowing ? (
                   <>

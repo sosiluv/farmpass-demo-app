@@ -38,6 +38,7 @@ export function CommonFilters({
       <div className="relative flex-1">
         <Input
           id="user-search"
+          className="text-sm sm:text-base"
           placeholder={searchPlaceholder}
           value={searchValue}
           onChange={onSearchChange}

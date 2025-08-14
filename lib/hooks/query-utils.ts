@@ -15,8 +15,7 @@ export function useAuthenticatedQuery<TData = unknown, TError = Error>(
   queryFn: () => Promise<TData>,
   options?: Omit<UseQueryOptions<TData, TError>, "queryKey" | "queryFn">
 ) {
-  const { state } = useAuth();
-  const isAuthenticated = state.status === "authenticated";
+  const { isAuthenticated } = useAuth();
 
   return useQuery({
     queryKey,

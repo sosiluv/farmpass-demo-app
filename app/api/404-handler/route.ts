@@ -37,7 +37,7 @@ async function handleMaliciousRequest(request: NextRequest) {
         "warn",
         undefined,
         "system",
-        undefined,
+        pathname,
         {
           action_type: "security_event",
           event: "malicious_bot_rate_limited",
@@ -74,7 +74,7 @@ async function handleMaliciousRequest(request: NextRequest) {
       "warn",
       undefined,
       "system",
-      undefined,
+      pathname,
       {
         action_type: "security_event",
         event: "security_404_handler_triggered",

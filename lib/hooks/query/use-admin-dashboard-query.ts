@@ -65,8 +65,7 @@ export interface AdminDashboardStatsResponse {
 }
 
 export function useAdminDashboardStatsQuery(farmId?: string) {
-  const { state } = useAuth();
-  const user = state.status === "authenticated" ? state.user : null;
+  const { user } = useAuth();
   const { farms } = useFarmsQuery();
 
   const query = useAuthenticatedQuery(

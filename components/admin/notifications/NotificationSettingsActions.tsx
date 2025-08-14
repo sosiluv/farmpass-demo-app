@@ -73,7 +73,7 @@ export function NotificationSettingsActions({
       <Button
         onClick={handleSave}
         disabled={isDisabled}
-        className="min-w-[100px]"
+        className="text-sm sm:text-base"
       >
         {saving ? (
           <>

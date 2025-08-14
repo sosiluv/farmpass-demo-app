@@ -18,7 +18,7 @@ export function SettingsHeader({
     <Button
       onClick={onSave}
       disabled={saving || !unsavedChanges}
-      className="flex items-center"
+      className="text-sm sm:text-base"
     >
       {saving ? (
         <>

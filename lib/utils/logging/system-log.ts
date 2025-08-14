@@ -147,28 +147,23 @@ async function createLog(
     }
     let currentUserId = context.userId;
     let userEmail = context.email;
-    if (!currentUserId || !userEmail) {
-      userEmail = userEmail || "admin@samwon114.com";
-    }
     let clientIP = context.ip;
+    let userAgent = context.userAgent;
     if (!clientIP) {
       clientIP = "server-unknown";
     }
     if (clientIP && clientIP !== "server-unknown") {
       clientIP = normalizeIP(clientIP);
     }
-    let userAgent = context.userAgent;
-    if (!userAgent) {
-      userAgent = "Server";
-    }
+
     const logData = {
-      user_id: currentUserId || null,
-      user_email: userEmail || null,
+      user_id: currentUserId || "00000000-0000-0000-0000-000000000000",
+      user_email: userEmail || "system@samwon1141.com",
       action,
       message,
       level,
       user_ip: clientIP || "unknown",
-      user_agent: userAgent,
+      user_agent: userAgent || "Server",
       resource_type: context.resource || null,
       resource_id: null,
       metadata:

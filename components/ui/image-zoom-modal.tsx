@@ -107,7 +107,7 @@ export function ImageZoomModal({
               <Button
                 variant="outline"
                 size="default" // Mobile default size
-                className="h-10 px-4 py-2 sm:h-11 sm:px-8" // Tablet+ lg size
+                className="h-12 px-4 py-2 sm:px-8" // Tablet+ lg size
                 onClick={handleZoomOut}
                 disabled={scale <= 0.5}
               >
@@ -119,7 +119,7 @@ export function ImageZoomModal({
               <Button
                 variant="outline"
                 size="default" // Mobile default size
-                className="h-10 px-4 py-2 sm:h-11 sm:px-8" // Tablet+ lg size
+                className="h-12 px-4 py-2 sm:px-8" // Tablet+ lg size
                 onClick={handleZoomIn}
                 disabled={scale >= 5}
               >
@@ -128,7 +128,7 @@ export function ImageZoomModal({
               <Button
                 variant="outline"
                 size="default" // Mobile default size
-                className="h-10 px-4 py-2 sm:h-11 sm:px-8" // Tablet+ lg size
+                className="h-12 px-4 py-2 sm:px-8" // Tablet+ lg size
                 onClick={handleReset}
               >
                 <RotateCcw className="w-4 h-4" />
@@ -136,7 +136,7 @@ export function ImageZoomModal({
               <Button
                 variant="outline"
                 size="default" // Mobile default size
-                className="h-10 px-4 py-2 sm:h-11 sm:px-8" // Tablet+ lg size
+                className="h-12 px-4 py-2 sm:px-8" // Tablet+ lg size
                 onClick={handleClose}
               >
                 <X className="w-4 h-4" />
