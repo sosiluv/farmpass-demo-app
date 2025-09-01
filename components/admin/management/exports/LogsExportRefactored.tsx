@@ -116,16 +116,6 @@ export function LogsExportRefactored({ logs, onExport }: LogsExportProps) {
       buttonText={BUTTONS.LOGS_EXPORT_BUTTON}
     >
       <div className="space-y-4">
-        {/* 날짜 범위 설정 */}
-        <DateRangeSection
-          startDate={startDate}
-          endDate={endDate}
-          onStartDateChange={setStartDate}
-          onEndDateChange={setEndDate}
-          title={LABELS.DATE_RANGE}
-          color="blue"
-        />
-
         {/* 필터 설정 */}
         <FilterSection
           title={LABELS.FILTER_SETTINGS}
@@ -154,6 +144,15 @@ export function LogsExportRefactored({ logs, onExport }: LogsExportProps) {
           ]}
         />
 
+        {/* 날짜 범위 설정 */}
+        <DateRangeSection
+          startDate={startDate}
+          endDate={endDate}
+          onStartDateChange={setStartDate}
+          onEndDateChange={setEndDate}
+          title={LABELS.DATE_RANGE}
+          color="blue"
+        />
         {/* 내보내기 옵션 */}
         <OptionsSection
           title={LABELS.INCLUDED_INFO}
@@ -164,7 +163,7 @@ export function LogsExportRefactored({ logs, onExport }: LogsExportProps) {
             {
               key: "includeBasic",
               label: LABELS.BASIC_INFO,
-              description: "액션, 메시지, 시간",
+              description: LABELS.LOG_BASIC_INFO_DESC,
               checked: includeBasic,
               onChange: setIncludeBasic,
             },

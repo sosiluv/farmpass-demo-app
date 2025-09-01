@@ -165,7 +165,6 @@ export function BrandingSection({
             onChange={(e) => onSettingChange("siteName", e.target.value)}
             disabled={loading}
             placeholder={PLACEHOLDERS.SITE_NAME}
-            className="text-sm sm:text-base"
           />
           <p className="text-sm sm:text-base text-muted-foreground">
             {LABELS.SITE_NAME_DESCRIPTION}
@@ -187,7 +186,6 @@ export function BrandingSection({
             disabled={loading}
             placeholder={PLACEHOLDERS.SITE_DESCRIPTION}
             rows={3}
-            className="text-sm sm:text-base"
           />
           <p className="text-sm sm:text-base text-muted-foreground">
             {LABELS.SITE_DESCRIPTION_HELP}

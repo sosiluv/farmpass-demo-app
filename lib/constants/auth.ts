@@ -104,10 +104,6 @@ export const ERROR_MESSAGES = {
   PASSWORD_MIN_LENGTH: "비밀번호는 최소 {minLength}자 이상이어야 합니다",
   PASSWORD_COMPLEXITY:
     "비밀번호는 최소 {minLength}자 이상이어야 하며, {requirements}를 포함해야 합니다",
-
-  // 약관 동의 관련
-  REQUIRED_PRIVACY_CONSENT: "개인정보 수집 및 이용에 동의해주세요.",
-  REQUIRED_TERMS_CONSENT: "서비스 이용약관에 동의해주세요.",
 } as const;
 
 export const SOCIAL_BUTTON_CONFIG = [

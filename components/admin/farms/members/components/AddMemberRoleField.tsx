@@ -46,7 +46,7 @@ const AddMemberRoleFieldComponent = ({
         >
           <SelectTrigger
             id="member-role-select"
-            className={`h-12 ${error ? "border-red-500" : ""}`}
+            className={`${error ? "border-red-500" : ""}`}
           >
             <SelectValue placeholder={PLACEHOLDERS.MEMBER_ROLE_PLACEHOLDER} />
           </SelectTrigger>

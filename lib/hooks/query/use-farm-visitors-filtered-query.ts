@@ -38,11 +38,15 @@ export function useFarmVisitorsWithFiltersQuery(
   const { isAuthenticated } = useAuth();
   const supabase = createClient();
 
-  // 쿼리 키 - farmId 변경 시 새로운 쿼리 실행
+  // 쿼리 키 - 필터 변경 시 새로운 쿼리 실행
   const queryKey = React.useMemo(() => {
-    const baseKey = visitorsKeys.list(filters.farmId || "all", { filters });
+    const baseKey = visitorsKeys.list(filters.farmId || "all", {
+      farmId: filters.farmId,
+    });
     return [...baseKey, "filtered", filters.farmId || "all"];
-  }, [filters.farmId]);
+  }, [
+    filters.farmId, // 농장 필터만 DB 쿼리 키에 포함
+  ]);
 
   // 방문자 데이터 쿼리 - 농장별 최적화
   const visitorsQuery = useAuthenticatedQuery(
@@ -94,14 +98,107 @@ export function useFarmVisitorsWithFiltersQuery(
     refetch: visitorsQuery.refetch,
     filter: (payload) => {
       const changedFarmId = payload?.new?.farm_id || payload?.old?.farm_id;
-      // filters.farmId가 null이면 모든 농장의 변경사항 처리 (전체 농장 선택)
-      return filters.farmId === null || changedFarmId === filters.farmId;
+      return filters.farmId === undefined || changedFarmId === filters.farmId;
     },
   });
 
-  // 필터링된 데이터 및 통계 계산
+  // 검색어 필터링 최적화
+  const searchFilteredVisitors = React.useMemo(() => {
+    const allVisitors = visitorsQuery.data || [];
+    if (!filters.searchTerm?.trim()) return allVisitors;
+
+    const searchLower = filters.searchTerm.toLowerCase();
+    return allVisitors.filter(
+      (visitor) =>
+        visitor.visitor_name?.toLowerCase().includes(searchLower) ||
+        visitor.visitor_phone?.toLowerCase().includes(searchLower) ||
+        visitor.visitor_address?.toLowerCase().includes(searchLower)
+    );
+  }, [visitorsQuery.data, filters.searchTerm]);
+
+  // 날짜 범위 필터링 최적화
+  const dateFilteredVisitors = React.useMemo(() => {
+    if (!filters.dateRange || filters.dateRange === "all") {
+      return searchFilteredVisitors;
+    }
+
+    let startUTC: Date | undefined;
+    let endUTC: Date | undefined;
+
+    const now = new Date();
+    const kstNow = toZonedTime(now, "Asia/Seoul");
+
+    switch (filters.dateRange) {
+      case "today": {
+        const { startUTC: s, endUTC: e } = getKSTDayBoundsUTC(new Date());
+        startUTC = s;
+        endUTC = e;
+        break;
+      }
+      case "week": {
+        const startKst = addDays(kstNow, -7);
+        const { startUTC: s } = getKSTDayBoundsUTC(startKst);
+        const { endUTC: e } = getKSTDayBoundsUTC(new Date());
+        startUTC = s;
+        endUTC = e;
+        break;
+      }
+      case "month": {
+        const startKst = addDays(kstNow, -30);
+        const { startUTC: s } = getKSTDayBoundsUTC(startKst);
+        const { endUTC: e } = getKSTDayBoundsUTC(new Date());
+        startUTC = s;
+        endUTC = e;
+        break;
+      }
+      case "custom": {
+        if (filters.dateStart) {
+          const { startUTC: s } = getKSTDayBoundsUTC(
+            new Date(filters.dateStart)
+          );
+          startUTC = s;
+        }
+        if (filters.dateEnd) {
+          const { endUTC: e } = getKSTDayBoundsUTC(new Date(filters.dateEnd));
+          endUTC = e;
+        }
+        // 기본값 보정: 시작 없으면 30일 전, 종료 없으면 오늘
+        if (!startUTC) {
+          const startKst = addDays(kstNow, -30);
+          startUTC = getKSTDayBoundsUTC(startKst).startUTC;
+        }
+        if (!endUTC) {
+          endUTC = getKSTDayBoundsUTC(new Date()).endUTC;
+        }
+        break;
+      }
+      default: {
+        const startKst = addDays(kstNow, -30);
+        const { startUTC: s } = getKSTDayBoundsUTC(startKst);
+        const { endUTC: e } = getKSTDayBoundsUTC(new Date());
+        startUTC = s;
+        endUTC = e;
+      }
+    }
+
+    return searchFilteredVisitors.filter((visitor) => {
+      const visitInstant = new Date(visitor.visit_datetime);
+      if (startUTC && visitInstant < startUTC) return false;
+      if (endUTC && visitInstant > endUTC) return false;
+      return true;
+    });
+  }, [
+    searchFilteredVisitors,
+    filters.dateRange,
+    filters.dateStart,
+    filters.dateEnd,
+  ]);
+
+  // 통계 계산 최적화
   const computedStats = React.useMemo(() => {
     const allVisitors = visitorsQuery.data || [];
+    const filteredVisitors = dateFilteredVisitors;
+
     if (allVisitors.length === 0) {
       return {
         allVisitors,
@@ -130,89 +227,6 @@ export function useFarmVisitorsWithFiltersQuery(
       };
     }
 
-    // 클라이언트 사이드 필터링 (농장 필터는 DB에서 처리됨)
-    let filteredVisitors = [...allVisitors];
-
-    // 검색어 필터링
-    if (filters.searchTerm?.trim()) {
-      const searchLower = filters.searchTerm.toLowerCase();
-      filteredVisitors = filteredVisitors.filter(
-        (visitor) =>
-          visitor.visitor_name?.toLowerCase().includes(searchLower) ||
-          visitor.visitor_phone?.toLowerCase().includes(searchLower) ||
-          visitor.visitor_address?.toLowerCase().includes(searchLower)
-      );
-    }
-
-    // 날짜 범위 필터링 (KST 기준 경계를 UTC instant로 계산하여 비교)
-    if (filters.dateRange && filters.dateRange !== "all") {
-      let startUTC: Date | undefined;
-      let endUTC: Date | undefined;
-
-      const now = new Date();
-      const kstNow = toZonedTime(now, "Asia/Seoul");
-
-      switch (filters.dateRange) {
-        case "today": {
-          const { startUTC: s, endUTC: e } = getKSTDayBoundsUTC(new Date());
-          startUTC = s;
-          endUTC = e;
-          break;
-        }
-        case "week": {
-          const startKst = addDays(kstNow, -7);
-          const { startUTC: s } = getKSTDayBoundsUTC(startKst);
-          const { endUTC: e } = getKSTDayBoundsUTC(new Date());
-          startUTC = s;
-          endUTC = e;
-          break;
-        }
-        case "month": {
-          const startKst = addDays(kstNow, -30);
-          const { startUTC: s } = getKSTDayBoundsUTC(startKst);
-          const { endUTC: e } = getKSTDayBoundsUTC(new Date());
-          startUTC = s;
-          endUTC = e;
-          break;
-        }
-        case "custom": {
-          if (filters.dateStart) {
-            const { startUTC: s } = getKSTDayBoundsUTC(
-              new Date(filters.dateStart)
-            );
-            startUTC = s;
-          }
-          if (filters.dateEnd) {
-            const { endUTC: e } = getKSTDayBoundsUTC(new Date(filters.dateEnd));
-            endUTC = e;
-          }
-          // 기본값 보정: 시작 없으면 30일 전, 종료 없으면 오늘
-          if (!startUTC) {
-            const startKst = addDays(kstNow, -30);
-            startUTC = getKSTDayBoundsUTC(startKst).startUTC;
-          }
-          if (!endUTC) {
-            endUTC = getKSTDayBoundsUTC(new Date()).endUTC;
-          }
-          break;
-        }
-        default: {
-          const startKst = addDays(kstNow, -30);
-          const { startUTC: s } = getKSTDayBoundsUTC(startKst);
-          const { endUTC: e } = getKSTDayBoundsUTC(new Date());
-          startUTC = s;
-          endUTC = e;
-        }
-      }
-
-      filteredVisitors = filteredVisitors.filter((visitor) => {
-        const visitInstant = new Date(visitor.visit_datetime);
-        if (startUTC && visitInstant < startUTC) return false;
-        if (endUTC && visitInstant > endUTC) return false;
-        return true;
-      });
-    }
-
     // 통계 계산을 위해 기본 방문자 정보만 추출
     const visitorsForStats: VisitorEntry[] = filteredVisitors.map(
       ({ farms, ...visitor }) => visitor
@@ -235,7 +249,7 @@ export function useFarmVisitorsWithFiltersQuery(
 
     return {
       allVisitors,
-      filteredVisitors: filteredVisitors,
+      filteredVisitors,
       visitorTrend,
       purposeStats,
       weekdayStats,
@@ -243,7 +257,7 @@ export function useFarmVisitorsWithFiltersQuery(
       topPurpose,
       dashboardStats,
     };
-  }, [visitorsQuery.data, filters]);
+  }, [visitorsQuery.data, dateFilteredVisitors]);
 
   return {
     visitors: computedStats.filteredVisitors,

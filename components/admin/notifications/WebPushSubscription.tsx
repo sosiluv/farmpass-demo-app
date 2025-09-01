@@ -2,7 +2,6 @@
 
 import React, { useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
-import type { Farm } from "@/lib/types";
 import { useNotificationService } from "@/hooks/notification/useNotificationService";
 import {
   CheckingStatus,
@@ -18,13 +17,7 @@ import { safeNotificationAccess } from "@/lib/utils/browser/safari-compat";
 import { PAGE_HEADER } from "@/lib/constants/notifications";
 import { useNotificationStore } from "@/store/use-notification-store";
 
-interface WebPushSubscriptionProps {
-  farms?: Farm[];
-}
-
-export function WebPushSubscription({
-  farms: propFarms = [],
-}: WebPushSubscriptionProps) {
+export function WebPushSubscription() {
   // 공통 스토어 사용
   const { status, updateSubscriptionStatus } = useNotificationStore();
 
@@ -90,7 +83,8 @@ export function WebPushSubscription({
 
   const handleAllow = async () => {
     showInfo("알림 권한 요청", "알림 권한을 요청하는 중입니다...");
-    const success = await requestNotificationPermission();
+    // 알림 설정 페이지에서는 설정 체크 건너뛰기
+    const success = await requestNotificationPermission(true);
     if (success) {
       await checkNotificationStatus();
     }
@@ -137,7 +131,6 @@ export function WebPushSubscription({
             isLoading={isLoading}
             onCleanup={handleCleanup}
             onUnsubscribe={handleUnsubscribe}
-            farms={propFarms || []}
           />
         );
       default:
@@ -152,7 +145,7 @@ export function WebPushSubscription({
         title={PAGE_HEADER.PUSH_NOTIFICATION_SETTINGS}
         description={PAGE_HEADER.PUSH_DESCRIPTION}
       />
-      <CardContent className="pt-0">{renderStatusComponent()}</CardContent>
+      <CardContent>{renderStatusComponent()}</CardContent>
     </Card>
   );
 }

@@ -6,7 +6,7 @@ import {
   AdminSidebar,
   Header,
   MobileMenuButton,
-  EdgeSwipeArea,
+  SidebarSwipeGuide,
 } from "@/components/layout";
 import { ProtectedRoute } from "@/components/providers/protected-route";
 import { MaintenanceBanner } from "@/components/maintenance";
@@ -15,7 +15,7 @@ import { ERROR_CONFIGS } from "@/lib/constants/error";
 import { ThemeProvider } from "@/components/providers/theme-provider";
 import { DialogManager } from "@/components/common/DialogManager";
 import { AuthProvider } from "@/components/providers/auth-provider";
-import { PWAUpdater } from "@/components/providers/pwa-updater";
+import { ServiceWorkerProvider } from "@/components/providers/service-worker-provider";
 
 export default function AdminLayout({
   children,
@@ -28,7 +28,7 @@ export default function AdminLayout({
       description={ERROR_CONFIGS.GENERAL.description}
     >
       <AuthProvider>
-        <PWAUpdater />
+        <ServiceWorkerProvider />
         <ThemeProvider
           attribute="class"
           defaultTheme="system"
@@ -46,8 +46,8 @@ export default function AdminLayout({
                 {/* </main> */}
               </SidebarInset>
               <MobileMenuButton />
-              {/* 화면 가장자리에서 스와이프로 사이드바 열기 */}
-              <EdgeSwipeArea />
+              {/* 사이드바 스와이프 닫기 가이드 */}
+              <SidebarSwipeGuide />
               {/* Admin 페이지에서만 알림 권한 다이얼로그 관리 */}
               <DialogManager />
             </SidebarProvider>

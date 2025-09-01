@@ -77,6 +77,7 @@ export const LABELS = {
   DEFAULT_PRIVACY_CONSENT_TITLE: "개인정보 수집 및 이용",
   DEFAULT_TERMS_TITLE: "서비스 이용약관",
   DEFAULT_MARKETING_TITLE: "마케팅 및 이벤트 정보 수신",
+  DEFAULT_AGE_CONSENT_TITLE: "만 14세 이상입니다.",
   DEFAULT_TERMS_FALLBACK: "약관",
 } as const;
 
@@ -103,4 +104,30 @@ export const TERM_TYPE_CONFIG = {
     title: "마케팅 정보 수신 동의",
     icon: "Mail",
   },
+  age_consent: {
+    title: "만 14세 이상입니다.",
+    icon: "UserCheck",
+  },
 } as const;
+
+export const TERM_CONFIGS = [
+  {
+    type: "age_consent" as const,
+    isRequired: true,
+    hasViewOption: false,
+    order: 1,
+  },
+  {
+    type: "privacy_consent" as const,
+    isRequired: true,
+    hasViewOption: true,
+    order: 2,
+  },
+  { type: "terms" as const, isRequired: true, hasViewOption: true, order: 3 },
+  {
+    type: "marketing" as const,
+    isRequired: false,
+    hasViewOption: true,
+    order: 4,
+  },
+] as const;

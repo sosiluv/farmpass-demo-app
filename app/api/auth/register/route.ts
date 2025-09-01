@@ -70,6 +70,7 @@ export async function POST(request: NextRequest) {
       privacyConsent: boolean;
       termsConsent: boolean;
       marketingConsent: boolean;
+      ageConsent: boolean;
     } = await request.json();
 
     // 시스템 설정에서 비밀번호 규칙 가져오기
@@ -89,6 +90,7 @@ export async function POST(request: NextRequest) {
       privacyConsent,
       termsConsent,
       marketingConsent,
+      ageConsent,
       ...registrationData
     } = body;
 
@@ -164,7 +166,7 @@ export async function POST(request: NextRequest) {
       where: {
         is_active: true,
         type: {
-          in: ["privacy_consent", "terms", "marketing"],
+          in: ["privacy_consent", "terms", "marketing", "age_consent"],
         },
       },
       select: {
@@ -180,6 +182,18 @@ export async function POST(request: NextRequest) {
     const consentRecords = [];
     const now = new Date();
 
+    // 필수 연령 동의 저장
+    if (ageConsent) {
+      const ageTermId = termIdMap.get("age_consent");
+      if (ageTermId) {
+        consentRecords.push({
+          user_id: user.id,
+          term_id: ageTermId,
+          agreed: true,
+          agreed_at: now,
+        });
+      }
+    }
     // 필수 약관 동의 저장
     if (privacyConsent) {
       const privacyTermId = termIdMap.get("privacy_consent");
@@ -192,7 +206,7 @@ export async function POST(request: NextRequest) {
         });
       }
     }
-
+    // 필수 이용약관 동의 저장
     if (termsConsent) {
       const termsTermId = termIdMap.get("terms");
       if (termsTermId) {
@@ -205,7 +219,7 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // 선택적 마케팅 동의 저장
+    // 선택적 마케팅 정보 수신 동의 저장
     if (marketingConsent) {
       const marketingTermId = termIdMap.get("marketing");
       if (marketingTermId) {
@@ -253,6 +267,7 @@ export async function POST(request: NextRequest) {
         privacy_consent: privacyConsent,
         terms_consent: termsConsent,
         marketing_consent: marketingConsent,
+        age_consent: ageConsent,
       },
       request
     );

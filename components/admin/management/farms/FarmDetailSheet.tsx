@@ -31,11 +31,8 @@ export function FarmDetailSheet({ farm, open, onClose }: FarmDetailSheetProps) {
   return (
     <Sheet open={open} onOpenChange={onClose}>
       <CommonSheetContent
-        side="bottom"
-        showHandle={true}
-        enableDragToClose={true}
-        dragDirection="vertical"
-        dragThreshold={50}
+        enableDragToResize={true}
+        open={open}
         onClose={onClose}
       >
         <CommonSheetHeader
@@ -43,8 +40,8 @@ export function FarmDetailSheet({ farm, open, onClose }: FarmDetailSheetProps) {
           description={PAGE_HEADER.FARM_DETAIL_DESCRIPTION}
         />
         {farm ? (
-          <ScrollArea className="flex-1 overflow-y-auto">
-            <div className="space-y-4 pr-2 pb-4">
+          <ScrollArea className="flex-1">
+            <div className="space-y-4">
               {/* 기본 정보 */}
               <div className="flex flex-col sm:flex-row items-center sm:items-start gap-3 sm:gap-4">
                 <Avatar className="h-8 w-8 sm:h-12 sm:w-12 lg:h-14 lg:w-14 xl:h-16 xl:w-16 flex-shrink-0 rounded-full bg-gray-50 flex items-center justify-center">

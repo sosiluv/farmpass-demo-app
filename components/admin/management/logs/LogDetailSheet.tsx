@@ -66,11 +66,8 @@ export function LogDetailSheet({ log, open, onClose }: LogDetailSheetProps) {
   return (
     <Sheet open={open} onOpenChange={onClose}>
       <CommonSheetContent
-        side="bottom"
-        showHandle={true}
-        enableDragToClose={true}
-        dragDirection="vertical"
-        dragThreshold={50}
+        enableDragToResize={true}
+        open={open}
         onClose={onClose}
       >
         <CommonSheetHeader
@@ -78,8 +75,8 @@ export function LogDetailSheet({ log, open, onClose }: LogDetailSheetProps) {
           description={LABELS.LOG_DETAIL_DESCRIPTION}
         />
         {log ? (
-          <ScrollArea className="flex-1 overflow-y-auto">
-            <div className="space-y-4 pr-2 pb-4">
+          <ScrollArea className="flex-1">
+            <div className="space-y-4">
               {/* 기본 정보 */}
               {log.message && (
                 <div className="space-y-3 sm:space-y-4">

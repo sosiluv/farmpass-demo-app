@@ -37,6 +37,8 @@ import { BUTTONS, LABELS } from "@/lib/constants/common";
 import { LottieLoadingCompact } from "@/components/ui/lottie-loading";
 import { motion } from "framer-motion";
 import { Logo } from "@/components/common/logo";
+import { ConfirmSheet } from "@/components/ui/confirm-sheet";
+import useBlockNavigation from "@/hooks/ui/use-before-unload";
 
 // 프로필 폼 스키마
 const profileFormSchema = z.object({
@@ -55,6 +57,7 @@ export default function ProfileSetupPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [showConsentSheet, setShowConsentSheet] = useState(false);
   const [isInitialized, setIsInitialized] = useState(false);
+  const [showConfirmSheet, setShowConfirmSheet] = useState(false);
 
   // Mutation 훅들
   const updateProfileMutation = useUpdateProfileMutation();
@@ -63,6 +66,10 @@ export default function ProfileSetupPage() {
   // 사용자 상태 확인
   const { data: profileData, isLoading: profileLoading } =
     useProfileQuery(userId);
+
+  // 프로필 완성 상태 계산 (중복 제거)
+  const isProfileAlreadyComplete =
+    profileData && isProfileComplete(profileData);
 
   // React Hook Form 설정
   const form = useForm<ProfileFormData>({
@@ -97,7 +104,7 @@ export default function ProfileSetupPage() {
   }, [isUnauthenticated, profileData, profileLoading, router, form]);
 
   // 프로필 저장 후 약관 동의 시트 띄우기
-  const handleSubmit = async (data: ProfileFormData) => {
+  const handleSubmit = async () => {
     // 약관 동의 시트 띄우기
     setShowConsentSheet(true);
   };
@@ -106,15 +113,14 @@ export default function ProfileSetupPage() {
   const handleConsentComplete = async (
     privacyConsent: boolean,
     termsConsent: boolean,
-    marketingConsent: boolean
+    marketingConsent: boolean,
+    ageConsent: boolean
   ) => {
     setIsLoading(true);
     try {
       // 1. 프로필 정보 저장 (사용자가 입력한 정보가 있는 경우에만)
       const formData = form.getValues();
       const hasProfileChanges = formData.name.trim() || formData.phone.trim();
-      const isProfileAlreadyComplete =
-        profileData && isProfileComplete(profileData);
 
       // 프로필이 이미 완성되어 있거나 새로 입력된 정보가 있는 경우에만 업데이트
       if (!isProfileAlreadyComplete && hasProfileChanges) {
@@ -129,6 +135,7 @@ export default function ProfileSetupPage() {
       const consentResult = await updateConsentMutation.mutateAsync({
         privacyConsent,
         termsConsent,
+        ageConsent,
         marketingConsent,
       });
 
@@ -166,6 +173,7 @@ export default function ProfileSetupPage() {
 
       // 로그아웃 처리 후 로그인 페이지로 리다이렉트
       await signOut();
+
       router.replace("/auth/login");
     } catch (error) {
       console.error("로그아웃 실패:", error);
@@ -173,6 +181,17 @@ export default function ProfileSetupPage() {
       router.replace("/auth/login");
     }
   };
+
+  // 뒤로가기 처리 - useBlockNavigation 훅 사용
+  const { isAttemptingNavigation, proceedNavigation, cancelNavigation } =
+    useBlockNavigation(true, "/auth/login"); // 로그인 페이지로 이동
+
+  // confirm 다이얼로그 처리
+  useEffect(() => {
+    if (isAttemptingNavigation) {
+      setShowConfirmSheet(true);
+    }
+  }, [isAttemptingNavigation]);
 
   // 로딩 중이거나 인증 확인 중인 경우
   if (isAuthLoading || profileLoading || !isInitialized) {
@@ -198,7 +217,7 @@ export default function ProfileSetupPage() {
           className="w-full max-w-md"
         >
           {/* 프로필이 완성된 경우 약관 동의 안내 */}
-          {profileData && isProfileComplete(profileData) ? (
+          {isProfileAlreadyComplete ? (
             <Card className="border-none shadow-soft-lg">
               <CardHeader className="space-y-1 text-center">
                 <div className="mx-auto mb-4 flex justify-center">
@@ -261,7 +280,7 @@ export default function ProfileSetupPage() {
               <CardContent>
                 <div className="mx-auto mb-4 flex justify-center">
                   <LottieLoadingCompact
-                    animationPath="/lottie/consent.json"
+                    animationPath="/lottie/profile.json"
                     size="lg"
                   />
                 </div>
@@ -321,11 +340,33 @@ export default function ProfileSetupPage() {
             onOpenChange={setShowConsentSheet}
             onConsent={handleConsentComplete}
             loading={isLoading}
-            mode={
-              profileData && isProfileComplete(profileData)
-                ? "reconsent"
-                : "register"
+            mode={isProfileAlreadyComplete ? "reconsent" : "register"}
+          />
+
+          {/* 네비게이션 확인 시트 */}
+          <ConfirmSheet
+            open={showConfirmSheet}
+            onOpenChange={setShowConfirmSheet}
+            onConfirm={() => {
+              setShowConfirmSheet(false);
+              handleGoBack();
+              proceedNavigation();
+            }}
+            onCancel={() => {
+              setShowConfirmSheet(false);
+              cancelNavigation();
+            }}
+            title={
+              showConsentSheet
+                ? LABELS.PROFILE_SETUP_CANCEL_TITLE_CONSENT
+                : LABELS.PROFILE_SETUP_CANCEL_TITLE
             }
+            warningMessage={
+              showConsentSheet
+                ? LABELS.PROFILE_SETUP_CANCEL_DESC_CONSENT
+                : LABELS.PROFILE_SETUP_CANCEL_DESC
+            }
+            variant="warning"
           />
         </motion.div>
       </div>

@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/sheet-common";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { MapPin } from "lucide-react";
+import { FileText, MapPin } from "lucide-react";
 import { BUTTONS, LABELS, PLACEHOLDERS } from "@/lib/constants/common";
 
 interface AddressSearchProps {
@@ -75,37 +75,33 @@ export function AddressSearch({
         <Button
           type="button"
           variant="outline"
-          className="w-full justify-start text-left font-normal"
+          className="w-full justify-start text-sm sm:text-base font-normal"
         >
           <MapPin className="mr-2 h-4 w-4" />
           {BUTTONS.ADDRESS_SEARCH_BUTTON}
         </Button>
       </SheetTrigger>
       <CommonSheetContent
-        side="bottom"
-        showHandle={true}
-        enableDragToClose={true}
-        dragDirection="vertical"
-        dragThreshold={50}
+        enableDragToResize={true}
+        open={open}
         onClose={() => setOpen(false)}
       >
         <CommonSheetHeader
           title={LABELS.ADDRESS_SEARCH_TITLE}
           description={LABELS.ADDRESS_SEARCH_DESCRIPTION}
+          show={false}
         />
         {!isAddressSelected && isPostcodeLoaded ? (
-          <div className="h-[500px] sm:h-[550px] lg:h-[600px]">
-            <DaumPostcode
-              onComplete={handleComplete}
-              style={{ height: "100%" }}
-              onClose={() => setOpen(false)}
-              autoClose={false}
-              defaultQuery=""
-              animation={false}
-            />
-          </div>
+          <DaumPostcode
+            onComplete={handleComplete}
+            style={{ height: "100%" }}
+            onClose={() => setOpen(false)}
+            autoClose={false}
+            defaultQuery=""
+            animation={false}
+          />
         ) : !isAddressSelected && !isPostcodeLoaded ? (
-          <div className="h-[500px] sm:h-[550px] lg:h-[600px] flex items-center justify-center">
+          <div className="flex items-center justify-center">
             <div className="text-center">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto mb-4"></div>
               <p className="text-sm text-gray-600">
@@ -115,25 +111,22 @@ export function AddressSearch({
           </div>
         ) : (
           <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <Label className="text-sm">
-                {LABELS.ADDRESS_SEARCH_BASIC_ADDRESS}
-              </Label>
-              <Input
-                value={selectedAddress}
-                readOnly
-                className="h-10 sm:h-11 text-sm"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label className="text-sm">
+            <Label className="flex items-center gap-2 text-sm">
+              <MapPin className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+              {LABELS.ADDRESS_SEARCH_BASIC_ADDRESS}
+              <span className="text-red-500">*</span>
+            </Label>
+            <Input value={selectedAddress} readOnly />
+
+            <div className="space-y-4 py-4">
+              <Label className="flex items-center gap-2 text-sm">
+                <FileText className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                 {LABELS.ADDRESS_SEARCH_DETAILED_ADDRESS}
               </Label>
               <Input
                 placeholder={PLACEHOLDERS.ADDRESS_SEARCH_DETAILED_PLACEHOLDER}
                 value={detailedAddress}
                 onChange={(e) => setDetailedAddress(e.target.value)}
-                className="h-10 sm:h-11 text-sm"
               />
             </div>
           </div>

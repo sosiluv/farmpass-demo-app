@@ -118,7 +118,7 @@ const VapidKeySection = React.memo(function VapidKeySection({
                 value={settings.vapidPublicKey || ""}
                 readOnly
                 disabled
-                className="pr-10 bg-muted/50 text-muted-foreground cursor-not-allowed text-sm sm:text-base"
+                className="pr-10 bg-muted/50 text-muted-foreground cursor-not-allowed"
               />
               <Button
                 type="button"
@@ -139,7 +139,6 @@ const VapidKeySection = React.memo(function VapidKeySection({
               variant="outline"
               onClick={handleGenerateKeys}
               disabled={isLoading}
-              className="text-sm sm:text-base"
             >
               {BUTTONS.VAPID_GENERATE_BUTTON}
             </Button>
@@ -161,7 +160,7 @@ const VapidKeySection = React.memo(function VapidKeySection({
               value={settings.vapidPrivateKey || ""}
               readOnly
               disabled
-              className="pr-10 bg-muted/50 text-muted-foreground cursor-not-allowed font-mono text-sm sm:text-base"
+              className="pr-10 bg-muted/50 text-muted-foreground cursor-not-allowed font-mono"
             />
             <Button
               type="button"

@@ -31,6 +31,7 @@ export const BUTTONS = {
   PAGINATION_PAGE_RANGE: "{start}-{end} / {total}개",
 
   THEME_TOGGLE_SCREEN_READER: "테마 전환",
+  PROFILE_MENU_SCREEN_READER: "사용자 프로필 메뉴",
 
   ADDRESS_SEARCH_BUTTON: "주소 검색",
 
@@ -137,12 +138,6 @@ export const LABELS = {
   CHART_NO_TIME_DATA: "시간대별 방문자 데이터가 없습니다.",
   CHART_NO_TREND_DATA: "방문자 추이 데이터가 없습니다.",
 
-  // 레이아웃 라벨
-  LAYOUT_ADMIN_SIDEBAR: "시스템 관리자",
-  LAYOUT_FARM_MANAGER: "{count}개 농장 관리",
-  LAYOUT_REGISTER_FARM: "농장을 등록해주세요",
-
-  LAYOUT_MOBILE_GUIDE: "💡 닫기: 외부 터치 · 왼쪽 스와이프 · 우하단 버튼",
   LAYOUT_MANAGEMENT_MENU: "관리 메뉴",
   LAYOUT_FARM_QUICK_ACCESS: "농장별 바로가기",
   LAYOUT_QUICK_ACTIONS: "빠른 액션",
@@ -332,6 +327,17 @@ export const LABELS = {
   PROFILE_SETUP_PROFILE_INPUT_TITLE: "프로필 정보 입력",
   PROFILE_SETUP_PROFILE_INPUT_DESC:
     "서비스 이용을 위해 추가 정보를 입력해주세요.",
+
+  PROFILE_SETUP_CANCEL_TITLE: "프로필 설정을 취소하시겠습니까?",
+  PROFILE_SETUP_CANCEL_TITLE_CONSENT: "약관 동의를 취소하시겠습니까?",
+  PROFILE_SETUP_CANCEL_DESC: "확인을 누르면 작성 중인 내용이 사라집니다.",
+  PROFILE_SETUP_CANCEL_DESC_CONSENT:
+    "확인을 누르면 프로필 설정으로 돌아갑니다.",
+
+  // 사이드바 스와이프 가이드 관련
+  SIDEBAR_SWIPE_GUIDE_TITLE: "← 왼쪽으로 스와이프",
+  SIDEBAR_SWIPE_GUIDE_DESCRIPTION: "화면을 터치하고 왼쪽으로 밀어보세요",
+  SIDEBAR_SWIPE_GUIDE_DESCRIPTION_MOBILE: "터치 후 왼쪽으로 밀기",
 } as const;
 
 // 공통 컴포넌트 플레이스홀더

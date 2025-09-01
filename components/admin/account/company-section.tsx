@@ -123,7 +123,6 @@ export function CompanySection({
                   onChange={(e) => handleChange("companyName", e.target.value)}
                   disabled={loading}
                   placeholder={PLACEHOLDERS.COMPANY_NAME}
-                  className="text-sm sm:text-base"
                 />
               </div>
               <div className="space-y-2">
@@ -138,21 +137,14 @@ export function CompanySection({
                   onValueChange={(value) => handleChange("businessType", value)}
                   disabled={loading}
                 >
-                  <SelectTrigger
-                    id="businessType"
-                    className="text-sm sm:text-base"
-                  >
+                  <SelectTrigger id="businessType">
                     <SelectValue
                       placeholder={PLACEHOLDERS.BUSINESS_TYPE_SELECT}
                     />
                   </SelectTrigger>
                   <SelectContent>
                     {(BUSINESS_TYPE_OPTIONS || []).map((option) => (
-                      <SelectItem
-                        key={option.value}
-                        value={option.value}
-                        className="text-sm sm:text-base"
-                      >
+                      <SelectItem key={option.value} value={option.value}>
                         {option.label}
                       </SelectItem>
                     ))}
@@ -183,7 +175,6 @@ export function CompanySection({
                 placeholder={PLACEHOLDERS.COMPANY_ADDRESS}
                 readOnly
                 disabled={loading}
-                className="text-sm sm:text-base"
               />
             </div>
 
@@ -206,7 +197,6 @@ export function CompanySection({
                     if (e.target.showPicker) e.target.showPicker();
                   }}
                   disabled={loading}
-                  className="text-sm sm:text-base"
                 />
               </div>
               <div className="space-y-2">
@@ -223,21 +213,14 @@ export function CompanySection({
                   }
                   disabled={loading}
                 >
-                  <SelectTrigger
-                    id="employee_count"
-                    className="text-sm sm:text-base"
-                  >
+                  <SelectTrigger id="employee_count">
                     <SelectValue
                       placeholder={PLACEHOLDERS.EMPLOYEE_COUNT_SELECT}
                     />
                   </SelectTrigger>
                   <SelectContent>
                     {(EMPLOYEE_COUNT_OPTIONS || []).map((option) => (
-                      <SelectItem
-                        key={option.value}
-                        value={option.value}
-                        className="text-sm sm:text-base"
-                      >
+                      <SelectItem key={option.value} value={option.value}>
                         {option.label}
                       </SelectItem>
                     ))}
@@ -262,7 +245,6 @@ export function CompanySection({
                 }
                 placeholder={PLACEHOLDERS.COMPANY_WEBSITE}
                 disabled={loading}
-                className="text-sm sm:text-base"
               />
             </div>
 
@@ -282,7 +264,6 @@ export function CompanySection({
                 placeholder={PLACEHOLDERS.COMPANY_DESCRIPTION}
                 rows={4}
                 disabled={loading}
-                className="text-sm sm:text-base"
               />
             </div>
 

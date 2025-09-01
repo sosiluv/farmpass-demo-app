@@ -9,7 +9,6 @@ import {
   mapRawErrorToCode,
 } from "@/lib/utils/error/errorUtil";
 import { useSupabaseRealtime } from "@/hooks/notification/useSupabaseRealtime";
-import { useFarmsQuery } from "@/lib/hooks/query/use-farms-query";
 
 export interface AdminDashboardStatsResponse {
   totalUsers: number;
@@ -66,7 +65,6 @@ export interface AdminDashboardStatsResponse {
 
 export function useAdminDashboardStatsQuery(farmId?: string) {
   const { user } = useAuth();
-  const { farms } = useFarmsQuery();
 
   const query = useAuthenticatedQuery(
     adminKeys.dashboard(farmId),
@@ -98,7 +96,7 @@ export function useAdminDashboardStatsQuery(farmId?: string) {
     }
   );
 
-  // 실시간: 방문자 변경 시(refetch). farmId === "all" 이면 전체(내 소속 농장 범위 내) 반응
+  // 실시간: 방문자 변경 시(refetch). farmId가 없거나 "all"이면 전체 반응
   useSupabaseRealtime({
     table: "visitor_entries",
     refetch: query.refetch,
@@ -106,10 +104,9 @@ export function useAdminDashboardStatsQuery(farmId?: string) {
       const changedFarmId = payload?.new?.farm_id || payload?.old?.farm_id;
       return farmId === "all" || changedFarmId === farmId;
     },
-    farms,
   });
 
-  // 실시간: 농장 정보 변경 시. farmId === "all" 이면 모든 소속 농장 반응
+  // 실시간: 농장 정보 변경 시. farmId가 없거나 "all"이면 모든 농장 반응
   useSupabaseRealtime({
     table: "farms",
     refetch: query.refetch,
@@ -117,7 +114,6 @@ export function useAdminDashboardStatsQuery(farmId?: string) {
       const changedId = payload?.new?.id || payload?.old?.id;
       return farmId === "all" || changedId === farmId;
     },
-    farms,
   });
 
   return query;

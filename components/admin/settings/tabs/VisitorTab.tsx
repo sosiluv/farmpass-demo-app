@@ -103,7 +103,6 @@ export default function VisitorTab({
               onFocus={reVisitAllowInterval.handleFocus}
               min={reVisitAllowInterval.min}
               max={reVisitAllowInterval.max}
-              className="text-sm sm:text-base"
             />
           </div>
 
@@ -135,7 +134,6 @@ export default function VisitorTab({
               onFocus={maxVisitorsPerDay.handleFocus}
               min={maxVisitorsPerDay.min}
               max={maxVisitorsPerDay.max}
-              className="text-sm sm:text-base"
             />
           </div>
 
@@ -167,7 +165,6 @@ export default function VisitorTab({
               onFocus={visitorDataRetentionDays.handleFocus}
               min={visitorDataRetentionDays.min}
               max={visitorDataRetentionDays.max}
-              className="text-sm sm:text-base"
             />
           </div>
 

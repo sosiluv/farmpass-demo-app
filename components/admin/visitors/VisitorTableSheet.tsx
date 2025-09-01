@@ -6,6 +6,7 @@ import {
   CommonSheetContent,
   CommonSheetHeader,
 } from "@/components/ui/sheet-common";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import {
@@ -349,23 +350,20 @@ export function VisitorTableSheet({
       <Sheet open={isModalOpen} onOpenChange={setIsModalOpen}>
         <CommonSheetContent
           side="bottom"
-          showHandle={true}
-          enableDragToClose={true}
-          dragDirection="vertical"
-          dragThreshold={50}
+          enableDragToResize={true}
           onClose={handleCloseModal}
-          className="max-h-[95vh] overflow-hidden p-0 gap-0"
+          open={isModalOpen}
         >
           <CommonSheetHeader
             title={LABELS.VISITOR_TABLE_DETAILS_TITLE}
             description={LABELS.VISITOR_TABLE_DETAILS_DESC}
           />
-          <div className="flex-1 overflow-y-auto">
+          <ScrollArea className="flex-1">
             <VisitorDetailSheet
               visitor={selectedVisitor}
               onClose={handleCloseModal}
             />
-          </div>
+          </ScrollArea>
         </CommonSheetContent>
       </Sheet>
     </>

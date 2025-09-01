@@ -27,7 +27,7 @@ export const PAGE_HEADER = {
   // 개인정보 섹션
   PRIVACY_MARKETING_TITLE: "마케팅 정보 수신",
   PRIVACY_MARKETING_DESCRIPTION:
-    "농장 관리에 도움이 되는 유용한 정보와 서비스 업데이트를 받아보실 수 있습니다.",
+    "새로운 기능, 이벤트, 유용한 농장 관리 팁 등을 이메일로 받아보세요.",
   PRIVACY_STATUS_TITLE: "개인정보 처리 현황",
   PRIVACY_STATUS_DESCRIPTION:
     "현재 동의하신 개인정보 처리 내역을 확인하실 수 있습니다.",
@@ -71,7 +71,7 @@ export const LABELS = {
   POSITION: "직책",
   DEPARTMENT: "부서",
   BIO: "자기소개",
-  EMAIL_CHANGE_DISABLED: "이메일은 보안상 변경할 수 없습니다.",
+
   // 탭 라벨
   TABS: {
     PROFILE: "프로필",
@@ -112,11 +112,7 @@ export const LABELS = {
 
   // 개인정보 섹션
   MARKETING_CONSENT: "마케팅 정보 수신 동의",
-  MARKETING_CONSENT_DESCRIPTION:
-    "새로운 기능, 이벤트, 유용한 농장 관리 팁 등을 이메일로 받아보세요.",
-  MARKETING_CONSENT_OPTIONAL: "선택사항입니다",
-  MARKETING_CONSENT_OPTIONAL_DESC:
-    "이 동의를 거부하셔도 서비스 이용에 제한이 없으며, 언제든지 변경하실 수 있습니다.",
+
   CONSENT_REQUIRED: "필수",
   CONSENT_OPTIONAL: "선택",
   CONSENT_AGREED: "동의",

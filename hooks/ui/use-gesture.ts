@@ -1,3 +1,4 @@
+import React from "react";
 import { useDrag } from "@use-gesture/react";
 
 /**
@@ -16,41 +17,23 @@ export interface SwipeToCloseOptions {
   enabled?: boolean;
 }
 
-export interface DragToCloseOptions {
-  /** 드래그 방향 */
-  direction: "horizontal" | "vertical";
-  /** 드래그 임계값 (px) */
-  threshold?: number;
+export interface DragToResizeOptions {
+  /** 초기 높이 (vh 단위) */
+  initialHeight?: number;
+  /** 최소 높이 (vh 단위) */
+  minHeight?: number;
+  /** 최대 높이 (vh 단위) */
+  maxHeight?: number;
+  /** 크기 변경 콜백 함수 */
+  onResize?: (height: number) => void;
   /** 닫기 콜백 함수 */
-  onClose: () => void;
+  onClose?: () => void;
+  /** 닫기 임계값 (vh 단위) */
+  closeThreshold?: number;
   /** 활성화 여부 */
   enabled?: boolean;
-  /** 이벤트 전파 방지 */
-  preventPropagation?: boolean;
-}
-
-export interface SwipeToOpenOptions {
-  /** 스와이프 방향 */
-  direction: "left" | "right" | "up" | "down";
-  /** 스와이프 임계값 (px) */
-  threshold?: number;
-  /** 열기 콜백 함수 */
-  onOpen: () => void;
-  /** 활성화 여부 */
-  enabled?: boolean;
-}
-
-export interface EdgeSwipeOptions {
-  /** 가장자리 영역 크기 (px) */
-  edgeSize?: number;
-  /** 스와이프 방향 */
-  direction: "right" | "left" | "down" | "up";
-  /** 스와이프 임계값 (px) */
-  threshold?: number;
-  /** 열기 콜백 함수 */
-  onOpen: () => void;
-  /** 활성화 여부 */
-  enabled?: boolean;
+  /** 모달 열림 상태 (높이 초기화 트리거용) */
+  open?: boolean;
 }
 
 /**
@@ -109,178 +92,114 @@ export function useSwipeToClose({
 }
 
 /**
- * 드래그로 닫기 제스처 훅
- * 모달, 시트 등에서 사용
+ * 드래그로 크기 조정 제스처 훅
+ * bottom sheet의 크기를 드래그로 조정할 때 사용
  *
  * @example
- * const bind = useDragToClose({
- *   direction: "vertical",
- *   onClose: () => setModalOpen(false)
+ * const { bind, height } = useDragToResize({
+ *   initialHeight: 50,
+ *   minHeight: 30,
+ *   maxHeight: 90,
+ *   onResize: (newHeight) => console.log(newHeight)
  * });
- * return <div {...bind()}>모달 내용</div>
+ * return <div {...bind()} style={{ height: `${height}vh` }}>크기 조정 가능한 시트</div>
  */
-export function useDragToClose({
-  direction,
-  threshold = 50,
+export function useDragToResize({
+  initialHeight = 75,
+  minHeight = 30,
+  maxHeight = 95,
+  onResize,
   onClose,
+  closeThreshold = 30,
   enabled = true,
-  preventPropagation = false,
-}: DragToCloseOptions) {
+  open,
+}: DragToResizeOptions) {
+  const [height, setHeight] = React.useState(initialHeight);
+  const [isDragging, setIsDragging] = React.useState(false);
+  const initialHeightRef = React.useRef(initialHeight);
+
+  // initialHeight가 변경되면 업데이트
+  React.useEffect(() => {
+    if (initialHeight !== initialHeightRef.current) {
+      setHeight(initialHeight);
+      initialHeightRef.current = initialHeight;
+    }
+  }, [initialHeight]);
+
+  // 모달이 열릴 때마다 높이를 초기값으로 리셋
+  React.useEffect(() => {
+    if (open === true) {
+      setHeight(initialHeight);
+      setIsDragging(false);
+    }
+  }, [open, initialHeight]);
+
   const bind = useDrag(
-    ({ movement, last, cancel, event }) => {
+    ({ movement, active, last, event, memo }) => {
       if (!enabled) return;
 
       // 이벤트 전파 방지
-      if (preventPropagation && event) {
+      if (event) {
         event.stopPropagation();
       }
 
-      const [mx, my] = movement;
-      let shouldClose = false;
+      const [, my] = movement;
+      const viewportHeight = window.innerHeight;
 
-      // 방향에 따른 닫기 조건 확인
-      if (direction === "horizontal") {
-        // 좌우 어느 방향이든 threshold 이상이면 닫기
-        shouldClose = Math.abs(mx) > threshold;
-      } else {
-        // 세로 방향은 아래로만 (양수)
-        shouldClose = my > threshold;
+      if (active && !isDragging) {
+        setIsDragging(true);
       }
 
-      if (shouldClose && last) {
-        onClose();
-        cancel && cancel();
+      if (!active && isDragging) {
+        setIsDragging(false);
       }
+
+      // 드래그 시작 시 현재 높이를 memo로 저장
+      const startHeight = memo || height;
+
+      // 드래그 거리를 vh 단위로 변환 (아래로 드래그하면 양수, 위로 드래그하면 음수)
+      const deltaVh = (my / viewportHeight) * 100;
+      let newHeight = startHeight - deltaVh; // 위로 드래그하면 높이 증가, 아래로 드래그하면 높이 감소
+
+      // 실시간으로 높이 업데이트 (범위 제한 없이)
+      if (active) {
+        // 드래그 중에는 범위를 넘어서도 시각적 피드백 제공
+        const visualHeight = Math.max(0, Math.min(100, newHeight));
+        setHeight(visualHeight);
+
+        if (onResize) {
+          onResize(visualHeight);
+        }
+      }
+
+      // 드래그 완료 시 처리
+      if (last) {
+        // 닫기 임계값 체크
+        if (newHeight < closeThreshold && onClose) {
+          onClose();
+          return startHeight; // 닫힐 때는 원래 높이 반환
+        }
+
+        // 정상 범위로 제한
+        const finalHeight = Math.max(minHeight, Math.min(maxHeight, newHeight));
+        setHeight(finalHeight);
+
+        if (onResize) {
+          onResize(finalHeight);
+        }
+
+        return finalHeight;
+      }
+
+      return startHeight;
     },
     {
       enabled,
-      axis: direction === "horizontal" ? "x" : "y",
+      axis: "y",
       filterTaps: true,
+      from: () => [0, 0],
     }
   );
 
-  return bind;
-}
-
-/**
- * 스와이프로 열기 제스처 훅
- * 일반적인 스와이프로 열기 (어디서든)
- *
- * @example
- * const bind = useSwipeToOpen({
- *   direction: "right",
- *   onOpen: () => setSidebarOpen(true)
- * });
- * return <div {...bind()}>스와이프 영역</div>
- */
-export function useSwipeToOpen({
-  direction,
-  threshold = 50,
-  onOpen,
-  enabled = true,
-}: SwipeToOpenOptions) {
-  const bind = useDrag(
-    ({ movement, last, cancel }) => {
-      if (!enabled) return;
-
-      const [mx, my] = movement;
-      let shouldOpen = false;
-
-      // 방향에 따른 열기 조건 확인
-      switch (direction) {
-        case "left":
-          shouldOpen = mx < -threshold;
-          break;
-        case "right":
-          shouldOpen = mx > threshold;
-          break;
-        case "up":
-          shouldOpen = my < -threshold;
-          break;
-        case "down":
-          shouldOpen = my > threshold;
-          break;
-      }
-
-      if (shouldOpen && last) {
-        onOpen();
-        cancel && cancel();
-      }
-    },
-    {
-      enabled,
-      axis: direction === "left" || direction === "right" ? "x" : "y",
-      filterTaps: true,
-    }
-  );
-
-  return bind;
-}
-
-export function useEdgeSwipe({
-  edgeSize = 20,
-  direction,
-  threshold = 50,
-  onOpen,
-  enabled = true,
-}: EdgeSwipeOptions) {
-  const bind = useDrag(
-    ({ movement, last, cancel, initial }) => {
-      if (!enabled) return;
-
-      const [mx, my] = movement;
-      const [initialX, initialY] = initial;
-      let shouldOpen = false;
-      let validEdgeStart = false;
-
-      // 가장자리에서 시작했는지 확인
-      switch (direction) {
-        case "right":
-          validEdgeStart = initialX <= edgeSize;
-          shouldOpen = mx > threshold;
-          break;
-        case "left":
-          validEdgeStart = initialX >= window.innerWidth - edgeSize;
-          shouldOpen = mx < -threshold;
-          break;
-        case "down":
-          validEdgeStart = initialY <= edgeSize;
-          shouldOpen = my > threshold;
-          break;
-        case "up":
-          validEdgeStart = initialY >= window.innerHeight - edgeSize;
-          shouldOpen = my < -threshold;
-          break;
-      }
-
-      if (validEdgeStart && shouldOpen && last) {
-        onOpen();
-        cancel && cancel();
-      }
-    },
-    {
-      enabled,
-      axis: direction === "left" || direction === "right" ? "x" : "y",
-      filterTaps: true,
-    }
-  );
-
-  return bind;
-}
-
-/**
- * 범용 제스처 훅 (커스텀 로직용)
- *
- * @example
- * const bind = useCustomGesture({
- *   onDrag: ({ movement: [mx, my] }) => {
- *     // 커스텀 드래그 로직
- *   },
- *   onPinch: ({ offset: [scale] }) => {
- *     // 커스텀 핀치 로직
- *   }
- * });
- */
-export function useCustomGesture(handlers: any, options?: any) {
-  return useDrag(handlers, options);
+  return { bind, height, setHeight, isDragging };
 }

@@ -34,10 +34,7 @@ export function LoggingLevelSelect({
         {LABELS.LOGGING_LEVEL}
       </Label>
       <Select value={value} onValueChange={onChange} disabled={isLoading}>
-        <SelectTrigger
-          id="logging-level"
-          className="w-full text-center text-sm sm:text-base"
-        >
+        <SelectTrigger id="logging-level">
           <SelectValue placeholder={PLACEHOLDERS.LOGGING_LEVEL}>
             {
               LOGGING_LEVEL_OPTIONS.find((option) => option.value === value)
@@ -47,11 +44,7 @@ export function LoggingLevelSelect({
         </SelectTrigger>
         <SelectContent>
           {LOGGING_LEVEL_OPTIONS.map((option) => (
-            <SelectItem
-              key={option.value}
-              value={option.value}
-              className="!p-2 text-sm sm:text-base"
-            >
+            <SelectItem key={option.value} value={option.value}>
               <div className="flex flex-col items-start">
                 <span className="font-medium leading-tight text-sm sm:text-base">
                   {option.label}

@@ -243,6 +243,21 @@ export async function middleware(request: NextRequest) {
       }, Token valid: ${isAuthenticated}, Session expired: ${sessionExpired}`
     );
   } catch (error) {
+    // 네트워크 연결 오류 감지 (오프라인 상태)
+    if (
+      error instanceof Error &&
+      (error.message.includes("fetch") ||
+        error.message.includes("network") ||
+        error.message.includes("Connection") ||
+        error.name === "TypeError")
+    ) {
+      devLog.warn(
+        `[MIDDLEWARE] Network error detected - letting Service Worker handle: ${error.message}`
+      );
+      // Service Worker가 처리하도록 요청을 그대로 통과
+      return NextResponse.next();
+    }
+
     devLog.error(`[MIDDLEWARE] Auth error: ${error}`);
   }
 
@@ -363,15 +378,6 @@ export async function middleware(request: NextRequest) {
     Object.entries(headers).forEach(([key, value]) => {
       supabaseResponse.headers.set(key, value);
     });
-  }
-
-  // ✅ 요청 처리 완료 - 다음 단계로 진행
-  // 성능 측정 로그 (개발 환경에서만)
-  const processingTime = Date.now() - start;
-  if (processingTime > 100) {
-    devLog.warn(
-      `[MIDDLEWARE] Slow request: ${pathname} took ${processingTime}ms`
-    );
   }
 
   return supabaseResponse;

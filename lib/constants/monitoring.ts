@@ -70,7 +70,6 @@ export const LABELS = {
   STATUS_UNKNOWN: "알 수 없음",
 
   // TechStackCard
-  TECH_STACK_DESC: "현재 사용 중인 기술 스택 정보",
   FRAMEWORK: "Framework",
   RUNTIME: "Runtime",
   REACT: "React",

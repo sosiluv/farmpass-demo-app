@@ -5,7 +5,6 @@ import { motion, AnimatePresence } from "framer-motion";
 import { PageHeader } from "@/components/layout";
 import { WebPushSubscription } from "@/components/admin/notifications/WebPushSubscription";
 import { useNotificationSettingsQuery } from "@/lib/hooks/query/use-notification-settings-query";
-import { useAuth } from "@/components/providers/auth-provider";
 import { ErrorBoundary } from "@/components/error/error-boundary";
 import { ERROR_CONFIGS } from "@/lib/constants/error";
 import {
@@ -18,21 +17,10 @@ import { useCommonToast } from "@/lib/utils/notification/toast-messages";
 import type { UserNotificationSetting } from "@/lib/types/common";
 import { FormSkeleton } from "@/components/ui/skeleton";
 import { PAGE_HEADER } from "@/lib/constants/notifications";
-import { useFarmsQuery } from "@/lib/hooks/query/use-farms-query";
 import { Bell } from "lucide-react";
 import { useNotificationStore } from "@/store/use-notification-store";
 
 export default function NotificationsPage() {
-  const { userId } = useAuth();
-
-  // useFarmsContext 대신 useFarmsQuery 사용
-  const {
-    farms,
-    isLoading: farmsLoading,
-    error: farmsError,
-    refetch: refetchFarms,
-  } = useFarmsQuery(userId);
-
   // 공통 스토어에서 isSubscribed 상태 사용
   const { isSubscribed } = useNotificationStore();
 
@@ -41,7 +29,7 @@ export default function NotificationsPage() {
     error: settingsError,
     isLoading: settingsLoading,
   } = useNotificationSettingsQuery();
-  const { showInfo, showError } = useCommonToast();
+  const { showError } = useCommonToast();
 
   // 시스템 설정 페이지처럼 로컬 상태 관리
   const [unsavedChanges, setUnsavedChanges] = useState(false);
@@ -73,13 +61,6 @@ export default function NotificationsPage() {
     setUnsavedChanges(false);
   };
 
-  // 농장 데이터 로드
-  useEffect(() => {
-    if (userId && !farmsLoading && farms.length === 0) {
-      refetchFarms();
-    }
-  }, [userId, refetchFarms, farmsLoading, farms.length, showInfo]);
-
   // 알림 설정 에러 처리
   useEffect(() => {
     if (settingsError) {
@@ -87,17 +68,7 @@ export default function NotificationsPage() {
     }
   }, [settingsError, showError]);
 
-  // 농장 에러에 따른 토스트 처리
-  useEffect(() => {
-    if (farmsError) {
-      showError("농장 정보 로드 실패", farmsError.message);
-    }
-  }, [farmsError, showError]);
-
-  // 농장 데이터를 WebPushSubscription 컴포넌트에 직접 전달
-  const farmData = farms || [];
-
-  const isLoading = farmsLoading || settingsLoading;
+  const isLoading = settingsLoading;
 
   if (isLoading) {
     return (
@@ -132,7 +103,7 @@ export default function NotificationsPage() {
             transition={{ duration: 0.3 }}
             layout
           >
-            <WebPushSubscription farms={farmData} />
+            <WebPushSubscription />
           </motion.div>
 
           <AnimatePresence mode="wait">

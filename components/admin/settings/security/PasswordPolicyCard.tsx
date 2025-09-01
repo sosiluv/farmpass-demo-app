@@ -83,7 +83,6 @@ export default function PasswordPolicyCard({
               }
               onFocus={passwordMinLength.handleFocus}
               disabled={isLoading}
-              className="text-sm sm:text-base"
             />
             <p className="text-sm sm:text-base text-muted-foreground">
               {LABELS.PASSWORD_MIN_LENGTH_DESC}

@@ -6,7 +6,6 @@ import { cva, type VariantProps } from "class-variance-authority";
 import { X } from "lucide-react";
 
 import { cn } from "@/lib/utils";
-import { useDragToClose } from "@/hooks/ui/use-gesture";
 
 const Sheet = SheetPrimitive.Root;
 
@@ -53,16 +52,7 @@ const sheetVariants = cva(
 interface SheetContentProps
   extends React.ComponentPropsWithoutRef<typeof SheetPrimitive.Content>,
     VariantProps<typeof sheetVariants> {
-  /** 핸들 바 표시 여부 */
-  showHandle?: boolean;
-  /** 드래그로 닫기 기능 활성화 여부 */
-  enableDragToClose?: boolean;
-  /** 드래그 방향 */
-  dragDirection?: "horizontal" | "vertical";
-  /** 드래그 임계값 (px) */
-  dragThreshold?: number;
-  /** 닫기 콜백 함수 */
-  onClose?: () => void;
+  showCloseButton?: boolean;
 }
 
 const SheetContent = React.forwardRef<
@@ -70,48 +60,24 @@ const SheetContent = React.forwardRef<
   SheetContentProps
 >(
   (
-    {
-      side = "right",
-      className,
-      children,
-      showHandle = false,
-      enableDragToClose = false,
-      dragDirection = "vertical",
-      dragThreshold = 50,
-      onClose,
-      ...props
-    },
+    { side = "right", className, children, showCloseButton = true, ...props },
     ref
   ) => {
-    // 제스처 훅 - enableDragToClose가 true일 때만 활성화
-    const bind = useDragToClose({
-      direction: dragDirection,
-      threshold: dragThreshold,
-      onClose: onClose || (() => {}),
-      enabled: enableDragToClose,
-      preventPropagation: true,
-    });
-
     return (
       <SheetPortal>
         <SheetOverlay />
         <SheetPrimitive.Content
           ref={ref}
           className={cn(sheetVariants({ side }), className)}
-          {...(enableDragToClose ? bind() : {})}
           {...props}
         >
-          {/* 상단 핸들 바 - showHandle이 true일 때만 표시 */}
-          {showHandle && side === "bottom" && (
-            <div className="flex justify-center mb-4 pt-2">
-              <div className="w-16 h-1.5 bg-gray-300 rounded-full cursor-grab active:cursor-grabbing touch-manipulation"></div>
-            </div>
-          )}
           {children}
-          <SheetPrimitive.Close className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-secondary">
-            <X className="h-4 w-4" />
-            <span className="sr-only">Close</span>
-          </SheetPrimitive.Close>
+          {showCloseButton && (
+            <SheetPrimitive.Close className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-secondary">
+              <X className="h-4 w-4" />
+              <span className="sr-only">Close</span>
+            </SheetPrimitive.Close>
+          )}
         </SheetPrimitive.Content>
       </SheetPortal>
     );

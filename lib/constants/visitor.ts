@@ -11,8 +11,7 @@ export const PAGE_HEADER = {
     "방문 정보를 정확히 입력해주세요. 모든 정보는 방역 관리 목적으로만 사용됩니다.",
 
   VISITOR_ACTION_MENU_DELETE_TITLE: "방문 기록 삭제",
-  VISITOR_ACTION_MENU_DELETE_DESC:
-    "{name} 방문자의 정보를 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.",
+  VISITOR_ACTION_MENU_DELETE_DESC: "{name} 방문자의 정보를 삭제하시겠습니까?",
 } as const;
 
 export const BUTTONS = {
@@ -31,6 +30,7 @@ export const BUTTONS = {
   VISITOR_ACTION_MENU_DELETING: "삭제 중...",
 
   SUCCESS_CARD_VIEW_COMPANY: "회사 소개 보기",
+  SUCCESS_CARD_GO_HOME: "홈페이지로 이동",
   VISITOR_FILTERS_ADVANCED: "고급 필터",
 
   VISITOR_TABLE_DETAILS_BUTTON: "상세보기",
@@ -53,7 +53,6 @@ export const LABELS = {
   NOTES: "비고",
   PROFILE_PHOTO: "프로필 사진",
   CONSENT: "개인정보 수집 및 이용에 동의합니다",
-  SELECTED_ADDRESS: "선택된 주소:",
   CONSENT_DESCRIPTION:
     "수집된 정보는 방역 관리 목적으로만 사용되며, 관련 법령에 따라 보관됩니다.",
   REQUIRED_MARK: "*",
@@ -228,6 +227,9 @@ export const LABELS = {
   SUCCESS_CARD_PRIVACY_DELETION: "🔒 개인정보는 3년 후 자동으로 삭제됩니다.",
   SUCCESS_CARD_CONTACT_GUIDE:
     "📞 문의사항이 있으시면 농장 관리자에게 연락해주세요.",
+  SUCCESS_CARD_CANCEL_WARNING: "방문자 등록을 취소하시겠습니까?",
+  SUCCESS_CARD_CANCEL_DESC: "확인을 누르면 작성 중인 내용이 사라집니다.",
+  SUCCESS_CARD_CANCEL_DESC_HOME: "확인을 누르면 홈페이지로 이동합니다.",
 
   FORM_HEADER_COMPANY_LOGO_ALT: "회사 로고",
 } as const;
@@ -247,6 +249,7 @@ export const PLACEHOLDERS = {
   DATE_RANGE_SELECTOR_VISITOR_TYPE_PLACEHOLDER: "방문자 유형을 선택하세요",
   // SearchInput
   SEARCH_INPUT_PLACEHOLDER: "방문자 이름, 연락처, 차량번호로 검색...",
+  VISITOR_ADDRESS_PLACEHOLDER: "주소를 입력하세요",
 } as const;
 
 // 방문 목적 옵션

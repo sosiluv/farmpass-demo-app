@@ -67,7 +67,13 @@ export function useFarmsQuery(userId?: string, includeMembers?: boolean) {
   useSupabaseRealtime({
     table: "farms",
     refetch: farmsQuery.refetch,
-    farms: farmsQuery.data || [], // farms 데이터를 전달
+  });
+
+  // 🔥 농장 멤버 실시간 업데이트 구독 (멤버 정보 포함 시에만)
+  useSupabaseRealtime({
+    table: "farm_members",
+    refetch: farmsQuery.refetch,
+    filter: includeMembers ? undefined : () => false, // includeMembers가 false면 구독 안함
   });
 
   return {

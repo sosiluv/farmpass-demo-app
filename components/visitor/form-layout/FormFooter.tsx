@@ -39,7 +39,7 @@ export const FormFooter = ({
       {/* 제출 버튼 */}
       <Button
         type="submit"
-        className="w-full h-12 text-base sm:text-lg font-semibold bg-gradient-to-r from-blue-500 to-indigo-500 text-white shadow-md hover:from-blue-600 hover:to-indigo-600 transition-colors mt-4 sm:mt-6"
+        className="w-full h-12 text-sm sm:text-base font-semibold bg-gradient-to-r from-blue-500 to-indigo-500 text-white shadow-md hover:from-blue-600 hover:to-indigo-600 transition-colors mt-4 sm:mt-6"
         disabled={isSubmitting}
       >
         {isSubmitting ? (

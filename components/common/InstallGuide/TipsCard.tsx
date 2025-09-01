@@ -12,23 +12,23 @@ interface TipsCardProps {
 export function TipsCard({ currentGuide }: TipsCardProps) {
   return (
     <Card>
-      <CardHeader>
-        <CardTitle className="text-lg">
+      <CardHeader className="pb-2">
+        <CardTitle className="text-base sm:text-lg">
           {LABELS.INSTALL_GUIDE_TIPS_TITLE}
         </CardTitle>
       </CardHeader>
-      <CardContent>
-        <ul className="space-y-2">
+      <CardContent className="pt-0">
+        <ul className="space-y-1 sm:space-y-2">
           {(currentGuide.tips || []).map((tip, index) => (
             <motion.li
               key={`tip-${index}-${tip.substring(0, 20)}`}
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: 0.5 + index * 0.1 }}
-              className="flex items-start gap-2 text-sm"
+              className="flex items-start gap-2 text-xs sm:text-sm"
             >
-              <CheckCircle className="w-4 h-4 text-green-500 mt-0.5 flex-shrink-0" />
-              <span>{tip}</span>
+              <CheckCircle className="w-3 h-3 sm:w-4 sm:h-4 text-green-500 mt-0.5 flex-shrink-0" />
+              <span className="leading-tight">{tip}</span>
             </motion.li>
           ))}
         </ul>

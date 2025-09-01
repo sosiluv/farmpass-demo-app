@@ -86,7 +86,6 @@ export function ConfirmSheet({
   cancelText = "취소",
   isLoading = false,
   variant = "destructive",
-  icon,
   warningMessage,
   children,
 }: ConfirmSheetProps) {
@@ -104,18 +103,20 @@ export function ConfirmSheet({
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <CommonSheetContent
-        side="bottom"
-        showHandle={true}
-        enableDragToClose={true}
-        dragDirection="vertical"
-        dragThreshold={50}
+        enableDragToResize={false}
+        open={open}
         onClose={() => onOpenChange(false)}
-        className="max-h-[85vh] min-h-[300px] w-[calc(100vw-2rem)] max-w-lg mx-auto overflow-y-auto p-0 gap-0 overflow-hidden"
+        showHandle={true}
+        showCloseButton={false}
       >
-        <CommonSheetHeader title={title} description={description} />
+        <CommonSheetHeader
+          title={title}
+          description={description || "확인 다이얼로그"}
+          hideDescription={true}
+        />
 
         {/* 로띠 애니메이션 */}
-        <div className="flex justify-center py-6">
+        <div className="flex justify-center">
           <LottieLoadingCompact
             animationPath={config.animationPath}
             size="md"
@@ -124,7 +125,7 @@ export function ConfirmSheet({
 
         {/* 경고 메시지 */}
         {warningMessage && (
-          <div className="flex-1 px-6 sm:px-8 py-4">
+          <div className="flex-1 px-6 sm:px-8">
             <div
               className={`${config.warningBg} border ${config.warningBorder} rounded-lg p-4 sm:p-6`}
             >
@@ -151,7 +152,7 @@ export function ConfirmSheet({
         )}
 
         {/* 추가 내용 */}
-        {children && <div className="flex-1 px-6 sm:px-8 py-4">{children}</div>}
+        {children && <div className="flex-1 px-6 sm:px-8">{children}</div>}
 
         <CommonSheetFooter
           onCancel={handleCancel}
@@ -201,7 +202,7 @@ export function DeleteConfirmSheet({
       onOpenChange={onOpenChange}
       onConfirm={onConfirm}
       title={title}
-      description={description}
+      description={description || "삭제 확인"}
       confirmText="삭제"
       cancelText="취소"
       isLoading={isLoading}
@@ -239,7 +240,7 @@ export function WarningConfirmSheet({
       onOpenChange={onOpenChange}
       onConfirm={onConfirm}
       title={title}
-      description={description}
+      description={description || "경고 확인"}
       confirmText={confirmText}
       cancelText={cancelText}
       isLoading={isLoading}
@@ -277,7 +278,7 @@ export function InfoConfirmSheet({
       onOpenChange={onOpenChange}
       onConfirm={onConfirm}
       title={title}
-      description={description}
+      description={description || "정보 확인"}
       confirmText={confirmText}
       cancelText={cancelText}
       isLoading={isLoading}

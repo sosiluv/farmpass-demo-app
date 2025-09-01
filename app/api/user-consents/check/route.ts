@@ -39,6 +39,7 @@ export async function GET(request: NextRequest) {
             },
           },
         },
+        orderBy: [{ agreed_at: "desc" }], // 동의 시간 최신순만 적용
       });
     } catch (queryError) {
       throwBusinessError(
@@ -102,7 +103,7 @@ export async function GET(request: NextRequest) {
     latestActiveTerms.push(...Array.from(typeMap.values()));
 
     // 필수 약관 타입들
-    const requiredTypes = ["privacy_consent", "terms"];
+    const requiredTypes = ["privacy_consent", "terms", "age_consent"];
 
     // 누락된 동의 확인
     const missingConsents: Array<{

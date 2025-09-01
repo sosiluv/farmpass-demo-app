@@ -19,44 +19,44 @@ interface FarmFormAddressFieldProps {
 
 export function FarmFormAddressField({ form }: FarmFormAddressFieldProps) {
   return (
-    <FormField
-      control={form.control}
-      name="farm_address"
-      render={({ field }) => (
-        <FormItem>
-          <FormLabel
-            htmlFor="farm-address"
-            className="flex items-center gap-2 text-sm"
-          >
-            <MapPin className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-            {LABELS.FARM_ADDRESS}
-            <span className="text-red-500">*</span>
-          </FormLabel>
-          <FormControl>
-            <div className="space-y-3">
-              <AddressSearch
-                onSelect={(address, detailedAddress) => {
-                  field.onChange(address);
-                  form.setValue("farm_detailed_address", detailedAddress);
-                }}
-                defaultDetailedAddress={
-                  form.getValues("farm_detailed_address") || ""
-                }
-              />
-
+    <>
+      <FormField
+        control={form.control}
+        name="farm_address"
+        render={({ field }) => (
+          <FormItem className="space-y-2 md:col-span-2">
+            <FormLabel
+              htmlFor="farm-address"
+              className="flex items-center gap-2 text-sm"
+            >
+              <MapPin className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+              {LABELS.FARM_ADDRESS}
+              <span className="text-red-500">*</span>
+            </FormLabel>
+            <FormControl>
               <div className="space-y-3">
+                <AddressSearch
+                  onSelect={(address, detailedAddress) => {
+                    field.onChange(address);
+                    form.setValue("farm_detailed_address", detailedAddress);
+                  }}
+                  defaultDetailedAddress={
+                    form.getValues("farm_detailed_address") || ""
+                  }
+                />
+
                 <Textarea
                   id="farm-address"
                   placeholder={PLACEHOLDERS.FARM_ADDRESS}
                   {...field}
                   readOnly
-                  className="text-sm min-h-[80px]"
+                  className="min-h-[80px]"
                 />
                 <FormField
                   control={form.control}
                   name="farm_detailed_address"
                   render={({ field: detailField }) => (
-                    <FormItem>
+                    <FormItem className="space-y-2">
                       <FormLabel
                         htmlFor="farm-detailed-address"
                         className="flex items-center gap-2 text-sm"
@@ -70,7 +70,6 @@ export function FarmFormAddressField({ form }: FarmFormAddressFieldProps) {
                           placeholder={PLACEHOLDERS.FARM_DETAILED_ADDRESS}
                           {...detailField}
                           value={detailField.value || ""}
-                          className="text-sm sm:text-base"
                         />
                       </FormControl>
                       <FormMessage />
@@ -78,11 +77,11 @@ export function FarmFormAddressField({ form }: FarmFormAddressFieldProps) {
                   )}
                 />
               </div>
-            </div>
-          </FormControl>
-          <FormMessage />
-        </FormItem>
-      )}
-    />
+            </FormControl>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
+    </>
   );
 }

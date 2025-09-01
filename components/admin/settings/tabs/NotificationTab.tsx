@@ -106,7 +106,6 @@ const NotificationTab = React.memo(function NotificationTab({
                 value={settings.visitTemplate}
                 onChange={(e) => onUpdate("visitTemplate", e.target.value)}
                 rows={3}
-                className="text-sm sm:text-base"
               />
               <div className="flex items-start gap-2">
                 <div className="flex-1">

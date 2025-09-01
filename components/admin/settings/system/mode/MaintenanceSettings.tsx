@@ -35,7 +35,7 @@ export function MaintenanceSettings({
           value={settings.maintenanceMessage}
           onChange={(e) => onUpdate("maintenanceMessage", e.target.value)}
           placeholder={PLACEHOLDERS.MAINTENANCE_MESSAGE}
-          className="min-h-[80px] text-sm sm:text-base"
+          className="min-h-[80px]"
           disabled={isLoading}
         />
       </div>
@@ -58,7 +58,6 @@ export function MaintenanceSettings({
           }
           placeholder={PLACEHOLDERS.MAINTENANCE_ESTIMATED_TIME}
           disabled={isLoading}
-          className="text-sm sm:text-base"
         />
         <p className="text-sm sm:text-base text-muted-foreground">
           {LABELS.MAINTENANCE_CURRENT_SETTING}{" "}
@@ -84,7 +83,7 @@ export function MaintenanceSettings({
           value={settings.maintenanceContactInfo}
           onChange={(e) => onUpdate("maintenanceContactInfo", e.target.value)}
           placeholder={PLACEHOLDERS.MAINTENANCE_CONTACT_INFO}
-          className="min-h-[60px] text-sm sm:text-base"
+          className="min-h-[60px]"
           disabled={isLoading}
         />
       </div>

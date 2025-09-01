@@ -45,7 +45,7 @@ export function ExportFilters({
               {LABELS.EXPORT_FILTERS_FARM_SELECT}
             </Label>
             <Select value={farmFilter} onValueChange={onFarmFilterChange}>
-              <SelectTrigger className="h-8 sm:h-9 text-xs sm:text-sm bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100">
+              <SelectTrigger className="h-8 sm:h-9 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100">
                 <SelectValue
                   placeholder={
                     PLACEHOLDERS.DATE_RANGE_SELECTOR_FARM_PLACEHOLDER
@@ -74,7 +74,7 @@ export function ExportFilters({
             {LABELS.EXPORT_FILTERS_VISITOR_TYPE}
           </Label>
           <Select value={visitorType} onValueChange={onVisitorTypeChange}>
-            <SelectTrigger className="h-8 sm:h-9 text-xs sm:text-sm bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100">
+            <SelectTrigger className="h-8 sm:h-9  bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100">
               <SelectValue
                 placeholder={
                   PLACEHOLDERS.DATE_RANGE_SELECTOR_VISITOR_TYPE_PLACEHOLDER

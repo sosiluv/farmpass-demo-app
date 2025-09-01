@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import {
   Card,
   CardContent,
@@ -15,8 +15,8 @@ import {
   useUpdateUserConsentsMutation,
 } from "@/lib/hooks/query/use-user-consents-query";
 import { useCommonToast } from "@/lib/utils/notification/toast-messages";
-import { devLog } from "@/lib/utils/logging/dev-logger";
 import { PAGE_HEADER, LABELS } from "@/lib/constants/account";
+import { TERM_CONFIGS } from "@/lib/constants/terms";
 
 interface PrivacySectionProps {
   userId: string | undefined;
@@ -30,8 +30,25 @@ export function PrivacySection({ userId }: PrivacySectionProps) {
   const { data: consentData, refetch } = useUserConsentsQuery();
   const updateConsentsMutation = useUpdateUserConsentsMutation();
 
-  // 동의 정보 배열 추출
-  const consents = consentData?.userConsents || [];
+  // 동의 정보 배열 추출 및 정렬 (TERM_CONFIGS order 기준)
+  const consents = useMemo(() => {
+    const consentArray = consentData?.userConsents || [];
+
+    // TERM_CONFIGS의 order 기준으로 정렬
+    return consentArray.sort((a, b) => {
+      const configA = TERM_CONFIGS.find(
+        (config: any) => config.type === a.type
+      );
+      const configB = TERM_CONFIGS.find(
+        (config: any) => config.type === b.type
+      );
+
+      const orderA = configA?.order ?? 999;
+      const orderB = configB?.order ?? 999;
+
+      return orderA - orderB;
+    });
+  }, [consentData?.userConsents]);
 
   // 마케팅 동의 상태 확인
   const marketingConsent = consents?.find(
@@ -46,6 +63,7 @@ export function PrivacySection({ userId }: PrivacySectionProps) {
       await updateConsentsMutation.mutateAsync({
         privacyConsent: true, // 필수 동의는 유지
         termsConsent: true, // 필수 동의는 유지
+        ageConsent: true, // 필수 동의는 유지
         marketingConsent: agreed, // 마케팅 동의만 변경
       });
 
@@ -70,62 +88,44 @@ export function PrivacySection({ userId }: PrivacySectionProps) {
     <div className="space-y-6">
       {/* 마케팅 정보 수신 동의 */}
       <Card>
-        <CardHeader className="pb-3">
-          <div className="flex items-center gap-2">
+        <CardHeader>
+          <CardTitle className="text-base flex items-center gap-2">
             <Mail className="h-5 w-5 text-blue-600" />
-            <CardTitle className="text-lg">
-              {PAGE_HEADER.PRIVACY_MARKETING_TITLE}
-            </CardTitle>
-          </div>
+            {PAGE_HEADER.PRIVACY_MARKETING_TITLE}
+          </CardTitle>
           <CardDescription>
             {PAGE_HEADER.PRIVACY_MARKETING_DESCRIPTION}
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 rounded-lg border bg-card hover:bg-accent/5 transition-colors">
+          <div className="flex items-center justify-between gap-4 p-4 rounded-lg border bg-card hover:bg-accent/5 transition-colors">
             <div className="flex items-center gap-3">
               <div className="p-2 rounded-full bg-blue-100">
                 <Mail className="h-4 w-4 text-blue-600" />
               </div>
-              <div>
-                <p className="font-medium">{LABELS.MARKETING_CONSENT}</p>
-                <p className="text-sm text-muted-foreground">
-                  {LABELS.MARKETING_CONSENT_DESCRIPTION}
-                </p>
-              </div>
-            </div>
-            <div className="flex items-center gap-2">
-              <Switch
-                id="marketing-consent"
-                checked={hasMarketingConsent}
-                onCheckedChange={handleMarketingConsentChange}
-                disabled={isLoading}
-                className="ml-auto"
-              />
-            </div>
-          </div>
-
-          <div className="flex items-start gap-2 p-3 bg-blue-50 rounded-lg">
-            <Info className="h-4 w-4 text-blue-600 mt-0.5 flex-shrink-0" />
-            <div className="text-sm text-blue-800">
-              <p className="font-medium mb-1">
-                {LABELS.MARKETING_CONSENT_OPTIONAL}
+              <p className="text-sm sm:text-base font-medium">
+                {LABELS.MARKETING_CONSENT}
               </p>
-              <p>{LABELS.MARKETING_CONSENT_OPTIONAL_DESC}</p>
             </div>
+            <Switch
+              id="marketing-consent"
+              checked={hasMarketingConsent}
+              onCheckedChange={handleMarketingConsentChange}
+              disabled={isLoading}
+              className="ml-auto"
+            />
           </div>
         </CardContent>
       </Card>
 
       {/* 개인정보 처리 현황 */}
       <Card>
-        <CardHeader className="pb-3">
-          <div className="flex items-center gap-2">
+        <CardHeader>
+          <CardTitle className="text-base flex items-center gap-2">
             <Shield className="h-5 w-5 text-green-600" />
-            <CardTitle className="text-lg">
-              {PAGE_HEADER.PRIVACY_STATUS_TITLE}
-            </CardTitle>
-          </div>
+            {PAGE_HEADER.PRIVACY_STATUS_TITLE}
+          </CardTitle>
+
           <CardDescription>
             {PAGE_HEADER.PRIVACY_STATUS_DESCRIPTION}
           </CardDescription>
@@ -150,7 +150,8 @@ export function PrivacySection({ userId }: PrivacySectionProps) {
                         </span>
                       )}
                       {(consent.type === "privacy_consent" ||
-                        consent.type === "terms") && (
+                        consent.type === "terms" ||
+                        consent.type === "age_consent") && (
                         <span className="text-xs px-2 py-1 bg-green-100 text-green-800 rounded">
                           {LABELS.CONSENT_REQUIRED}
                         </span>

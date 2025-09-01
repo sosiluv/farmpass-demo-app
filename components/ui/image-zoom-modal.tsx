@@ -82,13 +82,10 @@ export function ImageZoomModal({
   return (
     <Sheet open={isOpen} onOpenChange={handleClose}>
       <CommonSheetContent
-        side="bottom"
-        showHandle={true}
-        enableDragToClose={true}
-        dragDirection="vertical"
-        dragThreshold={50}
+        enableDragToResize={true}
+        open={isOpen}
         onClose={handleClose}
-        className="max-h-[95vh] overflow-hidden p-0 touch-none [&>button]:hidden"
+        showCloseButton={false}
       >
         {/* 접근성을 위한 숨겨진 제목과 설명 */}
         <SheetTitle className="sr-only">{title}</SheetTitle>
@@ -98,11 +95,12 @@ export function ImageZoomModal({
         </SheetDescription>
 
         <div className="p-4 pb-2">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-2">
-            <h2 className="text-lg font-semibold text-center sm:text-left">
-              {title}
-            </h2>
+          <div className="flex flex-col items-center gap-3">
+            <h2 className="text-lg font-semibold text-center">{title}</h2>
             <div className="flex items-center gap-2">
+              <span className="text-sm text-muted-foreground min-w-12 text-center bg-muted px-2 py-1 rounded">
+                {Math.round(scale * 100)}%
+              </span>
               {/* 확대/축소 버튼 */}
               <Button
                 variant="outline"
@@ -113,9 +111,6 @@ export function ImageZoomModal({
               >
                 <ZoomOut className="w-4 h-4" />
               </Button>
-              <span className="text-sm text-muted-foreground min-w-12 text-center bg-muted px-2 py-1 rounded">
-                {Math.round(scale * 100)}%
-              </span>
               <Button
                 variant="outline"
                 size="default" // Mobile default size
@@ -173,13 +168,6 @@ export function ImageZoomModal({
               draggable={false}
             />
           </div>
-        </div>
-
-        {/* 안내 텍스트 */}
-        <div className="p-4 pt-2 border-t bg-gray-50">
-          <p className="text-xs text-muted-foreground text-center">
-            💡 모바일: 두 손가락으로 확대/축소 | 데스크톱: 마우스 휠로 확대/축소
-          </p>
         </div>
       </CommonSheetContent>
     </Sheet>

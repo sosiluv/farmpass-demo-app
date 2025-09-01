@@ -177,7 +177,6 @@ export default function FarmsPage() {
               placeholder={PLACEHOLDERS.SEARCH}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="text-sm sm:text-base"
             />
           </div>
         </div>

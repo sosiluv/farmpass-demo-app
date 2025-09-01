@@ -1,17 +1,18 @@
 "use client";
 
+import ReactMarkdown from "react-markdown";
 import { useState, useEffect } from "react";
 import { Sheet, SheetTitle, SheetDescription } from "@/components/ui/sheet";
-import { CommonSheetContent } from "@/components/ui/sheet-common";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Button } from "@/components/ui/button";
 import { Shield, FileText, Mail, Loader2 } from "lucide-react";
 import { usePublicTermsQuery } from "@/lib/hooks/query/use-terms-query";
 import { TermType } from "@/lib/types/common";
-import ReactMarkdown from "react-markdown";
 import { markdownComponents } from "@/lib/utils/markdown/markdown-components";
 import { BUTTONS, LABELS, TERM_TYPE_CONFIG } from "@/lib/constants/terms";
+import { CommonSheetContent } from "@/components/ui/sheet-common";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 interface TermsSheetProps {
   isOpen: boolean;
@@ -54,11 +55,9 @@ export function TermsSheet({
     <Sheet open={isOpen} onOpenChange={onClose}>
       <CommonSheetContent
         side="bottom"
-        showHandle={true}
-        enableDragToClose={true}
-        dragDirection="vertical"
-        dragThreshold={50}
+        enableDragToResize={true}
         onClose={onClose}
+        open={isOpen}
       >
         {/* 접근성을 위한 숨겨진 제목과 설명 */}
         <SheetTitle className="sr-only">{title}</SheetTitle>
@@ -66,7 +65,7 @@ export function TermsSheet({
           {LABELS.MODAL_DESCRIPTION}
         </SheetDescription>
 
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between pb-0 px-6 pt-6">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between px-6">
           <div className="flex items-center gap-3 flex-1 min-w-0">
             <Icon className="h-5 w-5 sm:h-6 sm:w-6 text-primary flex-shrink-0" />
             <div className="min-w-0 flex-1">
@@ -92,7 +91,7 @@ export function TermsSheet({
 
         <Separator className="mx-6 sm:mx-0" />
 
-        <div className="flex-1 overflow-y-auto px-6">
+        <ScrollArea className="flex-1 px-6">
           {termsLoading ? (
             <div className="flex items-center justify-center py-8">
               <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
@@ -110,13 +109,22 @@ export function TermsSheet({
               {LABELS.TERMS_NOT_AVAILABLE}
             </div>
           )}
-        </div>
+        </ScrollArea>
 
         {/* 하단 확인 버튼 */}
         <div className="border-t border-gray-100 pt-4 px-6 pb-6">
           <Button
-            onClick={onConsent || onClose}
-            className="w-full h-12 text-base font-semibold bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 shadow-lg hover:shadow-xl transition-all duration-200 rounded-xl"
+            type="button"
+            onClick={(e) => {
+              e.preventDefault(); // 🔥 기본 동작 방지
+              e.stopPropagation(); // 🔥 이벤트 전파 중단
+              if (onConsent) {
+                onConsent();
+              } else {
+                onClose();
+              }
+            }}
+            className="w-full h-12 text-sm sm:text-base font-semibold bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 shadow-lg hover:shadow-xl transition-all duration-200 rounded-xl"
           >
             {BUTTONS.TERMS_CONFIRM}
           </Button>

@@ -6,21 +6,12 @@ import {
   Shield,
   Zap,
   Activity,
-  Building,
   RefreshCw,
   Loader2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { LottieLoadingCompact } from "@/components/ui/lottie-loading";
 import { BUTTONS, LABELS } from "@/lib/constants/notifications";
-import type { Farm } from "@/lib/types";
-
-// 알림 상태 표시용 Farm 타입 (최소한의 정보만 포함)
-interface NotificationFarm extends Pick<Farm, "id" | "farm_name"> {
-  address?: string;
-  isSubscribed?: boolean;
-}
 
 interface StatusProps {
   isLoading?: boolean;
@@ -28,7 +19,6 @@ interface StatusProps {
   onDeny?: () => void;
   onCleanup?: () => void;
   onUnsubscribe?: () => void;
-  farms?: NotificationFarm[];
 }
 
 export const CheckingStatus = () => (
@@ -112,32 +102,28 @@ export const GrantedStatus = ({ isLoading, onAllow }: StatusProps) => (
         <br />
         {LABELS.PUSH_SUBSCRIBE_DESC}
       </p>
-
-      <div className="space-y-3">
-        <Button
-          onClick={onAllow}
-          disabled={isLoading}
-          className="text-sm sm:text-base"
-        >
-          {isLoading ? (
-            <>
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              {BUTTONS.SUBSCRIBING}
-            </>
-          ) : (
-            <>
-              <Zap className="mr-2 h-4 w-4" />
-              {BUTTONS.SUBSCRIBE_PUSH}
-            </>
-          )}
-        </Button>
-      </div>
+      <Button
+        onClick={onAllow}
+        disabled={isLoading}
+        className="text-sm sm:text-base"
+      >
+        {isLoading ? (
+          <>
+            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            {BUTTONS.SUBSCRIBING}
+          </>
+        ) : (
+          <>
+            <Zap className="mr-2 h-4 w-4" />
+            {BUTTONS.SUBSCRIBE_PUSH}
+          </>
+        )}
+      </Button>
     </div>
   </div>
 );
 
 export const SubscribedStatus = ({
-  farms,
   onCleanup,
   onUnsubscribe,
   isLoading,
@@ -147,7 +133,7 @@ export const SubscribedStatus = ({
     <div className="flex flex-col lg:flex-row items-start lg:items-center gap-4 p-4 bg-gradient-to-r from-primary/5 to-primary/10 rounded-xl border border-primary/20">
       <div className="flex items-center gap-3 w-full lg:w-auto lg:flex-1">
         <div className="relative p-2 bg-primary/10 rounded-full">
-          <Activity className="h-5 w-5 text-primary" />
+          <Activity className="h-4 w-4 text-primary" />
           <div className="absolute -top-0.5 -right-0.5 w-3 h-3 bg-green-500 rounded-full animate-pulse" />
         </div>
         <div className="flex-1 space-y-2">
@@ -190,7 +176,7 @@ export const SubscribedStatus = ({
     <div className="p-4 bg-muted/30 rounded-lg border">
       <div className="flex items-start gap-3">
         <div className="p-1.5 bg-primary/10 rounded-full mt-0.5 shrink-0">
-          <Bell className="h-5 w-5 text-primary" />
+          <Bell className="h-4 w-4 text-primary" />
         </div>
         <div className="space-y-2 min-w-0">
           <h4 className="text-sm sm:text-base font-medium">
@@ -213,52 +199,5 @@ export const SubscribedStatus = ({
         </div>
       </div>
     </div>
-
-    {/* 농장 목록 정보 - 모든 태블릿에서 한 줄로 표시 */}
-    {farms && farms.length > 0 && (
-      <div className="space-y-3">
-        <div className="flex items-center justify-between">
-          <h4 className="text-base sm:text-lg font-semibold flex items-center gap-2">
-            <Building className="h-4 w-4" />
-            {LABELS.MANAGED_FARMS}
-          </h4>
-          <div className="text-xs sm:text-sm text-muted-foreground bg-muted px-2.5 py-1.5 rounded-full">
-            {LABELS.FARM_COUNT.replace("{count}", farms.length.toString())}
-          </div>
-        </div>
-
-        <div className="grid gap-3 grid-cols-1 xl:grid-cols-2 2xl:grid-cols-3">
-          {(farms || []).map((farm) => (
-            <div
-              key={farm.id}
-              className="flex items-center justify-between p-4 rounded-xl border bg-primary/5 border-primary/30 gap-3"
-            >
-              <div className="flex items-center gap-3 min-w-0">
-                <div className="relative shrink-0">
-                  <div className="w-3 h-3 rounded-full bg-primary" />
-                  <div className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-green-500 rounded-full animate-pulse" />
-                </div>
-                <div className="min-w-0">
-                  <p className="text-sm sm:text-base font-medium text-foreground truncate">
-                    {farm.farm_name}
-                  </p>
-                  {farm.address && (
-                    <p className="text-xs sm:text-sm text-muted-foreground truncate">
-                      {farm.address}
-                    </p>
-                  )}
-                </div>
-              </div>
-              <Badge
-                variant="secondary"
-                className="text-xs sm:text-sm bg-primary/10 text-primary border-primary/30 whitespace-nowrap shrink-0"
-              >
-                {LABELS.NOTIFICATION_RECEIVING}
-              </Badge>
-            </div>
-          ))}
-        </div>
-      </div>
-    )}
   </div>
 );

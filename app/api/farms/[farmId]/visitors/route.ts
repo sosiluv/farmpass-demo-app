@@ -105,7 +105,7 @@ async function sendVisitorNotificationToFarmMembers(
             method: "POST",
             headers: {
               "Content-Type": "application/json",
-              "User-Agent": "node-fetch/3.0.0",
+              "User-Agent": "node-fetch/3.0.0", // 시스템 사용자로 처리
             },
             body: JSON.stringify({
               targetUserIds: [member.id],

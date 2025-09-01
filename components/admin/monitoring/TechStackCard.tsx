@@ -1,10 +1,4 @@
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import {
   Code,
@@ -16,7 +10,7 @@ import {
   BarChart3,
   Bell,
 } from "lucide-react";
-import { LABELS, PAGE_HEADER } from "@/lib/constants/monitoring";
+import { PAGE_HEADER } from "@/lib/constants/monitoring";
 import type { TechStackData } from "@/lib/types/monitoring";
 
 interface TechStackCardProps {
@@ -94,7 +88,6 @@ export function TechStackCard({ data }: TechStackCardProps) {
           <Code className="h-5 w-5" />
           {PAGE_HEADER.TECH_STACK}
         </CardTitle>
-        <CardDescription>{LABELS.TECH_STACK_DESC}</CardDescription>
       </CardHeader>
       <CardContent>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">

@@ -104,7 +104,7 @@ export function Turnstile({
           theme: theme,
           size: size,
           callback: (token: string) => {
-            if (isDev) onVerify(token);
+            onVerify(token); // 모든 환경에서 onVerify 호출
           },
           "expired-callback": () => {
             onExpire?.();

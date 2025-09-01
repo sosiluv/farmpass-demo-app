@@ -59,11 +59,14 @@ export function AdminSidebar() {
   const { siteName } = useLogo(settings || null);
   const [isLoggingOut, setIsLoggingOut] = useState(false); // 로그아웃 로딩 상태 추가
 
-  // 공통 제스처 훅으로 왼쪽 스와이프 시 사이드바 닫기
+  // 공통 제스처 훅으로 왼쪽 스와이프 시 사이드바 닫기 (모바일에서만)
   const bind = useSwipeToClose({
     direction: "left",
     threshold: 50,
-    onClose: () => setOpenMobile(false),
+    onClose: () => {
+      setOpenMobile(false);
+    },
+    enabled: isMobile, // 모바일에서만 활성화
   });
 
   // 모바일에서 메뉴 클릭 시 사이드바 닫기
@@ -169,8 +172,7 @@ export function AdminSidebar() {
 
   return (
     <Sidebar
-      className="bg-background border-r touch-none"
-      {...bind()}
+      className="bg-background border-r touch-manipulation"
       onDoubleClick={handleDoubleClick}
     >
       <SidebarHeader className="bg-background border-b">
@@ -188,16 +190,6 @@ export function AdminSidebar() {
               </TooltipContent>
             </Tooltip>
           </TooltipProvider>
-          <span className="text-xs text-muted-foreground truncate text-center block w-full">
-            {isAdmin
-              ? LABELS.LAYOUT_ADMIN_SIDEBAR
-              : farms.length > 0
-              ? LABELS.LAYOUT_FARM_MANAGER.replace(
-                  "{count}",
-                  farms.length.toString()
-                )
-              : LABELS.LAYOUT_REGISTER_FARM}
-          </span>
         </div>
 
         {/* 대시보드로 돌아가기 버튼 - 모바일에서만 표시 */}
@@ -214,18 +206,9 @@ export function AdminSidebar() {
             </Button>
           </Link>
         </div>
-
-        {/* 모바일 사용 안내 */}
-        {isMobile && (
-          <div className="px-2 pb-2 md:hidden">
-            <div className="text-xs text-muted-foreground text-center py-2 px-3 bg-muted/30 rounded-lg">
-              {LABELS.LAYOUT_MOBILE_GUIDE}
-            </div>
-          </div>
-        )}
       </SidebarHeader>
 
-      <SidebarContent className="bg-background">
+      <SidebarContent className="bg-background touch-none" {...bind()}>
         <SidebarGroup>
           <SidebarGroupLabel className="text-xs font-medium text-muted-foreground px-2 py-2">
             {LABELS.LAYOUT_MANAGEMENT_MENU}

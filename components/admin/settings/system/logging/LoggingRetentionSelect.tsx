@@ -36,16 +36,12 @@ export function LoggingRetentionSelect({
         onValueChange={(val) => onChange(parseInt(val))}
         disabled={isLoading}
       >
-        <SelectTrigger id="logging-retention" className="text-sm sm:text-base">
+        <SelectTrigger id="logging-retention">
           <SelectValue placeholder={PLACEHOLDERS.LOGGING_RETENTION} />
         </SelectTrigger>
         <SelectContent>
           {LOGGING_RETENTION_OPTIONS.map((option) => (
-            <SelectItem
-              key={option.value}
-              value={option.value}
-              className="text-sm sm:text-base"
-            >
+            <SelectItem key={option.value} value={option.value}>
               {option.label}
             </SelectItem>
           ))}

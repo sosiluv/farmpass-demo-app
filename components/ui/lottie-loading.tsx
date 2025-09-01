@@ -17,7 +17,7 @@ export function LottieLoading({
   text = "페이지를 불러오는 중...",
   subText,
   fullScreen = false,
-  animationPath = "/lottie/plant_loading.json",
+  animationPath = "/lottie/cat_loading.json",
   size = "lg",
   showText = true,
 }: LottieLoadingProps) {
@@ -137,7 +137,7 @@ export function LottieLoading({
 export function LottieLoadingCompact({
   text,
   size = "sm",
-  animationPath = "/lottie/plant_loading.json",
+  animationPath = "/lottie/cat_loading.json",
 }: Pick<LottieLoadingProps, "text" | "size" | "animationPath">) {
   return (
     <LottieLoading
@@ -154,7 +154,7 @@ export function LottieLoadingCompact({
 export function LottieLoadingFullScreen({
   text = "페이지를 불러오는 중...",
   subText,
-  animationPath = "/lottie/plant_loading.json",
+  animationPath = "/lottie/cat_loading.json",
 }: Pick<LottieLoadingProps, "text" | "subText" | "animationPath">) {
   return (
     <LottieLoading

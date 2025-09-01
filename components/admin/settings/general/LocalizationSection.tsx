@@ -51,16 +51,12 @@ export function LocalizationSection({
               onValueChange={(value) => onSettingChange("language", value)}
               disabled={loading}
             >
-              <SelectTrigger id="language" className="text-sm sm:text-base">
+              <SelectTrigger id="language">
                 <SelectValue placeholder={PLACEHOLDERS.LANGUAGE_SELECT} />
               </SelectTrigger>
               <SelectContent>
                 {LANGUAGE_OPTIONS.map((option) => (
-                  <SelectItem
-                    key={option.value}
-                    value={option.value}
-                    className="text-sm sm:text-base"
-                  >
+                  <SelectItem key={option.value} value={option.value}>
                     {option.label}
                   </SelectItem>
                 ))}
@@ -84,16 +80,12 @@ export function LocalizationSection({
               onValueChange={(value) => onSettingChange("timezone", value)}
               disabled={loading}
             >
-              <SelectTrigger id="timezone" className="text-sm sm:text-base">
+              <SelectTrigger id="timezone">
                 <SelectValue placeholder={PLACEHOLDERS.TIMEZONE_SELECT} />
               </SelectTrigger>
               <SelectContent>
                 {TIMEZONE_OPTIONS.map((option) => (
-                  <SelectItem
-                    key={option.value}
-                    value={option.value}
-                    className="text-sm sm:text-base"
-                  >
+                  <SelectItem key={option.value} value={option.value}>
                     {option.label}
                   </SelectItem>
                 ))}

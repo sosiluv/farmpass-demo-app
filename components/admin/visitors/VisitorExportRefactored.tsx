@@ -96,14 +96,6 @@ export function VisitorExportRefactored({
       buttonText={LABELS.VISITOR_EXPORT_BUTTON}
     >
       <div className="space-y-4">
-        <DateRangeSection
-          startDate={startDate}
-          endDate={endDate}
-          onStartDateChange={setStartDate}
-          onEndDateChange={setEndDate}
-          title={LABELS.VISITOR_EXPORT_DATE_RANGE}
-          color="blue"
-        />
         <FilterSection
           title={LABELS.VISITOR_EXPORT_FILTERS}
           color="green"
@@ -137,6 +129,16 @@ export function VisitorExportRefactored({
             },
           ]}
         />
+        {/* 날짜 범위 설정 */}
+        <DateRangeSection
+          startDate={startDate}
+          endDate={endDate}
+          onStartDateChange={setStartDate}
+          onEndDateChange={setEndDate}
+          title={LABELS.VISITOR_EXPORT_DATE_RANGE}
+          color="blue"
+        />
+        {/* 내보내기 옵션 */}
         <OptionsSection
           title={LABELS.VISITOR_EXPORT_OPTIONS}
           color="purple"
@@ -173,6 +175,8 @@ export function VisitorExportRefactored({
             },
           ]}
         />
+
+        {/* 요약 정보 */}
         <SummarySection
           message={LABELS.VISITOR_EXPORT_SUMMARY.replace(
             "{count}",
@@ -181,6 +185,7 @@ export function VisitorExportRefactored({
           color="orange"
         />
       </div>
+      {/* 액션 버튼 */}
       <ExportActions
         isExporting={isExporting}
         canExport={selectedOptionsCount > 0}

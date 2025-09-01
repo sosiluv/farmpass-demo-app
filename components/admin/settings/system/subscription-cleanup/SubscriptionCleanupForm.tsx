@@ -46,16 +46,12 @@ export function SubscriptionCleanupForm({
           }
           disabled={isLoading}
         >
-          <SelectTrigger className="text-sm sm:text-base">
+          <SelectTrigger>
             <SelectValue placeholder={PLACEHOLDERS.SUBSCRIPTION_CLEANUP_DAYS} />
           </SelectTrigger>
           <SelectContent>
             {SUBSCRIPTION_CLEANUP_DAYS_OPTIONS.map((option) => (
-              <SelectItem
-                key={option.value}
-                value={option.value.toString()}
-                className="text-sm sm:text-base"
-              >
+              <SelectItem key={option.value} value={option.value.toString()}>
                 {option.label}
               </SelectItem>
             ))}
@@ -78,18 +74,14 @@ export function SubscriptionCleanupForm({
           }
           disabled={isLoading}
         >
-          <SelectTrigger className="text-sm sm:text-base">
+          <SelectTrigger>
             <SelectValue
               placeholder={PLACEHOLDERS.SUBSCRIPTION_FAIL_COUNT_THRESHOLD}
             />
           </SelectTrigger>
           <SelectContent>
             {SUBSCRIPTION_FAIL_COUNT_OPTIONS.map((option) => (
-              <SelectItem
-                key={option.value}
-                value={option.value.toString()}
-                className="text-sm sm:text-base"
-              >
+              <SelectItem key={option.value} value={option.value.toString()}>
                 {option.label}
               </SelectItem>
             ))}

@@ -29,7 +29,7 @@ export const NameField = memo(({ field, loading }: NameFieldProps) => (
           type="text"
           placeholder={PLACEHOLDERS.NAME}
           autoComplete="name"
-          className="h-12 pl-10 input-focus"
+          className="h-12 pl-10"
           disabled={loading}
         />
       </FormControl>

@@ -29,7 +29,7 @@ export const PhoneField = memo(({ field, loading }: PhoneFieldProps) => (
           {...field}
           type="tel"
           placeholder={PLACEHOLDERS.PHONE}
-          className="h-12 pl-10 input-focus"
+          className="h-12 pl-10"
           disabled={loading}
           onChange={(e) => {
             const formattedPhone = formatPhone(e.target.value);

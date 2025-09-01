@@ -55,7 +55,7 @@ export function VisitorFarmSelector({
     <Select value={selectedFarm} onValueChange={onFarmChange}>
       <SelectTrigger
         id="visitor-farm-selector"
-        className="h-10 border-slate-200 dark:border-slate-600 focus:border-indigo-400 dark:focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 dark:focus:ring-indigo-900 transition-all duration-300 bg-white/90 dark:bg-slate-800 backdrop-blur-sm text-sm md:text-base shadow-sm hover:shadow-md min-w-0 dark:text-slate-100 dark:placeholder:text-slate-400 dark:disabled:text-slate-500"
+        className="h-10 border-slate-200 dark:border-slate-600 focus:border-indigo-400 dark:focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 dark:focus:ring-indigo-900 transition-all duration-300 bg-white/90 dark:bg-slate-800 backdrop-blur-sm shadow-sm hover:shadow-md min-w-0 dark:text-slate-100 dark:placeholder:text-slate-400 dark:disabled:text-slate-500"
       >
         <div className="flex items-center space-x-3 min-w-0">
           <div className="p-1 bg-gradient-to-br from-indigo-100 to-purple-100 dark:from-indigo-900 dark:to-purple-900 rounded-md flex-shrink-0">

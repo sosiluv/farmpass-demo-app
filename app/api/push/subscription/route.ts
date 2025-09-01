@@ -322,7 +322,7 @@ export async function GET(request: NextRequest) {
       if (publicKey && privateKey) {
         const webpush = require("web-push");
         webpush.setVapidDetails(
-          "mailto:k331502@nate.com",
+          "mailto:admin@samwon1141.com",
           publicKey,
           privateKey
         );

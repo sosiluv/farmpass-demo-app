@@ -47,9 +47,7 @@ const AddMemberEmailFieldComponent = ({
             {...field}
             type="email"
             placeholder={PLACEHOLDERS.MEMBER_EMAIL_PLACEHOLDER}
-            className={`h-12 pl-10 input-focus ${
-              error ? "border-red-500" : ""
-            }`}
+            className={`h-12 pl-10 ${error ? "border-red-500" : ""}`}
             disabled={disabled}
           />
         </FormControl>

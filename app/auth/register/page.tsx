@@ -80,9 +80,6 @@ export default function RegisterPage() {
         password: "",
         confirmPassword: "",
         phone: "",
-        privacyConsent: false,
-        termsConsent: false,
-        marketingConsent: false,
       },
     }),
     [schema]
@@ -145,9 +142,10 @@ export default function RegisterPage() {
     async (
       privacyConsent: boolean,
       termsConsent: boolean,
-      marketingConsent: boolean
+      marketingConsent: boolean,
+      ageConsent: boolean
     ) => {
-      if (!privacyConsent || !termsConsent) {
+      if (!privacyConsent || !termsConsent || !ageConsent) {
         showError("약관 동의 필요", "필수 약관에 동의해주세요.");
         return;
       }
@@ -171,6 +169,7 @@ export default function RegisterPage() {
             privacyConsent: privacyConsent,
             termsConsent: termsConsent,
             marketingConsent: marketingConsent,
+            ageConsent: ageConsent,
           }),
           context: "회원가입",
         });
@@ -257,9 +256,7 @@ export default function RegisterPage() {
                       <EmailField
                         field={field}
                         onBlur={handleEmailBlur}
-                        error={
-                          form.formState.errors.email?.message || emailError
-                        }
+                        error={emailError}
                         isCheckingEmail={isCheckingEmail}
                         loading={loading}
                       />

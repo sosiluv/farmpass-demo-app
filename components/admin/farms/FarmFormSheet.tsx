@@ -20,6 +20,7 @@ import {
 } from "./components";
 import React from "react";
 import { BUTTONS, PAGE_HEADER } from "@/lib/constants/farms";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 interface FarmFormSheetProps {
   open: boolean;
@@ -103,11 +104,9 @@ export function FarmFormSheet({
       </SheetTrigger>
       <CommonSheetContent
         side="bottom"
-        showHandle={true}
-        enableDragToClose={true}
-        dragDirection="vertical"
-        dragThreshold={50}
+        enableDragToResize={true}
         onClose={() => onOpenChange(false)}
+        open={open}
       >
         <CommonSheetHeader
           title={
@@ -120,37 +119,41 @@ export function FarmFormSheet({
               ? PAGE_HEADER.EDIT_FARM_DESCRIPTION
               : PAGE_HEADER.ADD_FARM_DESCRIPTION
           }
+          show={false}
         />
-        <Form {...form}>
-          <form
-            onSubmit={form.handleSubmit(handleSubmit)}
-            className="space-y-3 sm:space-y-6"
-          >
-            <FarmFormBasicFields form={form} />
-            <FarmFormAddressField form={form} />
-            <FarmFormManagerFields form={form} />
+        <ScrollArea className="flex-1">
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(handleSubmit)}>
+              <div className="space-y-2 sm:space-y-4 p-3">
+                <div className="grid gap-3 sm:gap-6 md:grid-cols-2 md:gap-4">
+                  <FarmFormBasicFields form={form} />
+                  <FarmFormAddressField form={form} />
+                  <FarmFormManagerFields form={form} />
+                </div>
+              </div>
+            </form>
+          </Form>
+        </ScrollArea>
 
-            <CommonSheetFooter
-              onCancel={() => onOpenChange(false)}
-              onConfirm={form.handleSubmit(handleSubmit)}
-              cancelText={BUTTONS.CANCEL_BUTTON}
-              confirmText={
-                editingFarm ? BUTTONS.EDIT_BUTTON : BUTTONS.REGISTER_BUTTON
-              }
-              isLoading={submitting || isLoading}
-              disabled={submitting || isLoading}
-              confirmIcon={
-                submitting || isLoading ? (
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                ) : editingFarm ? (
-                  <Edit className="h-4 w-4 mr-2" />
-                ) : (
-                  <Plus className="h-4 w-4 mr-2" />
-                )
-              }
-            />
-          </form>
-        </Form>
+        <CommonSheetFooter
+          onCancel={() => onOpenChange(false)}
+          onConfirm={form.handleSubmit(handleSubmit)}
+          cancelText={BUTTONS.CANCEL_BUTTON}
+          confirmText={
+            editingFarm ? BUTTONS.EDIT_BUTTON : BUTTONS.REGISTER_BUTTON
+          }
+          isLoading={submitting || isLoading}
+          disabled={submitting || isLoading}
+          confirmIcon={
+            submitting || isLoading ? (
+              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+            ) : editingFarm ? (
+              <Edit className="h-4 w-4 mr-2" />
+            ) : (
+              <Plus className="h-4 w-4 mr-2" />
+            )
+          }
+        />
       </CommonSheetContent>
     </Sheet>
   );

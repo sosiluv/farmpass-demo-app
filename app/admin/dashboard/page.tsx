@@ -3,6 +3,7 @@
 import { useAuth } from "@/components/providers/auth-provider";
 import { useEffect, useState, useMemo, useCallback } from "react";
 import { useRouter } from "next/navigation";
+import useBlockNavigation from "@/hooks/ui/use-before-unload";
 import { PageHeader } from "@/components/layout";
 import {
   DashboardSkeleton,
@@ -24,6 +25,7 @@ import { useAdminDashboardStatsQuery } from "@/lib/hooks/query/use-admin-dashboa
 import { useProfileQuery } from "@/lib/hooks/query/use-profile-query";
 import { useUserConsentsQuery } from "@/lib/hooks/query/use-user-consents-query";
 import { isProfileComplete } from "@/lib/utils/auth/profile-utils";
+import { ConfirmSheet } from "@/components/ui/confirm-sheet";
 
 export default function DashboardPage() {
   const router = useRouter();
@@ -39,6 +41,7 @@ export default function DashboardPage() {
   // selectedFarm 상태 관리 - 로딩 상태 고려
   const [selectedFarm, setSelectedFarm] = useState<string>("all");
   const [isInitialized, setIsInitialized] = useState(false);
+  const [showConfirmSheet, setShowConfirmSheet] = useState(false);
 
   // 농장 선택 콜백 - useCallback으로 최적화
   const handleFarmSelect = useCallback((farmId: string) => {
@@ -104,7 +107,7 @@ export default function DashboardPage() {
     }
   }, [lastMessage, showSuccess, showError, clearLastMessage]);
 
-  const memoizedSelectedFarm = isInitialized ? selectedFarm : null;
+  const memoizedSelectedFarm = isInitialized ? selectedFarm : "all";
 
   // 단일 통합 집계 API 호출(선택 농장 반영)
   const {
@@ -112,7 +115,7 @@ export default function DashboardPage() {
     isLoading: adminLoading,
     error,
     refetch,
-  } = useAdminDashboardStatsQuery(memoizedSelectedFarm || undefined);
+  } = useAdminDashboardStatsQuery(memoizedSelectedFarm);
 
   // 초기 로딩 상태 최적화 - 데이터가 있으면 스켈레톤 숨김
   const isInitialLoading = useMemo(() => {
@@ -143,8 +146,19 @@ export default function DashboardPage() {
   const { timeoutReached, retry } = useMultipleLoadingTimeout(
     [adminLoading, farmsLoading],
     handleDataRefetch,
-    { timeout: 10000 }
+    { timeout: 15000 }
   );
+
+  // 뒤로가기 처리 - useBlockNavigation 훅 사용
+  const { isAttemptingNavigation, proceedNavigation, cancelNavigation } =
+    useBlockNavigation(true, "/", true);
+
+  // confirm 다이얼로그 처리
+  useEffect(() => {
+    if (isAttemptingNavigation) {
+      setShowConfirmSheet(true);
+    }
+  }, [isAttemptingNavigation]);
 
   // 타임아웃 상태 변경 시 경고 메시지 표시
   useEffect(() => {
@@ -262,7 +276,22 @@ export default function DashboardPage() {
         </div>
       </>
 
-      {/* 재동의 Bottom Sheet 모달 */}
+      {/* 네비게이션 확인 시트 */}
+      <ConfirmSheet
+        open={showConfirmSheet}
+        onOpenChange={setShowConfirmSheet}
+        onConfirm={() => {
+          setShowConfirmSheet(false);
+          proceedNavigation();
+        }}
+        onCancel={() => {
+          setShowConfirmSheet(false);
+          cancelNavigation();
+        }}
+        title={LABELS.DASHBOARD_CANCEL_TITLE}
+        warningMessage={LABELS.DASHBOARD_CANCEL_WARNING}
+        variant="warning"
+      />
     </ErrorBoundary>
   );
 }

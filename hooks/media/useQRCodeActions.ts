@@ -1,4 +1,5 @@
 import { useState, useCallback } from "react";
+import { useIsMobile } from "@/hooks/ui/use-mobile";
 
 interface UseQRCodeActionsProps {
   farmId: string;
@@ -24,8 +25,8 @@ export function useQRCodeActions({
   const [copied, setCopied] = useState(false);
   const qrUrl = `${window.location.origin}/visit/${farmId}`;
 
-  // 모바일 감지
-  const isMobile = /Android|iPhone|iPad/i.test(navigator.userAgent);
+  // 모바일 감지 - useIsMobile 훅 사용
+  const isMobile = useIsMobile();
   const supportsShare = "share" in navigator && "canShare" in navigator;
 
   // SVG를 Blob으로 변환하는 유틸리티 함수

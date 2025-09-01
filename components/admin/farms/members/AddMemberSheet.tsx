@@ -8,6 +8,7 @@ import {
   CommonSheetFooter,
   CommonSheetContent,
 } from "@/components/ui/sheet-common";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { UserPlus, Loader2 } from "lucide-react";
 import { devLog } from "@/lib/utils/logging/dev-logger";
 import { apiClient } from "@/lib/utils/data/api-client";
@@ -116,39 +117,48 @@ export function AddMemberSheet({
           <span className="sm:hidden">{BUTTONS.ADD_MEMBER_SHORT}</span>
         </Button>
       </SheetTrigger>
-      <CommonSheetContent onClose={handleClose}>
+      <CommonSheetContent
+        enableDragToResize={true}
+        open={sheetOpen}
+        onClose={handleClose}
+      >
         <CommonSheetHeader
           title={PAGE_HEADER.ADD_MEMBER_TITLE}
           description={PAGE_HEADER.ADD_MEMBER_DESCRIPTION}
         />
-        <div className="space-y-3 sm:space-y-4 py-3 sm:py-4">
-          <Form {...form}>
-            <form
-              onSubmit={form.handleSubmit(handleAddMember)}
-              className="space-y-3 sm:space-y-4 py-3 sm:py-4"
-            >
-              <FormField
-                control={form.control}
-                name="email"
-                render={({ field }) => (
-                  <AddMemberEmailField
-                    field={field}
-                    availableUsers={availableUsers}
-                    onUserSelect={handleUserSelect}
-                    disabled={isAddingMember}
-                  />
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="role"
-                render={({ field }) => (
-                  <AddMemberRoleField field={field} disabled={isAddingMember} />
-                )}
-              />
-            </form>
-          </Form>
-        </div>
+        <ScrollArea className="flex-1">
+          <div className="space-y-4 py-4">
+            <Form {...form}>
+              <form
+                onSubmit={form.handleSubmit(handleAddMember)}
+                className="space-y-4 py-4"
+              >
+                <FormField
+                  control={form.control}
+                  name="email"
+                  render={({ field }) => (
+                    <AddMemberEmailField
+                      field={field}
+                      availableUsers={availableUsers}
+                      onUserSelect={handleUserSelect}
+                      disabled={isAddingMember}
+                    />
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="role"
+                  render={({ field }) => (
+                    <AddMemberRoleField
+                      field={field}
+                      disabled={isAddingMember}
+                    />
+                  )}
+                />
+              </form>
+            </Form>
+          </div>
+        </ScrollArea>
         <CommonSheetFooter
           onCancel={handleClose}
           onConfirm={form.handleSubmit(handleAddMember)}

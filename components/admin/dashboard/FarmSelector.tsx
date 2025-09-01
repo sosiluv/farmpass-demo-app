@@ -31,7 +31,7 @@ export function FarmSelector({
         disabled={isDisabled}
       >
         <SelectTrigger
-          className="w-full sm:w-[250px] md:w-[280px] h-8 sm:h-9 md:h-10 text-sm"
+          className="w-full sm:w-[250px] md:w-[280px] h-8 sm:h-9 md:h-10"
           disabled={isDisabled}
         >
           <SelectValue placeholder={PLACEHOLDERS.FARM_SELECT} />

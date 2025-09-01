@@ -73,7 +73,7 @@ export function PageLoading({
         text={text}
         subText={subText}
         fullScreen={fullScreen}
-        size={fullScreen ? "xl" : "lg"}
+        size="lg"
         showText={true}
       />
     );

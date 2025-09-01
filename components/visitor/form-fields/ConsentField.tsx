@@ -15,7 +15,7 @@ import type {
 } from "react-hook-form";
 import { LABELS } from "@/lib/constants/visitor";
 import { Button } from "@/components/ui/button";
-import { ExternalLink } from "lucide-react";
+import { ExternalLink, UserCheck } from "lucide-react";
 import { TermsSheet } from "@/components/auth/TermsSheet";
 
 interface ConsentFieldProps<T extends FieldValues = any> {
@@ -35,9 +35,9 @@ export const ConsentField = <T extends FieldValues = any>({
         control={form.control}
         name={"consent_given" as Path<T>}
         render={({ field }) => (
-          <FormItem className={className}>
+          <FormItem className={`space-y-2 md:col-span-2 ${className}`}>
             <FormControl>
-              <div className="flex items-center space-x-2 p-3 bg-blue-50 border border-blue-200 rounded-lg mb-3 sm:mb-4 mt-2">
+              <div className="flex items-center space-x-2 p-3 bg-blue-50 border border-blue-200 rounded-lg">
                 <Checkbox
                   id="visitor-consent_given"
                   checked={field.value}
@@ -61,15 +61,17 @@ export const ConsentField = <T extends FieldValues = any>({
                     <br />
                   </Label>
                   <Button
+                    type="button" // 🔥 명시적으로 type="button" 추가
                     variant="ghost"
                     size="sm"
                     className="text-gray-400 hover:text-blue-600 transition-colors p-1 rounded-full hover:bg-blue-50 h-auto"
                     onClick={(e) => {
-                      e.stopPropagation();
+                      e.preventDefault(); // 🔥 기본 동작 방지
+                      e.stopPropagation(); // 🔥 이벤트 전파 중단
                       setModalOpen(true);
                     }}
                   >
-                    <ExternalLink className="h-4 w-4" />
+                    <ExternalLink className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                   </Button>
                 </div>
               </div>
@@ -85,11 +87,14 @@ export const ConsentField = <T extends FieldValues = any>({
         onClose={() => setModalOpen(false)}
         termType="privacy_consent"
         onConsent={() => {
-          // 체크박스 체크 처리
-          form.setValue(
-            "consent_given" as Path<T>,
-            true as PathValue<T, Path<T>>
-          );
+          // 체크박스 체크 처리 - 비동기적으로 처리하여 폼 제출 방지
+          setTimeout(() => {
+            form.setValue(
+              "consent_given" as Path<T>,
+              true as PathValue<T, Path<T>>,
+              { shouldValidate: false, shouldTouch: false, shouldDirty: false } // 🔥 폼 상태 변화 최소화
+            );
+          }, 0);
           setModalOpen(false);
         }}
       />

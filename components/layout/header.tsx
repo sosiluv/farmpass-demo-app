@@ -69,7 +69,7 @@ export function Header() {
       </div>
 
       {/* 오른쪽 아이콘들 */}
-      <div className="flex items-center gap-1 sm:gap-2 mr-2 sm:mr-4">
+      <div className="flex items-center gap-2 mr-2 sm:mr-4">
         <ThemeToggle />
         <RealtimeNotificationBell />
 
@@ -77,22 +77,25 @@ export function Header() {
         {isAuthenticated && profile && (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button
-                variant="ghost"
-                className="relative h-7 w-7 sm:h-8 sm:w-8 rounded-full"
+              <button
+                className="relative p-0 rounded-full bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm border border-gray-200 dark:border-gray-700 shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-105 focus:outline-none focus:ring-0 focus:ring-offset-0 focus:ring-transparent focus:border-transparent"
+                style={{ outline: "none" }}
+                aria-label={BUTTONS.PROFILE_MENU_SCREEN_READER}
               >
-                <Avatar className="h-7 w-7 sm:h-8 sm:w-8">
+                <Avatar className="h-9 w-9">
                   <AvatarImage
                     src={getAvatarUrl(profile, { size: 128 })}
                     alt={profile.name || "User"}
                   />
                   <AvatarFallback
-                    className={`${getAvatarColor(profile.name)} text-white`}
+                    className={`${getAvatarColor(
+                      profile.name
+                    )} text-white text-xs font-medium`}
                   >
                     {generateInitials(profile.name)}
                   </AvatarFallback>
                 </Avatar>
-              </Button>
+              </button>
             </DropdownMenuTrigger>
             <DropdownMenuContent
               className="w-48 sm:w-56"

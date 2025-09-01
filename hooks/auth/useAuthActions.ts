@@ -32,8 +32,8 @@ export function useSignIn() {
     };
   }> => {
     try {
-      // 새로운 통합 로그인 API 사용
-      const result = await apiClient("/api/auth/login", {
+      // 새로운 통합 로그인 API 사용 (캐시 방지를 위한 타임스탬프 추가)
+      const result = await apiClient(`/api/auth/login?t=${Date.now()}`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { slackNotifier } from "@/lib/slack";
 import { devLog } from "@/lib/utils/logging/dev-logger";
 import { logMemoryUsage } from "@/lib/utils/logging/system-log";
 import { createSystemLog } from "@/lib/utils/logging/system-log";
@@ -178,33 +177,6 @@ export async function GET() {
           response_time_ms: totalResponseTime,
         }
       );
-
-      slackNotifier
-        .sendSystemAlert(
-          "warning",
-          "시스템 리소스 경고",
-          "시스템 리소스 사용량이 높습니다.",
-          {
-            memory: {
-              used: `${Math.round(memoryUsage.heapUsed / 1024 / 1024)}MB`,
-              total: `${Math.round(memoryUsage.heapTotal / 1024 / 1024)}MB`,
-              threshold: `${Math.round(MEMORY_THRESHOLD / 1024 / 1024)}MB`,
-              status:
-                memoryUsage.heapUsed < MEMORY_THRESHOLD ? "normal" : "warning",
-            },
-            cpu: {
-              user: `${cpuUsagePercent.user}%`,
-              system: `${cpuUsagePercent.system}%`,
-              total: `${totalCpuUsage}%`,
-              threshold: `${CPU_THRESHOLD}%`,
-              status: totalCpuUsage > CPU_THRESHOLD ? "warning" : "normal",
-            },
-            responseTime: `${totalResponseTime}ms`,
-          }
-        )
-        .catch((error) => {
-          devLog.error("시스템 리소스 경고 Slack 알림 실패:", error);
-        });
     }
 
     // =================================
@@ -309,10 +281,6 @@ export async function GET() {
               api: "responsive",
             },
           },
-          slack: {
-            enabled: !!process.env.SLACK_WEBHOOK_URL,
-            notifications: ["memory_warning", "system_error", "database_error"],
-          },
         },
       },
       {
@@ -347,25 +315,9 @@ export async function GET() {
     );
 
     // =================================
-    // 9. 시스템 오류 시 Slack 알림 (비동기 처리)
+    // 9. 시스템 오류 로깅
     // =================================
     const responseTime = Date.now() - startTime;
-
-    // 비동기로 처리하여 헬스체크 응답에 영향 없도록 함
-    slackNotifier
-      .sendSystemAlert(
-        "error",
-        "시스템 헬스체크 실패",
-        "시스템 상태 확인 중 오류가 발생했습니다.",
-        {
-          error: errorMessage,
-          responseTime: `${responseTime}ms`,
-          timestamp: new Date().toISOString(),
-        }
-      )
-      .catch((slackError) => {
-        devLog.error("Slack 알림 전송 실패:", slackError);
-      });
 
     // 비즈니스 에러 또는 시스템 에러를 표준화된 에러 코드로 매핑
     const result = getErrorResultFromRawError(error, {

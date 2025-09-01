@@ -296,7 +296,6 @@ export function useUnifiedImageUpload(
         await handleSuccess(result);
         return result;
       } catch (error) {
-        console.log("error", error);
         const uploadError: UploadError = {
           code: "UPLOAD_FAILED",
           message:

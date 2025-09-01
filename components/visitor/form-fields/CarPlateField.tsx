@@ -27,10 +27,10 @@ export const CarPlateField = <T extends FieldValues = any>({
       control={form.control}
       name={"vehicle_number" as Path<T>}
       render={({ field }) => (
-        <FormItem className={`space-y-2 sm:space-y-2 ${className}`}>
+        <FormItem className={`space-y-2 ${className}`}>
           <FormLabel
             htmlFor="visitor-vehicle_number"
-            className="flex items-center gap-2 font-semibold text-gray-800 text-sm"
+            className="flex items-center gap-2 text-sm"
           >
             <Car className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
             {LABELS.CAR_PLATE}
@@ -41,11 +41,12 @@ export const CarPlateField = <T extends FieldValues = any>({
           <FormControl>
             <Input
               {...field}
+              value={field.value || ""} // null/undefined를 빈 문자열로 처리
               id="visitor-vehicle_number"
               name="vehicle_number"
               onChange={(e) => field.onChange(e.target.value.toUpperCase())}
               placeholder={PLACEHOLDERS.CAR_PLATE}
-              className="h-10 sm:h-12 bg-gray-50 border border-gray-200 uppercase text-sm"
+              className="uppercase"
             />
           </FormControl>
           <FormMessage />

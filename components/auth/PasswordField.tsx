@@ -34,7 +34,7 @@ export const PasswordField = memo(
     showFormMessage = true,
     label,
     placeholder,
-    className = "h-12 pl-10 input-focus",
+    className = "h-12 pl-10",
   }: PasswordFieldProps) => {
     // 타입별 기본값 설정
     const getDefaultValues = () => {

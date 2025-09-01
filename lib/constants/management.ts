@@ -125,8 +125,9 @@ export const LABELS = {
   FARM_INFO_DESCRIPTION: "소속 농장, 권한",
   PERMISSIONS_INFO: "권한 정보",
   PERMISSIONS_INFO_DESCRIPTION: "세부 권한 설정",
-  // 로그 내보내기
 
+  // 로그 내보내기
+  LOG_BASIC_INFO_DESC: "액션, 메시지, 시간",
   LOG_LEVEL: "로그 레벨",
   ALL_LEVELS: "모든 레벨",
   INFO: "정보",

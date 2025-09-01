@@ -72,6 +72,12 @@ export default function LoginPage() {
   // 세션 확인 및 세션 만료 파라미터 정리
   useEffect(() => {
     const checkSession = async () => {
+      // 이미 리다이렉트 중이면 세션 체크 하지 않음
+      if (redirecting) {
+        setSessionChecked();
+        return;
+      }
+
       // 타임아웃 설정 (5초)
       const timeoutPromise = new Promise((_, reject) => {
         setTimeout(() => reject(new Error("세션 확인 타임아웃")), 5000);
@@ -157,7 +163,7 @@ export default function LoginPage() {
     }
 
     checkSession();
-  }, [router, showInfo, signOut]);
+  }, [router, showInfo, signOut, redirecting]);
 
   // 소셜 로그인 무한 로딩 방지
   useEffect(() => {

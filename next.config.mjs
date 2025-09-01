@@ -3,10 +3,8 @@ import { withSentryConfig } from "@sentry/nextjs";
  * 🚀 Next.js 설정 파일
  *
  * 이 파일은 Next.js 애플리케이션의 빌드, 배포, 성능 최적화를 위한 설정을 포함합니다.
- * PWA(Progressive Web App) 기능과 보안, 성능 최적화가 모두 포함되어 있습니다.
+ * 보안, 성능 최적화가 모두 포함되어 있습니다.
  */
-
-import withPWA from "next-pwa";
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
 const supabaseDomain = supabaseUrl
@@ -169,118 +167,11 @@ const nextConfig = {
 };
 
 /**
- * 📱 PWA (Progressive Web App) 설정
- *
- * 웹 애플리케이션을 네이티브 앱과 유사한 경험으로 제공합니다.
- * - 오프라인 지원
- * - 홈화면 추가
- * - 푸시 알림
- * - 앱과 같은 UI/UX
- */
-const config = withPWA({
-  /**
-   * 📁 PWA 파일 저장 위치
-   * public 디렉토리에 service worker와 manifest 파일이 생성됩니다.
-   */
-  dest: "public",
-
-  /**
-   * 🔧 개발 환경에서 PWA 비활성화
-   *
-   * 개발 중에는 PWA 기능을 비활성화하여 개발 경험을 개선합니다.
-   * 프로덕션 빌드에서만 PWA 기능이 활성화됩니다.
-   */
-  disable: process.env.NODE_ENV === "development",
-
-  /**
-   * ✅ 서비스 워커 자동 등록
-   *
-   * 페이지 로드 시 자동으로 서비스 워커를 등록합니다.
-   * 사용자가 별도 작업 없이 PWA 기능을 사용할 수 있습니다.
-   */
-  register: true,
-
-  /**
-   * ⚡ 새 서비스 워커 즉시 활성화
-   *
-   * 업데이트된 서비스 워커가 있으면 기존 탭을 닫지 않고도 즉시 활성화됩니다.
-   * 사용자에게 최신 기능을 빠르게 제공할 수 있습니다.
-   */
-  skipWaiting: true,
-
-  /**
-   * 🔄 캐시 무효화 전략
-   *
-   * 코드 업데이트 시 즉시 반영되도록 캐시 무효화를 적극적으로 수행합니다.
-   */
-  reloadOnOnline: true,
-
-  /**
-   * 💾 런타임 캐싱 전략
-   *
-   * 네트워크 요청을 캐시하여 성능을 향상시키고 오프라인 지원을 제공합니다.
-   */
-  runtimeCaching: [
-    /**
-     * 🔤 Google Fonts API 캐싱
-     *
-     * Google Fonts를 1년간 캐시하여 폰트 로딩 속도를 대폭 개선합니다.
-     * CacheFirst 전략으로 네트워크보다 캐시를 우선 사용합니다.
-     */
-    {
-      urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,
-      handler: "CacheFirst", // 캐시 우선, 없으면 네트워크
-      options: {
-        cacheName: "google-fonts-cache",
-        expiration: {
-          maxEntries: 10, // 최대 10개 폰트 캐시
-          maxAgeSeconds: 60 * 60 * 24 * 365, // 1년간 캐시 유지
-        },
-      },
-    },
-
-    /**
-     * 🔤 Google Fonts Static 캐싱
-     *
-     * Google Fonts의 실제 폰트 파일을 캐시합니다.
-     * 폰트 파일은 자주 변경되지 않으므로 1년간 캐시해도 안전합니다.
-     */
-    {
-      urlPattern: /^https:\/\/fonts\.gstatic\.com\/.*/i,
-      handler: "CacheFirst", // 캐시 우선, 없으면 네트워크
-      options: {
-        cacheName: "gstatic-fonts-cache",
-        expiration: {
-          maxEntries: 10, // 최대 10개 폰트 파일 캐시
-          maxAgeSeconds: 60 * 60 * 24 * 365, // 1년간 캐시 유지
-        },
-      },
-    },
-  ],
-
-  /**
-   * 📱 오프라인 페이지 설정
-   *
-   * 네트워크 연결이 없을 때 표시할 오프라인 페이지를 지정합니다.
-   * 사용자가 오프라인 상태에서도 기본적인 정보를 볼 수 있습니다.
-   */
-  fallbacks: {
-    document: "/offline",
-  },
-
-  /**
-   * 🔄 네비게이션 폴백
-   *
-   * SPA에서 라우팅이 실패할 때 오프라인 페이지로 리다이렉트합니다.
-   */
-  navigateFallback: "/offline",
-})(nextConfig);
-
-/**
  * 📤 설정 내보내기
  *
  * Next.js가 이 설정을 사용하여 애플리케이션을 빌드하고 실행합니다.
  */
+const config = nextConfig;
 export default withSentryConfig(config, {
   // For all available options, see:
   // https://www.npmjs.com/package/@sentry/webpack-plugin#options

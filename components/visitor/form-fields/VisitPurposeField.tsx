@@ -37,10 +37,10 @@ export const VisitPurposeField = <T extends FieldValues = any>({
       control={form.control}
       name={"visitor_purpose" as Path<T>}
       render={({ field }) => (
-        <FormItem className={`space-y-2 sm:space-y-2 ${className}`}>
+        <FormItem className={`space-y-2 ${className}`}>
           <FormLabel
             htmlFor="visitor-visitor_purpose"
-            className="flex items-center gap-2 font-semibold text-gray-800 text-sm"
+            className="flex items-center gap-2 text-sm"
           >
             <FileText className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
             {LABELS.VISIT_PURPOSE}
@@ -53,7 +53,6 @@ export const VisitPurposeField = <T extends FieldValues = any>({
               <SelectTrigger
                 id="visitor-visitor_purpose"
                 name="visitor_purpose"
-                className="h-10 sm:h-12 bg-gray-50 border border-gray-200 text-sm"
               >
                 <SelectValue placeholder={PLACEHOLDERS.VISIT_PURPOSE} />
               </SelectTrigger>

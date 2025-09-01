@@ -77,7 +77,12 @@ export type LogLevel = Enums["LogLevel"];
 export type UserRole = "admin" | "owner" | "manager" | "viewer";
 export type AccountType = "admin" | "user";
 export type NotificationMethod = "push" | "kakao";
-export type TermType = "privacy" | "privacy_consent" | "terms" | "marketing";
+export type TermType =
+  | "privacy"
+  | "privacy_consent"
+  | "terms"
+  | "marketing"
+  | "age_consent";
 
 // ===========================================
 // 공통 유틸리티 타입

@@ -79,33 +79,12 @@ export default function TestLottieLoadingPage() {
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {/* Loading.json - 기본 로딩 */}
-            <div className="text-center p-4 border rounded-lg">
-              <h4 className="font-medium mb-2">📀 Loading.json</h4>
-              <p className="text-xs text-muted-foreground mb-3">기본 로딩</p>
-              <LottieLoadingCompact
-                animationPath="/lottie/Loading.json"
-                size="md"
-                text="기본 로딩"
-              />
-            </div>
-
             {/* 404.json - 페이지 찾을 수 없음 */}
             <div className="text-center p-4 border rounded-lg">
               <h4 className="font-medium mb-2">🚫 404.json</h4>
               <p className="text-xs text-muted-foreground mb-3">페이지 없음</p>
               <LottieLoadingCompact
                 animationPath="/lottie/404.json"
-                size="md"
-              />
-            </div>
-
-            {/* 500.json - 서버 에러 */}
-            <div className="text-center p-4 border rounded-lg">
-              <h4 className="font-medium mb-2">⚠️ 500.json</h4>
-              <p className="text-xs text-muted-foreground mb-3">서버 에러</p>
-              <LottieLoadingCompact
-                animationPath="/lottie/500.json"
                 size="md"
               />
             </div>
@@ -150,6 +129,66 @@ export default function TestLottieLoadingPage() {
               />
             </div>
           </div>
+          {/* consent.json - 약관 동의 */}
+          <div className="text-center p-4 border rounded-lg">
+            <h4 className="font-medium mb-2">⚠️ consent.json</h4>
+            <p className="text-xs text-muted-foreground mb-3">약관 동의</p>
+            <LottieLoadingCompact
+              animationPath="/lottie/consent.json"
+              size="md"
+            />
+          </div>
+
+          <div className="text-center p-4 border rounded-lg">
+            <h4 className="font-medium mb-2">⚠️ destructive.json</h4>
+            <p className="text-xs text-muted-foreground mb-3">파괴</p>
+            <LottieLoadingCompact
+              animationPath="/lottie/destructive.json"
+              size="md"
+            />
+          </div>
+
+          <div className="text-center p-4 border rounded-lg">
+            <h4 className="font-medium mb-2">⚠️ error.json</h4>
+            <p className="text-xs text-muted-foreground mb-3">에러</p>
+            <LottieLoadingCompact
+              animationPath="/lottie/error.json"
+              size="md"
+            />
+          </div>
+
+          <div className="text-center p-4 border rounded-lg">
+            <h4 className="font-medium mb-2">⚠️ info.json</h4>
+            <p className="text-xs text-muted-foreground mb-3">정보</p>
+            <LottieLoadingCompact animationPath="/lottie/info.json" size="md" />
+          </div>
+
+          <div className="text-center p-4 border rounded-lg">
+            <h4 className="font-medium mb-2">⚠️ success.json</h4>
+            <p className="text-xs text-muted-foreground mb-3">성공</p>
+            <LottieLoadingCompact
+              animationPath="/lottie/success.json"
+              size="md"
+            />
+          </div>
+
+          <div className="text-center p-4 border rounded-lg">
+            <h4 className="font-medium mb-2">⚠️ warning.json</h4>
+            <p className="text-xs text-muted-foreground mb-3">경고</p>
+            <LottieLoadingCompact
+              animationPath="/lottie/warning.json"
+              size="md"
+            />
+          </div>
+
+          <div className="text-center p-4 border rounded-lg">
+            <h4 className="font-medium mb-2">⚠️ profile.json</h4>
+            <p className="text-xs text-muted-foreground mb-3">프로필 설정</p>
+            <LottieLoadingCompact
+              animationPath="/lottie/profile.json"
+              size="md"
+            />
+          </div>
         </CardContent>
       </Card>
 
@@ -164,7 +203,6 @@ export default function TestLottieLoadingPage() {
         <CardContent>
           <div className="space-y-6">
             {[
-              { file: "Loading.json", name: "기본 로딩", emoji: "📀" },
               { file: "admin_error.json", name: "관리자 에러", emoji: "🔧" },
               { file: "no_result.json", name: "결과 없음", emoji: "🔍" },
               { file: "timeout.json", name: "타임아웃", emoji: "⏰" },
@@ -298,7 +336,7 @@ export default function TestLottieLoadingPage() {
               <h4 className="font-medium">📄 페이지 로딩</h4>
               <div className="bg-muted/30 p-4 rounded">
                 <LottieLoadingCompact
-                  animationPath="/lottie/Loading.json"
+                  animationPath="/lottie/cat_loading.json"
                   size="md"
                   text="페이지를 불러오는 중..."
                 />
@@ -361,20 +399,6 @@ export default function TestLottieLoadingPage() {
               </div>
               <code className="text-xs block p-2 bg-muted rounded">
                 오프라인 페이지
-              </code>
-            </div>
-
-            {/* 서버 에러 */}
-            <div className="space-y-4 p-4 border rounded-lg">
-              <h4 className="font-medium">⚠️ 서버 에러</h4>
-              <div className="bg-red-50 p-4 rounded">
-                <LottieLoadingCompact
-                  animationPath="/lottie/500.json"
-                  size="md"
-                />
-              </div>
-              <code className="text-xs block p-2 bg-muted rounded">
-                전역 에러 페이지
               </code>
             </div>
           </div>

@@ -48,9 +48,7 @@ export const EmailField = memo(
               onBlur?.();
             }}
             autoComplete={autoComplete}
-            className={`h-12 pl-10 input-focus ${
-              error ? "border-red-500" : ""
-            }`}
+            className={`h-12 pl-10 ${error ? "border-red-500" : ""}`}
             disabled={loading || isCheckingEmail}
           />
         </FormControl>

@@ -7,6 +7,7 @@ import {
   CommonSheetHeader,
   CommonSheetContent,
 } from "@/components/ui/sheet-common";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { Download } from "lucide-react";
 import { usePWAInstall } from "@/components/providers/pwa-provider";
 import { getCurrentPlatformGuide } from "./data";
@@ -32,33 +33,33 @@ export function InstallGuideSheet() {
       </SheetTrigger>
       <CommonSheetContent
         side="bottom"
-        showHandle={true}
-        enableDragToClose={true}
-        dragDirection="vertical"
-        dragThreshold={50}
+        enableDragToResize={true}
         onClose={() => setIsOpen(false)}
+        open={isOpen}
       >
         <CommonSheetHeader
           title={LABELS.INSTALL_GUIDE_SHEET_TITLE}
           description={LABELS.INSTALL_GUIDE_SHEET_DESCRIPTION}
         />
 
-        <div className="space-y-4">
-          {/* 현재 플랫폼 정보 */}
-          <PlatformGuideCard
-            currentGuide={currentGuide}
-            installInfo={installInfo}
-          />
+        <ScrollArea className="flex-1">
+          <div className="space-y-2">
+            {/* 현재 플랫폼 정보 */}
+            <PlatformGuideCard
+              currentGuide={currentGuide}
+              installInfo={installInfo}
+            />
 
-          {/* 설치 단계 */}
-          <InstallStepsCard currentGuide={currentGuide} />
+            {/* 설치 단계 */}
+            <InstallStepsCard currentGuide={currentGuide} />
 
-          {/* 팁 */}
-          <TipsCard currentGuide={currentGuide} />
+            {/* 팁 */}
+            <TipsCard currentGuide={currentGuide} />
 
-          {/* 다른 플랫폼 가이드 */}
-          <OtherPlatformsCard />
-        </div>
+            {/* 다른 플랫폼 가이드 */}
+            <OtherPlatformsCard />
+          </div>
+        </ScrollArea>
       </CommonSheetContent>
     </Sheet>
   );

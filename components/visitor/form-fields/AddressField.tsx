@@ -7,9 +7,10 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { AddressSearch } from "@/components/ui/address-search";
-import type { UseFormReturn, FieldValues, Path } from "react-hook-form";
-import { LABELS } from "@/lib/constants/visitor";
+import { Textarea } from "@/components/ui/textarea";
+import { LABELS, PLACEHOLDERS } from "@/lib/constants/visitor";
 import { MapPin } from "lucide-react";
+import type { UseFormReturn, FieldValues, Path } from "react-hook-form";
 
 interface AddressFieldProps<T extends FieldValues = any> {
   form: UseFormReturn<T>;
@@ -29,12 +30,10 @@ export const AddressField = <T extends FieldValues = any>({
       control={form.control}
       name={"visitor_address" as Path<T>}
       render={({ field }) => (
-        <FormItem
-          className={`space-y-2 sm:space-y-2 md:col-span-2 ${className}`}
-        >
+        <FormItem className={`space-y-2 md:col-span-2 ${className}`}>
           <FormLabel
             htmlFor="visitor-visitor_address"
-            className="flex items-center gap-2 font-semibold text-gray-800 text-sm"
+            className="flex items-center gap-2 text-sm"
           >
             <MapPin className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
             {LABELS.ADDRESS}
@@ -43,33 +42,34 @@ export const AddressField = <T extends FieldValues = any>({
             )}
           </FormLabel>
           <FormControl>
-            <AddressSearch
-              onSelect={(address, detailedAddress) => {
-                field.onChange(address);
-                (form as any).setValue("detailed_address", detailedAddress);
-              }}
-              defaultDetailedAddress={defaultDetailedAddress}
-            />
+            <div className="space-y-2">
+              <AddressSearch
+                onSelect={(address, detailedAddress) => {
+                  field.onChange(address);
+                  (form as any).setValue("detailed_address", detailedAddress);
+                }}
+                defaultDetailedAddress={defaultDetailedAddress}
+              />
+
+              <Textarea
+                id="visitor-visitor_address"
+                placeholder={PLACEHOLDERS.VISITOR_ADDRESS_PLACEHOLDER}
+                {...field}
+                readOnly
+                className="min-h-[80px]"
+                value={
+                  field.value
+                    ? `${field.value}${
+                        (form as any).watch("detailed_address")
+                          ? ` ${(form as any).watch("detailed_address")}`
+                          : ""
+                      }`
+                    : ""
+                }
+              />
+            </div>
           </FormControl>
           <FormMessage />
-          {field.value && (
-            <div className="mt-2 p-2.5 sm:p-3 bg-gray-50 border border-gray-200 rounded-lg">
-              <div className="text-xs sm:text-sm">
-                <div className="font-medium text-gray-700">
-                  {LABELS.SELECTED_ADDRESS}
-                </div>
-                <div className="text-gray-600 mt-1">
-                  {field.value}
-                  {(form as any).watch("detailed_address") && (
-                    <span className="text-blue-600">
-                      {" "}
-                      {(form as any).watch("detailed_address")}
-                    </span>
-                  )}
-                </div>
-              </div>
-            </div>
-          )}
         </FormItem>
       )}
     />

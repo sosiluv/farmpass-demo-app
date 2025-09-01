@@ -54,6 +54,7 @@ export function useUpdateUserConsentsMutation() {
     mutationFn: async (data: {
       privacyConsent: boolean;
       termsConsent: boolean;
+      ageConsent: boolean;
       marketingConsent?: boolean;
     }): Promise<{ consents: UserConsent[]; message: string }> => {
       const response = await apiClient("/api/user-consents/update", {
@@ -65,6 +66,7 @@ export function useUpdateUserConsentsMutation() {
       return { consents: response.consents, message: response.message };
     },
     onSuccess: () => {
+      // 약관 동의 쿼리 무효화
       queryClient.invalidateQueries({
         queryKey: userConsentsKeys.check(),
       });

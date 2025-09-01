@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
-import { Send, Loader2, MessageSquare } from "lucide-react";
+import { Send, Loader2 } from "lucide-react";
 import { LABELS, PLACEHOLDERS, BUTTONS } from "@/lib/constants/settings";
 
 interface BroadcastFormData {
@@ -50,7 +50,6 @@ export function BroadcastForm({
           onChange={(e) => onInputChange("title", e.target.value)}
           maxLength={50}
           disabled={isLoading || isSending}
-          className="text-sm sm:text-base"
         />
         <div className="text-sm sm:text-base text-muted-foreground">
           {formData.title.length}/50자
@@ -73,7 +72,6 @@ export function BroadcastForm({
           maxLength={200}
           rows={4}
           disabled={isLoading || isSending}
-          className="text-sm sm:text-base"
         />
         <div className="text-sm sm:text-base text-muted-foreground">
           {formData.message.length}/200자
@@ -94,7 +92,6 @@ export function BroadcastForm({
           value={formData.url}
           onChange={(e) => onInputChange("url", e.target.value)}
           disabled={isLoading || isSending}
-          className="text-sm sm:text-base"
         />
       </div>
 

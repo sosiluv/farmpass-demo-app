@@ -56,7 +56,7 @@ export function FilterSection({
                 {filter.label}
               </Label>
               <Select value={filter.value} onValueChange={filter.onChange}>
-                <SelectTrigger className="text-sm md:text-base">
+                <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>

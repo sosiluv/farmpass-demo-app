@@ -3,6 +3,7 @@
 import React, { useState, useMemo } from "react";
 import { Sheet, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 import { CommonSheetContent } from "@/components/ui/sheet-common";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Bell, Shield, Users, Activity, CheckCircle, X } from "lucide-react";
@@ -119,13 +120,11 @@ export default function NotificationPermissionSheet({
     >
       <CommonSheetContent
         side="bottom"
-        showHandle={false}
-        enableDragToClose={false}
-        dragDirection="vertical"
-        dragThreshold={50}
+        enableDragToResize={false}
         onClose={() => {}} // 빈 공간 클릭으로 닫히는 것을 완전히 방지
+        open={open}
+        showCloseButton={false}
         data-notification-sheet="true"
-        className="max-h-[95vh] overflow-y-auto p-0 gap-0 overflow-hidden touch-none rounded-t-[20px] rounded-b-[20px] sm:rounded-t-[24px] sm:rounded-b-[24px] border-t-2 border-primary/20 mb-4 flex flex-col mx-2 [&>button]:hidden"
       >
         {/* 접근성을 위한 숨겨진 제목과 설명 */}
         <SheetTitle className="sr-only">{title}</SheetTitle>

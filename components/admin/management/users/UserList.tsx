@@ -20,7 +20,6 @@ import {
   getAvatarColor,
 } from "@/lib/utils/media/avatar";
 import { LABELS } from "@/lib/constants/management";
-import { useAuth } from "@/components/providers/auth-provider";
 import { type UserProfileWithFarmMembers } from "@/lib/hooks/query/use-admin-users-query";
 
 interface UserListProps {
@@ -28,7 +27,6 @@ interface UserListProps {
 }
 
 export function UserList({ users }: UserListProps) {
-  const { isAdmin } = useAuth();
   const [selectedUser, setSelectedUser] =
     useState<UserProfileWithFarmMembers | null>(null);
 
@@ -96,10 +94,10 @@ export function UserList({ users }: UserListProps) {
               <div className="flex flex-col gap-1">
                 <Badge
                   className={`${getRoleColor(
-                    isAdmin ? "admin" : "user"
+                    user.account_type === "admin" ? "admin" : "user"
                   )} text-xs sm:text-sm px-2 sm:px-3 py-1 sm:py-1.5`}
                 >
-                  {isAdmin
+                  {user.account_type === "admin"
                     ? LABELS.SYSTEM_ADMIN_USER
                     : LABELS.GENERAL_USER_DETAIL}
                 </Badge>

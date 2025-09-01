@@ -191,3 +191,34 @@ export const userConsentsKeys = {
   // 사용자 동의 업데이트
   update: () => [...userConsentsKeys.all, "update"] as const,
 } as const;
+
+// ===========================================
+// 인증 관련 Query Keys 그룹화
+// ===========================================
+
+/**
+ * 인증 상태 변경 시 관리해야 할 모든 Query Keys
+ * AuthProvider에서 사용
+ */
+export const authRelatedKeys = {
+  // 모든 인증 관련 Query Keys
+  all: [
+    profileKeys.all,
+    farmsKeys.all,
+    notificationKeys.all,
+    visitorsKeys.all,
+    adminKeys.all,
+    termsKeys.all,
+    userConsentsKeys.all,
+  ] as const,
+
+  // 사용자별 데이터만 (프로필, 동의 등)
+  userSpecific: [
+    profileKeys.all,
+    userConsentsKeys.all,
+    termsKeys.consents.all(),
+  ] as const,
+
+  // 관리자 전용 데이터
+  adminOnly: [adminKeys.all, termsKeys.admin.all()] as const,
+} as const;

@@ -52,13 +52,8 @@ export function ProtectedRoute({
       return;
     }
 
-    // 관리자 권한이 필요한데 권한이 없는 경우
-    if (
-      requireAdmin &&
-      isUnauthenticated &&
-      !isAdmin &&
-      !hasRedirected.current
-    ) {
+    // 관리자 권한이 필요한데 권한이 없는 경우 (인증된 상태에서)
+    if (requireAdmin && !isAdmin && !hasRedirected.current) {
       hasRedirected.current = true;
       router.push("/unauthorized");
       return;
@@ -131,9 +126,15 @@ export function ProtectedRoute({
     );
   }
 
-  // 권한 부족 (리다이렉트 처리됨)
-  if (requireAdmin && isUnauthenticated && !isAdmin) {
-    return null;
+  // 권한 부족 (리다이렉트 처리됨) - 인증된 상태에서 권한 없음
+  if (requireAdmin && !isAdmin) {
+    return (
+      <PageLoading
+        text="권한을 확인하는 중..."
+        variant="lottie"
+        fullScreen={true}
+      />
+    );
   }
 
   // 인증된 경우 children 렌더링

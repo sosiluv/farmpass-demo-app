@@ -1,7 +1,6 @@
 import { getSystemSetting } from "@/lib/cache/system-settings-cache";
 import { devLog } from "@/lib/utils/logging/dev-logger";
 import { normalizeIP } from "@/lib/server/ip-helpers";
-import { slackNotifier } from "@/lib/slack";
 import {
   createServiceRoleClient,
   validateServiceRoleConfig,
@@ -217,25 +216,12 @@ export const logger = {
     const errorMessage = error instanceof Error ? error.message : String(error);
     const stack = error instanceof Error ? error.stack : undefined;
 
-    // 1. 기존 시스템 로그에 저장
+    // 시스템 로그에 저장
     await createLog("error", "ERROR", errorMessage, context, {
       ...metadata,
       error_message: errorMessage,
       stack_trace: stack,
     });
-
-    // 2. Slack 알림 전송 (에러 레벨인 경우)
-    await slackNotifier.sendSystemAlert(
-      "error",
-      "시스템 에러 발생",
-      errorMessage,
-      {
-        action: metadata?.action || "ERROR",
-        userId: context?.userId || "unknown",
-        stack: stack?.split("\n")[0], // 첫 번째 스택 라인만
-        timestamp: new Date().toISOString(),
-      }
-    );
   },
 };
 

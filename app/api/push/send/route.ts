@@ -64,6 +64,8 @@ async function sendPushWithRetry(
         },
       };
 
+      devLog.info(`푸시 발송 시도: ${pushSubscription.endpoint}`);
+      devLog.info(`푸시 발송 페이로드: ${payload}`);
       await webpush.sendNotification(pushSubscription, payload);
 
       return { success: true };
@@ -652,6 +654,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json(
       {
+        success: true,
         message: `푸시 알림이 성공적으로 발송되었습니다. (성공: ${successCount}명, 실패: ${failureCount}명)`,
         sentCount: successCount,
         failureCount,

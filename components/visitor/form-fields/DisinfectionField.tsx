@@ -25,9 +25,9 @@ export const DisinfectionField = <T extends FieldValues = any>({
       control={form.control}
       name={"disinfection_check" as Path<T>}
       render={({ field }) => (
-        <FormItem className={className}>
+        <FormItem className={`space-y-2 md:col-span-2 ${className}`}>
           <FormControl>
-            <div className="flex items-center space-x-2 p-3 bg-green-50 border border-green-200 rounded-lg mb-3 sm:mb-4 mt-2">
+            <div className="flex items-center space-x-2 p-3 bg-green-50 border border-green-200 rounded-lg">
               <Checkbox
                 id="visitor-disinfection_check"
                 name="disinfection_check"

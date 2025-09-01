@@ -11,13 +11,7 @@ import { Session, User } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/client";
 import { devLog } from "@/lib/utils/logging/dev-logger";
 import { useQueryClient } from "@tanstack/react-query";
-import {
-  profileKeys,
-  farmsKeys,
-  notificationKeys,
-  visitorsKeys,
-  adminKeys,
-} from "@/lib/hooks/query/query-keys";
+import { authRelatedKeys } from "@/lib/hooks/query/query-keys";
 
 // 통합된 인증 상태 정의
 type AuthState =
@@ -80,11 +74,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   // 인증 상태 변경 시 관련 캐시 초기화
   useEffect(() => {
     if (typeof window !== "undefined") {
-      queryClient.invalidateQueries({ queryKey: profileKeys.all });
-      queryClient.invalidateQueries({ queryKey: farmsKeys.all });
-      queryClient.invalidateQueries({ queryKey: notificationKeys.all });
-      queryClient.invalidateQueries({ queryKey: visitorsKeys.all });
-      queryClient.invalidateQueries({ queryKey: adminKeys.all });
+      if (state.status === "unauthenticated") {
+        // 로그아웃 시에는 캐시를 완전히 제거
+        authRelatedKeys.all.forEach((queryKey) => {
+          queryClient.removeQueries({ queryKey });
+        });
+      } else if (state.status === "authenticated") {
+        // 로그인 시에는 무효화만 (새로운 데이터로 갱신)
+        authRelatedKeys.all.forEach((queryKey) => {
+          queryClient.invalidateQueries({ queryKey });
+        });
+      }
     }
   }, [
     state.status,

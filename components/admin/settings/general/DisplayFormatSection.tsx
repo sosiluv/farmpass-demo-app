@@ -49,16 +49,12 @@ export function DisplayFormatSection({
             onValueChange={(value) => onSettingChange("dateFormat", value)}
             disabled={loading}
           >
-            <SelectTrigger id="dateFormat" className="text-sm sm:text-base">
+            <SelectTrigger id="dateFormat">
               <SelectValue placeholder={PLACEHOLDERS.DATE_FORMAT_SELECT} />
             </SelectTrigger>
             <SelectContent>
               {DATE_FORMAT_OPTIONS.map((option) => (
-                <SelectItem
-                  key={option.value}
-                  value={option.value}
-                  className="text-sm sm:text-base"
-                >
+                <SelectItem key={option.value} value={option.value}>
                   {option.label}
                 </SelectItem>
               ))}

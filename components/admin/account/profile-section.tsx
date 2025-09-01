@@ -148,7 +148,6 @@ export function ProfileSection({
                   disabled={loading}
                   autoComplete="name"
                   placeholder={PLACEHOLDERS.NAME}
-                  className="text-sm sm:text-base"
                 />
               </div>
               <div className="space-y-2">
@@ -167,11 +166,8 @@ export function ProfileSection({
                   disabled={true}
                   autoComplete="email"
                   placeholder={PLACEHOLDERS.EMAIL}
-                  className="text-sm sm:text-base bg-gray-50"
+                  className="bg-gray-50"
                 />
-                <p className="text-xs text-muted-foreground">
-                  {LABELS.EMAIL_CHANGE_DISABLED}
-                </p>
               </div>
             </div>
 
@@ -192,7 +188,6 @@ export function ProfileSection({
                   disabled={loading}
                   maxLength={13}
                   placeholder={PLACEHOLDERS.PHONE_NUMBER}
-                  className="text-sm sm:text-base"
                 />
               </div>
               <div className="space-y-2">
@@ -207,16 +202,12 @@ export function ProfileSection({
                   onValueChange={(value) => handleChange("position", value)}
                   disabled={loading}
                 >
-                  <SelectTrigger id="position" className="text-sm sm:text-base">
+                  <SelectTrigger id="position">
                     <SelectValue placeholder={PLACEHOLDERS.POSITION} />
                   </SelectTrigger>
                   <SelectContent>
                     {POSITION_OPTIONS.map((option) => (
-                      <SelectItem
-                        key={option.value}
-                        value={option.value}
-                        className="text-sm sm:text-base"
-                      >
+                      <SelectItem key={option.value} value={option.value}>
                         {option.label}
                       </SelectItem>
                     ))}
@@ -241,7 +232,6 @@ export function ProfileSection({
                   onChange={handleInputChange}
                   disabled={loading}
                   placeholder={PLACEHOLDERS.DEPARTMENT}
-                  className="text-sm sm:text-base"
                 />
               </div>
             </div>
@@ -258,7 +248,6 @@ export function ProfileSection({
                 disabled={loading}
                 placeholder={PLACEHOLDERS.BIO}
                 rows={4}
-                className="text-sm sm:text-base"
               />
             </div>
 

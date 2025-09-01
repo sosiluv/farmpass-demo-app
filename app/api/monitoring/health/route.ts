@@ -9,9 +9,12 @@ import {
 } from "@/lib/utils/error/errorUtil";
 
 // 시스템 헬스체크 데이터 패치
-async function fetchHealthCheck(baseUrl: string) {
+async function fetchHealthCheck(baseUrl: string, authHeaders: Headers) {
   const res = await fetch(new URL("/api/health", baseUrl), {
     cache: "no-store",
+    headers: {
+      cookie: authHeaders.get("cookie") || "",
+    },
   });
   return res.json();
 }
@@ -31,7 +34,7 @@ export async function GET(request: NextRequest) {
       process.env.NODE_ENV === "production" ? "https" : "http"
     }://${host}`;
 
-    const healthCheck = await fetchHealthCheck(baseUrl);
+    const healthCheck = await fetchHealthCheck(baseUrl, headers());
     return NextResponse.json({
       timestamp: new Date().toISOString(),
       health: healthCheck,

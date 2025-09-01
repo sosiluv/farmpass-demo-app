@@ -26,8 +26,12 @@ import { useSystemSettingsQuery } from "@/lib/hooks/query/use-system-settings-qu
 import { useVisitorForm } from "@/hooks/visitor/useVisitorForm";
 import { VisitorForm } from "@/components/visitor/VisitorForm";
 import { useCommonToast } from "@/lib/utils/notification/toast-messages";
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { VisitorFormData } from "@/lib/utils/validation/visitor-validation";
+import useBlockNavigation from "@/hooks/ui/use-before-unload";
+import { useRouter } from "next/navigation";
+import { ConfirmSheet } from "@/components/ui/confirm-sheet";
+import { LABELS } from "@/lib/constants/visitor";
 import type { VisitorSettings } from "@/lib/types/visitor";
 
 /**
@@ -37,12 +41,14 @@ import type { VisitorSettings } from "@/lib/types/visitor";
  * 농장 정보 표시, 방문자 정보 입력, 데이터 저장 기능을 포함합니다.
  */
 export default function VisitPage() {
+  const router = useRouter();
   const params = useParams();
   if (!params || !params.farmId) {
     throw new Error("잘못된 접근입니다. (farmId 없음)");
   }
   const farmId = params.farmId as string;
   const { showInfo, showSuccess, showError } = useCommonToast();
+  const [showConfirmSheet, setShowConfirmSheet] = useState(false);
 
   // 전역 시스템 설정 사용
   const {
@@ -87,6 +93,17 @@ export default function VisitPage() {
     uploadImage,
     deleteImage,
   } = useVisitorForm(farmId, settings);
+
+  // 뒤로가기 처리 - useBlockNavigation 훅 사용
+  const { isAttemptingNavigation, proceedNavigation, cancelNavigation } =
+    useBlockNavigation(true, "/"); // 홈페이지로 이동
+
+  // confirm 다이얼로그 처리
+  useEffect(() => {
+    if (isAttemptingNavigation) {
+      setShowConfirmSheet(true);
+    }
+  }, [isAttemptingNavigation]);
 
   // 에러 상태에 따른 토스트 처리
   useEffect(() => {
@@ -180,7 +197,7 @@ export default function VisitPage() {
   }
 
   if (isSubmitted) {
-    return <SuccessCard />;
+    return <SuccessCard onGoHome={() => router.push("/")} />;
   }
 
   return (
@@ -203,6 +220,31 @@ export default function VisitPage() {
           />
         </div>
       </div>
+
+      {/* 네비게이션 확인 시트 */}
+      <ConfirmSheet
+        open={showConfirmSheet}
+        onOpenChange={setShowConfirmSheet}
+        onConfirm={() => {
+          setShowConfirmSheet(false);
+          proceedNavigation();
+        }}
+        onCancel={() => {
+          setShowConfirmSheet(false);
+          cancelNavigation();
+        }}
+        title={
+          isSubmitted
+            ? LABELS.SUCCESS_CARD_HEADER
+            : LABELS.SUCCESS_CARD_CANCEL_WARNING
+        }
+        warningMessage={
+          isSubmitted
+            ? LABELS.SUCCESS_CARD_CANCEL_DESC_HOME
+            : LABELS.SUCCESS_CARD_CANCEL_DESC
+        }
+        variant={isSubmitted ? "success" : "warning"}
+      />
     </ErrorBoundary>
   );
 }

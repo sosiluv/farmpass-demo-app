@@ -93,7 +93,7 @@ export function SystemStatusCard({ data }: SystemStatusCardProps) {
               <Activity className="h-5 w-5 flex-shrink-0" />
               <span>{PAGE_HEADER.SYSTEM_STATUS}</span>
             </CardTitle>
-            <CardDescription className="mt-1">
+            <CardDescription>
               {LABELS.LAST_UPDATE.replace(
                 "{datetime}",
                 new Date(data.timestamp).toLocaleString()

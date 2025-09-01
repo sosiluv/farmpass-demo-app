@@ -38,13 +38,13 @@ export const TextField = <T extends FieldValues = any>({
       name={name}
       render={({ field }) => (
         <FormItem
-          className={`space-y-2 sm:space-y-2 ${
+          className={`space-y-2 ${
             fullWidth ? "md:col-span-2" : ""
           } ${className}`}
         >
           <FormLabel
             htmlFor={`visitor-${name}`}
-            className="flex items-center gap-2 font-semibold text-gray-800 text-sm"
+            className="flex items-center gap-2 text-sm"
           >
             <Icon className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
             {LABELS[labelKey]}
@@ -55,13 +55,13 @@ export const TextField = <T extends FieldValues = any>({
           <FormControl>
             <Input
               {...field}
+              value={field.value || ""} // null/undefined를 빈 문자열로 처리
               id={`visitor-${name}`}
               name={name}
               placeholder={
                 placeholder ||
                 (placeholderKey ? PLACEHOLDERS[placeholderKey] : "")
               }
-              className="h-10 sm:h-12 bg-gray-50 border border-gray-200 text-sm"
             />
           </FormControl>
           <FormMessage />

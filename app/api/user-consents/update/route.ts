@@ -21,15 +21,16 @@ export async function POST(request: NextRequest) {
     user = authResult.user;
 
     const body = await request.json();
-    const { privacyConsent, termsConsent, marketingConsent } = body;
+    const { privacyConsent, termsConsent, marketingConsent, ageConsent } = body;
 
     // 필수 필드 검증
     if (
       typeof privacyConsent !== "boolean" ||
-      typeof termsConsent !== "boolean"
+      typeof termsConsent !== "boolean" ||
+      typeof ageConsent !== "boolean"
     ) {
       throwBusinessError("MISSING_REQUIRED_FIELDS", {
-        missingFields: ["privacyConsent", "termsConsent"],
+        missingFields: ["privacyConsent", "termsConsent", "ageConsent"],
       });
     }
 
@@ -95,6 +96,20 @@ export async function POST(request: NextRequest) {
     }> = [];
     const now = new Date();
 
+    // 연령 동의
+    const ageTerm = latestActiveTerms.find(
+      (term) => term.type === "age_consent"
+    );
+    if (ageTerm && ageConsent) {
+      consentRecords.push({
+        user_id: user.id,
+        term_id: ageTerm.id,
+        agreed: true,
+        agreed_at: now,
+        created_at: now,
+        updated_at: now,
+      });
+    }
     // 개인정보 처리방침 동의
     const privacyTerm = latestActiveTerms.find(
       (term) => term.type === "privacy_consent"

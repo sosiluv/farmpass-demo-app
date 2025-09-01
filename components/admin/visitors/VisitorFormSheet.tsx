@@ -27,6 +27,7 @@ import { NotesField } from "@/components/visitor/form-fields/NotesField";
 import { ConsentField } from "@/components/visitor/form-fields/ConsentField";
 
 import { LABELS, BUTTONS } from "@/lib/constants/visitor";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 // ===========================================
 // 타입 및 상수 정의
@@ -162,11 +163,9 @@ export function VisitorFormSheet({
     <Sheet open={open} onOpenChange={handleClose}>
       <CommonSheetContent
         side="bottom"
-        showHandle={true}
-        enableDragToClose={true}
-        dragDirection="vertical"
-        dragThreshold={50}
-        onClose={() => onOpenChange(false)}
+        enableDragToResize={true}
+        onClose={handleClose}
+        open={open}
       >
         <CommonSheetHeader
           title={
@@ -179,6 +178,7 @@ export function VisitorFormSheet({
               ? LABELS.VISITOR_FORM_SHEET_CREATE_DESC
               : LABELS.VISITOR_FORM_SHEET_EDIT_DESC
           }
+          show={false}
         />
 
         {/* 외부 로딩 중에는 Lottie 애니메이션 표시하여 깜빡임 완전 방지 */}
@@ -190,42 +190,43 @@ export function VisitorFormSheet({
             />
           </div>
         ) : (
-          <div className="space-y-3 sm:space-y-4 py-3 sm:py-4">
+          <ScrollArea className="flex-1">
             <Form {...form}>
-              <form
-                onSubmit={form.handleSubmit(handleSubmit)}
-                className="space-y-3 sm:space-y-6"
-              >
-                <div className="grid gap-3 sm:gap-6">
-                  {/* 이름 필드 */}
-                  <TextField
-                    form={form}
-                    name="visitor_name"
-                    icon={User}
-                    required={true}
-                  />
-                  {/* 전화번호 필드 */}
-                  <PhoneField form={form} required={true} />
-                  {/* 주소 필드 */}
-                  <AddressField
-                    form={form}
-                    required={true}
-                    defaultDetailedAddress={formInitialValues.detailed_address}
-                  />
-                  {/* 방문목적 필드 */}
-                  <VisitPurposeField form={form} required={true} />
-                  {/* 차량번호 필드 */}
-                  <CarPlateField form={form} required={false} />
-                  {/* 메모 필드 */}
-                  <NotesField form={form} required={false} />
-                  {/* 소독여부 필드 */}
-                  <DisinfectionField form={form} />
-                  {/* 동의 필드 */}
-                  <ConsentField form={form} />
+              <form onSubmit={form.handleSubmit(handleSubmit)}>
+                <div className="space-y-2 sm:space-y-4 p-3">
+                  <div className="grid gap-3 sm:gap-6 md:grid-cols-2 md:gap-4">
+                    {/* 이름 필드 */}
+                    <TextField
+                      form={form}
+                      name="visitor_name"
+                      icon={User}
+                      required={true}
+                    />
+                    {/* 전화번호 필드 */}
+                    <PhoneField form={form} required={true} />
+                    {/* 주소 필드 */}
+                    <AddressField
+                      form={form}
+                      required={true}
+                      defaultDetailedAddress={
+                        formInitialValues.detailed_address
+                      }
+                    />
+                    {/* 방문목적 필드 */}
+                    <VisitPurposeField form={form} required={true} />
+                    {/* 차량번호 필드 */}
+                    <CarPlateField form={form} required={false} />
+                    {/* 메모 필드 */}
+                    <NotesField form={form} required={false} />
+                    {/* 소독여부 필드 */}
+                    <DisinfectionField form={form} />
+                    {/* 동의 필드 */}
+                    <ConsentField form={form} />
+                  </div>
                 </div>
               </form>
             </Form>
-          </div>
+          </ScrollArea>
         )}
 
         <CommonSheetFooter

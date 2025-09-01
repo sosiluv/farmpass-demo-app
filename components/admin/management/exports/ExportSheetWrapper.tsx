@@ -4,6 +4,7 @@ import {
   CommonSheetHeader,
   CommonSheetContent,
 } from "@/components/ui/sheet-common";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
 import { Download } from "lucide-react";
 
@@ -42,10 +43,8 @@ export function ExportSheetWrapper({
       </SheetTrigger>
       <CommonSheetContent
         side="bottom"
-        showHandle={true}
-        enableDragToClose={true}
-        dragDirection="vertical"
-        dragThreshold={50}
+        enableDragToResize={true}
+        open={open}
         onClose={() => onOpenChange(false)}
       >
         <CommonSheetHeader
@@ -53,7 +52,7 @@ export function ExportSheetWrapper({
           description={description}
           show={false}
         />
-        {children}
+        <ScrollArea className="flex-1">{children}</ScrollArea>
       </CommonSheetContent>
     </Sheet>
   );

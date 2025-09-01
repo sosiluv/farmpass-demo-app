@@ -95,7 +95,6 @@ export default function LoginSecurityCard({
               }
               onFocus={maxLoginAttempts.handleFocus}
               disabled={isLoading}
-              className="text-sm sm:text-base"
             />
             <p className="text-sm sm:text-base text-muted-foreground">
               {LABELS.LOGIN_ATTEMPTS_DESC}
@@ -130,7 +129,6 @@ export default function LoginSecurityCard({
               }
               onFocus={accountLockoutDuration.handleFocus}
               disabled={isLoading}
-              className="text-sm sm:text-base"
             />
             <p className="text-sm sm:text-base text-muted-foreground">
               {LABELS.ACCOUNT_LOCKOUT_DESC}

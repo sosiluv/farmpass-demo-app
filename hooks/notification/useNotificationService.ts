@@ -160,85 +160,92 @@ export function useNotificationService() {
   };
 
   // 권한 요청 및 구독 처리 - 공통 로직 사용
-  const requestNotificationPermission = useCallback(async () => {
-    setIsLoading(true);
-    try {
-      // VAPID 키 사용 (최상위에서 받은 값)
-      if (!vapidKey) {
-        setLastMessage({
-          type: "error",
-          title: "VAPID 키 오류",
-          message: "VAPID 키를 가져올 수 없습니다. 잠시 후 다시 시도해 주세요.",
-        });
-        return false;
-      }
-
-      // 1. 알림 설정 확인 (React Query로 이미 조회된 데이터 사용)
-      if (!notificationSettings?.is_active) {
-        setLastMessage({
-          type: "error",
-          title: "재구독 실패",
-          message:
-            "알림 설정이 비활성화되어 있습니다. 설정에서 알림을 활성화한 후 다시 시도해주세요.",
-        });
-        return false;
-      }
-
-      // 공통 로직 사용 (알림 설정 페이지용)
-      const result = await requestNotificationPermissionAndSubscribe(
-        async () => vapidKey,
-        async (subscription, deviceId, options) => {
-          // 서버에 구독 정보 전송 (device_id 포함)
-          const mutationResult = await createSubscriptionMutation.mutateAsync({
-            subscription: subscription as PushSubscription,
-            deviceId,
-            options: {
-              ...options,
-              updateSettings: true, // 알림 설정 페이지에서는 설정 업데이트
-            },
+  const requestNotificationPermission = useCallback(
+    async (skipSettingsCheck: boolean = false) => {
+      setIsLoading(true);
+      try {
+        // VAPID 키 사용 (최상위에서 받은 값)
+        if (!vapidKey) {
+          setLastMessage({
+            type: "error",
+            title: "VAPID 키 오류",
+            message:
+              "VAPID 키를 가져올 수 없습니다. 잠시 후 다시 시도해 주세요.",
           });
-          // 구독 성공 시 is_active를 true로 설정
-          if (mutationResult.success) {
-            await saveNotificationSettingsMutation.mutateAsync({
-              is_active: true,
-            });
-          }
-          return mutationResult;
+          return false;
         }
-      );
-      // 결과에 따른 메시지 설정
-      if (result.success) {
-        setLastMessage({
-          type: "success",
-          title: "구독 성공",
-          message: result.message || "알림 구독이 완료되었습니다",
-        });
-        return true;
-      } else {
+
+        // 1. 알림 설정 확인 (React Query로 이미 조회된 데이터 사용)
+        // 알림 설정 페이지에서는 설정 체크 건너뛰기
+        if (!skipSettingsCheck && !notificationSettings?.is_active) {
+          setLastMessage({
+            type: "error",
+            title: "재구독 실패",
+            message:
+              "알림 설정이 비활성화되어 있습니다. 설정에서 알림을 활성화한 후 다시 시도해주세요.",
+          });
+          return false;
+        }
+
+        // 공통 로직 사용 (알림 설정 페이지용)
+        const result = await requestNotificationPermissionAndSubscribe(
+          async () => vapidKey,
+          async (subscription, deviceId, options) => {
+            // 서버에 구독 정보 전송 (device_id 포함)
+            const mutationResult = await createSubscriptionMutation.mutateAsync(
+              {
+                subscription: subscription as PushSubscription,
+                deviceId,
+                options: {
+                  ...options,
+                  updateSettings: true, // 알림 설정 페이지에서는 설정 업데이트
+                },
+              }
+            );
+            // 구독 성공 시 is_active를 true로 설정
+            if (mutationResult.success) {
+              await saveNotificationSettingsMutation.mutateAsync({
+                is_active: true,
+              });
+            }
+            return mutationResult;
+          }
+        );
+        // 결과에 따른 메시지 설정
+        if (result.success) {
+          setLastMessage({
+            type: "success",
+            title: "구독 성공",
+            message: result.message || "알림 구독이 완료되었습니다",
+          });
+          return true;
+        } else {
+          setLastMessage({
+            type: "error",
+            title: "알림 설정 실패",
+            message: result.message || "알림 설정 중 오류가 발생했습니다.",
+          });
+          return false;
+        }
+      } catch (error) {
+        devLog.error("알림 권한 요청 실패:", error);
         setLastMessage({
           type: "error",
           title: "알림 설정 실패",
-          message: result.message || "알림 설정 중 오류가 발생했습니다.",
+          message: error instanceof Error ? error.message : "알 수 없는 오류",
         });
         return false;
+      } finally {
+        setIsLoading(false);
       }
-    } catch (error) {
-      devLog.error("알림 권한 요청 실패:", error);
-      setLastMessage({
-        type: "error",
-        title: "알림 설정 실패",
-        message: error instanceof Error ? error.message : "알 수 없는 오류",
-      });
-      return false;
-    } finally {
-      setIsLoading(false);
-    }
-  }, [
-    vapidKey,
-    createSubscriptionMutation,
-    saveNotificationSettingsMutation,
-    notificationSettings,
-  ]);
+    },
+    [
+      vapidKey,
+      createSubscriptionMutation,
+      saveNotificationSettingsMutation,
+      notificationSettings,
+    ]
+  );
 
   return {
     isLoading,

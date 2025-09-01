@@ -27,12 +27,6 @@ export function useTimeout(
   isLoading: boolean,
   options: UseTimeoutOptions = {}
 ): UseTimeoutReturn {
-  const {
-    timeout = 10000, // 기본 10초
-    onTimeout,
-    onRetry,
-  } = options;
-
   const [timeoutReached, setTimeoutReached] = useState(false);
   const timeoutIdRef = useRef<NodeJS.Timeout | null>(null);
   const optionsRef = useRef(options);
@@ -59,7 +53,7 @@ export function useTimeout(
     const id = setTimeout(() => {
       setTimeoutReached(true);
       optionsRef.current.onTimeout?.();
-    }, optionsRef.current.timeout || 10000);
+    }, optionsRef.current.timeout || 15000);
 
     timeoutIdRef.current = id;
   }, []);
@@ -87,7 +81,7 @@ export function useTimeout(
       const id = setTimeout(() => {
         setTimeoutReached(true);
         optionsRef.current.onTimeout?.();
-      }, optionsRef.current.timeout || 10000);
+      }, optionsRef.current.timeout || 15000);
 
       timeoutIdRef.current = id;
     } else if (!isLoading) {

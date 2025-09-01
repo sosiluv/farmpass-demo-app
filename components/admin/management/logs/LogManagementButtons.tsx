@@ -2,10 +2,7 @@ import { Button } from "@/components/ui/button";
 import { Trash2, AlertTriangle, Loader2 } from "lucide-react";
 import { memo, useCallback, useState } from "react";
 import { BUTTONS, LABELS, PAGE_HEADER } from "@/lib/constants/management";
-import {
-  DeleteConfirmSheet,
-  WarningConfirmSheet,
-} from "@/components/ui/confirm-sheet";
+import { WarningConfirmSheet } from "@/components/ui/confirm-sheet";
 
 interface LogManagementButtonsProps {
   logsCount: number;
