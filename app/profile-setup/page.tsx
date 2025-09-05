@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import * as z from "zod";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -49,7 +49,7 @@ const profileFormSchema = z.object({
 type ProfileFormData = z.infer<typeof profileFormSchema>;
 
 export default function ProfileSetupPage() {
-  const { userId, isUnauthenticated, isLoading: isAuthLoading } = useAuth();
+  const { userId, isUnauthenticated } = useAuth();
   const router = useRouter();
   const { showSuccess, showError } = useCommonToast();
   const { signOut } = useAuthActions();
@@ -58,6 +58,7 @@ export default function ProfileSetupPage() {
   const [showConsentSheet, setShowConsentSheet] = useState(false);
   const [isInitialized, setIsInitialized] = useState(false);
   const [showConfirmSheet, setShowConfirmSheet] = useState(false);
+  const [isNavigatingToLogin, setIsNavigatingToLogin] = useState(false);
 
   // Mutation 훅들
   const updateProfileMutation = useUpdateProfileMutation();
@@ -98,6 +99,11 @@ export default function ProfileSetupPage() {
         name: profileData.name || "",
         phone: profileData.phone || "",
       });
+    }
+
+    // 프로필이 완성되어 있는 경우 약관 동의 시트를 자동으로 열기
+    if (profileData && isProfileComplete(profileData)) {
+      setShowConsentSheet(true);
     }
 
     setIsInitialized(true);
@@ -156,35 +162,28 @@ export default function ProfileSetupPage() {
       const errorMessage =
         error instanceof Error ? error.message : "저장 중 오류가 발생했습니다.";
       showError("저장 실패", errorMessage);
-    } finally {
       setIsLoading(false);
       setShowConsentSheet(false);
     }
   };
 
   // 뒤로가기 처리
-  const handleGoBack = async () => {
+  const handleGoBack = useCallback(async () => {
     try {
-      // 약관 동의 시트가 열려있으면 먼저 닫기
-      if (showConsentSheet) {
-        setShowConsentSheet(false);
-        return;
-      }
-
-      // 로그아웃 처리 후 로그인 페이지로 리다이렉트
+      setShowConfirmSheet(false);
+      setIsNavigatingToLogin(true);
       await signOut();
-
-      router.replace("/auth/login");
+      window.location.replace("/auth/login");
     } catch (error) {
       console.error("로그아웃 실패:", error);
       // 로그아웃 실패 시에도 로그인 페이지로 리다이렉트
-      router.replace("/auth/login");
+      window.location.replace("/auth/login");
     }
-  };
+  }, []);
 
   // 뒤로가기 처리 - useBlockNavigation 훅 사용
   const { isAttemptingNavigation, proceedNavigation, cancelNavigation } =
-    useBlockNavigation(true, "/auth/login"); // 로그인 페이지로 이동
+    useBlockNavigation(true, true, showConfirmSheet, handleGoBack);
 
   // confirm 다이얼로그 처리
   useEffect(() => {
@@ -194,10 +193,14 @@ export default function ProfileSetupPage() {
   }, [isAttemptingNavigation]);
 
   // 로딩 중이거나 인증 확인 중인 경우
-  if (isAuthLoading || profileLoading || !isInitialized) {
+  if (profileLoading || !isInitialized || isNavigatingToLogin) {
     return (
       <PageLoading
-        text={LABELS.PROFILE_SETUP_LOADING_TEXT}
+        text={
+          isNavigatingToLogin
+            ? LABELS.PROFILE_SETUP_LOADING_TEXT_LOGIN
+            : LABELS.PROFILE_SETUP_LOADING_TEXT
+        }
         variant="lottie"
         fullScreen={true}
       />
@@ -209,7 +212,7 @@ export default function ProfileSetupPage() {
       title={ERROR_CONFIGS.LOADING.title}
       description={ERROR_CONFIGS.LOADING.description}
     >
-      <div className="flex min-h-screen items-center justify-center bg-gradient-farm p-4">
+      <div className="flex min-h-screen items-center justify-center bg-gradient-farm p-3">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -348,8 +351,6 @@ export default function ProfileSetupPage() {
             open={showConfirmSheet}
             onOpenChange={setShowConfirmSheet}
             onConfirm={() => {
-              setShowConfirmSheet(false);
-              handleGoBack();
               proceedNavigation();
             }}
             onCancel={() => {
@@ -361,11 +362,7 @@ export default function ProfileSetupPage() {
                 ? LABELS.PROFILE_SETUP_CANCEL_TITLE_CONSENT
                 : LABELS.PROFILE_SETUP_CANCEL_TITLE
             }
-            warningMessage={
-              showConsentSheet
-                ? LABELS.PROFILE_SETUP_CANCEL_DESC_CONSENT
-                : LABELS.PROFILE_SETUP_CANCEL_DESC
-            }
+            warningMessage={LABELS.PROFILE_SETUP_CANCEL_DESC}
             variant="warning"
           />
         </motion.div>

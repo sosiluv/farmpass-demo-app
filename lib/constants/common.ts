@@ -321,6 +321,7 @@ export const LABELS = {
 
   // 프로필 설정 관련
   PROFILE_SETUP_LOADING_TEXT: "사용자 정보를 확인하는 중...",
+  PROFILE_SETUP_LOADING_TEXT_LOGIN: "로그인 페이지로 이동 중...",
   PROFILE_SETUP_CONSENT_REQUIRED_TITLE: "약관 동의가 필요합니다",
   PROFILE_SETUP_CONSENT_REQUIRED_DESC:
     "서비스 이용을 위해 업데이트된 약관에 동의해주세요.",
@@ -330,9 +331,7 @@ export const LABELS = {
 
   PROFILE_SETUP_CANCEL_TITLE: "프로필 설정을 취소하시겠습니까?",
   PROFILE_SETUP_CANCEL_TITLE_CONSENT: "약관 동의를 취소하시겠습니까?",
-  PROFILE_SETUP_CANCEL_DESC: "확인을 누르면 작성 중인 내용이 사라집니다.",
-  PROFILE_SETUP_CANCEL_DESC_CONSENT:
-    "확인을 누르면 프로필 설정으로 돌아갑니다.",
+  PROFILE_SETUP_CANCEL_DESC: "확인을 누르면 로그인 페이지로 돌아갑니다.",
 
   // 사이드바 스와이프 가이드 관련
   SIDEBAR_SWIPE_GUIDE_TITLE: "← 왼쪽으로 스와이프",

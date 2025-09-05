@@ -214,7 +214,7 @@ export default function LoginPage() {
       title={ERROR_CONFIGS.LOADING.title}
       description={ERROR_CONFIGS.LOADING.description}
     >
-      <div className="flex min-h-screen items-center justify-center bg-gradient-farm p-4">
+      <div className="flex min-h-screen items-center justify-center bg-gradient-farm p-3">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -277,7 +277,7 @@ export default function LoginPage() {
                   </div>
                   {/* 소셜 로그인 버튼들 */}
                   <div className="space-y-4">
-                    {SOCIAL_BUTTON_CONFIG.map((btn, idx) => {
+                    {SOCIAL_BUTTON_CONFIG.map((btn) => {
                       const loading =
                         btn.provider === "kakao" ? kakaoLoading : googleLoading;
                       const onClick =

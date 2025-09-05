@@ -70,6 +70,11 @@ export function useUpdateUserConsentsMutation() {
       queryClient.invalidateQueries({
         queryKey: userConsentsKeys.check(),
       });
+
+      // 즉시 새로운 데이터를 가져오도록 설정
+      queryClient.refetchQueries({
+        queryKey: userConsentsKeys.check(),
+      });
     },
   });
 }

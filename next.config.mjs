@@ -1,4 +1,7 @@
 import { withSentryConfig } from "@sentry/nextjs";
+import { execSync } from "child_process";
+import withSerwistInit from "@serwist/next";
+
 /**
  * 🚀 Next.js 설정 파일
  *
@@ -11,16 +14,99 @@ const supabaseDomain = supabaseUrl
   .replace(/^https?:\/\//, "")
   .replace(/\/$/, "");
 
+// Git 커밋 해시를 사용한 캐시 버전 관리
+const revision = (() => {
+  try {
+    return execSync("git rev-parse HEAD", { encoding: "utf8" })
+      .trim()
+      .slice(0, 7);
+  } catch (error) {
+    // Vercel 환경 등에서 git이 없을 경우 현재 시간을 사용
+    return Date.now().toString(36);
+  }
+})();
+
+// Serwist PWA 설정
+const withSerwist = withSerwistInit({
+  swSrc: "app/sw.ts",
+  swDest: "public/sw.js",
+  register: true,
+  disable: false, // 개발 환경에서 비활성화 여부
+  scope: "/", // 서비스 워커 스코프
+  swUrl: "/sw.js", // 서비스 워커 URL
+  reloadOnOnline: true, // 온라인 복구 시 페이지 새로고침
+  cacheOnNavigation: false, // 네비게이션 시 캐싱 활성화
+  // 추가 프리캐시 엔트리
+  additionalPrecacheEntries: [
+    // 핵심 페이지들
+    { url: "/", revision },
+    { url: "/offline", revision },
+    { url: "/maintenance", revision },
+
+    // SEO 및 기본 파일들
+    { url: "/robots.txt", revision },
+    { url: "/sitemap.xml", revision },
+    { url: "/manifest.json", revision },
+    { url: "/favicon.ico", revision },
+    { url: "/favicon.png", revision },
+
+    // 로고 파일들
+    { url: "/logo.svg", revision },
+    { url: "/logo.png", revision },
+    { url: "/logo1.svg", revision },
+    { url: "/logo1.png", revision },
+
+    // PWA 아이콘들
+    { url: "/icon-72x72.png", revision },
+    { url: "/icon-57x57.png", revision },
+    { url: "/icon-96x96.png", revision },
+    { url: "/icon-120x120.png", revision },
+    { url: "/icon-144x144.png", revision },
+    { url: "/icon-152x152.png", revision },
+    { url: "/icon-167x167.png", revision },
+    { url: "/icon-180x180.png", revision },
+    { url: "/icon-192x192.png", revision },
+    { url: "/icon-384x384.png", revision },
+    { url: "/icon-512x512.png", revision },
+    { url: "/icon-1024x1024.png", revision },
+
+    // 소셜 로그인 버튼들
+    { url: "/btn_kakao.svg", revision },
+    { url: "/btn_google.svg", revision },
+    { url: "/btn_kakao_ch.svg", revision },
+    { url: "/btn_blog.svg", revision },
+    { url: "/btn_homepage.svg", revision },
+    { url: "/btn_mail.svg", revision },
+
+    // Lottie 애니메이션 파일들 (JSON) - 실제 파일명으로 수정
+    { url: "/lottie/success.json", revision },
+    { url: "/lottie/error.json", revision },
+    { url: "/lottie/warning.json", revision },
+    { url: "/lottie/info.json", revision },
+    { url: "/lottie/timeout.json", revision },
+    { url: "/lottie/no_connection.json", revision },
+    { url: "/lottie/404.json", revision },
+    { url: "/lottie/plant_loading.json", revision },
+    { url: "/lottie/cat_loading.json", revision },
+
+    // 문서 파일들 (오프라인 접근용) - 실제 파일명으로 수정
+    { url: "/docs/user-manual.html", revision },
+    { url: "/docs/pwa-guide.html", revision },
+    { url: "/docs/product-overview.html", revision },
+    { url: "/docs/quick-start.html", revision },
+    { url: "/docs/faq.html", revision },
+  ],
+
+  // 최대 캐시 파일 크기 (5MB)
+  maximumFileSizeToCacheInBytes: 5 * 1024 * 1024,
+});
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   // 빌드 성능 최적화
-  productionBrowserSourceMaps: false, // Source maps 비활성화로 빌드 시간 단축
+  productionBrowserSourceMaps: true, // Source maps 비활성화로 빌드 시간 단축
   swcMinify: true, // SWC 압축 활성화 (더 빠른 압축)
 
-  /**
-   * 🔬 실험적 기능 설정
-   * Next.js의 최신 기능들을 안전하게 테스트할 수 있도록 허용
-   */
   experimental: {
     /**
      * 🛡️ Server Actions 보안 설정
@@ -54,14 +140,6 @@ const nextConfig = {
     optimizeCss: true,
   },
 
-  /**
-   * ⚛️ React Strict Mode 활성화
-   *
-   * 개발 환경에서 잠재적인 문제를 조기에 발견할 수 있도록 도와줍니다.
-   * 컴포넌트의 부작용, 레거시 API 사용 등을 감지합니다.
-   *
-   * @see https://react.dev/reference/react/StrictMode
-   */
   reactStrictMode: false,
 
   /**
@@ -171,35 +249,12 @@ const nextConfig = {
  *
  * Next.js가 이 설정을 사용하여 애플리케이션을 빌드하고 실행합니다.
  */
-const config = nextConfig;
+const config = withSerwist(nextConfig);
 export default withSentryConfig(config, {
-  // For all available options, see:
-  // https://www.npmjs.com/package/@sentry/webpack-plugin#options
-
   org: "samwon",
   project: "samwon1141-farmpass",
-
-  // Only print logs for uploading source maps in CI
   silent: !process.env.CI,
-
-  // For all available options, see:
-  // https://docs.sentry.io/platforms/javascript/guides/nextjs/manual-setup/
-
-  // Upload a larger set of source maps for prettier stack traces (increases build time)
   widenClientFileUpload: true,
-
-  // Uncomment to route browser requests to Sentry through a Next.js rewrite to circumvent ad-blockers.
-  // This can increase your server load as well as your hosting bill.
-  // Note: Check that the configured route will not match with your Next.js middleware, otherwise reporting of client-
-  // side errors will fail.
-  // tunnelRoute: "/monitoring",
-
-  // Automatically tree-shake Sentry logger statements to reduce bundle size
   disableLogger: true,
-
-  // Enables automatic instrumentation of Vercel Cron Monitors. (Does not yet work with App Router route handlers.)
-  // See the following for more information:
-  // https://docs.sentry.io/product/crons/
-  // https://vercel.com/docs/cron-jobs
   automaticVercelMonitors: true,
 });

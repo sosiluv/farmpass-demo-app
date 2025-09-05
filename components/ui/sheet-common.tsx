@@ -166,6 +166,7 @@ export function CommonSheetContent({
     <BaseSheetContent
       side={side}
       showCloseButton={showCloseButton}
+      onInteractOutside={(e) => e.preventDefault()} // 빈 공간 클릭 시 닫히지 않도록 방지
       className={cn(
         "max-w-2xl mx-2 md:mx-auto overflow-y-auto p-3 sm:p-6 touch-none rounded-t-[20px] rounded-b-[20px] sm:rounded-t-[24px] sm:rounded-b-[24px] border-t-2 border-primary/20 mb-4 flex flex-col",
         enableDragToResize && side === "bottom"

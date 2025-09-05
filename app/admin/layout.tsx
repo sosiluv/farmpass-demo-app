@@ -15,7 +15,6 @@ import { ERROR_CONFIGS } from "@/lib/constants/error";
 import { ThemeProvider } from "@/components/providers/theme-provider";
 import { DialogManager } from "@/components/common/DialogManager";
 import { AuthProvider } from "@/components/providers/auth-provider";
-import { ServiceWorkerProvider } from "@/components/providers/service-worker-provider";
 
 export default function AdminLayout({
   children,
@@ -28,7 +27,6 @@ export default function AdminLayout({
       description={ERROR_CONFIGS.GENERAL.description}
     >
       <AuthProvider>
-        <ServiceWorkerProvider />
         <ThemeProvider
           attribute="class"
           defaultTheme="system"

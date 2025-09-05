@@ -209,7 +209,7 @@ export default function RegisterPage() {
   // 스키마 로딩 중이면 스켈레톤 표시
   if (isPasswordRulesLoading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-gradient-farm p-4">
+      <div className="flex min-h-screen items-center justify-center bg-gradient-farm p-3">
         <div className="w-full max-w-md">
           <div className="animate-pulse">
             <div className="h-64 bg-white rounded-lg shadow-lg"></div>
@@ -224,7 +224,7 @@ export default function RegisterPage() {
       title={ERROR_CONFIGS.LOADING.title}
       description={ERROR_CONFIGS.LOADING.description}
     >
-      <div className="flex min-h-screen items-center justify-center bg-gradient-farm p-4">
+      <div className="flex min-h-screen items-center justify-center bg-gradient-farm p-3">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}

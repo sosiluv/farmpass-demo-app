@@ -55,7 +55,7 @@ export async function POST(request: NextRequest) {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        cookie: request.headers.get("cookie") || "", // 실제 사용자 인증 정보 전달
+        "User-Agent": "node-fetch/3.0.0",
       },
       body: JSON.stringify({
         title,

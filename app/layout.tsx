@@ -42,8 +42,29 @@ export async function generateMetadata(): Promise<Metadata> {
   const mimeType = getMimeType(favicon);
 
   return {
-    title: siteName,
+    applicationName: siteName,
+    title: {
+      default: siteName,
+      template: `%s - ${siteName}`,
+    },
     description: siteDescription,
+    appleWebApp: {
+      capable: true,
+      statusBarStyle: "default",
+      title: siteName,
+    },
+    formatDetection: {
+      telephone: false,
+    },
+    openGraph: {
+      type: "website",
+      siteName: siteName,
+      title: {
+        default: siteName,
+        template: `%s - ${siteName}`,
+      },
+      description: siteDescription,
+    },
     icons: {
       icon: [
         { url: favicon, sizes: "32x32", type: mimeType },

@@ -231,6 +231,11 @@ export const LABELS = {
   SUCCESS_CARD_CANCEL_DESC: "확인을 누르면 작성 중인 내용이 사라집니다.",
   SUCCESS_CARD_CANCEL_DESC_HOME: "확인을 누르면 홈페이지로 이동합니다.",
 
+  // 방문자 폼 취소 확인
+  VISITOR_FORM_CANCEL_TITLE: "방문자 정보 수정 취소",
+  VISITOR_FORM_CANCEL_DESCRIPTION:
+    "입력한 정보가 저장되지 않습니다. 정말 나가시겠습니까?",
+
   FORM_HEADER_COMPANY_LOGO_ALT: "회사 로고",
 } as const;
 

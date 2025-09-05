@@ -28,6 +28,8 @@ import { ConsentField } from "@/components/visitor/form-fields/ConsentField";
 
 import { LABELS, BUTTONS } from "@/lib/constants/visitor";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import useBlockNavigation from "@/hooks/ui/use-before-unload";
+import { ConfirmSheet } from "@/components/ui/confirm-sheet";
 
 // ===========================================
 // 타입 및 상수 정의
@@ -73,10 +75,27 @@ export function VisitorFormSheet({
   isLoading = false,
 }: VisitorFormSheetProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showConfirmSheet, setShowConfirmSheet] = useState(false);
   const { showError } = useCommonToast();
-
   // 전체 로딩 상태 (외부 로딩 + 제출 중)
   const isFormDisabled = isLoading || isSubmitting;
+
+  const handleSheetClose = useCallback(() => {
+    setShowConfirmSheet(false);
+    if (!isFormDisabled) {
+      onOpenChange(false);
+    }
+  }, [isFormDisabled, onOpenChange]);
+  // 뒤로가기 처리 - useBlockNavigation 훅 사용
+  const { isAttemptingNavigation, proceedNavigation, cancelNavigation } =
+    useBlockNavigation(open, false, showConfirmSheet, handleSheetClose);
+
+  // confirm 다이얼로그 처리
+  useEffect(() => {
+    if (isAttemptingNavigation) {
+      setShowConfirmSheet(true);
+    }
+  }, [isAttemptingNavigation]);
 
   // 폼 초기화 데이터 계산 (깜빡임 방지를 위한 최적화)
   const formInitialValues = useMemo(() => {
@@ -149,110 +168,122 @@ export function VisitorFormSheet({
     }
   };
 
-  const handleClose = useCallback(() => {
-    if (!isFormDisabled) {
-      onOpenChange(false);
-    }
-  }, [isFormDisabled, onOpenChange]);
-
   // ===========================================
   // 메인 렌더링
   // ===========================================
 
   return (
-    <Sheet open={open} onOpenChange={handleClose}>
-      <CommonSheetContent
-        side="bottom"
-        enableDragToResize={true}
-        onClose={handleClose}
-        open={open}
-      >
-        <CommonSheetHeader
-          title={
-            mode === "create"
-              ? LABELS.VISITOR_FORM_SHEET_CREATE_TITLE
-              : LABELS.VISITOR_FORM_SHEET_EDIT_TITLE
-          }
-          description={
-            mode === "create"
-              ? LABELS.VISITOR_FORM_SHEET_CREATE_DESC
-              : LABELS.VISITOR_FORM_SHEET_EDIT_DESC
-          }
-          show={false}
-        />
+    <>
+      <Sheet open={open} onOpenChange={handleSheetClose}>
+        <CommonSheetContent
+          side="bottom"
+          enableDragToResize={true}
+          onClose={handleSheetClose}
+          open={open}
+        >
+          <CommonSheetHeader
+            title={
+              mode === "create"
+                ? LABELS.VISITOR_FORM_SHEET_CREATE_TITLE
+                : LABELS.VISITOR_FORM_SHEET_EDIT_TITLE
+            }
+            description={
+              mode === "create"
+                ? LABELS.VISITOR_FORM_SHEET_CREATE_DESC
+                : LABELS.VISITOR_FORM_SHEET_EDIT_DESC
+            }
+            show={false}
+          />
 
-        {/* 외부 로딩 중에는 Lottie 애니메이션 표시하여 깜빡임 완전 방지 */}
-        {isLoading && mode === "edit" ? (
-          <div className="flex flex-col items-center justify-center py-12">
-            <LottieLoadingCompact
-              text={LABELS.VISITOR_FORM_SHEET_LOADING}
-              size="md"
-            />
-          </div>
-        ) : (
-          <ScrollArea className="flex-1">
-            <Form {...form}>
-              <form onSubmit={form.handleSubmit(handleSubmit)}>
-                <div className="space-y-2 sm:space-y-4 p-3">
-                  <div className="grid gap-3 sm:gap-6 md:grid-cols-2 md:gap-4">
-                    {/* 이름 필드 */}
-                    <TextField
-                      form={form}
-                      name="visitor_name"
-                      icon={User}
-                      required={true}
-                    />
-                    {/* 전화번호 필드 */}
-                    <PhoneField form={form} required={true} />
-                    {/* 주소 필드 */}
-                    <AddressField
-                      form={form}
-                      required={true}
-                      defaultDetailedAddress={
-                        formInitialValues.detailed_address
-                      }
-                    />
-                    {/* 방문목적 필드 */}
-                    <VisitPurposeField form={form} required={true} />
-                    {/* 차량번호 필드 */}
-                    <CarPlateField form={form} required={false} />
-                    {/* 메모 필드 */}
-                    <NotesField form={form} required={false} />
-                    {/* 소독여부 필드 */}
-                    <DisinfectionField form={form} />
-                    {/* 동의 필드 */}
-                    <ConsentField form={form} />
+          {/* 외부 로딩 중에는 Lottie 애니메이션 표시하여 깜빡임 완전 방지 */}
+          {isLoading && mode === "edit" ? (
+            <div className="flex flex-col items-center justify-center py-12">
+              <LottieLoadingCompact
+                text={LABELS.VISITOR_FORM_SHEET_LOADING}
+                size="md"
+              />
+            </div>
+          ) : (
+            <ScrollArea className="flex-1">
+              <Form {...form}>
+                <form onSubmit={form.handleSubmit(handleSubmit)}>
+                  <div className="space-y-2 sm:space-y-4 p-3">
+                    <div className="grid gap-3 sm:gap-6 md:grid-cols-2 md:gap-4">
+                      {/* 이름 필드 */}
+                      <TextField
+                        form={form}
+                        name="visitor_name"
+                        icon={User}
+                        required={true}
+                      />
+                      {/* 전화번호 필드 */}
+                      <PhoneField form={form} required={true} />
+                      {/* 주소 필드 */}
+                      <AddressField
+                        form={form}
+                        required={true}
+                        defaultDetailedAddress={
+                          formInitialValues.detailed_address
+                        }
+                      />
+                      {/* 방문목적 필드 */}
+                      <VisitPurposeField form={form} required={true} />
+                      {/* 차량번호 필드 */}
+                      <CarPlateField form={form} required={false} />
+                      {/* 메모 필드 */}
+                      <NotesField form={form} required={false} />
+                      {/* 소독여부 필드 */}
+                      <DisinfectionField form={form} />
+                      {/* 동의 필드 */}
+                      <ConsentField form={form} />
+                    </div>
                   </div>
-                </div>
-              </form>
-            </Form>
-          </ScrollArea>
-        )}
+                </form>
+              </Form>
+            </ScrollArea>
+          )}
 
-        <CommonSheetFooter
-          onCancel={handleClose}
-          onConfirm={form.handleSubmit(handleSubmit)}
-          cancelText={BUTTONS.VISITOR_FORM_SHEET_CANCEL}
-          confirmText={
-            isSubmitting
-              ? BUTTONS.VISITOR_FORM_SHEET_PROCESSING
-              : mode === "create"
-              ? BUTTONS.VISITOR_FORM_SHEET_CREATE_BUTTON
-              : BUTTONS.VISITOR_FORM_SHEET_EDIT_BUTTON
-          }
-          isLoading={isSubmitting}
-          disabled={isFormDisabled}
-          confirmIcon={
-            isSubmitting ? (
-              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-            ) : mode === "create" ? (
-              <Plus className="h-4 w-4 mr-2" />
-            ) : (
-              <Pencil className="h-4 w-4 mr-2" />
-            )
-          }
-        />
-      </CommonSheetContent>
-    </Sheet>
+          <CommonSheetFooter
+            onCancel={handleSheetClose}
+            onConfirm={form.handleSubmit(handleSubmit)}
+            cancelText={BUTTONS.VISITOR_FORM_SHEET_CANCEL}
+            confirmText={
+              isSubmitting
+                ? BUTTONS.VISITOR_FORM_SHEET_PROCESSING
+                : mode === "create"
+                ? BUTTONS.VISITOR_FORM_SHEET_CREATE_BUTTON
+                : BUTTONS.VISITOR_FORM_SHEET_EDIT_BUTTON
+            }
+            isLoading={isSubmitting}
+            disabled={isFormDisabled}
+            confirmIcon={
+              isSubmitting ? (
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              ) : mode === "create" ? (
+                <Plus className="h-4 w-4 mr-2" />
+              ) : (
+                <Pencil className="h-4 w-4 mr-2" />
+              )
+            }
+          />
+        </CommonSheetContent>
+      </Sheet>
+
+      {/* 네비게이션 확인 시트 */}
+      <ConfirmSheet
+        open={showConfirmSheet}
+        onOpenChange={setShowConfirmSheet}
+        onConfirm={() => {
+          proceedNavigation();
+        }}
+        onCancel={() => {
+          setShowConfirmSheet(false);
+          cancelNavigation();
+        }}
+        title={LABELS.VISITOR_FORM_CANCEL_TITLE}
+        warningMessage={LABELS.VISITOR_FORM_CANCEL_DESCRIPTION}
+        variant="warning"
+      />
+    </>
   );
 }

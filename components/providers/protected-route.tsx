@@ -96,12 +96,12 @@ export function ProtectedRoute({
           fullScreen={true}
         />
         {loadingTimeout && (
-          <div className="fixed bottom-8 left-1/2 transform -translate-x-1/2 z-50">
+          <div className="fixed bottom-4 left-1/2 transform -translate-x-1/2 z-50">
             <Button
               variant="outline"
               size="sm"
               onClick={() => window.location.reload()}
-              className="flex items-center gap-2"
+              className="flex items-center gap-2 bg-white/90 backdrop-blur-sm shadow-lg border-2"
             >
               <RefreshCw className="h-4 w-4" />
               {BUTTONS.REFRESH_BUTTON}

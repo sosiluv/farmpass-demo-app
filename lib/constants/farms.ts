@@ -96,6 +96,16 @@ export const LABELS = {
   DELETE_FARM_CONFIRM_TITLE: "농장 삭제 확인",
   DELETE_FARM_CONFIRM_DESCRIPTION: "정말로 이 농장을 삭제하시겠습니까?",
 
+  // 농장 폼 취소 확인
+  FARM_FORM_CANCEL_TITLE: "농장 정보 입력 취소",
+  FARM_FORM_CANCEL_DESCRIPTION:
+    "입력한 정보가 저장되지 않습니다. 정말 나가시겠습니까?",
+
+  // 구성원 추가 폼 취소 확인
+  ADD_MEMBER_FORM_CANCEL_TITLE: "구성원 추가 취소",
+  ADD_MEMBER_FORM_CANCEL_DESCRIPTION:
+    "입력한 정보가 저장되지 않습니다. 정말 나가시겠습니까?",
+
   // 빈 농장 상태
   NO_REGISTERED_FARMS: "등록된 농장이 없습니다",
   NO_FARMS_DESCRIPTION: "첫 번째 농장을 등록하여 시작하세요",

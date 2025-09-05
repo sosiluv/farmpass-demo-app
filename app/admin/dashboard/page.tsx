@@ -68,6 +68,14 @@ export default function DashboardPage() {
 
     // 프로필 완성도 및 약관 동의 상태 체크
     if (!isProfileComplete(profile) || !consentData?.hasAllRequiredConsents) {
+      // 약관 동의 쿼리를 다시 실행하여 최신 상태 확인
+      if (consentData && !consentData.hasAllRequiredConsents) {
+        // 약간의 지연 후 다시 체크 (캐시 업데이트 대기)
+        setTimeout(() => {
+          router.replace("/profile-setup");
+        }, 100);
+        return;
+      }
       router.replace("/profile-setup");
       return;
     }
@@ -149,9 +157,13 @@ export default function DashboardPage() {
     { timeout: 15000 }
   );
 
+  const handleSheetClose = useCallback(() => {
+    setShowConfirmSheet(false);
+  }, []);
+
   // 뒤로가기 처리 - useBlockNavigation 훅 사용
   const { isAttemptingNavigation, proceedNavigation, cancelNavigation } =
-    useBlockNavigation(true, "/", true);
+    useBlockNavigation(true, true, showConfirmSheet, handleSheetClose, "/");
 
   // confirm 다이얼로그 처리
   useEffect(() => {
@@ -232,13 +244,15 @@ export default function DashboardPage() {
                 <span>{LABELS.CORE_STATS}</span>
               </div>
 
-              {/* 농장 선택기를 핵심통계 제목과 같은 행에 배치 */}
-              <FarmSelector
-                selectedFarm={farmsLoading ? "" : selectedFarm}
-                onFarmChange={handleFarmSelect}
-                availableFarms={availableFarms}
-                isAdmin={isAdmin}
-              />
+              {/* 농장 선택기 - 농장이 있을 때만 렌더링 */}
+              {availableFarms && availableFarms.length > 0 && (
+                <FarmSelector
+                  selectedFarm={selectedFarm}
+                  onFarmChange={handleFarmSelect}
+                  availableFarms={availableFarms}
+                  isAdmin={isAdmin}
+                />
+              )}
             </div>
             {/* 기존 StatsGrid 디자인 유지 */}
             <StatsGrid
@@ -281,7 +295,6 @@ export default function DashboardPage() {
         open={showConfirmSheet}
         onOpenChange={setShowConfirmSheet}
         onConfirm={() => {
-          setShowConfirmSheet(false);
           proceedNavigation();
         }}
         onCancel={() => {

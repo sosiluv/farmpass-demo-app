@@ -21,19 +21,11 @@ export function FarmSelector({
   availableFarms,
   isAdmin,
 }: FarmSelectorProps) {
-  const isDisabled = !isAdmin && (availableFarms?.length ?? 0) === 0;
-
+  // 농장이 있을 때만 렌더링되므로 disabled 로직 불필요
   return (
     <div className="flex flex-col gap-1 sm:gap-1.5">
-      <Select
-        value={selectedFarm}
-        onValueChange={onFarmChange}
-        disabled={isDisabled}
-      >
-        <SelectTrigger
-          className="w-full sm:w-[250px] md:w-[280px] h-8 sm:h-9 md:h-10"
-          disabled={isDisabled}
-        >
+      <Select value={selectedFarm} onValueChange={onFarmChange}>
+        <SelectTrigger className="w-full sm:w-[250px] md:w-[280px] h-8 sm:h-9 md:h-10">
           <SelectValue placeholder={PLACEHOLDERS.FARM_SELECT} />
         </SelectTrigger>
         <SelectContent>

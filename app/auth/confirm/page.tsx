@@ -151,7 +151,7 @@ export default function ConfirmPage() {
   // 타임아웃 상태 처리
   if (isTimedOut && !confirmed && !error) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-gradient-farm p-4">
+      <div className="flex min-h-screen items-center justify-center bg-gradient-farm p-3">
         <div className="w-full max-w-md">
           <div className="mb-8 text-center">
             <Logo className="mx-auto" size="xl" />
@@ -173,7 +173,7 @@ export default function ConfirmPage() {
       title={ERROR_CONFIGS.LOADING.title}
       description={ERROR_CONFIGS.LOADING.description}
     >
-      <div className="flex min-h-screen items-center justify-center bg-gradient-farm p-4">
+      <div className="flex min-h-screen items-center justify-center bg-gradient-farm p-3">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}

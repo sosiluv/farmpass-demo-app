@@ -128,15 +128,17 @@ export function VisitorActionMenu({
         itemName={visitor.visitor_name}
       />
 
-      <VisitorFormSheet
-        open={showEditDialog}
-        onOpenChange={setShowEditDialog}
-        mode="edit"
-        initialData={visitor}
-        farmId={visitor.farm_id}
-        onSuccess={handleUpdate}
-        isLoading={false} // 이미 로드된 데이터를 사용하므로 false
-      />
+      {showEditDialog && (
+        <VisitorFormSheet
+          open={showEditDialog}
+          onOpenChange={setShowEditDialog}
+          mode="edit"
+          initialData={visitor}
+          farmId={visitor.farm_id}
+          onSuccess={handleUpdate}
+          isLoading={false} // 이미 로드된 데이터를 사용하므로 false
+        />
+      )}
     </>
   );
 }

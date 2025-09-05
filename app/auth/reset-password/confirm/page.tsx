@@ -168,7 +168,7 @@ export default function ResetPasswordConfirmPage() {
 
   if (isTimedOut && !tokenProcessed && !tokenError) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-gradient-farm p-4">
+      <div className="flex min-h-screen items-center justify-center bg-gradient-farm p-3">
         <div className="w-full max-w-md">
           <AdminError
             title={ERROR_CONFIGS.TIMEOUT.title}
@@ -184,7 +184,7 @@ export default function ResetPasswordConfirmPage() {
 
   if (tokenLoading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-gradient-farm p-4">
+      <div className="flex min-h-screen items-center justify-center bg-gradient-farm p-3">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -209,7 +209,7 @@ export default function ResetPasswordConfirmPage() {
 
   if (tokenError) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-gradient-farm p-4">
+      <div className="flex min-h-screen items-center justify-center bg-gradient-farm p-3">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -248,7 +248,7 @@ export default function ResetPasswordConfirmPage() {
       title={ERROR_CONFIGS.LOADING.title}
       description={ERROR_CONFIGS.LOADING.description}
     >
-      <div className="flex min-h-screen items-center justify-center bg-gradient-farm p-4">
+      <div className="flex min-h-screen items-center justify-center bg-gradient-farm p-3">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}

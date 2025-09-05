@@ -26,7 +26,7 @@ import { useSystemSettingsQuery } from "@/lib/hooks/query/use-system-settings-qu
 import { useVisitorForm } from "@/hooks/visitor/useVisitorForm";
 import { VisitorForm } from "@/components/visitor/VisitorForm";
 import { useCommonToast } from "@/lib/utils/notification/toast-messages";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useCallback } from "react";
 import { VisitorFormData } from "@/lib/utils/validation/visitor-validation";
 import useBlockNavigation from "@/hooks/ui/use-before-unload";
 import { useRouter } from "next/navigation";
@@ -94,9 +94,14 @@ export default function VisitPage() {
     deleteImage,
   } = useVisitorForm(farmId, settings);
 
+  // 뒤로가기 처리 함수 메모이제이션
+  const handleSheetClose = useCallback(() => {
+    setShowConfirmSheet(false);
+  }, []);
+
   // 뒤로가기 처리 - useBlockNavigation 훅 사용
   const { isAttemptingNavigation, proceedNavigation, cancelNavigation } =
-    useBlockNavigation(true, "/"); // 홈페이지로 이동
+    useBlockNavigation(true, true, showConfirmSheet, handleSheetClose, "/");
 
   // confirm 다이얼로그 처리
   useEffect(() => {
@@ -205,20 +210,18 @@ export default function VisitPage() {
       title={ERROR_CONFIGS.LOADING.title}
       description={ERROR_CONFIGS.LOADING.description}
     >
-      <div className="min-h-screen bg-gray-50 py-2 sm:py-4">
-        <div className="w-full max-w-sm sm:max-w-md md:max-w-2xl mx-auto px-3 sm:px-4">
-          <FarmInfoCard farm={farm} />
-          <VisitorForm
-            settings={settings}
-            formData={formData}
-            isSubmitting={isSubmitting}
-            uploadedImageUrl={uploadedImageUrl}
-            onSubmit={handleSubmitWrapped}
-            onImageUpload={handleImageUploadWrapped}
-            onImageDelete={handleImageDeleteWrapped}
-            error={error}
-          />
-        </div>
+      <div className="min-h-screen items-center justify-center bg-gradient-farm p-3">
+        <FarmInfoCard farm={farm} />
+        <VisitorForm
+          settings={settings}
+          formData={formData}
+          isSubmitting={isSubmitting}
+          uploadedImageUrl={uploadedImageUrl}
+          onSubmit={handleSubmitWrapped}
+          onImageUpload={handleImageUploadWrapped}
+          onImageDelete={handleImageDeleteWrapped}
+          error={error}
+        />
       </div>
 
       {/* 네비게이션 확인 시트 */}
@@ -226,7 +229,6 @@ export default function VisitPage() {
         open={showConfirmSheet}
         onOpenChange={setShowConfirmSheet}
         onConfirm={() => {
-          setShowConfirmSheet(false);
           proceedNavigation();
         }}
         onCancel={() => {
