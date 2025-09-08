@@ -44,7 +44,7 @@ export function FarmDetailSheet({ farm, open, onClose }: FarmDetailSheetProps) {
             <div className="space-y-4">
               {/* 기본 정보 */}
               <div className="flex flex-col sm:flex-row items-center sm:items-start gap-3 sm:gap-4">
-                <Avatar className="h-8 w-8 sm:h-12 sm:w-12 lg:h-14 lg:w-14 xl:h-16 xl:w-16 flex-shrink-0 rounded-full bg-gray-50 flex items-center justify-center">
+                <Avatar className="h-8 w-8 sm:h-12 sm:w-12 lg:h-14 lg:w-14 flex-shrink-0 rounded-full bg-gray-50 flex items-center justify-center">
                   <AvatarFallback className="bg-blue-100 dark:bg-blue-900 flex items-center justify-center w-full h-full">
                     {(() => {
                       const Icon = getFarmTypeIcon(farm.farm_type || undefined);

@@ -59,12 +59,12 @@ export function UserList({ users }: UserListProps) {
                   src={getAvatarUrl(user, { size: 128 })}
                   alt={user.name || "User"}
                   title={`${user.name} 프로필`}
-                  className="h-8 w-8 sm:h-12 sm:w-12 lg:h-14 lg:w-14 xl:h-16 xl:w-16 flex-shrink-0 rounded-full bg-gray-50 flex items-center justify-center"
+                  className="h-8 w-8 sm:h-12 sm:w-12 lg:h-14 lg:w-14 flex-shrink-0 rounded-full bg-gray-50 flex items-center justify-center"
                   shape="circle"
                   size="md"
                 />
               ) : (
-                <Avatar className="h-8 w-8 sm:h-12 sm:w-12 lg:h-14 lg:w-14 xl:h-16 xl:w-16 flex-shrink-0 rounded-full bg-gray-50 flex items-center justify-center">
+                <Avatar className="h-8 w-8 sm:h-12 sm:w-12 lg:h-14 lg:w-14 flex-shrink-0 rounded-full bg-gray-50 flex items-center justify-center">
                   <AvatarImage
                     src={getAvatarUrl(user, { size: 128 })}
                     alt={user.name || "User"}
@@ -77,12 +77,10 @@ export function UserList({ users }: UserListProps) {
                 </Avatar>
               )
             }
-            primary={<span className="text-lg">{user.name}</span>}
-            secondary={
-              <span className="text-muted-foreground">{user.email}</span>
-            }
+            primary={<span>{user.name}</span>}
+            secondary={<span>{user.email}</span>}
             meta={
-              <span className="text-xs sm:text-sm lg:text-base text-muted-foreground">
+              <span>
                 {user.last_login_at
                   ? `${LABELS.LAST_ACCESS} ${formatDateTime(
                       user.last_login_at
@@ -91,7 +89,7 @@ export function UserList({ users }: UserListProps) {
               </span>
             }
             badges={
-              <div className="flex flex-col gap-1">
+              <div className="flex items-center gap-3 sm:gap-4">
                 <Badge
                   className={`${getRoleColor(
                     user.account_type === "admin" ? "admin" : "user"

@@ -24,8 +24,12 @@ export const markdownComponents: Components = {
     <h6 className="text-xs font-medium mt-2 mb-1">{children}</h6>
   ),
   p: ({ children }) => <p className="mb-3">{children}</p>,
-  ul: ({ children }) => <ul className="list-disc ml-4 mb-3">{children}</ul>,
-  ol: ({ children }) => <ol className="list-decimal ml-4 mb-3">{children}</ol>,
+  ul: ({ children }) => (
+    <ul className="list-disc ml-6 mb-3 pl-2">{children}</ul>
+  ),
+  ol: ({ children }) => (
+    <ol className="list-decimal ml-6 mb-3 pl-2">{children}</ol>
+  ),
   li: ({ children }) => <li className="mb-1">{children}</li>,
   strong: ({ children }) => (
     <strong className="font-semibold">{children}</strong>

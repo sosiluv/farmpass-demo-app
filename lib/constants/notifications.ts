@@ -25,7 +25,7 @@ export const BUTTONS = {
   SUBSCRIBE_PUSH: "푸시 알림 구독하기",
   CLEANUP: "정리",
   CLEANUP_TITLE: "만료된 구독 정리",
-  UNSUBSCRIBE: "해제",
+  UNSUBSCRIBE: "알림 해제",
   UNSUBSCRIBE_TITLE: "구독 해제",
   CHECK_PERMISSION_AGAIN: "권한 다시 확인하기",
 } as const;

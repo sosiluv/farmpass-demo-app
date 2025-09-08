@@ -115,25 +115,45 @@ export async function requestNotificationPermissionAndSubscribe(
         };
       }
 
-      // Service Worker 등록
-      const registration = await navigator.serviceWorker.ready;
+      try {
+        // Service Worker 등록
+        const registration = (await Promise.race([
+          navigator.serviceWorker.ready,
+          new Promise((_, reject) =>
+            setTimeout(() => reject("Service Worker Timeout"), 5000)
+          ),
+        ])) as ServiceWorkerRegistration;
 
-      // 푸시 구독 생성
-      const subscription = await registration.pushManager.subscribe({
-        userVisibleOnly: true,
-        applicationServerKey: urlBase64ToUint8Array(vapidKey),
-      });
+        // 푸시 구독 생성
+        const subscription = await registration.pushManager.subscribe({
+          userVisibleOnly: true,
+          applicationServerKey: urlBase64ToUint8Array(vapidKey),
+        });
 
-      // device_id 생성
-      const deviceId = generateDeviceId();
+        // device_id 생성
+        const deviceId = generateDeviceId();
 
-      // 서버에 구독 정보 전송 (device_id 포함)
-      const result = await createSubscription(subscription.toJSON(), deviceId);
+        // 서버에 구독 정보 전송 (device_id 포함)
+        const result = await createSubscription(
+          subscription.toJSON(),
+          deviceId
+        );
 
-      return {
-        success: true,
-        message: result?.message || "알림 구독이 완료되었습니다.",
-      };
+        return {
+          success: true,
+          message: result?.message || "알림 구독이 완료되었습니다.",
+        };
+      } catch (error) {
+        devLog.error("푸시 구독 생성 실패:", error);
+        return {
+          success: false,
+          error: "SUBSCRIPTION_FAILED",
+          message:
+            error instanceof Error
+              ? error.message
+              : "푸시 구독에 실패했습니다.",
+        };
+      }
     } else if (permission === "unsupported") {
       return {
         success: false,

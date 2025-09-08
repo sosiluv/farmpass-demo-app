@@ -41,7 +41,7 @@ export function FarmList({ farms }: FarmListProps) {
           <CommonListItem
             key={farm.id}
             avatar={
-              <Avatar className="h-8 w-8 sm:h-12 sm:w-12 lg:h-14 lg:w-14 xl:h-16 xl:w-16 flex-shrink-0 rounded-full bg-gray-50 flex items-center justify-center">
+              <Avatar className="h-8 w-8 sm:h-12 sm:w-12 lg:h-14 lg:w-14 flex-shrink-0 rounded-full bg-gray-50 flex items-center justify-center">
                 <AvatarFallback className="bg-blue-100 dark:bg-blue-900 flex items-center justify-center w-full h-full">
                   {(() => {
                     const Icon = getFarmTypeIcon(farm.farm_type || undefined);
@@ -52,12 +52,10 @@ export function FarmList({ farms }: FarmListProps) {
                 </AvatarFallback>
               </Avatar>
             }
-            primary={<span className="text-lg">{farm.farm_name}</span>}
-            secondary={
-              <span className="text-muted-foreground">{farm.farm_address}</span>
-            }
+            primary={<span>{farm.farm_name}</span>}
+            secondary={<span>{farm.farm_address}</span>}
             meta={
-              <span className="text-xs sm:text-sm lg:text-base text-muted-foreground">
+              <span>
                 {`${farm.owner_name || LABELS.UNASSIGNED} / ${formatDateTime(
                   farm.created_at
                 )}`}

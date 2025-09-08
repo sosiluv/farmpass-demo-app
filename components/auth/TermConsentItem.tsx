@@ -68,7 +68,7 @@ export function TermConsentItem({
             disabled={isLoading}
             className="flex-shrink-0 h-5 w-5"
           />
-          <div className="flex items-center space-x-2">
+          <div className="flex items-center space-x-1">
             <span
               className={`text-xs font-bold px-2 py-1 rounded-full ${
                 isRequired

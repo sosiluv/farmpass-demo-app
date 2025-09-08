@@ -34,13 +34,18 @@ export default function DashboardPage() {
   const { data: profile, isLoading: profileLoading } = useProfileQuery(userId);
   const { data: consentData, isLoading: consentLoading } =
     useUserConsentsQuery(isAuthenticated);
-
   const { farms: availableFarms, isLoading: farmsLoading } = useFarmsQuery();
   const userLoading = isLoading;
 
   // selectedFarm 상태 관리 - 로딩 상태 고려
   const [selectedFarm, setSelectedFarm] = useState<string>("all");
-  const [isInitialized, setIsInitialized] = useState(false);
+  // 단일 통합 집계 API 호출(선택 농장 반영)
+  const {
+    data: adminStats,
+    isLoading: adminLoading,
+    error,
+    refetch,
+  } = useAdminDashboardStatsQuery(selectedFarm);
   const [showConfirmSheet, setShowConfirmSheet] = useState(false);
 
   // 농장 선택 콜백 - useCallback으로 최적화
@@ -79,11 +84,6 @@ export default function DashboardPage() {
       router.replace("/profile-setup");
       return;
     }
-
-    // 모든 체크 통과 - 초기화 완료
-    if (!isInitialized) {
-      setIsInitialized(true);
-    }
   }, [
     isUnauthenticated,
     profile,
@@ -91,17 +91,24 @@ export default function DashboardPage() {
     profileLoading,
     consentLoading,
     router,
-    isInitialized,
   ]);
 
   // 초기화 완료 체크 - farms 로딩 완료 후 초기값 설정 (농장 0건이어도 초기화 진행)
   useEffect(() => {
-    if (isInitialized) return;
-    if (farmsLoading) return;
-    const initialFarm = isAdmin ? "all" : availableFarms[0]?.id || "all";
-    setSelectedFarm(initialFarm);
-    setIsInitialized(true);
-  }, [farmsLoading, availableFarms, isAdmin, isInitialized]);
+    // 로딩 중이면 스킵
+    if (farmsLoading) {
+      return;
+    }
+
+    // 농장 ID만 추출하여 메모리에 저장
+    const firstFarmId = availableFarms?.[0]?.id;
+    const initialFarm = isAdmin ? "all" : firstFarmId || "all";
+
+    // 현재 선택된 값과 다를 때만 업데이트
+    if (selectedFarm !== initialFarm) {
+      setSelectedFarm(initialFarm);
+    }
+  }, [farmsLoading, isAdmin]);
 
   // 알림 메시지 처리
   useEffect(() => {
@@ -115,16 +122,6 @@ export default function DashboardPage() {
     }
   }, [lastMessage, showSuccess, showError, clearLastMessage]);
 
-  const memoizedSelectedFarm = isInitialized ? selectedFarm : "all";
-
-  // 단일 통합 집계 API 호출(선택 농장 반영)
-  const {
-    data: adminStats,
-    isLoading: adminLoading,
-    error,
-    refetch,
-  } = useAdminDashboardStatsQuery(memoizedSelectedFarm);
-
   // 초기 로딩 상태 최적화 - 데이터가 있으면 스켈레톤 숨김
   const isInitialLoading = useMemo(() => {
     return (
@@ -132,8 +129,7 @@ export default function DashboardPage() {
       profileLoading ||
       consentLoading ||
       (farmsLoading && availableFarms.length === 0) ||
-      adminLoading ||
-      !isInitialized
+      adminLoading
     );
   }, [
     userLoading,
@@ -142,7 +138,6 @@ export default function DashboardPage() {
     farmsLoading,
     availableFarms.length,
     adminLoading,
-    isInitialized,
   ]);
 
   // 데이터 재페칭 함수

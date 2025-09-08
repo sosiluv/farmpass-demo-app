@@ -6,15 +6,15 @@ import Image from "next/image";
 
 export function Footer() {
   return (
-    <footer className="border-t bg-background/80 backdrop-blur-md py-10">
-      <div className="container mx-auto px-4 flex flex-col md:flex-row items-center justify-between gap-6 text-xs text-muted-foreground">
+    <footer className="border-t bg-background/80 backdrop-blur-md py-2">
+      <div className="container mx-auto px-4 flex flex-col md:flex-row items-center justify-between gap-2 text-xs text-muted-foreground">
         {/* 왼쪽: 로고 */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center">
           <Logo size="lg" />
         </div>
 
         {/* 가운데: 소셜 링크 */}
-        <div className="flex items-center gap-4 mt-2 md:mt-0">
+        <div className="flex items-center gap-4">
           {SOCIAL_LINKS.map((link, index) => (
             <a
               key={index}
@@ -34,7 +34,7 @@ export function Footer() {
         </div>
 
         {/* 오른쪽: 회사명/링크 */}
-        <div className="flex flex-row flex-wrap items-center justify-center gap-2 mt-2 md:mt-0 md:items-center whitespace-nowrap">
+        <div className="flex flex-row flex-wrap items-center justify-center gap-2 mt-3 md:mt-0 md:items-center whitespace-nowrap">
           <a
             href={FOOTER.URLS.COMPANY_INTRO}
             target="_blank"
@@ -69,7 +69,7 @@ export function Footer() {
         </div>
 
         {/* 사업자 정보 */}
-        <div className="mt-4 text-[11px] text-muted-foreground text-center md:text-right leading-relaxed md:mt-0">
+        <div className="mt-3 text-[11px] text-muted-foreground text-center md:text-right leading-relaxed md:mt-0">
           <div className="mt-1">
             <div className="mb-1">{FOOTER.COMPANY_INFO.PHONE}</div>
             <div className="mb-1">{FOOTER.COMPANY_INFO.FAX}</div>

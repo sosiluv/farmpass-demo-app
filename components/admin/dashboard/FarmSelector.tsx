@@ -21,7 +21,6 @@ export function FarmSelector({
   availableFarms,
   isAdmin,
 }: FarmSelectorProps) {
-  // 농장이 있을 때만 렌더링되므로 disabled 로직 불필요
   return (
     <div className="flex flex-col gap-1 sm:gap-1.5">
       <Select value={selectedFarm} onValueChange={onFarmChange}>

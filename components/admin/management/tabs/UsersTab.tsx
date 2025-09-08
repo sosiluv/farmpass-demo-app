@@ -144,12 +144,7 @@ export function UsersTab() {
                       filterFn={filterFn}
                       sortFn={sortFn}
                     >
-                      {({
-                        paginatedData,
-                        totalItems,
-                        isLoadingMore,
-                        hasMore,
-                      }) => (
+                      {({ paginatedData, totalItems }) => (
                         <>
                           {/* 결과 요약 카드 - 모바일 가독성 개선 */}
                           <CommonResultsSummary

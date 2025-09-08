@@ -156,7 +156,7 @@ export const SubscribedStatus = ({
           title={BUTTONS.CLEANUP_TITLE}
         >
           <RefreshCw className="h-4 w-4 lg:mr-2" />
-          <span className="hidden lg:inline">{BUTTONS.CLEANUP}</span>
+          <span>{BUTTONS.CLEANUP}</span>
         </Button>
         <Button
           variant="ghost"
@@ -167,7 +167,7 @@ export const SubscribedStatus = ({
           title={BUTTONS.UNSUBSCRIBE_TITLE}
         >
           <BellOff className="h-4 w-4 lg:mr-2" />
-          <span className="hidden lg:inline">{BUTTONS.UNSUBSCRIBE}</span>
+          <span>{BUTTONS.UNSUBSCRIBE}</span>
         </Button>
       </div>
     </div>

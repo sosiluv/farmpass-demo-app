@@ -104,7 +104,7 @@ const withSerwist = withSerwistInit({
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   // 빌드 성능 최적화
-  productionBrowserSourceMaps: true, // Source maps 비활성화로 빌드 시간 단축
+  productionBrowserSourceMaps: false, // 프로덕션 환경에서 소스맵 비활성화
   swcMinify: true, // SWC 압축 활성화 (더 빠른 압축)
 
   experimental: {

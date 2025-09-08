@@ -66,13 +66,28 @@ export function WebPushSubscription() {
         updateSubscriptionStatus("denied", false);
         break;
       case "granted":
-        const registration = await navigator.serviceWorker.ready;
-        const subscription = await registration.pushManager.getSubscription();
-        // 브라우저의 실제 구독 상태를 우선적으로 확인
-        if (subscription) {
-          updateSubscriptionStatus("subscribed", true);
-        } else {
-          // 브라우저에 구독이 없으면 서버 상태 확인 (자동 복구 없음)
+        try {
+          const registration = (await Promise.race([
+            navigator.serviceWorker.ready,
+            new Promise((_, reject) =>
+              setTimeout(() => reject("Service Worker Timeout"), 5000)
+            ),
+          ])) as ServiceWorkerRegistration;
+          const subscription = await registration.pushManager.getSubscription();
+          // 브라우저의 실제 구독 상태를 우선적으로 확인
+          if (subscription) {
+            updateSubscriptionStatus("subscribed", true);
+          } else {
+            // 브라우저에 구독이 없으면 서버 상태 확인 (자동 복구 없음)
+            updateSubscriptionStatus("granted", false);
+          }
+        } catch (error) {
+          showError(
+            "서비스 워커 오류",
+            error instanceof Error
+              ? error.message
+              : "서비스 워커를 가져오는 중 오류가 발생했습니다."
+          );
           updateSubscriptionStatus("granted", false);
         }
         break;

@@ -72,7 +72,7 @@ export function LogList({ logs, onShowDetails, onDeleteLog }: LogListProps) {
           <CommonListItem
             key={log.id}
             avatar={
-              <div className="h-8 w-8 sm:h-12 sm:w-12 lg:h-14 lg:w-14 xl:h-16 xl:w-16 flex-shrink-0 rounded-full bg-gray-50 flex items-center justify-center">
+              <div className="h-8 w-8 sm:h-12 sm:w-12 lg:h-14 lg:w-14 flex-shrink-0 rounded-full bg-gray-50 flex items-center justify-center">
                 {getLogLevelIcon(log.level)}
               </div>
             }
@@ -81,14 +81,12 @@ export function LogList({ logs, onShowDetails, onDeleteLog }: LogListProps) {
               <TooltipProvider>
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <span className="block break-words whitespace-pre-wrap max-w-full text-xs sm:text-sm lg:text-base xl:text-lg text-muted-foreground cursor-help">
+                    <span className="inline-block cursor-help break-all whitespace-normal">
                       {log.message}
                     </span>
                   </TooltipTrigger>
                   <TooltipContent side="top" className="max-w-md">
-                    <p className="whitespace-pre-wrap break-words">
-                      {log.message}
-                    </p>
+                    <p className="break-all whitespace-normal">{log.message}</p>
                   </TooltipContent>
                 </Tooltip>
               </TooltipProvider>
@@ -97,7 +95,7 @@ export function LogList({ logs, onShowDetails, onDeleteLog }: LogListProps) {
               <TooltipProvider>
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <span className="block break-words whitespace-pre-wrap max-w-full text-xs sm:text-sm lg:text-base xl:text-lg text-muted-foreground cursor-help">
+                    <span className="block cursor-help">
                       {`${
                         log.user_email || LABELS.SYSTEM_LABEL
                       } / ${formatDateTime(log.created_at)} / ${

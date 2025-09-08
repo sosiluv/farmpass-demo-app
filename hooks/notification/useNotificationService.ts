@@ -53,7 +53,7 @@ export function useNotificationService() {
             ((await Promise.race([
               navigator.serviceWorker.ready,
               new Promise((_, reject) =>
-                setTimeout(() => reject("서비스워커 Timeout"), 3000)
+                setTimeout(() => reject("Service Worker Timeout"), 5000)
               ),
             ])) as ServiceWorkerRegistration);
           const browserSubscription =
@@ -134,9 +134,9 @@ export function useNotificationService() {
     try {
       setIsLoading(true);
 
-      // 구독 정리 Mutation 사용
+      // 구독 정리 Mutation 사용 - 기본 검사만 수행 (알림 발송 없음)
       const result = await cleanupSubscriptionsMutation.mutateAsync({
-        realTimeCheck: true,
+        realTimeCheck: false,
       });
 
       setLastMessage({
