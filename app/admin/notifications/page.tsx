@@ -5,7 +5,6 @@ import { motion, AnimatePresence } from "framer-motion";
 import { PageHeader } from "@/components/layout";
 import { WebPushSubscription } from "@/components/admin/notifications/WebPushSubscription";
 import { useNotificationSettingsQuery } from "@/lib/hooks/query/use-notification-settings-query";
-import { useAuth } from "@/components/providers/auth-provider";
 import { ErrorBoundary } from "@/components/error/error-boundary";
 import { ERROR_CONFIGS } from "@/lib/constants/error";
 import {
@@ -15,39 +14,27 @@ import {
   SubscriptionGuideCard,
 } from "@/components/admin/notifications";
 import { useCommonToast } from "@/lib/utils/notification/toast-messages";
-import { getAuthErrorMessage } from "@/lib/utils/validation/validation";
-import type { NotificationSettings } from "@/lib/types/notification";
-import { FormSkeleton } from "@/components/common/skeletons/form-skeleton";
+import type { UserNotificationSetting } from "@/lib/types/common";
+import { FormSkeleton } from "@/components/ui/skeleton";
 import { PAGE_HEADER } from "@/lib/constants/notifications";
-import { useFarmsQuery } from "@/lib/hooks/query/use-farms-query";
-import { useProfileQuery } from "@/lib/hooks/query/use-profile-query";
+import { Bell } from "lucide-react";
+import { useNotificationStore } from "@/store/use-notification-store";
 
 export default function NotificationsPage() {
-  const { state } = useAuth();
-  const user = state.status === "authenticated" ? state.user : null;
-  const userId = state.status === "authenticated" ? state.user.id : undefined;
-  const { data: profile } = useProfileQuery(userId);
+  // 공통 스토어에서 isSubscribed 상태 사용
+  const { isSubscribed } = useNotificationStore();
 
-  // useFarmsContext 대신 useFarmsQuery 사용
-  const {
-    farms,
-    isLoading: farmsLoading,
-    error: farmsError,
-    refetch: refetchFarms,
-  } = useFarmsQuery(profile?.id);
-
-  const [isSubscribed, setIsSubscribed] = useState(false);
   const {
     data: settings,
     error: settingsError,
     isLoading: settingsLoading,
   } = useNotificationSettingsQuery();
-  const { showInfo, showError } = useCommonToast();
+  const { showError } = useCommonToast();
 
   // 시스템 설정 페이지처럼 로컬 상태 관리
   const [unsavedChanges, setUnsavedChanges] = useState(false);
   const [localSettings, setLocalSettings] =
-    useState<NotificationSettings | null>(null);
+    useState<UserNotificationSetting | null>(null);
 
   // settings가 로드되면 localSettings 업데이트
   useEffect(() => {
@@ -58,9 +45,9 @@ export default function NotificationsPage() {
   }, [settings]);
 
   // 설정 변경 핸들러
-  const handleSettingChange = <K extends keyof NotificationSettings>(
+  const handleSettingChange = <K extends keyof UserNotificationSetting>(
     key: K,
-    value: NotificationSettings[K]
+    value: UserNotificationSetting[K]
   ) => {
     if (!localSettings) return;
 
@@ -74,41 +61,22 @@ export default function NotificationsPage() {
     setUnsavedChanges(false);
   };
 
-  // 농장 데이터 로드
-  useEffect(() => {
-    if (user?.id && !farmsLoading && farms.length === 0) {
-      refetchFarms();
-    }
-  }, [user?.id, refetchFarms, farmsLoading, farms.length, showInfo]);
-
   // 알림 설정 에러 처리
   useEffect(() => {
     if (settingsError) {
-      const authError = getAuthErrorMessage(settingsError);
-      showError("알림 설정 로드 실패", authError.message);
+      showError("알림 설정 로드 실패", settingsError.message);
     }
   }, [settingsError, showError]);
 
-  // 농장 에러에 따른 토스트 처리
-  useEffect(() => {
-    if (farmsError) {
-      const authError = getAuthErrorMessage(farmsError);
-      showError("농장 정보 로드 실패", authError.message);
-    }
-  }, [farmsError, showError]);
-
-  // 농장 데이터를 WebPushSubscription 컴포넌트에 직접 전달
-  const farmData = farms || [];
-
-  const isLoading = farmsLoading || settingsLoading;
+  const isLoading = settingsLoading;
 
   if (isLoading) {
     return (
-      <div className="flex-1 space-y-4 p-3 md:p-6 pt-2 md:pt-4">
+      <div className="flex-1 space-y-4 md:space-y-6 px-4 md:px-6 lg:px-8 pt-3 pb-4 md:pb-6 lg:pb-8">
         <PageHeader
           title={PAGE_HEADER.PAGE_TITLE}
           description={PAGE_HEADER.PAGE_DESCRIPTION}
-          breadcrumbs={[{ label: PAGE_HEADER.BREADCRUMB }]}
+          icon={Bell}
         />
         <FormSkeleton fields={5} />
       </div>
@@ -120,11 +88,11 @@ export default function NotificationsPage() {
       title={ERROR_CONFIGS.LOADING.title}
       description={ERROR_CONFIGS.LOADING.description}
     >
-      <div className="flex-1 space-y-4 p-3 md:p-6 pt-2 md:pt-4">
+      <div className="flex-1 space-y-4 md:space-y-6 px-4 md:px-6 lg:px-8 pt-3 pb-4 md:pb-6 lg:pb-8">
         <PageHeader
           title={PAGE_HEADER.PAGE_TITLE}
           description={PAGE_HEADER.PAGE_DESCRIPTION}
-          breadcrumbs={[{ label: PAGE_HEADER.BREADCRUMB }]}
+          icon={Bell}
         />
 
         <div className="space-y-4 md:space-y-6">
@@ -135,10 +103,7 @@ export default function NotificationsPage() {
             transition={{ duration: 0.3 }}
             layout
           >
-            <WebPushSubscription
-              farms={farmData}
-              onSubscriptionStatusChange={setIsSubscribed}
-            />
+            <WebPushSubscription />
           </motion.div>
 
           <AnimatePresence mode="wait">

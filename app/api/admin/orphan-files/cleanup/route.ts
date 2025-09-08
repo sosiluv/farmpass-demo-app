@@ -3,8 +3,13 @@ import { createClient } from "@/lib/supabase/server";
 import { requireAuth } from "@/lib/server/auth-utils";
 import { devLog } from "@/lib/utils/logging/dev-logger";
 import { createSystemLog } from "@/lib/utils/logging/system-log";
-import { getClientIP, getUserAgent } from "@/lib/server/ip-helpers";
 import { prisma } from "@/lib/prisma";
+import {
+  getErrorResultFromRawError,
+  makeErrorResponseFromResult,
+  throwBusinessError,
+} from "@/lib/utils/error/errorUtil";
+import { LOG_MESSAGES } from "@/lib/utils/logging/log-templates";
 
 // 재귀적으로 Storage의 모든 파일을 가져오는 함수
 async function getAllStorageFiles(
@@ -22,12 +27,14 @@ async function getAllStorageFiles(
     if (error) {
       // HTML 응답 오류인지 확인
       if (error.message && error.message.includes("Unexpected token '<'")) {
-        devLog.error(`[GET_ALL_FILES] HTML 응답 오류 - ${bucket}/${prefix}:`, {
-          error: error.message,
-          bucket,
-          prefix,
-          suggestion: "Storage 버킷 권한 또는 환경 변수를 확인하세요",
-        });
+        throwBusinessError(
+          "STORAGE_HTML_RESPONSE_ERROR",
+          {
+            bucket,
+            prefix,
+          },
+          error
+        );
       } else {
         devLog.error(
           `[GET_ALL_FILES] Storage API 오류 - ${bucket}/${prefix}:`,
@@ -50,14 +57,21 @@ async function getAllStorageFiles(
         allFiles.push(...subFiles);
       }
     }
-  } catch (error) {
+  } catch (error: any) {
+    // 이미 비즈니스 에러로 처리된 경우 그대로 던지기
+    if (error.businessCode) {
+      throw error;
+    }
+
     // 예상치 못한 오류 처리
-    devLog.error(`[GET_ALL_FILES] 예상치 못한 오류 - ${bucket}/${prefix}:`, {
-      error: error instanceof Error ? error.message : String(error),
-      bucket,
-      prefix,
-      stack: error instanceof Error ? error.stack : undefined,
-    });
+    throwBusinessError(
+      "STORAGE_UNEXPECTED_ERROR",
+      {
+        bucket,
+        prefix,
+      },
+      error
+    );
   }
 
   return allFiles;
@@ -71,18 +85,29 @@ async function cleanupProfileOrphans(supabase: any) {
   let totalProfiles = 0;
 
   // 1. DB에서 profile_image_url이 있는 모든 프로필 조회 (1번)
-  const profiles = await prisma.profiles.findMany({
-    where: {
-      AND: [
-        { profile_image_url: { not: null } },
-        { profile_image_url: { not: "" } },
-      ],
-    },
-    select: {
-      id: true,
-      profile_image_url: true,
-    },
-  });
+  let profiles;
+  try {
+    profiles = await prisma.profiles.findMany({
+      where: {
+        AND: [
+          { profile_image_url: { not: null } },
+          { profile_image_url: { not: "" } },
+        ],
+      },
+      select: {
+        id: true,
+        profile_image_url: true,
+      },
+    });
+  } catch (error: any) {
+    throwBusinessError(
+      "GENERAL_QUERY_FAILED",
+      {
+        resourceType: "profile",
+      },
+      error
+    );
+  }
   totalProfiles = profiles.length;
 
   // 2. Storage의 모든 파일 목록 가져오기 (1번)
@@ -111,14 +136,21 @@ async function cleanupProfileOrphans(supabase: any) {
     if (filePath.startsWith("systems/")) continue;
 
     if (!fileSet.has(filePath)) {
-      await prisma.profiles.update({
-        where: { id: profile.id },
-        data: { profile_image_url: null },
-      });
-      dbOrphanUpdated++;
-      devLog.log(
-        `[CLEANUP_PROFILE_ORPHAN] DB orphan 초기화: userId=${profile.id}, url=${url}`
-      );
+      try {
+        await prisma.profiles.update({
+          where: { id: profile.id },
+          data: { profile_image_url: null },
+        });
+        dbOrphanUpdated++;
+      } catch (error: any) {
+        throwBusinessError(
+          "GENERAL_UPDATE_FAILED",
+          {
+            resourceType: "profile",
+          },
+          error
+        );
+      }
     }
   }
 
@@ -151,7 +183,14 @@ async function cleanupProfileOrphans(supabase: any) {
         .remove([filePath]);
       if (!deleteError) {
         deleted++;
-        devLog.log(`[CLEANUP_PROFILE_ORPHAN] Storage orphan 삭제: ${filePath}`);
+      } else {
+        throwBusinessError(
+          "GENERAL_DELETE_FAILED",
+          {
+            resourceType: "storage",
+          },
+          deleteError
+        );
       }
     }
   }
@@ -172,18 +211,29 @@ async function cleanupVisitorOrphans(supabase: any) {
   let totalEntries = 0;
 
   // 1. DB에서 profile_photo_url이 있는 모든 방문자 엔트리 조회 (1번)
-  const entries = await prisma.visitor_entries.findMany({
-    where: {
-      AND: [
-        { profile_photo_url: { not: null } },
-        { profile_photo_url: { not: "" } },
-      ],
-    },
-    select: {
-      id: true,
-      profile_photo_url: true,
-    },
-  });
+  let entries;
+  try {
+    entries = await prisma.visitor_entries.findMany({
+      where: {
+        AND: [
+          { profile_photo_url: { not: null } },
+          { profile_photo_url: { not: "" } },
+        ],
+      },
+      select: {
+        id: true,
+        profile_photo_url: true,
+      },
+    });
+  } catch (error: any) {
+    throwBusinessError(
+      "GENERAL_QUERY_FAILED",
+      {
+        resourceType: "visitor",
+      },
+      error
+    );
+  }
   totalEntries = entries.length;
 
   // 2. Storage의 모든 파일 목록 가져오기 (1번)
@@ -199,14 +249,21 @@ async function cleanupVisitorOrphans(supabase: any) {
     const filePath = match ? match[1] : null;
     if (!filePath) continue;
     if (!fileSet.has(filePath)) {
-      await prisma.visitor_entries.update({
-        where: { id: entry.id },
-        data: { profile_photo_url: null },
-      });
-      dbOrphanUpdated++;
-      devLog.log(
-        `[CLEANUP_VISITOR_ORPHAN] DB orphan 초기화: entryId=${entry.id}, url=${url}`
-      );
+      try {
+        await prisma.visitor_entries.update({
+          where: { id: entry.id },
+          data: { profile_photo_url: null },
+        });
+        dbOrphanUpdated++;
+      } catch (error: any) {
+        throwBusinessError(
+          "GENERAL_UPDATE_FAILED",
+          {
+            resourceType: "visitor",
+          },
+          error
+        );
+      }
     }
   }
 
@@ -227,7 +284,14 @@ async function cleanupVisitorOrphans(supabase: any) {
         .remove([filePath]);
       if (!deleteError) {
         deleted++;
-        devLog.log(`[CLEANUP_VISITOR_ORPHAN] Storage orphan 삭제: ${filePath}`);
+      } else {
+        throwBusinessError(
+          "GENERAL_DELETE_FAILED",
+          {
+            resourceType: "storage",
+          },
+          deleteError
+        );
       }
     }
   }
@@ -241,20 +305,16 @@ async function cleanupVisitorOrphans(supabase: any) {
 }
 
 export async function POST(request: NextRequest) {
-  const supabase = await createClient();
-  const clientIP = getClientIP(request);
-  const userAgent = getUserAgent(request);
-
-  // 인증 및 권한 확인 (admin만 접근 가능)
-  const authResult = await requireAuth(true);
-  if (!authResult.success || !authResult.user) {
-    return authResult.response!;
-  }
-
-  const user = authResult.user;
-
+  let user = null;
   try {
-    devLog.log("[CLEANUP_ORPHAN_IMAGES] Starting orphan file cleanup...");
+    const supabase = await createClient();
+
+    // 인증 및 권한 확인 (admin만 접근 가능)
+    const authResult = await requireAuth(true);
+    if (!authResult.success || !authResult.user) {
+      return authResult.response!;
+    }
+    user = authResult.user;
 
     let totalDeleted = 0;
     const results = {
@@ -282,33 +342,30 @@ export async function POST(request: NextRequest) {
     };
     totalDeleted += profileOrphanResult.deleted;
 
-    // 3. 시스템 로그 기록 (성공)
+    // 3. 시스템 로그 기록 (성공) - 템플릿 활용
     await createSystemLog(
       "ORPHAN_FILE_CLEANUP",
-      `관리자가 orphan 파일 정리를 완료했습니다 (총 ${totalDeleted}개 삭제, 방문자 DB orphan ${visitorOrphanResult.dbOrphanUpdated}건, 프로필 DB orphan ${profileOrphanResult.dbOrphanUpdated}건 초기화)`,
+      LOG_MESSAGES.ORPHAN_FILES_CLEANUP(
+        user.email || "",
+        totalDeleted,
+        visitorOrphanResult.dbOrphanUpdated,
+        profileOrphanResult.dbOrphanUpdated
+      ),
       "info",
-      user.id,
+      user?.id ? { id: user.id, email: user.email || "" } : undefined,
       "system",
-      undefined,
+      "orphan_files_cleanup",
       {
-        visitor_deleted: results.visitor.deleted,
-        visitor_total: results.visitor.total,
-        visitor_db_orphan_updated: results.visitor.db_orphan_updated,
-        visitor_db_orphan_total: results.visitor.db_total,
-        profile_deleted: results.profile.deleted,
-        profile_total: results.profile.total,
-        profile_db_orphan_updated: results.profile.db_orphan_updated,
-        profile_db_orphan_total: results.profile.db_total,
+        action_type: "admin_event",
+        event: "orphan_files_cleanup",
+        user_email: user.email || "",
         total_deleted: totalDeleted,
-        action_type: "orphan_file_cleanup",
+        visitor_deleted: results.visitor.deleted,
+        visitor_db_orphan_updated: results.visitor.db_orphan_updated,
+        profile_deleted: results.profile.deleted,
+        profile_db_orphan_updated: results.profile.db_orphan_updated,
       },
-      user.email,
-      clientIP,
-      userAgent
-    );
-
-    devLog.log(
-      `[CLEANUP_ORPHAN_IMAGES] Cleanup completed: ${totalDeleted} files deleted, 방문자 DB orphan ${visitorOrphanResult.dbOrphanUpdated}건, 프로필 DB orphan ${profileOrphanResult.dbOrphanUpdated}건 초기화`
+      request
     );
 
     return NextResponse.json({
@@ -317,31 +374,29 @@ export async function POST(request: NextRequest) {
       results,
     });
   } catch (error) {
-    devLog.error("[CLEANUP_ORPHAN_IMAGES] Error:", error);
-
+    const errorMessage = error instanceof Error ? error.message : String(error);
     await createSystemLog(
       "ORPHAN_FILE_CLEANUP_ERROR",
-      "관리자가 orphan 파일 정리에 실패했습니다.",
+      LOG_MESSAGES.ORPHAN_FILES_CLEANUP_FAILED(errorMessage),
       "error",
-      user?.id,
+      user?.id ? { id: user.id, email: user.email || "" } : undefined,
       "system",
-      undefined,
+      "orphan_files_cleanup",
       {
-        error_message: error instanceof Error ? error.message : "Unknown error",
-        action_type: "orphan_file_cleanup",
+        action_type: "admin_event",
+        event: "orphan_file_cleanup_failed",
+        error_message: errorMessage,
       },
-      user?.email,
-      clientIP,
-      userAgent
+      request
     );
 
-    return NextResponse.json(
-      {
-        success: false,
-        error: "ORPHAN_FILES_CLEANUP_FAILED",
-        message: "고아 파일 정리에 실패했습니다.",
-      },
-      { status: 500 }
-    );
+    // 통합 에러 처리 - 비즈니스 에러와 시스템 에러를 모두 처리
+    const result = getErrorResultFromRawError(error, {
+      operation: "cleanup_orphan_files",
+    });
+
+    return NextResponse.json(makeErrorResponseFromResult(result), {
+      status: result.status,
+    });
   }
 }

@@ -1,6 +1,6 @@
-import React from "react";
+import { useState } from "react";
 import { CardDescription, CardTitle } from "@/components/ui/card";
-import { Logo } from "@/components/common";
+import { Logo } from "@/components/common/logo";
 import { LABELS, PAGE_HEADER } from "@/lib/constants/visitor";
 
 interface FormHeaderProps {
@@ -12,9 +12,9 @@ interface FormHeaderProps {
 export const FormHeader = ({
   title = PAGE_HEADER.FORM_HEADER_DEFAULT_TITLE,
   description = PAGE_HEADER.FORM_HEADER_DEFAULT_DESCRIPTION,
-  logoUrl = "/default-logo1.png",
+  logoUrl = "/logo1.svg",
 }: FormHeaderProps) => {
-  const [logoError, setLogoError] = React.useState(false);
+  const [logoError, setLogoError] = useState(false);
 
   return (
     <div className="text-center pb-2 sm:pb-3 border-b border-gray-100 px-3 sm:px-6 pt-3 sm:pt-6">

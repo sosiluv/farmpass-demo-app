@@ -1,15 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
-import { logApiError, createSystemLog } from "@/lib/utils/logging/system-log";
+import { createSystemLog } from "@/lib/utils/logging/system-log";
 import { devLog } from "@/lib/utils/logging/dev-logger";
-import { getClientIP, getUserAgent } from "@/lib/server/ip-helpers";
 import { requireAuth } from "@/lib/server/auth-utils";
 import { prisma } from "@/lib/prisma";
+import {
+  getErrorResultFromRawError,
+  makeErrorResponseFromResult,
+  throwBusinessError,
+} from "@/lib/utils/error/errorUtil";
+import { LOG_MESSAGES } from "@/lib/utils/logging/log-templates";
 
 export async function POST(request: NextRequest) {
-  // 요청 컨텍스트 정보 추출
-  const clientIP = getClientIP(request);
-  const userAgent = getUserAgent(request);
-
+  let user = null;
   try {
     // 관리자 권한 인증 확인
     const authResult = await requireAuth(true);
@@ -17,7 +19,7 @@ export async function POST(request: NextRequest) {
       return authResult.response!;
     }
 
-    const user = authResult.user;
+    user = authResult.user;
 
     const body = await request.json();
     const { action, logId, beforeCount } = body;
@@ -28,20 +30,38 @@ export async function POST(request: NextRequest) {
     switch (action) {
       case "delete_single":
         // 개별 로그 삭제
-        await prisma.system_logs.delete({
-          where: { id: logId },
-        });
+        try {
+          await prisma.system_logs.delete({ where: { id: logId } });
+        } catch (error: any) {
+          throwBusinessError(
+            "GENERAL_DELETE_FAILED",
+            {
+              resourceType: "log",
+            },
+            error
+          );
+        }
 
         result = { deleted: true, logId };
-        logMessage = `관리자가 개별 시스템 로그를 삭제했습니다 (로그 ID: ${logId})`;
+        logMessage = LOG_MESSAGES.LOG_CLEANUP_FAILED(user.email || "");
         break;
 
       case "delete_all":
         // 전체 로그 삭제
-        await prisma.system_logs.deleteMany({});
+        try {
+          await prisma.system_logs.deleteMany({});
+        } catch (error: any) {
+          throwBusinessError(
+            "GENERAL_DELETE_FAILED",
+            {
+              resourceType: "log",
+            },
+            error
+          );
+        }
 
         result = { deleted: true, count: beforeCount };
-        logMessage = `관리자가 모든 시스템 로그를 완전히 삭제했습니다 (총 ${beforeCount}개 삭제)`;
+        logMessage = LOG_MESSAGES.LOG_CLEANUP(user.email || "", beforeCount);
         break;
 
       case "delete_old":
@@ -49,63 +69,74 @@ export async function POST(request: NextRequest) {
         const thirtyDaysAgo = new Date();
         thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
-        const oldLogsCount = await prisma.system_logs.count({
-          where: {
-            created_at: {
-              lt: thirtyDaysAgo,
-            },
-          },
-        });
-
-        if (!oldLogsCount) {
-          result = { deleted: false, count: 0 };
-          logMessage = "삭제할 30일 이전 로그가 없습니다.";
-        } else {
-          await prisma.system_logs.deleteMany({
+        let oldLogsCount;
+        try {
+          oldLogsCount = await prisma.system_logs.count({
             where: {
               created_at: {
                 lt: thirtyDaysAgo,
               },
             },
           });
+        } catch (error: any) {
+          throwBusinessError(
+            "GENERAL_QUERY_FAILED",
+            {
+              resourceType: "errorLogs",
+            },
+            error
+          );
+        }
+
+        if (!oldLogsCount) {
+          result = { deleted: false, count: 0 };
+          logMessage = "삭제할 30일 이전 로그가 없습니다.";
+        } else {
+          try {
+            await prisma.system_logs.deleteMany({
+              where: {
+                created_at: {
+                  lt: thirtyDaysAgo,
+                },
+              },
+            });
+          } catch (error: any) {
+            throwBusinessError(
+              "GENERAL_DELETE_FAILED",
+              {
+                resourceType: "log",
+              },
+              error
+            );
+          }
 
           result = { deleted: true, count: oldLogsCount };
-          logMessage = `관리자가 30일 이전 시스템 로그를 삭제했습니다 (총 ${oldLogsCount}개 삭제)`;
+          logMessage = LOG_MESSAGES.LOG_CLEANUP(user.email || "", oldLogsCount);
         }
         break;
 
       default:
-        return NextResponse.json(
-          {
-            success: false,
-            error: "UNSUPPORTED_DELETE_OPERATION",
-            message: "지원하지 않는 삭제 작업입니다.",
-          },
-          { status: 400 }
-        );
+        throwBusinessError("UNSUPPORTED_DELETE_OPERATION", {
+          providedAction: action,
+        });
     }
 
-    // 삭제 작업 로그 기록
+    // 삭제 작업 로그 기록 - 템플릿 활용
     await createSystemLog(
-      "LOG_DELETE",
-      logMessage,
+      "LOG_CLEANUP",
+      LOG_MESSAGES.LOG_CLEANUP(user.email || "", result.count || 1),
       "info",
-      user.id,
+      user?.id ? { id: user.id, email: user.email || "" } : undefined,
       "system",
-      undefined,
+      "logs_cleanup",
       {
-        user_email: user.email,
-        deleted_count: result.count || 1,
-        log_id: logId,
-        timestamp: new Date().toISOString(),
-        action_type: action,
+        action_type: "admin_event",
+        event: "log_cleanup",
+        action,
+        count: result.count || 1,
       },
-      user.email,
-      clientIP,
-      userAgent
+      request
     );
-
-    devLog.log("[LOG-DELETE] 로그 삭제 작업 완료:", result);
 
     // 작업 유형에 따른 구체적인 메시지 생성
     let successMessage = "";
@@ -134,25 +165,30 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     devLog.error("[LOG-DELETE] 로그 삭제 API 오류:", error);
 
-    // API 에러 로그 기록
-    await logApiError(
-      "/api/admin/logs/delete",
-      "POST",
-      error instanceof Error ? error : String(error),
-      undefined,
+    // 시스템 에러 로깅
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    await createSystemLog(
+      "LOG_CLEANUP_FAILED",
+      LOG_MESSAGES.LOG_CLEANUP_FAILED(errorMessage),
+      "error",
+      user?.id ? { id: user.id, email: user.email || "" } : undefined,
+      "system",
+      "logs_cleanup",
       {
-        ip: clientIP,
-        userAgent,
-      }
+        action_type: "admin_event",
+        event: "log_cleanup_failed",
+        error_message: errorMessage,
+      },
+      request
     );
 
-    return NextResponse.json(
-      {
-        success: false,
-        error: "LOG_DELETE_FAILED",
-        message: "로그 삭제에 실패했습니다.",
-      },
-      { status: 500 }
-    );
+    // 통합 에러 처리 - 비즈니스 에러와 시스템 에러를 모두 처리
+    const result = getErrorResultFromRawError(error, {
+      operation: "delete_logs",
+    });
+
+    return NextResponse.json(makeErrorResponseFromResult(result), {
+      status: result.status,
+    });
   }
 }

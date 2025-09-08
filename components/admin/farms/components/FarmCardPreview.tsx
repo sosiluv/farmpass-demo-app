@@ -1,9 +1,15 @@
 import { FarmMembersPreview } from "../members/farm-members-preview";
-import type { FarmMembers } from "@/lib/types";
+import type { FarmMember } from "@/lib/types/common";
 
 interface FarmCardPreviewProps {
   farmId: string;
-  membersData?: FarmMembers;
+  membersData?: Array<
+    FarmMember & {
+      profiles: {
+        name: string;
+      };
+    }
+  >;
 }
 
 export function FarmCardPreview({ farmId, membersData }: FarmCardPreviewProps) {

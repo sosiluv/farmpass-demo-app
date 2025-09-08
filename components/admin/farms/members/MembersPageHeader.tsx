@@ -1,6 +1,6 @@
-import { Building2 } from "lucide-react";
+import { Users } from "lucide-react";
 import { PageHeader } from "@/components/layout";
-import { AddMemberDialog } from "./AddMemberDialog";
+import { AddMemberSheet } from "./AddMemberSheet";
 import { PAGE_HEADER } from "@/lib/constants/farms";
 
 interface Farm {
@@ -26,17 +26,9 @@ export function MembersPageHeader({
         "{farmName}",
         farm.farm_name
       )}
-      breadcrumbs={[
-        {
-          label: PAGE_HEADER.FARMS_BREADCRUMB,
-          href: "/admin/farms",
-          icon: Building2,
-        },
-        { label: farm.farm_name, href: `/admin/farms/${farm.id}` },
-        { label: PAGE_HEADER.MEMBERS_BREADCRUMB },
-      ]}
+      icon={Users}
       actions={
-        <AddMemberDialog
+        <AddMemberSheet
           canManageMembers={canManageMembers}
           onAddMember={onAddMember}
           farmId={farm.id}

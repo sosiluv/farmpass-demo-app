@@ -4,8 +4,6 @@ export const PAGE_HEADER = {
   ALL_VISITORS_PAGE_DESCRIPTION:
     "모든 농장의 방문자 기록을 조회하고 관리합니다.",
   VISITORS_PAGE_DESCRIPTION: "내 농장의 방문자 기록을 조회하고 관리합니다.",
-  ALL_VISITORS_PAGE_BREADCRUMB: "전체 방문자 기록",
-  VISITORS_PAGE_BREADCRUMB: "방문자 기록",
 
   // FormHeader
   FORM_HEADER_DEFAULT_TITLE: "방문자 등록",
@@ -13,15 +11,14 @@ export const PAGE_HEADER = {
     "방문 정보를 정확히 입력해주세요. 모든 정보는 방역 관리 목적으로만 사용됩니다.",
 
   VISITOR_ACTION_MENU_DELETE_TITLE: "방문 기록 삭제",
-  VISITOR_ACTION_MENU_DELETE_DESC:
-    "{name} 방문자의 정보를 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.",
+  VISITOR_ACTION_MENU_DELETE_DESC: "{name} 방문자의 정보를 삭제하시겠습니까?",
 } as const;
 
 export const BUTTONS = {
-  VISITOR_FORM_DIALOG_CANCEL: "취소",
-  VISITOR_FORM_DIALOG_CREATE_BUTTON: "등록",
-  VISITOR_FORM_DIALOG_EDIT_BUTTON: "수정",
-  VISITOR_FORM_DIALOG_PROCESSING: "처리 중...",
+  VISITOR_FORM_SHEET_CANCEL: "취소",
+  VISITOR_FORM_SHEET_CREATE_BUTTON: "등록",
+  VISITOR_FORM_SHEET_EDIT_BUTTON: "수정",
+  VISITOR_FORM_SHEET_PROCESSING: "처리 중...",
 
   EXPORT_ACTIONS_RESET: "초기화",
   EXPORT_ACTIONS_EXPORTING: "내보내는 중...",
@@ -33,6 +30,7 @@ export const BUTTONS = {
   VISITOR_ACTION_MENU_DELETING: "삭제 중...",
 
   SUCCESS_CARD_VIEW_COMPANY: "회사 소개 보기",
+  SUCCESS_CARD_GO_HOME: "홈페이지로 이동",
   VISITOR_FILTERS_ADVANCED: "고급 필터",
 
   VISITOR_TABLE_DETAILS_BUTTON: "상세보기",
@@ -55,7 +53,6 @@ export const LABELS = {
   NOTES: "비고",
   PROFILE_PHOTO: "프로필 사진",
   CONSENT: "개인정보 수집 및 이용에 동의합니다",
-  SELECTED_ADDRESS: "선택된 주소:",
   CONSENT_DESCRIPTION:
     "수집된 정보는 방역 관리 목적으로만 사용되며, 관련 법령에 따라 보관됩니다.",
   REQUIRED_MARK: "*",
@@ -91,8 +88,7 @@ export const LABELS = {
   VISITOR_TABLE_DISINFECTION_STATUS: "방역",
   VISITOR_TABLE_DEFAULT_PURPOSE: "기타",
   VISITOR_TABLE_DETAILS_TITLE: "방문자 상세 정보",
-  VISITOR_TABLE_DETAILS_DESC:
-    "방문자의 기본 정보, 방문 정보, 방역 상태 등을 확인합니다.",
+  VISITOR_TABLE_DETAILS_DESC: "방문자의 방문 정보, 방역 상태 등을 확인합니다.",
   // 활성 필터 태그 라벨
   ACTIVE_FILTERS_LABEL: "활성 필터:",
   ACTIVE_FILTERS_SEARCH: '검색: "{searchTerm}"',
@@ -142,7 +138,6 @@ export const LABELS = {
   QUICK_FILTERS_MONTH: "30일",
   QUICK_FILTERS_ALL: "전체",
   // 방문자 상세 모달 라벨
-  VISITOR_DETAIL_TITLE: "방문자 상세 정보",
   VISITOR_DETAIL_BASIC_INFO: "기본 정보",
   VISITOR_DETAIL_CONTACT: "연락처",
   VISITOR_DETAIL_ADDRESS: "주소",
@@ -169,12 +164,12 @@ export const LABELS = {
   VISITOR_FARM_SELECTOR_ALL_FARMS: "전체 농장",
   VISITOR_FARM_SELECTOR_FARM_NOT_FOUND: "농장을 찾을 수 없음",
 
-  // VisitorFormDialog
-  VISITOR_FORM_DIALOG_CREATE_TITLE: "방문자 등록",
-  VISITOR_FORM_DIALOG_EDIT_TITLE: "방문자 정보 수정",
-  VISITOR_FORM_DIALOG_CREATE_DESC: "새로운 방문자를 등록합니다.",
-  VISITOR_FORM_DIALOG_EDIT_DESC: "방문자 정보를 수정합니다.",
-  VISITOR_FORM_DIALOG_LOADING: "데이터를 불러오는 중...",
+  // VisitorFormSheet
+  VISITOR_FORM_SHEET_CREATE_TITLE: "방문자 등록",
+  VISITOR_FORM_SHEET_EDIT_TITLE: "방문자 정보 수정",
+  VISITOR_FORM_SHEET_CREATE_DESC: "새로운 방문자를 등록합니다.",
+  VISITOR_FORM_SHEET_EDIT_DESC: "방문자 정보를 수정합니다.",
+  VISITOR_FORM_SHEET_LOADING: "데이터를 불러오는 중...",
 
   // VisitorStats
   VISITOR_STATS_TOTAL_VISITORS: "총 방문자",
@@ -232,6 +227,14 @@ export const LABELS = {
   SUCCESS_CARD_PRIVACY_DELETION: "🔒 개인정보는 3년 후 자동으로 삭제됩니다.",
   SUCCESS_CARD_CONTACT_GUIDE:
     "📞 문의사항이 있으시면 농장 관리자에게 연락해주세요.",
+  SUCCESS_CARD_CANCEL_WARNING: "방문자 등록을 취소하시겠습니까?",
+  SUCCESS_CARD_CANCEL_DESC: "확인을 누르면 작성 중인 내용이 사라집니다.",
+  SUCCESS_CARD_CANCEL_DESC_HOME: "확인을 누르면 홈페이지로 이동합니다.",
+
+  // 방문자 폼 취소 확인
+  VISITOR_FORM_CANCEL_TITLE: "방문자 정보 수정 취소",
+  VISITOR_FORM_CANCEL_DESCRIPTION:
+    "입력한 정보가 저장되지 않습니다. 정말 나가시겠습니까?",
 
   FORM_HEADER_COMPANY_LOGO_ALT: "회사 로고",
 } as const;
@@ -239,7 +242,7 @@ export const LABELS = {
 // 플레이스홀더
 export const PLACEHOLDERS = {
   FULL_NAME: "이름을 입력하세요",
-  PHONE_NUMBER: "숫자만 입력 가능합니다",
+  PHONE_NUMBER: "하이픈(-) 없이 숫자만 입력해주세요",
   ADDRESS: "주소 검색 버튼을 클릭하여 주소를 입력하세요",
   CAR_PLATE: "12가3456 (선택사항)",
   VISIT_PURPOSE: "방문 목적을 선택하세요",
@@ -251,6 +254,7 @@ export const PLACEHOLDERS = {
   DATE_RANGE_SELECTOR_VISITOR_TYPE_PLACEHOLDER: "방문자 유형을 선택하세요",
   // SearchInput
   SEARCH_INPUT_PLACEHOLDER: "방문자 이름, 연락처, 차량번호로 검색...",
+  VISITOR_ADDRESS_PLACEHOLDER: "주소를 입력하세요",
 } as const;
 
 // 방문 목적 옵션

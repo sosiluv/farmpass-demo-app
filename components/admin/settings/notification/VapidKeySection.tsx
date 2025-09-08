@@ -13,7 +13,6 @@ import {
 } from "@/lib/constants/settings";
 import type { SystemSettings } from "@/lib/types/settings";
 import { useCommonToast } from "@/lib/utils/notification/toast-messages";
-import { getNotificationErrorMessage } from "@/lib/utils/validation/validation";
 import SettingsCardHeader from "../SettingsCardHeader";
 
 interface VapidKeySectionProps {
@@ -57,8 +56,11 @@ const VapidKeySection = React.memo(function VapidKeySection({
         showWarning("VAPID 키 생성 완료", result.warning);
       }
     } catch (error) {
-      const notificationError = getNotificationErrorMessage(error);
-      showError("VAPID 키 생성 실패", notificationError.message);
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : "알 수 없는 오류가 발생했습니다.";
+      showError("VAPID 키 생성 실패", errorMessage);
     }
   };
 
@@ -102,7 +104,10 @@ const VapidKeySection = React.memo(function VapidKeySection({
       />
       <CardContent className="space-y-4">
         <div className="grid gap-2">
-          <Label htmlFor="vapidPublicKey">
+          <Label
+            htmlFor="vapidPublicKey"
+            className="text-sm sm:text-base font-medium"
+          >
             {LABELS.VAPID_PUBLIC_KEY_LABEL}
           </Label>
           <div className="flex gap-2">
@@ -141,7 +146,10 @@ const VapidKeySection = React.memo(function VapidKeySection({
         </div>
 
         <div className="grid gap-2">
-          <Label htmlFor="vapidPrivateKey">
+          <Label
+            htmlFor="vapidPrivateKey"
+            className="text-sm sm:text-base font-medium"
+          >
             {LABELS.VAPID_PRIVATE_KEY_LABEL}
           </Label>
           <div className="relative">
@@ -173,8 +181,10 @@ const VapidKeySection = React.memo(function VapidKeySection({
 
         <Alert>
           <AlertTriangle className="h-4 w-4" />
-          <AlertTitle>{LABELS.VAPID_SECURITY_TITLE}</AlertTitle>
-          <AlertDescription>
+          <AlertTitle className="text-sm sm:text-base">
+            {LABELS.VAPID_SECURITY_TITLE}
+          </AlertTitle>
+          <AlertDescription className="text-sm sm:text-base">
             {LABELS.VAPID_SECURITY_DESCRIPTION}
           </AlertDescription>
         </Alert>

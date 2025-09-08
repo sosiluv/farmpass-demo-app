@@ -1,2 +1,2 @@
-export { ChartCard } from "@/components/common/ChartCard";
+export { ChartCard } from "../../management/dashboard/ChartCard";
 export { ChartGrid } from "./ChartGrid";

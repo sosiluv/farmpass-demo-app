@@ -2,45 +2,43 @@
 
 import { useState, useEffect, useMemo } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { StatsSkeleton, TableSkeleton } from "@/components/common/skeletons";
+import { StatsSkeleton, TableSkeleton } from "@/components/ui/skeleton";
 import { PageHeader } from "@/components/layout";
 import { useAuth } from "@/components/providers/auth-provider";
 import {
   VisitorFilters,
   VisitorStats,
   VisitorExportRefactored,
-  VisitorTable,
+  VisitorTableSheet,
 } from "@/components/admin/visitors";
-import type { Farm } from "@/lib/types/farm";
+import type { Farm } from "@/lib/types/common";
 import { useCommonToast } from "@/lib/utils/notification/toast-messages";
-import { getAuthErrorMessage } from "@/lib/utils/validation/validation";
 import { AccessDenied } from "@/components/error/access-denied";
-import { LABELS, PAGE_HEADER } from "@/lib/constants/farms";
+import { AdminError } from "@/components/error/admin-error";
+import { PAGE_HEADER } from "@/lib/constants/farms";
 import { ERROR_CONFIGS } from "@/lib/constants/error";
+import { Users } from "lucide-react";
 
 // Zustand Store 사용
-import { useVisitorFiltersStore } from "@/lib/hooks/query/use-visitor-filters";
-import { useVisitorActions } from "@/hooks/useVisitorActions";
+import { useVisitorFiltersStore } from "@/store/use-visitor-filters-store";
+import { useVisitorActions } from "@/hooks/visitor/useVisitorActions";
 import { generateFarmVisitorPageStats } from "@/lib/utils/data/common-stats";
 import { ErrorBoundary } from "@/components/error/error-boundary";
-import { ResponsivePagination } from "@/components/common/responsive-pagination";
+import { ResponsivePagination } from "@/components/ui/responsive-pagination";
 
 // React Query Hooks
 import { useFarmsQuery } from "@/lib/hooks/query/use-farms-query";
 import { useFarmVisitorsWithFiltersQuery } from "@/lib/hooks/query/use-farm-visitors-filtered-query";
-import { useProfileQuery } from "@/lib/hooks/query/use-profile-query";
 
 export default function FarmVisitorsPage() {
-  const params = useParams();
-  const router = useRouter();
-  const { state } = useAuth();
-  const userId = state.status === "authenticated" ? state.user.id : undefined;
-  const { data: profile } = useProfileQuery(userId);
-  const farmId = (params as any).farmId as string; // useParams()는 항상 객체 반환
   const { showError } = useCommonToast();
+  const router = useRouter();
+  const params = useParams();
+  const { userId, isAdmin } = useAuth();
+  const farmId = (params as any).farmId as string; // useParams()는 항상 객체 반환
 
   // React Query Hooks
-  const farmsQuery = useFarmsQuery();
+  const farmsQuery = useFarmsQuery(userId);
 
   // 필터 Store
   const {
@@ -77,16 +75,15 @@ export default function FarmVisitorsPage() {
   // 에러 처리
   useEffect(() => {
     if (error) {
-      const authError = getAuthErrorMessage(error);
-      showError("오류", authError.message);
+      showError("오류", error.message);
     }
   }, [error, showError]);
 
   // 방문자 액션 훅
   const { handleEdit, handleDelete, handleExport } = useVisitorActions({
     farms: farms, // map 변환 없이 그대로 전달
-    isAdmin: false,
-    profileId: profile?.id,
+    isAdmin: isAdmin,
+    profileId: userId,
     allVisitors: allVisitors, // map 변환 없이 그대로 전달
   });
 
@@ -151,11 +148,6 @@ export default function FarmVisitorsPage() {
         <PageHeader
           title={PAGE_HEADER.FARM_VISITORS_PAGE_TITLE}
           description={PAGE_HEADER.FARM_VISITORS_PAGE_DESCRIPTION}
-          breadcrumbs={[
-            { label: LABELS.FARM_MANAGEMENT, href: "/admin/farms" },
-            { label: LABELS.LOADING, href: `/admin/farms/${farmId}` },
-            { label: PAGE_HEADER.FARM_VISITORS_PAGE_TITLE },
-          ]}
         />
         <StatsSkeleton columns={4} />
         <TableSkeleton rows={5} columns={6} />
@@ -166,14 +158,13 @@ export default function FarmVisitorsPage() {
   if (!currentFarm) {
     return (
       <div className="flex-1 space-y-4 p-4 sm:p-6 md:p-8">
-        <div className="text-center">
-          <h2 className="text-lg font-semibold text-gray-900">
-            농장을 찾을 수 없습니다
-          </h2>
-          <p className="mt-2 text-sm text-gray-600">
-            요청하신 농장이 존재하지 않거나 접근 권한이 없습니다.
-          </p>
-        </div>
+        <AdminError
+          title={ERROR_CONFIGS.LOADING.title}
+          description={ERROR_CONFIGS.LOADING.description}
+          error={new Error("Farm not found")}
+          reset={() => router.push("/admin/farms")}
+          isNotFound={true}
+        />
       </div>
     );
   }
@@ -195,7 +186,7 @@ export default function FarmVisitorsPage() {
       title={ERROR_CONFIGS.LOADING.title}
       description={ERROR_CONFIGS.LOADING.description}
     >
-      <div className="flex-1 space-y-3 sm:space-y-4 md:space-y-6 p-1 sm:p-4 md:p-6 lg:p-8 pt-3 sm:pt-4 md:pt-6">
+      <div className="flex-1 space-y-3 sm:space-y-4 md:space-y-6 px-4 md:px-6 lg:px-8 pt-3 pb-4 md:pb-6 lg:pb-8">
         <PageHeader
           title={PAGE_HEADER.FARM_VISITORS_TITLE.replace(
             "{farmName}",
@@ -205,15 +196,10 @@ export default function FarmVisitorsPage() {
             "{farmName}",
             currentFarm.farm_name
           )}
-          breadcrumbs={[
-            { label: LABELS.FARM_MANAGEMENT, href: "/admin/farms" },
-            { label: currentFarm.farm_name, href: `/admin/farms/${farmId}` },
-            { label: PAGE_HEADER.FARM_VISITORS_PAGE_TITLE },
-          ]}
+          icon={Users}
           actions={
             <VisitorExportRefactored
               farms={farms} // map 변환 없이 그대로 전달
-              isAdmin={false}
               onExport={handleExport}
             />
           }
@@ -259,7 +245,6 @@ export default function FarmVisitorsPage() {
           onClearFilters={resetFilters}
           showFarmFilter={true}
           showAllOption={false}
-          isAdmin={false}
         />
 
         {/* 방문자 테이블 (페이징 적용) */}
@@ -269,11 +254,11 @@ export default function FarmVisitorsPage() {
           sortFn={sortFn}
         >
           {({ paginatedData, isLoadingMore, hasMore }) => (
-            <VisitorTable
+            <VisitorTableSheet
               visitors={paginatedData}
               showFarmColumn={false}
               loading={loading}
-              isAdmin={false}
+              isAdmin={isAdmin}
               onEdit={handleEdit}
               onDelete={handleDelete}
             />

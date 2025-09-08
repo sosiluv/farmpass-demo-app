@@ -1,7 +1,6 @@
 export const PAGE_HEADER = {
   PAGE_TITLE: "시스템 관리",
   PAGE_DESCRIPTION: "사용자, 농장, 시스템 로그 등을 관리합니다",
-  BREADCRUMB: "시스템 관리",
 
   FARM_DETAIL_TITLE: "농장 상세 정보",
   FARM_DETAIL_DESCRIPTION: "선택된 농장의 상세 정보를 확인할 수 있습니다.",
@@ -126,8 +125,9 @@ export const LABELS = {
   FARM_INFO_DESCRIPTION: "소속 농장, 권한",
   PERMISSIONS_INFO: "권한 정보",
   PERMISSIONS_INFO_DESCRIPTION: "세부 권한 설정",
-  // 로그 내보내기
 
+  // 로그 내보내기
+  LOG_BASIC_INFO_DESC: "액션, 메시지, 시간",
   LOG_LEVEL: "로그 레벨",
   ALL_LEVELS: "모든 레벨",
   INFO: "정보",
@@ -142,8 +142,8 @@ export const LABELS = {
   SYSTEM_INFO_DESC: "레벨, 카테고리",
   METADATA: "메타데이터",
   METADATA_DESC: "상세 정보, 컨텍스트",
-  // 농장 관리
 
+  // 농장 관리
   OWNER_INFO: "소유자 정보",
   MANAGER_INFO: "관리자 정보",
   NO_INFO: "정보 없음",
@@ -151,8 +151,9 @@ export const LABELS = {
   MEMBERS: "구성원",
   FARM_DESCRIPTION: "농장 설명",
   DETAIL_INFO_VIEW: "상세 정보 보기",
-  // 농장 필터
+  NO_FARM_INFO: "농장 정보가 없습니다.",
 
+  // 농장 필터
   SUSPENDED: "정지",
   // 농장 목록
   UNASSIGNED: "미지정",
@@ -327,6 +328,7 @@ export const LABELS = {
 
   // 단위 표시
   COUNT_UNIT: "{count}건",
+  DISPLAYED_ITEMS_COUNT: "{count}개 표시 중",
 
   // 권한 확인
   CHECKING_PERMISSION: "권한을 확인하는 중...",
@@ -337,7 +339,7 @@ export const PLACEHOLDERS = {
   FARM_TYPE_PLACEHOLDER: "농장 유형",
   STATUS_PLACEHOLDER: "상태",
   LOG_SEARCH_PLACEHOLDER: "로그 검색...",
-  USER_SEARCH_PLACEHOLDER: "이름 또는 이메일로 검색",
+  USER_SEARCH_PLACEHOLDER: "이름 또는 이메일로 검색...",
   ROLE_PLACEHOLDER: "권한",
   USER_STATUS_PLACEHOLDER: "상태",
 } as const;

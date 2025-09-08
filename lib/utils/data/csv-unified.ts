@@ -6,10 +6,11 @@
  */
 
 import Papa from "papaparse";
-import { getKSTDateTimeForFileName, formatDateTime } from "../datetime/date";
+import { formatDateTime, getKSTDateTimeForFileName } from "../datetime/date";
 import { devLog } from "../logging/dev-logger";
 import type { VisitorWithFarm } from "@/lib/types/visitor";
 import type { VisitorsExportOptions } from "@/components/admin/management/exports/types";
+import { getFarmTypeLabel } from "@/lib/constants/farm-types";
 
 // ============================================
 // 핵심 다운로드 함수 (고급 방식만 유지)
@@ -31,8 +32,6 @@ export const downloadAdvancedCSV = (
     });
 
     downloadCSVContent(csvContent, filename, { includeBOM, includeDate });
-
-    devLog.log(`고급 CSV 다운로드 완료: ${filename} (${data.length}건의 기록)`);
   } catch (error) {
     devLog.error("고급 CSV 다운로드 오류:", error);
     throw new Error("CSV 다운로드 중 오류가 발생했습니다.");
@@ -142,7 +141,8 @@ export const exportVisitorsCSV = (
 
     if (includeFarm && visitor.farms) {
       row["농장명"] = visitor.farms.farm_name || "알 수 없음";
-      row["농장 유형"] = visitor.farms.farm_type || "알 수 없음";
+      row["농장 유형"] =
+        getFarmTypeLabel(visitor.farms.farm_type || undefined) || "알 수 없음";
     }
 
     return row;

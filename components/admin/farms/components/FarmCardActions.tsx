@@ -1,7 +1,7 @@
 import { Button } from "@/components/ui/button";
-import { FarmQRCode } from "../farm-qr-code";
-import { Edit, Trash2, Users, QrCode } from "lucide-react";
-import type { Farm } from "@/lib/types/farm";
+import { FarmQRCodeSheet } from "../FarmQRCodeSheet";
+import { Edit, Trash2, Users } from "lucide-react";
+import type { Farm } from "@/lib/types/common";
 import Link from "next/link";
 import { BUTTONS, LABELS } from "@/lib/constants/farms";
 
@@ -23,12 +23,11 @@ export function FarmCardActions({
       {/* 첫 번째 줄: 주요 액션 */}
       <div className="flex gap-2">
         {/* QR 코드 버튼 - 더 세련된 디자인 */}
-        <FarmQRCode farmId={farm.id} farmName={farm.farm_name} />
+        <FarmQRCodeSheet farmId={farm.id} farmName={farm.farm_name} />
 
         {/* 구성원 버튼 - 더 세련된 디자인 */}
         <Button
           variant="outline"
-          size="sm"
           className="flex-1 min-w-0 bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200 hover:from-blue-100 hover:to-indigo-100 hover:border-blue-300 transition-all duration-200 group"
           asChild
         >
@@ -50,7 +49,6 @@ export function FarmCardActions({
           {/* 수정 버튼 - 더 세련된 디자인 */}
           <Button
             variant="outline"
-            size="sm"
             onClick={() => onEdit(farm)}
             className="flex-1 min-w-0 bg-gradient-to-r from-amber-50 to-orange-50 border-amber-200 hover:from-amber-100 hover:to-orange-100 hover:border-amber-300 transition-all duration-200 group"
             title={LABELS.EDIT_FARM_TOOLTIP}
@@ -64,7 +62,6 @@ export function FarmCardActions({
           {/* 삭제 버튼 - 더 세련된 디자인 */}
           <Button
             variant="outline"
-            size="sm"
             onClick={() => onDelete(farm.id)}
             className="flex-1 min-w-0 bg-gradient-to-r from-red-50 to-pink-50 border-red-200 hover:from-red-100 hover:to-pink-100 hover:border-red-300 transition-all duration-200 group"
             title={LABELS.DELETE_FARM_TOOLTIP}

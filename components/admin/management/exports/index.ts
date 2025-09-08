@@ -10,10 +10,10 @@ export type {
   VisitorsExportOptions,
 } from "./types";
 
-export { ExportDialogWrapper } from "./ExportDialogWrapper";
+export { ExportSheetWrapper } from "./ExportSheetWrapper";
 export { ExportActions } from "./ExportActions";
 export { DateRangeSection } from "./DateRangeSection";
 export { FilterSection } from "./FilterSection";
 export { OptionsSection } from "./OptionsSection";
 export { SummarySection } from "./SummarySection";
-export { useExportDialog } from "./useExportDialog";
+export { useExportSheet } from "./useExportSheet";

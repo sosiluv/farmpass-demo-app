@@ -1,16 +1,17 @@
 "use client";
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { useAuth } from "@/components/providers/auth-provider";
 import { apiClient } from "@/lib/utils/data/api-client";
 import { createClient } from "@/lib/supabase/client";
-import { profileKeys } from "@/lib/hooks/query/query-keys";
-import type {
-  ProfileFormData,
-  CompanyFormData,
-  PasswordFormData,
-} from "@/lib/types/account";
-import { useAuthActions } from "@/hooks/useAuthActions";
+import { profileKeys, farmsKeys } from "@/lib/hooks/query/query-keys";
+import type { CompanyFormData } from "@/lib/utils/validation/company-validation";
+import type { ChangePasswordFormData } from "@/lib/utils/validation/auth-validation";
+import type { ProfileFormData } from "@/lib/utils/validation/profile-validation";
+import { useAuthActions } from "@/hooks/auth/useAuthActions";
+import {
+  mapRawErrorToCode,
+  getErrorMessage,
+} from "@/lib/utils/error/errorUtil";
 
 /**
  * 프로필 정보 저장 Mutation Hook
@@ -25,7 +26,7 @@ export function useUpdateProfileMutation() {
       // 변경된 필드만 PATCH로 보냄
       const profileData: any = {};
       if (data.name !== undefined) profileData.name = data.name;
-      if (data.phoneNumber !== undefined) profileData.phone = data.phoneNumber;
+      if (data.phone !== undefined) profileData.phone = data.phone;
       if (data.position !== undefined) profileData.position = data.position;
       if (data.department !== undefined)
         profileData.department = data.department;
@@ -42,6 +43,9 @@ export function useUpdateProfileMutation() {
     onSuccess: async () => {
       // 프로필 데이터 캐시 무효화
       await queryClient.invalidateQueries({ queryKey: profileKeys.all });
+
+      // 농장 관련 쿼리도 무효화 (아바타 변경으로 인한 영향)
+      await queryClient.invalidateQueries({ queryKey: farmsKeys.all });
     },
   });
 }
@@ -100,7 +104,7 @@ export function useChangePasswordMutation() {
 
   return useMutation({
     mutationFn: async (
-      data: PasswordFormData
+      data: ChangePasswordFormData
     ): Promise<{ success: boolean; error?: string }> => {
       const result = await changePassword({
         newPassword: data.newPassword,
@@ -142,15 +146,21 @@ export function useUpdateAvatarSeedMutation() {
         .select()
         .single();
 
-      if (error) throw error;
+      if (error) {
+        const errorCode = mapRawErrorToCode(error, "db");
+        const message = getErrorMessage(errorCode);
+        throw new Error(message);
+      }
 
       return {
         success: true,
         message: "아바타가 성공적으로 업데이트되었습니다.",
       };
     },
-    onSuccess: async (data, variables) => {
+    onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: profileKeys.all });
+
+      await queryClient.invalidateQueries({ queryKey: farmsKeys.all });
     },
   });
 }

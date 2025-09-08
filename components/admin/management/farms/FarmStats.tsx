@@ -14,7 +14,6 @@ interface FarmStatsProps {
   trends?: {
     farmGrowth: number;
     farmOwnersTrend: number;
-    regionsTrend: number;
     registrationTrend: number;
   };
 }

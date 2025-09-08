@@ -3,13 +3,10 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { AlertCircle, AlertTriangle, Info } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { LABELS, PAGE_HEADER } from "@/lib/constants/monitoring";
+import type { ErrorLog } from "@/lib/types/monitoring";
 
 interface ErrorLogsCardProps {
-  errors: Array<{
-    timestamp: string;
-    level: string;
-    message: string;
-  }>;
+  errors: ErrorLog[];
 }
 
 export function ErrorLogsCard({ errors }: ErrorLogsCardProps) {
@@ -18,7 +15,7 @@ export function ErrorLogsCard({ errors }: ErrorLogsCardProps) {
     return (
       <Card className="bg-gradient-to-br from-background to-muted/20">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
+          <CardTitle className="flex items-center gap-2 text-base">
             <AlertCircle className="h-5 w-5" />
             {PAGE_HEADER.RECENT_ERRORS}
           </CardTitle>
@@ -58,7 +55,7 @@ export function ErrorLogsCard({ errors }: ErrorLogsCardProps) {
     <Card className="bg-gradient-to-br from-background to-muted/20">
       <CardHeader>
         <div className="flex items-center justify-between">
-          <CardTitle className="flex items-center gap-2">
+          <CardTitle className="flex items-center gap-2 text-base">
             <AlertCircle className="h-5 w-5" />
             {PAGE_HEADER.RECENT_ERRORS}
           </CardTitle>

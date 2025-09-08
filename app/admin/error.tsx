@@ -15,7 +15,6 @@ export default function AdminErrorPage({ error, reset }: AdminErrorPageProps) {
       reset={reset}
       title={ERROR_CONFIGS.GENERAL.title}
       description={ERROR_CONFIGS.GENERAL.description}
-      showNavigation={true}
     />
   );
 }

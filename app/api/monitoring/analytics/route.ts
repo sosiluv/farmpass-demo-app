@@ -1,8 +1,12 @@
 import { google } from "googleapis";
 import { NextRequest, NextResponse } from "next/server";
-import { logSystemWarning } from "@/lib/utils/logging/system-log";
-import { getClientIP, getUserAgent } from "@/lib/server/ip-helpers";
+import { createSystemLog } from "@/lib/utils/logging/system-log";
+import { LOG_MESSAGES } from "@/lib/utils/logging/log-templates";
 import { requireAuth } from "@/lib/server/auth-utils";
+import {
+  getErrorResultFromRawError,
+  makeErrorResponseFromResult,
+} from "@/lib/utils/error/errorUtil";
 
 // Google Analytics(GA4) 데이터 패치
 async function fetchAnalyticsData() {
@@ -134,33 +138,44 @@ async function fetchAnalyticsData() {
 }
 
 export async function GET(request: NextRequest) {
-  const authResult = await requireAuth(true); // admin 권한 필수
-  if (!authResult.success || !authResult.user) {
-    return authResult.response!;
-  }
-  const clientIP = getClientIP(request);
-  const userAgent = getUserAgent(request);
+  let user = null;
+
   try {
+    const authResult = await requireAuth(true); // admin 권한 필수
+    if (!authResult.success || !authResult.user) {
+      return authResult.response!;
+    }
+
+    user = authResult.user;
     const analyticsData = await fetchAnalyticsData();
     return NextResponse.json(analyticsData);
   } catch (error) {
-    await logSystemWarning(
+    // 모니터링 분석 데이터 조회 시스템 오류 로그
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    await createSystemLog(
       "MONITORING_ANALYTICS_FAILED",
-      "GA4 데이터 조회 실패",
-      { ip: clientIP, userAgent },
+      LOG_MESSAGES.MONITORING_ANALYTICS_FAILED(errorMessage),
+      "error",
+      user?.id ? { id: user.id, email: user.email || "" } : undefined,
+      "system",
+      "monitoring_analytics",
       {
-        success: false,
-        error: "ANALYTICS_CHECK_FAILED",
-        message: error instanceof Error ? error.message : "Unknown error",
-      }
-    );
-    return NextResponse.json(
-      {
-        success: false,
-        error: "ANALYTICS_CHECK_FAILED",
-        message: error instanceof Error ? error.message : "Unknown error",
+        action_type: "monitoring_event",
+        event: "analytics_check_failed",
+        error_message: errorMessage,
+        user_id: user?.id,
+        user_email: user?.email,
       },
-      { status: 500 }
+      request
     );
+
+    // 비즈니스 에러 또는 시스템 에러를 표준화된 에러 코드로 매핑
+    const result = getErrorResultFromRawError(error, {
+      operation: "get_analytics_data",
+    });
+
+    return NextResponse.json(makeErrorResponseFromResult(result), {
+      status: result.status,
+    });
   }
 }

@@ -1,10 +1,9 @@
 "use client";
 
 import type React from "react";
-import { useState, useEffect } from "react";
+import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
@@ -13,15 +12,12 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Mail, Lock, Loader2 } from "lucide-react";
 import { motion } from "framer-motion";
 import { useCommonToast } from "@/lib/utils/notification/toast-messages";
 import { devLog } from "@/lib/utils/logging/dev-logger";
 import { ErrorBoundary } from "@/components/error/error-boundary";
 import { ERROR_CONFIGS } from "@/lib/constants/error";
-import { Logo } from "@/components/common";
-import { getAuthErrorMessage } from "@/lib/utils/validation/validation";
+import { Logo } from "@/components/common/logo";
 import { PageLoading } from "@/components/ui/loading";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -30,34 +26,40 @@ import {
   loginFormSchema,
   type LoginFormData,
 } from "@/lib/utils/validation/auth-validation";
+import { Form, FormField } from "@/components/ui/form";
+import { EmailField, PasswordField, AuthButton } from "@/components/auth";
 import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
-import {
-  LABELS,
-  PLACEHOLDERS,
   PAGE_HEADER,
   BUTTONS,
   PAGE_LOADING,
+  SOCIAL_BUTTON_CONFIG,
 } from "@/lib/constants/auth";
 import { createClient } from "@/lib/supabase/client";
-import { useAuthActions } from "@/hooks/useAuthActions";
+import { useAuthActions } from "@/hooks/auth/useAuthActions";
+import { useNotificationService } from "@/hooks/notification/useNotificationService";
+import { SocialLoginButton } from "@/components/ui/social-login-button";
+import { useLoginForm } from "@/hooks/auth/useLoginForm";
 
 export default function LoginPage() {
-  const [loading, setLoading] = useState(false);
-  const [formError, setFormError] = useState<string>("");
-  const [kakaoLoading, setKakaoLoading] = useState(false);
-  const [googleLoading, setGoogleLoading] = useState(false);
-  const [checkingSession, setCheckingSession] = useState(true);
-  const [redirecting, setRedirecting] = useState(false);
+  const {
+    loading,
+    checkingSession,
+    setSessionChecked,
+    kakaoLoading,
+    setKakaoLoading,
+    googleLoading,
+    setGoogleLoading,
+    formError,
+    redirecting,
+    setRedirecting,
+    handleLogin,
+    handleSocialLogin,
+  } = useLoginForm();
+
   const router = useRouter();
-  const { showInfo, showSuccess, showError } = useCommonToast();
-  const { signIn, signOut } = useAuthActions();
+  const { showInfo } = useCommonToast();
+  const { signOut } = useAuthActions();
+  const { handleUnsubscription } = useNotificationService();
 
   const form = useForm<LoginFormData>({
     resolver: zodResolver(loginFormSchema),
@@ -70,6 +72,12 @@ export default function LoginPage() {
   // 세션 확인 및 세션 만료 파라미터 정리
   useEffect(() => {
     const checkSession = async () => {
+      // 이미 리다이렉트 중이면 세션 체크 하지 않음
+      if (redirecting) {
+        setSessionChecked();
+        return;
+      }
+
       // 타임아웃 설정 (5초)
       const timeoutPromise = new Promise((_, reject) => {
         setTimeout(() => reject(new Error("세션 확인 타임아웃")), 5000);
@@ -92,32 +100,32 @@ export default function LoginPage() {
 
               // 세션은 있지만 유저 정보를 가져올 수 없으면 세션이 유효하지 않음
               if (error || !user) {
-                devLog.warn("세션은 있지만 유저 정보 검증 실패, 로그아웃 처리");
                 await signOut();
-                setCheckingSession(false);
+                setRedirecting(false); // 리다이렉트하지 않고 로그인 페이지에 머물기
+                setSessionChecked(); // 세션 확인 완료
                 return;
               }
 
-              // 유효한 세션이면 대시보드로 리다이렉트
+              // 유효한 세션이면 프로필과 약관 동의 상태를 확인한 후 리다이렉트
               setRedirecting(true);
-              setCheckingSession(false);
               router.replace("/admin/dashboard");
+
               return;
             } catch (userError) {
-              devLog.warn("사용자 정보 검증 중 오류:", userError);
-              await signOut();
-              setCheckingSession(false);
+              setRedirecting(false);
+              setSessionChecked(); // 세션 확인 완료
               return;
             }
           }
+          // 세션이 없으면 세션 확인 완료
+          setSessionChecked();
         })();
 
         // 타임아웃과 함께 실행
         await Promise.race([sessionPromise, timeoutPromise]);
       } catch (error) {
         devLog.error("세션 확인 중 오류:", error);
-      } finally {
-        setCheckingSession(false);
+        setSessionChecked(); // 오류 발생 시에도 세션 확인 완료
       }
     };
 
@@ -126,9 +134,24 @@ export default function LoginPage() {
     const sessionExpired = urlParams.get("session_expired");
 
     if (sessionExpired === "true") {
-      devLog.log("[LOGIN] 세션 만료로 인한 로그인 페이지 진입 - 구독은 유지");
+      devLog.log(
+        "[LOGIN] 세션 만료로 인한 로그인 페이지 진입 - 구독 해제 수행"
+      );
 
-      // URL에서 파라미터 제거 (구독 관련 처리는 하지 않음)
+      // 세션 만료 시 브라우저 구독 해제 수행
+      const handleSessionExpiredCleanup = async () => {
+        try {
+          await handleUnsubscription(); // 구독을 전달하지 않으면 내부에서 찾음
+          devLog.log("[LOGIN] 세션 만료로 인한 구독 해제 완료");
+        } catch (error) {
+          devLog.error("[LOGIN] 세션 만료 시 구독 해제 실패:", error);
+        }
+      };
+
+      // 구독 해제 실행
+      handleSessionExpiredCleanup();
+
+      // URL에서 파라미터 제거
       const newUrl = new URL(window.location.href);
       newUrl.searchParams.delete("session_expired");
       window.history.replaceState({}, "", newUrl.toString());
@@ -140,7 +163,7 @@ export default function LoginPage() {
     }
 
     checkSession();
-  }, [router, showInfo]);
+  }, [router, showInfo, signOut, redirecting]);
 
   // 소셜 로그인 무한 로딩 방지
   useEffect(() => {
@@ -158,87 +181,21 @@ export default function LoginPage() {
     };
   }, []);
 
-  // 로딩 상태 표시 (세션 확인 중, 로그인 중, 또는 리다이렉트 중일 때)
-  if (checkingSession || loading || redirecting) {
+  // 로딩 상태 표시 (세션 확인 중 또는 리다이렉트 중일 때만)
+  if (checkingSession || redirecting) {
     return (
       <PageLoading
         text={
           checkingSession
             ? PAGE_LOADING.CHECKING_SESSION
-            : redirecting
-            ? PAGE_LOADING.REDIRECTING_TO_DASHBOARD
-            : BUTTONS.LOGIN_LOADING
+            : PAGE_LOADING.REDIRECTING_TO_DASHBOARD
         }
         subText={PAGE_LOADING.SUB_TEXT}
-        variant="gradient"
+        variant="lottie"
         fullScreen={true}
       />
     );
   }
-
-  const handleLogin = async (data: LoginFormData) => {
-    setLoading(true);
-    setFormError("");
-    showInfo("로그인 시도 중", "잠시만 기다려주세요.");
-
-    try {
-      const result = await signIn({
-        email: data.email,
-        password: data.password,
-      });
-
-      if (result.success) {
-        showSuccess("로그인 성공", result.message || "대시보드로 이동합니다.");
-        setRedirecting(true);
-        router.replace("/admin/dashboard");
-        return;
-      }
-    } catch (error: any) {
-      devLog.error("Login failed:", error);
-
-      const authError = getAuthErrorMessage(error);
-      setFormError(authError.message);
-      showError("로그인 실패", authError.message);
-      setRedirecting(false);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // 공통 소셜 로그인 핸들러
-  const handleSocialLogin = async (
-    provider: "kakao" | "google",
-    setLoading: React.Dispatch<React.SetStateAction<boolean>>
-  ) => {
-    setLoading(true);
-    try {
-      const supabase = createClient();
-
-      // 카카오와 구글 모두 계정 선택 화면 강제 표시
-      const oauthOptions = {
-        redirectTo: `${window.location.origin}/api/auth/callback`,
-        queryParams: {
-          prompt: "select_account", // 계정 선택 화면 강제 표시
-        },
-      };
-
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider,
-        options: oauthOptions,
-      });
-
-      if (error) {
-        devLog.error(`${provider} 로그인 오류:`, error);
-        setLoading(false);
-        showError(`${provider} 로그인 실패`, error.message);
-      }
-      // 성공 시에는 리다이렉트가 발생하므로 로딩 상태를 유지
-    } catch (error) {
-      devLog.error(`${provider} 로그인 예외:`, error);
-      setLoading(false);
-      showError(`${provider} 로그인 실패`, "로그인 중 오류가 발생했습니다.");
-    }
-  };
 
   // 카카오 로그인 핸들러
   const handleKakaoLogin = () => {
@@ -257,7 +214,7 @@ export default function LoginPage() {
       title={ERROR_CONFIGS.LOADING.title}
       description={ERROR_CONFIGS.LOADING.description}
     >
-      <div className="flex min-h-screen items-center justify-center bg-gradient-farm p-4">
+      <div className="flex min-h-screen items-center justify-center bg-gradient-farm p-3">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -269,7 +226,7 @@ export default function LoginPage() {
               <div className="mx-auto mb-4 flex justify-center">
                 <Logo size="xl" />
               </div>
-              <CardTitle className="text-3xl">
+              <CardTitle className="text-2xl">
                 {PAGE_HEADER.LOGIN_TITLE}
               </CardTitle>
               <CardDescription>{PAGE_HEADER.LOGIN_DESCRIPTION}</CardDescription>
@@ -284,138 +241,61 @@ export default function LoginPage() {
                     control={form.control}
                     name="email"
                     render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="text-sm text-gray-800">
-                          {LABELS.EMAIL} <span className="text-red-500">*</span>
-                        </FormLabel>
-                        <div className="relative">
-                          <Mail className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                          <FormControl>
-                            <Input
-                              {...field}
-                              type="email"
-                              placeholder={PLACEHOLDERS.EMAIL}
-                              autoComplete="username"
-                              className="h-12 pl-10 input-focus"
-                              disabled={loading || redirecting}
-                            />
-                          </FormControl>
-                        </div>
-                        <FormMessage />
-                      </FormItem>
+                      <EmailField
+                        field={field}
+                        loading={loading || redirecting}
+                        autoComplete="username"
+                        showFormMessage={true}
+                      />
                     )}
                   />
                   <FormField
                     control={form.control}
                     name="password"
                     render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="text-sm text-gray-800">
-                          {LABELS.PASSWORD}{" "}
-                          <span className="text-red-500">*</span>
-                        </FormLabel>
-                        <div className="relative">
-                          <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                          <FormControl>
-                            <Input
-                              {...field}
-                              type="password"
-                              placeholder={PLACEHOLDERS.PASSWORD}
-                              autoComplete="current-password"
-                              className="h-12 pl-10 input-focus"
-                              disabled={loading || redirecting}
-                            />
-                          </FormControl>
-                        </div>
-                        <FormMessage />
-                      </FormItem>
+                      <PasswordField
+                        type="current"
+                        field={field}
+                        loading={loading || redirecting}
+                        showPasswordStrength={false}
+                      />
                     )}
                   />
                   {formError && (
                     <p className="text-sm text-red-500">{formError}</p>
                   )}
-                  <Button
-                    type="submit"
+                  <AuthButton
+                    type="login"
+                    loading={loading}
+                    redirecting={redirecting}
                     className="h-12 w-full"
-                    disabled={loading || redirecting}
-                  >
-                    {loading || redirecting ? (
-                      <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        {redirecting
-                          ? BUTTONS.REDIRECTING
-                          : BUTTONS.LOGIN_LOADING}
-                      </>
-                    ) : (
-                      BUTTONS.LOGIN_BUTTON
-                    )}
-                  </Button>
-                  {/* 카카오 로그인 버튼 */}
-                  <Button
-                    type="button"
-                    onClick={handleKakaoLogin}
-                    className="w-full h-12 min-h-[48px] rounded-md shadow-sm relative flex items-center justify-center"
-                    style={{
-                      background: "#FEE500",
-                      color: "#191600",
-                      border: "1px solid #e0e0e0",
-                      marginTop: 8,
-                      fontWeight: 600,
-                      padding: 0,
-                    }}
-                    disabled={kakaoLoading || redirecting}
-                  >
-                    {kakaoLoading ? (
-                      <div className="flex items-center justify-center w-full h-full">
-                        <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                        {BUTTONS.LOGIN_LOADING}
-                      </div>
-                    ) : (
-                      <>
-                        <img
-                          src="/btn_kakao.svg"
-                          alt={BUTTONS.KAKAO_LOGIN}
-                          className="absolute left-4 top-1/2 -translate-y-1/2 h-6 w-6"
+                  />
+                  <div className="flex items-center my-4">
+                    <div className="flex-grow h-px bg-gray-200" />
+                    <span className="mx-3 text-xs text-gray-400">또는</span>
+                    <div className="flex-grow h-px bg-gray-200" />
+                  </div>
+                  {/* 소셜 로그인 버튼들 */}
+                  <div className="space-y-4">
+                    {SOCIAL_BUTTON_CONFIG.map((btn) => {
+                      const loading =
+                        btn.provider === "kakao" ? kakaoLoading : googleLoading;
+                      const onClick =
+                        btn.provider === "kakao"
+                          ? handleKakaoLogin
+                          : handleGoogleLogin;
+                      const disabled = loading || redirecting;
+                      return (
+                        <SocialLoginButton
+                          key={btn.provider}
+                          {...btn}
+                          loading={loading}
+                          onClick={onClick}
+                          disabled={disabled}
                         />
-                        <span className="w-full text-center block">
-                          {BUTTONS.KAKAO_LOGIN}
-                        </span>
-                      </>
-                    )}
-                  </Button>
-                  {/* 구글 로그인 버튼 */}
-                  <Button
-                    type="button"
-                    onClick={handleGoogleLogin}
-                    className="w-full h-12 min-h-[48px] rounded-md shadow-sm relative flex items-center justify-center"
-                    style={{
-                      background: "#fff",
-                      color: "#191600",
-                      border: "1px solid #e0e0e0",
-                      marginTop: 8,
-                      fontWeight: 600,
-                      padding: 0,
-                    }}
-                    disabled={googleLoading || redirecting}
-                  >
-                    {googleLoading ? (
-                      <div className="flex items-center justify-center w-full h-full">
-                        <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                        {BUTTONS.LOGIN_LOADING}
-                      </div>
-                    ) : (
-                      <>
-                        <img
-                          src="/btn_google.svg"
-                          alt={BUTTONS.GOOGLE_LOGIN}
-                          className="absolute left-4 top-1/2 -translate-y-1/2 h-6 w-6"
-                        />
-                        <span className="w-full text-center block">
-                          {BUTTONS.GOOGLE_LOGIN}
-                        </span>
-                      </>
-                    )}
-                  </Button>
+                      );
+                    })}
+                  </div>
                 </form>
               </Form>
             </CardContent>

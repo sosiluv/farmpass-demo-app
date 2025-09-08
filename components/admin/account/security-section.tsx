@@ -3,16 +3,31 @@
 import { motion } from "framer-motion";
 import { ErrorBoundary } from "@/components/error/error-boundary";
 import { ERROR_CONFIGS } from "@/lib/constants/error";
-import type { SecuritySectionProps } from "@/lib/types/account";
+import type { ChangePasswordFormData } from "@/lib/utils/validation/auth-validation";
 import { PasswordSection } from "./password-section";
 import { LoginActivitySection } from "./login-activity-section";
 import WithdrawSection from "./withdraw-section";
+import { Profile } from "@/lib/types/common";
+
+interface SecuritySectionProps {
+  profile: Profile;
+  loading: boolean;
+  onPasswordChange: (data: ChangePasswordFormData) => Promise<void>;
+}
 
 export function SecuritySection({
   profile,
   loading,
   onPasswordChange,
-}: SecuritySectionProps) {
+  socialUserInfo,
+}: SecuritySectionProps & {
+  socialUserInfo?: {
+    isSocialUser: boolean;
+    socialProvider: string;
+    allProviders: string[];
+    socialProviders: string[];
+  };
+}) {
   return (
     <ErrorBoundary
       title={ERROR_CONFIGS.LOADING.title}
@@ -28,6 +43,7 @@ export function SecuritySection({
           profile={profile}
           loading={loading}
           onPasswordChange={onPasswordChange}
+          socialUserInfo={socialUserInfo}
         />
         <LoginActivitySection profile={profile} />
         <WithdrawSection />

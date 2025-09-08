@@ -4,7 +4,7 @@ DROP FUNCTION IF EXISTS handle_login_event() CASCADE;
 
 
 --  방문자 데이터 삭제 실행 전용 함수 (시스템 사용자 정보 포함)
-
+DROP FUNCTION IF EXISTS auto_cleanup_expired_visitor_entries() CASCADE;
 CREATE OR REPLACE FUNCTION auto_cleanup_expired_visitor_entries()
 RETURNS TABLE(
   execution_id UUID,
@@ -29,18 +29,9 @@ DECLARE
   v_admin_email TEXT;
   v_error_message TEXT;
 BEGIN
-  -- 첫 번째 admin 사용자 정보 가져오기
-  SELECT id, email 
-  INTO v_admin_user_id, v_admin_email
-  FROM profiles 
-  WHERE account_type = 'admin' 
-  ORDER BY created_at 
-  LIMIT 1;
-  
-  -- admin 사용자가 없으면 NULL 사용
-  IF v_admin_user_id IS NULL THEN
-    v_admin_email := 'admin@system';
-  END IF;
+  -- admin 사용자 정보 설정 (시스템 자동화용)
+  v_admin_user_id := '00000000-0000-0000-0000-000000000000'::UUID;
+  v_admin_email := 'system@samwon1141.com';
 
   -- 실행 시작 로그 (logScheduledJob 형식)
   INSERT INTO system_logs (
@@ -181,6 +172,7 @@ END;
 $$;
 
 -- 시스템 로그 자동 정리 함수
+DROP FUNCTION IF EXISTS auto_cleanup_expired_system_logs() CASCADE;
 CREATE OR REPLACE FUNCTION auto_cleanup_expired_system_logs()
 RETURNS TABLE(
   execution_id UUID,
@@ -205,18 +197,9 @@ DECLARE
   v_admin_email TEXT;
   v_error_message TEXT;
 BEGIN
-  -- 첫 번째 admin 사용자 정보 가져오기
-  SELECT id, email 
-  INTO v_admin_user_id, v_admin_email
-  FROM profiles 
-  WHERE account_type = 'admin' 
-  ORDER BY created_at 
-  LIMIT 1;
-  
-  -- admin 사용자가 없으면 NULL 사용
-  IF v_admin_user_id IS NULL THEN
-    v_admin_email := 'admin@system';
-  END IF;
+  -- admin 사용자 정보 설정 (시스템 자동화용)
+  v_admin_user_id := '00000000-0000-0000-0000-000000000000'::UUID;
+  v_admin_email := 'system@samwon1141.com';
 
   -- 실행 시작 로그 (logScheduledJob 형식)
   INSERT INTO system_logs (
@@ -364,61 +347,12 @@ BEGIN
 END;
 $$;
 
--- 통합 자동 정리 함수 (방문자 데이터 + 시스템 로그)
--- CREATE OR REPLACE FUNCTION auto_cleanup_all_expired_data()
--- RETURNS TABLE(
---   cleanup_type TEXT,
---   execution_id UUID,
---   deleted_count INTEGER,
---   retention_days INTEGER,
---   cutoff_date TIMESTAMPTZ,
---   execution_time INTERVAL,
---   status TEXT
--- )
--- LANGUAGE plpgsql
--- SECURITY DEFINER
--- SET search_path = public
--- AS $$
--- DECLARE
---   visitor_result RECORD;
---   log_result RECORD;
--- BEGIN
---   -- 방문자 데이터 정리
---   FOR visitor_result IN 
---     SELECT * FROM auto_cleanup_expired_visitor_entries()
---   LOOP
---     RETURN QUERY SELECT 
---       'VISITOR_DATA'::TEXT,
---       visitor_result.execution_id,
---       visitor_result.deleted_count,
---       visitor_result.retention_days,
---       visitor_result.cutoff_date,
---       visitor_result.execution_time,
---       visitor_result.status;
---   END LOOP;
-  
---   -- 시스템 로그 정리
---   FOR log_result IN 
---     SELECT * FROM auto_cleanup_expired_system_logs()
---   LOOP
---     RETURN QUERY SELECT 
---       'SYSTEM_LOGS'::TEXT,
---       log_result.execution_id,
---       log_result.deleted_count,
---       log_result.retention_days,
---       log_result.cutoff_date,
---       log_result.execution_time,
---       log_result.status;
---   END LOOP;
--- END;
--- $$;
-
-
 
 
 ------------------------------------------------------------------------------------------------------------------------------------------------
 
 -- 만료된 푸시 구독 정리 함수 (개선된 버전)
+DROP FUNCTION IF EXISTS auto_cleanup_expired_push_subscriptions() CASCADE;
 CREATE OR REPLACE FUNCTION auto_cleanup_expired_push_subscriptions()
 RETURNS TABLE(
   execution_id UUID,
@@ -460,18 +394,9 @@ DECLARE
   v_subscription RECORD;
   v_old_soft_delete_cutoff TIMESTAMPTZ;
 BEGIN
-  -- 첫 번째 admin 사용자 정보 가져오기
-  SELECT id, email 
-  INTO v_admin_user_id, v_admin_email
-  FROM profiles 
-  WHERE account_type = 'admin' 
-  ORDER BY created_at 
-  LIMIT 1;
-  
-  -- admin 사용자가 없으면 NULL 사용
-  IF v_admin_user_id IS NULL THEN
-    v_admin_email := 'admin@system';
-  END IF;
+  -- admin 사용자 정보 설정 (시스템 자동화용)
+  v_admin_user_id := '00000000-0000-0000-0000-000000000000'::UUID;
+  v_admin_email := 'system@samwon1141.com';
 
   -- 실행 시작 로그 (logScheduledJob 형식)
   INSERT INTO system_logs (
@@ -509,10 +434,10 @@ BEGIN
   BEGIN
     -- 시스템 설정에서 정리 옵션 가져오기
     SELECT 
-      subscriptionCleanupInactive,
-      subscriptionForceDelete,
-      subscriptionFailCountThreshold,
-      subscriptionCleanupDays
+      "subscriptionCleanupInactive",
+      "subscriptionForceDelete",
+      "subscriptionFailCountThreshold",
+      "subscriptionCleanupDays"
     INTO v_cleanup_inactive, v_force_delete, 
          v_fail_count_threshold, v_delete_after_days
     FROM system_settings 
@@ -791,7 +716,7 @@ $$;
 -- =========================================================================================================
 -- 알림(notifications) 30일 초과 데이터 자동 삭제 함수
 -- =========================================================================================================
-
+DROP FUNCTION IF EXISTS auto_cleanup_expired_notifications() CASCADE;
 CREATE OR REPLACE FUNCTION auto_cleanup_expired_notifications()
 RETURNS TABLE(
   execution_id UUID,
@@ -816,16 +741,9 @@ DECLARE
   v_admin_email TEXT;
   v_error_message TEXT;
 BEGIN
-  -- 첫 번째 admin 사용자 정보 가져오기
-  SELECT id, email 
-  INTO v_admin_user_id, v_admin_email
-  FROM profiles 
-  WHERE account_type = 'admin' 
-  ORDER BY created_at 
-  LIMIT 1;
-  IF v_admin_user_id IS NULL THEN
-    v_admin_email := 'admin@system';
-  END IF;
+  -- admin 사용자 정보 설정 (시스템 자동화용)
+  v_admin_user_id := '00000000-0000-0000-0000-000000000000'::UUID;
+  v_admin_email := 'system@samwon1141.com';
 
   -- 실행 시작 로그
   INSERT INTO system_logs (
@@ -1110,13 +1028,9 @@ DECLARE
   v_admin_user_id UUID;
   v_admin_email TEXT;
 BEGIN
-  -- 첫 번째 admin 사용자 정보 가져오기
-  SELECT id, email 
-  INTO v_admin_user_id, v_admin_email
-  FROM profiles 
-  WHERE account_type = 'admin' 
-  ORDER BY created_at 
-  LIMIT 1;
+  -- admin 사용자 정보 설정 (시스템 자동화용)
+  v_admin_user_id := '00000000-0000-0000-0000-000000000000'::UUID;
+  v_admin_email := 'system@samwon1141.com';
 
   -- 시스템 설정에서 보관 기간 가져오기
   SELECT 

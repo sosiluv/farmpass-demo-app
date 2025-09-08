@@ -7,31 +7,30 @@ import {
   FormItem,
   FormMessage,
 } from "@/components/ui/form";
-import type { UseFormReturn } from "react-hook-form";
-import type { VisitorFormData } from "@/lib/utils/validation/visitor-validation";
+import type { UseFormReturn, FieldValues, Path } from "react-hook-form";
 import { LABELS } from "@/lib/constants/visitor";
 import { Shield } from "lucide-react";
 
-interface DisinfectionFieldProps {
-  form: UseFormReturn<VisitorFormData>;
+interface DisinfectionFieldProps<T extends FieldValues = any> {
+  form: UseFormReturn<T>;
   className?: string;
 }
 
-export const DisinfectionField = ({
+export const DisinfectionField = <T extends FieldValues = any>({
   form,
   className = "",
-}: DisinfectionFieldProps) => {
+}: DisinfectionFieldProps<T>) => {
   return (
     <FormField
       control={form.control}
-      name="disinfectionCheck"
+      name={"disinfection_check" as Path<T>}
       render={({ field }) => (
-        <FormItem className={className}>
+        <FormItem className={`space-y-2 md:col-span-2 ${className}`}>
           <FormControl>
-            <div className="flex items-center space-x-2 sm:space-x-3 p-2.5 sm:p-3 bg-green-50 border border-green-200 rounded-lg mb-3 sm:mb-4 mt-2">
+            <div className="flex items-center space-x-2 p-3 bg-green-50 border border-green-200 rounded-lg">
               <Checkbox
-                id="visitor-disinfectionCheck"
-                name="disinfectionCheck"
+                id="visitor-disinfection_check"
+                name="disinfection_check"
                 checked={field.value}
                 onCheckedChange={(checked) => {
                   // 비동기적으로 상태 업데이트
@@ -42,10 +41,10 @@ export const DisinfectionField = ({
                 className="w-4 h-4 sm:w-5 sm:h-5"
               />
               <Label
-                htmlFor="visitor-disinfectionCheck"
-                className="flex items-center gap-1.5 sm:gap-2 font-medium text-sm sm:text-base"
+                htmlFor="visitor-disinfection_check"
+                className="flex items-center gap-2 font-medium text-sm"
               >
-                <Shield className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-green-600" />
+                <Shield className="h-4 w-4 text-green-600" />
                 {LABELS.DISINFECTION}
               </Label>
             </div>

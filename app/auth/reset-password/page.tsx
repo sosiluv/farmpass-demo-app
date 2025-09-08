@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
@@ -14,30 +13,16 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
-import { Mail, Key, Loader2 } from "lucide-react";
+import { Form, FormField } from "@/components/ui/form";
 import { motion } from "framer-motion";
 import { useCommonToast } from "@/lib/utils/notification/toast-messages";
-import { Logo } from "@/components/common";
+import { Logo } from "@/components/common/logo";
 import { apiClient } from "@/lib/utils/data";
 import { resetPasswordRequestFormSchema } from "@/lib/utils/validation/auth-validation";
 import type { ResetPasswordRequestFormData } from "@/lib/utils/validation/auth-validation";
-import { getAuthErrorMessage } from "@/lib/utils/validation";
 import { handleError } from "@/lib/utils/error";
-import {
-  BUTTONS,
-  LABELS,
-  PAGE_HEADER,
-  PLACEHOLDERS,
-} from "@/lib/constants/auth";
+import { BUTTONS, PAGE_HEADER } from "@/lib/constants/auth";
+import { EmailField, AuthButton } from "@/components/auth";
 
 export default function ResetPasswordPage() {
   const [loading, setLoading] = useState(false);
@@ -73,15 +58,18 @@ export default function ResetPasswordPage() {
       router.push("/auth/login");
     } catch (error) {
       handleError(error, { context: "reset-password-request" });
-      const authError = getAuthErrorMessage(error);
-      showError("오류", authError.message);
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : "알 수 없는 오류가 발생했습니다.";
+      showError("오류", errorMessage);
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gradient-farm p-4">
+    <div className="flex min-h-screen items-center justify-center bg-gradient-farm p-3">
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -110,45 +98,20 @@ export default function ResetPasswordPage() {
                   control={form.control}
                   name="email"
                   render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-sm text-gray-800">
-                        {LABELS.EMAIL} <span className="text-red-500">*</span>
-                      </FormLabel>
-                      <div className="relative">
-                        <Mail className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                        <FormControl>
-                          <Input
-                            {...field}
-                            type="email"
-                            placeholder={PLACEHOLDERS.EMAIL}
-                            autoComplete="username"
-                            className="h-12 pl-10 input-focus"
-                            disabled={loading}
-                          />
-                        </FormControl>
-                      </div>
-                      <FormMessage />
-                    </FormItem>
+                    <EmailField
+                      field={field}
+                      loading={loading}
+                      autoComplete="username"
+                      showFormMessage={true}
+                    />
                   )}
                 />
 
-                <Button
-                  type="submit"
+                <AuthButton
+                  type="reset-password"
+                  loading={loading}
                   className="h-12 w-full flex items-center justify-center"
-                  disabled={loading}
-                >
-                  {loading ? (
-                    <>
-                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                      {BUTTONS.RESET_PASSWORD_LOADING}
-                    </>
-                  ) : (
-                    <>
-                      <Key className="h-4 w-4 mr-2" />
-                      {BUTTONS.RESET_PASSWORD_BUTTON}
-                    </>
-                  )}
-                </Button>
+                />
               </form>
             </Form>
           </CardContent>

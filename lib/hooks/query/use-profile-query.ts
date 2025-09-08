@@ -2,6 +2,10 @@ import { useAuthenticatedQuery } from "@/lib/hooks/query-utils";
 import { createClient } from "@/lib/supabase/client";
 import type { Profile } from "@/lib/types";
 import { profileKeys } from "@/lib/hooks/query/query-keys";
+import {
+  mapRawErrorToCode,
+  getErrorMessage,
+} from "@/lib/utils/error/errorUtil";
 
 const supabase = createClient();
 
@@ -13,7 +17,11 @@ const fetchProfile = async (userId: string): Promise<Profile | null> => {
       setTimeout(() => reject(new Error("프로필 로딩 타임아웃")), 3000)
     ),
   ]);
-  if (error) throw error;
+  if (error) {
+    const errorCode = mapRawErrorToCode(error, "db");
+    const message = getErrorMessage(errorCode);
+    throw new Error(message);
+  }
   return data;
 };
 

@@ -10,52 +10,10 @@ import { Progress } from "@/components/ui/progress";
 import { Activity, Server, HardDrive, Cpu, Clock } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { LABELS, PAGE_HEADER } from "@/lib/constants/monitoring";
+import type { SystemStatusData } from "@/lib/types/monitoring";
 
 interface SystemStatusCardProps {
-  data: {
-    timestamp: string;
-    health: {
-      status: string;
-      timestamp: string;
-      uptime: number;
-      responseTime: string;
-      version: string;
-      performance: {
-        totalResponseTime: string;
-        databaseResponseTime: string;
-        cpu: {
-          user: string;
-          system: string;
-          total: string;
-        };
-      };
-      system: {
-        farmCount: number;
-        visitorCount: number;
-        memory: {
-          used: number;
-          total: number;
-          external: number;
-          status: string;
-        };
-        cpu: {
-          user: number;
-          system: number;
-          total: number;
-          threshold: number;
-          status: string;
-        };
-        nodeVersion: string;
-        platform: string;
-        arch: string;
-      };
-      services: {
-        database: string;
-        api: string;
-        memory: string;
-      };
-    };
-  };
+  data: SystemStatusData;
 }
 
 export function SystemStatusCard({ data }: SystemStatusCardProps) {
@@ -131,11 +89,11 @@ export function SystemStatusCard({ data }: SystemStatusCardProps) {
       <CardHeader>
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <CardTitle className="flex items-center gap-2">
+            <CardTitle className="flex items-center gap-2 text-base">
               <Activity className="h-5 w-5 flex-shrink-0" />
               <span>{PAGE_HEADER.SYSTEM_STATUS}</span>
             </CardTitle>
-            <CardDescription className="mt-1">
+            <CardDescription>
               {LABELS.LAST_UPDATE.replace(
                 "{datetime}",
                 new Date(data.timestamp).toLocaleString()

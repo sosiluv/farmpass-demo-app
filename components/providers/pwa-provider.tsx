@@ -169,7 +169,6 @@ export function PWAProvider({ children }: { children: ReactNode }) {
       try {
         // 브라우저 네이티브 설치 프롬프트 표시
         const result = await deferredPrompt.prompt();
-        devLog.log("설치 프롬프트 결과:", result.outcome);
 
         // 프롬프트 사용 후 초기화
         setDeferredPrompt(null);
@@ -196,7 +195,6 @@ export function PWAProvider({ children }: { children: ReactNode }) {
       const info = checkInstallability();
       setInstallInfo(info);
       setIsLoading(false);
-      devLog.log("PWA 설치 가능 여부 체크 (Provider):", info);
 
       // PWA 삭제 감지 및 localStorage 정리 함수
       const checkPWAUninstall = () => {
@@ -238,7 +236,6 @@ export function PWAProvider({ children }: { children: ReactNode }) {
             }
 
             if (canReinstall) {
-              devLog.log("PWA 삭제 감지됨 - localStorage 정리");
               // PWA가 삭제된 것으로 판단, localStorage 정리
               localStorage.removeItem("pwa_install_completed");
               localStorage.removeItem("pwa_install_dismissed");
@@ -256,7 +253,6 @@ export function PWAProvider({ children }: { children: ReactNode }) {
       // beforeinstallprompt 이벤트 리스너 추가
       const handleBeforeInstallPrompt = (e: Event) => {
         e.preventDefault();
-        devLog.log("beforeinstallprompt 이벤트 감지 - 설치 프롬프트 저장");
 
         // 이벤트를 저장하여 나중에 사용
         setDeferredPrompt(e);
@@ -273,7 +269,6 @@ export function PWAProvider({ children }: { children: ReactNode }) {
       };
 
       const handleAppInstalled = () => {
-        devLog.log("appinstalled 이벤트 감지 - PWA 설치 완료");
         // 설치 완료 시 localStorage에 저장
         localStorage.setItem("pwa_install_completed", Date.now().toString());
         setInstallInfo({

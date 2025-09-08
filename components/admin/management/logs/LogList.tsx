@@ -10,7 +10,7 @@ import {
 } from "@/components/ui/tooltip";
 import { formatDateTime } from "@/lib/utils/datetime/date";
 import { LABELS } from "@/lib/constants/management";
-import { SystemLog } from "@/lib/types/system";
+import { SystemLog } from "@/lib/types/common";
 import { CommonListWrapper } from "../shared/CommonListWrapper";
 
 interface LogListProps {
@@ -33,17 +33,25 @@ export function LogList({ logs, onShowDetails, onDeleteLog }: LogListProps) {
   const getLogLevelIcon = (level: string) => {
     switch (level) {
       case "info":
-        return <Activity className="h-4 w-4 sm:h-6 sm:w-6 text-blue-500" />;
+        return (
+          <Activity className="h-4 w-4 sm:h-6 sm:w-6 lg:h-7 lg:w-7 xl:h-8 xl:w-8 text-blue-500" />
+        );
       case "warn":
         return (
-          <AlertCircle className="h-4 w-4 sm:h-6 sm:w-6 text-yellow-500" />
+          <AlertCircle className="h-4 w-4 sm:h-6 sm:w-6 lg:h-7 lg:w-7 xl:h-8 xl:w-8 text-yellow-500" />
         );
       case "error":
-        return <XCircle className="h-4 w-4 sm:h-6 sm:w-6 text-red-500" />;
+        return (
+          <XCircle className="h-4 w-4 sm:h-6 sm:w-6 lg:h-7 lg:w-7 xl:h-8 xl:w-8 text-red-500" />
+        );
       case "debug":
-        return <Activity className="h-4 w-4 sm:h-6 sm:w-6 text-gray-500" />;
+        return (
+          <Activity className="h-4 w-4 sm:h-6 sm:w-6 lg:h-7 lg:w-7 xl:h-8 xl:w-8 text-gray-500" />
+        );
       default:
-        return <Activity className="h-4 w-4 sm:h-6 sm:w-6 text-gray-500" />;
+        return (
+          <Activity className="h-4 w-4 sm:h-6 sm:w-6 lg:h-7 lg:w-7 xl:h-8 xl:w-8 text-gray-500" />
+        );
     }
   };
 
@@ -64,7 +72,7 @@ export function LogList({ logs, onShowDetails, onDeleteLog }: LogListProps) {
           <CommonListItem
             key={log.id}
             avatar={
-              <div className="h-6 w-6 flex-shrink-0 rounded-full bg-gray-50 flex items-center justify-center">
+              <div className="h-8 w-8 sm:h-12 sm:w-12 lg:h-14 lg:w-14 flex-shrink-0 rounded-full bg-gray-50 flex items-center justify-center">
                 {getLogLevelIcon(log.level)}
               </div>
             }
@@ -73,14 +81,12 @@ export function LogList({ logs, onShowDetails, onDeleteLog }: LogListProps) {
               <TooltipProvider>
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <span className="block break-words whitespace-pre-wrap max-w-full text-xs sm:text-sm lg:text-base cursor-help">
+                    <span className="inline-block cursor-help break-all whitespace-normal">
                       {log.message}
                     </span>
                   </TooltipTrigger>
                   <TooltipContent side="top" className="max-w-md">
-                    <p className="whitespace-pre-wrap break-words">
-                      {log.message}
-                    </p>
+                    <p className="break-all whitespace-normal">{log.message}</p>
                   </TooltipContent>
                 </Tooltip>
               </TooltipProvider>
@@ -89,7 +95,7 @@ export function LogList({ logs, onShowDetails, onDeleteLog }: LogListProps) {
               <TooltipProvider>
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <span className="block break-words whitespace-pre-wrap max-w-full text-[10px] sm:text-xs lg:text-sm cursor-help">
+                    <span className="block cursor-help">
                       {`${
                         log.user_email || LABELS.SYSTEM_LABEL
                       } / ${formatDateTime(log.created_at)} / ${
@@ -113,23 +119,23 @@ export function LogList({ logs, onShowDetails, onDeleteLog }: LogListProps) {
               <Badge
                 className={`${getLogLevelColor(
                   log.level
-                )} text-xs px-1.5 py-0.5 sm:px-2 sm:py-1`}
+                )} text-xs sm:text-sm px-2 sm:px-3 py-1 sm:py-1.5`}
               >
                 {getLogLevelText(log.level)}
               </Badge>
             }
             actions={
-              <div className="flex items-center gap-3 flex-shrink-0 ml-1">
+              <div className="flex items-center gap-2 flex-shrink-0 ml-1">
                 <TooltipProvider>
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <Button
                         variant="ghost"
                         size="icon"
-                        className="h-6 w-6 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 flex-shrink-0"
+                        className="h-10 w-10 sm:h-12 sm:w-12 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 flex-shrink-0"
                         onClick={() => onShowDetails(log)}
                       >
-                        <Eye className="h-4 w-4 text-muted-foreground" />
+                        <Eye className="h-5 w-5 sm:h-6 sm:w-6 text-muted-foreground" />
                       </Button>
                     </TooltipTrigger>
                     <TooltipContent>
@@ -144,10 +150,10 @@ export function LogList({ logs, onShowDetails, onDeleteLog }: LogListProps) {
                         <Button
                           variant="ghost"
                           size="icon"
-                          className="text-red-600 hover:text-red-700 hover:bg-red-50 h-6 w-6 rounded-full"
+                          className="text-red-600 hover:text-red-700 hover:bg-red-50 h-8 w-8 sm:h-12 sm:w-12 rounded-full"
                           onClick={() => onDeleteLog(log.id)}
                         >
-                          <Trash2 className="h-4 w-4" />
+                          <Trash2 className="h-4 w-4 sm:h-6 sm:w-6" />
                         </Button>
                       </TooltipTrigger>
                       <TooltipContent>

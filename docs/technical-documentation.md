@@ -542,7 +542,6 @@ export class SystemLogger {
         console.warn(message, entry.metadata);
         break;
       default:
-        console.log(message, entry.metadata);
     }
   }
 
@@ -1258,7 +1257,7 @@ await prisma.profiles.update({
 
 #### 프로필 로드 최적화
 
-```typescript
+````typescript
 // 기존: 실패 시 1초 대기 후 재시도
 if (!profile) {
   await new Promise((resolve) => setTimeout(resolve, 1000));
@@ -1275,177 +1274,8 @@ if (!profile) {
     });
   }
 }
-```
 
-#### 성능 개선 효과
 
-- **로그인 처리**: 2-4초 → 1-2초 (50-60% 개선)
-- **대시보드 로딩**: 3-5초 → 2-3초 (40-50% 개선)
-- **총 소요 시간**: 5-9초 → 3-5초 (40-60% 개선)
-
-### 1. React 컴포넌트 최적화
-
-```typescript
-// 메모이제이션을 활용한 성능 최적화
-import { memo, useMemo, useCallback } from "react";
-
-interface VisitorListProps {
-  visitors: Visitor[];
-  onSelect: (visitor: Visitor) => void;
-  searchQuery: string;
-}
-
-export const VisitorList = memo(
-  ({ visitors, onSelect, searchQuery }: VisitorListProps) => {
-    // 필터링된 방문자 목록을 메모이제이션
-    const filteredVisitors = useMemo(() => {
-      if (!searchQuery) return visitors;
-
-      return visitors.filter(
-        (visitor) =>
-          visitor.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          visitor.phone.includes(searchQuery) ||
-          visitor.organization
-            ?.toLowerCase()
-            .includes(searchQuery.toLowerCase())
-      );
-    }, [visitors, searchQuery]);
-
-    // 콜백 함수 메모이제이션
-    const handleSelect = useCallback(
-      (visitor: Visitor) => {
-        onSelect(visitor);
-      },
-      [onSelect]
-    );
-
-    return (
-      <div className="space-y-2">
-        {filteredVisitors.map((visitor) => (
-          <VisitorItem
-            key={visitor.id}
-            visitor={visitor}
-            onSelect={handleSelect}
-          />
-        ))}
-      </div>
-    );
-  }
-);
-
-// React.memo를 사용한 자식 컴포넌트 최적화
-interface VisitorItemProps {
-  visitor: Visitor;
-  onSelect: (visitor: Visitor) => void;
-}
-
-const VisitorItem = memo(({ visitor, onSelect }: VisitorItemProps) => {
-  const handleClick = useCallback(() => {
-    onSelect(visitor);
-  }, [visitor, onSelect]);
-
-  return (
-    <div
-      className="p-4 border rounded-lg cursor-pointer hover:bg-gray-50"
-      onClick={handleClick}
-    >
-      <h3 className="font-semibold">{visitor.name}</h3>
-      <p className="text-sm text-gray-600">{visitor.phone}</p>
-    </div>
-  );
-});
-```
-
-### 2. 데이터베이스 쿼리 최적화
-
-```typescript
-// lib/services/visitor-service.ts
-export class VisitorService {
-  // 페이지네이션과 필터링을 통한 최적화
-  static async getVisitors(params: {
-    page: number;
-    limit: number;
-    search?: string;
-    dateFrom?: Date;
-    dateTo?: Date;
-  }) {
-    const { page, limit, search, dateFrom, dateTo } = params;
-    const offset = (page - 1) * limit;
-
-    // 동적 where 조건 구성
-    const whereConditions: any = {};
-
-    if (search) {
-      whereConditions.OR = [
-        { name: { contains: search, mode: "insensitive" } },
-        { phone: { contains: search } },
-        { organization: { contains: search, mode: "insensitive" } },
-      ];
-    }
-
-    if (dateFrom || dateTo) {
-      whereConditions.createdAt = {};
-      if (dateFrom) whereConditions.createdAt.gte = dateFrom;
-      if (dateTo) whereConditions.createdAt.lte = dateTo;
-    }
-
-    // 병렬 쿼리 실행으로 성능 향상
-    const [visitors, totalCount] = await Promise.all([
-      prisma.visitor.findMany({
-        where: whereConditions,
-        skip: offset,
-        take: limit,
-        orderBy: { createdAt: "desc" },
-        include: {
-          visitLogs: {
-            take: 1,
-            orderBy: { timestamp: "desc" },
-            select: {
-              type: true,
-              timestamp: true,
-            },
-          },
-          _count: {
-            select: {
-              visitLogs: true,
-            },
-          },
-        },
-      }),
-      prisma.visitor.count({ where: whereConditions }),
-    ]);
-
-    return {
-      visitors,
-      pagination: {
-        page,
-        limit,
-        total: totalCount,
-        totalPages: Math.ceil(totalCount / limit),
-      },
-    };
-  }
-
-  // 배치 처리를 통한 대량 데이터 처리
-  static async createVisitorsBatch(visitorsData: CreateVisitorData[]) {
-    const batchSize = 100;
-    const results = [];
-
-    for (let i = 0; i < visitorsData.length; i += batchSize) {
-      const batch = visitorsData.slice(i, i + batchSize);
-
-      const batchResult = await prisma.visitor.createMany({
-        data: batch,
-        skipDuplicates: true,
-      });
-
-      results.push(batchResult);
-    }
-
-    return results;
-  }
-}
-```
 
 ### 3. 캐싱 전략
 
@@ -1518,7 +1348,7 @@ export async function GET(request: NextRequest) {
 
   return NextResponse.json(stats);
 }
-```
+````
 
 ### 4. 이미지 최적화
 
@@ -1871,9 +1701,7 @@ export function DevTools() {
         (window as any).__REACT_DEVTOOLS_GLOBAL_HOOK__?.onCommitFiberRoot = (
           id: any,
           root: any
-        ) => {
-          console.log("React render:", { id, root });
-        };
+        ) => {};
       }
     }
   }, []);

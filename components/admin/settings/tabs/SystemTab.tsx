@@ -6,7 +6,6 @@ import { ERROR_CONFIGS } from "@/lib/constants/error";
 import type { SystemSettings } from "@/lib/types/settings";
 import { useCleanupManager } from "@/lib/hooks/query/use-cleanup-manager";
 import { useOrphanFilesManager } from "@/lib/hooks/query/use-orphan-files-manager";
-import { getAuthErrorMessage } from "@/lib/utils/validation/validation";
 import { useCommonToast } from "@/lib/utils/notification/toast-messages";
 
 // 분리된 컴포넌트들
@@ -61,9 +60,12 @@ export default function SystemTab({
     try {
       const result = await executeCleanup(type);
       showSuccess("정리 완료", result.message);
-    } catch (error: any) {
-      const authError = getAuthErrorMessage(error);
-      showError("정리 요청 실패", authError.message);
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : "알 수 없는 오류가 발생했습니다.";
+      showError("정리 요청 실패", errorMessage);
     }
   };
 
@@ -72,9 +74,12 @@ export default function SystemTab({
     try {
       const result = await executeOrphanCleanup();
       showSuccess("Orphan 파일 정리 완료", result.message);
-    } catch (error: any) {
-      const authError = getAuthErrorMessage(error);
-      showError("Orphan 파일 정리 요청 실패", authError.message);
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : "알 수 없는 오류가 발생했습니다.";
+      showError("Orphan 파일 정리 요청 실패", errorMessage);
     }
   };
 

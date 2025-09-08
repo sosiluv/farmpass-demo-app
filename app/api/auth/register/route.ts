@@ -1,22 +1,22 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { createSystemLog, logApiError } from "@/lib/utils/logging/system-log";
-import {
-  getClientIP,
-  getLocationFromIP,
-  getUserAgent,
-} from "@/lib/server/ip-helpers";
+import { createSystemLog } from "@/lib/utils/logging/system-log";
+import { getClientIP } from "@/lib/server/ip-helpers";
 import { devLog } from "@/lib/utils/logging/dev-logger";
+import {
+  getErrorResultFromRawError,
+  makeErrorResponseFromResult,
+  throwBusinessError,
+} from "@/lib/utils/error/errorUtil";
+import { LOG_MESSAGES } from "@/lib/utils/logging/log-templates";
+import { prisma } from "@/lib/prisma";
+import { getSystemSettings } from "@/lib/cache/system-settings-cache";
+import type { RegistrationFormData } from "@/lib/utils/validation/auth-validation";
+import { createRegistrationFormSchema } from "@/lib/utils/validation/auth-validation";
 
 // Turnstile 검증 함수
-async function verifyTurnstile(
-  token: string,
-  clientIP: string,
-  userAgent: string
-) {
-  if (!token) {
-    throw new Error("캡차 토큰이 필요합니다.");
-  }
+async function verifyTurnstile(token: string, request: NextRequest) {
+  const clientIP = getClientIP(request);
 
   const verificationResponse = await fetch(
     "https://challenges.cloudflare.com/turnstile/v0/siteverify",
@@ -37,53 +37,88 @@ async function verifyTurnstile(
 
   if (!verificationResult.success) {
     const errorCodes = verificationResult["error-codes"] || [];
-    const firstErrorCode = errorCodes[0] || "unknown-error";
-    await logApiError(
-      "/api/auth/register",
-      "POST",
-      `Turnstile verification failed: ${errorCodes.join(", ")}`,
+    await createSystemLog(
+      "TURNSTILE_VERIFICATION_FAILED",
+      LOG_MESSAGES.TURNSTILE_VERIFICATION_FAILED(errorCodes.join(", ")),
+      "error",
       undefined,
-      { ip: clientIP, userAgent }
-    );
-    return NextResponse.json(
+      "system",
+      "turnstile_verification", // Turnstile 검증 작업을 resourceId로 사용
       {
-        success: false,
-        error: "TURNSTILE_VERIFICATION_FAILED",
-        message: firstErrorCode,
-        details: errorCodes,
+        action_type: "auth_event",
+        event: "turnstile_verification_failed",
+        error_codes: errorCodes,
+        client_ip: clientIP,
       },
-      { status: 400 }
+      request
     );
+    throwBusinessError("TURNSTILE_VERIFICATION_FAILED", {
+      operation: "register",
+    });
   }
 
   return true;
 }
 
 export async function POST(request: NextRequest) {
-  const clientIP = getClientIP(request);
-  const userAgent = getUserAgent(request);
-  const location = await getLocationFromIP(clientIP);
+  let email: string | undefined;
+  let user: any = null; // user 정보를 저장할 변수 추가
 
   try {
-    const body = await request.json();
+    const body: RegistrationFormData & {
+      turnstileToken: string;
+      privacyConsent: boolean;
+      termsConsent: boolean;
+      marketingConsent: boolean;
+      ageConsent: boolean;
+    } = await request.json();
 
-    // 클라이언트에서 이미 검증된 데이터를 그대로 사용
-    const { email, password, name, phone, turnstileToken } = body;
+    // 시스템 설정에서 비밀번호 규칙 가져오기
+    const settings = await getSystemSettings();
+    const passwordRules = {
+      passwordMinLength: settings.passwordMinLength,
+      passwordRequireSpecialChar: settings.passwordRequireSpecialChar,
+      passwordRequireNumber: settings.passwordRequireNumber,
+      passwordRequireUpperCase: settings.passwordRequireUpperCase,
+      passwordRequireLowerCase: settings.passwordRequireLowerCase,
+    };
 
-    const validatedData = { email, password, name, phone, turnstileToken };
+    // ZOD 스키마로 검증 (RegistrationFormData 부분만)
+    const registrationSchema = createRegistrationFormSchema(passwordRules);
+    const {
+      turnstileToken,
+      privacyConsent,
+      termsConsent,
+      marketingConsent,
+      ageConsent,
+      ...registrationData
+    } = body;
+
+    const validation = registrationSchema.safeParse(registrationData);
+
+    if (!validation.success) {
+      throwBusinessError("INVALID_FORM_DATA", {
+        errors: validation.error.errors,
+        formType: "user",
+      });
+    }
+
+    // 검증된 데이터 사용
+    const { email: validatedEmail, password, name, phone } = validation.data;
+    email = validatedEmail; // email 변수에 저장
 
     // 캡차 인증 확인 (내부 함수 사용)
-    await verifyTurnstile(validatedData.turnstileToken, clientIP, userAgent);
+    await verifyTurnstile(turnstileToken, request);
 
     // Supabase Auth를 통한 사용자 생성
     const supabase = await createClient();
     const { data: authData, error: authError } = await supabase.auth.signUp({
-      email: validatedData.email,
-      password: validatedData.password,
+      email: email,
+      password: password,
       options: {
         data: {
-          name: validatedData.name,
-          phone: validatedData.phone,
+          name: name,
+          phone: phone,
         },
       },
     });
@@ -91,66 +126,150 @@ export async function POST(request: NextRequest) {
     if (authError) {
       devLog.error("Supabase auth error:", authError);
 
-      // 회원가입 실패 로그 기록
+      // 회원가입 실패 로그 기록 - 템플릿 활용
       await createSystemLog(
-        "USER_CREATION_FAILED",
-        `회원가입 실패: ${validatedData.email} - ${authError.message}`,
+        "USER_CREATE_FAILED",
+        LOG_MESSAGES.USER_CREATE_FAILED(email, authError.message),
         "error",
-        undefined,
+        { id: "00000000-0000-0000-0000-000000000000", email: email },
         "user",
-        undefined,
+        email, // 이메일을 resourceId로 사용
         {
+          action_type: "auth_event",
+          event: "user_create_failed",
           error_message: authError.message,
-          email: validatedData.email,
-          name: validatedData.name,
-          location: location,
-          action_type: "security_event",
+          email: email,
         },
-        validatedData.email,
-        clientIP,
-        userAgent
+        request
       );
 
-      return NextResponse.json(
-        {
-          success: false,
-          error: authError.status || "AUTH_ERROR",
-          message: authError.message,
-        },
-        { status: 400 }
-      );
+      const result = getErrorResultFromRawError(authError, {
+        operation: "register",
+        email: email,
+      });
+
+      return NextResponse.json(makeErrorResponseFromResult(result), {
+        status: result.status,
+      });
     }
 
     if (!authData.user) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: "USER_CREATION_FAILED",
-          message: "회원가입에 실패했습니다.",
-        },
-        { status: 500 }
-      );
+      throwBusinessError("GENERAL_CREATE_FAILED", {
+        resourceType: "user",
+      });
     }
 
-    // 회원가입 성공 로그 기록
+    user = authData.user; // user 변수에 저장
+
+    // 활성화된 약관 조회
+    const activeTerms = await prisma.terms_management.findMany({
+      where: {
+        is_active: true,
+        type: {
+          in: ["privacy_consent", "terms", "marketing", "age_consent"],
+        },
+      },
+      select: {
+        id: true,
+        type: true,
+      },
+    });
+
+    // 약관 타입별 ID 매핑
+    const termIdMap = new Map(activeTerms.map((term) => [term.type, term.id]));
+
+    // 약관 동의 정보를 user_consents 테이블에 저장
+    const consentRecords = [];
+    const now = new Date();
+
+    // 필수 연령 동의 저장
+    if (ageConsent) {
+      const ageTermId = termIdMap.get("age_consent");
+      if (ageTermId) {
+        consentRecords.push({
+          user_id: user.id,
+          term_id: ageTermId,
+          agreed: true,
+          agreed_at: now,
+        });
+      }
+    }
+    // 필수 약관 동의 저장
+    if (privacyConsent) {
+      const privacyTermId = termIdMap.get("privacy_consent");
+      if (privacyTermId) {
+        consentRecords.push({
+          user_id: user.id,
+          term_id: privacyTermId,
+          agreed: true,
+          agreed_at: now,
+        });
+      }
+    }
+    // 필수 이용약관 동의 저장
+    if (termsConsent) {
+      const termsTermId = termIdMap.get("terms");
+      if (termsTermId) {
+        consentRecords.push({
+          user_id: user.id,
+          term_id: termsTermId,
+          agreed: true,
+          agreed_at: now,
+        });
+      }
+    }
+
+    // 선택적 마케팅 정보 수신 동의 저장
+    if (marketingConsent) {
+      const marketingTermId = termIdMap.get("marketing");
+      if (marketingTermId) {
+        consentRecords.push({
+          user_id: user.id,
+          term_id: marketingTermId,
+          agreed: true,
+          agreed_at: now,
+        });
+      }
+    }
+
+    // 약관 동의 정보 저장
+    if (consentRecords.length > 0) {
+      try {
+        await prisma.user_consents.createMany({
+          data: consentRecords,
+        });
+      } catch (consentError) {
+        throwBusinessError(
+          "GENERAL_CREATE_FAILED",
+          {
+            resourceType: "consent",
+          },
+          consentError
+        );
+      }
+    }
+
+    // 회원가입 성공 로그 기록 - 템플릿 활용
     await createSystemLog(
       "USER_CREATED",
-      `새로운 사용자 회원가입 완료: ${validatedData.name} (${validatedData.email})`,
+      LOG_MESSAGES.USER_CREATED(name, email),
       "info",
-      authData.user.id,
+      { id: user.id, email: email },
       "user",
-      authData.user.id,
+      user.id,
       {
-        user_id: authData.user.id,
-        email: validatedData.email,
-        name: validatedData.name,
-        phone: validatedData.phone,
-        location: location,
-        action_type: "security_event",
+        action_type: "auth_event", // action_type 추가
+        event: "user_created",
+        user_id: user.id,
+        email: email,
+        name: name,
+        phone: phone,
+        privacy_consent: privacyConsent,
+        terms_consent: termsConsent,
+        marketing_consent: marketingConsent,
+        age_consent: ageConsent,
       },
-      validatedData.email,
-      clientIP,
-      userAgent
+      request
     );
 
     return NextResponse.json(
@@ -158,9 +277,9 @@ export async function POST(request: NextRequest) {
         success: true,
         message: "회원가입이 완료되었습니다. 이메일 인증 후 로그인해주세요.",
         user: {
-          id: authData.user.id,
-          email: validatedData.email,
-          name: validatedData.name,
+          id: user.id,
+          email: email,
+          name: name,
         },
       },
       { status: 201 }
@@ -168,46 +287,35 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     devLog.error("Registration error:", error);
 
-    // 회원가입 오류 로그 기록
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    // 회원가입 오류 로그 기록 - 템플릿 활용
     await createSystemLog(
-      "USER_CREATION_FAILED",
-      `회원가입 처리 중 오류 발생: ${
-        error instanceof Error ? error.message : "Unknown error"
-      }`,
+      "USER_CREATE_SYSTEM_ERROR",
+      LOG_MESSAGES.USER_CREATE_SYSTEM_ERROR(errorMessage),
       "error",
-      undefined,
+      user
+        ? { id: user.id, email: user.email || email || "unknown" }
+        : undefined, // user 정보가 있으면 사용
       "user",
-      undefined,
+      user?.id || email || "registration_system_error", // user ID 또는 email을 resourceId로 사용
       {
-        error_message: error instanceof Error ? error.message : "Unknown error",
-        location: location,
-        action_type: "security_event",
+        action_type: "auth_event",
+        event: "user_create_system_error",
+        error_message: errorMessage,
+        user_id: user?.id, // 추가된 user ID
+        user_email: user?.email, // 추가된 user email
+        email: email || "unknown", // 원본 이메일
       },
-      undefined,
-      clientIP,
-      userAgent
+      request
     );
 
-    // 캡차 검증 실패 오류 처리
-    if (error instanceof Error && error.message.includes("캡차")) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: "TURNSTILE_VERIFICATION_FAILED",
-          message: error.message,
-        },
-        { status: 400 }
-      );
-    }
+    // 비즈니스 에러 또는 시스템 에러를 표준화된 에러 코드로 매핑
+    const result = getErrorResultFromRawError(error, {
+      operation: "register",
+    });
 
-    return NextResponse.json(
-      {
-        success: false,
-        error: "INTERNAL_SERVER_ERROR",
-        message:
-          "회원가입 처리 중 시스템 오류가 발생했습니다. 잠시 후 다시 시도해주세요.",
-      },
-      { status: 500 }
-    );
+    return NextResponse.json(makeErrorResponseFromResult(result), {
+      status: result.status,
+    });
   }
 }

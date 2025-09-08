@@ -15,7 +15,7 @@ export function ExportButton({
   disabled,
 }: ExportButtonProps) {
   return (
-    <Button onClick={onClick} disabled={disabled} variant="outline" size="sm">
+    <Button onClick={onClick} disabled={disabled} variant="outline">
       <Download className="w-4 h-4 mr-2" />
       {children || BUTTONS.CSV_EXPORT}
     </Button>

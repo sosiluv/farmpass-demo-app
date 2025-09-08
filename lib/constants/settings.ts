@@ -1,7 +1,6 @@
 export const PAGE_HEADER = {
   PAGE_TITLE: "시스템 설정",
   PAGE_DESCRIPTION: "시스템의 전반적인 설정을 관리하세요",
-  BREADCRUMB: "시스템 설정",
 
   CLEANUP_SYSTEM_LOGS_CONFIRM_TITLE: "시스템 로그 정리 확인",
 
@@ -96,8 +95,6 @@ export const BUTTONS = {
   SAVING: "저장 중...",
   SAVE_SETTINGS: "설정 저장",
 
-  SYSTEM_MODE_MAINTENANCE_DETAILS: "유지보수 상세 설정",
-
   DOCUMENTATION_OPEN_BUTTON: "문서 열기",
 
   TEMPLATE_PREVIEW_BUTTON: "미리보기",
@@ -160,16 +157,11 @@ export const LABELS = {
     "로그인 시도 횟수 초과 시 계정이 잠기는 시간입니다 (5분-24시간)",
   // 비밀번호 정책 설정
   PASSWORD_MIN_LENGTH_DESC:
-    "사용자가 설정해야 하는 최소 비밀번호 길이입니다 (8-20자)",
+    "사용자가 설정해야 하는 최소 비밀번호 길이입니다 (6-20자)",
   PASSWORD_SPECIAL_CHAR: "특수문자 포함",
-  PASSWORD_SPECIAL_CHAR_DESC:
-    "!@#$%^&* 등의 특수문자를 반드시 포함하도록 합니다",
   PASSWORD_NUMBER: "숫자 포함",
-  PASSWORD_NUMBER_DESC: "0-9 숫자를 반드시 포함하도록 합니다",
   PASSWORD_UPPERCASE: "대문자 포함",
-  PASSWORD_UPPERCASE_DESC: "A-Z 대문자를 반드시 포함하도록 합니다",
   PASSWORD_LOWERCASE: "소문자 포함",
-  PASSWORD_LOWERCASE_DESC: "a-z 소문자를 반드시 포함하도록 합니다",
   // 브로드캐스트 설정
   BROADCAST_NOTIFICATION_TYPE: "알림 유형",
   BROADCAST_NOTIFICATION_TYPE_PLACEHOLDER: "알림 유형을 선택하세요",
@@ -187,27 +179,8 @@ export const LABELS = {
     "활성화하면 사용자가 직접 알림을 닫아야 합니다.",
 
   BROADCAST_GUIDE_TITLE: "브로드캐스트 사용 가이드:",
-  BROADCAST_GUIDE_NOTICE: "• 공지사항: 일반적인 공지나 안내사항에 사용",
-  BROADCAST_GUIDE_EMERGENCY: "• 긴급 알림: 중요하고 긴급한 상황 전파에 사용",
-  BROADCAST_GUIDE_MAINTENANCE:
-    "• 유지보수 알림: 시스템 점검이나 업데이트 안내에 사용",
-  BROADCAST_GUIDE_TITLE_TIP: "• 제목은 간결하고 명확하게 작성해주세요",
-  BROADCAST_GUIDE_REVIEW: "• 발송 전 내용을 다시 한 번 확인해주세요",
-
-  // BroadcastAlert
-  BROADCAST_ALERT_WARNING: "주의:",
-  BROADCAST_ALERT_DESCRIPTION:
-    "이 기능은 선택한 알림 유형에 따라 해당 알림을 구독한 사용자에게만 메시지를 발송합니다.",
-  BROADCAST_ALERT_NOTICE: "공지사항:",
-  BROADCAST_ALERT_NOTICE_DESC:
-    "일반적인 공지나 안내사항을 구독한 사용자에게 전송",
-  BROADCAST_ALERT_EMERGENCY: "긴급 알림:",
-  BROADCAST_ALERT_EMERGENCY_DESC: "긴급 알림을 구독한 사용자에게 즉시 전송",
-  BROADCAST_ALERT_MAINTENANCE: "유지보수 알림:",
-  BROADCAST_ALERT_MAINTENANCE_DESC:
-    "시스템 점검이나 업데이트 알림을 구독한 사용자에게 전송",
-  BROADCAST_ALERT_SPAM_WARNING:
-    "스팸성 메시지나 불필요한 알림은 사용자 경험을 해칠 수 있으니 신중하게 사용해주세요.",
+  BROADCAST_GUIDE_SYSTEM:
+    "• 시스템 알림: 공지사항, 긴급 알림, 유지보수 알림을 포함한 모든 시스템 알림",
 
   // BroadcastResult
   BROADCAST_RESULT_SUCCESS: "발송 완료",
@@ -289,10 +262,6 @@ export const LABELS = {
   DOCUMENTATION_FAQ_DESC: "고객들이 가장 궁금해하는 질문과 답변",
   DOCUMENTATION_PWA_GUIDE: "PWA 사용 가이드",
   DOCUMENTATION_PWA_GUIDE_DESC: "모바일 앱처럼 사용하는 방법과 설치 가이드",
-  DOCUMENTATION_USAGE_TIP: "💡 사용 팁",
-  DOCUMENTATION_TIP_1: "• 처음 사용하시는 경우 빠른 시작 가이드부터 읽어보세요",
-  DOCUMENTATION_TIP_2: "• 상세한 기능 설명은 사용자 매뉴얼을 참고하세요",
-  DOCUMENTATION_TIP_3: "• 문제가 생기면 자주 묻는 질문을 먼저 확인해보세요",
 
   // OrphanFilesSection
   ORPHAN_FILES_STATUS_CHECKING: "Orphan 파일 상태를 확인하는 중...",
@@ -313,12 +282,10 @@ export const LABELS = {
   LOGGING_DEBUG_WARNING: "디버그 모드는 성능에 영향을 줄 수 있습니다.",
   // 디버그 모드 설정
   DEBUG_MODE: "디버그 모드",
-  DEBUG_MODE_DESC: "개발 및 문제 해결을 위한 상세한 디버그 정보를 표시합니다",
   DEBUG_MODE_ACTIVE: "활성화",
   DEBUG_MODE_PANEL_WARNING: "디버그 패널이 화면 우측 하단에 표시됩니다",
   // 유지보수 모드 설정
   MAINTENANCE_MODE: "유지보수 모드",
-  MAINTENANCE_MODE_DESC: "시스템 업데이트 시 일반 사용자의 접근을 제한합니다",
   MAINTENANCE_MODE_ACTIVE: "활성화",
   MAINTENANCE_MODE_WARNING: "일반 사용자는 현재 시스템에 접근할 수 없습니다",
   // 유지보수 설정
@@ -343,16 +310,9 @@ export const LABELS = {
     "DB에는 있는데 Storage에는 없는 프로필 이미지",
   // 구독 정리 설정
   SUBSCRIPTION_CLEANUP_DAYS: "자동 삭제 일수",
-  SUBSCRIPTION_CLEANUP_DAYS_DESC:
-    "Soft delete된 구독을 지정된 일수 후 완전히 삭제합니다. 0으로 설정하면 자동 삭제하지 않습니다.",
   SUBSCRIPTION_FAIL_COUNT_THRESHOLD: "실패 횟수 임계값",
-  SUBSCRIPTION_FAIL_COUNT_DESC:
-    "푸시 발송 실패가 지정된 횟수를 초과하면 구독을 비활성화합니다.",
   SUBSCRIPTION_CLEANUP_INACTIVE_SETTING: "비활성 구독 정리",
-  SUBSCRIPTION_CLEANUP_INACTIVE_DESC: "비활성화된 구독을 자동으로 정리합니다.",
   SUBSCRIPTION_FORCE_DELETE_SETTING: "강제 삭제",
-  SUBSCRIPTION_FORCE_DELETE_DESC:
-    "Soft delete 대신 즉시 완전 삭제합니다. (주의: 복구 불가능)",
   // 알림 탭 설정
   VISIT_NOTIFICATION_TEMPLATE_LABEL: "알림 메시지 템플릿",
   VISIT_NOTIFICATION_TEMPLATE_VARIABLES:
@@ -420,13 +380,6 @@ export const PLACEHOLDERS = {
   VISIT_NOTIFICATION_TEMPLATE:
     "새로운 방문자가 등록되었습니다. 방문자: {방문자명}, 농장: {농장명}, 시간: {방문시간}",
 } as const;
-
-// 브로드캐스트 알림 유형 옵션
-export const BROADCAST_NOTIFICATION_TYPE_OPTIONS = [
-  { value: "notice", label: "공지사항" },
-  { value: "emergency", label: "긴급 알림" },
-  { value: "maintenance", label: "유지보수 알림" },
-] as const;
 
 // 로깅 레벨 옵션
 export const LOGGING_LEVEL_OPTIONS = [

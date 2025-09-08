@@ -24,8 +24,6 @@
 
 - ✅ **로그 일관성 확보**: 전체 코드베이스에서 일관된 로그 방식 사용
   - `createSystemLog()`: 기본 시스템 로그
-  - `logApiError()`: API 에러 로깅 (중복 방지 내장)
-  - `logVisitorDataAccess()`: 방문자 개인정보 접근 로그 (GDPR 준수)
 
 ---
 

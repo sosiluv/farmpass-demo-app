@@ -44,16 +44,8 @@ export const farmsKeys = {
       ? ([...farmsKeys.all, "list", { filters }] as const)
       : ([...farmsKeys.all, "list"] as const),
 
-  // 농장 멤버
-  farmMembers: (farmId: string) =>
-    [...farmsKeys.all, "members", farmId] as const,
-
   // 농장 정보
   info: (farmId: string) => [...farmsKeys.all, "info", farmId] as const,
-
-  // 농장 멤버 미리보기
-  farmMembersPreview: (farmIds: string[]) =>
-    [...farmsKeys.all, "farmMembersPreview", ...farmIds.sort()] as const,
 } as const;
 
 /**
@@ -63,8 +55,9 @@ export const adminKeys = {
   // 모든 관리자 쿼리
   all: ["admin"] as const,
 
-  // 대시보드 통계
-  dashboard: () => [...adminKeys.all, "dashboard"] as const,
+  // 대시보드 통계 (선택 농장 필터 포함)
+  dashboard: (farmId?: string) =>
+    [...adminKeys.all, "dashboard", farmId ?? "all"] as const,
 
   // 농장 관리
   farms: {
@@ -144,3 +137,88 @@ export const profileKeys = {
   all: ["profile"] as const,
   detail: (userId: string | undefined) => ["profile", userId] as const,
 };
+
+/**
+ * 소셜 연동 관련 Query Key Factory
+ */
+export const socialLinkingKeys = {
+  all: ["social-linking"] as const,
+  identities: () => [...socialLinkingKeys.all, "identities"] as const,
+  linkStatus: (provider: string) =>
+    [...socialLinkingKeys.all, "link-status", provider] as const,
+} as const;
+
+/**
+ * 약관 관리 관련 Query Key Factory
+ */
+export const termsKeys = {
+  all: ["terms"] as const,
+
+  // 관리자용 약관
+  admin: {
+    all: () => [...termsKeys.all, "admin"] as const,
+    list: (type?: string, isActive?: boolean) =>
+      [...termsKeys.all, "admin", "list", type, isActive] as const,
+    detail: (id: string) => [...termsKeys.all, "admin", "detail", id] as const,
+  },
+
+  // 공개 약관 (회원가입용)
+  public: {
+    all: () => [...termsKeys.all, "public"] as const,
+    list: (type?: string) =>
+      [...termsKeys.all, "public", "list", type] as const,
+  },
+
+  // 사용자 동의
+  consents: {
+    all: () => [...termsKeys.all, "consents"] as const,
+    list: (userId?: string, termType?: string, agreed?: boolean) =>
+      [...termsKeys.all, "consents", "list", userId, termType, agreed] as const,
+    user: (userId: string) =>
+      [...termsKeys.all, "consents", "user", userId] as const,
+  },
+} as const;
+
+/**
+ * 사용자 동의 관련 Query Key Factory
+ */
+export const userConsentsKeys = {
+  all: ["user-consents"] as const,
+
+  // 사용자 동의 상태 확인
+  check: () => [...userConsentsKeys.all, "check"] as const,
+
+  // 사용자 동의 업데이트
+  update: () => [...userConsentsKeys.all, "update"] as const,
+} as const;
+
+// ===========================================
+// 인증 관련 Query Keys 그룹화
+// ===========================================
+
+/**
+ * 인증 상태 변경 시 관리해야 할 모든 Query Keys
+ * AuthProvider에서 사용
+ */
+export const authRelatedKeys = {
+  // 모든 인증 관련 Query Keys
+  all: [
+    profileKeys.all,
+    farmsKeys.all,
+    notificationKeys.all,
+    visitorsKeys.all,
+    adminKeys.all,
+    termsKeys.all,
+    userConsentsKeys.all,
+  ] as const,
+
+  // 사용자별 데이터만 (프로필, 동의 등)
+  userSpecific: [
+    profileKeys.all,
+    userConsentsKeys.all,
+    termsKeys.consents.all(),
+  ] as const,
+
+  // 관리자 전용 데이터
+  adminOnly: [adminKeys.all, termsKeys.admin.all()] as const,
+} as const;

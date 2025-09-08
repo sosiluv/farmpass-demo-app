@@ -1,19 +1,25 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { createSystemLog } from "@/lib/utils/logging/system-log";
-import { devLog } from "@/lib/utils/logging/dev-logger";
-import { getClientIP, getUserAgent } from "@/lib/server/ip-helpers";
 import { requireAuth } from "@/lib/server/auth-utils";
+import {
+  getErrorResultFromRawError,
+  makeErrorResponseFromResult,
+  throwBusinessError,
+} from "@/lib/utils/error/errorUtil";
+import { LOG_MESSAGES } from "@/lib/utils/logging/log-templates";
+import {
+  updateVisitorFormSchema,
+  type VisitorSheetFormData,
+} from "@/lib/utils/validation/visitor-validation";
 
 export async function PUT(
   request: NextRequest,
   { params }: { params: { farmId: string; visitorId: string } }
 ) {
-  const clientIP = getClientIP(request);
-  const userAgent = getUserAgent(request);
   const { farmId, visitorId } = params;
 
-  let updateData: any = {};
+  let updateData: VisitorSheetFormData;
 
   // 인증 확인
   const authResult = await requireAuth(false);
@@ -24,92 +30,101 @@ export async function PUT(
   const user = authResult.user;
 
   try {
-    updateData = await request.json();
+    const requestData: VisitorSheetFormData = await request.json();
 
-    // 필수 필드 검증
-    if (
-      !updateData.visitor_name?.trim() ||
-      !updateData.visitor_phone?.trim() ||
-      !updateData.visitor_address?.trim()
-    ) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: "MISSING_REQUIRED_FIELDS",
-          message: "이름, 연락처, 주소는 필수 입력 항목입니다.",
-        },
-        { status: 400 }
-      );
+    // ZOD 스키마로 검증
+    const validation = updateVisitorFormSchema.safeParse(requestData);
+    if (!validation.success) {
+      throwBusinessError("INVALID_FORM_DATA", {
+        errors: validation.error.errors,
+        formType: "visitor",
+      });
     }
+    updateData = validation.data;
 
     const visitorUpdateData = {
       visitor_name: updateData.visitor_name.trim(),
       visitor_phone: updateData.visitor_phone.trim(),
-      visitor_address: updateData.visitor_address.trim(),
-      visitor_purpose: updateData.visitor_purpose?.trim() || null,
-      vehicle_number: updateData.vehicle_number?.trim() || null,
-      notes: updateData.notes?.trim() || null,
-      disinfection_check: updateData.disinfection_check || false,
+      visitor_address: `${updateData.visitor_address.trim()}${
+        updateData.detailed_address?.trim()
+          ? " " + updateData.detailed_address.trim()
+          : ""
+      }`,
+      visitor_purpose: updateData.visitor_purpose || null,
+      vehicle_number: updateData.vehicle_number || null,
+      notes: updateData.notes || null,
+      disinfection_check: updateData.disinfection_check,
+      consent_given: updateData.consent_given,
       updated_at: new Date(),
     };
 
     // 방문자 정보 업데이트 + 알림 트랜잭션 처리
-    const data = await prisma.$transaction(async (tx: any) => {
-      const updatedVisitor = await tx.visitor_entries.update({
-        where: {
-          id: visitorId,
-          farm_id: farmId,
-        },
-        data: visitorUpdateData,
-        include: {
-          farms: {
-            select: {
-              farm_name: true,
-              farm_type: true,
+    let data;
+    try {
+      data = await prisma.$transaction(async (tx: any) => {
+        const updatedVisitor = await tx.visitor_entries.update({
+          where: {
+            id: visitorId,
+            farm_id: farmId,
+          },
+          data: visitorUpdateData,
+          include: {
+            farms: {
+              select: {
+                farm_name: true,
+                farm_type: true,
+              },
             },
           },
-        },
+        });
+        // const members = await tx.farm_members.findMany({
+        //   where: { farm_id: farmId },
+        //   select: { user_id: true },
+        // });
+        // await tx.notifications.createMany({
+        //   data: members.map((m: any) => ({
+        //     user_id: m.user_id,
+        //     type: "visitor_updated",
+        //     title: `방문자 정보 수정`,
+        //     message: `${updatedVisitor.farms?.farm_name} 농장 방문자 정보가 수정되었습니다: ${updatedVisitor.visitor_name}`,
+        //     data: {
+        //       farm_id: farmId,
+        //       farm_name: updatedVisitor.farms?.farm_name,
+        //       visitor_id: updatedVisitor.id,
+        //       visitor_name: updatedVisitor.visitor_name,
+        //       updated_fields: Object.keys(visitorUpdateData),
+        //     },
+        //     link: `/admin/farms/${farmId}/visitors`,
+        //   })),
+        // });
+        return updatedVisitor;
       });
-      // const members = await tx.farm_members.findMany({
-      //   where: { farm_id: farmId },
-      //   select: { user_id: true },
-      // });
-      // await tx.notifications.createMany({
-      //   data: members.map((m: any) => ({
-      //     user_id: m.user_id,
-      //     type: "visitor_updated",
-      //     title: `방문자 정보 수정`,
-      //     message: `${updatedVisitor.farms?.farm_name} 농장 방문자 정보가 수정되었습니다: ${updatedVisitor.visitor_name}`,
-      //     data: {
-      //       farm_id: farmId,
-      //       farm_name: updatedVisitor.farms?.farm_name,
-      //       visitor_id: updatedVisitor.id,
-      //       visitor_name: updatedVisitor.visitor_name,
-      //       updated_fields: Object.keys(visitorUpdateData),
-      //     },
-      //     link: `/admin/farms/${farmId}/visitors`,
-      //   })),
-      // });
-      return updatedVisitor;
-    });
+    } catch (transactionError) {
+      throwBusinessError(
+        "GENERAL_QUERY_FAILED",
+        {
+          resourceType: "visitor",
+        },
+        transactionError
+      );
+    }
     // 성공 로그 기록
     await createSystemLog(
       "VISITOR_UPDATED",
-      `방문자 정보 수정: ${data.visitor_name} (방문자 ID: ${visitorId}, 농장 ID: ${farmId})`,
+      LOG_MESSAGES.VISITOR_UPDATED(data.visitor_name, farmId),
       "info",
-      user.id,
+      { id: user.id, email: user.email || "" },
       "visitor",
       visitorId,
       {
+        action_type: "visitor_event",
+        event: "visitor_updated",
         farm_id: farmId,
         farm_name: data.farms?.farm_name,
         visitor_id: visitorId,
         updated_fields: Object.keys(visitorUpdateData),
-        action_type: "visitor_management",
       },
-      user.email,
-      clientIP,
-      userAgent
+      request
     );
 
     return NextResponse.json({
@@ -117,60 +132,37 @@ export async function PUT(
       success: true,
       message: "방문자 정보가 성공적으로 수정되었습니다.",
     });
-  } catch (error: any) {
-    devLog.error("방문자 수정 중 예외 발생:", error);
-
-    // Prisma 에러 처리
-    if (error.code === "P2002") {
-      return NextResponse.json(
-        {
-          success: false,
-          error: "DUPLICATE_VISITOR_INFO",
-          message: "중복된 방문자 정보가 있습니다.",
-        },
-        { status: 400 }
-      );
-    }
-
-    if (error.code === "P2025") {
-      return NextResponse.json(
-        {
-          success: false,
-          error: "VISITOR_NOT_FOUND",
-          message: "방문자 정보를 찾을 수 없습니다.",
-        },
-        { status: 404 }
-      );
-    }
-
+  } catch (error) {
     // 실패 로그 기록
+    const errorMessage = error instanceof Error ? error.message : String(error);
     await createSystemLog(
       "VISITOR_UPDATE_FAILED",
-      `방문자 정보 수정 실패: ${error.message} (방문자 ID: ${visitorId}, 농장 ID: ${farmId})`,
+      LOG_MESSAGES.VISITOR_UPDATE_FAILED(visitorId, farmId, errorMessage),
       "error",
-      user.id,
+      { id: user.id, email: user.email || "" },
       "visitor",
       visitorId,
       {
-        error_message: error instanceof Error ? error.message : "Unknown error",
+        action_type: "visitor_event",
+        event: "visitor_update_failed",
         farm_id: farmId,
         visitor_id: visitorId,
-        visitor_data: updateData,
-        action_type: "visitor_management",
+        error_message: errorMessage,
       },
-      user.email,
-      clientIP,
-      userAgent
+      request
     );
 
-    return NextResponse.json(
-      {
-        success: false,
-        error: "VISITOR_UPDATE_FAILED",
-        message: "방문자 정보 수정에 실패했습니다.",
-      },
-      { status: 500 }
-    );
+    // 비즈니스 에러 또는 시스템 에러를 표준화된 에러 코드로 매핑
+    const result = getErrorResultFromRawError(error, {
+      operation: "update_visitor",
+      visitorId: visitorId,
+      farmId: farmId,
+      userId: user.id,
+    });
+
+    return NextResponse.json(makeErrorResponseFromResult(result), {
+      status: result.status,
+    });
   }
 }
 
@@ -178,8 +170,6 @@ export async function DELETE(
   request: NextRequest,
   { params }: { params: { farmId: string; visitorId: string } }
 ) {
-  const clientIP = getClientIP(request);
-  const userAgent = getUserAgent(request);
   const { farmId, visitorId } = params;
 
   // 인증 확인
@@ -192,117 +182,122 @@ export async function DELETE(
 
   try {
     // 방문자 정보 조회 (로그용)
-    const visitor = await prisma.visitor_entries.findUnique({
-      where: {
-        id: visitorId,
-        farm_id: farmId,
-      },
-      select: {
-        visitor_name: true,
-      },
-    });
-
-    if (!visitor) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: "VISITOR_NOT_FOUND",
-          message: "방문자 정보를 찾을 수 없습니다.",
-        },
-        { status: 404 }
-      );
-    }
-
-    // 방문자 삭제 + 알림 트랜잭션 처리
-    await prisma.$transaction(async (tx: any) => {
-      await tx.visitor_entries.delete({
+    let visitor;
+    try {
+      visitor = await prisma.visitor_entries.findUnique({
         where: {
           id: visitorId,
           farm_id: farmId,
         },
+        select: {
+          visitor_name: true,
+        },
       });
-      // const members = await tx.farm_members.findMany({
-      //   where: { farm_id: farmId },
-      //   select: { user_id: true },
-      // });
-      // await tx.notifications.createMany({
-      //   data: members.map((m: any) => ({
-      //     user_id: m.user_id,
-      //     type: "visitor_deleted",
-      //     title: `방문자 정보 삭제`,
-      //     message: `농장 방문자가 삭제되었습니다: ${visitor.visitor_name}`,
-      //     data: {
-      //       farm_id: farmId,
-      //       visitor_id: visitorId,
-      //       visitor_name: visitor.visitor_name,
-      //     },
-      //     link: `/admin/farms/${farmId}/visitors`,
-      //   })),
-      // });
-    });
+    } catch (visitorError) {
+      throwBusinessError(
+        "GENERAL_QUERY_FAILED",
+        {
+          resourceType: "visitor",
+        },
+        visitorError
+      );
+    }
+
+    if (!visitor) {
+      throwBusinessError("VISITOR_NOT_FOUND", {
+        operation: "delete_visitor_check",
+        visitorId: visitorId,
+        farmId: farmId,
+      });
+    }
+
+    // 방문자 삭제 + 알림 트랜잭션 처리
+    try {
+      await prisma.$transaction(async (tx: any) => {
+        await tx.visitor_entries.delete({
+          where: {
+            id: visitorId,
+            farm_id: farmId,
+          },
+        });
+        // const members = await tx.farm_members.findMany({
+        //   where: { farm_id: farmId },
+        //   select: { user_id: true },
+        // });
+        // await tx.notifications.createMany({
+        //   data: members.map((m: any) => ({
+        //     user_id: m.user_id,
+        //     type: "visitor_deleted",
+        //     title: `방문자 정보 삭제`,
+        //     message: `농장 방문자가 삭제되었습니다: ${visitor.visitor_name}`,
+        //     data: {
+        //       farm_id: farmId,
+        //       visitor_id: visitorId,
+        //       visitor_name: visitor.visitor_name,
+        //     },
+        //     link: `/admin/farms/${farmId}/visitors`,
+        //   })),
+        // });
+      });
+    } catch (deleteError) {
+      throwBusinessError(
+        "GENERAL_QUERY_FAILED",
+        {
+          resourceType: "visitor",
+        },
+        deleteError
+      );
+    }
     // 성공 로그 기록
     await createSystemLog(
       "VISITOR_DELETED",
-      `방문자 삭제: ${visitor.visitor_name} (방문자 ID: ${visitorId}, 농장 ID: ${farmId})`,
+      LOG_MESSAGES.VISITOR_DELETED(visitor.visitor_name, farmId),
       "info",
-      user.id,
+      { id: user.id, email: user.email || "" },
       "visitor",
       visitorId,
       {
         farm_id: farmId,
         visitor_id: visitorId,
         visitor_name: visitor.visitor_name,
-        action_type: "visitor_management",
       },
-      user.email,
-      clientIP,
-      userAgent
+      request
     );
 
     return NextResponse.json({
       success: true,
       message: "방문자가 성공적으로 삭제되었습니다.",
     });
-  } catch (error: any) {
-    devLog.error("방문자 삭제 중 예외 발생:", error);
-
-    if (error.code === "P2025") {
-      return NextResponse.json(
-        {
-          success: false,
-          error: "VISITOR_NOT_FOUND",
-          message: "방문자 정보를 찾을 수 없습니다.",
-        },
-        { status: 404 }
-      );
-    }
-
+  } catch (error) {
     // 실패 로그 기록
+    const errorMessage = error instanceof Error ? error.message : String(error);
     await createSystemLog(
       "VISITOR_DELETE_FAILED",
-      `방문자 삭제 실패: ${error.message} (방문자 ID: ${visitorId}, 농장 ID: ${farmId})`,
+      LOG_MESSAGES.VISITOR_DELETE_FAILED(visitorId, farmId, errorMessage),
       "error",
-      user.id,
+      { id: user.id, email: user.email || "" },
       "visitor",
       visitorId,
       {
-        error_message: error instanceof Error ? error.message : "Unknown error",
+        action_type: "visitor_event",
+        event: "visitor_delete_failed",
         farm_id: farmId,
         visitor_id: visitorId,
-        action_type: "visitor_management",
+        error_message: errorMessage,
       },
-      user.email,
-      clientIP,
-      userAgent
+      request
     );
 
-    return NextResponse.json(
-      {
-        success: false,
-        error: "VISITOR_DELETE_FAILED",
-        message: "방문자 삭제에 실패했습니다.",
-      },
-      { status: 500 }
-    );
+    // 비즈니스 에러 또는 시스템 에러를 표준화된 에러 코드로 매핑
+    const result = getErrorResultFromRawError(error, {
+      operation: "delete_visitor",
+      visitorId: visitorId,
+      farmId: farmId,
+      userId: user.id,
+    });
+
+    return NextResponse.json(makeErrorResponseFromResult(result), {
+      status: result.status,
+    });
   }
 }

@@ -1,28 +1,18 @@
+import React from "react";
 import { CommonFilters } from "../shared/CommonFilters";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { Calendar } from "@/components/ui/calendar";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import { CalendarIcon } from "lucide-react";
-import { format } from "date-fns";
-import { ko } from "date-fns/locale";
+import DateRangePicker from "@/components/admin/management/shared/DateRangePicker";
 import { BUTTONS, LABELS, PLACEHOLDERS } from "@/lib/constants/management";
-import type { LogFilter } from "@/lib/types/system";
-import React, { useState } from "react";
 import { cn } from "@/lib/utils";
+import type { LogFilter } from "@/lib/types/system";
 
 interface LogFiltersProps {
   filters: LogFilter;
   onFiltersChange: (filters: LogFilter) => void;
   levelFilters: string[];
   onLevelFiltersChange: (filters: string[]) => void;
-  onCategoryFiltersChange?: (filters: string[]) => void;
-  onExport?: () => void;
 }
 
 export function LogFilters({
@@ -30,11 +20,7 @@ export function LogFilters({
   onFiltersChange,
   levelFilters,
   onLevelFiltersChange,
-  onCategoryFiltersChange,
-  onExport,
 }: LogFiltersProps) {
-  const [showEndCalendar, setShowEndCalendar] = useState(false);
-
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     onFiltersChange({ ...filters, search: e.target.value });
   };
@@ -64,25 +50,6 @@ export function LogFilters({
     onFiltersChange({ ...filters, endDate: date });
   };
 
-  const clearFilters = () => {
-    onFiltersChange({
-      search: "",
-      level: undefined,
-      startDate: undefined,
-      endDate: undefined,
-    });
-    onLevelFiltersChange(["all"]);
-    if (onCategoryFiltersChange) {
-      onCategoryFiltersChange(["all"]);
-    }
-  };
-
-  const hasActiveFilters =
-    filters.search ||
-    filters.startDate ||
-    filters.endDate ||
-    !levelFilters.includes("all");
-
   const levelOptions = LABELS.LOG_LEVEL_OPTIONS;
 
   const selectedLevelCount = levelFilters.includes("all")
@@ -90,63 +57,12 @@ export function LogFilters({
     : levelFilters.length;
 
   const datePickers = (
-    <div className="flex flex-col sm:flex-row gap-2">
-      {/* 시작 날짜 */}
-      <Popover>
-        <PopoverTrigger asChild>
-          <Button
-            variant="outline"
-            className={cn(
-              "w-full sm:w-auto justify-start text-left font-normal",
-              !filters.startDate && "text-muted-foreground"
-            )}
-          >
-            <CalendarIcon className="mr-2 h-4 w-4" />
-            {filters.startDate ? (
-              format(filters.startDate, "PPP", { locale: ko })
-            ) : (
-              <span>{LABELS.START_DATE}</span>
-            )}
-          </Button>
-        </PopoverTrigger>
-        <PopoverContent className="w-auto p-0" align="start">
-          <Calendar
-            mode="single"
-            selected={filters.startDate}
-            onSelect={handleStartDateChange}
-            initialFocus
-          />
-        </PopoverContent>
-      </Popover>
-
-      {/* 종료 날짜 */}
-      <Popover open={showEndCalendar} onOpenChange={setShowEndCalendar}>
-        <PopoverTrigger asChild>
-          <Button
-            variant="outline"
-            className={cn(
-              "w-full sm:w-auto justify-start text-left font-normal",
-              !filters.endDate && "text-muted-foreground"
-            )}
-          >
-            <CalendarIcon className="mr-2 h-4 w-4" />
-            {filters.endDate ? (
-              format(filters.endDate, "PPP", { locale: ko })
-            ) : (
-              <span>{LABELS.END_DATE}</span>
-            )}
-          </Button>
-        </PopoverTrigger>
-        <PopoverContent className="w-auto p-0" align="start">
-          <Calendar
-            mode="single"
-            selected={filters.endDate}
-            onSelect={handleEndDateChange}
-            initialFocus
-          />
-        </PopoverContent>
-      </Popover>
-    </div>
+    <DateRangePicker
+      startDate={filters.startDate}
+      endDate={filters.endDate}
+      onStartDateChange={handleStartDateChange}
+      onEndDateChange={handleEndDateChange}
+    />
   );
 
   return (
@@ -155,9 +71,8 @@ export function LogFilters({
         searchPlaceholder={PLACEHOLDERS.LOG_SEARCH_PLACEHOLDER}
         searchValue={filters.search || ""}
         onSearchChange={handleSearchChange}
+        extra={datePickers}
       />
-
-      {datePickers}
 
       {/* 레벨 필터 (다중 선택) */}
       <div className="space-y-3">

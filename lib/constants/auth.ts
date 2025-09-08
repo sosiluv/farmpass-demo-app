@@ -25,7 +25,7 @@ export const BUTTONS = {
   NO_ACCOUNT: "계정이 없으신가요?",
   HAS_ACCOUNT: "이미 계정이 있으신가요?",
   FORGOT_PASSWORD: "비밀번호를 잊으셨나요?",
-  BACK_TO_LOGIN: "로그인으로 돌아가기",
+  BACK_TO_LOGIN: "로그인 페이지로 돌아가기",
 
   LOGIN_LOADING: "로그인 중...",
   REDIRECTING: "이동 중...",
@@ -43,6 +43,7 @@ export const LABELS = {
   EMAIL: "아이디(이메일)",
   PASSWORD: "비밀번호",
   CONFIRM_PASSWORD: "비밀번호 확인",
+  CURRENT_PASSWORD: "현재 비밀번호",
   NAME: "이름",
   PHONE: "휴대폰 번호",
 
@@ -62,6 +63,8 @@ export const LABELS = {
   EMAIL_CONFIRMATION_ACTIVATED: "계정이 활성화되었습니다! 🎉",
   EMAIL_CONFIRMATION_REDIRECT: "후 로그인 페이지로 자동 이동합니다.",
   EMAIL_CONFIRMATION_REDIRECTING: "로그인 페이지로 이동 중...",
+  EMAIL_CONFIRMATION_PROCESSING_MESSAGE:
+    "이메일 인증을 확인 중입니다. 잠시만 기다려주세요...",
 } as const;
 
 // PageLoading 텍스트
@@ -76,8 +79,9 @@ export const PLACEHOLDERS = {
   EMAIL: "name@example.com",
   PASSWORD: "비밀번호를 입력하세요",
   CONFIRM_PASSWORD: "비밀번호를 다시 입력하세요",
+  CURRENT_PASSWORD: "현재 비밀번호를 입력하세요",
   NAME: "이름을 입력하세요",
-  PHONE: "숫자만 입력 가능합니다",
+  PHONE: "하이픈(-) 없이 숫자만 입력해주세요",
 } as const;
 
 // 에러 메시지
@@ -101,3 +105,32 @@ export const ERROR_MESSAGES = {
   PASSWORD_COMPLEXITY:
     "비밀번호는 최소 {minLength}자 이상이어야 하며, {requirements}를 포함해야 합니다",
 } as const;
+
+export const SOCIAL_BUTTON_CONFIG = [
+  {
+    provider: "kakao" as const,
+    label: BUTTONS.KAKAO_LOGIN,
+    iconSrc: "/btn_kakao.svg",
+    style: {
+      background: "#FEE500",
+      color: "#191600",
+      border: "1px solid #e0e0e0",
+      marginTop: 8,
+      fontWeight: 600,
+      padding: 0,
+    },
+  },
+  {
+    provider: "google" as const,
+    label: BUTTONS.GOOGLE_LOGIN,
+    iconSrc: "/btn_google.svg",
+    style: {
+      background: "#fff",
+      color: "#191600",
+      border: "1px solid #e0e0e0",
+      marginTop: 8,
+      fontWeight: 600,
+      padding: 0,
+    },
+  },
+] as const;

@@ -1,49 +1,54 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createSystemLog } from "@/lib/utils/logging/system-log";
-import { devLog } from "@/lib/utils/logging/dev-logger";
 import { requireAuth } from "@/lib/server/auth-utils";
-import { getClientIP, getUserAgent } from "@/lib/server/ip-helpers";
-import { logApiError } from "@/lib/utils/logging/system-log";
 import { prisma } from "@/lib/prisma";
+import {
+  getErrorResultFromRawError,
+  makeErrorResponseFromResult,
+  throwBusinessError,
+} from "@/lib/utils/error/errorUtil";
+import { LOG_MESSAGES } from "@/lib/utils/logging/log-templates";
 
 // 동적 렌더링 강제
 export const dynamic = "force-dynamic";
 
 // GET: 알림 설정 조회
 export async function GET(request: NextRequest) {
-  const clientIP = getClientIP(request);
-  const userAgent = getUserAgent(request);
-
+  let user = null;
   try {
-    devLog.log("[API] /api/notifications/settings GET 요청 시작");
-
     // 인증 확인
     const authResult = await requireAuth(false);
     if (!authResult.success || !authResult.user) {
       return authResult.response!;
     }
 
-    const user = authResult.user;
+    user = authResult.user;
 
-    devLog.log("사용자 ID:", user.id);
-
-    const settings = await prisma.user_notification_settings.findUnique({
-      where: {
-        user_id: user.id,
-      },
-    });
+    let settings;
+    try {
+      settings = await prisma.user_notification_settings.findUnique({
+        where: {
+          user_id: user.id,
+        },
+      });
+    } catch (queryError) {
+      throwBusinessError(
+        "GENERAL_QUERY_FAILED",
+        {
+          resourceType: "notificationSettings",
+        },
+        queryError
+      );
+    }
 
     if (!settings) {
-      devLog.log("알림 설정이 없음, 기본값 반환");
       return NextResponse.json(
         {
           id: null,
           user_id: user.id,
           notification_method: "push",
           visitor_alerts: true,
-          notice_alerts: true,
-          emergency_alerts: true,
-          maintenance_alerts: true,
+          system_alerts: true,
           kakao_user_id: null,
           is_active: false,
           created_at: null,
@@ -57,62 +62,43 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    devLog.log("알림 설정 조회 성공:", settings);
     return NextResponse.json(settings, {
       headers: {
         "Cache-Control": "no-store",
       },
     });
   } catch (error) {
-    devLog.error("알림 설정 조회 중 예외 발생:", error);
-
-    // API 에러 로깅
-    await logApiError(
-      "/api/notifications/settings",
-      "GET",
-      error instanceof Error ? error : String(error),
-      undefined,
-      {
-        ip: clientIP,
-        userAgent,
-      }
-    );
-
     // 시스템 예외 로그
+    const errorMessage = error instanceof Error ? error.message : String(error);
     await createSystemLog(
-      "NOTIFICATION_SETTINGS_READ_SYSTEM_ERROR",
-      `알림 설정 조회 시스템 오류: ${
-        error instanceof Error ? error.message : String(error)
-      }`,
+      "NOTIFICATION_SETTINGS_QUERY_FAILED",
+      LOG_MESSAGES.NOTIFICATION_SETTINGS_QUERY_FAILED(errorMessage),
       "error",
-      undefined,
+      user?.id ? { id: user.id, email: user.email || "" } : undefined,
       "notification",
-      undefined,
+      user?.id,
       {
-        error_message: error instanceof Error ? error.message : String(error),
-        action_type: "notification_settings",
+        action_type: "notification_event",
+        event: "notification_settings_query_failed",
+        error_message: errorMessage,
       },
-      undefined,
-      clientIP,
-      userAgent
+      request
     );
 
-    return NextResponse.json(
-      {
-        success: false,
-        error: "NOTIFICATION_SETTINGS_READ_SYSTEM_ERROR",
-        message: "알림 설정 조회 중 시스템 오류가 발생했습니다.",
-      },
-      { status: 500 }
-    );
+    // 비즈니스 에러 또는 시스템 에러를 표준화된 에러 코드로 매핑
+    const result = getErrorResultFromRawError(error, {
+      operation: "get_notification_settings",
+    });
+
+    return NextResponse.json(makeErrorResponseFromResult(result), {
+      status: result.status,
+    });
   }
 }
 
 // PUT: 알림 설정 업데이트
 export async function PUT(request: NextRequest) {
-  const clientIP = getClientIP(request);
-  const userAgent = getUserAgent(request);
-
+  let user = null;
   try {
     // 인증 확인
     const authResult = await requireAuth(false);
@@ -120,19 +106,28 @@ export async function PUT(request: NextRequest) {
       return authResult.response!;
     }
 
-    const user = authResult.user;
+    user = authResult.user;
 
     const body = await request.json();
-    const existingSettings = await prisma.user_notification_settings.findUnique(
-      {
+    let existingSettings;
+    try {
+      existingSettings = await prisma.user_notification_settings.findUnique({
         where: {
           user_id: user.id,
         },
         select: {
           id: true,
         },
-      }
-    );
+      });
+    } catch (queryError) {
+      throwBusinessError(
+        "GENERAL_QUERY_FAILED",
+        {
+          resourceType: "notificationSettings",
+        },
+        queryError
+      );
+    }
 
     let result;
     if (existingSettings) {
@@ -150,49 +145,13 @@ export async function PUT(request: NextRequest) {
             updated_at: now,
           },
         });
-      } catch (error) {
-        devLog.error("알림 설정 업데이트 오류:", error);
-
-        // API 에러 로깅
-        await logApiError(
-          "/api/notifications/settings",
-          "PUT",
-          error instanceof Error ? error.message : String(error),
-          user.id,
+      } catch (updateError) {
+        throwBusinessError(
+          "GENERAL_UPDATE_FAILED",
           {
-            ip: clientIP,
-            userAgent,
-          }
-        );
-
-        // 알림 설정 업데이트 실패 로그
-        await createSystemLog(
-          "NOTIFICATION_SETTINGS_UPDATE_FAILED",
-          `알림 설정 업데이트 실패: ${
-            error instanceof Error ? error.message : String(error)
-          } (사용자 ID: ${user.id})`,
-          "error",
-          user.id,
-          "notification",
-          undefined,
-          {
-            error_message:
-              error instanceof Error ? error.message : String(error),
-            user_id: user.id,
-            action_type: "notification_settings",
+            resourceType: "notificationSettings",
           },
-          user.email,
-          clientIP,
-          userAgent
-        );
-
-        return NextResponse.json(
-          {
-            success: false,
-            error: "NOTIFICATION_SETTINGS_UPDATE_FAILED",
-            message: "알림 설정 업데이트에 실패했습니다.",
-          },
-          { status: 500 }
+          updateError
         );
       }
     } else {
@@ -209,68 +168,32 @@ export async function PUT(request: NextRequest) {
             updated_at: now,
           },
         });
-      } catch (error) {
-        devLog.error("알림 설정 생성 오류:", error);
-
-        // API 에러 로깅
-        await logApiError(
-          "/api/notifications/settings",
-          "PUT",
-          error instanceof Error ? error.message : String(error),
-          user.id,
+      } catch (createError) {
+        throwBusinessError(
+          "GENERAL_CREATE_FAILED",
           {
-            ip: clientIP,
-            userAgent,
-          }
-        );
-
-        // 알림 설정 생성 실패 로그
-        await createSystemLog(
-          "NOTIFICATION_SETTINGS_CREATE_FAILED",
-          `알림 설정 생성 실패: ${
-            error instanceof Error ? error.message : String(error)
-          } (사용자 ID: ${user.id})`,
-          "error",
-          user.id,
-          "notification",
-          undefined,
-          {
-            error_message:
-              error instanceof Error ? error.message : String(error),
-            user_id: user.id,
-            action_type: "notification_settings",
+            resourceType: "notificationSettings",
           },
-          user.email,
-          clientIP,
-          userAgent
-        );
-
-        return NextResponse.json(
-          {
-            error: "NOTIFICATION_SETTINGS_CREATE_FAILED",
-            message: "알림 설정 생성에 실패했습니다.",
-          },
-          { status: 500 }
+          createError
         );
       }
     }
 
     // 성공 로그
     await createSystemLog(
-      "NOTIFICATION_SETTINGS_UPDATE_SUCCESS",
-      `알림 설정 업데이트 성공 (사용자 ID: ${user.id})`,
+      "NOTIFICATION_SETTINGS_UPDATED",
+      LOG_MESSAGES.NOTIFICATION_SETTINGS_UPDATED(user.email || user.id),
       "info",
-      user.id,
+      { id: user.id, email: user.email || "" },
       "notification",
-      undefined,
+      user?.id,
       {
         user_id: user.id,
         updated_fields: Object.keys(result),
-        action_type: "notification_settings",
+        action_type: "notification_event",
+        event: "notification_settings_updated",
       },
-      user.email,
-      clientIP,
-      userAgent
+      request
     );
 
     return NextResponse.json({
@@ -281,46 +204,30 @@ export async function PUT(request: NextRequest) {
         : "알림 설정이 성공적으로 생성되었습니다.",
     });
   } catch (error) {
-    devLog.error("알림 설정 업데이트 중 예외 발생:", error);
-
-    // API 에러 로깅
-    await logApiError(
-      "/api/notifications/settings",
-      "PUT",
-      error instanceof Error ? error : String(error),
-      undefined,
-      {
-        ip: clientIP,
-        userAgent,
-      }
-    );
-
     // 시스템 예외 로그
+    const errorMessage = error instanceof Error ? error.message : String(error);
     await createSystemLog(
-      "NOTIFICATION_SETTINGS_UPDATE_SYSTEM_ERROR",
-      `알림 설정 업데이트 시스템 오류: ${
-        error instanceof Error ? error.message : String(error)
-      }`,
+      "NOTIFICATION_SETTINGS_UPDATE_FAILED",
+      LOG_MESSAGES.NOTIFICATION_SETTINGS_UPDATE_FAILED(errorMessage),
       "error",
-      undefined,
+      user?.id ? { id: user.id, email: user.email || "" } : undefined,
       "notification",
-      undefined,
+      user?.id,
       {
-        error_message: error instanceof Error ? error.message : String(error),
-        action_type: "notification_settings",
+        action_type: "notification_event",
+        event: "notification_settings_update_failed",
+        error_message: errorMessage,
       },
-      undefined,
-      clientIP,
-      userAgent
+      request
     );
 
-    return NextResponse.json(
-      {
-        success: false,
-        error: "NOTIFICATION_SETTINGS_UPDATE_SYSTEM_ERROR",
-        message: "알림 설정 업데이트 중 시스템 오류가 발생했습니다.",
-      },
-      { status: 500 }
-    );
+    // 비즈니스 에러 또는 시스템 에러를 표준화된 에러 코드로 매핑
+    const result = getErrorResultFromRawError(error, {
+      operation: "update_notification_settings",
+    });
+
+    return NextResponse.json(makeErrorResponseFromResult(result), {
+      status: result.status,
+    });
   }
 }

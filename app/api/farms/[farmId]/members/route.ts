@@ -1,189 +1,22 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createSystemLog } from "@/lib/utils/logging/system-log";
-import { devLog } from "@/lib/utils/logging/dev-logger";
 import { requireAuth } from "@/lib/server/auth-utils";
-import { getClientIP, getUserAgent } from "@/lib/server/ip-helpers";
 import { prisma } from "@/lib/prisma";
-
-// GET - 농장 멤버 목록 조회
-export async function GET(
-  request: NextRequest,
-  { params }: { params: { farmId: string } }
-) {
-  const clientIP = getClientIP(request);
-  const userAgent = getUserAgent(request);
-
-  try {
-    // 인증된 사용자 확인
-    // 인증 확인
-    const authResult = await requireAuth(false);
-    if (!authResult.success || !authResult.user) {
-      return authResult.response!;
-    }
-
-    const user = authResult.user;
-    const isAdmin = authResult.isAdmin || false;
-
-    // 시스템 관리자가 아닌 경우 농장별 권한 체크
-    if (!isAdmin) {
-      let access;
-      try {
-        access = await prisma.farms.findUnique({
-          where: { id: params.farmId },
-          select: { owner_id: true },
-        });
-      } catch (accessError) {
-        devLog.error("Error checking farm access:", accessError);
-        return NextResponse.json(
-          {
-            success: false,
-            error: "FARM_ACCESS_CHECK_ERROR",
-            message: "농장 접근 권한 확인 중 오류가 발생했습니다.",
-          },
-          { status: 500 }
-        );
-      }
-
-      if (!access) {
-        return NextResponse.json(
-          {
-            success: false,
-            error: "FARM_NOT_FOUND",
-            message: "농장을 찾을 수 없습니다.",
-          },
-          { status: 404 }
-        );
-      }
-
-      // 농장 소유자이거나 구성원인지 확인
-      const isOwner = access.owner_id === user.id;
-      const isMember = await isFarmMember(params.farmId, user.id);
-
-      if (!isOwner && !isMember) {
-        return NextResponse.json(
-          {
-            success: false,
-            error: "ACCESS_DENIED",
-            message: "농장 접근 권한이 없습니다.",
-          },
-          { status: 403 }
-        );
-      }
-    }
-
-    // 멤버 목록 조회
-    let members;
-    try {
-      members = await prisma.farm_members.findMany({
-        where: { farm_id: params.farmId },
-        include: {
-          profiles: {
-            select: {
-              id: true,
-              name: true,
-              email: true,
-              profile_image_url: true,
-              avatar_seed: true,
-            },
-          },
-        },
-        orderBy: { created_at: "desc" },
-      });
-    } catch (membersError) {
-      devLog.error("Error fetching farm members:", membersError);
-      return NextResponse.json(
-        {
-          success: false,
-          error: "MEMBER_FETCH_ERROR",
-          message: "농장 멤버 조회 중 오류가 발생했습니다.",
-        },
-        { status: 500 }
-      );
-    }
-
-    // 농장 멤버 조회 로그 기록
-    await createSystemLog(
-      "MEMBER_READ",
-      `농장 멤버 조회: ${members?.length || 0}명 (농장 ID: ${params.farmId})`,
-      "info",
-      user.id,
-      "member",
-      undefined,
-      {
-        farm_id: params.farmId,
-        member_count: members?.length || 0,
-        action_type: "member_management",
-      },
-      user.email,
-      clientIP,
-      userAgent
-    );
-
-    return NextResponse.json(
-      { members },
-      {
-        headers: {
-          "Cache-Control": "no-store",
-        },
-      }
-    );
-  } catch (error) {
-    devLog.error("Error fetching farm members:", error);
-
-    // 농장 멤버 조회 실패 로그 기록
-    await createSystemLog(
-      "MEMBER_READ_FAILED",
-      `농장 멤버 조회 실패: ${
-        error instanceof Error ? error.message : "Unknown error"
-      } (농장 ID: ${params.farmId})`,
-      "error",
-      undefined,
-      "member",
-      undefined,
-      {
-        error_message: error instanceof Error ? error.message : "Unknown error",
-        farm_id: params.farmId,
-        action_type: "member_management",
-      },
-      undefined,
-      clientIP,
-      userAgent
-    ).catch((logError: any) =>
-      devLog.error("Failed to log member fetch error:", logError)
-    );
-
-    return NextResponse.json(
-      {
-        success: false,
-        error: "MEMBER_FETCH_ERROR",
-        message: "농장 멤버 조회 중 오류가 발생했습니다.",
-      },
-      { status: 500, headers: { "Cache-Control": "no-store" } }
-    );
-  }
-}
-
-// 농장 구성원 여부 확인 헬퍼 함수
-async function isFarmMember(farmId: string, userId: string) {
-  const data = await prisma.farm_members.findFirst({
-    where: {
-      farm_id: farmId,
-      user_id: userId,
-      is_active: true,
-    },
-    select: { id: true },
-  });
-  return !!data;
-}
+import {
+  getErrorResultFromRawError,
+  makeErrorResponseFromResult,
+  throwBusinessError,
+} from "@/lib/utils/error/errorUtil";
+import { LOG_MESSAGES } from "@/lib/utils/logging/log-templates";
+import type { AddMemberData } from "@/lib/types/farm";
 
 // POST - 농장 멤버 추가
 export async function POST(
   request: NextRequest,
   { params }: { params: { farmId: string } }
 ) {
-  const clientIP = getClientIP(request);
-  const userAgent = getUserAgent(request);
-  let user: any = null;
+  let user = null;
+  let newMember;
 
   try {
     // 인증된 사용자 확인
@@ -195,7 +28,8 @@ export async function POST(
 
     user = authResult.user;
     const isAdmin = authResult.isAdmin || false;
-    const { email, role } = await request.json();
+    const memberData: AddMemberData = await request.json();
+    const { email, role } = memberData;
 
     // 농장 소유권, 농장 관리자 권한, 또는 시스템 관리자 권한 확인
     let farm;
@@ -205,26 +39,20 @@ export async function POST(
         select: { owner_id: true, farm_name: true },
       });
     } catch (farmError) {
-      devLog.error("Error fetching farm:", farmError);
-      return NextResponse.json(
+      throwBusinessError(
+        "GENERAL_QUERY_FAILED",
         {
-          success: false,
-          error: "FARM_FETCH_ERROR",
-          message: "농장 정보 조회 중 오류가 발생했습니다.",
+          resourceType: "farm",
         },
-        { status: 500 }
+        farmError
       );
     }
 
     if (!farm) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: "FARM_NOT_FOUND",
-          message: "농장을 찾을 수 없습니다.",
-        },
-        { status: 404 }
-      );
+      throwBusinessError("FARM_NOT_FOUND", {
+        operation: "find_farm_for_member_add",
+        farmId: params.farmId,
+      });
     }
 
     // 권한 확인
@@ -239,27 +67,21 @@ export async function POST(
           select: { role: true },
         });
       } catch (memberError) {
-        devLog.error("Error checking member role:", memberError);
-        return NextResponse.json(
+        throwBusinessError(
+          "GENERAL_QUERY_FAILED",
           {
-            success: false,
-            error: "PERMISSION_CHECK_ERROR",
-            message: "권한 확인 중 오류가 발생했습니다.",
+            resourceType: "member",
           },
-          { status: 500 }
+          memberError
         );
       }
 
       if (!memberRole || memberRole.role !== "manager") {
-        return NextResponse.json(
-          {
-            success: false,
-            error: "INSUFFICIENT_PERMISSIONS",
-            message:
-              "멤버 추가 권한이 없습니다. 농장 소유자 또는 관리자만 멤버를 추가할 수 있습니다.",
-          },
-          { status: 403 }
-        );
+        throwBusinessError("INSUFFICIENT_PERMISSIONS", {
+          operation: "add_farm_member",
+          farmId: params.farmId,
+          userId: user.id,
+        });
       }
     }
 
@@ -277,26 +99,20 @@ export async function POST(
         },
       });
     } catch (profileError) {
-      devLog.error("Error fetching profile:", profileError);
-      return NextResponse.json(
+      throwBusinessError(
+        "GENERAL_QUERY_FAILED",
         {
-          success: false,
-          error: "PROFILE_FETCH_ERROR",
-          message: "사용자 정보 조회 중 오류가 발생했습니다.",
+          resourceType: "user",
         },
-        { status: 500 }
+        profileError
       );
     }
 
     if (!userToAdd) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: "USER_NOT_FOUND",
-          message: "추가할 사용자를 찾을 수 없습니다.",
-        },
-        { status: 404 }
-      );
+      throwBusinessError("USER_NOT_FOUND", {
+        operation: "add_farm_member",
+        email: email,
+      });
     }
 
     // 중복 멤버 확인
@@ -310,30 +126,24 @@ export async function POST(
         select: { id: true },
       });
     } catch (existingError) {
-      devLog.error("Error checking existing member:", existingError);
-      return NextResponse.json(
+      throwBusinessError(
+        "GENERAL_QUERY_FAILED",
         {
-          success: false,
-          error: "MEMBER_CHECK_ERROR",
-          message: "멤버 확인 중 오류가 발생했습니다.",
+          resourceType: "member",
         },
-        { status: 500 }
+        existingError
       );
     }
 
     if (existingMember) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: "MEMBER_ALREADY_EXISTS",
-          message: "이미 농장 멤버로 등록된 사용자입니다.",
-        },
-        { status: 409 }
-      );
+      throwBusinessError("MEMBER_ALREADY_EXISTS", {
+        operation: "add_farm_member",
+        farmId: params.farmId,
+        userId: userToAdd.id,
+      });
     }
 
     // 새 멤버 추가 + 알림 insert 트랜잭션 처리
-    let newMember;
     try {
       newMember = await prisma.$transaction(async (tx: any) => {
         const createdMember = await tx.farm_members.create({
@@ -355,7 +165,7 @@ export async function POST(
             farm_id: params.farmId,
             farm_name: farm.farm_name,
             role,
-            invited_by: user.email,
+            invited_by: user!.email,
           },
           link: `/admin/farms/${params.farmId}/members`,
         };
@@ -363,36 +173,39 @@ export async function POST(
         await tx.notifications.createMany({
           data: [
             { ...notificationData, user_id: userToAdd.id },
-            { ...notificationData, user_id: user.id },
+            { ...notificationData, user_id: user!.id },
           ],
         });
         return createdMember;
       });
     } catch (insertError) {
-      devLog.error("Error creating farm member or notification:", insertError);
-      throw insertError;
+      throwBusinessError(
+        "GENERAL_TRANSACTION_FAILED",
+        {
+          resourceType: "member",
+          operationType: "create",
+        },
+        insertError
+      );
     }
 
     // 농장 멤버 추가 로그 기록
     await createSystemLog(
-      "MEMBER_CREATE",
-      `농장 멤버 추가: ${userToAdd.name} (${userToAdd.email}) - ${role} 역할 (농장: ${farm.farm_name})`,
+      "MEMBER_CREATED",
+      LOG_MESSAGES.MEMBER_CREATED(userToAdd.email, farm.farm_name, role),
       "info",
-      user.id,
+      { id: user.id, email: user.email || "" },
       "member",
       newMember.id,
       {
+        action_type: "farm_event",
+        event: "member_created",
         member_id: newMember.id,
-        farm_id: params.farmId,
-        farm_name: farm.farm_name,
         member_email: userToAdd.email,
-        member_role: role,
-        target_user_id: userToAdd.id,
-        action_type: "member_management",
+        farm_name: farm.farm_name,
+        role: role,
       },
-      user.email,
-      clientIP,
-      userAgent
+      request
     );
 
     // 응답용 멤버 데이터 구성
@@ -431,37 +244,30 @@ export async function POST(
       }
     );
   } catch (error) {
-    devLog.error("Error adding farm member:", error);
-
     // 농장 멤버 추가 실패 로그 기록
+    const errorMessage = error instanceof Error ? error.message : String(error);
     await createSystemLog(
       "MEMBER_CREATE_FAILED",
-      `농장 멤버 추가 실패: ${
-        error instanceof Error ? error.message : "Unknown error"
-      } (농장 ID: ${params.farmId})`,
+      LOG_MESSAGES.MEMBER_CREATE_FAILED(params.farmId, errorMessage),
       "error",
-      user?.id,
+      user?.id ? { id: user.id, email: user.email || "" } : undefined,
       "member",
-      undefined,
+      newMember.id,
       {
-        error_message: error instanceof Error ? error.message : "Unknown error",
+        action_type: "farm_event",
+        event: "member_create_failed",
         farm_id: params.farmId,
-        action_type: "member_management",
+        error_message: errorMessage,
       },
-      user?.email,
-      clientIP,
-      userAgent
-    ).catch((logError: any) =>
-      devLog.error("Failed to log member addition error:", logError)
+      request
     );
-
-    return NextResponse.json(
-      {
-        success: false,
-        error: "MEMBER_CREATE_ERROR",
-        message: "멤버 추가 중 오류가 발생했습니다.",
-      },
-      { status: 500, headers: { "Cache-Control": "no-store" } }
-    );
+    const result = getErrorResultFromRawError(error, {
+      operation: "add_farm_member",
+      farmId: params.farmId,
+      userId: user?.id,
+    });
+    return NextResponse.json(makeErrorResponseFromResult(result), {
+      status: result.status,
+    });
   }
 }

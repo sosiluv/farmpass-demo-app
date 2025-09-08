@@ -1,12 +1,10 @@
 export const PAGE_HEADER = {
   FARMS_PAGE_TITLE: "농장 관리",
   FARMS_PAGE_DESCRIPTION: "등록된 농장을 관리하고 QR 코드를 생성하세요",
-  FARMS_BREADCRUMB: "농장 관리",
 
   MEMBERS_PAGE_TITLE: "구성원 관리",
   MEMBERS_PAGE_DESCRIPTION:
     "{farmName} 농장의 구성원을 관리하고 권한을 설정하세요",
-  MEMBERS_BREADCRUMB: "구성원 관리",
 
   FARM_VISITORS_PAGE_TITLE: "방문자 기록",
   FARM_VISITORS_PAGE_DESCRIPTION: "방문자 기록을 조회하고 관리합니다.",
@@ -32,9 +30,14 @@ export const BUTTONS = {
   DELETE_BUTTON: "삭제",
   DELETE_FARM_LOADING: "삭제 중...",
   ADD_FIRST_FARM: "첫 농장 등록하기",
+  ADD_FARM_BUTTON: "농장 추가",
   CANCEL_BUTTON: "취소",
   QR_CODE_DOWNLOAD: "QR 코드 다운로드",
-  ADD_FARM_BUTTON: "농장 추가",
+  QR_CODE_SHARE: "QR 코드 공유",
+  QR_CODE_COPY: "URL 복사",
+  QR_CODE_COPY_SUCCESS: "복사됨!",
+  QR_CODE_OPEN_LINK: "링크 열기",
+
   ADD_MEMBER: "구성원 추가",
   ADD_MEMBER_SHORT: "추가",
   QR_CODE_BUTTON: "QR코드",
@@ -91,8 +94,17 @@ export const LABELS = {
   VIEWER_TITLE: "조회자",
   // 농장 삭제 확인
   DELETE_FARM_CONFIRM_TITLE: "농장 삭제 확인",
-  DELETE_FARM_CONFIRM_DESCRIPTION:
-    "정말로 이 농장을 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.",
+  DELETE_FARM_CONFIRM_DESCRIPTION: "정말로 이 농장을 삭제하시겠습니까?",
+
+  // 농장 폼 취소 확인
+  FARM_FORM_CANCEL_TITLE: "농장 정보 입력 취소",
+  FARM_FORM_CANCEL_DESCRIPTION:
+    "입력한 정보가 저장되지 않습니다. 정말 나가시겠습니까?",
+
+  // 구성원 추가 폼 취소 확인
+  ADD_MEMBER_FORM_CANCEL_TITLE: "구성원 추가 취소",
+  ADD_MEMBER_FORM_CANCEL_DESCRIPTION:
+    "입력한 정보가 저장되지 않습니다. 정말 나가시겠습니까?",
 
   // 빈 농장 상태
   NO_REGISTERED_FARMS: "등록된 농장이 없습니다",
@@ -102,6 +114,7 @@ export const LABELS = {
   QR_CODE_TITLE: "{farmName} QR 코드",
   QR_CODE_DESCRIPTION: "방문자 등록을 위한 QR 코드입니다.",
   QR_CODE_SCAN_INFO: "QR 코드를 스캔하면 방문자 등록 페이지로 이동합니다.",
+  QR_CODE_LINK_TITLE: "방문자 등록 링크",
 } as const;
 
 // 구성원 역할 옵션
@@ -121,13 +134,13 @@ export const PLACEHOLDERS = {
   FARM_ADDRESS: "주소 검색을 통해 주소를 입력해주세요",
   FARM_DETAILED_ADDRESS: "상세 주소를 입력하세요 (예: 101동 1234호)",
   MANAGER_NAME: "이름을 입력하세요",
-  MANAGER_PHONE: "숫자만 입력 가능합니다",
+  MANAGER_PHONE: "하이픈(-) 없이 숫자만 입력해주세요",
   DESCRIPTION: "농장에 대한 설명을 입력하세요",
   // 구성원 추가
   MEMBER_EMAIL_PLACEHOLDER: "이메일 주소 입력 (최소 2글자)",
   MEMBER_ROLE_PLACEHOLDER: "역할을 선택하세요",
   // 검색
-  SEARCH: "농장 검색... (농장명, 주소)",
+  SEARCH: "농장 검색... (농장명, 주소) 입력하세요",
 } as const;
 
 // 에러 메시지

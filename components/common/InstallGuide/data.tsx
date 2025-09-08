@@ -58,7 +58,7 @@ export const platformGuides: PlatformGuide[] = [
   },
   {
     platform: LABELS.INSTALL_GUIDE_PLATFORM_ANDROID_CHROME,
-    icon: <Chrome className="w-6 h-6" />,
+    icon: <Smartphone className="w-6 h-6" />,
     steps: [
       {
         step: 1,
@@ -111,12 +111,11 @@ export const platformGuides: PlatformGuide[] = [
     tips: [
       LABELS.INSTALL_GUIDE_SAMSUNG_TIP1,
       LABELS.INSTALL_GUIDE_SAMSUNG_TIP2,
-      LABELS.INSTALL_GUIDE_SAMSUNG_TIP3,
     ],
   },
   {
     platform: LABELS.INSTALL_GUIDE_PLATFORM_DESKTOP_CHROME,
-    icon: <Chrome className="w-6 h-6" />,
+    icon: <Smartphone className="w-6 h-6" />,
     steps: [
       {
         step: 1,

@@ -31,18 +31,88 @@ export const BUTTONS = {
   PAGINATION_PAGE_RANGE: "{start}-{end} / {total}개",
 
   THEME_TOGGLE_SCREEN_READER: "테마 전환",
+  PROFILE_MENU_SCREEN_READER: "사용자 프로필 메뉴",
 
   ADDRESS_SEARCH_BUTTON: "주소 검색",
 
   REFRESH_BUTTON: "새로고침",
-  PHONE_INPUT_SAVE: "저장",
-  PHONE_INPUT_LOADING: "저장중...",
 
   // 알림 관련
   NOTIFICATION_LOAD_MORE: "더보기",
   NOTIFICATION_LOADING: "로딩 중...",
   NOTIFICATION_MARK_ALL_READ: "모두 읽음 처리",
+  NOTIFICATION_DELETE_ALL: "전체 삭제",
+
+  // 프로필 설정 관련
+  PROFILE_SETUP_GO_BACK: "로그인 페이지로 돌아가기",
+  PROFILE_SETUP_NEXT: "다음",
+  PROFILE_SETUP_CONSENT_TERMS: "약관 동의하기",
+  PROFILE_SETUP_PROCESSING: "처리 중...",
+  PROFILE_SETUP_SAVING: "저장 중...",
 } as const;
+
+// 헤더 메뉴 상수
+export const HEADER_MENU = {
+  MY_PROFILE: "내 프로필",
+  PASSWORD_CHANGE: "비밀번호 변경",
+  COMPANY_INFO: "회사 정보",
+  MENU: "메뉴",
+} as const;
+
+// Footer 상수
+export const FOOTER = {
+  BADGES: {
+    MOBILE_OPTIMIZED: "모바일 최적화",
+    QR_CODE_SUPPORT: "QR 코드 지원",
+    REAL_TIME_NOTIFICATION: "실시간 알림",
+  },
+  LINKS: {
+    COMPANY_INTRO: "회사소개",
+    LOCATION: "오시는길",
+    TERMS_OF_SERVICE: "이용약관",
+    PRIVACY_POLICY: "개인정보처리방침",
+  },
+  COMPANY_INFO: {
+    PHONE: "대표전화 : 054-843-1141",
+    FAX: "팩스 : 054-855-9398",
+    ADDRESS: "주소 : 경상북도 안동시 풍산읍 괴정2길 106-23 주101~104동",
+    COPYRIGHT: "Copyright. © {year} SWKorea All rights reserved.",
+  },
+  URLS: {
+    COMPANY_INTRO: "http://www.swkukorea.com/theme/sample60/html/a1.php",
+    LOCATION: "http://www.swkukorea.com/theme/sample60/html/a5.php",
+    TERMS: "/terms",
+    PRIVACY: "/privacy",
+  },
+} as const;
+
+// 소셜 링크 상수
+export const SOCIAL_LINKS = [
+  {
+    href: "http://pf.kakao.com/_fQFhG",
+    title: "카카오톡 채널",
+    src: "/btn_kakao_ch.svg",
+    alt: "카카오톡 채널",
+  },
+  {
+    href: "https://blog.naver.com/k331502",
+    title: "블로그",
+    src: "/btn_blog.svg",
+    alt: "블로그",
+  },
+  {
+    href: "mailto:k331502@nate.com",
+    title: "이메일",
+    src: "/btn_mail.svg",
+    alt: "이메일",
+  },
+  {
+    href: "http://www.swkukorea.com/",
+    title: "홈페이지",
+    src: "/btn_homepage.svg",
+    alt: "홈페이지",
+  },
+] as const;
 
 // 공통 컴포넌트 라벨
 export const LABELS = {
@@ -68,12 +138,6 @@ export const LABELS = {
   CHART_NO_TIME_DATA: "시간대별 방문자 데이터가 없습니다.",
   CHART_NO_TREND_DATA: "방문자 추이 데이터가 없습니다.",
 
-  // 레이아웃 라벨
-  LAYOUT_ADMIN_SIDEBAR: "시스템 관리자",
-  LAYOUT_FARM_MANAGER: "{count}개 농장 관리",
-  LAYOUT_REGISTER_FARM: "농장을 등록해주세요",
-
-  LAYOUT_MOBILE_GUIDE: "💡 닫기: 외부 터치 · 왼쪽 스와이프 · 우하단 버튼",
   LAYOUT_MANAGEMENT_MENU: "관리 메뉴",
   LAYOUT_FARM_QUICK_ACCESS: "농장별 바로가기",
   LAYOUT_QUICK_ACTIONS: "빠른 액션",
@@ -197,8 +261,8 @@ export const LABELS = {
 
   // InstallGuide.tsx
 
-  INSTALL_GUIDE_DIALOG_TITLE: "PWA 설치 가이드",
-  INSTALL_GUIDE_DIALOG_DESCRIPTION:
+  INSTALL_GUIDE_SHEET_TITLE: "PWA 설치 가이드",
+  INSTALL_GUIDE_SHEET_DESCRIPTION:
     "현재 플랫폼에 맞는 PWA 설치 방법을 안내합니다.",
 
   // InstallPrompt.tsx
@@ -230,6 +294,7 @@ export const LABELS = {
   ADMIN_SIDEBAR_NOTIFICATION_SETTINGS: "알림 설정",
   ADMIN_SIDEBAR_ACCOUNT_MANAGEMENT: "계정 관리",
   ADMIN_SIDEBAR_SYSTEM_MANAGEMENT: "시스템 관리",
+  ADMIN_SIDEBAR_TERMS_MANAGEMENT: "약관 관리",
   ADMIN_SIDEBAR_SYSTEM_SETTINGS: "시스템 설정",
   ADMIN_SIDEBAR_MONITORING: "모니터링",
 
@@ -246,8 +311,6 @@ export const LABELS = {
   MOBILE_HEADER_SYSTEM_ADMIN: "시스템 관리자",
   MOBILE_HEADER_FARM_COUNT: "{count}개 농장",
   MOBILE_HEADER_FARM_REGISTRATION_NEEDED: "농장 등록 필요",
-  PHONE_INPUT_TITLE: "휴대폰번호 입력",
-  PHONE_INPUT_DESCRIPTION: "서비스 이용을 위해 휴대폰번호를 입력해주세요.",
 
   // 알림 관련
   NOTIFICATION_TITLE: "실시간 알림",
@@ -255,6 +318,25 @@ export const LABELS = {
   NOTIFICATION_EMPTY: "알림이 없습니다.",
   NOTIFICATION_DETAIL_MODAL: "알림 상세 모달",
   NOTIFICATION_DELETE: "알림 삭제",
+
+  // 프로필 설정 관련
+  PROFILE_SETUP_LOADING_TEXT: "사용자 정보를 확인하는 중...",
+  PROFILE_SETUP_LOADING_TEXT_LOGIN: "로그인 페이지로 이동 중...",
+  PROFILE_SETUP_CONSENT_REQUIRED_TITLE: "약관 동의가 필요합니다",
+  PROFILE_SETUP_CONSENT_REQUIRED_DESC:
+    "서비스 이용을 위해 업데이트된 약관에 동의해주세요.",
+  PROFILE_SETUP_PROFILE_INPUT_TITLE: "프로필 정보 입력",
+  PROFILE_SETUP_PROFILE_INPUT_DESC:
+    "서비스 이용을 위해 추가 정보를 입력해주세요.",
+
+  PROFILE_SETUP_CANCEL_TITLE: "프로필 설정을 취소하시겠습니까?",
+  PROFILE_SETUP_CANCEL_TITLE_CONSENT: "약관 동의를 취소하시겠습니까?",
+  PROFILE_SETUP_CANCEL_DESC: "확인을 누르면 로그인 페이지로 돌아갑니다.",
+
+  // 사이드바 스와이프 가이드 관련
+  SIDEBAR_SWIPE_GUIDE_TITLE: "← 왼쪽으로 스와이프",
+  SIDEBAR_SWIPE_GUIDE_DESCRIPTION: "화면을 터치하고 왼쪽으로 밀어보세요",
+  SIDEBAR_SWIPE_GUIDE_DESCRIPTION_MOBILE: "터치 후 왼쪽으로 밀기",
 } as const;
 
 // 공통 컴포넌트 플레이스홀더

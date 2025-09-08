@@ -1,31 +1,25 @@
 import { NextRequest, NextResponse } from "next/server";
 import { devLog } from "@/lib/utils/logging/dev-logger";
-import { logApiError } from "@/lib/utils/logging/system-log";
-import { getClientIP, getUserAgent } from "@/lib/server/ip-helpers";
+import { createSystemLog } from "@/lib/utils/logging/system-log";
+import { getClientIP } from "@/lib/server/ip-helpers";
+import {
+  getErrorResultFromRawError,
+  makeErrorResponseFromResult,
+  throwBusinessError,
+} from "@/lib/utils/error/errorUtil";
+import { LOG_MESSAGES } from "@/lib/utils/logging/log-templates";
 
 export async function POST(request: NextRequest) {
   const clientIP = getClientIP(request);
-  const userAgent = getUserAgent(request);
 
   try {
     const { token } = await request.json();
 
     if (!token) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: "MISSING_TURNSTILE_TOKEN",
-          message: "캡차 토큰이 필요합니다.",
-        },
-        {
-          status: 400,
-          headers: {
-            "Cache-Control": "no-cache, no-store, must-revalidate",
-            Pragma: "no-cache",
-            Expires: "0",
-          },
-        }
-      );
+      throwBusinessError("MISSING_REQUIRED_FIELDS", {
+        missingFields: ["turnstile"],
+        operation: "verify_turnstile",
+      });
     }
 
     // Cloudflare Turnstile 검증
@@ -46,43 +40,32 @@ export async function POST(request: NextRequest) {
 
     const verificationResult = await verificationResponse.json();
 
-    devLog.log("Turnstile verification result:", {
-      success: verificationResult.success,
-      errorCodes: verificationResult["error-codes"],
-      clientIP,
-    });
-
     if (!verificationResult.success) {
       // 검증 실패 로그
-      await logApiError(
-        "/api/auth/verify-turnstile",
-        "POST",
-        `Turnstile verification failed: ${verificationResult[
-          "error-codes"
-        ]?.join(", ")}`,
+      const errorMessage = `Turnstile verification failed: ${verificationResult[
+        "error-codes"
+      ]?.join(", ")}`;
+
+      await createSystemLog(
+        "TURNSTILE_VERIFICATION_FAILED",
+        LOG_MESSAGES.TURNSTILE_VERIFICATION_FAILED(
+          verificationResult["error-codes"] || []
+        ),
+        "error",
+        undefined,
+        "system",
         undefined,
         {
-          ip: clientIP,
-          userAgent,
+          action_type: "auth_event",
+          event: "turnstile_verification_failed",
+          error_message: errorMessage,
         }
       );
 
-      return NextResponse.json(
-        {
-          success: false,
-          error: "TURNSTILE_VERIFICATION_FAILED",
-          message: "Turnstile 검증에 실패했습니다.",
-          details: verificationResult["error-codes"],
-        },
-        {
-          status: 400,
-          headers: {
-            "Cache-Control": "no-cache, no-store, must-revalidate",
-            Pragma: "no-cache",
-            Expires: "0",
-          },
-        }
-      );
+      throwBusinessError("TURNSTILE_VERIFICATION_FAILED", {
+        operation: "verify_turnstile",
+        errorCodes: verificationResult["error-codes"],
+      });
     }
 
     // 검증 성공
@@ -102,31 +85,35 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     devLog.error("Turnstile verification error:", error);
 
-    await logApiError(
-      "/api/auth/verify-turnstile",
-      "POST",
-      error instanceof Error ? error : String(error),
+    // 시스템 에러 로깅
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    await createSystemLog(
+      "TURNSTILE_SYSTEM_ERROR",
+      LOG_MESSAGES.TURNSTILE_SYSTEM_ERROR(errorMessage),
+      "error",
+      undefined,
+      "system",
       undefined,
       {
-        ip: clientIP,
-        userAgent,
-      }
+        action_type: "auth_event",
+        event: "turnstile_system_error",
+        error_message: errorMessage,
+      },
+      request
     );
 
-    return NextResponse.json(
-      {
-        success: false,
-        error: "TURNSTILE_SYSTEM_ERROR",
-        message: "Turnstile 시스템 오류가 발생했습니다.",
+    // 비즈니스 에러 또는 시스템 에러를 표준화된 에러 코드로 매핑
+    const result = getErrorResultFromRawError(error, {
+      operation: "verify_turnstile",
+    });
+
+    return NextResponse.json(makeErrorResponseFromResult(result), {
+      status: result.status,
+      headers: {
+        "Cache-Control": "no-cache, no-store, must-revalidate",
+        Pragma: "no-cache",
+        Expires: "0",
       },
-      {
-        status: 500,
-        headers: {
-          "Cache-Control": "no-cache, no-store, must-revalidate",
-          Pragma: "no-cache",
-          Expires: "0",
-        },
-      }
-    );
+    });
   }
 }

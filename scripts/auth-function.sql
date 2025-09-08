@@ -242,21 +242,6 @@ CREATE TRIGGER tr_handle_session_event
 
 -----------------------------------------------------------------------------------------------------------------------
 
--- CREATE OR REPLACE FUNCTION public.handle_profile_delete_on_user_delete()
--- RETURNS TRIGGER AS $$
--- BEGIN
---   DELETE FROM public.profiles WHERE id = OLD.id;
---   RETURN OLD;
--- END;
--- $$ LANGUAGE plpgsql SECURITY DEFINER;
-
--- DROP TRIGGER IF EXISTS tr_handle_profile_delete_on_user_delete ON auth.users;
--- CREATE TRIGGER tr_handle_profile_delete_on_user_delete
---   AFTER DELETE ON auth.users
---   FOR EACH ROW
---   EXECUTE FUNCTION public.handle_profile_delete_on_user_delete();
-
-
 
 -- 사용자 프로필 테이블 주석
 COMMENT ON TABLE public.profiles IS '사용자 프로필 정보를 저장하는 테이블';
@@ -411,9 +396,7 @@ COMMENT ON COLUMN public.user_notification_settings.id IS '알림 설정 고유 
 COMMENT ON COLUMN public.user_notification_settings.user_id IS '사용자 ID (auth.users 테이블 참조)';
 COMMENT ON COLUMN public.user_notification_settings.notification_method IS '알림 방법: push, kakao';
 COMMENT ON COLUMN public.user_notification_settings.visitor_alerts IS '방문자 알림 활성화 여부';
-COMMENT ON COLUMN public.user_notification_settings.notice_alerts IS '공지사항 알림 활성화 여부';
-COMMENT ON COLUMN public.user_notification_settings.emergency_alerts IS '긴급 알림 활성화 여부';
-COMMENT ON COLUMN public.user_notification_settings.maintenance_alerts IS '시스템 알림 활성화 여부';
+COMMENT ON COLUMN public.user_notification_settings.system_alerts IS '시스템 알림 활성화 여부';
 COMMENT ON COLUMN public.user_notification_settings.kakao_user_id IS '카카오톡 사용자 ID';
 COMMENT ON COLUMN public.user_notification_settings.is_active IS '알림 설정 활성화 상태';
 COMMENT ON COLUMN public.user_notification_settings.created_at IS '생성 시간';
@@ -431,5 +414,33 @@ COMMENT ON COLUMN public.notifications.data IS '추가 데이터(관련 리소�
 COMMENT ON COLUMN public.notifications.read IS '읽음 여부';
 COMMENT ON COLUMN public.notifications.created_at IS '생성 시각';
 COMMENT ON COLUMN public.notifications.updated_at IS '수정 시각(읽음 처리 등)';
+
+-- =================================
+-- 새로 추가된 테이블들 주석 (실제 스키마 기반)
+-- =================================
+
+-- 약관 관리 테이블 주석
+COMMENT ON TABLE public.terms_management IS '시스템 약관 및 정책을 관리하는 테이블';
+COMMENT ON COLUMN public.terms_management.id IS '약관 고유 ID';
+COMMENT ON COLUMN public.terms_management.type IS '약관 유형 (terms_of_service, privacy_policy 등)';
+COMMENT ON COLUMN public.terms_management.title IS '약관 제목';
+COMMENT ON COLUMN public.terms_management.content IS '약관 내용';
+COMMENT ON COLUMN public.terms_management.version IS '약관 버전';
+COMMENT ON COLUMN public.terms_management.is_active IS '약관 활성화 상태';
+COMMENT ON COLUMN public.terms_management.is_draft IS '초안 여부';
+COMMENT ON COLUMN public.terms_management.published_at IS '발행일';
+COMMENT ON COLUMN public.terms_management.created_by IS '약관 생성자 ID (profiles 테이블 참조)';
+COMMENT ON COLUMN public.terms_management.created_at IS '생성 시간';
+COMMENT ON COLUMN public.terms_management.updated_at IS '수정 시간';
+
+-- 사용자 동의 테이블 주석
+COMMENT ON TABLE public.user_consents IS '사용자별 약관 동의 정보를 저장하는 테이블';
+COMMENT ON COLUMN public.user_consents.id IS '동의 기록 고유 ID';
+COMMENT ON COLUMN public.user_consents.user_id IS '동의한 사용자 ID (profiles 테이블 참조)';
+COMMENT ON COLUMN public.user_consents.agreed IS '동의 여부';
+COMMENT ON COLUMN public.user_consents.agreed_at IS '동의 시간';
+COMMENT ON COLUMN public.user_consents.created_at IS '생성 시간';
+COMMENT ON COLUMN public.user_consents.updated_at IS '수정 시간';
+COMMENT ON COLUMN public.user_consents.term_id IS '동의한 약관 ID (terms_management 테이블 참조)';
 
 

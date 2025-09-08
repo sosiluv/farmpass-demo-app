@@ -21,7 +21,7 @@ export function DebugModeToggle({
         <div className="flex items-center gap-2">
           <Label
             htmlFor="debug-mode"
-            className="text-sm font-medium flex items-center gap-1"
+            className="text-sm sm:text-base font-medium flex items-center gap-1"
           >
             <Bug className="h-4 w-4" />
             {LABELS.DEBUG_MODE}
@@ -29,17 +29,14 @@ export function DebugModeToggle({
           {debugMode && (
             <Badge
               variant="outline"
-              className="text-xs border-orange-300 text-orange-700"
+              className="text-sm sm:text-base border-orange-300 text-orange-700"
             >
               {LABELS.DEBUG_MODE_ACTIVE}
             </Badge>
           )}
         </div>
-        <p className="text-sm text-muted-foreground">
-          {LABELS.DEBUG_MODE_DESC}
-        </p>
         {debugMode && (
-          <div className="flex items-center gap-1 text-xs text-orange-600 mt-1">
+          <div className="flex items-center gap-1 text-sm sm:text-base text-orange-600 mt-1">
             <AlertTriangle className="h-3 w-3" />
             <span>{LABELS.DEBUG_MODE_PANEL_WARNING}</span>
           </div>

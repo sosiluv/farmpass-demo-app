@@ -1,11 +1,9 @@
 import type { VisitorWithFarm as Visitor } from "@/lib/types/visitor";
 import type { VisitorEntry } from "@/lib/types";
 import { getRegionFromAddress } from "../system/region";
-import {
-  getKSTTodayRange,
-  toDateString,
-  toKSTDate,
-} from "@/lib/utils/datetime/date";
+import { getKSTDayBoundsUTC } from "@/lib/utils/datetime/date";
+import { formatInTimeZone, toZonedTime } from "date-fns-tz";
+import { addDays, startOfDay } from "date-fns";
 
 /**
  * =================================
@@ -116,37 +114,36 @@ export const calculateVisitorStats = ({
   visitors,
   showDisinfectionRate = true,
 }: VisitorStatsOptions): VisitorStats => {
-  // KST 기준으로 오늘 범위 계산 (조회용)
-  const { start: todayStart, end: todayEnd } = getKSTTodayRange();
+  // 오늘 KST 범위를 UTC instant로 계산
+  const { startUTC: todayStart, endUTC: todayEnd } = getKSTDayBoundsUTC(
+    new Date()
+  );
 
-  // 7일 전 시작 시간 (KST 기준)
-  const weekAgo = new Date(todayStart);
-  weekAgo.setDate(weekAgo.getDate() - 7);
-
-  // 30일 전 시작 시간 (KST 기준)
-  const monthAgo = new Date(todayStart);
-  monthAgo.setDate(monthAgo.getDate() - 30);
+  // 기준 KST 자정
+  const kstNow = toZonedTime(new Date(), "Asia/Seoul");
+  const todayKstStart = startOfDay(kstNow);
+  // 7일/30일 전 KST 자정
+  const weekAgoStartUTC = getKSTDayBoundsUTC(
+    addDays(todayKstStart, -7)
+  ).startUTC;
+  const monthAgoStartUTC = getKSTDayBoundsUTC(
+    addDays(todayKstStart, -30)
+  ).startUTC;
 
   const total = visitors.length;
   const todayCount = visitors.filter((visitor) => {
-    // ISO 문자열을 KST로 변환하여 비교
-    const visitDate = new Date(visitor.visit_datetime);
-    const kstVisitDate = toKSTDate(visitDate);
-    return kstVisitDate >= todayStart && kstVisitDate <= todayEnd;
+    const visitInstant = new Date(visitor.visit_datetime);
+    return visitInstant >= todayStart && visitInstant <= todayEnd;
   }).length;
 
   const weekCount = visitors.filter((visitor) => {
-    // ISO 문자열을 KST로 변환하여 비교
-    const visitDate = new Date(visitor.visit_datetime);
-    const kstVisitDate = toKSTDate(visitDate);
-    return kstVisitDate >= weekAgo;
+    const visitInstant = new Date(visitor.visit_datetime);
+    return visitInstant >= weekAgoStartUTC;
   }).length;
 
   const monthCount = visitors.filter((visitor) => {
-    // ISO 문자열을 KST로 변환하여 비교
-    const visitDate = new Date(visitor.visit_datetime);
-    const kstVisitDate = toKSTDate(visitDate);
-    return kstVisitDate >= monthAgo;
+    const visitInstant = new Date(visitor.visit_datetime);
+    return visitInstant >= monthAgoStartUTC;
   }).length;
 
   // 방역 완료율 계산
@@ -195,10 +192,9 @@ export const calculatePurposeStats = (visitors: Visitor[]) => {
  */
 export const calculateTimeStats = (visitors: Visitor[]) => {
   const timeCounts = visitors.reduce<Record<string, number>>((acc, visitor) => {
-    // ISO 문자열을 KST로 변환 (정확한 방식)
-    const visitDate = new Date(visitor.visit_datetime);
-    const kstDate = toKSTDate(visitDate);
-    const hour = kstDate.getHours();
+    const visitInstant = new Date(visitor.visit_datetime);
+    const kstZoned = toZonedTime(visitInstant, "Asia/Seoul");
+    const hour = kstZoned.getHours();
     const hourStr = `${String(hour).padStart(2, "0")}:00`;
     acc[hourStr] = (acc[hourStr] || 0) + 1;
     return acc;
@@ -220,10 +216,9 @@ export const calculateTimeStats = (visitors: Visitor[]) => {
 export const calculateWeekdayStats = (visitors: Visitor[]) => {
   const weekdayCounts = visitors.reduce<Record<string, number[]>>(
     (acc, visitor) => {
-      // ISO 문자열을 KST로 변환 (정확한 방식)
-      const visitDate = new Date(visitor.visit_datetime);
-      const kstDate = toKSTDate(visitDate);
-      const dayIndex = kstDate.getDay();
+      const visitInstant = new Date(visitor.visit_datetime);
+      const kstZoned = toZonedTime(visitInstant, "Asia/Seoul");
+      const dayIndex = kstZoned.getDay();
       const day = ["일", "월", "화", "수", "목", "금", "토"][dayIndex];
 
       if (!acc[day]) {
@@ -292,10 +287,8 @@ export const calculatePeriodVisitors = (
   endDate: Date
 ): number => {
   return visitors.filter((visitor) => {
-    // ISO 문자열을 KST로 변환하여 비교
-    const visitDate = new Date(visitor.visit_datetime);
-    const kstVisitDate = toKSTDate(visitDate);
-    return kstVisitDate >= startDate && kstVisitDate <= endDate;
+    const visitInstant = new Date(visitor.visit_datetime);
+    return visitInstant >= startDate && visitInstant <= endDate;
   }).length;
 };
 
@@ -305,36 +298,35 @@ export const calculatePeriodVisitors = (
 export const calculateMonthlyTrend = (visitors: Visitor[]): string => {
   const now = new Date();
 
-  // 최근 30일 범위
-  const last30DaysStart = new Date(now);
-  last30DaysStart.setDate(now.getDate() - 30);
-  last30DaysStart.setHours(0, 0, 0, 0);
+  // 기준 KST 자정
+  const kstNow = toZonedTime(now, "Asia/Seoul");
+  const todayKstStart = startOfDay(kstNow);
 
-  const last30DaysEnd = new Date(now);
-  last30DaysEnd.setHours(23, 59, 59, 999);
+  // 최근 30일 범위 (KST) → UTC instant
+  const last30DaysStart = getKSTDayBoundsUTC(
+    addDays(todayKstStart, -30)
+  ).startUTC;
+  const last30DaysEnd = getKSTDayBoundsUTC(kstNow).endUTC;
 
-  // 그 이전 30일 범위 (31~60일 전)
-  const previous30DaysStart = new Date(now);
-  previous30DaysStart.setDate(now.getDate() - 60);
-  previous30DaysStart.setHours(0, 0, 0, 0);
-
-  const previous30DaysEnd = new Date(now);
-  previous30DaysEnd.setDate(now.getDate() - 31);
-  previous30DaysEnd.setHours(23, 59, 59, 999);
+  // 그 이전 30일 범위 (31~60일 전, KST) → UTC instant
+  const previous30DaysStart = getKSTDayBoundsUTC(
+    addDays(todayKstStart, -60)
+  ).startUTC;
+  const previous30DaysEnd = getKSTDayBoundsUTC(
+    addDays(todayKstStart, -31)
+  ).endUTC;
 
   // 최근 30일 방문자 수 (KST 기준)
   const recentVisitors = visitors.filter((v) => {
-    const visitDate = new Date(v.visit_datetime);
-    const kstVisitDate = toKSTDate(visitDate);
-    return kstVisitDate >= last30DaysStart && kstVisitDate <= last30DaysEnd;
+    const visitInstant = new Date(v.visit_datetime);
+    return visitInstant >= last30DaysStart && visitInstant <= last30DaysEnd;
   }).length;
 
   // 이전 30일 방문자 수 (KST 기준)
   const previousVisitors = visitors.filter((v) => {
-    const visitDate = new Date(v.visit_datetime);
-    const kstVisitDate = toKSTDate(visitDate);
+    const visitInstant = new Date(v.visit_datetime);
     return (
-      kstVisitDate >= previous30DaysStart && kstVisitDate <= previous30DaysEnd
+      visitInstant >= previous30DaysStart && visitInstant <= previous30DaysEnd
     );
   }).length;
 
@@ -364,23 +356,20 @@ export const calculateMonthlyTrend = (visitors: Visitor[]): string => {
  */
 export const calculateWeeklyTrend = (visitors: Visitor[]): string => {
   const now = new Date();
+  const kstNow = toZonedTime(now, "Asia/Seoul");
 
-  // 이번 주 범위 (일요일 기준)
-  const dayOfWeek = now.getDay();
-  const thisWeekStart = new Date(now);
-  thisWeekStart.setDate(now.getDate() - dayOfWeek);
-  thisWeekStart.setHours(0, 0, 0, 0);
+  // 이번 주 범위 (일요일 기준), KST 자정 기준으로 계산 후 UTC instant 변환
+  const dayOfWeek = kstNow.getDay();
+  const thisWeekKstStart = startOfDay(addDays(kstNow, -dayOfWeek));
+  const thisWeekKstEnd = startOfDay(addDays(thisWeekKstStart, 6));
+  const thisWeekStart = getKSTDayBoundsUTC(thisWeekKstStart).startUTC;
+  const thisWeekEnd = getKSTDayBoundsUTC(thisWeekKstEnd).endUTC;
 
-  const thisWeekEnd = new Date(thisWeekStart);
-  thisWeekEnd.setDate(thisWeekStart.getDate() + 6);
-  thisWeekEnd.setHours(23, 59, 59, 999);
-
-  // 지난 주 범위
-  const lastWeekStart = new Date(thisWeekStart);
-  lastWeekStart.setDate(thisWeekStart.getDate() - 7);
-
-  const lastWeekEnd = new Date(thisWeekEnd);
-  lastWeekEnd.setDate(thisWeekEnd.getDate() - 7);
+  // 지난 주 범위 (KST)
+  const lastWeekKstStart = addDays(thisWeekKstStart, -7);
+  const lastWeekKstEnd = addDays(thisWeekKstEnd, -7);
+  const lastWeekStart = getKSTDayBoundsUTC(lastWeekKstStart).startUTC;
+  const lastWeekEnd = getKSTDayBoundsUTC(lastWeekKstEnd).endUTC;
 
   const thisWeekCount = calculatePeriodVisitors(
     visitors,
@@ -423,15 +412,13 @@ export const calculateWeeklyTrend = (visitors: Visitor[]): string => {
  */
 export const calculateDailyTrend = (visitors: Visitor[]): string => {
   const now = new Date();
+  const kstNow = toZonedTime(now, "Asia/Seoul");
+  const todayStart = getKSTDayBoundsUTC(kstNow).startUTC;
+  const todayEnd = getKSTDayBoundsUTC(kstNow).endUTC;
 
-  // KST 기준으로 오늘과 어제 범위 계산 (조회용)
-  const { start: todayStart, end: todayEnd } = getKSTTodayRange();
-
-  // 어제 범위 (KST 기준)
-  const yesterdayStart = new Date(todayStart);
-  yesterdayStart.setDate(todayStart.getDate() - 1);
-  const yesterdayEnd = new Date(todayEnd);
-  yesterdayEnd.setDate(todayEnd.getDate() - 1);
+  const yesterdayKst = addDays(startOfDay(kstNow), -1);
+  const yesterdayStart = getKSTDayBoundsUTC(yesterdayKst).startUTC;
+  const yesterdayEnd = getKSTDayBoundsUTC(yesterdayKst).endUTC;
 
   const todayCount = calculatePeriodVisitors(visitors, todayStart, todayEnd);
   const yesterdayCount = calculatePeriodVisitors(
@@ -584,10 +571,9 @@ export const calculateUnifiedChartData = (
   // 방문자 트렌드 (표준화) - KST 기준으로 날짜 처리
   const visitorTrend = visitorData
     .reduce<{ date: string; count: number }[]>((acc, visitor) => {
-      // ISO 문자열을 KST로 변환 (정확한 방식)
-      const visitDate = new Date(visitor.visit_datetime);
-      const kstDate = toKSTDate(visitDate);
-      const date = toDateString(kstDate);
+      const visitInstant = new Date(visitor.visit_datetime);
+      const kstZoned = toZonedTime(visitInstant, "Asia/Seoul");
+      const date = formatInTimeZone(kstZoned, "Asia/Seoul", "yyyy-MM-dd");
 
       const existing = acc.find((d) => d.date === date);
       if (existing) {
@@ -909,3 +895,25 @@ export const generateLogManagementStats = (
     },
   ];
 };
+
+export function formatTrendPercent(current: number, previous: number): string {
+  if (current === 0 && previous === 0) return "방문 없음";
+  if (previous === 0 && current > 0) return "첫 기간";
+  const pct = Math.round(((current - previous) / previous) * 100);
+  const sign = pct >= 0 ? "+" : "";
+  return `${sign}${pct}%`;
+}
+
+export function formatDiffCount(current: number, previous: number): string {
+  const diff = current - previous;
+  if (diff === 0) return current === 0 ? "방문 없음" : "동일";
+  if (diff > 0 && previous === 0) return `첫 방문 ${current}명`;
+  return diff > 0 ? `+${diff}명` : `${diff}명`;
+}
+
+export function getDisinfectionGrade(rate: number): string {
+  if (rate >= 95) return "우수";
+  if (rate >= 80) return "양호";
+  if (rate >= 60) return "보통";
+  return "개선필요";
+}

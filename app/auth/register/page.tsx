@@ -1,12 +1,11 @@
 "use client";
 
 import type React from "react";
-import { useState, useCallback, useMemo, memo } from "react";
+import { useState, useCallback, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
@@ -15,267 +14,32 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
-import { Mail, User, Lock, Phone, Plus, Loader2 } from "lucide-react";
+import { Form, FormField } from "@/components/ui/form";
 import { motion } from "framer-motion";
 import { useCommonToast } from "@/lib/utils/notification/toast-messages";
-import { formatPhone } from "@/lib/utils/validation/validation";
 import { devLog } from "@/lib/utils/logging/dev-logger";
 import { ErrorBoundary } from "@/components/error/error-boundary";
 import { ERROR_CONFIGS } from "@/lib/constants/error";
 import { usePasswordRules } from "@/lib/utils/validation/usePasswordRules";
 import { apiClient } from "@/lib/utils/data/api-client";
-import {
-  checkEmailDuplicate,
-  getAuthErrorMessage,
-} from "@/lib/utils/validation";
-import { useAuthActions } from "@/hooks/useAuthActions";
+import { checkEmailDuplicate } from "@/lib/utils/validation";
+import { useAuthActions } from "@/hooks/auth/useAuthActions";
 import {
   createRegistrationFormSchema,
   createDefaultRegistrationFormSchema,
   type RegistrationFormData,
 } from "@/lib/utils/validation/auth-validation";
-import { PasswordStrength } from "@/components/ui/password-strength";
-import { Logo, Turnstile } from "@/components/common";
-import { Loading } from "@/components/ui/loading";
+import { Logo } from "@/components/common/logo";
+import { BUTTONS, PAGE_HEADER } from "@/lib/constants/auth";
 import {
-  BUTTONS,
-  LABELS,
-  PLACEHOLDERS,
-  PAGE_HEADER,
-} from "@/lib/constants/auth";
-
-// 메모이제이션된 Turnstile 섹션 컴포넌트
-const TurnstileSection = memo(
-  ({
-    onVerify,
-    onError,
-    onExpire,
-    error,
-  }: {
-    onVerify: (token: string) => void;
-    onError: (error: string) => void;
-    onExpire: () => void;
-    error: string;
-  }) => (
-    <div className="space-y-2">
-      <label className="text-sm text-gray-800">
-        {LABELS.CAPTCHA_LABEL} <span className="text-red-500">*</span>
-      </label>
-      <Turnstile
-        siteKey={process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY || ""}
-        onVerify={onVerify}
-        onError={onError}
-        onExpire={onExpire}
-        theme="light"
-        size="normal"
-        className="flex justify-center"
-      />
-      {error && <p className="text-sm text-red-500">{error}</p>}
-    </div>
-  )
-);
-
-TurnstileSection.displayName = "TurnstileSection";
-
-// 메모이제이션된 이메일 필드 컴포넌트
-const EmailField = memo(
-  ({
-    field,
-    onBlur,
-    error,
-    isCheckingEmail,
-    loading,
-  }: {
-    field: any;
-    onBlur: () => void;
-    error: string;
-    isCheckingEmail: boolean;
-    loading: boolean;
-  }) => (
-    <FormItem>
-      <FormLabel className="text-sm text-gray-800">
-        {LABELS.EMAIL} <span className="text-red-500">*</span>
-      </FormLabel>
-      <div className="relative">
-        <Mail className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-        <FormControl>
-          <Input
-            {...field}
-            type="email"
-            placeholder={PLACEHOLDERS.EMAIL}
-            onBlur={(e) => {
-              field.onBlur();
-              onBlur();
-            }}
-            autoComplete="username"
-            className={`h-12 pl-10 input-focus ${
-              error ? "border-red-500" : ""
-            }`}
-            disabled={loading || isCheckingEmail}
-          />
-        </FormControl>
-        {isCheckingEmail && (
-          <Loading
-            spinnerSize={16}
-            showText={false}
-            minHeight="auto"
-            className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground"
-          />
-        )}
-      </div>
-      {error && <p className="text-sm text-red-500">{error}</p>}
-    </FormItem>
-  )
-);
-
-EmailField.displayName = "EmailField";
-
-// 메모이제이션된 이름 필드 컴포넌트
-const NameField = memo(
-  ({ field, loading }: { field: any; loading: boolean }) => (
-    <FormItem>
-      <FormLabel className="text-sm text-gray-800">
-        {LABELS.NAME} <span className="text-red-500">*</span>
-      </FormLabel>
-      <div className="relative">
-        <User className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-        <FormControl>
-          <Input
-            {...field}
-            type="text"
-            placeholder={PLACEHOLDERS.NAME}
-            autoComplete="name"
-            className="h-12 pl-10 input-focus"
-            disabled={loading}
-          />
-        </FormControl>
-      </div>
-      <FormMessage />
-    </FormItem>
-  )
-);
-
-NameField.displayName = "NameField";
-
-// 메모이제이션된 비밀번호 필드 컴포넌트
-const PasswordField = memo(
-  ({ field, loading }: { field: any; loading: boolean }) => (
-    <FormItem>
-      <FormLabel className="text-sm text-gray-800">
-        {LABELS.PASSWORD} <span className="text-red-500">*</span>
-      </FormLabel>
-      <div className="relative">
-        <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-        <FormControl>
-          <Input
-            {...field}
-            type="password"
-            placeholder={PLACEHOLDERS.PASSWORD}
-            autoComplete="new-password"
-            className="h-12 pl-10 input-focus"
-            disabled={loading}
-          />
-        </FormControl>
-      </div>
-      <FormMessage />
-      <PasswordStrength password={field.value} />
-    </FormItem>
-  )
-);
-
-PasswordField.displayName = "PasswordField";
-
-// 메모이제이션된 비밀번호 확인 필드 컴포넌트
-const ConfirmPasswordField = memo(
-  ({ field, loading }: { field: any; loading: boolean }) => (
-    <FormItem>
-      <FormLabel className="text-sm text-gray-800">
-        {LABELS.CONFIRM_PASSWORD} <span className="text-red-500">*</span>
-      </FormLabel>
-      <div className="relative">
-        <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-        <FormControl>
-          <Input
-            {...field}
-            type="password"
-            placeholder={PLACEHOLDERS.CONFIRM_PASSWORD}
-            autoComplete="new-password"
-            className="h-12 pl-10 input-focus"
-            disabled={loading}
-          />
-        </FormControl>
-      </div>
-      <FormMessage />
-    </FormItem>
-  )
-);
-
-ConfirmPasswordField.displayName = "ConfirmPasswordField";
-
-// 메모이제이션된 휴대폰 필드 컴포넌트
-const PhoneField = memo(
-  ({ field, loading }: { field: any; loading: boolean }) => (
-    <FormItem>
-      <FormLabel className="text-sm text-gray-800">
-        {LABELS.PHONE} <span className="text-red-500">*</span>
-      </FormLabel>
-      <div className="relative">
-        <Phone className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-        <FormControl>
-          <Input
-            {...field}
-            type="tel"
-            placeholder={PLACEHOLDERS.PHONE}
-            className="h-12 pl-10 input-focus"
-            disabled={loading}
-            onChange={(e) => {
-              const formattedPhone = formatPhone(e.target.value);
-              field.onChange(formattedPhone);
-            }}
-            maxLength={13}
-          />
-        </FormControl>
-      </div>
-      <FormMessage />
-    </FormItem>
-  )
-);
-
-PhoneField.displayName = "PhoneField";
-
-// 메모이제이션된 회원가입 버튼 컴포넌트
-const RegisterButton = memo(
-  ({ loading, disabled }: { loading: boolean; disabled: boolean }) => (
-    <Button
-      type="submit"
-      className="h-12 w-full flex items-center justify-center"
-      disabled={disabled}
-    >
-      {loading ? (
-        <>
-          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-          {BUTTONS.REGISTER_LOADING}
-        </>
-      ) : (
-        <>
-          <Plus className="h-4 w-4 mr-2" />
-          {BUTTONS.REGISTER_BUTTON}
-        </>
-      )}
-    </Button>
-  )
-);
-
-RegisterButton.displayName = "RegisterButton";
+  EmailField,
+  NameField,
+  PasswordField,
+  PhoneField,
+  TermsConsentSheet,
+  TurnstileSection,
+  AuthButton,
+} from "@/components/auth";
 
 export default function RegisterPage() {
   const [loading, setLoading] = useState(false);
@@ -283,6 +47,7 @@ export default function RegisterPage() {
   const [emailError, setEmailError] = useState<string>("");
   const [turnstileToken, setTurnstileToken] = useState<string>("");
   const [turnstileError, setTurnstileError] = useState<string>("");
+  const [showConsentSheet, setShowConsentSheet] = useState(false);
   const router = useRouter();
   const { showInfo, showSuccess, showError } = useCommonToast();
   const { signOut } = useAuthActions();
@@ -361,28 +126,50 @@ export default function RegisterPage() {
   }, []);
 
   // 메모이제이션된 회원가입 핸들러
-  const handleRegister = useCallback(
-    async (data: RegistrationFormData) => {
-      showInfo("회원가입 시도 중", "잠시만 기다려주세요.");
+  const handleRegister = useCallback(async () => {
+    // 캡차 인증 확인
+    if (!turnstileToken) {
+      setTurnstileError("캡차 인증을 완료해주세요.");
+      return;
+    }
 
-      // 캡차 인증 확인
-      if (!turnstileToken) {
-        setTurnstileError("캡차 인증을 완료해주세요.");
+    // 약관 동의 bottom sheet 모달 표시
+    setShowConsentSheet(true);
+  }, [turnstileToken]);
+
+  // 약관 동의 후 실제 회원가입 처리
+  const handleConsentSubmit = useCallback(
+    async (
+      privacyConsent: boolean,
+      termsConsent: boolean,
+      marketingConsent: boolean,
+      ageConsent: boolean
+    ) => {
+      if (!privacyConsent || !termsConsent || !ageConsent) {
+        showError("약관 동의 필요", "필수 약관에 동의해주세요.");
         return;
       }
 
+      showInfo("회원가입 시도 중", "잠시만 기다려주세요.");
       setLoading(true);
 
       try {
+        const formData = form.getValues();
+
         // 새로운 회원가입 API 호출
         const response = await apiClient("/api/auth/register", {
           method: "POST",
           body: JSON.stringify({
-            email: data.email,
-            password: data.password,
-            name: data.name,
-            phone: data.phone,
+            email: formData.email,
+            password: formData.password,
+            confirmPassword: formData.confirmPassword,
+            name: formData.name,
+            phone: formData.phone,
             turnstileToken: turnstileToken,
+            privacyConsent: privacyConsent,
+            termsConsent: termsConsent,
+            marketingConsent: marketingConsent,
+            ageConsent: ageConsent,
           }),
           context: "회원가입",
         });
@@ -395,21 +182,23 @@ export default function RegisterPage() {
             "회원가입 완료",
             response.message || "회원가입이 완료되었습니다."
           );
+          setShowConsentSheet(false);
           router.push("/auth/login");
         } else {
           throw new Error(response.message || "회원가입에 실패했습니다.");
         }
-      } catch (error: any) {
-        devLog.error("Registration failed:", error);
-        const authError = getAuthErrorMessage(error);
-        setEmailError(authError.message);
-
-        showError("회원가입 실패", authError.message);
+      } catch (error) {
+        const errorMessage =
+          error instanceof Error
+            ? error.message
+            : "알 수 없는 오류가 발생했습니다.";
+        setEmailError(errorMessage);
+        showError("회원가입 실패", errorMessage);
       } finally {
         setLoading(false);
       }
     },
-    [turnstileToken, showInfo, showSuccess, showError, router, signOut]
+    [turnstileToken, showInfo, showSuccess, showError, router, signOut, form]
   );
 
   // 메모이제이션된 버튼 비활성화 상태
@@ -420,7 +209,7 @@ export default function RegisterPage() {
   // 스키마 로딩 중이면 스켈레톤 표시
   if (isPasswordRulesLoading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-gradient-farm p-4">
+      <div className="flex min-h-screen items-center justify-center bg-gradient-farm p-3">
         <div className="w-full max-w-md">
           <div className="animate-pulse">
             <div className="h-64 bg-white rounded-lg shadow-lg"></div>
@@ -435,7 +224,7 @@ export default function RegisterPage() {
       title={ERROR_CONFIGS.LOADING.title}
       description={ERROR_CONFIGS.LOADING.description}
     >
-      <div className="flex min-h-screen items-center justify-center bg-gradient-farm p-4">
+      <div className="flex min-h-screen items-center justify-center bg-gradient-farm p-3">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -447,7 +236,7 @@ export default function RegisterPage() {
               <div className="mx-auto mb-4 flex justify-center">
                 <Logo size="xl" />
               </div>
-              <CardTitle className="text-3xl">
+              <CardTitle className="text-2xl">
                 {PAGE_HEADER.REGISTER_TITLE}
               </CardTitle>
               <CardDescription>
@@ -467,9 +256,7 @@ export default function RegisterPage() {
                       <EmailField
                         field={field}
                         onBlur={handleEmailBlur}
-                        error={
-                          form.formState.errors.email?.message || emailError
-                        }
+                        error={emailError}
                         isCheckingEmail={isCheckingEmail}
                         loading={loading}
                       />
@@ -488,7 +275,11 @@ export default function RegisterPage() {
                     control={form.control}
                     name="password"
                     render={({ field }) => (
-                      <PasswordField field={field} loading={loading} />
+                      <PasswordField
+                        type="new"
+                        field={field}
+                        loading={loading}
+                      />
                     )}
                   />
 
@@ -496,7 +287,11 @@ export default function RegisterPage() {
                     control={form.control}
                     name="confirmPassword"
                     render={({ field }) => (
-                      <ConfirmPasswordField field={field} loading={loading} />
+                      <PasswordField
+                        type="confirm"
+                        field={field}
+                        loading={loading}
+                      />
                     )}
                   />
 
@@ -508,6 +303,8 @@ export default function RegisterPage() {
                     )}
                   />
 
+                  {/* 약관 동의는 bottom sheet 모달에서 처리 */}
+
                   <TurnstileSection
                     onVerify={handleTurnstileVerify}
                     onError={handleTurnstileError}
@@ -515,27 +312,36 @@ export default function RegisterPage() {
                     error={turnstileError}
                   />
 
-                  <RegisterButton
+                  <AuthButton
+                    type="register"
                     loading={loading}
                     disabled={isButtonDisabled}
                   />
                 </form>
               </Form>
             </CardContent>
-            <CardFooter className="flex justify-center">
-              <p className="text-sm text-muted-foreground">
+            <CardFooter className="flex flex-col">
+              <div className="mt-2 text-center text-sm">
                 {BUTTONS.HAS_ACCOUNT}{" "}
                 <Link
                   href="/auth/login"
-                  className="font-medium text-primary hover:underline"
+                  className="text-primary hover:underline"
                 >
                   {BUTTONS.LOGIN_BUTTON}
                 </Link>
-              </p>
+              </div>
             </CardFooter>
           </Card>
         </motion.div>
       </div>
+
+      {/* 약관 동의 Bottom Sheet 모달 */}
+      <TermsConsentSheet
+        open={showConsentSheet}
+        onOpenChange={setShowConsentSheet}
+        onConsent={handleConsentSubmit}
+        loading={loading}
+      />
     </ErrorBoundary>
   );
 }

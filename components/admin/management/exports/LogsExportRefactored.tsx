@@ -1,16 +1,16 @@
 import { useState } from "react";
-import type { SystemLog } from "@/lib/types/system";
+import type { SystemLog } from "@/lib/types/common";
 import { LOG_CATEGORIES_NO_ICON } from "@/lib/constants/log-categories";
 import { BUTTONS, LABELS, PAGE_HEADER } from "@/lib/constants/management";
 import {
-  ExportDialogWrapper,
+  ExportSheetWrapper,
+  ExportActions,
   DateRangeSection,
   FilterSection,
   OptionsSection,
   SummarySection,
-  ExportActions,
-  useExportDialog,
-} from "./index";
+  useExportSheet,
+} from "@/components/admin/management/exports";
 
 interface LogsExportProps {
   logs: SystemLog[];
@@ -71,7 +71,7 @@ export function LogsExportRefactored({ logs, onExport }: LogsExportProps) {
   };
 
   // 공통 훅 사용
-  const { isOpen, setIsOpen, isExporting, handleExport } = useExportDialog({
+  const { isOpen, setIsOpen, isExporting, handleExport } = useExportSheet({
     onExport,
     validateOptions,
     successMessage: "로그 데이터가 성공적으로 내보내졌습니다.",
@@ -108,24 +108,14 @@ export function LogsExportRefactored({ logs, onExport }: LogsExportProps) {
   };
 
   return (
-    <ExportDialogWrapper
+    <ExportSheetWrapper
       open={isOpen}
       onOpenChange={setIsOpen}
       title={PAGE_HEADER.LOGS_EXPORT_TITLE}
       description={PAGE_HEADER.LOGS_EXPORT_DESCRIPTION}
       buttonText={BUTTONS.LOGS_EXPORT_BUTTON}
     >
-      <div className="space-y-3 sm:space-y-4 md:space-y-6">
-        {/* 날짜 범위 설정 */}
-        <DateRangeSection
-          startDate={startDate}
-          endDate={endDate}
-          onStartDateChange={setStartDate}
-          onEndDateChange={setEndDate}
-          title={LABELS.DATE_RANGE}
-          color="blue"
-        />
-
+      <div className="space-y-4">
         {/* 필터 설정 */}
         <FilterSection
           title={LABELS.FILTER_SETTINGS}
@@ -154,6 +144,15 @@ export function LogsExportRefactored({ logs, onExport }: LogsExportProps) {
           ]}
         />
 
+        {/* 날짜 범위 설정 */}
+        <DateRangeSection
+          startDate={startDate}
+          endDate={endDate}
+          onStartDateChange={setStartDate}
+          onEndDateChange={setEndDate}
+          title={LABELS.DATE_RANGE}
+          color="blue"
+        />
         {/* 내보내기 옵션 */}
         <OptionsSection
           title={LABELS.INCLUDED_INFO}
@@ -164,7 +163,7 @@ export function LogsExportRefactored({ logs, onExport }: LogsExportProps) {
             {
               key: "includeBasic",
               label: LABELS.BASIC_INFO,
-              description: "액션, 메시지, 시간",
+              description: LABELS.LOG_BASIC_INFO_DESC,
               checked: includeBasic,
               onChange: setIncludeBasic,
             },
@@ -211,6 +210,6 @@ export function LogsExportRefactored({ logs, onExport }: LogsExportProps) {
         onExport={() => handleExport(exportOptions)}
         onReset={resetOptions}
       />
-    </ExportDialogWrapper>
+    </ExportSheetWrapper>
   );
 }

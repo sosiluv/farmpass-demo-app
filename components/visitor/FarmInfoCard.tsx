@@ -7,7 +7,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import type { Farm } from "@/lib/types/visitor";
+import type { Farm } from "@/lib/types/common";
 import { LABELS } from "@/lib/constants/visitor";
 
 interface FarmInfoCardProps {

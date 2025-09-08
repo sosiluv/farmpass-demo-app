@@ -1,7 +1,6 @@
 export const PAGE_HEADER = {
   PAGE_TITLE: "알림 설정",
-  PAGE_DESCRIPTION: "농장 관령 알림을 설정하세요",
-  BREADCRUMB: "알림 설정",
+  PAGE_DESCRIPTION: "농장 관련 알림을 설정하세요",
 
   NOTIFICATION_SETTINGS: "알림 설정",
   NOTIFICATION_SETTINGS_DESC: "알림 방식과 종류를 설정하세요",
@@ -26,7 +25,7 @@ export const BUTTONS = {
   SUBSCRIBE_PUSH: "푸시 알림 구독하기",
   CLEANUP: "정리",
   CLEANUP_TITLE: "만료된 구독 정리",
-  UNSUBSCRIBE: "해제",
+  UNSUBSCRIBE: "알림 해제",
   UNSUBSCRIBE_TITLE: "구독 해제",
   CHECK_PERMISSION_AGAIN: "권한 다시 확인하기",
 } as const;
@@ -35,13 +34,7 @@ export const BUTTONS = {
 export const LABELS = {
   // 알림 유형
   VISITOR_ALERTS: "방문자 알림",
-  VISITOR_ALERTS_DESCRIPTION: "새로운 방문자가 등록되면 알림을 받습니다.",
-  NOTICE_ALERTS: "공지사항 알림",
-  NOTICE_ALERTS_DESCRIPTION: "새로운 공지사항이 등록되면 알림을 받습니다.",
-  EMERGENCY_ALERTS: "긴급 알림",
-  EMERGENCY_ALERTS_DESCRIPTION: "긴급 상황 발생 시 알림을 받습니다.",
-  MAINTENANCE_ALERTS: "유지보수 알림",
-  MAINTENANCE_ALERTS_DESCRIPTION: "시스템 유지보수 일정 알림을 받습니다.",
+  SYSTEM_ALERTS: "시스템 알림",
 
   // NotificationStatus 컴포넌트
   CHECKING_STATUS: "푸시 알림 상태 확인 중",
@@ -79,11 +72,10 @@ export const LABELS = {
   SYSTEM_NOTICE: "시스템 공지사항 및 업데이트",
 
   // 농장 목록
-  MANAGED_FARMS: "관리 중인 농장",
-  FARM_COUNT: "{count}개 농장",
-  NOTIFICATION_RECEIVING: "알림 수신 중",
 
-  // NotificationPermissionDialog
+  FARM_COUNT: "{count}개 농장",
+
+  // NotificationPermission
   ALLOW_NOTIFICATIONS: "알림을 허용하시겠어요?",
   RESUBSCRIBE_NOTIFICATIONS: "알림을 다시 구독하시겠어요?",
   ALLOW_DESCRIPTION: "농장 관리에 필요한 중요한 알림을 놓치지 마세요",
@@ -117,10 +109,10 @@ export const LABELS = {
 
   // NotificationMethodsCard
   PUSH_NOTIFICATION: "푸시 알림",
-  PUSH_NOTIFICATION_DESC: "실시간 알림을 받아보세요",
+  PUSH_NOTIFICATION_DESC: "실시간 푸시 알림을 받을 수 있습니다",
   KAKAO_NOTIFICATION: "카카오톡",
   KAKAO_NOTIFICATION_DESC:
-    "카카오톡 메시지를 통해 알림을 받을 수 있습니다. (미구현)",
+    "카카오톡 메시지를 통해 알림을 받을 수 있습니다 (미구현)",
 } as const;
 
 // 알림 유형 정의
@@ -129,28 +121,12 @@ export const NOTIFICATION_TYPES = [
     key: "visitor_alerts" as const,
     icon: "Bell",
     label: LABELS.VISITOR_ALERTS,
-    description: LABELS.VISITOR_ALERTS_DESCRIPTION,
     iconColor: "bg-blue-100 text-blue-600",
   },
   {
-    key: "notice_alerts" as const,
-    icon: "Megaphone",
-    label: LABELS.NOTICE_ALERTS,
-    description: LABELS.NOTICE_ALERTS_DESCRIPTION,
-    iconColor: "bg-purple-100 text-purple-600",
-  },
-  {
-    key: "emergency_alerts" as const,
-    icon: "AlertTriangle",
-    label: LABELS.EMERGENCY_ALERTS,
-    description: LABELS.EMERGENCY_ALERTS_DESCRIPTION,
-    iconColor: "bg-red-100 text-red-600",
-  },
-  {
-    key: "maintenance_alerts" as const,
-    icon: "Wrench",
-    label: LABELS.MAINTENANCE_ALERTS,
-    description: LABELS.MAINTENANCE_ALERTS_DESCRIPTION,
-    iconColor: "bg-yellow-100 text-yellow-600",
+    key: "system_alerts" as const,
+    icon: "Bell",
+    label: LABELS.SYSTEM_ALERTS,
+    iconColor: "bg-gray-100 text-gray-600",
   },
 ] as const;

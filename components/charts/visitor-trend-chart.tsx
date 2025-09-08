@@ -1,11 +1,13 @@
-import { Line } from "@/components/ui/chart";
+import { Bar } from "@/components/ui/chart";
 import { LABELS } from "@/lib/constants/common";
+import { useIsMobile } from "@/hooks/ui/use-mobile";
 
 interface VisitorTrendChartProps {
   data: { date: string; visitors: number }[];
 }
 
 export function VisitorTrendChart({ data }: VisitorTrendChartProps) {
+  const isMobile = useIsMobile();
   // 데이터가 없거나 모든 visitors 값이 0일 때 안내 메시지
   const isEmpty =
     !data ||
@@ -19,20 +21,28 @@ export function VisitorTrendChart({ data }: VisitorTrendChartProps) {
     );
   }
 
+  // 날짜를 MM-DD 형식으로 변환하는 함수
+  const formatDateToMMDD = (dateString: string) => {
+    const date = new Date(dateString);
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const day = String(date.getDate()).padStart(2, "0");
+    return `${month}-${day}`;
+  };
+
   return (
-    <Line
+    <Bar
       data={{
-        labels: data.map((item) => item.date),
+        labels: data.map((item) => formatDateToMMDD(item.date)),
         datasets: [
           {
             label: LABELS.CHART_VISITOR_COUNT,
             data: data.map((item) => item.visitors),
-            borderColor: "rgb(99, 102, 241)",
-            backgroundColor: "rgba(99, 102, 241, 0.2)",
-            tension: 0.4,
-            borderWidth: 3,
-            pointRadius: 4,
-            fill: true,
+            backgroundColor: "rgba(99, 102, 241, 0.8)",
+            borderColor: "rgb(79, 82, 221)",
+            borderWidth: 1,
+            borderRadius: 8,
+            maxBarThickness: 60,
+            hoverBackgroundColor: "rgba(99, 102, 241, 0.9)",
           },
         ],
       }}
@@ -54,11 +64,14 @@ export function VisitorTrendChart({ data }: VisitorTrendChartProps) {
         scales: {
           y: {
             beginAtZero: true,
-            ticks: { font: { size: 14 } },
+            ticks: { font: { size: 13 } },
             grid: { color: "rgba(0, 0, 0, 0.05)" },
           },
           x: {
-            ticks: { font: { size: 14 } },
+            ticks: {
+              font: { size: 13 },
+              maxTicksLimit: isMobile ? 7 : 0,
+            },
             grid: { display: false },
           },
         },

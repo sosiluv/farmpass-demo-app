@@ -10,7 +10,7 @@ import { LABELS, PAGE_HEADER } from "@/lib/constants/settings";
 import { ErrorBoundary } from "@/components/error/error-boundary";
 import { ERROR_CONFIGS } from "@/lib/constants/error";
 import type { SystemSettings } from "@/lib/types/settings";
-import { useNumberInput } from "@/hooks/use-number-input";
+import { useNumberInput } from "@/hooks/ui/use-number-input";
 import SettingsCardHeader from "../SettingsCardHeader";
 
 interface VisitorTabProps {
@@ -76,7 +76,10 @@ export default function VisitorTab({
         />
         <CardContent className="space-y-4">
           <div className="grid gap-2">
-            <Label htmlFor="reVisitAllowInterval">
+            <Label
+              htmlFor="reVisitAllowInterval"
+              className="text-sm sm:text-base font-medium"
+            >
               {LABELS.VISITOR_REVISIT_INTERVAL}
             </Label>
             <Input
@@ -100,12 +103,14 @@ export default function VisitorTab({
               onFocus={reVisitAllowInterval.handleFocus}
               min={reVisitAllowInterval.min}
               max={reVisitAllowInterval.max}
-              className="w-full"
             />
           </div>
 
           <div className="grid gap-2">
-            <Label htmlFor="maxVisitorsPerDay">
+            <Label
+              htmlFor="maxVisitorsPerDay"
+              className="text-sm sm:text-base font-medium"
+            >
               {LABELS.VISITOR_MAX_PER_DAY}
             </Label>
             <Input
@@ -129,12 +134,14 @@ export default function VisitorTab({
               onFocus={maxVisitorsPerDay.handleFocus}
               min={maxVisitorsPerDay.min}
               max={maxVisitorsPerDay.max}
-              className="w-full"
             />
           </div>
 
           <div className="grid gap-2">
-            <Label htmlFor="visitorDataRetentionDays">
+            <Label
+              htmlFor="visitorDataRetentionDays"
+              className="text-sm sm:text-base font-medium"
+            >
               {LABELS.VISITOR_DATA_RETENTION}
             </Label>
             <Input
@@ -158,12 +165,14 @@ export default function VisitorTab({
               onFocus={visitorDataRetentionDays.handleFocus}
               min={visitorDataRetentionDays.min}
               max={visitorDataRetentionDays.max}
-              className="w-full"
             />
           </div>
 
           <div className="flex items-center justify-between">
-            <Label htmlFor="requireVisitorPhoto">
+            <Label
+              htmlFor="requireVisitorPhoto"
+              className="text-sm sm:text-base font-medium"
+            >
               {LABELS.VISITOR_PHOTO_REQUIRED}
             </Label>
             <Switch
@@ -176,7 +185,10 @@ export default function VisitorTab({
           </div>
 
           <div className="flex items-center justify-between">
-            <Label htmlFor="requireVisitorContact">
+            <Label
+              htmlFor="requireVisitorContact"
+              className="text-sm sm:text-base font-medium"
+            >
               {LABELS.VISITOR_CONTACT_REQUIRED}
             </Label>
             <Switch
@@ -189,7 +201,10 @@ export default function VisitorTab({
           </div>
 
           <div className="flex items-center justify-between">
-            <Label htmlFor="requireVisitPurpose">
+            <Label
+              htmlFor="requireVisitPurpose"
+              className="text-sm sm:text-base font-medium"
+            >
               {LABELS.VISITOR_PURPOSE_REQUIRED}
             </Label>
             <Switch

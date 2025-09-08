@@ -1,4 +1,4 @@
-export { InstallGuide } from "../InstallGuide";
+export { InstallGuideSheet } from "./InstallGuideSheet";
 export { PlatformGuideCard } from "./PlatformGuideCard";
 export { InstallStepsCard } from "./InstallStepsCard";
 export { TipsCard } from "./TipsCard";

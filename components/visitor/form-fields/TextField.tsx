@@ -7,13 +7,12 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-import type { UseFormReturn } from "react-hook-form";
-import type { VisitorFormData } from "@/lib/utils/validation/visitor-validation";
+import type { UseFormReturn, FieldValues, Path } from "react-hook-form";
 import { LABELS, PLACEHOLDERS } from "@/lib/constants/visitor";
 
-interface TextFieldProps {
-  form: UseFormReturn<VisitorFormData>;
-  name: keyof VisitorFormData;
+interface TextFieldProps<T extends FieldValues = any> {
+  form: UseFormReturn<T>;
+  name: Path<T>;
   icon: React.ComponentType<{ className?: string }>;
   required?: boolean;
   fullWidth?: boolean;
@@ -21,7 +20,7 @@ interface TextFieldProps {
   className?: string;
 }
 
-export const TextField = ({
+export const TextField = <T extends FieldValues = any>({
   form,
   name,
   icon: Icon,
@@ -29,9 +28,9 @@ export const TextField = ({
   fullWidth = false,
   placeholder,
   className = "",
-}: TextFieldProps) => {
-  const labelKey = getLabelKey(name);
-  const placeholderKey = getPlaceholderKey(name);
+}: TextFieldProps<T>) => {
+  const labelKey = getLabelKey(name as string);
+  const placeholderKey = getPlaceholderKey(name as string);
 
   return (
     <FormField
@@ -39,13 +38,13 @@ export const TextField = ({
       name={name}
       render={({ field }) => (
         <FormItem
-          className={`space-y-2 sm:space-y-2 ${
+          className={`space-y-2 ${
             fullWidth ? "md:col-span-2" : ""
           } ${className}`}
         >
           <FormLabel
             htmlFor={`visitor-${name}`}
-            className="flex items-center gap-2 font-semibold text-gray-800 text-sm"
+            className="flex items-center gap-2 text-sm"
           >
             <Icon className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
             {LABELS[labelKey]}
@@ -56,13 +55,13 @@ export const TextField = ({
           <FormControl>
             <Input
               {...field}
+              value={field.value || ""} // null/undefined를 빈 문자열로 처리
               id={`visitor-${name}`}
               name={name}
               placeholder={
                 placeholder ||
                 (placeholderKey ? PLACEHOLDERS[placeholderKey] : "")
               }
-              className="h-10 sm:h-12 bg-gray-50 border border-gray-200 text-sm"
             />
           </FormControl>
           <FormMessage />
@@ -73,40 +72,37 @@ export const TextField = ({
 };
 
 // 필드명을 라벨 키로 매핑
-const getLabelKey = (fieldName: keyof VisitorFormData): keyof typeof LABELS => {
-  const mapping: Record<keyof VisitorFormData, keyof typeof LABELS> = {
-    fullName: "FULL_NAME",
-    phoneNumber: "PHONE_NUMBER",
-    address: "ADDRESS",
-    detailedAddress: "ADDRESS",
-    carPlateNumber: "CAR_PLATE",
-    visitPurpose: "VISIT_PURPOSE",
-    disinfectionCheck: "DISINFECTION",
+const getLabelKey = (fieldName: string): keyof typeof LABELS => {
+  const mapping: Record<string, keyof typeof LABELS> = {
+    visitor_name: "FULL_NAME",
+    visitor_phone: "PHONE_NUMBER",
+    visitor_address: "ADDRESS",
+    detailed_address: "ADDRESS",
+    vehicle_number: "CAR_PLATE",
+    visitor_purpose: "VISIT_PURPOSE",
+    disinfection_check: "DISINFECTION",
     notes: "NOTES",
-    profilePhoto: "PROFILE_PHOTO",
-    consentGiven: "CONSENT",
+    profile_photo_url: "PROFILE_PHOTO",
+    consent_given: "CONSENT",
   };
-  return mapping[fieldName];
+  return mapping[fieldName] || "FULL_NAME";
 };
 
 // 필드명을 플레이스홀더 키로 매핑
 const getPlaceholderKey = (
-  fieldName: keyof VisitorFormData
+  fieldName: string
 ): keyof typeof PLACEHOLDERS | null => {
-  const mapping: Record<
-    keyof VisitorFormData,
-    keyof typeof PLACEHOLDERS | null
-  > = {
-    fullName: "FULL_NAME",
-    phoneNumber: "PHONE_NUMBER",
-    address: null,
-    detailedAddress: null,
-    carPlateNumber: "CAR_PLATE",
-    visitPurpose: "VISIT_PURPOSE",
-    disinfectionCheck: null,
+  const mapping: Record<string, keyof typeof PLACEHOLDERS | null> = {
+    visitor_name: "FULL_NAME",
+    visitor_phone: "PHONE_NUMBER",
+    visitor_address: "ADDRESS",
+    detailed_address: "ADDRESS",
+    vehicle_number: "CAR_PLATE",
+    visitor_purpose: "VISIT_PURPOSE",
+    disinfection_check: null,
     notes: "NOTES",
-    profilePhoto: null,
-    consentGiven: null,
+    profile_photo_url: null,
+    consent_given: null,
   };
-  return mapping[fieldName];
+  return mapping[fieldName] || null;
 };

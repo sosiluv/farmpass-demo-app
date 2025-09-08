@@ -5,7 +5,7 @@ import { Wifi, WifiOff, RefreshCw, Home } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useRouter } from "next/navigation";
-import { useOnlineStatus } from "@/hooks/useOnlineStatus";
+import { useOnlineStatus } from "@/hooks/system/useOnlineStatus";
 import { OFFLINE_LABELS } from "@/lib/constants/offline";
 
 export default function OfflinePage() {
@@ -14,13 +14,12 @@ export default function OfflinePage() {
 
   useEffect(() => {
     // 온라인 상태가 되면 홈으로 리다이렉트
-    if (isOnline) {
-      const timer = setTimeout(() => {
-        router.push("/");
-      }, 2000);
-
-      return () => clearTimeout(timer);
-    }
+    // if (isOnline) {
+    //   const timer = setTimeout(() => {
+    //     router.push("/");
+    //   }, 2000);
+    //   return () => clearTimeout(timer);
+    // }
   }, [isOnline, router]);
 
   const handleRetry = async () => {
@@ -38,11 +37,15 @@ export default function OfflinePage() {
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
       <Card className="w-full max-w-md shadow-lg">
         <CardHeader className="text-center pb-4">
-          <div className="mx-auto mb-4 p-3 bg-red-100 rounded-full w-16 h-16 flex items-center justify-center">
+          <div className="mx-auto mb-4 flex justify-center">
             {isOnline ? (
-              <Wifi className="w-8 h-8 text-green-600" />
+              <div className="p-3 bg-green-100 rounded-full w-16 h-16 flex items-center justify-center">
+                <Wifi className="w-8 h-8 text-green-600" />
+              </div>
             ) : (
-              <WifiOff className="w-8 h-8 text-red-600" />
+              <div className="p-3 bg-red-100 rounded-full w-16 h-16 flex items-center justify-center">
+                <WifiOff className="w-8 h-8 text-red-600" />
+              </div>
             )}
           </div>
           <CardTitle className="text-xl font-semibold text-gray-800">

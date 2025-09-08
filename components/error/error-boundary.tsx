@@ -10,7 +10,6 @@ interface Props {
   fallback?: (error: Error, reset: () => void) => ReactNode;
   title?: string;
   description?: string;
-  showNavigation?: boolean;
 }
 
 interface State {
@@ -84,7 +83,6 @@ export class ErrorBoundary extends Component<Props, State> {
           reset={this.reset}
           title={this.props.title}
           description={this.props.description}
-          showNavigation={this.props.showNavigation}
         />
       );
     }

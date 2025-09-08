@@ -25,7 +25,10 @@ export function LoggingRetentionSelect({
 }: LoggingRetentionSelectProps) {
   return (
     <div className="space-y-2">
-      <Label htmlFor="logging-retention" className="text-sm font-medium">
+      <Label
+        htmlFor="logging-retention"
+        className="text-sm sm:text-base font-medium"
+      >
         {LABELS.LOGGING_RETENTION}
       </Label>
       <Select
@@ -44,7 +47,7 @@ export function LoggingRetentionSelect({
           ))}
         </SelectContent>
       </Select>
-      <p className="text-xs text-muted-foreground">
+      <p className="text-sm sm:text-base text-muted-foreground">
         {LABELS.LOGGING_RETENTION_DESC.replace("{days}", value.toString())}
       </p>
     </div>

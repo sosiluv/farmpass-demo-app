@@ -1,26 +1,42 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { logSystemWarning } from "@/lib/utils/logging/system-log";
-import { getClientIP, getUserAgent } from "@/lib/server/ip-helpers";
+import { createSystemLog } from "@/lib/utils/logging/system-log";
+import { LOG_MESSAGES } from "@/lib/utils/logging/log-templates";
 import { requireAuth } from "@/lib/server/auth-utils";
+import {
+  getErrorResultFromRawError,
+  makeErrorResponseFromResult,
+  throwBusinessError,
+} from "@/lib/utils/error/errorUtil";
 
 // 에러 로그 데이터 패치
 async function fetchErrorLogs() {
   try {
     const hoursAgo = new Date();
     hoursAgo.setHours(hoursAgo.getHours() - 24);
-    const logs = await prisma.system_logs.findMany({
-      where: {
-        level: "error",
-        created_at: {
-          gte: hoursAgo,
+    let logs;
+    try {
+      logs = await prisma.system_logs.findMany({
+        where: {
+          level: "error",
+          created_at: {
+            gte: hoursAgo,
+          },
         },
-      },
-      orderBy: {
-        created_at: "desc",
-      },
-      take: 50,
-    });
+        orderBy: {
+          created_at: "desc",
+        },
+        take: 50,
+      });
+    } catch (queryError) {
+      throwBusinessError(
+        "GENERAL_QUERY_FAILED",
+        {
+          resourceType: "errorLogs",
+        },
+        queryError
+      );
+    }
     const formattedLogs = logs.map((log: any) => {
       let context = undefined;
       if (log.metadata) {
@@ -43,43 +59,55 @@ async function fetchErrorLogs() {
     });
     return formattedLogs;
   } catch (error) {
-    return {
-      success: false,
-      error: "INTERNAL_SERVER_ERROR",
-      message: "데이터베이스 에러 발생",
-      details: error instanceof Error ? error.message : "Unknown error",
-    };
+    throwBusinessError(
+      "GENERAL_QUERY_FAILED",
+      {
+        resourceType: "errorLogs",
+      },
+      error
+    );
   }
 }
 
 export async function GET(request: NextRequest) {
-  const authResult = await requireAuth(true); // admin 권한 필수
-  if (!authResult.success || !authResult.user) {
-    return authResult.response!;
-  }
-  const clientIP = getClientIP(request);
-  const userAgent = getUserAgent(request);
+  let user = null;
+
   try {
+    const authResult = await requireAuth(true); // admin 권한 필수
+    if (!authResult.success || !authResult.user) {
+      return authResult.response!;
+    }
+
+    user = authResult.user;
     const errorLogs = await fetchErrorLogs();
     return NextResponse.json(errorLogs);
   } catch (error) {
-    await logSystemWarning(
+    // 모니터링 에러 로그 조회 시스템 오류 로그
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    await createSystemLog(
       "MONITORING_ERROR_LOGS_FAILED",
-      "에러 로그 조회 실패",
-      { ip: clientIP, userAgent },
+      LOG_MESSAGES.ERROR_LOGS_CHECK_FAILED(errorMessage),
+      "error",
+      user?.id ? { id: user.id, email: user.email || "" } : undefined,
+      "system",
+      "monitoring_errors",
       {
-        success: false,
-        error: "ERROR_LOGS_CHECK_FAILED",
-        message: error instanceof Error ? error.message : "Unknown error",
-      }
-    );
-    return NextResponse.json(
-      {
-        success: false,
-        error: "ERROR_LOGS_CHECK_FAILED",
-        message: error instanceof Error ? error.message : "Unknown error",
+        action_type: "monitoring_event",
+        event: "error_logs_check_failed",
+        error_message: errorMessage,
+        user_id: user?.id,
+        user_email: user?.email,
       },
-      { status: 500 }
+      request
     );
+
+    // 비즈니스 에러 또는 시스템 에러를 표준화된 에러 코드로 매핑
+    const result = getErrorResultFromRawError(error, {
+      operation: "get_error_logs",
+    });
+
+    return NextResponse.json(makeErrorResponseFromResult(result), {
+      status: result.status,
+    });
   }
 }

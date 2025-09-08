@@ -1,6 +1,7 @@
 import { Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { Logo } from "@/components/common";
+import { Logo } from "@/components/common/logo";
+import { LottieLoading } from "./lottie-loading";
 
 interface LoadingProps {
   /** 로딩 텍스트 (기본값: "로딩중...") */
@@ -28,7 +29,7 @@ export function Loading({
   return (
     <div
       className={cn(
-        "flex flex-col items-center justify-center gap-4 animate-in fade-in duration-300",
+        "flex flex-col items-center justify-center gap-4 animate-in fade-in duration-300 flex-1",
         className
       )}
       style={{ minHeight }}
@@ -53,8 +54,8 @@ interface PageLoadingProps {
   /** 로고 표시 여부 (기본값: true) */
   showLogo?: boolean;
   /** 배경 스타일 (기본값: "default") */
-  variant?: "default" | "gradient" | "minimal";
-  /** 전체 화면 여부 (기본값: true) */
+  variant?: "default" | "minimal" | "lottie";
+  /** 전체 화면 여부 (기본값: false) */
   fullScreen?: boolean;
 }
 
@@ -63,60 +64,37 @@ export function PageLoading({
   subText,
   showLogo = true,
   variant = "default",
-  fullScreen = true,
+  fullScreen = false,
 }: PageLoadingProps) {
+  // Lottie 로딩 사용 시
+  if (variant === "lottie") {
+    return (
+      <LottieLoading
+        text={text}
+        subText={subText}
+        fullScreen={fullScreen}
+        size="lg"
+        showText={true}
+      />
+    );
+  }
+
   const containerClasses = cn(
     "flex flex-col items-center justify-center gap-4",
-    fullScreen && "min-h-screen",
+    fullScreen ? "min-h-screen" : "flex-1", // fullScreen이 false일 때 남은 공간 모두 차지
     "bg-background"
   );
 
-  const spinnerClasses = cn(
-    "animate-spin",
-    variant === "gradient"
-      ? "w-16 h-16 border-4 border-blue-200 border-t-blue-600 rounded-full"
-      : "h-8 w-8 text-primary"
-  );
+  const spinnerClasses = cn("animate-spin h-8 w-8 text-primary");
 
   return (
     <div className={containerClasses}>
       {showLogo && <Logo size="lg" />}
-      <div className={spinnerClasses} />
+      {variant === "minimal" ? null : <Loader2 className={spinnerClasses} />}
       <div className="text-center">
         <p className="text-lg font-medium text-gray-700">{text}</p>
         {subText && <p className="text-sm text-gray-500 mt-1">{subText}</p>}
       </div>
-    </div>
-  );
-}
-
-// 스켈레톤 로딩 컴포넌트
-interface SkeletonLoadingProps {
-  /** 스켈레톤 개수 */
-  count?: number;
-  /** 스켈레톤 높이 */
-  height?: number;
-  /** 간격 */
-  gap?: number;
-  /** 추가 CSS 클래스 */
-  className?: string;
-}
-
-export function SkeletonLoading({
-  count = 3,
-  height = 20,
-  gap = 16,
-  className,
-}: SkeletonLoadingProps) {
-  return (
-    <div className={cn("space-y-4", className)} style={{ gap: `${gap}px` }}>
-      {Array.from({ length: count }).map((_, i) => (
-        <div
-          key={i}
-          className="animate-pulse bg-gradient-to-r from-gray-200 to-gray-300 rounded-lg"
-          style={{ height: `${height}px` }}
-        />
-      ))}
     </div>
   );
 }

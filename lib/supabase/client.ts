@@ -1,5 +1,9 @@
 import { createBrowserClient } from "@supabase/ssr";
 import { devLog } from "@/lib/utils/logging/dev-logger";
+import {
+  mapRawErrorToCode,
+  getErrorMessage,
+} from "@/lib/utils/error/errorUtil";
 
 export function createClient() {
   return createBrowserClient(
@@ -34,6 +38,8 @@ export async function refreshSession() {
     return { session };
   } catch (error) {
     devLog.error("Failed to refresh session:", error);
-    throw error;
+    const errorCode = mapRawErrorToCode(error);
+    const message = getErrorMessage(errorCode);
+    throw new Error(message);
   }
 }

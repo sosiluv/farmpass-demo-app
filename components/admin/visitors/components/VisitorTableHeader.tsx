@@ -13,7 +13,6 @@ import { LABELS } from "@/lib/constants/visitor";
 
 interface VisitorTableHeaderProps {
   showFarmColumn?: boolean;
-  isAdmin?: boolean;
 }
 
 /**
@@ -21,7 +20,6 @@ interface VisitorTableHeaderProps {
  */
 export function VisitorTableHeader({
   showFarmColumn = true,
-  isAdmin = false,
 }: VisitorTableHeaderProps) {
   return (
     <TableHeader>

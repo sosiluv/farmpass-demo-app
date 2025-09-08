@@ -5,7 +5,6 @@ import {
   Rabbit,
   Milk,
   Wheat,
-  TreePine,
   Fish,
   Flower2,
   Apple,

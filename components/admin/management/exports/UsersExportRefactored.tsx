@@ -1,12 +1,12 @@
 import { useState } from "react";
 import {
-  ExportDialogWrapper,
+  ExportSheetWrapper,
   ExportActions,
   FilterSection,
   OptionsSection,
   SummarySection,
-  useExportDialog,
-} from "./index";
+  useExportSheet,
+} from "@/components/admin/management/exports";
 import type { UsersExportOptions } from "./types";
 import { BUTTONS, LABELS, PAGE_HEADER } from "@/lib/constants/management";
 
@@ -41,7 +41,7 @@ export function UsersExportRefactored({ users, onExport }: UsersExportProps) {
     return { isValid: true };
   };
 
-  const { isOpen, setIsOpen, isExporting, handleExport } = useExportDialog({
+  const { isOpen, setIsOpen, isExporting, handleExport } = useExportSheet({
     onExport,
     validateOptions,
     successMessage: "사용자 데이터가 성공적으로 내보내졌습니다.",
@@ -76,14 +76,14 @@ export function UsersExportRefactored({ users, onExport }: UsersExportProps) {
   };
 
   return (
-    <ExportDialogWrapper
+    <ExportSheetWrapper
       open={isOpen}
       onOpenChange={setIsOpen}
       title={PAGE_HEADER.USERS_EXPORT_TITLE}
       description={PAGE_HEADER.USERS_EXPORT_DESCRIPTION}
       buttonText={BUTTONS.USERS_EXPORT_BUTTON}
     >
-      <div className="space-y-3 sm:space-y-4 md:space-y-6">
+      <div className="space-y-4">
         <FilterSection
           title={LABELS.FILTER_SETTINGS}
           color="green"
@@ -171,6 +171,6 @@ export function UsersExportRefactored({ users, onExport }: UsersExportProps) {
         onExport={() => handleExport(exportOptions)}
         onReset={resetOptions}
       />
-    </ExportDialogWrapper>
+    </ExportSheetWrapper>
   );
 }

@@ -5,20 +5,13 @@ import {
   useContext,
   useEffect,
   useReducer,
-  useState,
+  useMemo,
 } from "react";
 import { Session, User } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/client";
 import { devLog } from "@/lib/utils/logging/dev-logger";
-import { useSubscriptionManager } from "@/hooks/useSubscriptionManager";
-// React Query 캐시 정리를 위한 import
 import { useQueryClient } from "@tanstack/react-query";
-import {
-  profileKeys,
-  farmsKeys,
-  notificationKeys,
-  visitorsKeys,
-} from "@/lib/hooks/query/query-keys";
+import { authRelatedKeys } from "@/lib/hooks/query/query-keys";
 
 // 통합된 인증 상태 정의
 type AuthState =
@@ -60,6 +53,13 @@ function authReducer(state: AuthState, action: AuthAction): AuthState {
 
 interface AuthContextType {
   state: AuthState;
+  isAdmin: boolean;
+  user: User | undefined;
+  userId: string | undefined;
+  isAuthenticated: boolean;
+  isUnauthenticated: boolean;
+  isLoading: boolean;
+  isInitializing: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -68,19 +68,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [state, dispatch] = useReducer(authReducer, { status: "initializing" });
   const supabase = createClient();
 
-  // 구독 관리 훅 사용 - Lazy Loading으로 최적화
-  const { switchSubscription } = useSubscriptionManager();
-
   // React Query 캐시 정리를 위한 queryClient
   const queryClient = useQueryClient();
 
   // 인증 상태 변경 시 관련 캐시 초기화
   useEffect(() => {
     if (typeof window !== "undefined") {
-      queryClient.invalidateQueries({ queryKey: profileKeys.all });
-      queryClient.invalidateQueries({ queryKey: farmsKeys.all });
-      queryClient.invalidateQueries({ queryKey: notificationKeys.all });
-      queryClient.invalidateQueries({ queryKey: visitorsKeys.all });
+      if (state.status === "unauthenticated") {
+        // 로그아웃 시에는 캐시를 완전히 제거
+        authRelatedKeys.all.forEach((queryKey) => {
+          queryClient.removeQueries({ queryKey });
+        });
+      } else if (state.status === "authenticated") {
+        // 로그인 시에는 무효화만 (새로운 데이터로 갱신)
+        authRelatedKeys.all.forEach((queryKey) => {
+          queryClient.invalidateQueries({ queryKey });
+        });
+      }
     }
   }, [
     state.status,
@@ -122,10 +126,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               type: "SET_AUTHENTICATED",
               session,
               user: session.user,
-            });
-            // ✅ 최초 세션 로드 시에도 구독 전환 시도
-            switchSubscription(session.user.id).catch((error) => {
-              devLog.error("구독 전환 실패:", error);
             });
           } catch (userError) {
             devLog.warn("사용자 정보 검증 중 오류:", userError);
@@ -205,9 +205,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, [state.status]);
 
-  const value = {
-    state,
-  };
+  const value = useMemo(
+    () => ({
+      state,
+      isAdmin:
+        state.status === "authenticated" &&
+        state.user?.app_metadata?.isAdmin === true,
+      user: state.status === "authenticated" ? state.user : undefined,
+      userId: state.status === "authenticated" ? state.user.id : undefined,
+      isAuthenticated: state.status === "authenticated",
+      isUnauthenticated: state.status === "unauthenticated",
+      isLoading: state.status === "loading",
+      isInitializing: state.status === "initializing",
+    }),
+    [state]
+  );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }

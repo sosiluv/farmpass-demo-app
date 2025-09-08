@@ -13,7 +13,7 @@ import {
   Users,
   Database,
 } from "lucide-react";
-import { ChartCard } from "@/components/common/ChartCard";
+import { ChartCard } from "./ChartCard";
 import { LABELS } from "@/lib/constants/management";
 
 interface Activity {

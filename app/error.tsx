@@ -2,9 +2,10 @@
 
 import { useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { RefreshCw, Zap } from "lucide-react";
+import { RefreshCw } from "lucide-react";
 import { devLog } from "@/lib/utils/logging/dev-logger";
 import { GLOBAL_ERROR_LABELS } from "@/lib/constants/error";
+import { LottieLoading } from "@/components/ui/lottie-loading";
 
 interface ErrorProps {
   error: Error & { digest?: string };
@@ -19,19 +20,15 @@ export default function Error({ error, reset }: ErrorProps) {
   return (
     <div className="min-h-screen bg-gradient-to-br from-red-50 via-white to-orange-50 flex items-center justify-center p-4">
       <div className="text-center max-w-md w-full mx-auto">
-        {/* 에러 아이콘과 500 숫자 조합 */}
-        <div className="relative mb-12">
-          <div className="text-[clamp(6rem,20vw,12rem)] font-black text-transparent bg-clip-text bg-gradient-to-r from-red-200 to-orange-300 leading-none select-none">
-            {GLOBAL_ERROR_LABELS.ERROR_CODE}
-          </div>
-          <div className="absolute inset-0 text-[clamp(6rem,20vw,12rem)] font-black text-red-100 leading-none -z-10 blur-sm">
-            {GLOBAL_ERROR_LABELS.ERROR_CODE}
-          </div>
-          {/* 번개 아이콘 */}
-          <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
-            <div className="w-20 h-20 sm:w-24 sm:h-24 bg-gradient-to-r from-red-500 to-orange-500 rounded-full flex items-center justify-center shadow-lg">
-              <Zap className="w-12 h-12 sm:w-16 sm:h-16 text-white" />
-            </div>
+        {/* 에러 Lottie 애니메이션 */}
+        <div className="mb-8 flex justify-center">
+          <div className="w-64 h-64">
+            <LottieLoading
+              animationPath="/lottie/admin_error.json"
+              size="xl"
+              showText={false}
+              fullScreen={false}
+            />
           </div>
         </div>
 

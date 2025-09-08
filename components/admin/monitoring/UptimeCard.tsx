@@ -3,25 +3,10 @@ import { Badge } from "@/components/ui/badge";
 import { Clock, Activity, Hash, Calendar, AlertCircle } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { LABELS, PAGE_HEADER } from "@/lib/constants/monitoring";
+import type { UptimeData } from "@/lib/types/monitoring";
+import { LottieLoading } from "@/components/ui/lottie-loading";
 
-interface UptimeCardProps {
-  monitors?: Array<{
-    id: number;
-    friendly_name: string;
-    status: number;
-    all_time_uptime_ratio: number;
-    custom_uptime_ratio?: number;
-    url?: string;
-    interval?: number;
-    type?: number;
-    port?: string;
-    create_datetime?: number;
-  }>;
-  success?: boolean;
-  error?: string;
-  message?: string;
-  details?: string;
-}
+interface UptimeCardProps extends UptimeData {}
 
 export function UptimeCard({
   monitors,
@@ -47,12 +32,20 @@ export function UptimeCard({
     return (
       <Card className="bg-gradient-to-br from-background to-muted/20">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
+          <CardTitle className="flex items-center gap-2 text-base">
             <Clock className="h-5 w-5" />
             {PAGE_HEADER.UPTIME}
           </CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="flex flex-col items-center space-y-4">
+          <div className="w-24 h-24">
+            <LottieLoading
+              animationPath="/lottie/no_connection.json"
+              size="md"
+              showText={false}
+              fullScreen={false}
+            />
+          </div>
           <Alert>
             <AlertCircle className="h-4 w-4" />
             <AlertDescription>
@@ -74,7 +67,7 @@ export function UptimeCard({
     return (
       <Card className="bg-gradient-to-br from-background to-muted/20">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
+          <CardTitle className="flex items-center gap-2 text-base">
             <Clock className="h-5 w-5" />
             {PAGE_HEADER.UPTIME}
           </CardTitle>
@@ -149,7 +142,7 @@ export function UptimeCard({
   return (
     <Card className="bg-gradient-to-br from-background to-muted/20">
       <CardHeader>
-        <CardTitle className="flex items-center gap-2">
+        <CardTitle className="flex items-center gap-2 text-base">
           <Clock className="h-5 w-5" />
           {PAGE_HEADER.UPTIME}
         </CardTitle>

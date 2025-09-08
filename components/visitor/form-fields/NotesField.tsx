@@ -7,33 +7,30 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-import type { UseFormReturn } from "react-hook-form";
-import type { VisitorFormData } from "@/lib/utils/validation/visitor-validation";
+import type { UseFormReturn, FieldValues, Path } from "react-hook-form";
 import { LABELS, PLACEHOLDERS } from "@/lib/constants/visitor";
 import { FileText } from "lucide-react";
 
-interface NotesFieldProps {
-  form: UseFormReturn<VisitorFormData>;
+interface NotesFieldProps<T extends FieldValues = any> {
+  form: UseFormReturn<T>;
   required?: boolean;
   className?: string;
 }
 
-export const NotesField = ({
+export const NotesField = <T extends FieldValues = any>({
   form,
   required = false,
   className = "",
-}: NotesFieldProps) => {
+}: NotesFieldProps<T>) => {
   return (
     <FormField
       control={form.control}
-      name="notes"
+      name={"notes" as Path<T>}
       render={({ field }) => (
-        <FormItem
-          className={`space-y-2 sm:space-y-2 md:col-span-2 ${className}`}
-        >
+        <FormItem className={`space-y-2 md:col-span-2 ${className}`}>
           <FormLabel
             htmlFor="visitor-notes"
-            className="flex items-center gap-2 font-semibold text-gray-800 text-sm"
+            className="flex items-center gap-2 text-sm"
           >
             <FileText className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
             {LABELS.NOTES}
@@ -46,9 +43,10 @@ export const NotesField = ({
               {...field}
               id="visitor-notes"
               name="notes"
+              value={field.value || ""} // null/undefined를 빈 문자열로 처리
               placeholder={PLACEHOLDERS.NOTES}
-              rows={3}
-              className="resize-none bg-gray-50 border border-gray-200 text-sm"
+              className="min-h-[80px]"
+              rows={4}
             />
           </FormControl>
           <FormMessage />

@@ -2,11 +2,15 @@ import { CheckCircle } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Logo } from "@/components/common";
+import { Logo } from "@/components/common/logo";
 import { formatDateTime } from "@/lib/utils/datetime/date";
 import { BUTTONS, LABELS } from "@/lib/constants/visitor";
 
-export const SuccessCard = () => {
+interface SuccessCardProps {
+  onGoHome?: () => void;
+}
+
+export const SuccessCard = ({ onGoHome }: SuccessCardProps) => {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 py-4 px-3 sm:px-4">
       <Card className="w-full max-w-sm sm:max-w-md shadow-lg rounded-lg sm:rounded-2xl">
@@ -48,14 +52,25 @@ export const SuccessCard = () => {
             <p className="text-xs sm:text-sm text-gray-600">
               {LABELS.SUCCESS_CARD_COMPLETION_GUIDE}
             </p>
-            <Button
-              onClick={() => {
-                window.open("http://www.swkukorea.com/", "_blank");
-              }}
-              className="w-full h-10 sm:h-11 text-sm sm:text-base"
-            >
-              {BUTTONS.SUCCESS_CARD_VIEW_COMPANY}
-            </Button>
+            <div className="space-y-2">
+              <Button
+                onClick={() => {
+                  window.open("http://www.swkukorea.com/", "_blank");
+                }}
+                className="w-full h-12 text-sm sm:text-base"
+              >
+                {BUTTONS.SUCCESS_CARD_VIEW_COMPANY}
+              </Button>
+              {onGoHome && (
+                <Button
+                  onClick={onGoHome}
+                  variant="outline"
+                  className="w-full h-12 text-sm sm:text-base"
+                >
+                  {BUTTONS.SUCCESS_CARD_GO_HOME}
+                </Button>
+              )}
+            </div>
           </div>
 
           <div className="text-xs text-muted-foreground mt-3 sm:mt-4 space-y-1 text-center">

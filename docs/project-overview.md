@@ -845,8 +845,6 @@ export async function cleanupOldLogs() {
     .from("system_logs")
     .delete()
     .lt("created_at", cutoffDate.toISOString());
-
-  console.log(`${count}개의 오래된 로그를 정리했습니다.`);
 }
 ```
 

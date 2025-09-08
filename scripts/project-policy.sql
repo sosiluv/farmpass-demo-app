@@ -1,3 +1,8 @@
+-- 특정 이메일을 가진 사용자에게 관리자 권한 부여
+UPDATE auth.users 
+SET raw_app_meta_data = raw_app_meta_data || '{"isAdmin": true}'::jsonb
+WHERE email = 'admin@swkorea.com';
+
 ALTER TABLE public.profiles
 DROP CONSTRAINT fk_profiles_auth_users_id;
 
@@ -5,6 +10,11 @@ ALTER TABLE public.profiles
 ADD CONSTRAINT fk_profiles_auth_users_id
 FOREIGN KEY (id) REFERENCES auth.users(id)
 ON DELETE CASCADE;
+
+ALTER TABLE system_logs 
+ADD CONSTRAINT system_logs_user_id_fkey 
+FOREIGN KEY (user_id) REFERENCES profiles(id) 
+ON DELETE SET NULL ON UPDATE NO ACTION;
 
 ALTER TABLE system_logs DROP CONSTRAINT system_logs_user_id_fkey;
 
@@ -39,6 +49,8 @@ ALTER TABLE public.system_logs ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.push_subscriptions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.user_notification_settings ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.notifications ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.terms_management ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.user_consents ENABLE ROW LEVEL SECURITY;
 
 -- =================================
 -- 관리자 확인 함수 (RLS 우회 방식)
@@ -52,9 +64,10 @@ DECLARE
     result BOOLEAN;
 BEGIN
     -- RLS를 우회하여 직접 조회 (SECURITY DEFINER로 인해 RLS 무시)
-    SELECT account_type = 'admin'
+    -- JWT 토큰의 app_metadata에서 isAdmin 확인
+    SELECT (raw_app_meta_data ->> 'isAdmin')::boolean
     INTO result
-    FROM public.profiles
+    FROM auth.users
     WHERE id = auth.uid();
     
     RETURN COALESCE(result, FALSE);
@@ -66,7 +79,7 @@ END;
 $$;
 
 COMMENT ON FUNCTION public.is_system_admin() IS 
-'RLS를 우회하여 profiles.account_type으로 관리자 확인. 재귀 방지 및 실시간 권한 변경 지원';
+'RLS를 우회하여 auth.users.raw_app_meta_data.isAdmin으로 관리자 확인. 재귀 방지 및 실시간 권한 변경 지원';
 
 -- =================================
 -- farms row 접근 가능 여부 함수 (무한 재귀 방지)
@@ -270,6 +283,55 @@ COMMENT ON POLICY "Users can manage own notification settings" ON public.user_no
 
 COMMENT ON POLICY "Admins can manage all notification settings" ON public.user_notification_settings IS 
 '관리자는 모든 알림 설정에 대한 전체 권한을 가짐';
+
+-- =================================
+-- terms_management 테이블 정책
+-- =================================
+
+-- 관리자는 모든 약관 관리에 대한 전체 권한
+CREATE POLICY "Admins can manage all terms" ON public.terms_management
+  FOR ALL
+  USING (public.is_system_admin())
+  WITH CHECK (public.is_system_admin());
+
+-- 인증된 사용자는 활성화된 약관만 조회 가능
+CREATE POLICY "Users can view active terms" ON public.terms_management
+  FOR SELECT
+  USING (
+    auth.uid() IS NOT NULL AND is_active = true
+  );
+
+COMMENT ON POLICY "Admins can manage all terms" ON public.terms_management IS 
+'약관 관리는 관리자만 생성, 조회, 수정, 삭제할 수 있음';
+
+COMMENT ON POLICY "Users can view active terms" ON public.terms_management IS 
+'인증된 사용자는 활성화된 약관만 조회할 수 있음';
+
+-- =================================
+-- user_consents 테이블 정책
+-- =================================
+
+-- 사용자는 자신의 동의 정보만 조회/수정 가능
+CREATE POLICY "Users can manage own consents" ON public.user_consents
+  FOR ALL
+  USING (
+    auth.uid() IS NOT NULL AND user_id = auth.uid()
+  )
+  WITH CHECK (
+    auth.uid() IS NOT NULL AND user_id = auth.uid()
+  );
+
+-- 관리자는 모든 사용자 동의 정보에 대한 전체 권한
+CREATE POLICY "Admins can manage all consents" ON public.user_consents
+  FOR ALL
+  USING (public.is_system_admin())
+  WITH CHECK (public.is_system_admin());
+
+COMMENT ON POLICY "Users can manage own consents" ON public.user_consents IS 
+'사용자는 자신의 동의 정보만 조회/수정할 수 있음';
+
+COMMENT ON POLICY "Admins can manage all consents" ON public.user_consents IS 
+'관리자는 모든 사용자 동의 정보에 대한 전체 권한을 가짐';
 
 
 

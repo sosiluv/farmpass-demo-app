@@ -20,7 +20,16 @@ import { VisitInfoSection } from "./form-sections/VisitInfoSection";
 import { ConsentSection } from "./form-sections/ConsentSection";
 import { ImageSection } from "./form-sections/ImageSection";
 
-interface VisitorFormProps {
+export const VisitorForm = ({
+  settings,
+  formData,
+  isSubmitting,
+  uploadedImageUrl,
+  error,
+  onSubmit,
+  onImageUpload,
+  onImageDelete,
+}: {
   settings: VisitorSettings;
   formData: VisitorFormData;
   isSubmitting: boolean;
@@ -31,18 +40,7 @@ interface VisitorFormProps {
     file: File
   ) => Promise<{ publicUrl: string; fileName: string } | void>;
   onImageDelete: (fileName: string) => Promise<void>;
-}
-
-export const VisitorForm = ({
-  settings,
-  formData,
-  isSubmitting,
-  uploadedImageUrl,
-  error,
-  onSubmit,
-  onImageUpload,
-  onImageDelete,
-}: VisitorFormProps) => {
+}) => {
   // 동적 스키마 생성
   const visitorSchema = createVisitorFormSchema(settings, uploadedImageUrl);
 
@@ -68,7 +66,7 @@ export const VisitorForm = ({
     if (
       settings.requireVisitorPhoto &&
       !uploadedImageUrl &&
-      !formData.profilePhotoUrl
+      !formData.profile_photo_url
     ) {
       form.setError("root", { message: "방문자 사진을 등록해주세요" });
       return;

@@ -26,12 +26,12 @@ export const PhoneField = <T extends FieldValues = any>({
   return (
     <FormField
       control={form.control}
-      name={"phoneNumber" as Path<T>}
+      name={"visitor_phone" as Path<T>}
       render={({ field }) => (
-        <FormItem className={`space-y-2 sm:space-y-2 ${className}`}>
+        <FormItem className={`space-y-2 ${className}`}>
           <FormLabel
-            htmlFor="visitor-phoneNumber"
-            className="flex items-center gap-2 font-semibold text-gray-800 text-sm"
+            htmlFor="visitor-visitor_phone"
+            className="flex items-center gap-2 text-sm"
           >
             <Phone className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
             {LABELS.PHONE_NUMBER}
@@ -42,8 +42,9 @@ export const PhoneField = <T extends FieldValues = any>({
           <FormControl>
             <Input
               {...field}
-              id="visitor-phoneNumber"
-              name="phoneNumber"
+              value={field.value || ""} // null/undefined를 빈 문자열로 처리
+              id="visitor-visitor_phone"
+              name="visitor_phone"
               type="tel"
               onChange={(e) => {
                 const formattedPhone = formatPhone(e.target.value);
@@ -51,7 +52,6 @@ export const PhoneField = <T extends FieldValues = any>({
               }}
               placeholder={PLACEHOLDERS.PHONE_NUMBER}
               maxLength={13}
-              className="h-10 sm:h-12 bg-gray-50 border border-gray-200 text-sm"
             />
           </FormControl>
           <FormMessage />

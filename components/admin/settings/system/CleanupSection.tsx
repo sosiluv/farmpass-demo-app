@@ -10,6 +10,7 @@ import {
   CleanupActions,
 } from "./cleanup";
 import { Loading } from "@/components/ui/loading";
+import { LottieLoadingCompact } from "@/components/ui/lottie-loading";
 import { BUTTONS, LABELS, PAGE_HEADER } from "@/lib/constants/settings";
 
 interface CleanupSectionProps {
@@ -41,6 +42,7 @@ export function CleanupSection({
             size="sm"
             onClick={onRefreshStatus}
             disabled={cleanupLoading || statusLoading}
+            className="text-sm sm:text-base"
           >
             <RotateCcw
               className={`h-4 w-4 mr-2 ${statusLoading ? "animate-spin" : ""}`}
@@ -51,13 +53,12 @@ export function CleanupSection({
       />
       <CardContent className="space-y-6">
         {statusLoading ? (
-          <Loading
-            text={LABELS.CLEANUP_STATUS_CHECKING}
-            minHeight={180}
-            spinnerSize={32}
-            spinnerColor="text-primary"
-            className="py-8 w-full"
-          />
+          <div className="flex items-center justify-center py-8">
+            <LottieLoadingCompact
+              text={LABELS.CLEANUP_STATUS_CHECKING}
+              size="md"
+            />
+          </div>
         ) : cleanupStatus ? (
           <>
             <CleanupStatusComponent cleanupStatus={cleanupStatus} />

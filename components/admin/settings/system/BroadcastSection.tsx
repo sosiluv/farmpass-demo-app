@@ -6,9 +6,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Send } from "lucide-react";
 import { useCommonToast } from "@/lib/utils/notification/toast-messages";
 import { useBroadcastMutation } from "@/lib/hooks/query/use-broadcast-mutations";
-import { getAuthErrorMessage } from "@/lib/utils/validation/validation";
 import SettingsCardHeader from "../SettingsCardHeader";
-import { BroadcastForm, BroadcastAlert, BroadcastResult } from "./broadcast";
+import { BroadcastForm, BroadcastResult } from "./broadcast";
 import { PAGE_HEADER } from "@/lib/constants/settings";
 
 interface BroadcastSectionProps {
@@ -20,7 +19,6 @@ interface BroadcastFormData {
   message: string;
   requireInteraction: boolean;
   url: string;
-  notificationType: "maintenance" | "emergency" | "notice";
 }
 
 export default function BroadcastSection({ isLoading }: BroadcastSectionProps) {
@@ -32,7 +30,6 @@ export default function BroadcastSection({ isLoading }: BroadcastSectionProps) {
     message: "",
     requireInteraction: false,
     url: "/admin/dashboard",
-    notificationType: "notice",
   });
   const [lastSendResult, setLastSendResult] = useState<{
     success: boolean;
@@ -49,22 +46,16 @@ export default function BroadcastSection({ isLoading }: BroadcastSectionProps) {
   };
 
   const handleSendBroadcast = async () => {
-    if (
-      !formData.title.trim() ||
-      !formData.message.trim() ||
-      !formData.notificationType
-    ) {
-      showWarning("입력 누락", "제목, 메시지, 알림 유형을 모두 입력해주세요.");
+    if (!formData.title.trim() || !formData.message.trim()) {
+      showWarning("입력 누락", "제목, 메시지를 모두 입력해주세요.");
       return;
     }
 
-    // 긴급 알림인 경우 경고 메시지
-    if (formData.notificationType === "emergency") {
-      showWarning(
-        "긴급 알림 발송",
-        "이 알림은 모든 사용자에게 즉시 전송됩니다. 신중하게 발송해주세요."
-      );
-    }
+    // 시스템 알림인 경우 경고 메시지
+    showWarning(
+      "시스템 알림 발송",
+      "이 알림은 모든 사용자에게 즉시 전송됩니다. 신중하게 발송해주세요."
+    );
 
     // 발송 시작 알림
     showInfo("알림 발송 시작", "푸시 알림을 발송하는 중입니다...");
@@ -75,7 +66,7 @@ export default function BroadcastSection({ isLoading }: BroadcastSectionProps) {
         message: formData.message,
         url: formData.url,
         requireInteraction: formData.requireInteraction,
-        notificationType: formData.notificationType,
+        notificationType: "system",
       });
 
       // 성공 처리 - API의 message를 그대로 사용
@@ -106,11 +97,13 @@ export default function BroadcastSection({ isLoading }: BroadcastSectionProps) {
         message: "",
         requireInteraction: false,
         url: "/admin/dashboard",
-        notificationType: "notice",
       });
     } catch (error) {
-      const authError = getAuthErrorMessage(error);
-      showError("브로드캐스트 오류", authError.message);
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : "알 수 없는 오류가 발생했습니다.";
+      showError("브로드캐스트 오류", errorMessage);
 
       setLastSendResult({
         success: false,
@@ -134,7 +127,6 @@ export default function BroadcastSection({ isLoading }: BroadcastSectionProps) {
           description={PAGE_HEADER.BROADCAST_SECTION_DESC}
         />
         <CardContent className="space-y-6">
-          <BroadcastAlert />
           <BroadcastForm
             formData={formData}
             onInputChange={handleInputChange}

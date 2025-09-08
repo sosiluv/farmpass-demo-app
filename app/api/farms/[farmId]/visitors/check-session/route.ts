@@ -2,16 +2,18 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { cookies } from "next/headers";
 import { getSystemSettings } from "@/lib/cache/system-settings-cache";
-import { devLog } from "@/lib/utils/logging/dev-logger";
 import { createSystemLog } from "@/lib/utils/logging/system-log";
-import { getClientIP, getUserAgent } from "@/lib/server/ip-helpers";
+import {
+  getErrorResultFromRawError,
+  makeErrorResponseFromResult,
+  throwBusinessError,
+} from "@/lib/utils/error/errorUtil";
+import { LOG_MESSAGES } from "@/lib/utils/logging/log-templates";
 
 export async function GET(
   request: NextRequest,
   { params }: { params: { farmId: string } }
 ) {
-  const clientIP = getClientIP(request);
-  const userAgent = getUserAgent(request);
   const farmId = params.farmId;
 
   try {
@@ -22,56 +24,65 @@ export async function GET(
     if (!sessionToken) {
       await createSystemLog(
         "VISITOR_SESSION_NOT_FOUND",
-        `방문자 세션 없음 - 첫 방문 (농장 ID: ${farmId})`,
+        LOG_MESSAGES.VISITOR_SESSION_NOT_FOUND(farmId),
         "info",
         undefined,
         "visitor",
-        undefined,
+        farmId,
         {
+          action_type: "visitor_event",
+          event: "visitor_session_not_found",
           farm_id: farmId,
           session_token: "none",
-          action_type: "first_visit",
         },
-        undefined,
-        clientIP,
-        userAgent
+        request
       );
       return NextResponse.json({ isFirstVisit: true });
     }
 
     // 2. 시스템 설정 및 방문 기록 조회
     const settings = await getSystemSettings();
-    const lastVisit = await prisma.visitor_entries.findFirst({
-      where: { farm_id: farmId, session_token: sessionToken },
-      orderBy: { visit_datetime: "desc" },
-      select: {
-        visit_datetime: true,
-        visitor_name: true,
-        visitor_phone: true,
-        visitor_address: true,
-        vehicle_number: true,
-        visitor_purpose: true,
-        profile_photo_url: true, // 프로필 사진 URL 추가
-      },
-    });
+    let lastVisit;
+    try {
+      lastVisit = await prisma.visitor_entries.findFirst({
+        where: { farm_id: farmId, session_token: sessionToken },
+        orderBy: { visit_datetime: "desc" },
+        select: {
+          visit_datetime: true,
+          visitor_name: true,
+          visitor_phone: true,
+          visitor_address: true,
+          vehicle_number: true,
+          visitor_purpose: true,
+          profile_photo_url: true, // 프로필 사진 URL 추가
+        },
+      });
+    } catch (visitorError) {
+      throwBusinessError(
+        "GENERAL_QUERY_FAILED",
+        {
+          resourceType: "visitor",
+        },
+        visitorError
+      );
+    }
 
     // 3. 방문 기록이 없으면 첫 방문 처리
     if (!lastVisit) {
       await createSystemLog(
         "VISITOR_RECORD_NOT_FOUND",
-        `방문자 기록 없음 - 새 방문자 (농장 ID: ${farmId})`,
+        LOG_MESSAGES.VISITOR_RECORD_NOT_FOUND(farmId),
         "info",
         undefined,
         "visitor",
-        undefined,
+        farmId,
         {
+          action_type: "visitor_event",
+          event: "visitor_record_not_found",
           farm_id: farmId,
           session_token: sessionToken,
-          action_type: "new_visitor",
         },
-        undefined,
-        clientIP,
-        userAgent
+        request
       );
       return NextResponse.json({ isFirstVisit: true });
     }
@@ -87,36 +98,36 @@ export async function GET(
     if (isExpired) {
       await createSystemLog(
         "VISITOR_SESSION_EXPIRED",
-        `방문자 세션 만료 - ${Math.round(
-          hoursSinceLastVisit
-        )}시간 경과 (농장 ID: ${farmId})`,
+        LOG_MESSAGES.VISITOR_SESSION_EXPIRED(
+          Math.round(hoursSinceLastVisit),
+          farmId
+        ),
         "info",
         undefined,
         "visitor",
-        undefined,
+        farmId,
         {
+          action_type: "visitor_event",
+          event: "visitor_session_expired",
           farm_id: farmId,
           session_token: sessionToken,
           hours_since_last_visit: Math.round(hoursSinceLastVisit),
           visit_allow_interval: reVisitAllowInterval,
-          action_type: "expired_session",
         },
-        undefined,
-        clientIP,
-        userAgent
+        request
       );
       // 만료: 쿠키가 있으면 자동완성 제공, 없으면 첫 방문 처리
       if (sessionToken && lastVisit) {
         return NextResponse.json({
           isFirstVisit: false,
           lastVisit: {
-            visitDateTime: lastVisit.visit_datetime,
-            visitorName: lastVisit.visitor_name,
-            visitorPhone: lastVisit.visitor_phone,
-            visitorAddress: lastVisit.visitor_address,
-            vehicleNumber: lastVisit.vehicle_number,
-            visitPurpose: lastVisit.visitor_purpose,
-            profilePhotoUrl: lastVisit.profile_photo_url,
+            visit_datetime: lastVisit.visit_datetime,
+            visitor_name: lastVisit.visitor_name,
+            visitor_phone: lastVisit.visitor_phone,
+            visitor_address: lastVisit.visitor_address,
+            vehicle_number: lastVisit.vehicle_number,
+            visitor_purpose: lastVisit.visitor_purpose,
+            profile_photo_url: lastVisit.profile_photo_url,
           },
           sessionInfo: {
             remainingHours: 0,
@@ -131,34 +142,31 @@ export async function GET(
     const remainingHours = reVisitAllowInterval - hoursSinceLastVisit;
     await createSystemLog(
       "VISITOR_SESSION_VALID",
-      `방문자 세션 유효 - 재방문 (${Math.round(
-        remainingHours
-      )}시간 남음, 농장 ID: ${farmId})`,
+      LOG_MESSAGES.VISITOR_SESSION_VALID(Math.round(remainingHours), farmId),
       "info",
       undefined,
       "visitor",
-      undefined,
+      farmId,
       {
+        action_type: "visitor_event",
+        event: "visitor_session_valid",
         farm_id: farmId,
         session_token: sessionToken,
         hours_since_last_visit: Math.round(hoursSinceLastVisit),
         remaining_hours: Math.round(remainingHours),
-        action_type: "return_visit",
       },
-      undefined,
-      clientIP,
-      userAgent
+      request
     );
     return NextResponse.json({
       isFirstVisit: false,
       lastVisit: {
-        visitDateTime: lastVisit.visit_datetime,
-        visitorName: lastVisit.visitor_name,
-        visitorPhone: lastVisit.visitor_phone,
-        visitorAddress: lastVisit.visitor_address,
-        vehicleNumber: lastVisit.vehicle_number,
-        visitPurpose: lastVisit.visitor_purpose,
-        profilePhotoUrl: lastVisit.profile_photo_url,
+        visit_datetime: lastVisit.visit_datetime,
+        visitor_name: lastVisit.visitor_name,
+        visitor_phone: lastVisit.visitor_phone,
+        visitor_address: lastVisit.visitor_address,
+        vehicle_number: lastVisit.vehicle_number,
+        visitor_purpose: lastVisit.visitor_purpose,
+        profile_photo_url: lastVisit.profile_photo_url,
       },
       sessionInfo: {
         remainingHours,
@@ -166,34 +174,33 @@ export async function GET(
       },
     });
   } catch (error) {
-    devLog.error("Error checking session:", error);
+    const errorMessage = error instanceof Error ? error.message : String(error);
     await createSystemLog(
       "VISITOR_SESSION_CHECK_ERROR",
-      `방문자 세션 체크 오류: ${
-        error instanceof Error ? error.message : String(error)
-      } (농장 ID: ${params.farmId})`,
+      LOG_MESSAGES.VISITOR_SESSION_CHECK_ERROR(farmId, errorMessage),
       "error",
       undefined,
       "visitor",
-      undefined,
+      farmId,
       {
-        error_message: error instanceof Error ? error.message : String(error),
+        action_type: "visitor_event",
+        event: "visitor_session_check_error",
+        error_message: errorMessage,
         endpoint: "/api/farms/[farmId]/visitors/check-session",
         method: "GET",
-        farm_id: params.farmId,
-        action_type: "session_check_error",
+        farm_id: farmId,
       },
-      undefined,
-      clientIP,
-      userAgent
+      request
     );
-    return NextResponse.json(
-      {
-        success: false,
-        error: "SESSION_CHECK_FAILED",
-        message: "세션 확인에 실패했습니다.",
-      },
-      { status: 500 }
-    );
+
+    // 비즈니스 에러 또는 시스템 에러를 표준화된 에러 코드로 매핑
+    const result = getErrorResultFromRawError(error, {
+      operation: "check_visitor_session",
+      farmId: farmId,
+    });
+
+    return NextResponse.json(makeErrorResponseFromResult(result), {
+      status: result.status,
+    });
   }
 }

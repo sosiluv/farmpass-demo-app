@@ -1,11 +1,8 @@
 import { useState, useMemo } from "react";
-import type { SystemLog, LogFilter } from "@/lib/types/system";
+import type { SystemLog } from "@/lib/types/common";
+import type { LogFilter } from "@/lib/types/system";
 import { getLogCategory } from "@/lib/utils/logging/system-log";
-import {
-  createKSTDateRange,
-  toDateString,
-  toKSTDate,
-} from "@/lib/utils/datetime/date";
+import { getKSTDayBoundsUTC } from "@/lib/utils/datetime/date";
 
 interface LogsFilterManagerProps {
   logs: SystemLog[];
@@ -46,28 +43,17 @@ export function LogsFilterManager({ logs, children }: LogsFilterManagerProps) {
         return false;
       }
 
-      // 날짜 필터 (AND 조건) - KST 기준
+      // 날짜 필터 (AND 조건) - 선택된 KST 날짜의 UTC 경계와 비교
       if (filters.startDate || filters.endDate) {
-        // 로그의 created_at을 KST로 변환
-        const logDate = new Date(log.created_at);
-        const kstLogDate = toKSTDate(logDate);
+        const logInstant = new Date(log.created_at);
 
         if (filters.startDate) {
-          // 시작 날짜를 KST 기준 00:00:00으로 설정
-          const startDateStr = toDateString(filters.startDate);
-          const startDateKST = createKSTDateRange(startDateStr, false);
-          if (kstLogDate < startDateKST) {
-            return false;
-          }
+          const { startUTC } = getKSTDayBoundsUTC(filters.startDate);
+          if (logInstant < startUTC) return false;
         }
-
         if (filters.endDate) {
-          // 종료 날짜를 KST 기준 23:59:59로 설정
-          const endDateStr = toDateString(filters.endDate);
-          const endDateKST = createKSTDateRange(endDateStr, true);
-          if (kstLogDate > endDateKST) {
-            return false;
-          }
+          const { endUTC } = getKSTDayBoundsUTC(filters.endDate);
+          if (logInstant > endUTC) return false;
         }
       }
 

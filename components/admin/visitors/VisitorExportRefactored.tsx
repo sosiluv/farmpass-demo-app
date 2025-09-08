@@ -1,12 +1,12 @@
 import { useState } from "react";
 import {
-  ExportDialogWrapper,
+  ExportSheetWrapper,
   ExportActions,
   DateRangeSection,
   FilterSection,
   OptionsSection,
   SummarySection,
-  useExportDialog,
+  useExportSheet,
 } from "@/components/admin/management/exports";
 import { Farm } from "@/lib/types";
 import {
@@ -18,14 +18,12 @@ import type { VisitorsExportOptions } from "@/components/admin/management/export
 
 interface VisitorExportProps {
   farms: Farm[];
-  isAdmin?: boolean;
   onExport: (options: VisitorsExportOptions) => Promise<void>;
   hideFarmFilter?: boolean;
 }
 
 export function VisitorExportRefactored({
   farms,
-  isAdmin = false,
   onExport,
   hideFarmFilter = false,
 }: VisitorExportProps) {
@@ -54,7 +52,7 @@ export function VisitorExportRefactored({
     return { isValid: true };
   };
 
-  const { isOpen, setIsOpen, isExporting, handleExport } = useExportDialog({
+  const { isOpen, setIsOpen, isExporting, handleExport } = useExportSheet({
     onExport,
     validateOptions,
     successMessage: "방문자 데이터가 성공적으로 내보내졌습니다.",
@@ -90,22 +88,14 @@ export function VisitorExportRefactored({
   };
 
   return (
-    <ExportDialogWrapper
+    <ExportSheetWrapper
       open={isOpen}
       onOpenChange={setIsOpen}
       title={LABELS.VISITOR_EXPORT_TITLE}
       description={LABELS.VISITOR_EXPORT_DESC}
       buttonText={LABELS.VISITOR_EXPORT_BUTTON}
     >
-      <div className="space-y-3 sm:space-y-4 md:space-y-6">
-        <DateRangeSection
-          startDate={startDate}
-          endDate={endDate}
-          onStartDateChange={setStartDate}
-          onEndDateChange={setEndDate}
-          title={LABELS.VISITOR_EXPORT_DATE_RANGE}
-          color="blue"
-        />
+      <div className="space-y-4">
         <FilterSection
           title={LABELS.VISITOR_EXPORT_FILTERS}
           color="green"
@@ -139,6 +129,16 @@ export function VisitorExportRefactored({
             },
           ]}
         />
+        {/* 날짜 범위 설정 */}
+        <DateRangeSection
+          startDate={startDate}
+          endDate={endDate}
+          onStartDateChange={setStartDate}
+          onEndDateChange={setEndDate}
+          title={LABELS.VISITOR_EXPORT_DATE_RANGE}
+          color="blue"
+        />
+        {/* 내보내기 옵션 */}
         <OptionsSection
           title={LABELS.VISITOR_EXPORT_OPTIONS}
           color="purple"
@@ -175,6 +175,8 @@ export function VisitorExportRefactored({
             },
           ]}
         />
+
+        {/* 요약 정보 */}
         <SummarySection
           message={LABELS.VISITOR_EXPORT_SUMMARY.replace(
             "{count}",
@@ -183,12 +185,13 @@ export function VisitorExportRefactored({
           color="orange"
         />
       </div>
+      {/* 액션 버튼 */}
       <ExportActions
         isExporting={isExporting}
         canExport={selectedOptionsCount > 0}
         onExport={() => handleExport(exportOptions)}
         onReset={resetOptions}
       />
-    </ExportDialogWrapper>
+    </ExportSheetWrapper>
   );
 }

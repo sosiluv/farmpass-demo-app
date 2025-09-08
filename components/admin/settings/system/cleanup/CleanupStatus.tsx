@@ -12,7 +12,7 @@ export function CleanupStatus({ cleanupStatus }: CleanupStatusProps) {
     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
       <div className="space-y-2">
         <div className="flex items-center justify-between">
-          <Label className="text-sm font-medium">
+          <Label className="text-sm sm:text-base font-medium">
             {LABELS.CLEANUP_SYSTEM_LOGS}
           </Label>
         </div>
@@ -26,11 +26,12 @@ export function CleanupStatus({ cleanupStatus }: CleanupStatusProps) {
                     ? "destructive"
                     : "default"
                 }
+                className="text-sm sm:text-base"
               >
                 {cleanupStatus.expiredData.systemLogs.count}개
               </Badge>
             </div>
-            <span className="text-xs text-muted-foreground mt-1">
+            <span className="text-sm sm:text-base text-muted-foreground mt-1">
               {cleanupStatus.expiredData.systemLogs.count === 0
                 ? LABELS.CLEANUP_NO_EXPIRED_LOGS
                 : LABELS.CLEANUP_BEFORE_DATE.replace(
@@ -45,7 +46,7 @@ export function CleanupStatus({ cleanupStatus }: CleanupStatusProps) {
       </div>
       <div className="space-y-2">
         <div className="flex items-center justify-between">
-          <Label className="text-sm font-medium">
+          <Label className="text-sm sm:text-base font-medium">
             {LABELS.CLEANUP_VISITOR_DATA}
           </Label>
         </div>
@@ -59,11 +60,12 @@ export function CleanupStatus({ cleanupStatus }: CleanupStatusProps) {
                     ? "destructive"
                     : "default"
                 }
+                className="text-sm sm:text-base"
               >
                 {cleanupStatus.expiredData.visitorEntries.count}개
               </Badge>
             </div>
-            <span className="text-xs text-muted-foreground mt-1">
+            <span className="text-sm sm:text-base text-muted-foreground mt-1">
               {cleanupStatus.expiredData.visitorEntries.count === 0
                 ? LABELS.CLEANUP_NO_EXPIRED_DATA
                 : LABELS.CLEANUP_BEFORE_DATE_DATA.replace(

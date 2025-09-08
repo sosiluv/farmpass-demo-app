@@ -3,23 +3,54 @@
 import { ProfileSection } from "./profile-section";
 import { CompanySection } from "./company-section";
 import { SecuritySection } from "./security-section";
+import { PrivacySection } from "./privacy-section";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { User2, Building2, Shield } from "lucide-react";
+import { User2, Building2, Shield, FileText } from "lucide-react";
 import { ErrorBoundary } from "@/components/error/error-boundary";
 import { ERROR_CONFIGS } from "@/lib/constants/error";
 import { LABELS } from "@/lib/constants/account";
-import { useAccountActions } from "@/hooks/useAccountActions";
+import { useAccountActions } from "@/hooks/account/useAccountActions";
 import { useCommonToast } from "@/lib/utils/notification/toast-messages";
-import { getAuthErrorMessage } from "@/lib/utils/validation/validation";
 import type { Profile } from "@/lib/types";
+import { useSearchParams, useRouter } from "next/navigation";
+import { useCallback, useMemo } from "react";
+import { useAuth } from "@/components/providers/auth-provider";
 
 interface AccountTabsProps {
   profile: Profile;
-  userId: string;
 }
 
-export function AccountTabs({ profile, userId }: AccountTabsProps) {
+export function AccountTabs({ profile }: AccountTabsProps) {
   const { showInfo, showSuccess, showError } = useCommonToast();
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const { user, isAuthenticated } = useAuth();
+  const defaultTab = searchParams.get("tab") || "profile";
+
+  // 소셜 로그인 사용자 감지
+  const socialUserInfo = useMemo(() => {
+    if (isAuthenticated && user) {
+      const provider = user.app_metadata?.provider;
+      return {
+        isSocialUser: provider && provider !== "email",
+        socialProvider: provider || "",
+        allProviders: provider ? [provider] : [],
+        socialProviders: provider && provider !== "email" ? [provider] : [],
+      };
+    }
+    return {
+      isSocialUser: false,
+      socialProvider: "",
+      allProviders: [],
+      socialProviders: [],
+    };
+  }, [user]) as {
+    isSocialUser: boolean;
+    socialProvider: string;
+    allProviders: string[];
+    socialProviders: string[];
+  };
+
   const {
     isLoading,
     handleImageUpload,
@@ -27,7 +58,17 @@ export function AccountTabs({ profile, userId }: AccountTabsProps) {
     handleProfileSave,
     handleCompanySave,
     handlePasswordChange,
-  } = useAccountActions({ profile, userId });
+  } = useAccountActions({ profile, userId: user?.id });
+
+  // 탭 변경 핸들러
+  const handleTabChange = useCallback(
+    (value: string) => {
+      const params = new URLSearchParams(searchParams);
+      params.set("tab", value);
+      router.push(`/admin/account?${params.toString()}`);
+    },
+    [searchParams, router]
+  );
 
   // 저장 핸들러들
   const handleProfileSaveWrapped = async (data: any) => {
@@ -47,8 +88,11 @@ export function AccountTabs({ profile, userId }: AccountTabsProps) {
         );
       }
     } catch (error) {
-      const authError = getAuthErrorMessage(error);
-      showError("프로필 저장 실패", authError.message);
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : "알 수 없는 오류가 발생했습니다.";
+      showError("프로필 저장 실패", errorMessage);
     }
   };
 
@@ -69,8 +113,11 @@ export function AccountTabs({ profile, userId }: AccountTabsProps) {
         );
       }
     } catch (error) {
-      const authError = getAuthErrorMessage(error);
-      showError("회사 정보 저장 실패", authError.message);
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : "알 수 없는 오류가 발생했습니다.";
+      showError("회사 정보 저장 실패", errorMessage);
     }
   };
 
@@ -91,8 +138,11 @@ export function AccountTabs({ profile, userId }: AccountTabsProps) {
         );
       }
     } catch (error) {
-      const authError = getAuthErrorMessage(error);
-      showError("비밀번호 변경 실패", authError.message);
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : "알 수 없는 오류가 발생했습니다.";
+      showError("비밀번호 변경 실패", errorMessage);
     }
   };
 
@@ -102,8 +152,12 @@ export function AccountTabs({ profile, userId }: AccountTabsProps) {
       description={ERROR_CONFIGS.LOADING.description}
     >
       <div className="space-y-6">
-        <Tabs defaultValue="profile" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-3 h-auto">
+        <Tabs
+          value={defaultTab}
+          onValueChange={handleTabChange}
+          className="space-y-6"
+        >
+          <TabsList className="grid w-full grid-cols-4 h-auto">
             <TabsTrigger
               value="profile"
               className="flex flex-col items-center justify-center gap-0.5 p-1 sm:p-1.5 md:p-2 min-w-0"
@@ -134,6 +188,15 @@ export function AccountTabs({ profile, userId }: AccountTabsProps) {
                 {LABELS.TABS.SECURITY}
               </span>
             </TabsTrigger>
+            <TabsTrigger
+              value="privacy"
+              className="flex flex-col items-center justify-center gap-0.5 p-1 sm:p-1.5 md:p-2 min-w-0"
+            >
+              <FileText className="h-3.5 w-3.5 flex-shrink-0" />
+              <span className="text-[10px] sm:text-xs hidden sm:inline truncate">
+                {LABELS.TABS.PRIVACY}
+              </span>
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="profile">
@@ -159,7 +222,12 @@ export function AccountTabs({ profile, userId }: AccountTabsProps) {
               profile={profile}
               loading={isLoading}
               onPasswordChange={handlePasswordChangeWrapped}
+              socialUserInfo={socialUserInfo}
             />
+          </TabsContent>
+
+          <TabsContent value="privacy">
+            <PrivacySection userId={user?.id} />
           </TabsContent>
         </Tabs>
       </div>

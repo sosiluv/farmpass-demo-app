@@ -1,6 +1,10 @@
 import { getSystemSettings } from "@/lib/cache/system-settings-cache";
 import { createClient } from "@/lib/supabase/server";
 import { devLog } from "@/lib/utils/logging/dev-logger";
+import {
+  mapRawErrorToCode,
+  getErrorMessage,
+} from "@/lib/utils/error/errorUtil";
 
 /**
  * 🚀 성능 최적화 캐시 관리
@@ -29,12 +33,10 @@ const SystemCache = {
       this.maintenanceModeCache &&
       Date.now() - this.maintenanceModeCache.timestamp < this.CACHE_DURATION
     ) {
-      devLog.log("[CACHE] Maintenance mode cache hit");
       return this.maintenanceModeCache.value;
     }
 
     // 캐시가 없거나 만료된 경우 DB에서 조회
-    devLog.log("[CACHE] Maintenance mode cache miss, fetching from DB");
     const mode = await SystemCache.fetchMaintenanceModeFromDB();
 
     // 캐시 업데이트
@@ -48,21 +50,16 @@ const SystemCache = {
    */
   async getAdminStatus(userId: string): Promise<boolean> {
     if (!userId) {
-      devLog.log(`[CACHE] No userId provided, not admin`);
       return false;
     }
 
     // 캐시가 유효한 경우 캐시 값 반환
     const cached = this.adminUserCache.get(userId);
     if (cached && Date.now() - cached.timestamp < this.CACHE_DURATION) {
-      devLog.log(`[CACHE] Admin status cache hit for user ${userId}`);
       return cached.value;
     }
 
     // 캐시가 없거나 만료된 경우 DB에서 조회
-    devLog.log(
-      `[CACHE] Admin status cache miss for user ${userId}, fetching from DB`
-    );
     const isAdmin = await SystemCache.fetchAdminStatusFromDB(userId);
 
     // 캐시 업데이트 (메모리 누수 방지)
@@ -95,21 +92,25 @@ const SystemCache = {
   async fetchAdminStatusFromDB(userId: string): Promise<boolean> {
     try {
       const supabase = await createClient();
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("account_type")
-        .eq("id", userId)
-        .single();
+      const {
+        data: { user },
+        error: userError,
+      } = await supabase.auth.getUser();
 
-      const isAdmin = profile?.account_type === "admin";
-      devLog.log(
-        `[SYSTEM-MODE] User ${userId} admin check: ${isAdmin} (account_type: ${profile?.account_type})`
-      );
+      if (userError || !user) {
+        devLog.error("[SYSTEM-MODE] Failed to get user from auth:", userError);
+        return false;
+      }
+
+      // JWT 토큰의 app_metadata에서 isAdmin 확인
+      const isAdmin = user.app_metadata?.isAdmin === true;
       return isAdmin;
     } catch (error) {
+      const errorCode = mapRawErrorToCode(error);
+      const message = getErrorMessage(errorCode);
       devLog.error(
         "[SYSTEM-MODE] Failed to fetch admin status from DB:",
-        error
+        message
       );
       return false;
     }
@@ -146,10 +147,6 @@ const SystemCache = {
         this.adminUserCache.delete(entries[i][0]);
       }
     }
-
-    devLog.log(
-      `[CACHE] Admin cache cleaned up, current size: ${this.adminUserCache.size}`
-    );
   },
 };
 
@@ -181,19 +178,8 @@ export async function isDebugMode(): Promise<boolean> {
  */
 export async function isAdminUser(userId?: string): Promise<boolean> {
   if (!userId) {
-    devLog.log(`[SYSTEM-MODE] No userId provided, not admin`);
     return false;
   }
 
   return await SystemCache.getAdminStatus(userId);
-}
-
-/**
- * 디버그 로그 출력 (디버그 모드일 때만)
- */
-export async function debugLog(message: string, data?: any) {
-  const debugMode = await isDebugMode();
-  if (debugMode) {
-    devLog.log(`[DEBUG] ${message}`, data || "");
-  }
 }

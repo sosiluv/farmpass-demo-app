@@ -6,6 +6,7 @@ import { visitorsKeys } from "@/lib/hooks/query/query-keys";
 import { useAuth } from "@/components/providers/auth-provider";
 import { createClient } from "@/lib/supabase/client";
 import type { VisitorEntry, VisitorFilters } from "@/lib/types";
+import type { VisitorWithFarm } from "@/lib/types/visitor";
 
 import {
   calculateVisitorStats,
@@ -14,12 +15,14 @@ import {
   calculateRevisitStats,
   generateDashboardStats,
 } from "@/lib/utils/data/common-stats";
+import { getKSTDayBoundsUTC } from "@/lib/utils/datetime/date";
+import { addDays } from "date-fns";
+import { toZonedTime } from "date-fns-tz";
+import { useSupabaseRealtime } from "@/hooks/notification/useSupabaseRealtime";
 import {
-  toKSTDate,
-  createKSTDateRange,
-  createKSTDateRangeSimple,
-} from "@/lib/utils/datetime/date";
-import { useSupabaseRealtime } from "@/hooks/useSupabaseRealtime";
+  mapRawErrorToCode,
+  getErrorMessage,
+} from "@/lib/utils/error/errorUtil";
 
 /**
  * React Query 기반 방문자 필터링 Hook
@@ -32,19 +35,23 @@ import { useSupabaseRealtime } from "@/hooks/useSupabaseRealtime";
 export function useFarmVisitorsWithFiltersQuery(
   filters: Partial<VisitorFilters> = {}
 ) {
-  const { state } = useAuth();
+  const { isAuthenticated } = useAuth();
   const supabase = createClient();
 
-  // 쿼리 키 - farmId 변경 시 새로운 쿼리 실행
+  // 쿼리 키 - 필터 변경 시 새로운 쿼리 실행
   const queryKey = React.useMemo(() => {
-    const baseKey = visitorsKeys.list(filters.farmId || "all", { filters });
+    const baseKey = visitorsKeys.list(filters.farmId || "all", {
+      farmId: filters.farmId,
+    });
     return [...baseKey, "filtered", filters.farmId || "all"];
-  }, [filters.farmId]);
+  }, [
+    filters.farmId, // 농장 필터만 DB 쿼리 키에 포함
+  ]);
 
   // 방문자 데이터 쿼리 - 농장별 최적화
   const visitorsQuery = useAuthenticatedQuery(
     queryKey,
-    async (): Promise<VisitorEntry[]> => {
+    async (): Promise<VisitorWithFarm[]> => {
       let query = supabase
         .from("visitor_entries")
         .select(
@@ -68,13 +75,15 @@ export function useFarmVisitorsWithFiltersQuery(
       const { data, error } = await query;
 
       if (error) {
-        throw new Error(`방문자 데이터 조회 실패: ${error.message}`);
+        const errorCode = mapRawErrorToCode(error, "db");
+        const message = getErrorMessage(errorCode);
+        throw new Error(message);
       }
 
       return data || [];
     },
     {
-      enabled: state.status === "authenticated",
+      enabled: isAuthenticated,
       staleTime: 10 * 60 * 1000, // 10분 (중복 호출 방지)
       gcTime: 20 * 60 * 1000, // 20분간 캐시 유지
       refetchOnWindowFocus: false, // 윈도우 포커스 시 refetch 비활성화
@@ -89,14 +98,107 @@ export function useFarmVisitorsWithFiltersQuery(
     refetch: visitorsQuery.refetch,
     filter: (payload) => {
       const changedFarmId = payload?.new?.farm_id || payload?.old?.farm_id;
-      // filters.farmId가 null이면 모든 농장의 변경사항 처리 (전체 농장 선택)
-      return filters.farmId === null || changedFarmId === filters.farmId;
+      return filters.farmId === undefined || changedFarmId === filters.farmId;
     },
   });
 
-  // 필터링된 데이터 및 통계 계산
+  // 검색어 필터링 최적화
+  const searchFilteredVisitors = React.useMemo(() => {
+    const allVisitors = visitorsQuery.data || [];
+    if (!filters.searchTerm?.trim()) return allVisitors;
+
+    const searchLower = filters.searchTerm.toLowerCase();
+    return allVisitors.filter(
+      (visitor) =>
+        visitor.visitor_name?.toLowerCase().includes(searchLower) ||
+        visitor.visitor_phone?.toLowerCase().includes(searchLower) ||
+        visitor.visitor_address?.toLowerCase().includes(searchLower)
+    );
+  }, [visitorsQuery.data, filters.searchTerm]);
+
+  // 날짜 범위 필터링 최적화
+  const dateFilteredVisitors = React.useMemo(() => {
+    if (!filters.dateRange || filters.dateRange === "all") {
+      return searchFilteredVisitors;
+    }
+
+    let startUTC: Date | undefined;
+    let endUTC: Date | undefined;
+
+    const now = new Date();
+    const kstNow = toZonedTime(now, "Asia/Seoul");
+
+    switch (filters.dateRange) {
+      case "today": {
+        const { startUTC: s, endUTC: e } = getKSTDayBoundsUTC(new Date());
+        startUTC = s;
+        endUTC = e;
+        break;
+      }
+      case "week": {
+        const startKst = addDays(kstNow, -7);
+        const { startUTC: s } = getKSTDayBoundsUTC(startKst);
+        const { endUTC: e } = getKSTDayBoundsUTC(new Date());
+        startUTC = s;
+        endUTC = e;
+        break;
+      }
+      case "month": {
+        const startKst = addDays(kstNow, -30);
+        const { startUTC: s } = getKSTDayBoundsUTC(startKst);
+        const { endUTC: e } = getKSTDayBoundsUTC(new Date());
+        startUTC = s;
+        endUTC = e;
+        break;
+      }
+      case "custom": {
+        if (filters.dateStart) {
+          const { startUTC: s } = getKSTDayBoundsUTC(
+            new Date(filters.dateStart)
+          );
+          startUTC = s;
+        }
+        if (filters.dateEnd) {
+          const { endUTC: e } = getKSTDayBoundsUTC(new Date(filters.dateEnd));
+          endUTC = e;
+        }
+        // 기본값 보정: 시작 없으면 30일 전, 종료 없으면 오늘
+        if (!startUTC) {
+          const startKst = addDays(kstNow, -30);
+          startUTC = getKSTDayBoundsUTC(startKst).startUTC;
+        }
+        if (!endUTC) {
+          endUTC = getKSTDayBoundsUTC(new Date()).endUTC;
+        }
+        break;
+      }
+      default: {
+        const startKst = addDays(kstNow, -30);
+        const { startUTC: s } = getKSTDayBoundsUTC(startKst);
+        const { endUTC: e } = getKSTDayBoundsUTC(new Date());
+        startUTC = s;
+        endUTC = e;
+      }
+    }
+
+    return searchFilteredVisitors.filter((visitor) => {
+      const visitInstant = new Date(visitor.visit_datetime);
+      if (startUTC && visitInstant < startUTC) return false;
+      if (endUTC && visitInstant > endUTC) return false;
+      return true;
+    });
+  }, [
+    searchFilteredVisitors,
+    filters.dateRange,
+    filters.dateStart,
+    filters.dateEnd,
+  ]);
+
+  // 통계 계산 최적화
   const computedStats = React.useMemo(() => {
     const allVisitors = visitorsQuery.data || [];
+    const filteredVisitors = dateFilteredVisitors;
+
     if (allVisitors.length === 0) {
       return {
         allVisitors,
@@ -125,79 +227,19 @@ export function useFarmVisitorsWithFiltersQuery(
       };
     }
 
-    // 클라이언트 사이드 필터링 (농장 필터는 DB에서 처리됨)
-    let filteredVisitors = [...allVisitors];
-
-    // 검색어 필터링
-    if (filters.searchTerm?.trim()) {
-      const searchLower = filters.searchTerm.toLowerCase();
-      filteredVisitors = filteredVisitors.filter(
-        (visitor) =>
-          visitor.visitor_name?.toLowerCase().includes(searchLower) ||
-          visitor.visitor_phone?.toLowerCase().includes(searchLower) ||
-          visitor.visitor_address?.toLowerCase().includes(searchLower)
-      );
-    }
-
-    // 날짜 범위 필터링 (KST 기준)
-    if (filters.dateRange && filters.dateRange !== "all") {
-      let startDate: Date;
-      let endDate: Date;
-
-      switch (filters.dateRange) {
-        case "today":
-          // 오늘 00:00:00 부터 23:59:59까지 (KST)
-          ({ start: startDate, end: endDate } = createKSTDateRangeSimple(0, 0));
-          break;
-        case "week":
-          // 7일 전부터 오늘까지 (KST)
-          ({ start: startDate, end: endDate } = createKSTDateRangeSimple(7, 0));
-          break;
-        case "month":
-          // 30일 전부터 오늘까지 (KST)
-          ({ start: startDate, end: endDate } = createKSTDateRangeSimple(
-            30,
-            0
-          ));
-          break;
-        case "custom":
-          if (filters.dateStart) {
-            startDate = createKSTDateRange(filters.dateStart, false);
-          } else {
-            // 기본값: 30일 전
-            startDate = createKSTDateRangeSimple(30, 30).start;
-          }
-          if (filters.dateEnd) {
-            endDate = createKSTDateRange(filters.dateEnd, true);
-          } else {
-            endDate = createKSTDateRangeSimple(0, 0).end;
-          }
-          break;
-        default:
-          // 기본값: 30일 전부터 오늘까지
-          ({ start: startDate, end: endDate } = createKSTDateRangeSimple(
-            30,
-            0
-          ));
-      }
-
-      filteredVisitors = filteredVisitors.filter((visitor) => {
-        // ISO 문자열을 KST로 변환하여 비교
-        const visitDate = new Date(visitor.visit_datetime);
-        const kstVisitDate = toKSTDate(visitDate);
-
-        return kstVisitDate >= startDate && kstVisitDate <= endDate;
-      });
-    }
+    // 통계 계산을 위해 기본 방문자 정보만 추출
+    const visitorsForStats: VisitorEntry[] = filteredVisitors.map(
+      ({ farms, ...visitor }) => visitor
+    );
 
     // 통계 계산
     const visitorTrend = calculateVisitorStats({
-      visitors: filteredVisitors,
+      visitors: visitorsForStats,
     });
-    const purposeStats = calculatePurposeStats(filteredVisitors);
-    const weekdayStats = calculateWeekdayStats(filteredVisitors);
-    const revisitStats = calculateRevisitStats(filteredVisitors);
-    const dashboardStats = generateDashboardStats(filteredVisitors);
+    const purposeStats = calculatePurposeStats(visitorsForStats);
+    const weekdayStats = calculateWeekdayStats(visitorsForStats);
+    const revisitStats = calculateRevisitStats(visitorsForStats);
+    const dashboardStats = generateDashboardStats(visitorsForStats);
 
     // 상위 방문 목적
     const topPurpose =
@@ -207,7 +249,7 @@ export function useFarmVisitorsWithFiltersQuery(
 
     return {
       allVisitors,
-      filteredVisitors: filteredVisitors,
+      filteredVisitors,
       visitorTrend,
       purposeStats,
       weekdayStats,
@@ -215,10 +257,9 @@ export function useFarmVisitorsWithFiltersQuery(
       topPurpose,
       dashboardStats,
     };
-  }, [visitorsQuery.data, filters]);
+  }, [visitorsQuery.data, dateFilteredVisitors]);
 
   return {
-    // 데이터
     visitors: computedStats.filteredVisitors,
     allVisitors: computedStats.allVisitors,
 
@@ -239,45 +280,4 @@ export function useFarmVisitorsWithFiltersQuery(
     // 액션
     refetch: visitorsQuery.refetch,
   };
-}
-
-/**
- * 방문자 목적 옵션 조회 Hook
- */
-export function useVisitorPurposeOptionsQuery(farmId?: string | null) {
-  const { state } = useAuth();
-  const supabase = createClient();
-
-  return useAuthenticatedQuery(
-    ["visitorPurposeOptions", farmId || "all"],
-    async (): Promise<string[]> => {
-      let query = supabase
-        .from("visitor_entries")
-        .select("visitor_purpose")
-        .not("visitor_purpose", "is", null);
-
-      if (farmId) {
-        query = query.eq("farm_id", farmId);
-      }
-
-      const { data, error } = await query;
-
-      if (error) {
-        throw new Error(`방문 목적 옵션 조회 실패: ${error.message}`);
-      }
-
-      const purposes =
-        data
-          ?.map((item) => item.visitor_purpose)
-          .filter((purpose): purpose is string => purpose !== null)
-          .filter((purpose, index, arr) => arr.indexOf(purpose) === index)
-          .sort() || [];
-
-      return purposes;
-    },
-    {
-      enabled: state.status === "authenticated",
-      staleTime: 10 * 60 * 1000, // 10분
-    }
-  );
 }

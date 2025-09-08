@@ -1,5 +1,9 @@
 import { createClient } from "@/lib/supabase/server";
 import { User } from "@supabase/supabase-js";
+import {
+  getErrorResultFromRawError,
+  makeErrorResponseFromResult,
+} from "@/lib/utils/error/errorUtil";
 
 /**
  * 시스템 관리자 권한 확인 유틸리티
@@ -40,7 +44,7 @@ export async function getAuthenticatedUser(): Promise<AuthCheckResult> {
   } catch (error) {
     return {
       user: null,
-      error: error instanceof Error ? error.message : "UNKNOWN_ERROR",
+      error: "UNKNOWN_ERROR",
     };
   }
 }
@@ -82,29 +86,15 @@ export async function checkSystemAdmin(
       user = authResult.user;
     }
 
-    // 프로필에서 account_type 확인
-    const { data: profile, error: profileError } = await supabase
-      .from("profiles")
-      .select("account_type")
-      .eq("id", user.id)
-      .single();
-
-    if (profileError) {
-      return {
-        isAdmin: false,
-        user,
-        error: "FAILED_TO_FETCH_USER_PROFILE",
-      };
-    }
-
-    const isAdmin = profile?.account_type === "admin";
+    // app_metadata에서 isAdmin 확인
+    const isAdmin = user.app_metadata?.isAdmin === true;
 
     return { isAdmin, user };
   } catch (error) {
     return {
       isAdmin: false,
       user: null as any,
-      error: error instanceof Error ? error.message : "UNKNOWN_ERROR",
+      error: "UNKNOWN_ERROR",
     };
   }
 }
@@ -157,7 +147,7 @@ export async function checkAdminOrCondition(
       hasPermission: false,
       user: adminResult.user,
       isAdmin: false,
-      error: error instanceof Error ? error.message : "ADDITIONAL_CHECK_FAILED",
+      error: "ADDITIONAL_CHECK_FAILED",
     };
   }
 }
@@ -176,10 +166,12 @@ export async function requireAuth(requireAdmin: boolean = false): Promise<{
   const authResult = await getAuthenticatedUser();
 
   if (!authResult.user) {
+    const result = getErrorResultFromRawError({ businessCode: "UNAUTHORIZED" });
+    const errorResponse = makeErrorResponseFromResult(result);
     return {
       success: false,
-      response: new Response(JSON.stringify({ error: "UNAUTHORIZED" }), {
-        status: 401,
+      response: new Response(JSON.stringify(errorResponse), {
+        status: result.status,
         headers: { "Content-Type": "application/json" },
       }),
     };
@@ -198,22 +190,30 @@ export async function requireAuth(requireAdmin: boolean = false): Promise<{
   const adminResult = await checkSystemAdmin(authResult.user.id);
 
   if (adminResult.error) {
+    const result = getErrorResultFromRawError({
+      businessCode: adminResult.error,
+    });
+    const errorResponse = makeErrorResponseFromResult(result);
     return {
       success: false,
-      response: new Response(
-        JSON.stringify({ error: "FAILED_TO_VERIFY_ADMIN_STATUS" }),
-        { status: 500, headers: { "Content-Type": "application/json" } }
-      ),
+      response: new Response(JSON.stringify(errorResponse), {
+        status: result.status,
+        headers: { "Content-Type": "application/json" },
+      }),
     };
   }
 
   if (!adminResult.isAdmin) {
+    const result = getErrorResultFromRawError({
+      businessCode: "ADMIN_ACCESS_REQUIRED",
+    });
+    const errorResponse = makeErrorResponseFromResult(result);
     return {
       success: false,
-      response: new Response(
-        JSON.stringify({ error: "ADMIN_ACCESS_REQUIRED" }),
-        { status: 403, headers: { "Content-Type": "application/json" } }
-      ),
+      response: new Response(JSON.stringify(errorResponse), {
+        status: result.status,
+        headers: { "Content-Type": "application/json" },
+      }),
     };
   }
 

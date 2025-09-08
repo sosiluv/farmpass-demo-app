@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { UserCheck } from "lucide-react";
 import { LABELS, PLACEHOLDERS, PAGE_HEADER } from "@/lib/constants/settings";
 import type { SystemSettings } from "@/lib/types/settings";
-import { useNumberInput } from "@/hooks/use-number-input";
+import { useNumberInput } from "@/hooks/ui/use-number-input";
 import SettingsCardHeader from "../SettingsCardHeader";
 
 type LoginSecuritySettings = Pick<
@@ -67,7 +67,10 @@ export default function LoginSecurityCard({
       <CardContent className="space-y-4">
         <div className="grid gap-4">
           <div className="space-y-2">
-            <Label htmlFor="maxLoginAttempts">
+            <Label
+              htmlFor="maxLoginAttempts"
+              className="text-sm sm:text-base font-medium"
+            >
               {PLACEHOLDERS.MAX_LOGIN_ATTEMPTS}
             </Label>
             <Input
@@ -93,12 +96,15 @@ export default function LoginSecurityCard({
               onFocus={maxLoginAttempts.handleFocus}
               disabled={isLoading}
             />
-            <p className="text-sm text-muted-foreground">
+            <p className="text-sm sm:text-base text-muted-foreground">
               {LABELS.LOGIN_ATTEMPTS_DESC}
             </p>
           </div>
           <div className="space-y-2">
-            <Label htmlFor="accountLockoutDurationMinutes">
+            <Label
+              htmlFor="accountLockoutDurationMinutes"
+              className="text-sm sm:text-base font-medium"
+            >
               {PLACEHOLDERS.ACCOUNT_LOCKOUT_DURATION}
             </Label>
             <Input
@@ -124,7 +130,7 @@ export default function LoginSecurityCard({
               onFocus={accountLockoutDuration.handleFocus}
               disabled={isLoading}
             />
-            <p className="text-sm text-muted-foreground">
+            <p className="text-sm sm:text-base text-muted-foreground">
               {LABELS.ACCOUNT_LOCKOUT_DESC}
             </p>
           </div>

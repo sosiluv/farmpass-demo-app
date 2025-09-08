@@ -17,6 +17,7 @@ interface ChartCardProps {
   iconClassName?: string;
   titleClassName?: string;
   variant?: "default" | "success" | "warning" | "info";
+  className?: string;
 }
 
 const variantStyles = {
@@ -28,19 +29,19 @@ const variantStyles = {
   },
   success: {
     card: "bg-gradient-to-br from-emerald-50 to-emerald-100/50 dark:from-emerald-900/20 dark:to-emerald-800/20 border-emerald-200 dark:border-emerald-700",
-    icon: "bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400",
+    icon: "bg-emerald-100 dark:bg-emerald-800/50 text-emerald-600 dark:text-emerald-400",
     title: "text-emerald-900 dark:text-emerald-100",
     description: "text-emerald-700 dark:text-emerald-300",
   },
   warning: {
     card: "bg-gradient-to-br from-amber-50 to-amber-100/50 dark:from-amber-900/20 dark:to-amber-800/20 border-amber-200 dark:border-amber-700",
-    icon: "bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400",
+    icon: "bg-amber-100 dark:bg-amber-800/50 text-amber-600 dark:text-amber-400",
     title: "text-amber-900 dark:text-amber-100",
-    description: "text-amber-700 dark:text-amber-300",
+    description: "text-amber-700 dark:text-emerald-300",
   },
   info: {
     card: "bg-gradient-to-br from-blue-50 to-blue-100/50 dark:from-blue-900/20 dark:to-blue-800/20 border-blue-200 dark:border-blue-700",
-    icon: "bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400",
+    icon: "bg-blue-100 dark:bg-blue-800/50 text-blue-600 dark:text-blue-400",
     title: "text-blue-900 dark:text-blue-100",
     description: "text-blue-700 dark:text-blue-300",
   },
@@ -51,76 +52,55 @@ export function ChartCard({
   description,
   children,
   icon: Icon,
-  iconClassName = "h-5 w-5",
-  titleClassName = "text-base",
+  iconClassName,
+  titleClassName,
   variant = "default",
+  className,
 }: ChartCardProps) {
   const styles = variantStyles[variant];
 
   return (
     <Card
       className={cn(
-        "group relative overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300",
-        styles.card
+        "transition-all duration-200 hover:shadow-lg border min-h-[400px] lg:min-h-[480px] xl:min-h-[520px] flex flex-col",
+        styles.card,
+        className
       )}
     >
-      {/* 배경 패턴 오버레이 */}
-      <div className="absolute inset-0 opacity-5 group-hover:opacity-10 transition-opacity duration-300">
-        <div className="absolute inset-0 bg-gradient-to-br from-current to-transparent" />
-      </div>
-
-      <CardHeader className="relative pb-3">
-        <CardTitle
-          className={cn(
-            "flex items-center gap-3 text-lg font-semibold transition-colors duration-300",
-            styles.title,
-            titleClassName
-          )}
-        >
+      <CardHeader className="pb-3">
+        <div className="flex items-start justify-between space-y-0">
+          <div className="space-y-1 flex-1">
+            <CardTitle
+              className={cn(
+                "text-base sm:text-lg md:text-xl font-medium leading-none tracking-tight",
+                titleClassName || styles.title
+              )}
+            >
+              {title}
+            </CardTitle>
+            <CardDescription
+              className={cn(
+                "text-sm sm:text-base leading-relaxed",
+                styles.description
+              )}
+            >
+              {description}
+            </CardDescription>
+          </div>
           {Icon && (
             <div
               className={cn(
-                "w-10 h-10 rounded-lg flex items-center justify-center transition-all duration-300 group-hover:scale-110",
-                styles.icon
+                "flex h-8 w-8 items-center justify-center rounded-md",
+                iconClassName || styles.icon
               )}
             >
-              <Icon
-                className={cn("transition-colors duration-300", iconClassName)}
-              />
+              <Icon className="h-4 w-4" />
             </div>
           )}
-          <span className="flex-1">{title}</span>
-        </CardTitle>
-        <CardDescription
-          className={cn(
-            "text-sm font-medium transition-colors duration-300",
-            styles.description
-          )}
-        >
-          {description}
-        </CardDescription>
-      </CardHeader>
-
-      <CardContent className="relative p-0 overflow-hidden">
-        {/* 차트 영역 */}
-        <div className="flex-1 flex flex-col min-h-0 w-full p-4">
-          <div className="flex-1 min-h-0 flex flex-col">{children}</div>
         </div>
-
-        {/* 하단 장식선 */}
-        <div
-          className={cn(
-            "absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r transition-all duration-300",
-            variant === "default" &&
-              "from-slate-200 to-slate-300 dark:from-slate-700 dark:to-slate-600",
-            variant === "success" &&
-              "from-emerald-200 to-emerald-300 dark:from-emerald-700 dark:to-emerald-600",
-            variant === "warning" &&
-              "from-amber-200 to-amber-300 dark:from-amber-700 dark:to-amber-600",
-            variant === "info" &&
-              "from-blue-200 to-blue-300 dark:from-blue-700 dark:to-blue-600"
-          )}
-        />
+      </CardHeader>
+      <CardContent className="pt-0 flex-1 flex flex-col">
+        <div className="flex-1 min-h-0">{children}</div>
       </CardContent>
     </Card>
   );

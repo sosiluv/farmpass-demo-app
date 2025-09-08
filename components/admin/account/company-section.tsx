@@ -15,11 +15,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { AddressSearch } from "@/components/common/address-search";
+import { AddressSearch } from "@/components/ui/address-search";
 import { ErrorBoundary } from "@/components/error/error-boundary";
 import { ERROR_CONFIGS } from "@/lib/constants/error";
-import { useAccountForm } from "@/hooks/useAccountForm";
-import type { CompanySectionProps, CompanyFormData } from "@/lib/types/account";
+import { useAccountForm } from "@/hooks/account/useAccountForm";
+import type { CompanyFormData } from "@/lib/utils/validation/company-validation";
+import { companyFormSchema } from "@/lib/utils/validation/company-validation";
+import type { Profile } from "@/lib/types/common";
+import { useCommonToast } from "@/lib/utils/notification/toast-messages";
 import AccountCardHeader from "./AccountCardHeader";
 import {
   EMPLOYEE_COUNT_OPTIONS,
@@ -30,11 +33,18 @@ import {
   PAGE_HEADER,
 } from "@/lib/constants/account";
 
+interface CompanySectionProps {
+  profile: Profile;
+  loading: boolean;
+  onSave: (data: CompanyFormData) => Promise<void>;
+}
+
 export function CompanySection({
   profile,
   loading,
   onSave,
 }: CompanySectionProps) {
+  const { showError } = useCommonToast();
   // 폼 데이터 관리 - 안정화된 initialData
   const initialData = useMemo<CompanyFormData>(
     () => ({
@@ -66,6 +76,14 @@ export function CompanySection({
   const handleSave = async () => {
     if (!hasChanges || loading) return;
 
+    const result = companyFormSchema.safeParse(formData);
+    if (!result.success) {
+      const firstError =
+        result.error.errors[0]?.message || "입력값을 확인하세요.";
+      showError("회사 정보 저장 실패", firstError);
+      return;
+    }
+
     try {
       await onSave(formData);
       resetChanges();
@@ -93,7 +111,12 @@ export function CompanySection({
           <CardContent className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-2">
-                <Label htmlFor="companyName">{LABELS.COMPANY_NAME}</Label>
+                <Label
+                  htmlFor="companyName"
+                  className="text-sm sm:text-base font-medium"
+                >
+                  {LABELS.COMPANY_NAME}
+                </Label>
                 <Input
                   id="companyName"
                   value={formData.companyName || ""}
@@ -103,7 +126,12 @@ export function CompanySection({
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="businessType">{LABELS.BUSINESS_TYPE}</Label>
+                <Label
+                  htmlFor="businessType"
+                  className="text-sm sm:text-base font-medium"
+                >
+                  {LABELS.BUSINESS_TYPE}
+                </Label>
                 <Select
                   value={formData.businessType || ""}
                   onValueChange={(value) => handleChange("businessType", value)}
@@ -126,7 +154,12 @@ export function CompanySection({
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="companyAddress">{LABELS.COMPANY_ADDRESS}</Label>
+              <Label
+                htmlFor="companyAddress"
+                className="text-sm sm:text-base font-medium"
+              >
+                {LABELS.COMPANY_ADDRESS}
+              </Label>
               <AddressSearch
                 onSelect={(address, detailedAddress) =>
                   handleChange(
@@ -147,7 +180,10 @@ export function CompanySection({
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-2">
-                <Label htmlFor="establishment_date">
+                <Label
+                  htmlFor="establishment_date"
+                  className="text-sm sm:text-base font-medium"
+                >
                   {LABELS.ESTABLISHMENT_DATE}
                 </Label>
                 <Input
@@ -164,7 +200,12 @@ export function CompanySection({
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="employee_count">{LABELS.EMPLOYEE_COUNT}</Label>
+                <Label
+                  htmlFor="employee_count"
+                  className="text-sm sm:text-base font-medium"
+                >
+                  {LABELS.EMPLOYEE_COUNT}
+                </Label>
                 <Select
                   value={formData.employee_count || ""}
                   onValueChange={(value) =>
@@ -189,7 +230,12 @@ export function CompanySection({
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="company_website">{LABELS.COMPANY_WEBSITE}</Label>
+              <Label
+                htmlFor="company_website"
+                className="text-sm sm:text-base font-medium"
+              >
+                {LABELS.COMPANY_WEBSITE}
+              </Label>
               <Input
                 id="company_website"
                 type="url"
@@ -203,7 +249,10 @@ export function CompanySection({
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="company_description">
+              <Label
+                htmlFor="company_description"
+                className="text-sm sm:text-base font-medium"
+              >
                 {LABELS.COMPANY_DESCRIPTION}
               </Label>
               <Textarea
@@ -222,7 +271,7 @@ export function CompanySection({
               <Button
                 onClick={handleSave}
                 disabled={loading || !hasChanges}
-                className="btn-hover"
+                className="text-sm sm:text-base"
               >
                 {loading ? (
                   <>

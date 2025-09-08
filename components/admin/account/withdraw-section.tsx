@@ -1,25 +1,15 @@
 import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import {
-  AlertDialog,
-  AlertDialogTrigger,
-  AlertDialogContent,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogCancel,
-  AlertDialogAction,
-} from "@/components/ui/alert-dialog";
 import { AlertTriangle, Loader2 } from "lucide-react";
 import { PAGE_HEADER, BUTTONS, LABELS } from "@/lib/constants/account";
 import { useRouter } from "next/navigation";
 import { useCommonToast } from "@/lib/utils/notification/toast-messages";
-import { useAuthActions } from "@/hooks/useAuthActions";
+import { useAuthActions } from "@/hooks/auth/useAuthActions";
 import { apiClient } from "@/lib/utils/data/api-client";
-import { handleError } from "@/lib/utils/error/handleError";
-import { getAuthErrorMessage } from "@/lib/utils/validation/validation";
+import { handleError } from "@/lib/utils/error/";
+import AccountCardHeader from "./AccountCardHeader";
+import { DeleteConfirmSheet } from "@/components/ui/confirm-sheet";
 
 export default function WithdrawSection({
   onWithdraw,
@@ -55,10 +45,13 @@ export default function WithdrawSection({
         return;
       }
       setOpen(false);
-    } catch (error: any) {
+    } catch (error) {
       handleError(error, { context: "withdraw" });
-      const authError = getAuthErrorMessage(error);
-      showError("오류", authError.message);
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : "알 수 없는 오류가 발생했습니다.";
+      showError("오류", errorMessage);
     } finally {
       setLoading(false);
     }
@@ -66,69 +59,46 @@ export default function WithdrawSection({
 
   return (
     <Card>
-      <div className="flex items-center justify-between w-full px-6 pt-6">
-        <div className="flex items-center gap-2">
-          <AlertTriangle className="text-destructive mr-2" />
-          <span className="text-lg font-semibold">
-            {PAGE_HEADER.WITHDRAW_TITLE}
-          </span>
+      <AccountCardHeader
+        icon={AlertTriangle}
+        title={PAGE_HEADER.WITHDRAW_TITLE}
+        description={PAGE_HEADER.WITHDRAW_DESCRIPTION}
+      />
+      <CardContent className="space-y-6">
+        <div className="flex items-center justify-between">
+          <Button
+            variant="destructive"
+            disabled={loading}
+            className="text-sm sm:text-base"
+            onClick={() => setOpen(true)}
+          >
+            {loading ? (
+              <>
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                {BUTTONS.WITHDRAW}
+              </>
+            ) : (
+              <>
+                <AlertTriangle className="h-4 w-4 mr-2" />
+                {BUTTONS.WITHDRAW}
+              </>
+            )}
+          </Button>
         </div>
-        <AlertDialog open={open} onOpenChange={setOpen}>
-          <AlertDialogTrigger asChild>
-            <Button variant="destructive" disabled={loading}>
-              {loading ? (
-                <>
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  {BUTTONS.WITHDRAW}
-                </>
-              ) : (
-                <>
-                  <AlertTriangle className="h-4 w-4 mr-2" />
-                  {BUTTONS.WITHDRAW}
-                </>
-              )}
-            </Button>
-          </AlertDialogTrigger>
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>
-                {LABELS.WITHDRAW_DIALOG_TITLE}
-              </AlertDialogTitle>
-              <AlertDialogDescription>
-                {LABELS.WITHDRAW_DIALOG_DESC}
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel disabled={loading}>
-                {BUTTONS.WITHDRAW_CANCEL}
-              </AlertDialogCancel>
-              <AlertDialogAction
-                onClick={handleWithdraw}
-                disabled={loading}
-                className="bg-destructive text-white hover:bg-destructive/90"
-              >
-                {loading ? (
-                  <>
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                    {BUTTONS.WITHDRAWING}
-                  </>
-                ) : (
-                  <>
-                    <AlertTriangle className="h-4 w-4 mr-2" />
-                    {BUTTONS.WITHDRAW_CONFIRM}
-                  </>
-                )}
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
-      </div>
-      <div className="px-6 pb-4">
-        <div className="text-xs text-muted-foreground mb-1">
-          {PAGE_HEADER.WITHDRAW_DESCRIPTION}
-        </div>
-        {error && <div className="text-xs text-red-500 mt-2">{error}</div>}
-      </div>
+        {error && (
+          <div className="text-sm sm:text-base text-red-500">{error}</div>
+        )}
+      </CardContent>
+
+      <DeleteConfirmSheet
+        open={open}
+        onOpenChange={setOpen}
+        onConfirm={handleWithdraw}
+        isLoading={loading}
+        title={LABELS.WITHDRAW_DIALOG_TITLE}
+        description={LABELS.WITHDRAW_DIALOG_DESC}
+        itemName={LABELS.WITHDRAW_ACCOUNT}
+      />
     </Card>
   );
 }

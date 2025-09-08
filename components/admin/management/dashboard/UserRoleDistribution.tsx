@@ -1,6 +1,6 @@
 import { Pie } from "@/components/ui/chart";
 import { Users } from "lucide-react";
-import { ChartCard } from "@/components/common/ChartCard";
+import { ChartCard } from "./ChartCard";
 import { LABELS, PAGE_HEADER } from "@/lib/constants/management";
 
 interface UserRoleDistributionProps {

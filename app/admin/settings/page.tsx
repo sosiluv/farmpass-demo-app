@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Settings, Shield, UserCheck, Bell, Terminal } from "lucide-react";
-import { CardSkeleton } from "@/components/common/skeletons";
+import { CardSkeleton } from "@/components/ui/skeleton";
 import { ErrorBoundary } from "@/components/error/error-boundary";
 import { AccessDenied } from "@/components/error/access-denied";
 import {
@@ -13,20 +13,15 @@ import {
   NotificationTab,
   SystemTab,
 } from "@/components/admin/settings/tabs";
-import { useDynamicFavicon } from "@/hooks/use-dynamic-favicon";
 import { useSystemMode } from "@/components/providers/debug-provider";
 import { useAuth } from "@/components/providers/auth-provider";
 import type { SystemSettings } from "@/lib/types/settings";
-import {
-  useSettingsValidator,
-  useSettingsSaver,
-  SettingsHeader,
-} from "@/components/admin/settings";
+import { useSettingsValidator } from "@/hooks/settings/useSettingsValidator";
+import { useSettingsSaver } from "@/hooks/settings/useSettingsSaver";
+import { SettingsHeader } from "@/components/admin/settings/SettingsHeader";
 import { ERROR_CONFIGS } from "@/lib/constants/error";
 import { LABELS } from "@/lib/constants/settings";
-import { useProfileQuery } from "@/lib/hooks/query/use-profile-query";
 import { useSystemSettingsQuery } from "@/lib/hooks/query/use-system-settings-query";
-import { PageLoading } from "@/components/ui/loading";
 
 export default function SettingsPage() {
   const {
@@ -35,15 +30,8 @@ export default function SettingsPage() {
     refetch,
   } = useSystemSettingsQuery();
 
-  // 설정 페이지에서만 동적 파비콘 업데이트 (기본 파비콘 포함)
-  useDynamicFavicon(settings?.favicon || "/favicon.ico");
-
   const { refreshSystemModes } = useSystemMode();
-  const { state } = useAuth();
-  const user = state.status === "authenticated" ? state.user : null;
-  const userId = state.status === "authenticated" ? state.user.id : undefined;
-  const { data: profile, isLoading: profileLoading } = useProfileQuery(userId);
-
+  const { user, isAdmin, isLoading } = useAuth();
   const [unsavedChanges, setUnsavedChanges] = useState(false);
   const [activeTab, setActiveTab] = useState("general");
   const [localSettings, setLocalSettings] = useState<SystemSettings | null>(
@@ -70,9 +58,9 @@ export default function SettingsPage() {
   });
 
   // 설정이 로딩 중이거나 localSettings가 없거나 프로필 로딩 중일 때는 스켈레톤 표시
-  if (loading || !localSettings || profileLoading) {
+  if (loading || !localSettings || isLoading) {
     return (
-      <div className="flex-1 space-y-4 p-4 md:p-6 pt-2 md:pt-4">
+      <div className="flex-1 space-y-4 md:space-y-6 px-4 md:px-6 lg:px-8 pt-3 pb-4 md:pb-6 lg:pb-8">
         <SettingsHeader
           saving={false}
           unsavedChanges={false}
@@ -84,7 +72,7 @@ export default function SettingsPage() {
   }
 
   // admin 권한 체크
-  if (!profile || profile.account_type !== "admin") {
+  if (!isAdmin) {
     return (
       <AccessDenied
         title={ERROR_CONFIGS.PERMISSION.title}
@@ -130,106 +118,107 @@ export default function SettingsPage() {
       title={ERROR_CONFIGS.LOADING.title}
       description={ERROR_CONFIGS.LOADING.description}
     >
-      <div className="flex-1 space-y-4 p-4 md:p-6 pt-2 md:pt-4">
+      <div className="flex-1 space-y-4 md:space-y-6 px-4 md:px-6 lg:px-8 pt-3 pb-4 md:pb-6 lg:pb-8">
         <SettingsHeader
           saving={saving}
           unsavedChanges={unsavedChanges}
           onSave={handleSave}
         />
+        <div className="space-y-6">
+          <Tabs
+            defaultValue="general"
+            className="space-y-6"
+            value={activeTab}
+            onValueChange={setActiveTab}
+          >
+            <TabsList className="grid w-full grid-cols-5 h-auto">
+              <TabsTrigger
+                value="general"
+                className="flex flex-col items-center justify-center gap-0.5 p-1 sm:p-1.5 md:p-2 min-w-0"
+              >
+                <Settings className="h-3.5 w-3.5 flex-shrink-0" />
+                <span className="text-[10px] sm:text-xs hidden sm:inline truncate">
+                  {LABELS.TABS.GENERAL}
+                </span>
+              </TabsTrigger>
+              <TabsTrigger
+                value="security"
+                className="flex flex-col items-center justify-center gap-0.5 p-1 sm:p-1.5 md:p-2 min-w-0"
+              >
+                <Shield className="h-3.5 w-3.5 flex-shrink-0" />
+                <span className="text-[10px] sm:text-xs hidden sm:inline truncate">
+                  {LABELS.TABS.SECURITY}
+                </span>
+              </TabsTrigger>
+              <TabsTrigger
+                value="visitor"
+                className="flex flex-col items-center justify-center gap-0.5 p-1 sm:p-1.5 md:p-2 min-w-0"
+              >
+                <UserCheck className="h-3.5 w-3.5 flex-shrink-0" />
+                <span className="text-[10px] sm:text-xs hidden sm:inline truncate">
+                  {LABELS.TABS.VISITOR}
+                </span>
+              </TabsTrigger>
+              <TabsTrigger
+                value="notifications"
+                className="flex flex-col items-center justify-center gap-0.5 p-1 sm:p-1.5 md:p-2 min-w-0"
+              >
+                <Bell className="h-3.5 w-3.5 flex-shrink-0" />
+                <span className="text-[10px] sm:text-xs hidden sm:inline truncate">
+                  {LABELS.TABS.NOTIFICATIONS}
+                </span>
+              </TabsTrigger>
+              <TabsTrigger
+                value="system"
+                className="flex flex-col items-center justify-center gap-0.5 p-1 sm:p-1.5 md:p-2 min-w-0"
+              >
+                <Terminal className="h-3.5 w-3.5 flex-shrink-0" />
+                <span className="text-[10px] sm:text-xs hidden sm:inline truncate">
+                  {LABELS.TABS.SYSTEM}
+                </span>
+              </TabsTrigger>
+            </TabsList>
+            <TabsContent value="general">
+              <GeneralTab
+                settings={localSettings}
+                onSettingChange={handleSettingChange}
+                loading={saving}
+              />
+            </TabsContent>
 
-        <Tabs
-          defaultValue="general"
-          className="w-full"
-          value={activeTab}
-          onValueChange={setActiveTab}
-        >
-          <TabsList className="grid w-full grid-cols-5 h-auto">
-            <TabsTrigger
-              value="general"
-              className="flex flex-col items-center justify-center gap-0.5 p-1 sm:p-1.5 md:p-2 min-w-0"
-            >
-              <Settings className="h-3.5 w-3.5 flex-shrink-0" />
-              <span className="text-[10px] sm:text-xs hidden sm:inline truncate">
-                {LABELS.TABS.GENERAL}
-              </span>
-            </TabsTrigger>
-            <TabsTrigger
-              value="security"
-              className="flex flex-col items-center justify-center gap-0.5 p-1 sm:p-1.5 md:p-2 min-w-0"
-            >
-              <Shield className="h-3.5 w-3.5 flex-shrink-0" />
-              <span className="text-[10px] sm:text-xs hidden sm:inline truncate">
-                {LABELS.TABS.SECURITY}
-              </span>
-            </TabsTrigger>
-            <TabsTrigger
-              value="visitor"
-              className="flex flex-col items-center justify-center gap-0.5 p-1 sm:p-1.5 md:p-2 min-w-0"
-            >
-              <UserCheck className="h-3.5 w-3.5 flex-shrink-0" />
-              <span className="text-[10px] sm:text-xs hidden sm:inline truncate">
-                {LABELS.TABS.VISITOR}
-              </span>
-            </TabsTrigger>
-            <TabsTrigger
-              value="notifications"
-              className="flex flex-col items-center justify-center gap-0.5 p-1 sm:p-1.5 md:p-2 min-w-0"
-            >
-              <Bell className="h-3.5 w-3.5 flex-shrink-0" />
-              <span className="text-[10px] sm:text-xs hidden sm:inline truncate">
-                {LABELS.TABS.NOTIFICATIONS}
-              </span>
-            </TabsTrigger>
-            <TabsTrigger
-              value="system"
-              className="flex flex-col items-center justify-center gap-0.5 p-1 sm:p-1.5 md:p-2 min-w-0"
-            >
-              <Terminal className="h-3.5 w-3.5 flex-shrink-0" />
-              <span className="text-[10px] sm:text-xs hidden sm:inline truncate">
-                {LABELS.TABS.SYSTEM}
-              </span>
-            </TabsTrigger>
-          </TabsList>
-          <TabsContent value="general">
-            <GeneralTab
-              settings={localSettings}
-              onSettingChange={handleSettingChange}
-              loading={saving}
-            />
-          </TabsContent>
+            <TabsContent value="security">
+              <SecurityTab
+                settings={localSettings}
+                onUpdate={handleSettingChange}
+                isLoading={loading}
+              />
+            </TabsContent>
 
-          <TabsContent value="security">
-            <SecurityTab
-              settings={localSettings}
-              onUpdate={handleSettingChange}
-              isLoading={loading}
-            />
-          </TabsContent>
+            <TabsContent value="visitor">
+              <VisitorTab
+                settings={localSettings}
+                onUpdate={handleSettingChange}
+                isLoading={loading}
+              />
+            </TabsContent>
 
-          <TabsContent value="visitor">
-            <VisitorTab
-              settings={localSettings}
-              onUpdate={handleSettingChange}
-              isLoading={loading}
-            />
-          </TabsContent>
+            <TabsContent value="notifications">
+              <NotificationTab
+                settings={localSettings}
+                onUpdate={handleSettingChange}
+                isLoading={loading}
+              />
+            </TabsContent>
 
-          <TabsContent value="notifications">
-            <NotificationTab
-              settings={localSettings}
-              onUpdate={handleSettingChange}
-              isLoading={loading}
-            />
-          </TabsContent>
-
-          <TabsContent value="system">
-            <SystemTab
-              settings={localSettings}
-              onUpdate={handleSettingChange}
-              isLoading={loading}
-            />
-          </TabsContent>
-        </Tabs>
+            <TabsContent value="system">
+              <SystemTab
+                settings={localSettings}
+                onUpdate={handleSettingChange}
+                isLoading={loading}
+              />
+            </TabsContent>
+          </Tabs>
+        </div>
       </div>
     </ErrorBoundary>
   );

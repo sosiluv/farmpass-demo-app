@@ -2,16 +2,19 @@ import { NextRequest, NextResponse } from "next/server";
 import webpush from "web-push";
 import { getSystemSettings } from "@/lib/cache/system-settings-cache";
 import { devLog } from "@/lib/utils/logging/dev-logger";
-import { logApiError } from "@/lib/utils/logging/system-log";
-import { getClientIP, getUserAgent } from "@/lib/server/ip-helpers";
 import { createSystemLog } from "@/lib/utils/logging/system-log";
+import { LOG_MESSAGES } from "@/lib/utils/logging/log-templates";
 import { requireAuth } from "@/lib/server/auth-utils";
+import {
+  getErrorResultFromRawError,
+  makeErrorResponseFromResult,
+  throwBusinessError,
+} from "@/lib/utils/error/errorUtil";
 
 // VAPID 키 생성
 export async function POST(request: NextRequest) {
-  // IP, userAgent 추출
-  const clientIP = getClientIP(request);
-  const userAgent = getUserAgent(request);
+  let user = null;
+
   try {
     // 관리자 권한 인증 확인
     const authResult = await requireAuth(true);
@@ -19,7 +22,7 @@ export async function POST(request: NextRequest) {
       return authResult.response!;
     }
 
-    const user = authResult.user;
+    user = authResult.user;
 
     // VAPID 키 생성
     const vapidKeys = webpush.generateVAPIDKeys();
@@ -27,19 +30,18 @@ export async function POST(request: NextRequest) {
     // 시스템 로그 기록 (성공)
     await createSystemLog(
       "VAPID_KEY_CREATED",
-      `VAPID 키가 생성되었습니다. (사용자: ${user.id})`,
+      LOG_MESSAGES.VAPID_KEY_CREATED(user.id),
       "info",
-      user.id,
+      { id: user.id, email: user.email || "" },
       "system",
-      undefined,
+      "push_notification",
       {
+        action_type: "push_notification_event",
+        event: "vapid_key_created",
         user_id: user.id,
         user_email: user.email,
-        action_type: "push_notification_vapid",
       },
-      user.email,
-      clientIP,
-      userAgent
+      request
     );
 
     return NextResponse.json(
@@ -53,53 +55,38 @@ export async function POST(request: NextRequest) {
       { status: 200 }
     );
   } catch (error) {
-    devLog.error("VAPID 키 생성 오류:", error);
-
-    // 시스템 로그 기록 (실패)
+    // VAPID 키 생성 시스템 오류 로그
+    const errorMessage = error instanceof Error ? error.message : String(error);
     await createSystemLog(
       "VAPID_KEY_CREATE_FAILED",
-      `VAPID 키 생성 실패.`,
+      LOG_MESSAGES.VAPID_KEY_CREATE_FAILED(),
       "error",
-      undefined,
+      user?.id ? { id: user.id, email: user.email || "" } : undefined,
       "system",
-      undefined,
+      "push_notification",
       {
-        error_message: error instanceof Error ? error.message : String(error),
-        action_type: "push_notification_vapid",
+        action_type: "push_notification_event",
+        event: "vapid_key_create_failed",
+        error_message: errorMessage,
+        user_id: user?.id,
+        user_email: user?.email,
       },
-      undefined,
-      clientIP,
-      userAgent
+      request
     );
 
-    // API 에러 로그 기록
-    await logApiError(
-      "/api/push/vapid",
-      "POST",
-      error instanceof Error ? error : String(error),
-      undefined,
-      {
-        ip: clientIP,
-        userAgent,
-      }
-    );
+    // 비즈니스 에러 또는 시스템 에러를 표준화된 에러 코드로 매핑
+    const result = getErrorResultFromRawError(error, {
+      operation: "generate_vapid_keys",
+    });
 
-    return NextResponse.json(
-      {
-        success: false,
-        error: "VAPID_KEY_GENERATION_FAILED",
-        message: "VAPID 키 생성에 실패했습니다.",
-      },
-      { status: 500 }
-    );
+    return NextResponse.json(makeErrorResponseFromResult(result), {
+      status: result.status,
+    });
   }
 }
 
 // VAPID 키 조회
 export async function GET(request: NextRequest) {
-  // IP, userAgent 추출
-  const clientIP = getClientIP(request);
-  const userAgent = getUserAgent(request);
   try {
     // 1. 환경변수에서 VAPID 키 조회 (우선)
     let publicKey = process.env.VAPID_PUBLIC_KEY || null;
@@ -116,91 +103,71 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    // 3. 둘 다 없으면 404 반환
+    // 3. 둘 다 없으면 비즈니스 에러 반환
     if (!publicKey) {
-      // 시스템 로그 기록 (조회 실패)
+      // VAPID 키 미설정 비즈니스 에러 로그
       await createSystemLog(
-        "VAPID_KEY_RETRIEVE_FAILED",
-        `VAPID 키가 설정되지 않았습니다.`,
+        "VAPID_KEY_NOT_CONFIGURED",
+        LOG_MESSAGES.VAPID_KEY_NOT_CONFIGURED(),
         "warn",
         undefined,
         "system",
-        undefined,
+        "push_notification",
         {
-          action_type: "push_notification_vapid",
+          action_type: "push_notification_event",
+          event: "vapid_key_not_configured",
         },
-        undefined,
-        clientIP,
-        userAgent
+        request
       );
-      return NextResponse.json(
-        {
-          success: false,
-          error: "VAPID_KEY_NOT_CONFIGURED",
-          message: "VAPID 키가 설정되지 않았습니다.",
-        },
-        { status: 500 }
-      );
+
+      throwBusinessError("VAPID_KEY_NOT_CONFIGURED", {
+        operation: "get_vapid_public_key",
+      });
     }
 
     // 시스템 로그 기록 (조회 성공)
     await createSystemLog(
-      "VAPID_KEY_RETRIEVED",
-      `VAPID 키가 조회되었습니다.`,
+      "VAPID_KEY_CONFIGURED",
+      LOG_MESSAGES.VAPID_KEY_CONFIGURED(),
       "info",
       undefined,
       "system",
-      undefined,
+      "push_notification",
       {
-        action_type: "push_notification_vapid",
+        action_type: "push_notification_event",
+        event: "vapid_key_configured",
       },
-      undefined,
-      clientIP,
-      userAgent
+      request
     );
 
     return NextResponse.json({
       publicKey: publicKey,
     });
   } catch (error) {
-    devLog.error("VAPID 키 조회 실패:", error);
-
-    // 시스템 로그 기록 (조회 실패)
+    // VAPID 키 조회 시스템 오류 로그
+    const errorMessage = error instanceof Error ? error.message : String(error);
     await createSystemLog(
-      "VAPID_KEY_RETRIEVE_FAILED",
-      `VAPID 키 조회 실패.`,
+      "VAPID_KEY_FETCH_FAILED",
+      LOG_MESSAGES.VAPID_KEY_FETCH_FAILED(errorMessage),
       "error",
       undefined,
       "system",
-      undefined,
+      "push_notification",
       {
-        error_message: error instanceof Error ? error.message : String(error),
-        action_type: "push_notification_vapid",
+        action_type: "push_notification_event",
+        event: "vapid_key_fetch_failed",
+        error_message: errorMessage,
       },
-      undefined,
-      clientIP,
-      userAgent
+      request
     );
 
-    // API 에러 로그 기록
-    await logApiError(
-      "/api/push/vapid",
-      "GET",
-      error instanceof Error ? error : String(error),
-      undefined,
-      {
-        ip: clientIP,
-        userAgent,
-      }
-    );
+    // 비즈니스 에러 또는 시스템 에러를 표준화된 에러 코드로 매핑
+    const result = getErrorResultFromRawError(error, {
+      operation: "get_vapid_public_key",
+    });
 
-    return NextResponse.json(
-      {
-        success: false,
-        error: "VAPID_KEY_FETCH_FAILED",
-        message: "VAPID 키 조회에 실패했습니다.",
-      },
-      { status: 500 }
-    );
+    return NextResponse.json(makeErrorResponseFromResult(result), {
+      status: result.status,
+    });
   }
 }

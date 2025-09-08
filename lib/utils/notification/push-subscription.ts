@@ -1,5 +1,4 @@
 import { devLog } from "@/lib/utils/logging/dev-logger";
-import { getNotificationErrorMessage } from "@/lib/utils/validation/validation";
 import { safeNotificationAccess } from "@/lib/utils/browser/safari-compat";
 import { getDeviceInfo } from "@/lib/utils/browser/device-detection";
 
@@ -30,171 +29,26 @@ export const urlBase64ToUint8Array = (base64String: string) => {
 };
 
 /**
- * 브라우저 푸시 지원 확인
- */
-export function checkPushSupport(): {
-  supported: boolean;
-  details: {
-    serviceWorker: boolean;
-    pushManager: boolean;
-    notification: boolean;
-    permissions: boolean;
-    userAgent: string;
-    isPWA: boolean;
-    displayMode: string;
-    iosVersion?: number;
-    // 추가된 검사 항목들
-    isSecureContext: boolean;
-    isOnline: boolean;
-    hasServiceWorkerRegistration: boolean;
-    canSubscribe: boolean;
-    browserVersion?: string;
-    osVersion?: string;
-    isPrivateMode?: boolean;
-    hasPushManagerSupport: boolean;
-    hasNotificationSupport: boolean;
-    hasPermissionsSupport: boolean;
-  };
-} {
-  const deviceInfo = getDeviceInfo();
-  const isPWA = window.matchMedia("(display-mode: standalone)").matches;
-  const displayMode = isPWA ? "standalone" : "browser";
-
-  // iOS 버전 확인
-  let iosVersion: number | undefined;
-  if (deviceInfo.os === "iOS") {
-    const match = deviceInfo.userAgent.match(/OS (\d+)_(\d+)_?(\d+)?/);
-    if (match) {
-      iosVersion = parseInt(match[1]);
-    }
-  }
-
-  // 브라우저 버전 확인
-  let browserVersion: string | undefined;
-  if (deviceInfo.browser === "Chrome") {
-    const match = deviceInfo.userAgent.match(/Chrome\/(\d+)/);
-    if (match) browserVersion = match[1];
-  } else if (deviceInfo.browser === "Safari") {
-    const match = deviceInfo.userAgent.match(/Version\/(\d+)/);
-    if (match) browserVersion = match[1];
-  } else if (deviceInfo.browser === "Firefox") {
-    const match = deviceInfo.userAgent.match(/Firefox\/(\d+)/);
-    if (match) browserVersion = match[1];
-  }
-
-  // OS 버전 확인
-  let osVersion: string | undefined;
-  if (deviceInfo.os === "Android") {
-    const match = deviceInfo.userAgent.match(/Android (\d+)/);
-    if (match) osVersion = match[1];
-  } else if (deviceInfo.os === "iOS") {
-    const match = deviceInfo.userAgent.match(/OS (\d+)_(\d+)_?(\d+)?/);
-    if (match) osVersion = `${match[1]}.${match[2]}`;
-  }
-
-  // 프라이빗 모드 감지 (제한적)
-  let isPrivateMode: boolean | undefined;
-  try {
-    localStorage.setItem("test", "test");
-    localStorage.removeItem("test");
-    isPrivateMode = false;
-  } catch {
-    isPrivateMode = true;
-  }
-
-  // 기본 지원 확인
-  const hasServiceWorker = "serviceWorker" in navigator;
-  const hasPushManager = "PushManager" in window;
-  const hasNotification = "Notification" in window;
-  const hasPermissions = "permissions" in navigator;
-  const isSecureContext = window.isSecureContext;
-  const isOnline = navigator.onLine;
-
-  // Service Worker 등록 가능 여부 확인
-  let hasServiceWorkerRegistration = false;
-  try {
-    if (hasServiceWorker) {
-      hasServiceWorkerRegistration = true;
-    }
-  } catch {
-    hasServiceWorkerRegistration = false;
-  }
-
-  // 구독 가능 여부 확인 (기본적인 검사)
-  let canSubscribe = false;
-  try {
-    if (
-      hasPushManager &&
-      hasNotification &&
-      hasPermissions &&
-      isSecureContext
-    ) {
-      canSubscribe = true;
-    }
-  } catch {
-    canSubscribe = false;
-  }
-
-  // 세부 지원 여부 확인
-  const hasPushManagerSupport =
-    hasPushManager && typeof PushManager !== "undefined";
-  const hasNotificationSupport =
-    hasNotification && typeof Notification !== "undefined";
-  const hasPermissionsSupport =
-    hasPermissions && typeof navigator.permissions !== "undefined";
-
-  return {
-    supported:
-      hasServiceWorker &&
-      hasPushManagerSupport &&
-      hasNotificationSupport &&
-      hasPermissionsSupport &&
-      isSecureContext,
-    details: {
-      serviceWorker: hasServiceWorker,
-      pushManager: hasPushManager,
-      notification: hasNotification,
-      permissions: hasPermissions,
-      userAgent: deviceInfo.userAgent,
-      isPWA,
-      displayMode,
-      iosVersion,
-      // 추가된 검사 항목들
-      isSecureContext,
-      isOnline,
-      hasServiceWorkerRegistration,
-      canSubscribe,
-      browserVersion,
-      osVersion,
-      isPrivateMode,
-      hasPushManagerSupport,
-      hasNotificationSupport,
-      hasPermissionsSupport,
-    },
-  };
-}
-
-/**
  * 디바이스 정보를 기반으로 고유한 device_id를 생성하는 함수
  * @returns device_id 문자열
  */
 export function generateDeviceId(): string {
   try {
     const deviceInfo = getDeviceInfo();
-    const timestamp = Date.now();
 
-    // 더 정확한 디바이스 식별자 생성
+    // 더 정확한 디바이스 식별자 생성 (timestamp 제거로 일관성 확보)
     const deviceType = deviceInfo.isMobile
       ? "mobile"
       : deviceInfo.isTablet
       ? "tablet"
       : "desktop";
 
-    return `${deviceInfo.browser}_${deviceInfo.os}_${deviceType}_${timestamp}`;
+    // 브라우저, OS, 디바이스 타입만으로 일관된 device_id 생성
+    return `${deviceInfo.browser}_${deviceInfo.os}_${deviceType}`;
   } catch (error) {
     // 에러 발생 시 기본값 반환
     devLog.warn("디바이스 정보 생성 실패, 기본값 사용:", error);
-    return `device_${Date.now()}`;
+    return `device_unknown`;
   }
 }
 
@@ -208,7 +62,6 @@ export async function requestNotificationPermissionAndSubscribe(
     subscription: PushSubscriptionJSON,
     deviceId?: string,
     options?: {
-      farmId?: string;
       isResubscribe?: boolean;
       updateSettings?: boolean;
     }
@@ -262,27 +115,45 @@ export async function requestNotificationPermissionAndSubscribe(
         };
       }
 
-      // Service Worker 등록
-      const registration = await navigator.serviceWorker.ready;
+      try {
+        // Service Worker 등록
+        const registration = (await Promise.race([
+          navigator.serviceWorker.ready,
+          new Promise((_, reject) =>
+            setTimeout(() => reject("Service Worker Timeout"), 5000)
+          ),
+        ])) as ServiceWorkerRegistration;
 
-      // 푸시 구독 생성
-      const subscription = await registration.pushManager.subscribe({
-        userVisibleOnly: true,
-        applicationServerKey: urlBase64ToUint8Array(vapidKey),
-      });
+        // 푸시 구독 생성
+        const subscription = await registration.pushManager.subscribe({
+          userVisibleOnly: true,
+          applicationServerKey: urlBase64ToUint8Array(vapidKey),
+        });
 
-      // device_id 생성
-      const deviceId = generateDeviceId();
+        // device_id 생성
+        const deviceId = generateDeviceId();
 
-      // 서버에 구독 정보 전송 (device_id 포함)
-      const result = await createSubscription(subscription.toJSON(), deviceId);
+        // 서버에 구독 정보 전송 (device_id 포함)
+        const result = await createSubscription(
+          subscription.toJSON(),
+          deviceId
+        );
 
-      devLog.log("웹푸시 구독이 성공적으로 등록되었습니다.");
-
-      return {
-        success: true,
-        message: result?.message || "알림 구독이 완료되었습니다.",
-      };
+        return {
+          success: true,
+          message: result?.message || "알림 구독이 완료되었습니다.",
+        };
+      } catch (error) {
+        devLog.error("푸시 구독 생성 실패:", error);
+        return {
+          success: false,
+          error: "SUBSCRIPTION_FAILED",
+          message:
+            error instanceof Error
+              ? error.message
+              : "푸시 구독에 실패했습니다.",
+        };
+      }
     } else if (permission === "unsupported") {
       return {
         success: false,
@@ -298,81 +169,10 @@ export async function requestNotificationPermissionAndSubscribe(
     }
   } catch (error) {
     devLog.error("알림 권한 요청 및 구독 실패:", error);
-    const notificationError = getNotificationErrorMessage(error);
     return {
       success: false,
       error: "SUBSCRIPTION_FAILED",
-      message: notificationError.message,
-    };
-  }
-}
-
-/**
- * 기존 구독을 사용한 구독 생성 (권한 요청 없음)
- * 사용자 전환이나 재구독 시 사용
- */
-export async function createSubscriptionFromExisting(
-  createSubscription: (
-    subscription: PushSubscriptionJSON,
-    deviceId?: string,
-    options?: {
-      farmId?: string;
-      isResubscribe?: boolean;
-      updateSettings?: boolean;
-    }
-  ) => Promise<any>,
-  options?: {
-    farmId?: string;
-    isResubscribe?: boolean;
-    updateSettings?: boolean;
-  }
-): Promise<PushSubscriptionResult> {
-  try {
-    // 브라우저 지원 확인
-    if (!("serviceWorker" in navigator) || !("PushManager" in window)) {
-      return {
-        success: false,
-        error: "UNSUPPORTED_BROWSER",
-        message: "이 브라우저는 알림을 지원하지 않습니다.",
-      };
-    }
-
-    // 기존 구독 확인
-    const registration = await navigator.serviceWorker.ready;
-    const existingSubscription =
-      await registration.pushManager.getSubscription();
-
-    if (!existingSubscription) {
-      return {
-        success: false,
-        error: "NO_EXISTING_SUBSCRIPTION",
-        message: "기존 구독이 없습니다. 권한 요청이 필요합니다.",
-      };
-    }
-
-    // device_id 생성
-    const deviceId = generateDeviceId();
-
-    // 서버에 구독 정보 전송
-    const result = await createSubscription(
-      existingSubscription.toJSON(),
-      deviceId,
-      options
-    );
-
-    devLog.log("기존 구독을 사용한 구독 등록 완료");
-
-    return {
-      success: true,
-      message: result?.message || "구독이 완료되었습니다.",
-    };
-  } catch (error) {
-    devLog.error("기존 구독 사용 실패:", error);
-    const notificationError = getNotificationErrorMessage(error);
-    return {
-      success: false,
-      error: "SUBSCRIPTION_FAILED",
-      message: notificationError.message,
+      message: error instanceof Error ? error.message : "알 수 없는 오류",
     };
   }
 }

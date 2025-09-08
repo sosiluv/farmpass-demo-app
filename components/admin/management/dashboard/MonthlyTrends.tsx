@@ -1,6 +1,6 @@
 import { Line } from "@/components/ui/chart";
 import { TrendingUp } from "lucide-react";
-import { ChartCard } from "@/components/common/ChartCard";
+import { ChartCard } from "./ChartCard";
 import { LABELS, PAGE_HEADER } from "@/lib/constants/management";
 
 interface MonthlyTrendsProps {

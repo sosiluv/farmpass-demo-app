@@ -1,6 +1,5 @@
 import React from "react";
-import { Button } from "@/components/ui/button";
-import { DialogFooter } from "@/components/ui/dialog";
+import { CommonSheetFooter } from "@/components/ui/sheet-common";
 import { Download } from "lucide-react";
 import { BUTTONS } from "@/lib/constants/management";
 
@@ -22,29 +21,16 @@ export function ExportActions({
   resetButtonText = BUTTONS.RESET,
 }: ExportActionsProps) {
   return (
-    <DialogFooter className="flex-col sm:flex-row gap-2 sm:gap-3 pt-3 sm:pt-4 md:pt-6">
-      <Button
-        variant="outline"
-        onClick={onReset}
-        className="w-full sm:w-auto h-8 sm:h-9 text-xs sm:text-sm"
-        disabled={isExporting}
-      >
-        {resetButtonText}
-      </Button>
-      <Button
-        onClick={onExport}
-        disabled={isExporting || !canExport}
-        className="w-full sm:w-auto h-8 sm:h-9 text-xs sm:text-sm"
-      >
-        {isExporting ? (
-          BUTTONS.EXPORTING
-        ) : (
-          <>
-            <Download className="h-3 w-3 mr-2" />
-            {exportButtonText}
-          </>
-        )}
-      </Button>
-    </DialogFooter>
+    <CommonSheetFooter
+      onCancel={onReset}
+      onConfirm={onExport}
+      cancelText={resetButtonText}
+      confirmText={exportButtonText}
+      isLoading={isExporting}
+      disabled={isExporting || !canExport}
+      confirmIcon={
+        isExporting ? undefined : <Download className="h-4 w-4 mr-2" />
+      }
+    />
   );
 }

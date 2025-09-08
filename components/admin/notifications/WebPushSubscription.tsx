@@ -1,37 +1,26 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
-import { devLog } from "@/lib/utils/logging/dev-logger";
-
-import type { SubscriptionStatus } from "@/lib/types/notification";
-import type { Farm } from "@/lib/types";
-
-// 알림 전용 확장 Farm 타입
-interface NotificationFarm extends Pick<Farm, "id" | "farm_name"> {
-  address?: string;
-  isSubscribed?: boolean;
-}
-import { useNotificationService } from "@/hooks/useNotificationService";
-import { renderNotificationStatus } from "./status/NotificationStatus";
+import { useNotificationService } from "@/hooks/notification/useNotificationService";
+import {
+  CheckingStatus,
+  UnsupportedStatus,
+  DeniedStatus,
+  GrantedStatus,
+  SubscribedStatus,
+} from "./status/NotificationStatus";
 import NotificationCardHeader from "./NotificationCardHeader";
 import { Zap } from "lucide-react";
 import { useCommonToast } from "@/lib/utils/notification/toast-messages";
 import { safeNotificationAccess } from "@/lib/utils/browser/safari-compat";
-import { getNotificationErrorMessage } from "@/lib/utils/validation/validation";
 import { PAGE_HEADER } from "@/lib/constants/notifications";
+import { useNotificationStore } from "@/store/use-notification-store";
 
-interface WebPushSubscriptionProps {
-  farms?: Farm[];
-  onSubscriptionStatusChange?: (isSubscribed: boolean) => void;
-}
+export function WebPushSubscription() {
+  // 공통 스토어 사용
+  const { status, updateSubscriptionStatus } = useNotificationStore();
 
-export function WebPushSubscription({
-  farms: propFarms = [],
-  onSubscriptionStatusChange,
-}: WebPushSubscriptionProps) {
-  const [status, setStatus] = useState<SubscriptionStatus>("checking");
-  const [farms, setFarms] = useState<NotificationFarm[]>([]);
   const {
     isLoading,
     requestNotificationPermission,
@@ -43,21 +32,9 @@ export function WebPushSubscription({
   } = useNotificationService(); // Lazy Loading으로 최적화
   const { showInfo, showWarning, showSuccess, showError } = useCommonToast();
 
-  // props로 받은 농장 데이터 처리
   useEffect(() => {
-    setFarms(
-      (propFarms || []).map((farm) => ({
-        id: farm.id,
-        farm_name: farm.farm_name,
-        address: farm.farm_address,
-        isSubscribed: false,
-      }))
-    );
-  }, [propFarms]);
-
-  useEffect(() => {
-    initializeNotifications();
-  }, []);
+    checkNotificationStatus();
+  }, [updateSubscriptionStatus]);
 
   useEffect(() => {
     if (lastMessage) {
@@ -68,30 +45,10 @@ export function WebPushSubscription({
       }
       clearLastMessage();
     }
-  }, [lastMessage, clearLastMessage]); // 토스트 함수들을 의존성에서 제거
-
-  const initializeNotifications = async () => {
-    try {
-      // Service Worker 등록
-      try {
-        const registration = await navigator.serviceWorker.register(
-          "/push-sw.js"
-        );
-        devLog.log("Service Worker 등록 성공:", registration);
-        await checkNotificationStatus();
-      } catch (error) {
-        devLog.error("Service Worker 등록 실패:", error);
-        setStatus("unsupported");
-      }
-    } catch (error) {
-      devLog.error("알림 초기화 실패:", error);
-      setStatus("unsupported");
-    }
-  };
+  }, [lastMessage, showSuccess, showError, clearLastMessage]);
 
   const checkNotificationStatus = async () => {
     const safeNotification = safeNotificationAccess();
-    devLog.log("현재 권한 상태:", safeNotification.permission);
 
     // 브라우저 지원 여부 확인
     if (!safeNotification.isSupported) {
@@ -99,49 +56,50 @@ export function WebPushSubscription({
         "브라우저 미지원",
         "이 브라우저는 푸시 알림을 지원하지 않습니다."
       );
-      setStatus("unsupported");
+      updateSubscriptionStatus("unsupported", false);
       return;
     }
 
     // 권한 상태 확인
     switch (safeNotification.permission) {
       case "denied":
-        setStatus("denied");
+        updateSubscriptionStatus("denied", false);
         break;
       case "granted":
-        const registration = await navigator.serviceWorker.ready;
-        const subscription = await registration.pushManager.getSubscription();
-        if (subscription) {
-          setStatus("subscribed");
-          // 구독된 농장 정보 로드
-          const { subscriptions } = await getSubscriptionStatus();
-          if (subscriptions?.length > 0) {
-            const subscribedFarms = (subscriptions || [])
-              .map((sub: any) => sub.farm)
-              .filter(Boolean);
-
-            // 기존 farms 상태와 구독 정보를 병합
-            setFarms((prevFarms) =>
-              (prevFarms || []).map((farm) => ({
-                ...farm,
-                isSubscribed: subscribedFarms.some(
-                  (subFarm: { id: string }) => subFarm.id === farm.id
-                ),
-              }))
-            );
+        try {
+          const registration = (await Promise.race([
+            navigator.serviceWorker.ready,
+            new Promise((_, reject) =>
+              setTimeout(() => reject("Service Worker Timeout"), 5000)
+            ),
+          ])) as ServiceWorkerRegistration;
+          const subscription = await registration.pushManager.getSubscription();
+          // 브라우저의 실제 구독 상태를 우선적으로 확인
+          if (subscription) {
+            updateSubscriptionStatus("subscribed", true);
+          } else {
+            // 브라우저에 구독이 없으면 서버 상태 확인 (자동 복구 없음)
+            updateSubscriptionStatus("granted", false);
           }
-        } else {
-          setStatus("granted");
+        } catch (error) {
+          showError(
+            "서비스 워커 오류",
+            error instanceof Error
+              ? error.message
+              : "서비스 워커를 가져오는 중 오류가 발생했습니다."
+          );
+          updateSubscriptionStatus("granted", false);
         }
         break;
       default:
-        setStatus("granted");
+        updateSubscriptionStatus("granted", false);
     }
   };
 
   const handleAllow = async () => {
     showInfo("알림 권한 요청", "알림 권한을 요청하는 중입니다...");
-    const success = await requestNotificationPermission();
+    // 알림 설정 페이지에서는 설정 체크 건너뛰기
+    const success = await requestNotificationPermission(true);
     if (success) {
       await checkNotificationStatus();
     }
@@ -154,19 +112,15 @@ export function WebPushSubscription({
       const subscription = await registration.pushManager.getSubscription();
       if (subscription) {
         await subscription.unsubscribe();
-        await handleUnsubscription(subscription);
-        setStatus("granted");
-        setFarms((prevFarms) =>
-          (prevFarms || []).map((farm) => ({
-            ...farm,
-            isSubscribed: false,
-          }))
-        );
+        await handleUnsubscription(true, subscription);
+        updateSubscriptionStatus("granted", false);
       }
     } catch (error) {
-      devLog.error("구독 해제 실패:", error);
-      const notificationError = getNotificationErrorMessage(error);
-      showError("구독 해제 실패", notificationError.message);
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : "알 수 없는 오류가 발생했습니다.";
+      showError("구독 해제 실패", errorMessage);
     }
   };
 
@@ -175,11 +129,29 @@ export function WebPushSubscription({
     await checkNotificationStatus();
   };
 
-  // 구독 상태 변경 시 부모 컴포넌트에 알림
-  useEffect(() => {
-    const isSubscribed = status === "subscribed";
-    onSubscriptionStatusChange?.(isSubscribed);
-  }, [status, onSubscriptionStatusChange]);
+  // 상태에 따른 컴포넌트 직접 렌더링
+  const renderStatusComponent = () => {
+    switch (status) {
+      case "checking":
+        return <CheckingStatus />;
+      case "unsupported":
+        return <UnsupportedStatus />;
+      case "denied":
+        return <DeniedStatus onAllow={handleAllow} />;
+      case "granted":
+        return <GrantedStatus isLoading={isLoading} onAllow={handleAllow} />;
+      case "subscribed":
+        return (
+          <SubscribedStatus
+            isLoading={isLoading}
+            onCleanup={handleCleanup}
+            onUnsubscribe={handleUnsubscribe}
+          />
+        );
+      default:
+        return <CheckingStatus />;
+    }
+  };
 
   return (
     <Card>
@@ -188,15 +160,7 @@ export function WebPushSubscription({
         title={PAGE_HEADER.PUSH_NOTIFICATION_SETTINGS}
         description={PAGE_HEADER.PUSH_DESCRIPTION}
       />
-      <CardContent className="pt-0">
-        {renderNotificationStatus(status, {
-          isLoading,
-          onAllow: handleAllow,
-          onCleanup: handleCleanup,
-          onUnsubscribe: handleUnsubscribe,
-          farms,
-        })}
-      </CardContent>
+      <CardContent>{renderStatusComponent()}</CardContent>
     </Card>
   );
 }

@@ -1,7 +1,6 @@
 export const PAGE_HEADER = {
   PAGE_TITLE: "대시보드",
   PAGE_DESCRIPTION: "농장 방문자 현황과 통계를 한눈에 확인하세요",
-  BREADCRUMB: "대시보드",
 } as const;
 
 // 대시보드 페이지 라벨
@@ -33,6 +32,11 @@ export const LABELS = {
   TODAY_VISITORS_DESC: "오늘 방문한 방문자",
   WEEKLY_VISITORS_DESC: "최근 7일간",
   DISINFECTION_RATE_DESC: "전체 방문자 대비",
+
+  // 대시보드 나가기
+  DASHBOARD_CANCEL_TITLE: "대시보드를 나가시겠습니까?",
+  DASHBOARD_CANCEL_WARNING:
+    "대시보드를 나가면 현재 작업 중인 내용이 저장되지 않을 수 있습니다.",
 } as const;
 
 // 플레이스홀더

@@ -1,7 +1,4 @@
-import {
-  formatDateTime,
-  formatResponsiveDateTime,
-} from "@/lib/utils/datetime/date";
+import { formatDateTime } from "@/lib/utils/datetime/date";
 import { TableCell, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -15,8 +12,8 @@ import { getFarmTypeInfo } from "@/lib/constants/farm-types";
 import { formatPhoneNumber } from "@/lib/utils/validation";
 import { VisitorAvatar, StatusBadge, VisitorActionMenu } from "./index";
 import type { VisitorWithFarm } from "@/lib/types/visitor";
-import { useState } from "react";
-import { ImagePreviewDialog } from "@/components/common/ImagePreviewDialog";
+import type { VisitorSheetFormData } from "@/lib/utils/validation/visitor-validation";
+import { ZoomableImage } from "@/components/ui/zoomable-image";
 import { LABELS } from "@/lib/constants/visitor";
 
 interface VisitorTableRowProps {
@@ -25,8 +22,8 @@ interface VisitorTableRowProps {
   showFarmColumn: boolean;
   onViewDetails: (visitor: VisitorWithFarm) => void;
   isAdmin?: boolean;
-  onEdit?: (visitor: VisitorWithFarm) => Promise<void>;
-  onDelete?: (visitor: VisitorWithFarm) => Promise<void>;
+  onEdit?: (visitor: VisitorSheetFormData) => Promise<void>;
+  onDelete?: (visitorId: string, farmId: string) => Promise<void>;
 }
 
 /**
@@ -41,7 +38,6 @@ export function VisitorTableRow({
   onEdit,
   onDelete,
 }: VisitorTableRowProps) {
-  const [previewOpen, setPreviewOpen] = useState(false);
   return (
     <TableRow className="hover:bg-gray-50/80 transition-colors duration-200 group">
       {/* 번호 */}
@@ -59,21 +55,23 @@ export function VisitorTableRow({
       {/* 방문자 정보 */}
       <TableCell className="w-32 sm:w-40">
         <div className="flex items-center space-x-2 sm:space-x-3">
-          <VisitorAvatar
-            name={visitor.visitor_name}
-            imageUrl={visitor.profile_photo_url}
-            disinfectionCheck={visitor.disinfection_check}
-            size="md"
-            onClick={() => visitor.profile_photo_url && setPreviewOpen(true)}
-            className={visitor.profile_photo_url ? "cursor-pointer" : ""}
-          />
-          <ImagePreviewDialog
-            src={visitor.profile_photo_url || ""}
-            alt={visitor.visitor_name}
-            open={previewOpen}
-            onOpenChange={setPreviewOpen}
-            caption={visitor.visitor_name}
-          />
+          {visitor.profile_photo_url ? (
+            <ZoomableImage
+              src={visitor.profile_photo_url}
+              alt={visitor.visitor_name}
+              title={`${visitor.visitor_name} 프로필`}
+              className="rounded-full"
+              shape="circle"
+              size="md"
+            />
+          ) : (
+            <VisitorAvatar
+              name={visitor.visitor_name}
+              imageUrl={visitor.profile_photo_url}
+              disinfectionCheck={visitor.disinfection_check}
+              size="md"
+            />
+          )}
           <div className="min-w-0 flex-1">
             <div className="flex items-center space-x-1 sm:space-x-2 mb-1">
               <Tooltip>
@@ -142,18 +140,23 @@ export function VisitorTableRow({
           <Calendar className="w-3 h-3 sm:w-4 sm:h-4 text-blue-500 flex-shrink-0 mt-0.5" />
           <div className="min-w-0 flex-1">
             {(() => {
-              const { datePart, timePart, fullDateTime } =
-                formatResponsiveDateTime(visitor.visit_datetime);
+              const datePart = formatDateTime(
+                visitor.visit_datetime,
+                "yyyy.MM.dd"
+              );
+              const timePart = formatDateTime(visitor.visit_datetime, "HH:mm");
+              const fullDateTime = formatDateTime(
+                visitor.visit_datetime,
+                "yyyy.MM.dd HH:mm:ss"
+              );
               return (
                 <TooltipProvider>
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <div className="cursor-help">
-                        {/* 연도/월일 - 첫번째 줄로 표시 */}
                         <p className="text-xs sm:text-sm font-medium text-gray-900 leading-tight">
                           {datePart}
                         </p>
-                        {/* 시간 - 다음 줄에 표시 */}
                         <p className="text-[10px] sm:text-xs text-gray-600 leading-tight">
                           {timePart}
                         </p>

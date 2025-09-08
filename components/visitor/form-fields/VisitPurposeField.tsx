@@ -13,8 +13,7 @@ import {
   SelectItem,
   SelectValue,
 } from "@/components/ui/select";
-import type { UseFormReturn } from "react-hook-form";
-import type { VisitorFormData } from "@/lib/utils/validation/visitor-validation";
+import type { UseFormReturn, FieldValues, Path } from "react-hook-form";
 import {
   LABELS,
   PLACEHOLDERS,
@@ -22,26 +21,26 @@ import {
 } from "@/lib/constants/visitor";
 import { FileText } from "lucide-react";
 
-interface VisitPurposeFieldProps {
-  form: UseFormReturn<VisitorFormData>;
+interface VisitPurposeFieldProps<T extends FieldValues = any> {
+  form: UseFormReturn<T>;
   required?: boolean;
   className?: string;
 }
 
-export const VisitPurposeField = ({
+export const VisitPurposeField = <T extends FieldValues = any>({
   form,
   required = false,
   className = "",
-}: VisitPurposeFieldProps) => {
+}: VisitPurposeFieldProps<T>) => {
   return (
     <FormField
       control={form.control}
-      name="visitPurpose"
+      name={"visitor_purpose" as Path<T>}
       render={({ field }) => (
-        <FormItem className={`space-y-2 sm:space-y-2 ${className}`}>
+        <FormItem className={`space-y-2 ${className}`}>
           <FormLabel
-            htmlFor="visitor-visitPurpose"
-            className="flex items-center gap-2 font-semibold text-gray-800 text-sm"
+            htmlFor="visitor-visitor_purpose"
+            className="flex items-center gap-2 text-sm"
           >
             <FileText className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
             {LABELS.VISIT_PURPOSE}
@@ -52,9 +51,8 @@ export const VisitPurposeField = ({
           <FormControl>
             <Select onValueChange={field.onChange} value={field.value}>
               <SelectTrigger
-                id="visitor-visitPurpose"
-                name="visitPurpose"
-                className="h-10 sm:h-12 bg-gray-50 border border-gray-200 text-sm"
+                id="visitor-visitor_purpose"
+                name="visitor_purpose"
               >
                 <SelectValue placeholder={PLACEHOLDERS.VISIT_PURPOSE} />
               </SelectTrigger>

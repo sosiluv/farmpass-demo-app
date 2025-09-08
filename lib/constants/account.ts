@@ -1,7 +1,6 @@
 export const PAGE_HEADER = {
   PAGE_TITLE: "계정 관리",
   PAGE_DESCRIPTION: "개인 정보 및 회사 정보를 관리하세요",
-  BREADCRUMB: "계정 관리",
 
   COMPANY_INFO_TITLE: "회사 정보",
   COMPANY_INFO_DESCRIPTION: "회사 및 농장 정보를 관리합니다",
@@ -11,7 +10,7 @@ export const PAGE_HEADER = {
 
   PASSWORD_CHANGE_TITLE: "비밀번호 변경",
   PASSWORD_CHANGE_DESCRIPTION:
-    "계정 보안을 위해 정기적으로 비밀번호를 변경하세요. 변경 후 자동으로 로그아웃됩니다.",
+    "계정 보안을 위해 정기적으로 비밀번호를 변경하세요.",
 
   PROFILE_INFO_TITLE: "개인 정보",
   PROFILE_INFO_DESCRIPTION: "개인 프로필 정보를 관리합니다",
@@ -19,6 +18,19 @@ export const PAGE_HEADER = {
   WITHDRAW_TITLE: "회원탈퇴",
   WITHDRAW_DESCRIPTION:
     "회원탈퇴 시 계정 및 모든 데이터가 영구적으로 삭제되며 복구할 수 없습니다.",
+
+  // 소셜 연동 섹션
+  SOCIAL_LINKING_TITLE: "소셜 계정 연동",
+  SOCIAL_LINKING_DESCRIPTION:
+    "다양한 소셜 계정을 연동하여 편리하게 로그인하세요",
+
+  // 개인정보 섹션
+  PRIVACY_MARKETING_TITLE: "마케팅 정보 수신",
+  PRIVACY_MARKETING_DESCRIPTION:
+    "새로운 기능, 이벤트, 유용한 농장 관리 팁 등을 이메일로 받아보세요.",
+  PRIVACY_STATUS_TITLE: "개인정보 처리 현황",
+  PRIVACY_STATUS_DESCRIPTION:
+    "현재 동의하신 개인정보 처리 내역을 확인하실 수 있습니다.",
 } as const;
 
 export const BUTTONS = {
@@ -31,6 +43,11 @@ export const BUTTONS = {
   WITHDRAWING: "탈퇴 중...",
   WITHDRAW_CONFIRM: "탈퇴하기",
   WITHDRAW_CANCEL: "취소",
+
+  // 소셜 연동 버튼
+  LINK_ACCOUNT_MOBILE: "연동",
+  UNLINK_ACCOUNT: "연동 해제",
+  UNLINK_ACCOUNT_MOBILE: "해제",
 } as const;
 
 // 계정 관리 페이지 라벨
@@ -54,11 +71,13 @@ export const LABELS = {
   POSITION: "직책",
   DEPARTMENT: "부서",
   BIO: "자기소개",
+
   // 탭 라벨
   TABS: {
     PROFILE: "프로필",
     COMPANY: "회사 정보",
     SECURITY: "보안",
+    PRIVACY: "개인정보",
   },
   // 로그인 활동
   CURRENT_SESSION: "현재 세션",
@@ -72,9 +91,34 @@ export const LABELS = {
   ACCOUNT_STATUS: "계정 상태",
   ACTIVE: "활성화",
   INACTIVE: "비활성화",
-  WITHDRAW_DIALOG_TITLE: "정말로 회원탈퇴 하시겠습니까?",
-  WITHDRAW_DIALOG_DESC:
-    "이 작업은 되돌릴 수 없습니다. 계정 및 모든 데이터가 영구적으로 삭제됩니다.",
+  WITHDRAW_DIALOG_TITLE: "회원탈퇴",
+  WITHDRAW_DIALOG_DESC: "정말로 회원탈퇴 하시겠습니까?",
+  WITHDRAW_ACCOUNT: "계정",
+
+  // 소셜 로그인
+  SOCIAL_LOGIN_ACCOUNT: "소셜 로그인 계정",
+  SOCIAL_PASSWORD_CHANGE_GUIDE:
+    "소셜 로그인 계정의 비밀번호는 해당 서비스에서 변경하세요.",
+  SECURITY_INFO_MANAGED: "보안 정보는 해당 서비스에서 관리됩니다",
+
+  // 소셜 연동 섹션
+  LINKED: "연동됨",
+  LINKING_DATE: "연동일",
+  EMAIL_INFO_UNAVAILABLE: "이메일 정보 없음",
+  LOADING_ACCOUNT_INFO: "계정 정보를 불러오는 중...",
+  MIN_LOGIN_METHOD_WARNING: "최소 1개의 로그인 방법을 유지해야 합니다",
+  MIN_LOGIN_METHOD_DESCRIPTION:
+    "다른 계정을 연동한 후에 현재 계정을 해제할 수 있습니다.",
+
+  // 개인정보 섹션
+  MARKETING_CONSENT: "마케팅 정보 수신 동의",
+
+  CONSENT_REQUIRED: "필수",
+  CONSENT_OPTIONAL: "선택",
+  CONSENT_AGREED: "동의",
+  CONSENT_DATE: (date?: string) =>
+    date ? `동의일: ${new Date(date).toLocaleDateString()}` : "동의일: -",
+  NO_CONSENT_RECORDS: "동의 내역이 없습니다.",
 } as const;
 
 // 플레이스홀더
@@ -90,10 +134,17 @@ export const PLACEHOLDERS = {
   // 프로필 섹션
   EMAIL: "name@example.com",
   NAME: "이름을 입력하세요",
-  PHONE_NUMBER: "숫자만 입력 가능합니다",
+  PHONE_NUMBER: "하이픈(-) 없이 숫자만 입력해주세요",
   POSITION: "직책을 선택하세요",
   DEPARTMENT: "부서명을 입력하세요",
   BIO: "자기소개를 입력하세요",
+} as const;
+
+// 소셜 로그인 메시지
+export const SOCIAL_LOGIN_MESSAGES = {
+  GOOGLE_LOGIN: "Google 계정으로 로그인하셨습니다.",
+  KAKAO_LOGIN: "카카오 계정으로 로그인하셨습니다.",
+  OTHER_LOGIN: (provider: string) => `${provider} 계정으로 로그인하셨습니다.`,
 } as const;
 
 // 직원 수 옵션
@@ -120,3 +171,33 @@ export const POSITION_OPTIONS = [
   { value: "직원", label: "직원" },
   { value: "방역담당자", label: "방역담당자" },
 ] as const;
+
+export const SOCIAL_PROVIDERS: Array<{
+  id: string;
+  name: string;
+  iconSrc?: string;
+  color: string;
+  description: string;
+}> = [
+  // {
+  //   id: "email",
+  //   name: "이메일",
+  //   iconSrc: "/btn_mail.svg",
+  //   color: "bg-blue-50 text-blue-600 border-blue-200",
+  //   description: "이메일/비밀번호로 로그인",
+  // },
+  {
+    id: "google",
+    name: "Google",
+    iconSrc: "/btn_google.svg",
+    color: "bg-white border-gray-200",
+    description: "Google 계정으로 로그인",
+  },
+  {
+    id: "kakao",
+    name: "Kakao",
+    iconSrc: "/btn_kakao.svg",
+    color: "bg-yellow-50 border-yellow-200",
+    description: "카카오 계정으로 로그인",
+  },
+];

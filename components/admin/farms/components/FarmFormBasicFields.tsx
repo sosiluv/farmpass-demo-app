@@ -25,23 +25,19 @@ interface FarmFormBasicFieldsProps {
 
 export function FarmFormBasicFields({ form }: FarmFormBasicFieldsProps) {
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+    <>
       <FormField
         control={form.control}
         name="farm_name"
         render={({ field }) => (
-          <FormItem>
+          <FormItem className="space-y-2">
             <FormLabel className="flex items-center gap-2 text-sm">
               <Building2 className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
               {LABELS.FARM_NAME}
               <span className="text-red-500">*</span>
             </FormLabel>
             <FormControl>
-              <Input
-                placeholder={PLACEHOLDERS.FARM_NAME}
-                {...field}
-                className="h-10 sm:h-12 text-sm"
-              />
+              <Input placeholder={PLACEHOLDERS.FARM_NAME} {...field} />
             </FormControl>
             <FormMessage />
           </FormItem>
@@ -51,7 +47,7 @@ export function FarmFormBasicFields({ form }: FarmFormBasicFieldsProps) {
         control={form.control}
         name="farm_type"
         render={({ field }) => (
-          <FormItem>
+          <FormItem className="space-y-2">
             <FormLabel
               htmlFor="farm-type-select"
               className="flex items-center gap-2 text-sm"
@@ -62,11 +58,7 @@ export function FarmFormBasicFields({ form }: FarmFormBasicFieldsProps) {
             </FormLabel>
             <Select onValueChange={field.onChange} defaultValue={field.value}>
               <FormControl>
-                <SelectTrigger
-                  id="farm-type-select"
-                  name="farm_type"
-                  className="h-10 sm:h-12 text-sm"
-                >
+                <SelectTrigger id="farm-type-select" name="farm_type">
                   <SelectValue placeholder={PLACEHOLDERS.FARM_TYPE} />
                 </SelectTrigger>
               </FormControl>
@@ -82,6 +74,6 @@ export function FarmFormBasicFields({ form }: FarmFormBasicFieldsProps) {
           </FormItem>
         )}
       />
-    </div>
+    </>
   );
 }

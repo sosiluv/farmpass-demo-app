@@ -1,12 +1,14 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { slackNotifier } from "@/lib/slack";
 import { devLog } from "@/lib/utils/logging/dev-logger";
+import { logMemoryUsage } from "@/lib/utils/logging/system-log";
+import { createSystemLog } from "@/lib/utils/logging/system-log";
+import { LOG_MESSAGES } from "@/lib/utils/logging/log-templates";
 import {
-  logMemoryUsage,
-  logSystemWarning,
-  logApiError,
-} from "@/lib/utils/logging/system-log";
+  getErrorResultFromRawError,
+  makeErrorResponseFromResult,
+} from "@/lib/utils/error/errorUtil";
+import { requireAuth } from "@/lib/server/auth-utils";
 
 // package.json에서 버전 정보 가져오기
 const packageJson = require("../../../package.json");
@@ -57,8 +59,13 @@ const CPU_THRESHOLD = parseInt(process.env.CPU_THRESHOLD || "80");
  */
 export async function GET() {
   const startTime = Date.now();
-
+  let user = null;
   try {
+    const authResult = await requireAuth(true); // admin 권한 필수
+    if (!authResult.success || !authResult.user) {
+      return authResult.response!;
+    }
+    user = authResult.user;
     // =================================
     // 1. 데이터베이스 연결 확인 (타임아웃 적용)
     // =================================
@@ -72,7 +79,6 @@ export async function GET() {
       process.env.NODE_ENV !== "production" &&
       process.env.NEXT_PHASE === "phase-production-build"
     ) {
-      devLog.log("Skipping database check during build phase");
     } else {
       await Promise.race([
         prisma.$queryRaw`SELECT 1`,
@@ -88,10 +94,17 @@ export async function GET() {
       // =================================
       // 2. 핵심 기능 동작 확인
       // =================================
-      [farmCount, visitorCount] = await Promise.all([
-        prisma.farms.count(),
-        prisma.visitor_entries.count(),
-      ]);
+      try {
+        [farmCount, visitorCount] = await Promise.all([
+          prisma.farms.count(),
+          prisma.visitor_entries.count(),
+        ]);
+      } catch (queryError) {
+        devLog.error("Database count queries failed:", queryError);
+        // 헬스체크에서는 에러를 던지지 않고 기본값 사용
+        farmCount = 0;
+        visitorCount = 0;
+      }
     }
 
     // =================================
@@ -142,18 +155,20 @@ export async function GET() {
       totalCpuUsage > CPU_THRESHOLD
     ) {
       // 시스템 리소스 경고 로깅
-      await logSystemWarning(
+      await createSystemLog(
         "SYSTEM_RESOURCE_WARNING",
         `시스템 리소스 사용량이 높습니다. 메모리: ${Math.round(
           memoryUsage.heapUsed / 1024 / 1024
         )}MB/${Math.round(
           memoryUsage.heapTotal / 1024 / 1024
         )}MB, CPU: ${totalCpuUsage}%`,
+        "warn",
+        user?.id ? { id: user.id, email: user.email || "" } : undefined,
+        "system",
+        "system_resource",
         {
-          ip: "health-check",
-          userAgent: "health-check",
-        },
-        {
+          action_type: "system_resource_event",
+          event: "system_resource_warning",
           memory_used_mb: Math.round(memoryUsage.heapUsed / 1024 / 1024),
           memory_total_mb: Math.round(memoryUsage.heapTotal / 1024 / 1024),
           memory_threshold_mb: Math.round(MEMORY_THRESHOLD / 1024 / 1024),
@@ -162,33 +177,6 @@ export async function GET() {
           response_time_ms: totalResponseTime,
         }
       );
-
-      slackNotifier
-        .sendSystemAlert(
-          "warning",
-          "시스템 리소스 경고",
-          "시스템 리소스 사용량이 높습니다.",
-          {
-            memory: {
-              used: `${Math.round(memoryUsage.heapUsed / 1024 / 1024)}MB`,
-              total: `${Math.round(memoryUsage.heapTotal / 1024 / 1024)}MB`,
-              threshold: `${Math.round(MEMORY_THRESHOLD / 1024 / 1024)}MB`,
-              status:
-                memoryUsage.heapUsed < MEMORY_THRESHOLD ? "normal" : "warning",
-            },
-            cpu: {
-              user: `${cpuUsagePercent.user}%`,
-              system: `${cpuUsagePercent.system}%`,
-              total: `${totalCpuUsage}%`,
-              threshold: `${CPU_THRESHOLD}%`,
-              status: totalCpuUsage > CPU_THRESHOLD ? "warning" : "normal",
-            },
-            responseTime: `${totalResponseTime}ms`,
-          }
-        )
-        .catch((error) => {
-          devLog.error("시스템 리소스 경고 Slack 알림 실패:", error);
-        });
     }
 
     // =================================
@@ -293,10 +281,6 @@ export async function GET() {
               api: "responsive",
             },
           },
-          slack: {
-            enabled: !!process.env.SLACK_WEBHOOK_URL,
-            notifications: ["memory_warning", "system_error", "database_error"],
-          },
         },
       },
       {
@@ -311,71 +295,37 @@ export async function GET() {
       }
     );
   } catch (error) {
-    // =================================
-    // 8. 오류 처리
-    // =================================
-    // 데이터베이스 연결 실패 등 문제 발생 시
-    devLog.error("Health check failed:", error);
-
-    // API 에러 로깅
-    await logApiError(
-      "/api/health",
-      "GET",
-      error instanceof Error ? error : String(error),
-      undefined,
+    // 헬스 체크 시스템 오류 로그
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    await createSystemLog(
+      "HEALTH_CHECK_FAILED",
+      LOG_MESSAGES.HEALTH_CHECK_FAILED(errorMessage),
+      "error",
+      user?.id ? { id: user.id, email: user.email || "" } : undefined,
+      "system",
+      "system_resource",
       {
-        ip: "health-check",
-        userAgent: "health-check",
+        action_type: "health_check_event",
+        event: "health_check_failed",
+        error_message: errorMessage,
+        endpoint: "/api/health",
+        method: "GET",
+        response_time_ms: Date.now() - startTime,
       }
     );
 
     // =================================
-    // 9. 시스템 오류 시 Slack 알림 (비동기 처리)
+    // 9. 시스템 오류 로깅
     // =================================
     const responseTime = Date.now() - startTime;
-    const errorMessage =
-      error instanceof Error ? error.message : "Unknown error";
 
-    // 비동기로 처리하여 헬스체크 응답에 영향 없도록 함
-    slackNotifier
-      .sendSystemAlert(
-        "error",
-        "시스템 헬스체크 실패",
-        "시스템 상태 확인 중 오류가 발생했습니다.",
-        {
-          error: errorMessage,
-          responseTime: `${responseTime}ms`,
-          timestamp: new Date().toISOString(),
-        }
-      )
-      .catch((slackError) => {
-        devLog.error("Slack 알림 전송 실패:", slackError);
-      });
+    // 비즈니스 에러 또는 시스템 에러를 표준화된 에러 코드로 매핑
+    const result = getErrorResultFromRawError(error, {
+      operation: "health_check",
+    });
 
-    return NextResponse.json(
-      {
-        success: false,
-        error: "HEALTH_CHECK_FAILED",
-        message: "서버 상태 점검에 실패했습니다.",
-        errorDetails: errorMessage,
-        responseTime: `${responseTime}ms`,
-        services: {
-          database: "disconnected",
-          api: "error",
-          memory: "unknown",
-        },
-        status: "unhealthy",
-        timestamp: new Date().toISOString(),
-      },
-      {
-        status: 503,
-        headers: {
-          "Cache-Control": "no-cache, no-store, must-revalidate",
-          Pragma: "no-cache",
-          Expires: "0",
-          "Content-Type": "application/json",
-        },
-      }
-    );
+    return NextResponse.json(makeErrorResponseFromResult(result), {
+      status: result.status,
+    });
   }
 }

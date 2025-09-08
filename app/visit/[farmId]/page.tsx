@@ -16,18 +16,22 @@
  */
 "use client";
 import { useParams } from "next/navigation";
-import { FormSkeleton } from "@/components/common/skeletons";
+import { FormSkeleton } from "@/components/ui/skeleton";
 import { FarmInfoCard } from "@/components/visitor/FarmInfoCard";
 import { SuccessCard } from "@/components/visitor/SuccessCard";
 import { ErrorBoundary } from "@/components/error/error-boundary";
 import { ERROR_CONFIGS } from "@/lib/constants/error";
+import { AdminError } from "@/components/error/admin-error";
 import { useSystemSettingsQuery } from "@/lib/hooks/query/use-system-settings-query";
-import { useVisitorForm } from "@/hooks/useVisitorForm";
+import { useVisitorForm } from "@/hooks/visitor/useVisitorForm";
 import { VisitorForm } from "@/components/visitor/VisitorForm";
 import { useCommonToast } from "@/lib/utils/notification/toast-messages";
-import { getAuthErrorMessage } from "@/lib/utils/validation/validation";
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState, useCallback } from "react";
 import { VisitorFormData } from "@/lib/utils/validation/visitor-validation";
+import useBlockNavigation from "@/hooks/ui/use-before-unload";
+import { useRouter } from "next/navigation";
+import { ConfirmSheet } from "@/components/ui/confirm-sheet";
+import { LABELS } from "@/lib/constants/visitor";
 import type { VisitorSettings } from "@/lib/types/visitor";
 
 /**
@@ -37,12 +41,14 @@ import type { VisitorSettings } from "@/lib/types/visitor";
  * 농장 정보 표시, 방문자 정보 입력, 데이터 저장 기능을 포함합니다.
  */
 export default function VisitPage() {
+  const router = useRouter();
   const params = useParams();
   if (!params || !params.farmId) {
     throw new Error("잘못된 접근입니다. (farmId 없음)");
   }
   const farmId = params.farmId as string;
   const { showInfo, showSuccess, showError } = useCommonToast();
+  const [showConfirmSheet, setShowConfirmSheet] = useState(false);
 
   // 전역 시스템 설정 사용
   const {
@@ -88,27 +94,40 @@ export default function VisitPage() {
     deleteImage,
   } = useVisitorForm(farmId, settings);
 
+  // 뒤로가기 처리 함수 메모이제이션
+  const handleSheetClose = useCallback(() => {
+    setShowConfirmSheet(false);
+  }, []);
+
+  // 뒤로가기 처리 - useBlockNavigation 훅 사용
+  const { isAttemptingNavigation, proceedNavigation, cancelNavigation } =
+    useBlockNavigation(true, true, showConfirmSheet, handleSheetClose, "/");
+
+  // confirm 다이얼로그 처리
+  useEffect(() => {
+    if (isAttemptingNavigation) {
+      setShowConfirmSheet(true);
+    }
+  }, [isAttemptingNavigation]);
+
   // 에러 상태에 따른 토스트 처리
   useEffect(() => {
     if (error) {
-      const authError = getAuthErrorMessage(error);
-      showError("방문자 등록 오류", authError.message);
+      showError("방문자 등록 오류", error);
     }
   }, [error, showError]);
 
   // 농장 에러에 따른 토스트 처리
   useEffect(() => {
     if (farmError) {
-      const authError = getAuthErrorMessage(farmError);
-      showError("농장 정보 조회 실패", authError.message);
+      showError("농장 정보 조회 실패", farmError.message);
     }
   }, [farmError, showError]);
 
   // 설정 에러에 따른 토스트 처리
   useEffect(() => {
     if (settingsError) {
-      const authError = getAuthErrorMessage(settingsError);
-      showError("설정 로드 실패", authError.message);
+      showError("설정 로드 실패", settingsError.message);
     }
   }, [settingsError, showError]);
 
@@ -162,15 +181,28 @@ export default function VisitPage() {
   }
 
   if (!farm || farmError) {
-    throw new Error(
-      farmError
-        ? "농장 정보를 불러오는 중 오류가 발생했습니다."
-        : "요청하신 농장이 존재하지 않거나 접근할 수 없습니다."
+    const isNotFoundError = !farm && !farmError;
+    const errorMessage = farmError
+      ? "농장 정보를 불러오는 중 오류가 발생했습니다."
+      : "요청하신 농장이 존재하지 않거나 접근할 수 없습니다.";
+
+    return (
+      <AdminError
+        title={
+          isNotFoundError
+            ? ERROR_CONFIGS.NOT_FOUND.title
+            : ERROR_CONFIGS.LOADING.title
+        }
+        description={errorMessage}
+        error={farmError || new Error(errorMessage)}
+        isNotFound={isNotFoundError}
+        retry={() => window.location.reload()}
+      />
     );
   }
 
   if (isSubmitted) {
-    return <SuccessCard />;
+    return <SuccessCard onGoHome={() => router.push("/")} />;
   }
 
   return (
@@ -178,21 +210,43 @@ export default function VisitPage() {
       title={ERROR_CONFIGS.LOADING.title}
       description={ERROR_CONFIGS.LOADING.description}
     >
-      <div className="min-h-screen bg-gray-50 py-2 sm:py-4">
-        <div className="w-full max-w-sm sm:max-w-md md:max-w-2xl mx-auto px-3 sm:px-4">
-          <FarmInfoCard farm={farm} />
-          <VisitorForm
-            settings={settings}
-            formData={formData}
-            isSubmitting={isSubmitting}
-            uploadedImageUrl={uploadedImageUrl}
-            onSubmit={handleSubmitWrapped}
-            onImageUpload={handleImageUploadWrapped}
-            onImageDelete={handleImageDeleteWrapped}
-            error={error}
-          />
-        </div>
+      <div className="min-h-screen items-center justify-center bg-gradient-farm p-3">
+        <FarmInfoCard farm={farm} />
+        <VisitorForm
+          settings={settings}
+          formData={formData}
+          isSubmitting={isSubmitting}
+          uploadedImageUrl={uploadedImageUrl}
+          onSubmit={handleSubmitWrapped}
+          onImageUpload={handleImageUploadWrapped}
+          onImageDelete={handleImageDeleteWrapped}
+          error={error}
+        />
       </div>
+
+      {/* 네비게이션 확인 시트 */}
+      <ConfirmSheet
+        open={showConfirmSheet}
+        onOpenChange={setShowConfirmSheet}
+        onConfirm={() => {
+          proceedNavigation();
+        }}
+        onCancel={() => {
+          setShowConfirmSheet(false);
+          cancelNavigation();
+        }}
+        title={
+          isSubmitted
+            ? LABELS.SUCCESS_CARD_HEADER
+            : LABELS.SUCCESS_CARD_CANCEL_WARNING
+        }
+        warningMessage={
+          isSubmitted
+            ? LABELS.SUCCESS_CARD_CANCEL_DESC_HOME
+            : LABELS.SUCCESS_CARD_CANCEL_DESC
+        }
+        variant={isSubmitted ? "success" : "warning"}
+      />
     </ErrorBoundary>
   );
 }

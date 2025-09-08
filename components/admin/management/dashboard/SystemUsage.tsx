@@ -1,6 +1,6 @@
 import { Badge } from "@/components/ui/badge";
 import { Activity } from "lucide-react";
-import { ChartCard } from "@/components/common/ChartCard";
+import { ChartCard } from "./ChartCard";
 import { LABELS } from "@/lib/constants/management";
 
 interface SystemUsageProps {

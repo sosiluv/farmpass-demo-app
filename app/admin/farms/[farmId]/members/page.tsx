@@ -6,26 +6,22 @@ import { useAuth } from "@/components/providers/auth-provider";
 import {
   MembersPageHeader,
   MembersList,
-  DeleteMemberDialog,
 } from "@/components/admin/farms/members";
+import { DeleteConfirmSheet } from "@/components/ui/confirm-sheet";
 import { ErrorBoundary } from "@/components/error/error-boundary";
-import { StatsSkeleton, TableSkeleton } from "@/components/common/skeletons";
+import { StatsSkeleton, TableSkeleton } from "@/components/ui/skeleton";
 import { AdminError } from "@/components/error/admin-error";
 import { ERROR_CONFIGS } from "@/lib/constants/error";
-import { useDataFetchTimeout } from "@/hooks/useTimeout";
-import { getAuthErrorMessage } from "@/lib/utils/validation/validation";
-
-// React Query Hooks
+import { useDataFetchTimeout } from "@/hooks/system/useTimeout";
 import { useFarmsQuery } from "@/lib/hooks/query/use-farms-query";
-import { useFarmMembersQuery } from "@/lib/hooks/query/use-farm-members-query";
 import { useProfileQuery } from "@/lib/hooks/query/use-profile-query";
 
-// React Query Mutations
 import {
   useInviteMemberMutation,
   useUpdateMemberRoleMutation,
   useRemoveMemberMutation,
 } from "@/lib/hooks/query/use-farm-member-mutations";
+import { LABELS } from "@/lib/constants/farms";
 
 interface PageProps {
   params: {
@@ -34,15 +30,13 @@ interface PageProps {
 }
 
 export default function MembersPage({ params }: PageProps) {
-  const farmId = params.farmId as string;
-  const { state } = useAuth();
-  const userId = state.status === "authenticated" ? state.user.id : undefined;
-  const { data: profile } = useProfileQuery(userId);
   const { showInfo, showSuccess, showError } = useCommonToast();
+  const { userId, isAdmin } = useAuth();
+  const { data: profile } = useProfileQuery(userId);
+  const farmId = params.farmId as string;
 
   // React Query Hooks
-  const farmsQuery = useFarmsQuery();
-  const membersQuery = useFarmMembersQuery(farmId);
+  const farmsQuery = useFarmsQuery(profile?.id, true); // 멤버 정보 포함해서 조회
 
   // React Query Mutations
   const inviteMemberMutation = useInviteMemberMutation();
@@ -51,8 +45,19 @@ export default function MembersPage({ params }: PageProps) {
 
   // 데이터 선택
   const farms = farmsQuery.farms || [];
-  const members = membersQuery.members || [];
-  const membersLoading = membersQuery.loading;
+  const currentFarm = farms.find((f) => f.id === farmId);
+
+  // farm_members를 MemberWithProfile 형식으로 변환
+  const members =
+    currentFarm?.farm_members?.map((member) => ({
+      ...member,
+      representative_name: member.profiles.name,
+      email: member.profiles.email,
+      profile_image_url: member.profiles.profile_image_url,
+      avatar_seed: member.profiles.avatar_seed,
+    })) || [];
+
+  const membersLoading = farmsQuery.loading;
   const farmsLoading = farmsQuery.loading;
 
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -63,9 +68,8 @@ export default function MembersPage({ params }: PageProps) {
     membersLoading || farmsLoading,
     () => {
       farmsQuery.refetch();
-      membersQuery.refetch();
     },
-    { timeout: 10000 }
+    { timeout: 15000 }
   );
 
   const farm = farms.find((f) => f.id === farmId);
@@ -74,7 +78,7 @@ export default function MembersPage({ params }: PageProps) {
   const canManageMembers = useCallback(() => {
     if (!profile || !farm) return false;
     // 시스템 관리자인 경우 모든 농장의 구성원 관리 가능
-    if (profile.account_type == "admin") return true;
+    if (isAdmin) return true;
     // 농장 소유자이거나 농장 관리자인 경우
     return (
       farm.owner_id === profile.id ||
@@ -103,9 +107,12 @@ export default function MembersPage({ params }: PageProps) {
           role,
         });
         showSuccess("구성원 추가 완료", result.message);
-      } catch (error: any) {
-        const authError = getAuthErrorMessage(error);
-        showError("구성원 추가 실패", authError.message);
+      } catch (error) {
+        const errorMessage =
+          error instanceof Error
+            ? error.message
+            : "알 수 없는 오류가 발생했습니다.";
+        showError("구성원 추가 실패", errorMessage);
         throw error;
       }
     },
@@ -123,9 +130,12 @@ export default function MembersPage({ params }: PageProps) {
           role: newRole,
         });
         showSuccess("권한 변경 완료", result.message);
-      } catch (error: any) {
-        const authError = getAuthErrorMessage(error);
-        showError("권한 변경 실패", authError.message);
+      } catch (error) {
+        const errorMessage =
+          error instanceof Error
+            ? error.message
+            : "알 수 없는 오류가 발생했습니다.";
+        showError("권한 변경 실패", errorMessage);
       }
     },
     [farmId, updateMemberRoleMutation, showInfo, showSuccess, showError]
@@ -144,9 +154,12 @@ export default function MembersPage({ params }: PageProps) {
       setDeleteDialogOpen(false);
       setMemberToDelete(null);
       showSuccess("구성원 삭제 완료", result.message);
-    } catch (error: any) {
-      const authError = getAuthErrorMessage(error);
-      showError("구성원 삭제 실패", authError.message);
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : "알 수 없는 오류가 발생했습니다.";
+      showError("구성원 삭제 실패", errorMessage);
     }
   }, [
     farmId,
@@ -170,6 +183,7 @@ export default function MembersPage({ params }: PageProps) {
         description={ERROR_CONFIGS.TIMEOUT.description}
         retry={retry}
         error={new Error("Timeout: 데이터 로딩 10초 초과")}
+        isTimeout={true}
       />
     );
   }
@@ -177,7 +191,7 @@ export default function MembersPage({ params }: PageProps) {
   // 로딩 상태 처리
   if (membersLoading || farmsLoading || !farm) {
     return (
-      <div className="flex-1 space-y-3 sm:space-y-4 md:space-y-6 p-2 sm:p-4 md:p-6 lg:p-8 pt-3 sm:pt-4 md:pt-6">
+      <div className="flex-1 space-y-3 sm:space-y-4 md:space-y-6 px-4 md:px-6 lg:px-8 pt-3 pb-4 md:pb-6 lg:pb-8">
         <MembersPageHeader
           farm={farm || ({ id: farmId, farm_name: "로딩 중..." } as any)}
           canManageMembers={false}
@@ -199,6 +213,7 @@ export default function MembersPage({ params }: PageProps) {
           description={ERROR_CONFIGS.NOT_FOUND.description}
           error={new Error("Farm not found or access denied")}
           retry={retry}
+          isNotFound={true}
         />
       );
     }
@@ -209,7 +224,7 @@ export default function MembersPage({ params }: PageProps) {
       title={ERROR_CONFIGS.LOADING.title}
       description={ERROR_CONFIGS.LOADING.description}
     >
-      <div className="flex-1 space-y-3 sm:space-y-4 md:space-y-6 p-2 sm:p-4 md:p-6 lg:p-8 pt-3 sm:pt-4 md:pt-6">
+      <div className="flex-1 space-y-3 sm:space-y-4 md:space-y-6 px-4 md:px-6 lg:px-8 pt-3 pb-4 md:pb-6 lg:pb-8">
         <MembersPageHeader
           farm={farm}
           canManageMembers={canManageMembers()}
@@ -223,11 +238,19 @@ export default function MembersPage({ params }: PageProps) {
           onRoleChange={handleRoleChange}
         />
 
-        <DeleteMemberDialog
+        <DeleteConfirmSheet
           open={deleteDialogOpen}
           onOpenChange={setDeleteDialogOpen}
           onConfirm={handleDelete}
           isLoading={removeMemberMutation.isPending}
+          title={LABELS.REMOVE_MEMBER_TITLE}
+          description={LABELS.REMOVE_MEMBER_DESCRIPTION}
+          itemName={
+            memberToDelete
+              ? members.find((m) => m.id === memberToDelete)
+                  ?.representative_name
+              : LABELS.MEMBERS
+          }
         />
       </div>
     </ErrorBoundary>

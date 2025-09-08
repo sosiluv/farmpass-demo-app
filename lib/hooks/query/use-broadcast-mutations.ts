@@ -8,7 +8,7 @@ interface BroadcastData {
   message: string;
   url: string;
   requireInteraction: boolean;
-  notificationType: "maintenance" | "emergency" | "notice";
+  notificationType: "system";
 }
 
 interface BroadcastResult {

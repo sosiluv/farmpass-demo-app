@@ -1,3 +1,6 @@
+"use client";
+
+import { memo } from "react";
 import {
   Select,
   SelectContent,
@@ -5,7 +8,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Label } from "@/components/ui/label";
+import {
+  FormControl,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
 import {
   LABELS,
   PLACEHOLDERS,
@@ -13,38 +21,50 @@ import {
 } from "@/lib/constants/farms";
 
 interface AddMemberRoleFieldProps {
-  role: "manager" | "viewer";
-  onRoleChange: (role: "manager" | "viewer") => void;
+  field: any; // React Hook Form field
+  error?: string;
+  showFormMessage?: boolean;
+  disabled?: boolean;
 }
 
-export function AddMemberRoleField({
-  role,
-  onRoleChange,
-}: AddMemberRoleFieldProps) {
+const AddMemberRoleFieldComponent = ({
+  field,
+  error,
+  showFormMessage = true,
+  disabled = false,
+}: AddMemberRoleFieldProps) => {
   return (
-    <div className="space-y-1 sm:space-y-2">
-      <Label htmlFor="member-role-select" className="text-xs sm:text-sm">
-        {LABELS.MEMBER_ROLE}
-      </Label>
-      <Select value={role} onValueChange={(value: any) => onRoleChange(value)}>
-        <SelectTrigger
-          id="member-role-select"
-          className="h-8 sm:h-9 md:h-10 text-xs sm:text-sm"
+    <FormItem>
+      <FormLabel className="text-gray-800">
+        {LABELS.MEMBER_ROLE} <span className="text-red-500">*</span>
+      </FormLabel>
+      <FormControl>
+        <Select
+          value={field.value}
+          onValueChange={field.onChange}
+          disabled={disabled}
         >
-          <SelectValue placeholder={PLACEHOLDERS.MEMBER_ROLE_PLACEHOLDER} />
-        </SelectTrigger>
-        <SelectContent>
-          {MEMBER_ROLE_OPTIONS.map((option) => (
-            <SelectItem
-              key={option.value}
-              value={option.value}
-              className="text-xs sm:text-sm"
-            >
-              {option.label}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
-    </div>
+          <SelectTrigger
+            id="member-role-select"
+            className={`${error ? "border-red-500" : ""}`}
+          >
+            <SelectValue placeholder={PLACEHOLDERS.MEMBER_ROLE_PLACEHOLDER} />
+          </SelectTrigger>
+          <SelectContent>
+            {MEMBER_ROLE_OPTIONS.map((option) => (
+              <SelectItem key={option.value} value={option.value}>
+                {option.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </FormControl>
+      {showFormMessage && <FormMessage />}
+      {error && <p className="text-red-500">{error}</p>}
+    </FormItem>
   );
-}
+};
+
+export const AddMemberRoleField = memo(AddMemberRoleFieldComponent);
+
+AddMemberRoleField.displayName = "AddMemberRoleField";

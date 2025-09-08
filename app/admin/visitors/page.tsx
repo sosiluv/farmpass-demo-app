@@ -1,29 +1,28 @@
 "use client";
 
 import { useAuth } from "@/components/providers/auth-provider";
-import { StatsSkeleton, TableSkeleton } from "@/components/common/skeletons";
-import { useVisitorFiltersStore } from "@/lib/hooks/query/use-visitor-filters";
+import { StatsSkeleton, TableSkeleton } from "@/components/ui/skeleton";
+import { useVisitorFiltersStore } from "@/store/use-visitor-filters-store";
 import {
-  VisitorTable,
+  VisitorTableSheet,
   VisitorFilters,
   VisitorStats,
   VisitorExportRefactored,
 } from "@/components/admin/visitors";
 import { PageHeader } from "@/components/layout";
 import { useMemo, useEffect } from "react";
-import { useVisitorActions } from "@/hooks/useVisitorActions";
+import { useVisitorActions } from "@/hooks/visitor/useVisitorActions";
 import { generateVisitorPageStats } from "@/lib/utils/data/common-stats";
 import { ErrorBoundary } from "@/components/error/error-boundary";
 import { ERROR_CONFIGS } from "@/lib/constants/error";
-import { ResponsivePagination } from "@/components/common/responsive-pagination";
+import { ResponsivePagination } from "@/components/ui/responsive-pagination";
 import { useCommonToast } from "@/lib/utils/notification/toast-messages";
-import { getAuthErrorMessage } from "@/lib/utils/validation/validation";
-import { LABELS, PAGE_HEADER } from "@/lib/constants/visitor";
+import { PAGE_HEADER } from "@/lib/constants/visitor";
+import { Users } from "lucide-react";
 
 // React Query Hooks
 import { useFarmsQuery } from "@/lib/hooks/query/use-farms-query";
 import { useFarmVisitorsWithFiltersQuery } from "@/lib/hooks/query/use-farm-visitors-filtered-query";
-import { useProfileQuery } from "@/lib/hooks/query/use-profile-query";
 
 /**
  * 방문자 기록 조회 페이지
@@ -34,10 +33,7 @@ import { useProfileQuery } from "@/lib/hooks/query/use-profile-query";
  * - 일반 사용자: 소유/관리하는 농장만 접근 가능
  */
 export default function VisitorsPage() {
-  const { state } = useAuth();
-  const userId = state.status === "authenticated" ? state.user.id : undefined;
-  const { data: profile } = useProfileQuery(userId);
-  const isAdmin = profile?.account_type === "admin";
+  const { userId, isAdmin } = useAuth();
   const { showError } = useCommonToast();
 
   // React Query Hooks - useFarmsContext 대신 useFarmsQuery 사용
@@ -45,7 +41,7 @@ export default function VisitorsPage() {
     farms,
     isLoading: farmsLoading,
     error: farmsError,
-  } = useFarmsQuery(profile?.id);
+  } = useFarmsQuery(userId);
 
   // 필터 Store
   const {
@@ -76,8 +72,7 @@ export default function VisitorsPage() {
   // 에러 처리
   useEffect(() => {
     if (error) {
-      const authError = getAuthErrorMessage(error);
-      showError("오류", authError.message);
+      showError("오류", error.message);
     }
   }, [error, showError]);
 
@@ -92,7 +87,7 @@ export default function VisitorsPage() {
   const { handleEdit, handleDelete, handleExport } = useVisitorActions({
     farms: farms, // 변환 없이 그대로 전달
     isAdmin,
-    profileId: profile?.id,
+    profileId: userId,
     allVisitors: allVisitors,
   });
 
@@ -124,7 +119,7 @@ export default function VisitorsPage() {
 
   if (loading) {
     return (
-      <div className="flex-1 space-y-3 sm:space-y-4 md:space-y-6 p-1 sm:p-4 md:p-6 lg:p-8 pt-3 sm:pt-4 md:pt-6">
+      <div className="flex-1 space-y-3 sm:space-y-4 md:space-y-6 p-1 sm:p-4 md:p-6 lg:p-8">
         <PageHeader
           title={
             isAdmin
@@ -136,13 +131,7 @@ export default function VisitorsPage() {
               ? PAGE_HEADER.ALL_VISITORS_PAGE_DESCRIPTION
               : PAGE_HEADER.VISITORS_PAGE_DESCRIPTION
           }
-          breadcrumbs={[
-            {
-              label: isAdmin
-                ? PAGE_HEADER.ALL_VISITORS_PAGE_BREADCRUMB
-                : PAGE_HEADER.VISITORS_PAGE_BREADCRUMB,
-            },
-          ]}
+          icon={Users}
         />
         <StatsSkeleton columns={4} />
         <TableSkeleton rows={5} columns={6} />
@@ -155,7 +144,7 @@ export default function VisitorsPage() {
       title={ERROR_CONFIGS.LOADING.title}
       description={ERROR_CONFIGS.LOADING.description}
     >
-      <div className="flex-1 space-y-3 sm:space-y-4 md:space-y-6 p-1 sm:p-4 md:p-6 lg:p-8 pt-3 sm:pt-4 md:pt-6">
+      <div className="flex-1 space-y-3 sm:space-y-4 md:space-y-6 px-4 md:px-6 lg:px-8 pt-3 pb-4 md:pb-6 lg:pb-8">
         <PageHeader
           title={
             isAdmin
@@ -167,17 +156,10 @@ export default function VisitorsPage() {
               ? PAGE_HEADER.ALL_VISITORS_PAGE_DESCRIPTION
               : PAGE_HEADER.VISITORS_PAGE_DESCRIPTION
           }
-          breadcrumbs={[
-            {
-              label: isAdmin
-                ? PAGE_HEADER.ALL_VISITORS_PAGE_BREADCRUMB
-                : PAGE_HEADER.VISITORS_PAGE_BREADCRUMB,
-            },
-          ]}
+          icon={Users}
           actions={
             <VisitorExportRefactored
               farms={farms} // 변환 없이 그대로 전달
-              isAdmin={isAdmin}
               onExport={handleExport}
             />
           }
@@ -226,7 +208,6 @@ export default function VisitorsPage() {
           onClearFilters={resetFilters}
           showFarmFilter={true}
           showAllOption={true}
-          isAdmin={isAdmin}
         />
 
         {/* 방문자 테이블 (페이징 적용) */}
@@ -236,7 +217,7 @@ export default function VisitorsPage() {
           sortFn={sortFn}
         >
           {({ paginatedData, isLoadingMore, hasMore }) => (
-            <VisitorTable
+            <VisitorTableSheet
               visitors={paginatedData}
               showFarmColumn={isAdmin || farms.length > 1} // 관리자이거나 농장이 여러 개인 경우 농장 컬럼 표시
               loading={loading}

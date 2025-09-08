@@ -1,10 +1,11 @@
 "use client";
 
+import { useSwipeToClose } from "@/hooks/ui/use-gesture";
 import { useAuth } from "@/components/providers/auth-provider";
-import { useAuthActions } from "@/hooks/useAuthActions";
+import { useAuthActions } from "@/hooks/auth/useAuthActions";
 import { useSystemSettingsQuery } from "@/lib/hooks/query/use-system-settings-query";
 import { getFarmTypeLabel, getFarmTypeIcon } from "@/lib/constants/farm-types";
-import type { Farm } from "@/lib/types/farm";
+import type { Farm } from "@/lib/types/common";
 import {
   Sidebar,
   SidebarContent,
@@ -37,26 +38,36 @@ import {
   Shield,
   Activity,
   Loader2,
+  FileText,
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useMemo, useState } from "react";
-import { Logo, ThemeToggle } from "@/components/common";
-import { useLogo } from "@/hooks/use-logo";
+import { Logo } from "@/components/common/logo";
+import { useLogo } from "@/hooks/ui/use-logo";
 import { BUTTONS, LABELS } from "@/lib/constants/common";
 import { useProfileQuery } from "@/lib/hooks/query/use-profile-query";
 import { useFarmsQuery } from "@/lib/hooks/query/use-farms-query";
 
 export function AdminSidebar() {
-  const { state } = useAuth();
   const { signOut } = useAuthActions();
-  const userId = state.status === "authenticated" ? state.user.id : undefined;
+  const { isAdmin, userId } = useAuth();
   const { data: profile, isLoading: profileLoading } = useProfileQuery(userId);
-  const { farms } = useFarmsQuery(profile?.id);
+  const { farms } = useFarmsQuery(userId);
   const { data: settings } = useSystemSettingsQuery();
   const { isMobile, setOpenMobile } = useSidebar();
   const { siteName } = useLogo(settings || null);
   const [isLoggingOut, setIsLoggingOut] = useState(false); // 로그아웃 로딩 상태 추가
+
+  // 공통 제스처 훅으로 왼쪽 스와이프 시 사이드바 닫기 (모바일에서만)
+  const bind = useSwipeToClose({
+    direction: "left",
+    threshold: 50,
+    onClose: () => {
+      setOpenMobile(false);
+    },
+    enabled: isMobile, // 모바일에서만 활성화
+  });
 
   // 모바일에서 메뉴 클릭 시 사이드바 닫기
   const handleMenuClick = () => {
@@ -77,33 +88,6 @@ export function AdminSidebar() {
     }
   };
 
-  // 터치 제스처 핸들러
-  const handleTouchStart = (e: React.TouchEvent) => {
-    if (!isMobile) return;
-    const touch = e.touches[0];
-    const startX = touch.clientX;
-
-    const handleTouchMove = (moveEvent: TouchEvent) => {
-      const currentTouch = moveEvent.touches[0];
-      const deltaX = currentTouch.clientX - startX;
-
-      // 왼쪽으로 50px 이상 스와이프하면 닫기
-      if (deltaX < -50) {
-        setOpenMobile(false);
-        document.removeEventListener("touchmove", handleTouchMove);
-        document.removeEventListener("touchend", handleTouchEnd);
-      }
-    };
-
-    const handleTouchEnd = () => {
-      document.removeEventListener("touchmove", handleTouchMove);
-      document.removeEventListener("touchend", handleTouchEnd);
-    };
-
-    document.addEventListener("touchmove", handleTouchMove);
-    document.addEventListener("touchend", handleTouchEnd);
-  };
-
   // 더블 탭으로 닫기
   const handleDoubleClick = () => {
     if (isMobile) {
@@ -114,8 +98,6 @@ export function AdminSidebar() {
 
   // 동적 메뉴 아이템 생성
   const menuItems = useMemo(() => {
-    const isAdmin = profile?.account_type === "admin";
-
     // 모든 사용자가 동일한 visitors 페이지 사용
     const visitorsUrl = "/admin/visitors";
     const visitorsTitle = isAdmin
@@ -176,16 +158,21 @@ export function AdminSidebar() {
         icon: Activity,
         badge: null,
       },
+      {
+        title: LABELS.ADMIN_SIDEBAR_TERMS_MANAGEMENT,
+        url: "/admin/terms",
+        icon: FileText,
+        badge: null,
+      },
     ];
 
     // admin인 경우 admin 메뉴 아이템도 포함
     return isAdmin ? [...baseMenuItems, ...adminMenuItems] : baseMenuItems;
-  }, [farms, profile?.account_type]);
+  }, [farms, isAdmin]);
 
   return (
     <Sidebar
-      className="bg-background border-r"
-      onTouchStart={handleTouchStart}
+      className="bg-background border-r touch-manipulation"
       onDoubleClick={handleDoubleClick}
     >
       <SidebarHeader className="bg-background border-b">
@@ -203,16 +190,6 @@ export function AdminSidebar() {
               </TooltipContent>
             </Tooltip>
           </TooltipProvider>
-          <span className="text-xs text-muted-foreground truncate text-center block w-full">
-            {profile?.account_type === "admin"
-              ? LABELS.LAYOUT_ADMIN_SIDEBAR
-              : farms.length > 0
-              ? LABELS.LAYOUT_FARM_MANAGER.replace(
-                  "{count}",
-                  farms.length.toString()
-                )
-              : LABELS.LAYOUT_REGISTER_FARM}
-          </span>
         </div>
 
         {/* 대시보드로 돌아가기 버튼 - 모바일에서만 표시 */}
@@ -229,18 +206,9 @@ export function AdminSidebar() {
             </Button>
           </Link>
         </div>
-
-        {/* 모바일 사용 안내 */}
-        {isMobile && (
-          <div className="px-2 pb-2 md:hidden">
-            <div className="text-xs text-muted-foreground text-center py-2 px-3 bg-muted/30 rounded-lg">
-              {LABELS.LAYOUT_MOBILE_GUIDE}
-            </div>
-          </div>
-        )}
       </SidebarHeader>
 
-      <SidebarContent className="bg-background">
+      <SidebarContent className="bg-background touch-none" {...bind()}>
         <SidebarGroup>
           <SidebarGroupLabel className="text-xs font-medium text-muted-foreground px-2 py-2">
             {LABELS.LAYOUT_MANAGEMENT_MENU}
@@ -347,7 +315,7 @@ export function AdminSidebar() {
               </Link>
               <Link
                 href={
-                  profile?.account_type === "admin"
+                  isAdmin
                     ? "/admin/all-visitors"
                     : farms.length > 0
                     ? "/admin/visitors"
@@ -359,13 +327,11 @@ export function AdminSidebar() {
                   variant="outline"
                   size="sm"
                   className="w-full justify-start"
-                  disabled={
-                    profile?.account_type !== "admin" && farms.length === 0
-                  }
+                  disabled={!isAdmin && farms.length === 0}
                   onClick={handleMenuClick}
                 >
                   <Users className="mr-2 h-4 w-4" />
-                  {profile?.account_type === "admin"
+                  {isAdmin
                     ? BUTTONS.LAYOUT_ALL_VISITORS_STATUS
                     : farms.length > 0
                     ? BUTTONS.LAYOUT_VISITORS_STATUS
@@ -385,12 +351,12 @@ export function AdminSidebar() {
                 {LABELS.LAYOUT_CURRENT_LOGIN}
               </div>
               <div className="text-sm font-medium truncate">
-                {state.status === "loading" || profileLoading
+                {profileLoading
                   ? BUTTONS.PAGINATION_LOADING
                   : profile?.name || LABELS.LAYOUT_LOGIN_REQUIRED}
               </div>
               <div className="text-xs text-muted-foreground truncate">
-                {state.status === "loading" || profileLoading
+                {profileLoading
                   ? BUTTONS.PAGINATION_LOADING
                   : profile?.email || LABELS.LAYOUT_LOGIN_NEEDED}
               </div>
@@ -417,7 +383,6 @@ export function AdminSidebar() {
                   </>
                 )}
               </Button>
-              <ThemeToggle />
             </div>
           </SidebarMenuItem>
         </SidebarMenu>

@@ -1,7 +1,6 @@
 import { useCommonToast } from "@/lib/utils/notification/toast-messages";
 import { useDeleteLogsMutation } from "@/lib/hooks/query/use-logs-mutations";
-import { getAuthErrorMessage } from "@/lib/utils/validation/validation";
-import type { SystemLog } from "@/lib/types/system";
+import type { SystemLog } from "@/lib/types/common";
 
 interface LogsActionManagerProps {
   logs: SystemLog[];
@@ -34,9 +33,8 @@ export function LogsActionManager({
           refetch();
           showSuccess("로그 삭제 완료", result.message);
         },
-        onError: (error: any) => {
-          const authError = getAuthErrorMessage(error);
-          showError("로그 삭제 실패", authError.message);
+        onError: (error) => {
+          showError("로그 삭제 실패", error.message);
         },
       }
     );
@@ -59,9 +57,8 @@ export function LogsActionManager({
           refetch();
           showSuccess("전체 로그 삭제 완료", result.message);
         },
-        onError: (error: any) => {
-          const authError = getAuthErrorMessage(error);
-          showError("전체 로그 삭제 실패", authError.message);
+        onError: (error) => {
+          showError("전체 로그 삭제 실패", error.message);
         },
       }
     );
@@ -83,9 +80,8 @@ export function LogsActionManager({
             `${result.deletedCount || 0}개의 오래된 로그가 삭제되었습니다.`
           );
         },
-        onError: (error: any) => {
-          const authError = getAuthErrorMessage(error);
-          showError("오래된 로그 삭제 실패", authError.message);
+        onError: (error) => {
+          showError("오래된 로그 삭제 실패", error.message);
         },
       }
     );

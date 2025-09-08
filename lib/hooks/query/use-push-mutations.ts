@@ -13,8 +13,6 @@ export const useVapidKeyQuery = (options?: { enabled?: boolean }) => {
   return useQuery({
     queryKey: pushKeys.vapid(),
     queryFn: async () => {
-      devLog.log("[QUERY] VAPID 키 조회 시작");
-
       const data = await apiClient("/api/push/vapid", {
         method: "GET",
         context: "VAPID 키 조회",
@@ -32,7 +30,7 @@ export const useVapidKeyQuery = (options?: { enabled?: boolean }) => {
 export const useSubscriptionStatusQuery = (enabled: boolean = true) => {
   return useQuery({
     queryKey: pushKeys.status(),
-    queryFn: async () => {
+    queryFn: async (): Promise<PushSubscription[]> => {
       const data = await apiClient("/api/push/subscription", {
         method: "GET",
         context: "구독 상태 조회",
@@ -41,7 +39,7 @@ export const useSubscriptionStatusQuery = (enabled: boolean = true) => {
       return data.subscriptions || [];
     },
     enabled,
-    staleTime: 2 * 60 * 1000, // 2분간 fresh 유지
+    staleTime: 10 * 1000, // 10초간 fresh 유지 (빠른 동기화)
     retry: 1,
   });
 };
@@ -63,12 +61,6 @@ export const useCreateSubscriptionMutation = () => {
         updateSettings?: boolean;
       };
     }): Promise<{ success: boolean; message?: string; subscription?: any }> => {
-      devLog.log("[MUTATION] 푸시 알림 구독 생성 시작", {
-        deviceId,
-        isResubscribe: options?.isResubscribe,
-        updateSettings: options?.updateSettings,
-      });
-
       const result = await apiClient("/api/push/subscription", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -80,13 +72,11 @@ export const useCreateSubscriptionMutation = () => {
         context: "구독 정보 서버 전송",
       });
 
-      devLog.log("[MUTATION] 푸시 알림 구독 생성 완료");
       return result;
     },
     onSuccess: () => {
       // 구독 상태 캐시 무효화
       queryClient.invalidateQueries({ queryKey: pushKeys.status() });
-      devLog.log("[MUTATION] 구독 상태 캐시 무효화 완료");
     },
     onError: (error) => {
       devLog.error("[MUTATION] 구독 생성 실패:", error);
@@ -114,12 +104,6 @@ export const useDeleteSubscriptionMutation = () => {
       message?: string;
       deletedCount?: number;
     }> => {
-      devLog.log("[MUTATION] 푸시 알림 구독 해제 시작", {
-        endpoint,
-        forceDelete,
-        updateSettings: options?.updateSettings,
-      });
-
       const result = await apiClient("/api/push/subscription", {
         method: "DELETE",
         headers: { "Content-Type": "application/json" },
@@ -127,13 +111,11 @@ export const useDeleteSubscriptionMutation = () => {
         context: "구독 해제",
       });
 
-      devLog.log("[MUTATION] 푸시 알림 구독 해제 완료");
       return result;
     },
     onSuccess: () => {
       // 구독 상태 캐시 무효화
       queryClient.invalidateQueries({ queryKey: pushKeys.status() });
-      devLog.log("[MUTATION] 구독 상태 캐시 무효화 완료");
     },
     onError: (error) => {
       devLog.error("[MUTATION] 구독 해제 실패:", error);
@@ -152,20 +134,16 @@ export const useRegenerateVapidKeyMutation = () => {
       message?: string;
       warning?: string;
     }> => {
-      devLog.log("[MUTATION] VAPID 키 재생성 시작");
-
       const result = await apiClient("/api/push/vapid", {
         method: "POST",
         context: "VAPID 키 재생성",
       });
 
-      devLog.log("[MUTATION] VAPID 키 재생성 완료");
       return result;
     },
     onSuccess: () => {
       // VAPID 키 정보 무효화
       queryClient.invalidateQueries({ queryKey: pushKeys.vapid() });
-      devLog.log("[MUTATION] VAPID 키 캐시 무효화 완료");
     },
     onError: (error) => {
       devLog.error("[MUTATION] VAPID 키 재생성 실패:", error);
@@ -189,8 +167,6 @@ export const useCleanupSubscriptionsMutation = () => {
       totalChecked: number;
       checkType: string;
     }> => {
-      devLog.log("[MUTATION] 구독 정리 시작", data);
-
       const result = await apiClient("/api/push/subscription/cleanup", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -198,13 +174,11 @@ export const useCleanupSubscriptionsMutation = () => {
         context: "구독 정리",
       });
 
-      devLog.log("[MUTATION] 구독 정리 완료");
       return result;
     },
     onSuccess: () => {
       // 구독 상태 캐시 무효화
       queryClient.invalidateQueries({ queryKey: pushKeys.status() });
-      devLog.log("[MUTATION] 구독 상태 캐시 무효화 완료");
     },
     onError: (error) => {
       devLog.error("[MUTATION] 구독 정리 실패:", error);

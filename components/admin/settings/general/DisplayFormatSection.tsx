@@ -38,7 +38,12 @@ export function DisplayFormatSection({
       <CardContent className="space-y-6">
         {/* 날짜 형식 */}
         <div className="space-y-2">
-          <Label htmlFor="dateFormat">{LABELS.DATE_FORMAT}</Label>
+          <Label
+            htmlFor="dateFormat"
+            className="text-sm sm:text-base font-medium"
+          >
+            {LABELS.DATE_FORMAT}
+          </Label>
           <Select
             value={settings.dateFormat}
             onValueChange={(value) => onSettingChange("dateFormat", value)}
@@ -55,7 +60,7 @@ export function DisplayFormatSection({
               ))}
             </SelectContent>
           </Select>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-sm sm:text-base text-muted-foreground">
             {LABELS.DATE_FORMAT_DESCRIPTION}
           </p>
         </div>

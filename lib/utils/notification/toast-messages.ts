@@ -6,7 +6,7 @@
  */
 
 import { useCallback } from "react";
-import { useToast } from "@/hooks/use-toast";
+import { useToast } from "@/hooks/ui/use-toast";
 
 // Toast 메시지 표시 헬퍼 함수들
 export function useCommonToast() {

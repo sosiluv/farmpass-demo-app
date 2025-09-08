@@ -1,13 +1,14 @@
 import { getSystemSetting } from "@/lib/cache/system-settings-cache";
 import { devLog } from "@/lib/utils/logging/dev-logger";
 import { normalizeIP } from "@/lib/server/ip-helpers";
-import { slackNotifier } from "@/lib/slack";
 import {
   createServiceRoleClient,
   validateServiceRoleConfig,
 } from "@/lib/supabase/service-role";
 import type { LogLevel } from "@/lib/types/common";
 import { ACTIONS_BY_CATEGORY } from "@/lib/constants/log-actions";
+import { NextRequest } from "next/server";
+import { extractRequestContextWithLocation } from "@/lib/server/ip-helpers";
 
 /**
  * 통합 로깅 시스템 - 단순화된 인터페이스
@@ -145,29 +146,23 @@ async function createLog(
     }
     let currentUserId = context.userId;
     let userEmail = context.email;
-    if (!currentUserId || !userEmail) {
-      userEmail =
-        userEmail || process.env.ENV_COMPANY_EMAIL || "k331502@nate.com";
-    }
     let clientIP = context.ip;
+    let userAgent = context.userAgent;
     if (!clientIP) {
       clientIP = "server-unknown";
     }
     if (clientIP && clientIP !== "server-unknown") {
       clientIP = normalizeIP(clientIP);
     }
-    let userAgent = context.userAgent;
-    if (!userAgent) {
-      userAgent = "Server";
-    }
+
     const logData = {
-      user_id: currentUserId || null,
-      user_email: userEmail || null,
+      user_id: currentUserId || "00000000-0000-0000-0000-000000000000",
+      user_email: userEmail || "system@samwon1141.com",
       action,
       message,
       level,
       user_ip: clientIP || "unknown",
-      user_agent: userAgent,
+      user_agent: userAgent || "Server",
       resource_type: context.resource || null,
       resource_id: null,
       metadata:
@@ -202,13 +197,7 @@ async function createLog(
   }
 }
 
-/**
- * 통합 로거 객체
- */
 export const logger = {
-  /**
-   * 1. 기본 로깅 (모든 로그의 기반)
-   */
   log: async (
     level: LogLevel,
     action: string,
@@ -219,105 +208,6 @@ export const logger = {
     await createLog(level, action, message, context, metadata);
   },
 
-  /**
-   * 2. API 관련 (에러 + 성능 통합)
-   */
-  api: async (
-    endpoint: string,
-    method: string,
-    result: ApiResult,
-    context?: LogContext
-  ) => {
-    const cacheKey = `api_${endpoint}_${method}`;
-
-    if (result.error) {
-      // API 에러 로깅 (중복 방지)
-      if (shouldSkipDuplicate(cacheKey)) return;
-
-      const errorMessage =
-        result.error instanceof Error
-          ? result.error.message
-          : String(result.error);
-
-      await createLog(
-        "error",
-        "API_ERROR",
-        `${method} ${endpoint} 실패: ${errorMessage}`,
-        { ...context, resource: "api" },
-        {
-          endpoint,
-          method,
-          status_code: result.status,
-          duration_ms: result.duration,
-          error_message: errorMessage,
-        }
-      );
-    } else if (result.duration && result.duration > 1000) {
-      // 느린 API 성능 로깅
-      await createLog(
-        "warn",
-        "API_SLOW",
-        `느린 API 감지: ${method} ${endpoint} (${result.duration}ms)`,
-        { ...context, resource: "api" },
-        {
-          endpoint,
-          method,
-          duration_ms: result.duration,
-          status_code: result.status,
-        }
-      );
-    }
-  },
-
-  /**
-   * 3. 비즈니스 이벤트 (데이터 변경, 사용자 행동)
-   */
-  business: async (
-    action: string,
-    resource: string,
-    context?: LogContext,
-    metadata?: LogMetadata
-  ) => {
-    await createLog(
-      "info",
-      action,
-      `${resource} 관련 작업: ${action}`,
-      context,
-      {
-        ...metadata,
-        business_action: action,
-        business_resource: resource,
-      }
-    );
-  },
-
-  /**
-   * 4. 성능 모니터링
-   */
-  performance: async (
-    operation: string,
-    duration: number,
-    threshold = 1000,
-    context?: LogContext
-  ) => {
-    if (duration > threshold) {
-      await createLog(
-        "warn",
-        "PERFORMANCE_SLOW",
-        `느린 작업 감지: ${operation} (${duration}ms)`,
-        { ...context, resource: "system" },
-        {
-          operation,
-          duration_ms: duration,
-          threshold_ms: threshold,
-        }
-      );
-    }
-  },
-
-  /**
-   * 5. 에러 전용 (간단한 에러 로깅)
-   */
   error: async (
     error: Error | string,
     context?: LogContext,
@@ -326,113 +216,88 @@ export const logger = {
     const errorMessage = error instanceof Error ? error.message : String(error);
     const stack = error instanceof Error ? error.stack : undefined;
 
-    // 1. 기존 시스템 로그에 저장
+    // 시스템 로그에 저장
     await createLog("error", "ERROR", errorMessage, context, {
       ...metadata,
       error_message: errorMessage,
       stack_trace: stack,
     });
-
-    // 2. Slack 알림 전송 (에러 레벨인 경우)
-    await slackNotifier.sendSystemAlert(
-      "error",
-      "시스템 에러 발생",
-      errorMessage,
-      {
-        action: metadata?.action || "ERROR",
-        userId: context?.userId || "unknown",
-        stack: stack?.split("\n")[0], // 첫 번째 스택 라인만
-        timestamp: new Date().toISOString(),
-      }
-    );
   },
 };
 
-// ============================================
-// 기존 함수 호환성 유지 (기존 코드 수정 없이 사용 가능)
-// ============================================
+/**
+ * Request 컨텍스트 추출 헬퍼 함수
+ */
+async function extractRequestContext(request?: NextRequest) {
+  if (!request) {
+    return { ip: undefined, userAgent: undefined, location: undefined };
+  }
 
+  const requestContext = await extractRequestContextWithLocation(request);
+  return {
+    ip: requestContext.ip,
+    userAgent: requestContext.userAgent,
+    location: requestContext.location,
+  };
+}
+
+/**
+ * 통합된 시스템 로그 생성 함수
+ *
+ * 다양한 사용 패턴을 지원하는 하나의 함수로 통합
+ *
+ * @param action - 로그 액션
+ * @param message - 로그 메시지
+ * @param level - 로그 레벨
+ * @param user - 사용자 정보 (id, email 포함)
+ * @param resourceType - 리소스 타입
+ * @param resourceId - 리소스 ID
+ * @param metadata - 추가 메타데이터
+ * @param request - NextRequest 객체 (IP/User-Agent 자동 추출용)
+ */
 export const createSystemLog = async (
   action: string,
   message: string,
   level: LogLevel = "info",
-  userId?: string,
+  user?: { id: string; email: string },
   resourceType?: ResourceType,
   resourceId?: string,
   metadata?: LogMetadata,
-  userEmail?: string,
-  userIP?: string,
-  userAgent?: string
+  request?: NextRequest
 ) => {
+  const context = await extractRequestContext(request);
+
   await logger.log(
     level,
     action,
     message,
-    { userId, resource: resourceType, ip: userIP, email: userEmail, userAgent },
-    { ...metadata, user_email: userEmail, resource_id: resourceId }
-  );
-};
-
-export const logApiError = (
-  endpoint: string,
-  method: string,
-  error: Error | string,
-  userId?: string,
-  context?: Partial<LogContext>,
-  resourceType: ResourceType = "api"
-) => {
-  return logger.api(
-    endpoint,
-    method,
-    { error },
-    { userId, resource: resourceType, ...context }
-  );
-};
-
-export const logPageView = async (
-  fromPath: string,
-  toPath: string,
-  userId?: string,
-  context?: Partial<LogContext>,
-  resourceType: ResourceType = "system"
-) => {
-  await logger.business(
-    "PAGE_VIEW",
-    "navigation",
-    { userId, resource: resourceType, ...context },
-    { fromPath, toPath }
+    {
+      userId: user?.id,
+      resource: resourceType,
+      email: user?.email,
+      ...context,
+    },
+    { ...metadata, user_email: user?.email, resource_id: resourceId }
   );
 };
 
 export const logSecurityError = async (
   threat: string,
   description: string,
-  userId?: string,
-  ip?: string,
-  userAgent?: string,
-  resourceType: ResourceType = "system"
+  user?: { id: string; email: string },
+  request?: NextRequest
 ) => {
+  const context = await extractRequestContext(request);
+
   await logger.error(
     `보안 위협: ${threat}`,
-    { userId, ip, resource: resourceType },
-    { threat, description, userAgent }
-  );
-};
-
-export const logSystemWarning = async (
-  operation: string,
-  message: string,
-  logContext?: Partial<LogContext>,
-  metadata?: Record<string, any>,
-  userId?: string,
-  resourceType: ResourceType = "system"
-) => {
-  await logger.log(
-    "warn",
-    "SYSTEM_WARNING",
-    `${operation}: ${message}`,
-    { userId, resource: resourceType, ...logContext },
-    metadata
+    {
+      userId: user?.id,
+      email: user?.email,
+      resource: "system",
+      ...context,
+    },
+    { threat, description, userAgent: context.userAgent }
   );
 };
 
@@ -440,49 +305,12 @@ export const logSystemWarning = async (
 // Performance Logger 통합 (기존 호환성 유지)
 // ============================================
 
-export interface PerformanceMetric {
-  duration_ms: number;
-  operation: string;
-  metadata?: Record<string, any>;
-}
-
-export interface DatabaseQueryMetric {
-  query: string;
-  table: string;
-  duration_ms: number;
-  row_count?: number;
-}
-
 export interface MemoryMetric {
   heap_used: number;
   heap_total: number;
   heap_limit?: number;
   warning_threshold?: number;
 }
-
-export interface ApiResponseMetric {
-  endpoint: string;
-  method: string;
-  duration_ms: number;
-  status_code: number;
-  response_size?: number;
-}
-
-export const logDatabasePerformance = async (
-  metric: DatabaseQueryMetric,
-  userId?: string,
-  context?: Partial<LogContext>
-) => {
-  if (metric.duration_ms > 1000) {
-    // 1초 이상만 로깅
-    await logger.performance(
-      `DB Query: ${metric.table}`,
-      metric.duration_ms,
-      1000,
-      { userId, ...context }
-    );
-  }
-};
 
 export const logMemoryUsage = async (metric: MemoryMetric, userId?: string) => {
   const usagePercentage = (metric.heap_used / metric.heap_total) * 100;
@@ -498,48 +326,6 @@ export const logMemoryUsage = async (metric: MemoryMetric, userId?: string) => {
     );
   }
 };
-
-export const logApiPerformance = async (
-  metric: ApiResponseMetric,
-  userId?: string,
-  context?: Partial<LogContext>
-) => {
-  if (metric.duration_ms > 1000) {
-    // 1초 이상만 로깅
-    await logger.performance(
-      `${metric.method} ${metric.endpoint}`,
-      metric.duration_ms,
-      1000,
-      { userId, ...context }
-    );
-  }
-};
-
-export class PerformanceMonitor {
-  private startTime: number;
-  private operation: string;
-  private metadata: Record<string, any>;
-
-  constructor(operation: string, metadata: Record<string, any> = {}) {
-    this.operation = operation;
-    this.metadata = metadata;
-    this.startTime = performance.now();
-  }
-
-  async finish(threshold = 1000, userId?: string): Promise<number> {
-    const duration = performance.now() - this.startTime;
-
-    if (duration > threshold) {
-      await logger.performance(this.operation, duration, threshold, { userId });
-    }
-
-    return duration;
-  }
-
-  async end(threshold = 1000, userId?: string): Promise<number> {
-    return this.finish(threshold, userId);
-  }
-}
 
 export const logSystemResources = async (): Promise<void> => {
   try {
@@ -604,5 +390,4 @@ export const getLogCategory = (log: any): string => {
 // 기본 내보내기 (새로운 프로젝트에서 사용)
 export default {
   logger,
-  PerformanceMonitor,
 };

@@ -9,17 +9,22 @@ import { RegionDistribution } from "../dashboard/RegionDistribution";
 import { MonthlyTrends } from "../dashboard/MonthlyTrends";
 import { SystemUsage } from "../dashboard/SystemUsage";
 import { RecentActivities } from "../dashboard/RecentActivities";
-import { useAdminDashboardQuery } from "@/lib/hooks/query/use-admin-dashboard-query";
+import { useAdminDashboardStatsQuery } from "@/lib/hooks/query/use-admin-dashboard-query";
 import { ErrorBoundary } from "@/components/error/error-boundary";
-import { StatsSkeleton } from "@/components/common/skeletons";
-import { BarChart3, TrendingUp } from "lucide-react";
+import { StatsSkeleton } from "@/components/ui/skeleton";
+import { TrendingUp } from "lucide-react";
 import { AdminError } from "@/components/error/admin-error";
 import { ERROR_CONFIGS } from "@/lib/constants/error";
-import { useDataFetchTimeout } from "@/hooks/useTimeout";
+import { useDataFetchTimeout } from "@/hooks/system/useTimeout";
 import { LABELS } from "@/lib/constants/management";
 
 export function DashboardTab() {
-  const { data: stats, isLoading: loading, refetch } = useAdminDashboardQuery();
+  const {
+    data: stats,
+    isLoading: loading,
+    error,
+    refetch,
+  } = useAdminDashboardStatsQuery();
 
   // 타임아웃 관리
   const { timeoutReached, retry } = useDataFetchTimeout(
@@ -28,7 +33,7 @@ export function DashboardTab() {
       await refetch();
     },
     {
-      timeout: 10000,
+      timeout: 15000,
     }
   );
 
@@ -39,6 +44,7 @@ export function DashboardTab() {
         description={ERROR_CONFIGS.TIMEOUT.description}
         retry={retry}
         error={new Error("Timeout: 데이터 로딩 10초 초과")}
+        isTimeout={true}
       />
     );
   }
@@ -55,6 +61,17 @@ export function DashboardTab() {
     );
   }
 
+  if (error) {
+    return (
+      <AdminError
+        title={ERROR_CONFIGS.LOADING.title}
+        description={ERROR_CONFIGS.LOADING.description}
+        retry={refetch}
+        error={error as Error}
+      />
+    );
+  }
+
   if (!stats) return;
 
   return (
@@ -65,10 +82,6 @@ export function DashboardTab() {
       <CommonPageWrapper>
         {/* 핵심 통계 섹션 */}
         <section className="space-y-4 lg:space-y-6">
-          <div className="flex items-center gap-2 text-lg font-semibold text-slate-900 dark:text-slate-100">
-            <BarChart3 className="w-5 h-5 text-blue-600 dark:text-blue-400" />
-            <span>{LABELS.CORE_STATS}</span>
-          </div>
           <DashboardStats
             totalUsers={stats.totalUsers}
             totalFarms={stats.totalFarms}

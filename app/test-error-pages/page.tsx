@@ -34,11 +34,7 @@ export default function ErrorTestPage() {
       </div>
       {showAccessDenied && (
         <div className="mt-8 w-full max-w-lg">
-          <AccessDenied
-            requiredRole="admin"
-            currentRole="viewer"
-            showNavigation={true}
-          />
+          <AccessDenied requiredRole="admin" currentRole="viewer" />
         </div>
       )}
     </div>

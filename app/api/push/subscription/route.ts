@@ -1,10 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createSystemLog } from "@/lib/utils/logging/system-log";
 import { devLog } from "@/lib/utils/logging/dev-logger";
-import { getClientIP, getUserAgent } from "@/lib/server/ip-helpers";
-import { logApiError } from "@/lib/utils/logging/system-log";
 import { requireAuth } from "@/lib/server/auth-utils";
 import { prisma } from "@/lib/prisma";
+import {
+  getErrorResultFromRawError,
+  makeErrorResponseFromResult,
+  throwBusinessError,
+} from "@/lib/utils/error/errorUtil";
+import { LOG_MESSAGES } from "@/lib/utils/logging/log-templates";
+import { getUserAgent } from "@/lib/server/ip-helpers";
 
 /**
  * 푸시 구독 데이터 무결성 검증
@@ -52,8 +57,9 @@ function validateSubscriptionData(subscription: any): {
 
 // 푸시 구독 등록
 export async function POST(request: NextRequest) {
-  const clientIP = getClientIP(request);
   const userAgent = getUserAgent(request);
+  let user = null;
+  let body: any = null;
 
   try {
     // 사용자 인증 확인
@@ -63,78 +69,89 @@ export async function POST(request: NextRequest) {
       return authResult.response!;
     }
 
-    const user = authResult.user;
+    user = authResult.user;
 
-    const body = await request.json();
+    body = await request.json();
     const { subscription, deviceId, options } = body;
     // 더 이상 사용하지 않음 - 항상 전체 구독으로 통합
 
     if (!subscription || !subscription.endpoint) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: "INCOMPLETE_SUBSCRIPTION",
-          message: "구독 정보가 불완전합니다.",
-        },
-        { status: 400 }
-      );
+      throwBusinessError("INCOMPLETE_SUBSCRIPTION");
     }
 
     // 구독 데이터 무결성 검증
     const validation = validateSubscriptionData(subscription);
     if (!validation.valid) {
       devLog.error("구독 데이터 검증 실패:", validation.errors);
-      return NextResponse.json(
-        {
-          success: false,
-          error: "SUBSCRIPTION_VALIDATION_FAILED",
-          message: validation.errors,
-        },
-        { status: 400 }
-      );
+      throwBusinessError("SUBSCRIPTION_VALIDATION_FAILED", {
+        errors: validation.errors,
+      });
     }
 
     // 기존 구독 확인 및 등록/갱신을 upsert로 통합
-    const newSubscription = await prisma.push_subscriptions.upsert({
-      where: {
-        // user_id와 endpoint의 복합 unique 인덱스가 필요합니다.
-        user_id_endpoint: {
+    let newSubscription;
+    try {
+      newSubscription = await prisma.push_subscriptions.upsert({
+        where: {
+          // user_id와 device_id의 복합 unique 인덱스
+          user_id_device_id: {
+            user_id: user.id,
+            device_id: deviceId || null,
+          },
+        },
+        update: {
+          is_active: true,
+          endpoint: subscription.endpoint,
+          p256dh: subscription.keys?.p256dh || null,
+          auth: subscription.keys?.auth || null,
+          device_id: deviceId || null,
+          user_agent: userAgent || null,
+          last_used_at: new Date(),
+          fail_count: 0,
+          deleted_at: null,
+          updated_at: new Date(),
+        },
+        create: {
           user_id: user.id,
           endpoint: subscription.endpoint,
+          p256dh: subscription.keys?.p256dh || null,
+          auth: subscription.keys?.auth || null,
+          device_id: deviceId || null,
+          user_agent: userAgent || null,
+          is_active: true,
+          fail_count: 0,
+          last_used_at: new Date(),
+          created_at: new Date(),
+          updated_at: new Date(),
         },
-      },
-      update: {
-        is_active: true,
-        p256dh: subscription.keys?.p256dh || null,
-        auth: subscription.keys?.auth || null,
-        device_id: deviceId || null,
-        user_agent: userAgent || null,
-        last_used_at: new Date(),
-        fail_count: 0,
-        deleted_at: null,
-        updated_at: new Date(),
-      },
-      create: {
-        user_id: user.id,
-        endpoint: subscription.endpoint,
-        p256dh: subscription.keys?.p256dh || null,
-        auth: subscription.keys?.auth || null,
-        device_id: deviceId || null,
-        user_agent: userAgent || null,
-        is_active: true,
-        fail_count: 0,
-        last_used_at: new Date(),
-        created_at: new Date(),
-        updated_at: new Date(),
-      },
-    });
+      });
+    } catch (upsertError) {
+      throwBusinessError(
+        "GENERAL_UPDATE_FAILED",
+        {
+          resourceType: "pushSubscription",
+        },
+        upsertError
+      );
+    }
 
     // 알림 설정 업데이트 (options.updateSettings가 true인 경우에만)
     if (options?.updateSettings !== false) {
-      const existingSettings =
-        await prisma.user_notification_settings.findUnique({
+      let existingSettings;
+      try {
+        existingSettings = await prisma.user_notification_settings.findUnique({
           where: { user_id: user.id },
         });
+      } catch (queryError) {
+        throwBusinessError(
+          "GENERAL_QUERY_FAILED",
+          {
+            resourceType: "notificationSettings",
+          },
+          queryError
+        );
+      }
+
       if (!existingSettings) {
         try {
           await prisma.user_notification_settings.create({
@@ -142,37 +159,19 @@ export async function POST(request: NextRequest) {
               user_id: user.id,
               notification_method: "push",
               visitor_alerts: true,
-              notice_alerts: true,
-              emergency_alerts: true,
-              maintenance_alerts: true,
+              system_alerts: true,
               is_active: true,
               created_at: new Date(),
               updated_at: new Date(),
             },
           });
-        } catch (settingsError: any) {
-          devLog.warn("알림 설정 자동 생성 실패:", settingsError);
-          await createSystemLog(
-            "NOTIFICATION_SETTINGS_CREATION_FAILED",
-            `푸시 구독 시 알림 설정 자동 생성에 실패했습니다.`,
-            "warn",
-            user.id,
-            "system",
-            newSubscription.id,
+        } catch (createError) {
+          throwBusinessError(
+            "GENERAL_CREATE_FAILED",
             {
-              error_message: settingsError.message,
-              endpoint: newSubscription.endpoint,
-              device_id: deviceId,
-              user_agent: userAgent,
-              is_active: newSubscription.is_active,
-              fail_count: newSubscription.fail_count,
-              subscription_id: newSubscription.id,
-              user_id: user.id,
-              action_type: "push_notification",
+              resourceType: "notificationSettings",
             },
-            user.email,
-            clientIP,
-            userAgent
+            createError
           );
         }
       } else if (options?.isResubscribe) {
@@ -181,8 +180,14 @@ export async function POST(request: NextRequest) {
             where: { user_id: user.id },
             data: { is_active: true, updated_at: new Date() },
           });
-        } catch (settingsError: any) {
-          devLog.warn("알림 설정 업데이트 실패:", settingsError);
+        } catch (updateError) {
+          throwBusinessError(
+            "GENERAL_UPDATE_FAILED",
+            {
+              resourceType: "notificationSettings",
+            },
+            updateError
+          );
         }
       }
     }
@@ -190,16 +195,14 @@ export async function POST(request: NextRequest) {
     // 푸시 구독 성공 시 시스템 로그 기록 (기본 동작)
     await createSystemLog(
       "PUSH_SUBSCRIPTION_CREATED",
-      `사용자가 푸시 알림을 구독했습니다. ${
-        newSubscription.endpoint
-          ? ` (엔드포인트: ${newSubscription.endpoint})`
-          : ""
-      }`,
+      LOG_MESSAGES.PUSH_SUBSCRIPTION_CREATED(newSubscription.endpoint),
       "info",
-      user.id,
+      { id: user.id, email: user.email || "" },
       "system",
-      newSubscription.id,
+      newSubscription.endpoint,
       {
+        action_type: "push_notification_event",
+        event: "push_subscription_created",
         user_id: user.id,
         user_email: user.email,
         endpoint: newSubscription.endpoint,
@@ -207,11 +210,8 @@ export async function POST(request: NextRequest) {
         user_agent: userAgent,
         is_active: newSubscription.is_active,
         fail_count: newSubscription.fail_count,
-        action_type: "push_notification",
       },
-      user.email,
-      clientIP,
-      userAgent
+      request
     );
 
     return NextResponse.json(
@@ -223,33 +223,42 @@ export async function POST(request: NextRequest) {
       { status: 201, headers: { "Cache-Control": "no-store" } }
     );
   } catch (error) {
-    devLog.error("푸시 구독 API 오류:", error);
-    // API 에러 로그 기록
-    await logApiError(
-      "/api/push/subscription",
-      "POST",
-      error instanceof Error ? error : String(error),
-      undefined,
+    // 푸시 구독 생성 시스템 오류 로그
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    await createSystemLog(
+      "PUSH_SUBSCRIPTION_CREATE_FAILED",
+      LOG_MESSAGES.PUSH_SUBSCRIPTION_CREATE_FAILED(errorMessage),
+      "error",
+      user?.id ? { id: user.id, email: user.email || "" } : undefined,
+      "system",
+      body?.subscription?.endpoint || "unknown_endpoint", // endpoint를 resourceId로 사용
       {
-        ip: clientIP,
-        userAgent,
-      }
-    );
-    return NextResponse.json(
-      {
-        success: false,
-        error: "SUBSCRIPTION_SERVER_ERROR",
-        message: "서버 오류가 발생했습니다.",
+        action_type: "push_notification_event",
+        event: "push_subscription_create_failed",
+        error_message: errorMessage,
+        user_id: user?.id,
+        user_email: user?.email,
+        endpoint: body?.subscription?.endpoint,
+        device_id: body?.deviceId,
       },
-      { status: 500 }
+      request
     );
+
+    // 비즈니스 에러 또는 시스템 에러를 표준화된 에러 코드로 매핑
+    const result = getErrorResultFromRawError(error, {
+      operation: "create_push_subscription",
+    });
+
+    return NextResponse.json(makeErrorResponseFromResult(result), {
+      status: result.status,
+    });
   }
 }
 
 // 푸시 구독 조회
 export async function GET(request: NextRequest) {
-  const clientIP = getClientIP(request);
-  const userAgent = getUserAgent(request);
+  let user = null;
+
   try {
     // 인증 확인
     const authResult = await requireAuth(false);
@@ -257,16 +266,26 @@ export async function GET(request: NextRequest) {
       return authResult.response!;
     }
 
-    const user = authResult.user;
+    user = authResult.user;
 
     let whereCondition: any = {
       user_id: user.id,
-      is_active: true, // 활성 구독만 조회
     };
 
-    const subscriptions = await prisma.push_subscriptions.findMany({
-      where: whereCondition,
-    });
+    let subscriptions;
+    try {
+      subscriptions = await prisma.push_subscriptions.findMany({
+        where: whereCondition,
+      });
+    } catch (queryError) {
+      throwBusinessError(
+        "GENERAL_QUERY_FAILED",
+        {
+          resourceType: "pushSubscription",
+        },
+        queryError
+      );
+    }
 
     // 구독 유효성 검사 (만료된 구독 감지)
     let expiredCount = 0;
@@ -280,19 +299,30 @@ export async function GET(request: NextRequest) {
       let publicKey: string | undefined = envPublicKey;
       let privateKey: string | undefined = envPrivateKey;
       if (!publicKey || !privateKey) {
-        const settings = await prisma.system_settings.findFirst({
-          select: {
-            vapidPublicKey: true,
-            vapidPrivateKey: true,
-          },
-        });
+        let settings;
+        try {
+          settings = await prisma.system_settings.findFirst({
+            select: {
+              vapidPublicKey: true,
+              vapidPrivateKey: true,
+            },
+          });
+        } catch (queryError) {
+          throwBusinessError(
+            "GENERAL_QUERY_FAILED",
+            {
+              resourceType: "systemSettings",
+            },
+            queryError
+          );
+        }
         publicKey = publicKey || settings?.vapidPublicKey || undefined;
         privateKey = privateKey || settings?.vapidPrivateKey || undefined;
       }
       if (publicKey && privateKey) {
         const webpush = require("web-push");
         webpush.setVapidDetails(
-          "mailto:k331502@nate.com",
+          "mailto:admin@samwon1141.com",
           publicKey,
           privateKey
         );
@@ -312,20 +342,23 @@ export async function GET(request: NextRequest) {
               continue; // 이 구독은 건너뛰고 다음 구독으로
             }
           } catch (error: any) {
-            devLog.log(
-              `구독 유효성 검사 실패 (ID: ${subscription.id}):`,
-              error.message
-            );
-
             // 만료된 구독으로 간주하고 삭제
             expiredCount++;
-            await prisma.push_subscriptions.delete({
-              where: {
-                id: subscription.id,
-              },
-            });
-
-            devLog.log(`만료된 구독 삭제됨 (ID: ${subscription.id})`);
+            try {
+              await prisma.push_subscriptions.delete({
+                where: {
+                  id: subscription.id,
+                },
+              });
+            } catch (deleteError) {
+              throwBusinessError(
+                "GENERAL_DELETE_FAILED",
+                {
+                  resourceType: "pushSubscription",
+                },
+                deleteError
+              );
+            }
           }
         }
       } else {
@@ -341,20 +374,19 @@ export async function GET(request: NextRequest) {
 
     // 구독 조회 성공 시 시스템 로그 기록
     await createSystemLog(
-      "PUSH_SUBSCRIPTION_GET",
-      `사용자가 푸시 알림 구독을 조회했습니다.`,
+      "PUSH_SUBSCRIPTION_READ",
+      LOG_MESSAGES.PUSH_SUBSCRIPTION_READ(),
       "info",
-      user.id,
+      { id: user.id, email: user.email || "" },
       "system",
       undefined,
       {
+        action_type: "push_notification_event",
+        event: "push_subscription_read",
         user_id: user.id,
         user_email: user.email,
-        action_type: "push_notification",
       },
-      user.email,
-      clientIP,
-      userAgent
+      request
     );
 
     return NextResponse.json(response, {
@@ -362,53 +394,53 @@ export async function GET(request: NextRequest) {
       headers: { "Cache-Control": "no-store" },
     });
   } catch (error) {
-    devLog.error("푸시 구독 조회 API 오류:", error);
-    // API 에러 로그 기록
-    await logApiError(
-      "/api/push/subscription",
-      "GET",
-      error instanceof Error ? error : String(error),
-      undefined,
+    // 푸시 구독 조회 시스템 오류 로그
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    await createSystemLog(
+      "PUSH_SUBSCRIPTION_READ_FAILED",
+      LOG_MESSAGES.PUSH_SUBSCRIPTION_READ_FAILED(errorMessage),
+      "error",
+      user?.id ? { id: user.id, email: user.email || "" } : undefined,
+      "system",
+      user?.id || "unknown_user", // user ID를 resourceId로 사용
       {
-        ip: clientIP,
-        userAgent,
-      }
-    );
-    return NextResponse.json(
-      {
-        success: false,
-        error: "SUBSCRIPTION_GET_SYSTEM_ERROR",
-        message: "구독 조회 중 시스템 오류가 발생했습니다.",
+        action_type: "push_notification_event",
+        event: "push_subscription_read_failed",
+        error_message: errorMessage,
+        user_id: user?.id,
+        user_email: user?.email,
       },
-      { status: 500 }
+      request
     );
+
+    // 비즈니스 에러 또는 시스템 에러를 표준화된 에러 코드로 매핑
+    const result = getErrorResultFromRawError(error, {
+      operation: "get_push_subscriptions",
+    });
+
+    return NextResponse.json(makeErrorResponseFromResult(result), {
+      status: result.status,
+    });
   }
 }
 
 // 푸시 구독 해제
 export async function DELETE(request: NextRequest) {
-  const clientIP = getClientIP(request);
-  const userAgent = getUserAgent(request);
+  let body: any = null;
+  let user = null;
 
   try {
-    const body = await request.json();
+    body = await request.json();
     const { endpoint, forceDelete, options } = body;
 
     if (!endpoint) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: "MISSING_ENDPOINT",
-          message: "구독 엔드포인트가 필요합니다.",
-        },
-        { status: 400 }
-      );
+      throwBusinessError("MISSING_ENDPOINT", {
+        operation: "delete_push_subscription",
+      });
     }
 
     // forceDelete가 true인 경우 (특수한 경우에만 사용) 인증 없이 endpoint로만 삭제
     if (forceDelete) {
-      devLog.log(`강제 구독 해제: endpoint ${endpoint}의 모든 구독 삭제`);
-
       try {
         // 강제 삭제 시에는 실제 삭제 (soft delete 아님)
         const deletedSubscriptions = await prisma.push_subscriptions.deleteMany(
@@ -419,26 +451,20 @@ export async function DELETE(request: NextRequest) {
           }
         );
 
-        devLog.log(
-          `강제 삭제 완료: ${deletedSubscriptions.count}개 구독 삭제됨`
-        );
-
         await createSystemLog(
-          "PUSH_SUBSCRIPTION_FORCE_DELETE",
-          `강제 구독 해제: ${endpoint}`,
+          "PUSH_SUBSCRIPTION_FORCE_DELETED",
+          LOG_MESSAGES.PUSH_SUBSCRIPTION_FORCE_DELETED(endpoint),
           "info",
           undefined,
           "notification",
-          undefined,
+          endpoint, // endpoint를 resourceId로 사용
           {
+            action_type: "push_notification_event",
+            event: "push_subscription_force_deleted",
             endpoint,
             deletedCount: deletedSubscriptions.count,
-            reason: "force_delete",
-            action_type: "push_notification",
           },
-          undefined,
-          clientIP,
-          userAgent
+          request
         );
 
         return NextResponse.json({
@@ -446,24 +472,13 @@ export async function DELETE(request: NextRequest) {
           message: "구독이 강제로 해제되었습니다.",
           deletedCount: deletedSubscriptions.count,
         });
-      } catch (error) {
-        devLog.error("강제 구독 해제 실패:", error);
-
-        await logApiError(
-          "/api/push/subscription",
-          "DELETE",
-          error instanceof Error ? error : new Error(String(error)),
-          undefined,
-          { ip: clientIP, userAgent }
-        );
-
-        return NextResponse.json(
+      } catch (deleteError) {
+        throwBusinessError(
+          "GENERAL_DELETE_FAILED",
           {
-            success: false,
-            error: "DATABASE_ERROR",
-            message: "구독 해제 중 오류가 발생했습니다.",
+            resourceType: "pushSubscription",
           },
-          { status: 500 }
+          deleteError
         );
       }
     }
@@ -474,48 +489,61 @@ export async function DELETE(request: NextRequest) {
       return authResult.response!;
     }
 
-    const user = authResult.user;
+    user = authResult.user;
 
     // 구독 정보 조회 (soft delete 전에 정보 확인)
-    const existingSubscriptions = await prisma.push_subscriptions.findMany({
-      where: {
-        user_id: user.id,
-        endpoint: endpoint,
-        is_active: true, // 활성 구독만
-      },
-    });
-
-    if (existingSubscriptions.length === 0) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: "SUBSCRIPTION_NOT_FOUND",
-          message: "해당 구독을 찾을 수 없습니다.",
+    let existingSubscriptions;
+    try {
+      existingSubscriptions = await prisma.push_subscriptions.findMany({
+        where: {
+          user_id: user.id,
+          endpoint: endpoint,
+          is_active: true, // 활성 구독만
         },
-        { status: 404 }
+      });
+    } catch (queryError) {
+      throwBusinessError(
+        "GENERAL_QUERY_FAILED",
+        {
+          resourceType: "pushSubscription",
+        },
+        queryError
       );
     }
 
-    // 구독 soft delete (전체 구독 해제)
-    devLog.log(
-      `구독 해제: endpoint ${endpoint}의 ${existingSubscriptions.length}개 구독 soft delete`
-    );
+    if (existingSubscriptions.length === 0) {
+      throwBusinessError("GENERAL_NOT_FOUND", {
+        resourceType: "pushSubscription",
+      });
+    }
 
-    const updateResult = await prisma.push_subscriptions.updateMany({
-      where: {
-        user_id: user.id,
-        endpoint: endpoint,
-        is_active: true, // 활성 구독만
-      },
-      data: {
-        is_active: false,
-        deleted_at: new Date(),
-        updated_at: new Date(),
-        // fail_count는 0으로 초기화 (수동 해제이므로)
-        fail_count: 0,
-        last_fail_at: null,
-      },
-    });
+    // 구독 soft delete (전체 구독 해제)
+    let updateResult;
+    try {
+      updateResult = await prisma.push_subscriptions.updateMany({
+        where: {
+          user_id: user.id,
+          endpoint: endpoint,
+          is_active: true, // 활성 구독만
+        },
+        data: {
+          is_active: false,
+          deleted_at: new Date(),
+          updated_at: new Date(),
+          // fail_count는 0으로 초기화 (수동 해제이므로)
+          fail_count: 0,
+          last_fail_at: null,
+        },
+      });
+    } catch (updateError) {
+      throwBusinessError(
+        "GENERAL_UPDATE_FAILED",
+        {
+          resourceType: "pushSubscription",
+        },
+        updateError
+      );
+    }
 
     // 알림 설정 업데이트 (options.updateSettings가 true인 경우에만)
     if (options?.updateSettings !== false) {
@@ -528,28 +556,13 @@ export async function DELETE(request: NextRequest) {
             updated_at: new Date(),
           },
         });
-        devLog.log(`사용자 ${user.id}의 알림 설정 비활성화 완료`);
-      } catch (settingsError: any) {
-        devLog.warn("알림 설정 업데이트 실패:", settingsError);
-
-        // 알림 설정 업데이트 실패 시 시스템 로그 기록
-        await createSystemLog(
-          "NOTIFICATION_SETTINGS_UPDATE_FAILED",
-          `구독 해제 시 알림 설정 업데이트에 실패했습니다.`,
-          "warn",
-          user.id,
-          "system",
-          endpoint,
+      } catch (updateError) {
+        throwBusinessError(
+          "GENERAL_UPDATE_FAILED",
           {
-            error_message: settingsError.message,
-            user_email: user.email,
-            user_id: user.id,
-            endpoint,
-            action_type: "push_notification",
+            resourceType: "notificationSettings",
           },
-          user.email,
-          clientIP,
-          userAgent
+          updateError
         );
       }
     }
@@ -557,12 +570,14 @@ export async function DELETE(request: NextRequest) {
     // 시스템 로그 기록 (상세 정보 포함)
     await createSystemLog(
       "PUSH_SUBSCRIPTION_DELETED",
-      `사용자가 푸시 알림 구독을 해제했습니다. (엔드포인트: ${endpoint})`,
+      LOG_MESSAGES.PUSH_SUBSCRIPTION_DELETED(endpoint),
       "info",
-      user.id,
+      { id: user.id, email: user.email || "" },
       "system",
       endpoint,
       {
+        action_type: "push_notification_event",
+        event: "push_subscription_deleted",
         user_email: user.email,
         user_id: user.id,
         endpoint,
@@ -571,11 +586,8 @@ export async function DELETE(request: NextRequest) {
           .map((sub: any) => sub.device_id)
           .filter(Boolean),
         updateSettings: options?.updateSettings !== false,
-        action_type: "push_notification",
       },
-      user.email,
-      clientIP,
-      userAgent
+      request
     );
 
     return NextResponse.json(
@@ -588,25 +600,32 @@ export async function DELETE(request: NextRequest) {
       { status: 200 }
     );
   } catch (error) {
-    devLog.error("푸시 구독 해제 API 오류:", error);
-    // API 에러 로그 기록
-    await logApiError(
-      "/api/push/subscription",
-      "DELETE",
-      error instanceof Error ? error : String(error),
-      undefined,
+    // 푸시 구독 삭제 시스템 오류 로그
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    await createSystemLog(
+      "PUSH_SUBSCRIPTION_DELETE_FAILED",
+      LOG_MESSAGES.PUSH_SUBSCRIPTION_DELETE_FAILED(errorMessage),
+      "error",
+      user?.id ? { id: user.id, email: user.email || "" } : undefined,
+      "system",
+      body?.endpoint || "unknown_endpoint", // endpoint를 resourceId로 사용
       {
-        ip: clientIP,
-        userAgent,
-      }
-    );
-    return NextResponse.json(
-      {
-        success: false,
-        error: "SUBSCRIPTION_SERVER_ERROR",
-        message: "서버 오류가 발생했습니다.",
+        action_type: "push_notification_event",
+        event: "push_subscription_delete_failed",
+        error_message: errorMessage,
+        endpoint: body?.endpoint,
+        force_delete: body?.forceDelete,
       },
-      { status: 500 }
+      request
     );
+
+    // 비즈니스 에러 또는 시스템 에러를 표준화된 에러 코드로 매핑
+    const result = getErrorResultFromRawError(error, {
+      operation: "delete_push_subscription",
+    });
+
+    return NextResponse.json(makeErrorResponseFromResult(result), {
+      status: result.status,
+    });
   }
 }

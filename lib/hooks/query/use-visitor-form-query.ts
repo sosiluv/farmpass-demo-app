@@ -7,30 +7,20 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiClient } from "@/lib/utils/data";
 import { devLog } from "@/lib/utils/logging/dev-logger";
 import type { VisitorFormData } from "@/lib/utils/validation/visitor-validation";
-import type { Farm as VisitorFarm } from "@/lib/types/visitor";
+import type { Farm } from "@/lib/types/common";
 import { visitorsKeys, farmsKeys } from "@/lib/hooks/query/query-keys";
 
 // 농장 정보 조회 (Query)
 export const useFarmInfoQuery = (farmId: string) => {
   return useQuery({
     queryKey: farmsKeys.info(farmId),
-    queryFn: async (): Promise<VisitorFarm> => {
-      devLog.log(`[QUERY] 농장 정보 조회 시작: ${farmId}`);
-
+    queryFn: async (): Promise<Farm> => {
       const result = await apiClient(`/api/farms/${farmId}`, {
         method: "GET",
         context: "농장 정보 조회",
       });
 
-      const farmData: VisitorFarm = {
-        id: result.farm.id,
-        farm_name: result.farm.farm_name,
-        farm_address: result.farm.farm_address,
-        manager_name: result.farm.manager_name || "",
-        manager_phone: result.farm.manager_phone || "",
-        farm_type: result.farm.farm_type || undefined,
-        owner_id: result.farm.owner_id,
-      };
+      const farmData: Farm = result.farm;
 
       return farmData;
     },
@@ -48,8 +38,6 @@ export const useVisitorSessionQuery = (
   return useQuery({
     queryKey: visitorsKeys.session(farmId),
     queryFn: async () => {
-      devLog.log(`[QUERY] 세션 체크 시작: ${farmId}`);
-
       const data = await apiClient(
         `/api/farms/${farmId}/visitors/check-session`,
         {
@@ -74,8 +62,6 @@ export const useDailyVisitorCountQuery = (
   return useQuery({
     queryKey: visitorsKeys.dailyCount(farmId),
     queryFn: async () => {
-      devLog.log(`[QUERY] 일일 방문자 수 조회: ${farmId}`);
-
       const data = await apiClient(
         `/api/farms/${farmId}/visitors/count-today`,
         {
@@ -106,8 +92,6 @@ export const useCreateVisitorMutation = () => {
       visitorData: VisitorFormData;
       profilePhotoUrl?: string | null;
     }): Promise<{ message?: string; visitor?: any }> => {
-      devLog.log(`[MUTATION] 방문자 등록 시작: ${farmId}`);
-
       const result = await apiClient(`/api/farms/${farmId}/visitors`, {
         method: "POST",
         headers: {
@@ -120,21 +104,13 @@ export const useCreateVisitorMutation = () => {
         context: "방문자 등록",
       });
 
-      devLog.log(`[MUTATION] 방문자 등록 완료: ${farmId}`);
       return result;
     },
     onSuccess: (result, { farmId }) => {
-      // 해당 농장의 방문자 관련 쿼리만 무효화
-      queryClient.invalidateQueries({ queryKey: visitorsKeys.session(farmId) });
-      queryClient.invalidateQueries({
-        queryKey: visitorsKeys.dailyCount(farmId),
-      });
+      // 모든 방문자 관련 쿼리 무효화 (기본 list + 필터링된 쿼리 모두)
+      queryClient.invalidateQueries({ queryKey: visitorsKeys.all });
+      // 농장 정보 무효화
       queryClient.invalidateQueries({ queryKey: farmsKeys.info(farmId) });
-      queryClient.invalidateQueries({
-        queryKey: visitorsKeys.list(farmId),
-      });
-
-      devLog.log("[MUTATION] 방문자 등록 캐시 무효화 완료");
     },
   });
 };

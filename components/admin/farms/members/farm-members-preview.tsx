@@ -2,21 +2,25 @@
 
 import { Users, Crown, Shield, Eye, ChevronRight } from "lucide-react";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
-import { type FarmMembers, MemberWithProfile } from "@/lib/types";
+import { FarmMember } from "@/lib/types/common";
 import { generateInitials, getAvatarUrl } from "@/lib/utils/media/avatar";
 import { LABELS } from "@/lib/constants/farms";
 
 interface FarmMembersPreviewProps {
   farmId: string;
-  membersData?: FarmMembers;
+  membersData?: Array<
+    FarmMember & {
+      profiles: {
+        name: string;
+        profile_image_url?: string | null;
+        avatar_seed?: string | null;
+      };
+    }
+  >;
 }
 
-export function FarmMembersPreview({
-  farmId,
-  membersData,
-}: FarmMembersPreviewProps) {
-  // 오직 상위에서 전달받은 데이터만 사용 (개별 쿼리 완전 제거)
-  const members = membersData?.members || [];
+export function FarmMembersPreview({ membersData }: FarmMembersPreviewProps) {
+  const members = membersData || [];
   const isLoading = !membersData;
 
   if (isLoading) {
@@ -56,7 +60,7 @@ export function FarmMembersPreview({
               </div>
               <div className="text-center">
                 <div className="text-sm font-medium">{LABELS.NO_MEMBERS}</div>
-                <div className="text-xs text-muted-foreground mt-1">
+                <div className="text-sm text-muted-foreground mt-1">
                   {LABELS.ADD_MEMBERS_SUGGESTION}
                 </div>
               </div>
@@ -106,7 +110,7 @@ export function FarmMembersPreview({
                 <Users className="h-4 w-4 text-blue-600" />
               </div>
               <div>
-                <div className="text-xs text-blue-600">
+                <div className="text-sm text-blue-600">
                   {LABELS.MEMBERS_COUNT.replace(
                     "{count}",
                     memberCount.toString()
@@ -118,38 +122,49 @@ export function FarmMembersPreview({
             <div className="flex items-center space-x-3">
               {/* 아바타들 */}
               <div className="flex -space-x-2">
-                {members.slice(0, 4).map((member: MemberWithProfile) => (
-                  <div
-                    key={member.id}
-                    className="relative group/avatar"
-                    title={`${member.representative_name} (${member.role})`}
-                  >
-                    <Avatar className="w-8 h-8 border-2 border-white shadow-sm transition-transform group-hover/avatar:scale-110 group-hover/avatar:z-10">
-                      <AvatarImage
-                        src={getAvatarUrl(
-                          {
-                            ...member,
-                            name: member.representative_name,
-                          },
-                          { size: 64 }
-                        )}
-                        alt={member.representative_name}
-                        className="object-cover"
-                      />
-                      <AvatarFallback
-                        className={`text-xs font-medium ${getRoleColor(
-                          member.role
-                        )}`}
-                      >
-                        {generateInitials(member.representative_name)}
-                      </AvatarFallback>
-                    </Avatar>
-                    {/* 역할 표시 */}
-                    <div className="absolute -bottom-1 -right-1 p-0.5 bg-white rounded-full border border-blue-200 shadow-sm">
-                      {getRoleIcon(member.role)}
+                {members.slice(0, 4).map(
+                  (
+                    member: FarmMember & {
+                      profiles: {
+                        name: string;
+                        profile_image_url?: string | null;
+                        avatar_seed?: string | null;
+                      };
+                    }
+                  ) => (
+                    <div
+                      key={member.id}
+                      className="relative group/avatar"
+                      title={`${member.profiles.name} (${member.role})`}
+                    >
+                      <Avatar className="w-8 h-8 border-2 border-white shadow-sm transition-transform group-hover/avatar:scale-110 group-hover/avatar:z-10">
+                        <AvatarImage
+                          src={getAvatarUrl(
+                            {
+                              ...member,
+                              name: member.profiles.name,
+                              profile_image_url:
+                                member.profiles.profile_image_url,
+                              avatar_seed: member.profiles.avatar_seed,
+                            },
+                            { size: 64 }
+                          )}
+                          alt={member.profiles.name}
+                          className="object-cover"
+                        />
+                        <AvatarFallback
+                          className={`text-white ${getRoleColor(member.role)}`}
+                        >
+                          {generateInitials(member.profiles.name)}
+                        </AvatarFallback>
+                      </Avatar>
+                      {/* 역할 표시 */}
+                      <div className="absolute -bottom-1 -right-1 p-0.5 bg-white rounded-full border border-blue-200 shadow-sm">
+                        {getRoleIcon(member.role)}
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  )
+                )}
 
                 {/* 더 많은 구성원이 있을 때 +N 표시 */}
                 {memberCount > 4 && (

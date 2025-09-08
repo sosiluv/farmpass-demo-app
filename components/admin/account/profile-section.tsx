@@ -1,13 +1,12 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useMemo } from "react";
 import { motion } from "framer-motion";
-import { User, Save, Loader2, RefreshCw } from "lucide-react";
+import { User, Save, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Separator } from "@/components/ui/separator";
 import { Card, CardContent } from "@/components/ui/card";
 import {
   Select,
@@ -16,15 +15,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { ImageUpload } from "@/components/ui/image-upload";
 import { ErrorBoundary } from "@/components/error/error-boundary";
 import { ERROR_CONFIGS } from "@/lib/constants/error";
 import { formatPhone } from "@/lib/utils/validation/validation";
-import { useAccountForm } from "@/hooks/useAccountForm";
-import { useAvatarSeedManager } from "@/hooks/useAvatarSeedManager";
-import type { ProfileSectionProps, ProfileFormData } from "@/lib/types/account";
-import AccountCardHeader from "./AccountCardHeader";
+import { useAccountForm } from "@/hooks/account/useAccountForm";
 import { devLog } from "@/lib/utils/logging/dev-logger";
+import AccountCardHeader from "./AccountCardHeader";
 import {
   BUTTONS,
   LABELS,
@@ -34,6 +30,20 @@ import {
 import { POSITION_OPTIONS } from "@/lib/constants/account";
 import { profileSchema } from "@/lib/utils/validation/profile-validation";
 import { useCommonToast } from "@/lib/utils/notification/toast-messages";
+import { SocialLinkingSection } from "./social-linking-section";
+import { ProfileImageSection } from "./profile-image-section";
+import type { ProfileFormData } from "@/lib/utils/validation/profile-validation";
+import type { Profile } from "@/lib/types/common";
+
+interface ProfileSectionProps {
+  profile: Profile;
+  loading: boolean;
+  onSave: (data: ProfileFormData) => Promise<void>;
+  onImageUpload: (
+    file: File | null
+  ) => Promise<{ publicUrl: string; fileName: string } | void>;
+  onImageDelete: () => Promise<void>;
+}
 
 export function ProfileSection({
   profile,
@@ -43,26 +53,13 @@ export function ProfileSection({
   onImageDelete,
 }: ProfileSectionProps) {
   const { showError } = useCommonToast();
-  // 아바타 시드 관리 훅
-  const {
-    updateAvatarSeed,
-    generateRandomSeed,
-    loading: avatarLoading,
-  } = useAvatarSeedManager({
-    userId: profile?.id || "",
-  });
-  const [profileImagePreview, setProfileImagePreview] = useState<string | null>(
-    profile?.profile_image_url
-      ? `${profile.profile_image_url}?t=${Date.now()}`
-      : null
-  );
 
   // 폼 데이터 관리 - 안정화된 initialData
   const initialData = useMemo<ProfileFormData>(
     () => ({
       name: profile?.name || "",
       email: profile?.email || "",
-      phoneNumber: profile?.phone || "",
+      phone: profile?.phone || "",
       position: profile?.position || "",
       department: profile?.department || "",
       bio: profile?.bio || "",
@@ -81,32 +78,12 @@ export function ProfileSection({
     initialData,
   });
 
-  // profile prop이 변경될 때마다 프리뷰 업데이트
-  useEffect(() => {
-    if (profile?.profile_image_url) {
-      const newPreviewUrl = `${profile.profile_image_url}?t=${Date.now()}`;
-      setProfileImagePreview(newPreviewUrl);
-    } else {
-      setProfileImagePreview(null);
-    }
-  }, [profile?.profile_image_url]);
-
   const handleInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
   ) => {
     const { name, value } = e.target;
-    const processedValue = name === "phoneNumber" ? formatPhone(value) : value;
+    const processedValue = name === "phone" ? formatPhone(value) : value;
     handleChange(name as keyof ProfileFormData, processedValue);
-  };
-
-  const handleImageDelete = async () => {
-    try {
-      await onImageDelete();
-      setProfileImagePreview(null);
-    } catch (error) {
-      devLog.error("[PROFILE_SECTION] Failed to delete image:", error);
-      throw error;
-    }
   };
 
   const handleSave = async () => {
@@ -146,43 +123,22 @@ export function ProfileSection({
             description={PAGE_HEADER.PROFILE_INFO_DESCRIPTION}
           />
           <CardContent className="space-y-6">
-            {/* 프로필 사진 */}
-            <div className="space-y-4">
-              <ImageUpload
-                id="profile-image-upload"
-                uploadType="profile"
-                onUpload={async (file) => {
-                  if (!file) return;
-                  setProfileImagePreview(URL.createObjectURL(file));
-                  const result = await onImageUpload(file);
-                  if (result?.publicUrl) {
-                    const cacheBustedUrl = `${
-                      result.publicUrl
-                    }?t=${Date.now()}`;
-                    setProfileImagePreview(cacheBustedUrl);
-                    if (profile) {
-                      profile.profile_image_url = result.publicUrl;
-                    }
-                  }
-                }}
-                onDelete={handleImageDelete}
-                onAvatarChange={async () => {
-                  const newSeed = generateRandomSeed();
-                  await updateAvatarSeed(newSeed);
-                }}
-                currentImage={profileImagePreview}
-                avatarSize="lg"
-                label={LABELS.PROFILE_PHOTO}
-                profile={profile}
-              />
-            </div>
-
-            <Separator />
+            {/* 프로필 이미지 섹션 */}
+            <ProfileImageSection
+              profile={profile}
+              onImageUpload={onImageUpload}
+              onImageDelete={onImageDelete}
+            />
 
             {/* 기본 정보 */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-2">
-                <Label htmlFor="name">{LABELS.NAME}</Label>
+                <Label
+                  htmlFor="name"
+                  className="text-sm sm:text-base font-medium"
+                >
+                  {LABELS.NAME}
+                </Label>
                 <Input
                   id="name"
                   name="name"
@@ -195,28 +151,39 @@ export function ProfileSection({
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="email">{LABELS.EMAIL}</Label>
+                <Label
+                  htmlFor="email"
+                  className="text-sm sm:text-base font-medium"
+                >
+                  {LABELS.EMAIL}
+                </Label>
                 <Input
                   id="email"
                   name="email"
                   type="email"
                   value={formData.email}
                   onChange={handleInputChange}
-                  disabled={loading}
+                  disabled={true}
                   autoComplete="email"
                   placeholder={PLACEHOLDERS.EMAIL}
+                  className="bg-gray-50"
                 />
               </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-2">
-                <Label htmlFor="phoneNumber">{LABELS.PHONE_NUMBER}</Label>
+                <Label
+                  htmlFor="phone"
+                  className="text-sm sm:text-base font-medium"
+                >
+                  {LABELS.PHONE_NUMBER}
+                </Label>
                 <Input
-                  id="phoneNumber"
-                  name="phoneNumber"
+                  id="phone"
+                  name="phone"
                   type="tel"
-                  value={formData.phoneNumber || ""}
+                  value={formData.phone || ""}
                   onChange={handleInputChange}
                   disabled={loading}
                   maxLength={13}
@@ -224,7 +191,12 @@ export function ProfileSection({
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="position">{LABELS.POSITION}</Label>
+                <Label
+                  htmlFor="position"
+                  className="text-sm sm:text-base font-medium"
+                >
+                  {LABELS.POSITION}
+                </Label>
                 <Select
                   value={formData.position || ""}
                   onValueChange={(value) => handleChange("position", value)}
@@ -246,7 +218,12 @@ export function ProfileSection({
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-2">
-                <Label htmlFor="department">{LABELS.DEPARTMENT}</Label>
+                <Label
+                  htmlFor="department"
+                  className="text-sm sm:text-base font-medium"
+                >
+                  {LABELS.DEPARTMENT}
+                </Label>
                 <Input
                   id="department"
                   name="department"
@@ -260,7 +237,9 @@ export function ProfileSection({
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="bio">{LABELS.BIO}</Label>
+              <Label htmlFor="bio" className="text-sm sm:text-base font-medium">
+                {LABELS.BIO}
+              </Label>
               <Textarea
                 id="bio"
                 name="bio"
@@ -276,7 +255,7 @@ export function ProfileSection({
               <Button
                 onClick={handleSave}
                 disabled={loading || !hasChanges}
-                className="flex items-center gap-2"
+                className="text-sm sm:text-base"
               >
                 {loading ? (
                   <>
@@ -293,6 +272,11 @@ export function ProfileSection({
             </div>
           </CardContent>
         </Card>
+
+        {/* 소셜 계정 연동 섹션 */}
+        <div className="mt-6">
+          <SocialLinkingSection userId={profile?.id || ""} />
+        </div>
       </motion.div>
     </ErrorBoundary>
   );

@@ -1,12 +1,12 @@
 import { downloadAdvancedCSV } from "@/lib/utils/data/csv-unified";
 import { formatDateTime } from "@/lib/utils/datetime/date";
-import type { Profile } from "@/lib/types";
-import type { UsersExportOptions } from "../exports";
 import { LABELS } from "@/lib/constants/management";
+import type { UsersExportOptions } from "../exports";
+import { type UserProfileWithFarmMembers } from "@/lib/hooks/query/use-admin-users-query";
 
 interface UsersExportManagerProps {
-  users: Profile[];
-  filterFn: (user: Profile) => boolean;
+  users: UserProfileWithFarmMembers[];
+  filterFn: (user: UserProfileWithFarmMembers) => boolean;
   children: (actions: {
     handleUsersExport: (options: UsersExportOptions) => Promise<void>;
   }) => React.ReactNode;
@@ -63,8 +63,13 @@ export function UsersExportManager({
 
       if (options.includeFarms) {
         row[LABELS.ACCOUNT_TYPE_CSV] = user.account_type || LABELS.NO_DATA_CSV;
-        // 농장 정보는 추가 쿼리가 필요하므로 기본값으로 설정
-        row[LABELS.AFFILIATED_FARMS] = LABELS.NO_DATA_CSV;
+        // farm_members 정보를 활용하여 농장 정보 추가
+        const farmNames =
+          user.farm_members
+            ?.map((member) => member.farms?.farm_name)
+            .filter(Boolean)
+            .join(", ") || LABELS.NO_DATA_CSV;
+        row[LABELS.AFFILIATED_FARMS] = farmNames;
       }
 
       if (options.includePermissions) {

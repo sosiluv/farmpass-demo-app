@@ -8,7 +8,7 @@ import { Image, Monitor, Bookmark } from "lucide-react";
 import { LABELS, PLACEHOLDERS, PAGE_HEADER } from "@/lib/constants/settings";
 import type { SystemSettings } from "@/lib/types/settings";
 import SettingsCardHeader from "../SettingsCardHeader";
-import { useUnifiedImageUpload } from "@/hooks/useUnifiedImageUpload";
+import { useUnifiedImageUpload } from "@/hooks/media/useUnifiedImageUpload";
 
 interface BrandingSectionProps {
   settings: SystemSettings;
@@ -101,7 +101,9 @@ export function BrandingSection({
             <div className="border-2 border-dashed border-blue-200 bg-blue-50/50 rounded-lg p-4 sm:p-6 space-y-3 sm:space-y-4">
               <div className="flex items-center gap-2 text-blue-700">
                 <Monitor className="h-5 w-5" />
-                <span className="font-medium">{LABELS.SITE_LOGO}</span>
+                <span className="font-medium text-sm sm:text-base">
+                  {LABELS.SITE_LOGO}
+                </span>
               </div>
               <div className="flex flex-col items-center sm:block">
                 <ImageUpload
@@ -115,7 +117,7 @@ export function BrandingSection({
                   hideGuidelines={false}
                 />
               </div>
-              <div className="text-sm text-blue-600/80 space-y-1 text-center">
+              <div className="text-sm sm:text-base text-blue-600/80 space-y-1 text-center">
                 <p>{LABELS.SITE_LOGO_DESCRIPTION}</p>
               </div>
             </div>
@@ -126,7 +128,9 @@ export function BrandingSection({
             <div className="border-2 border-dashed border-orange-200 bg-orange-50/50 rounded-lg p-4 sm:p-6 space-y-3 sm:space-y-4">
               <div className="flex items-center gap-2 text-orange-700">
                 <Bookmark className="h-5 w-5" />
-                <span className="font-medium">{LABELS.FAVICON}</span>
+                <span className="font-medium text-sm sm:text-base">
+                  {LABELS.FAVICON}
+                </span>
               </div>
               <div className="flex flex-col items-center sm:block">
                 <ImageUpload
@@ -140,7 +144,7 @@ export function BrandingSection({
                   hideGuidelines={false}
                 />
               </div>
-              <div className="text-sm text-orange-600/80 space-y-1 text-center">
+              <div className="text-sm sm:text-base text-orange-600/80 space-y-1 text-center">
                 <p>{LABELS.FAVICON_DESCRIPTION}</p>
               </div>
             </div>
@@ -149,7 +153,12 @@ export function BrandingSection({
 
         {/* 사이트명 */}
         <div className="space-y-2">
-          <Label htmlFor="siteName">{LABELS.SITE_NAME}</Label>
+          <Label
+            htmlFor="siteName"
+            className="text-sm sm:text-base font-medium"
+          >
+            {LABELS.SITE_NAME}
+          </Label>
           <Input
             id="siteName"
             value={settings.siteName}
@@ -157,14 +166,19 @@ export function BrandingSection({
             disabled={loading}
             placeholder={PLACEHOLDERS.SITE_NAME}
           />
-          <p className="text-sm text-muted-foreground">
+          <p className="text-sm sm:text-base text-muted-foreground">
             {LABELS.SITE_NAME_DESCRIPTION}
           </p>
         </div>
 
         {/* 사이트 설명 */}
         <div className="space-y-2">
-          <Label htmlFor="siteDescription">{LABELS.SITE_DESCRIPTION}</Label>
+          <Label
+            htmlFor="siteDescription"
+            className="text-sm sm:text-base font-medium"
+          >
+            {LABELS.SITE_DESCRIPTION}
+          </Label>
           <Textarea
             id="siteDescription"
             value={settings.siteDescription}
@@ -173,7 +187,7 @@ export function BrandingSection({
             placeholder={PLACEHOLDERS.SITE_DESCRIPTION}
             rows={3}
           />
-          <p className="text-sm text-muted-foreground">
+          <p className="text-sm sm:text-base text-muted-foreground">
             {LABELS.SITE_DESCRIPTION_HELP}
           </p>
         </div>

@@ -2,7 +2,7 @@
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiClient } from "@/lib/utils/data/api-client";
-import type { NotificationSettings } from "@/lib/types/notification";
+import type { UserNotificationSetting } from "@/lib/types/common";
 import {
   notificationKeys,
   settingsKeys,
@@ -17,9 +17,9 @@ export function useSaveNotificationSettingsMutation() {
 
   return useMutation({
     mutationFn: async (
-      settings: Partial<NotificationSettings>
+      settings: Partial<UserNotificationSetting>
     ): Promise<
-      { success: boolean; message?: string } & NotificationSettings
+      { success: boolean; message?: string } & UserNotificationSetting
     > => {
       const response = await apiClient("/api/notifications/settings", {
         method: "PUT",
@@ -30,9 +30,7 @@ export function useSaveNotificationSettingsMutation() {
     },
     onSuccess: () => {
       // 알림 설정 쿼리 무효화
-      queryClient.invalidateQueries({
-        queryKey: notificationKeys.settings(),
-      });
+      queryClient.invalidateQueries({ queryKey: notificationKeys.settings() });
     },
   });
 }
@@ -56,9 +54,7 @@ export function useSubscribePushMutation() {
     },
     onSuccess: () => {
       // 푸시 구독 상태 무효화
-      queryClient.invalidateQueries({
-        queryKey: pushKeys.status(),
-      });
+      queryClient.invalidateQueries({ queryKey: pushKeys.status() });
     },
   });
 }
@@ -82,9 +78,7 @@ export function useUnsubscribePushMutation() {
     },
     onSuccess: () => {
       // 푸시 구독 상태 무효화
-      queryClient.invalidateQueries({
-        queryKey: pushKeys.status(),
-      });
+      queryClient.invalidateQueries({ queryKey: pushKeys.status() });
     },
   });
 }
@@ -110,9 +104,7 @@ export function useSendPushNotificationMutation() {
     },
     onSuccess: () => {
       // 푸시 전송 상태 무효화
-      queryClient.invalidateQueries({
-        queryKey: pushKeys.status(),
-      });
+      queryClient.invalidateQueries({ queryKey: pushKeys.status() });
     },
   });
 }
@@ -126,7 +118,7 @@ export function useUpdateNotificationStatusMutation() {
   return useMutation({
     mutationFn: async (data: {
       is_active: boolean;
-    }): Promise<NotificationSettings> => {
+    }): Promise<UserNotificationSetting> => {
       const response = await apiClient("/api/notifications/settings", {
         method: "PUT",
         body: JSON.stringify(data),
@@ -136,9 +128,7 @@ export function useUpdateNotificationStatusMutation() {
     },
     onSuccess: () => {
       // 알림 설정 쿼리 무효화
-      queryClient.invalidateQueries({
-        queryKey: notificationKeys.settings(),
-      });
+      queryClient.invalidateQueries({ queryKey: notificationKeys.settings() });
     },
   });
 }
@@ -165,9 +155,7 @@ export function useGenerateVapidKeysMutation() {
     },
     onSuccess: () => {
       // 시스템 설정 쿼리 무효화 (VAPID 키가 시스템 설정에 포함)
-      queryClient.invalidateQueries({
-        queryKey: settingsKeys.system(),
-      });
+      queryClient.invalidateQueries({ queryKey: settingsKeys.system() });
     },
   });
 }

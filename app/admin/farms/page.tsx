@@ -5,36 +5,31 @@ import React, { useState } from "react";
 import { useFarmMutations } from "@/lib/hooks/query/use-farm-mutations";
 import { useAuth } from "@/components/providers/auth-provider";
 import { useCommonToast } from "@/lib/utils/notification/toast-messages";
-import { getAuthErrorMessage } from "@/lib/utils/validation/validation";
-import { Farm } from "@/lib/types/farm";
+import { Farm } from "@/lib/types/common";
 import { FarmsList } from "@/components/admin/farms/FarmsList";
 import { FarmsPageHeader } from "@/components/admin/farms/FarmsPageHeader";
 import { EmptyFarmsState } from "@/components/admin/farms/EmptyFarmsState";
-import { DeleteConfirmDialog } from "@/components/admin/farms/DeleteConfirmDialog";
+import { DeleteConfirmSheet } from "@/components/ui/confirm-sheet";
 import { Input } from "@/components/ui/input";
-import { StatsSkeleton, TableSkeleton } from "@/components/common/skeletons";
+import { StatsSkeleton, TableSkeleton } from "@/components/ui/skeleton";
 import { ErrorBoundary } from "@/components/error/error-boundary";
 import { ERROR_CONFIGS } from "@/lib/constants/error";
 import { LABELS, PLACEHOLDERS } from "@/lib/constants/farms";
-import { ResponsivePagination } from "@/components/common/responsive-pagination";
+import { ResponsivePagination } from "@/components/ui/responsive-pagination";
 import type { FarmFormValues } from "@/lib/utils/validation";
-import { useProfileQuery } from "@/lib/hooks/query/use-profile-query";
 import { useFarmsQuery } from "@/lib/hooks/query/use-farms-query";
 
 export default function FarmsPage() {
   const { showInfo, showSuccess, showError } = useCommonToast();
-  const [dialogOpen, setDialogOpen] = useState(false);
+  const [sheetOpen, setSheetOpen] = useState(false);
   const [editingFarm, setEditingFarm] = useState<Farm | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [farmToDelete, setFarmToDelete] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
 
-  const { state } = useAuth();
-  const userId = state.status === "authenticated" ? state.user.id : undefined;
-  const { data: profile } = useProfileQuery(userId);
+  const { userId, isAdmin } = useAuth();
 
-  // useFarmsContext 대신 useFarmsQuery 직접 사용
-  const { farms, isLoading, error } = useFarmsQuery(profile?.id);
+  const { farms, isLoading } = useFarmsQuery(userId, true);
 
   const {
     createFarmAsync,
@@ -58,12 +53,12 @@ export default function FarmsPage() {
 
   const handleAddClick = () => {
     setEditingFarm(null);
-    setDialogOpen(true);
+    setSheetOpen(true);
   };
 
   const handleEdit = (farm: Farm) => {
     setEditingFarm(farm);
-    setDialogOpen(true);
+    setSheetOpen(true);
   };
 
   const handleDelete = (farmId: string) => {
@@ -85,15 +80,17 @@ export default function FarmsPage() {
         const result = await createFarmAsync(values);
         showSuccess("농장 등록 완료", result.message);
       }
-      setDialogOpen(false);
+      setSheetOpen(false);
       setEditingFarm(null);
-    } catch (error: any) {
-      const authError = getAuthErrorMessage(error);
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : "알 수 없는 오류가 발생했습니다.";
       showError(
         editingFarm ? "농장 수정 실패" : "농장 등록 실패",
-        authError.message
+        errorMessage
       );
-      console.error("농장 저장 중 오류:", error);
     }
   };
 
@@ -106,9 +103,7 @@ export default function FarmsPage() {
       showSuccess("농장 삭제 완료", result.message);
       setDeleteDialogOpen(false);
       setFarmToDelete(null);
-    } catch (error: any) {
-      console.error("농장 삭제 중 오류:", error);
-
+    } catch (error) {
       // 404 에러인 경우 (이미 삭제된 경우)
       if (
         error &&
@@ -123,27 +118,30 @@ export default function FarmsPage() {
         setDeleteDialogOpen(false);
         setFarmToDelete(null);
       } else {
-        const authError = getAuthErrorMessage(error);
-        showError("농장 삭제 실패", authError.message);
+        const errorMessage =
+          error instanceof Error
+            ? error.message
+            : "알 수 없는 오류가 발생했습니다.";
+        showError("농장 삭제 실패", errorMessage);
       }
     }
   };
 
   const isOwner = React.useCallback(
     (farm: Farm) => {
-      if (!profile) return false;
+      if (!userId) return false;
       // 관리자이거나 농장 소유자인 경우
-      return profile.account_type === "admin" || farm.owner_id === profile.id;
+      return isAdmin || farm.owner_id === userId;
     },
-    [profile]
+    [isAdmin, userId]
   );
 
   if (isLoading) {
     return (
-      <div className="flex-1 space-y-4 p-4 md:p-6 pt-2 md:pt-4">
+      <div className="flex-1 space-y-4 md:space-y-6 px-4 md:px-6 lg:px-8 pt-3 pb-4 md:pb-6 lg:pb-8">
         <FarmsPageHeader
-          dialogOpen={false}
-          onDialogOpenChange={() => {}}
+          sheetOpen={false}
+          onSheetOpenChange={() => {}}
           editingFarm={null}
           onSubmit={async () => {}}
           onAddClick={() => {}}
@@ -161,10 +159,10 @@ export default function FarmsPage() {
       title={ERROR_CONFIGS.LOADING.title}
       description={ERROR_CONFIGS.LOADING.description}
     >
-      <div className="flex-1 space-y-4 p-1 md:p-6 pt-2 md:pt-4">
+      <div className="flex-1 space-y-4 md:space-y-6 px-4 md:px-6 lg:px-8 pt-3 pb-4 md:pb-6 lg:pb-8">
         <FarmsPageHeader
-          dialogOpen={dialogOpen}
-          onDialogOpenChange={setDialogOpen}
+          sheetOpen={sheetOpen}
+          onSheetOpenChange={setSheetOpen}
           editingFarm={editingFarm}
           onSubmit={handleSubmit}
           onAddClick={handleAddClick}
@@ -173,13 +171,14 @@ export default function FarmsPage() {
 
         {/* 검색 기능 */}
         <div className="mb-6">
-          <Input
-            id="farm-search"
-            placeholder={PLACEHOLDERS.SEARCH}
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full sm:w-64 h-12 text-base placeholder:text-xs sm:placeholder:text-sm"
-          />
+          <div className="relative flex-1">
+            <Input
+              id="farm-search"
+              placeholder={PLACEHOLDERS.SEARCH}
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+          </div>
         </div>
 
         {filteredFarms.length === 0 && searchTerm ? (
@@ -215,11 +214,18 @@ export default function FarmsPage() {
           </ResponsivePagination>
         )}
 
-        <DeleteConfirmDialog
+        <DeleteConfirmSheet
           open={deleteDialogOpen}
           onOpenChange={setDeleteDialogOpen}
           onConfirm={handleConfirmDelete}
           isLoading={isDeleting}
+          title={LABELS.DELETE_FARM_CONFIRM_TITLE}
+          description={LABELS.DELETE_FARM_CONFIRM_DESCRIPTION}
+          itemName={
+            farmToDelete
+              ? farms.find((f) => f.id === farmToDelete)?.farm_name
+              : LABELS.FARM_NAME
+          }
         />
       </div>
     </ErrorBoundary>

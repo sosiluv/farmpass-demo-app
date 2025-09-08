@@ -8,24 +8,16 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
-import { VisitorFormDialog, VisitorFormValues } from "../VisitorFormDialog";
+import { VisitorFormSheet } from "../VisitorFormSheet";
 import { VisitorWithFarm } from "@/lib/types/visitor";
 import { BUTTONS, PAGE_HEADER } from "@/lib/constants/visitor";
+import { DeleteConfirmSheet } from "@/components/ui/confirm-sheet";
+import type { VisitorSheetFormData } from "@/lib/utils/validation/visitor-validation";
 
 interface VisitorActionMenuProps {
   visitor: VisitorWithFarm;
-  onEdit?: (visitor: VisitorWithFarm) => Promise<void>;
-  onDelete?: (visitor: VisitorWithFarm) => Promise<void>;
+  onEdit?: (visitor: VisitorSheetFormData) => Promise<void>;
+  onDelete?: (visitorId: string, farmId: string) => Promise<void>;
   onSuccess?: () => void;
 }
 
@@ -45,7 +37,7 @@ export function VisitorActionMenu({
 
     try {
       setIsProcessing(true);
-      await onDelete(visitor);
+      await onDelete(visitor.id, visitor.farm_id);
       setShowDeleteDialog(false);
       onSuccess?.();
     } catch (error) {
@@ -55,15 +47,12 @@ export function VisitorActionMenu({
     }
   };
 
-  const handleUpdate = async (values: VisitorFormValues) => {
+  const handleUpdate = async (values: VisitorSheetFormData) => {
     if (isProcessing || !onEdit) return;
 
     try {
       setIsProcessing(true);
-      await onEdit({
-        ...visitor,
-        ...values,
-      });
+      await onEdit(values);
 
       setShowEditDialog(false);
       onSuccess?.();
@@ -126,53 +115,30 @@ export function VisitorActionMenu({
         </DropdownMenuContent>
       </DropdownMenu>
 
-      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>
-              {PAGE_HEADER.VISITOR_ACTION_MENU_DELETE_TITLE}
-            </AlertDialogTitle>
-            <AlertDialogDescription>
-              {PAGE_HEADER.VISITOR_ACTION_MENU_DELETE_DESC.replace(
-                "{name}",
-                visitor.visitor_name
-              )}
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel disabled={isProcessing}>
-              {BUTTONS.VISITOR_FORM_DIALOG_CANCEL}
-            </AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleDelete}
-              className="bg-destructive hover:bg-destructive/90"
-              disabled={isProcessing}
-            >
-              {isProcessing ? (
-                <>
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  {BUTTONS.VISITOR_ACTION_MENU_DELETING}
-                </>
-              ) : (
-                <>
-                  <Trash className="h-4 w-4 mr-2" />
-                  {BUTTONS.VISITOR_ACTION_MENU_DELETE}
-                </>
-              )}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-
-      <VisitorFormDialog
-        open={showEditDialog}
-        onOpenChange={setShowEditDialog}
-        mode="edit"
-        initialData={visitor}
-        farmId={visitor.farm_id}
-        onSuccess={handleUpdate}
-        isLoading={false} // 이미 로드된 데이터를 사용하므로 false
+      <DeleteConfirmSheet
+        open={showDeleteDialog}
+        onOpenChange={setShowDeleteDialog}
+        onConfirm={handleDelete}
+        isLoading={isProcessing}
+        title={PAGE_HEADER.VISITOR_ACTION_MENU_DELETE_TITLE}
+        description={PAGE_HEADER.VISITOR_ACTION_MENU_DELETE_DESC.replace(
+          "{name}",
+          visitor.visitor_name
+        )}
+        itemName={visitor.visitor_name}
       />
+
+      {showEditDialog && (
+        <VisitorFormSheet
+          open={showEditDialog}
+          onOpenChange={setShowEditDialog}
+          mode="edit"
+          initialData={visitor}
+          farmId={visitor.farm_id}
+          onSuccess={handleUpdate}
+          isLoading={false} // 이미 로드된 데이터를 사용하므로 false
+        />
+      )}
     </>
   );
 }

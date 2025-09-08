@@ -15,7 +15,11 @@ import {
 import { ErrorBoundary } from "@/components/error/error-boundary";
 import { ERROR_CONFIGS } from "@/lib/constants/error";
 import type { SystemSettings } from "@/lib/types/settings";
-import { WebPushConfiguration } from "../notification";
+import {
+  VapidKeySection,
+  NotificationIconSection,
+  NotificationBehaviorSection,
+} from "../notification";
 import SettingsCardHeader from "../SettingsCardHeader";
 import {
   previewVisitTemplate,
@@ -23,6 +27,7 @@ import {
 } from "@/lib/utils/notification/notification-template";
 import { useCommonToast } from "@/lib/utils/notification/toast-messages";
 import { handleError } from "@/lib/utils/error";
+import { useSystemNotificationSettings } from "@/hooks/settings/useNotificationSettings";
 
 interface NotificationTabProps {
   settings: SystemSettings;
@@ -39,6 +44,11 @@ const NotificationTab = React.memo(function NotificationTab({
   isLoading,
 }: NotificationTabProps) {
   const { showError, showSuccess } = useCommonToast();
+  const { handleGenerateVapidKeys } = useSystemNotificationSettings({
+    settings,
+    onUpdate,
+    isLoading,
+  });
 
   // 템플릿 미리보기 함수
   const handlePreviewTemplate = useCallback(() => {
@@ -84,7 +94,10 @@ const NotificationTab = React.memo(function NotificationTab({
           />
           <CardContent className="space-y-4">
             <div className="grid gap-2">
-              <Label htmlFor="visitTemplate">
+              <Label
+                htmlFor="visitTemplate"
+                className="text-sm sm:text-base font-medium"
+              >
                 {LABELS.VISIT_NOTIFICATION_TEMPLATE_LABEL}
               </Label>
               <Textarea
@@ -96,17 +109,16 @@ const NotificationTab = React.memo(function NotificationTab({
               />
               <div className="flex items-start gap-2">
                 <div className="flex-1">
-                  <p className="text-sm text-muted-foreground">
+                  <p className="text-sm sm:text-base text-muted-foreground">
                     {LABELS.VISIT_NOTIFICATION_TEMPLATE_VARIABLES}
                   </p>
                 </div>
                 <Button
                   onClick={handlePreviewTemplate}
                   variant="outline"
-                  size="sm"
-                  className="flex items-center gap-1"
+                  className="flex items-center gap-1 text-sm sm:text-base"
                 >
-                  <Eye className="h-3 w-3" />
+                  <Eye className="h-4 w-4 mr-2" />
                   {BUTTONS.TEMPLATE_PREVIEW_BUTTON}
                 </Button>
               </div>
@@ -115,10 +127,20 @@ const NotificationTab = React.memo(function NotificationTab({
         </Card>
 
         {/* 웹푸시 상세 설정 */}
-        <WebPushConfiguration
+
+        <NotificationBehaviorSection settings={settings} onUpdate={onUpdate} />
+
+        <VapidKeySection
           settings={settings}
           onUpdate={onUpdate}
+          onGenerateKeys={handleGenerateVapidKeys}
           isLoading={isLoading}
+        />
+
+        <NotificationIconSection
+          settings={settings}
+          onUpdate={onUpdate}
+          loading={isLoading}
         />
       </div>
     </ErrorBoundary>

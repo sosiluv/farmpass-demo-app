@@ -1,10 +1,18 @@
+export const dynamic = "force-dynamic";
+
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { requireAuth } from "@/lib/server/auth-utils";
 import { devLog } from "@/lib/utils/logging/dev-logger";
 import { prisma } from "@/lib/prisma";
-import { logApiError } from "@/lib/utils/logging/system-log";
-import { getClientIP, getUserAgent } from "@/lib/server/ip-helpers";
+import { createSystemLog } from "@/lib/utils/logging/system-log";
+import { LOG_MESSAGES } from "@/lib/utils/logging/log-templates";
+
+import {
+  getErrorResultFromRawError,
+  makeErrorResponseFromResult,
+  throwBusinessError,
+} from "@/lib/utils/error/errorUtil";
 
 // 재귀적으로 Storage의 모든 파일을 가져오는 함수
 async function getAllStorageFiles(
@@ -22,12 +30,14 @@ async function getAllStorageFiles(
     if (error) {
       // HTML 응답 오류인지 확인
       if (error.message && error.message.includes("Unexpected token '<'")) {
-        devLog.error(`[GET_ALL_FILES] HTML 응답 오류 - ${bucket}/${prefix}:`, {
-          error: error.message,
-          bucket,
-          prefix,
-          suggestion: "Storage 버킷 권한 또는 환경 변수를 확인하세요",
-        });
+        throwBusinessError(
+          "STORAGE_HTML_RESPONSE_ERROR",
+          {
+            bucket,
+            prefix,
+          },
+          error
+        );
       } else {
         devLog.error(
           `[GET_ALL_FILES] Storage API 오류 - ${bucket}/${prefix}:`,
@@ -50,35 +60,40 @@ async function getAllStorageFiles(
         allFiles.push(...subFiles);
       }
     }
-  } catch (error) {
+  } catch (error: any) {
+    // 이미 비즈니스 에러로 처리된 경우 그대로 던지기
+    if (error.businessCode) {
+      throw error;
+    }
+
     // 예상치 못한 오류 처리
-    devLog.error(`[GET_ALL_FILES] 예상치 못한 오류 - ${bucket}/${prefix}:`, {
-      error: error instanceof Error ? error.message : String(error),
-      bucket,
-      prefix,
-      stack: error instanceof Error ? error.stack : undefined,
-    });
+    throwBusinessError(
+      "STORAGE_UNEXPECTED_ERROR",
+      {
+        bucket,
+        prefix,
+      },
+      error
+    );
   }
 
   return allFiles;
 }
 
 export async function GET(request: NextRequest) {
-  // 요청 컨텍스트 정보 추출
-  const clientIP = getClientIP(request);
-  const userAgent = getUserAgent(request);
-  const supabase = await createClient();
-
-  // 인증 및 권한 확인 (admin만 접근 가능)
-  const authResult = await requireAuth(true);
-  if (!authResult.success || !authResult.user) {
-    return authResult.response!;
-  }
-
+  let user = null;
   try {
     // 방문자 orphan 파일 체크
     let usedVisitorUrls;
     let visitorDbError = null;
+    const supabase = await createClient();
+    // 인증 및 권한 확인 (admin만 접근 가능)
+    const authResult = await requireAuth(true);
+    if (!authResult.success || !authResult.user) {
+      return authResult.response!;
+    }
+
+    user = authResult.user;
 
     try {
       usedVisitorUrls = await prisma.visitor_entries.findMany({
@@ -92,9 +107,14 @@ export async function GET(request: NextRequest) {
           profile_photo_url: true,
         },
       });
-    } catch (error) {
-      visitorDbError = error;
-      devLog.error("[CHECK_ORPHAN] Visitor DB error:", visitorDbError);
+    } catch (error: any) {
+      throwBusinessError(
+        "GENERAL_QUERY_FAILED",
+        {
+          resourceType: "visitor",
+        },
+        error
+      );
     }
 
     const usedVisitorSet = new Set(
@@ -126,9 +146,14 @@ export async function GET(request: NextRequest) {
           profile_image_url: true,
         },
       });
-    } catch (error) {
-      profileDbError = error;
-      devLog.error("[CHECK_ORPHAN] Profile DB error:", profileDbError);
+    } catch (error: any) {
+      throwBusinessError(
+        "GENERAL_QUERY_FAILED",
+        {
+          resourceType: "profile",
+        },
+        error
+      );
     }
 
     // 소셜 로그인 URL 제외 (구글, 카카오)
@@ -224,25 +249,30 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     devLog.error("[CHECK_ORPHAN] General error:", error);
 
-    // API 에러 로그 기록
-    await logApiError(
-      "/api/admin/orphan-files/check",
-      "GET",
-      error instanceof Error ? error : String(error),
-      undefined,
+    // 시스템 에러 로그 기록
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    await createSystemLog(
+      "ORPHAN_FILES_CHECK_FAILED",
+      LOG_MESSAGES.ORPHAN_FILES_CHECK_FAILED(errorMessage),
+      "error",
+      user?.id ? { id: user.id, email: user.email || "" } : undefined,
+      "system",
+      "check_orphan_files",
       {
-        ip: clientIP,
-        userAgent,
-      }
+        action_type: "admin_event",
+        event: "orphan_files_check_failed",
+        error_message: errorMessage,
+      },
+      request
     );
 
-    return NextResponse.json(
-      {
-        success: false,
-        error: "ORPHAN_FILES_CHECK_FAILED",
-        message: "고아 파일 확인에 실패했습니다.",
-      },
-      { status: 500 }
-    );
+    // 통합 에러 처리 - 비즈니스 에러와 시스템 에러를 모두 처리
+    const result = getErrorResultFromRawError(error, {
+      operation: "check_orphan_files",
+    });
+
+    return NextResponse.json(makeErrorResponseFromResult(result), {
+      status: result.status,
+    });
   }
 }

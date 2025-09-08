@@ -9,19 +9,22 @@ import { QueryProvider } from "@/components/providers/query-provider";
 import { ToastPositionProvider } from "@/components/providers/toast-position-provider";
 import { DebugProvider } from "@/components/providers/debug-provider";
 import { SystemMonitor } from "@/components/common/system-monitor";
-import { getMetadataSettings } from "@/lib/server/metadata";
 import { ErrorBoundary } from "@/components/error/error-boundary";
 import { ERROR_CONFIGS } from "@/lib/constants/error";
 import { Analytics } from "@vercel/analytics/react";
 import { PWAProvider } from "@/components/providers/pwa-provider";
-
-import { Logo } from "@/components/common";
-import { Badge } from "@/components/ui/badge";
+import { Footer } from "@/components/layout/footer";
 
 const inter = Inter({ subsets: ["latin"] });
 
 export async function generateMetadata(): Promise<Metadata> {
-  const settings = await getMetadataSettings();
+  // 환경변수로 설정값 가져오기
+  const siteName =
+    process.env.NEXT_PUBLIC_SITE_NAME || "농장 출입 관리 시스템(FarmPass)";
+  const siteDescription =
+    process.env.NEXT_PUBLIC_SITE_DESCRIPTION ||
+    "방역은 출입자 관리부터 시작됩니다. QR기록으로 축산 질병 예방의 첫걸음을 함께하세요.";
+  const favicon = process.env.NEXT_PUBLIC_SITE_FAVICON || "/favicon.ico";
 
   // 파일 확장자에 따라 MIME 타입 결정 (파비콘은 ICO, PNG만 지원)
   const getMimeType = (url: string): string => {
@@ -36,25 +39,46 @@ export async function generateMetadata(): Promise<Metadata> {
     }
   };
 
-  const mimeType = getMimeType(settings.favicon);
+  const mimeType = getMimeType(favicon);
 
   return {
-    title: settings.siteName,
-    description: settings.siteDescription,
+    applicationName: siteName,
+    title: {
+      default: siteName,
+      template: `%s - ${siteName}`,
+    },
+    description: siteDescription,
+    appleWebApp: {
+      capable: true,
+      statusBarStyle: "default",
+      title: siteName,
+    },
+    formatDetection: {
+      telephone: false,
+    },
+    openGraph: {
+      type: "website",
+      siteName: siteName,
+      title: {
+        default: siteName,
+        template: `%s - ${siteName}`,
+      },
+      description: siteDescription,
+    },
     icons: {
       icon: [
-        { url: settings.favicon, sizes: "32x32", type: mimeType },
-        { url: settings.favicon, sizes: "16x16", type: mimeType },
+        { url: favicon, sizes: "32x32", type: mimeType },
+        { url: favicon, sizes: "16x16", type: mimeType },
       ],
-      shortcut: settings.favicon,
-      apple: settings.favicon,
+      shortcut: favicon,
+      apple: favicon,
     },
     other: {
       "mobile-web-app-capable": "yes",
       "apple-mobile-web-app-capable": "yes",
       "apple-mobile-web-app-status-bar-style": "default",
-      "apple-mobile-web-app-title": settings.siteName,
-      "application-name": settings.siteName,
+      "apple-mobile-web-app-title": siteName,
+      "application-name": siteName,
       "msapplication-TileColor": "#10b981",
       "msapplication-config": "none",
     },
@@ -69,89 +93,6 @@ export const viewport: Viewport = {
   viewportFit: "cover",
   themeColor: "#10b981",
 };
-
-function Footer() {
-  return (
-    <footer className="border-t bg-background/80 backdrop-blur-md py-10">
-      <div className="container mx-auto px-4 flex flex-col lg:flex-row items-center justify-between gap-6 text-xs text-muted-foreground">
-        {/* 왼쪽: 로고 */}
-        <div className="flex items-center gap-2">
-          <Logo size="lg" />
-        </div>
-        {/* 가운데: 뱃지 */}
-        <div className="flex gap-2 mt-2 lg:mt-0 lg:items-center">
-          <Badge
-            variant="outline"
-            className="flex items-center gap-1 px-2 py-1"
-          >
-            <span className="inline-block w-2.5 h-2.5 bg-green-400 rounded-full" />
-            모바일 최적화
-          </Badge>
-          <Badge
-            variant="outline"
-            className="flex items-center gap-1 px-2 py-1"
-          >
-            <span className="inline-block w-2.5 h-2.5 bg-blue-400 rounded-full" />
-            QR 코드 지원
-          </Badge>
-          <Badge
-            variant="outline"
-            className="flex items-center gap-1 px-2 py-1"
-          >
-            <span className="inline-block w-2.5 h-2.5 bg-yellow-400 rounded-full" />
-            실시간 알림
-          </Badge>
-        </div>
-        {/* 오른쪽: 회사명/링크 */}
-        <div className="flex flex-row flex-wrap items-center justify-center gap-2 mt-2 lg:mt-0 lg:items-center whitespace-nowrap">
-          <a
-            href="http://www.swkukorea.com/theme/sample60/html/a1.php"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="underline hover:text-primary transition-colors"
-          >
-            회사소개
-          </a>
-          <span className="text-gray-300">|</span>
-          <a
-            href="http://www.swkukorea.com/theme/sample60/html/a5.php"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="underline hover:text-primary transition-colors"
-          >
-            오시는길
-          </a>
-          <span className="text-gray-300">|</span>
-          <a
-            href="/terms"
-            className="underline hover:text-primary transition-colors"
-          >
-            이용약관
-          </a>
-          <span className="text-gray-300">|</span>
-          <a
-            href="/privacy"
-            className="underline hover:text-primary transition-colors"
-          >
-            개인정보처리방침
-          </a>
-        </div>
-        {/* 사업자 정보 */}
-        <div className="mt-4 text-[11px] text-muted-foreground text-center lg:text-right leading-relaxed lg:mt-0">
-          <div className="mt-1">
-            대표전화 : 054-843-1141 &nbsp;&nbsp; 팩스 : 054-855-9398
-            <br />
-            주소 : 경상북도 안동시 풍산읍 괴정2길 106-23 주101~104동
-          </div>
-          <div className="mt-2 font-semibold">
-            Copyright. © {new Date().getFullYear()}{" "}
-            {process.env.ENV_COMPANY_NAME || "SWKorea"} All rights reserved.
-          </div>
-        </div>
-      </div>
-    </footer>
-  );
-}
 
 export default function RootLayout({
   children,
@@ -180,7 +121,12 @@ export default function RootLayout({
           `}
         </Script>
       </head>
-      <body className={cn(inter.className, "min-h-screen bg-background")}>
+      <body
+        className={cn(
+          inter.className,
+          "min-h-screen bg-background flex flex-col overflow-x-hidden"
+        )}
+      >
         <ErrorBoundary
           title={ERROR_CONFIGS.GENERAL.title}
           description={ERROR_CONFIGS.GENERAL.description}

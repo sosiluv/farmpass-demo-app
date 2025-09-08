@@ -8,7 +8,7 @@ import { Switch } from "@/components/ui/switch";
 import { Lock } from "lucide-react";
 import { LABELS, PLACEHOLDERS, PAGE_HEADER } from "@/lib/constants/settings";
 import type { SystemSettings } from "@/lib/types/settings";
-import { useNumberInput } from "@/hooks/use-number-input";
+import { useNumberInput } from "@/hooks/ui/use-number-input";
 import SettingsCardHeader from "../SettingsCardHeader";
 
 type PasswordPolicySettings = Pick<
@@ -55,7 +55,10 @@ export default function PasswordPolicyCard({
       <CardContent className="space-y-4">
         <div className="grid gap-4">
           <div className="space-y-2">
-            <Label htmlFor="passwordMinLength">
+            <Label
+              htmlFor="passwordMinLength"
+              className="text-sm sm:text-base font-medium"
+            >
               {PLACEHOLDERS.PASSWORD_MIN_LENGTH}
             </Label>
             <Input
@@ -81,18 +84,18 @@ export default function PasswordPolicyCard({
               onFocus={passwordMinLength.handleFocus}
               disabled={isLoading}
             />
-            <p className="text-sm text-muted-foreground">
+            <p className="text-sm sm:text-base text-muted-foreground">
               {LABELS.PASSWORD_MIN_LENGTH_DESC}
             </p>
           </div>
           <div className="flex items-center justify-between">
             <div className="space-y-0.5">
-              <Label htmlFor="passwordRequireSpecialChar">
+              <Label
+                htmlFor="passwordRequireSpecialChar"
+                className="text-sm sm:text-base font-medium"
+              >
                 {LABELS.PASSWORD_SPECIAL_CHAR}
               </Label>
-              <p className="text-sm text-muted-foreground">
-                {LABELS.PASSWORD_SPECIAL_CHAR_DESC}
-              </p>
             </div>
             <Switch
               id="passwordRequireSpecialChar"
@@ -105,12 +108,12 @@ export default function PasswordPolicyCard({
           </div>
           <div className="flex items-center justify-between">
             <div className="space-y-0.5">
-              <Label htmlFor="passwordRequireNumber">
+              <Label
+                htmlFor="passwordRequireNumber"
+                className="text-sm sm:text-base font-medium"
+              >
                 {LABELS.PASSWORD_NUMBER}
               </Label>
-              <p className="text-sm text-muted-foreground">
-                {LABELS.PASSWORD_NUMBER_DESC}
-              </p>
             </div>
             <Switch
               id="passwordRequireNumber"
@@ -123,12 +126,12 @@ export default function PasswordPolicyCard({
           </div>
           <div className="flex items-center justify-between">
             <div className="space-y-0.5">
-              <Label htmlFor="passwordRequireUpperCase">
+              <Label
+                htmlFor="passwordRequireUpperCase"
+                className="text-sm sm:text-base font-medium"
+              >
                 {LABELS.PASSWORD_UPPERCASE}
               </Label>
-              <p className="text-sm text-muted-foreground">
-                {LABELS.PASSWORD_UPPERCASE_DESC}
-              </p>
             </div>
             <Switch
               id="passwordRequireUpperCase"
@@ -141,12 +144,12 @@ export default function PasswordPolicyCard({
           </div>
           <div className="flex items-center justify-between">
             <div className="space-y-0.5">
-              <Label htmlFor="passwordRequireLowerCase">
+              <Label
+                htmlFor="passwordRequireLowerCase"
+                className="text-sm sm:text-base font-medium"
+              >
                 {LABELS.PASSWORD_LOWERCASE}
               </Label>
-              <p className="text-sm text-muted-foreground">
-                {LABELS.PASSWORD_LOWERCASE_DESC}
-              </p>
             </div>
             <Switch
               id="passwordRequireLowerCase"

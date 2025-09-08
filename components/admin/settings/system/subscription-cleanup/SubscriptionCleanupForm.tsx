@@ -33,7 +33,12 @@ export function SubscriptionCleanupForm({
     <div className="space-y-6">
       {/* 삭제 일수 설정 */}
       <div className="space-y-2">
-        <Label htmlFor="cleanupDays">{LABELS.SUBSCRIPTION_CLEANUP_DAYS}</Label>
+        <Label
+          htmlFor="cleanupDays"
+          className="text-sm sm:text-base font-medium"
+        >
+          {LABELS.SUBSCRIPTION_CLEANUP_DAYS}
+        </Label>
         <Select
           value={settings.subscriptionCleanupDays?.toString() || "30"}
           onValueChange={(value) =>
@@ -52,14 +57,14 @@ export function SubscriptionCleanupForm({
             ))}
           </SelectContent>
         </Select>
-        <p className="text-sm text-muted-foreground">
-          {LABELS.SUBSCRIPTION_CLEANUP_DAYS_DESC}
-        </p>
       </div>
 
       {/* 실패 횟수 임계값 */}
       <div className="space-y-2">
-        <Label htmlFor="failCountThreshold">
+        <Label
+          htmlFor="failCountThreshold"
+          className="text-sm sm:text-base font-medium"
+        >
           {LABELS.SUBSCRIPTION_FAIL_COUNT_THRESHOLD}
         </Label>
         <Select
@@ -82,18 +87,14 @@ export function SubscriptionCleanupForm({
             ))}
           </SelectContent>
         </Select>
-        <p className="text-sm text-muted-foreground">
-          {LABELS.SUBSCRIPTION_FAIL_COUNT_DESC}
-        </p>
       </div>
 
       {/* 비활성 구독 정리 */}
       <div className="flex items-center justify-between">
         <div className="space-y-0.5">
-          <Label>{LABELS.SUBSCRIPTION_CLEANUP_INACTIVE}</Label>
-          <p className="text-sm text-muted-foreground">
-            {LABELS.SUBSCRIPTION_CLEANUP_INACTIVE_DESC}
-          </p>
+          <Label className="text-sm sm:text-base font-medium">
+            {LABELS.SUBSCRIPTION_CLEANUP_INACTIVE_SETTING}
+          </Label>
         </div>
         <Switch
           checked={settings.subscriptionCleanupInactive || false}
@@ -107,10 +108,9 @@ export function SubscriptionCleanupForm({
       {/* 강제 삭제 */}
       <div className="flex items-center justify-between">
         <div className="space-y-0.5">
-          <Label>{LABELS.SUBSCRIPTION_FORCE_DELETE_SETTING}</Label>
-          <p className="text-sm text-muted-foreground">
-            {LABELS.SUBSCRIPTION_FORCE_DELETE_DESC}
-          </p>
+          <Label className="text-sm sm:text-base font-medium">
+            {LABELS.SUBSCRIPTION_FORCE_DELETE_SETTING}
+          </Label>
         </div>
         <Switch
           checked={settings.subscriptionForceDelete || false}

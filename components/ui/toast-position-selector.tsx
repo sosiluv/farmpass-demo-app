@@ -1,10 +1,9 @@
 "use client";
 
 import { useCallback } from "react";
-import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { useToast } from "@/hooks/use-toast";
+import { useToast } from "@/hooks/ui/use-toast";
 import { useToastPosition } from "@/components/providers/toast-position-provider";
 import {
   Monitor,

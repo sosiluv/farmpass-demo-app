@@ -12,34 +12,18 @@ import { Badge } from "@/components/ui/badge";
 import { ArrowRight, ChevronRight } from "lucide-react";
 import Link from "next/link";
 import { features, steps } from "./home-data";
-import { DEFAULT_SYSTEM_SETTINGS } from "@/lib/constants/defaults";
-import { Logo } from "@/components/common";
-import { PageLoading } from "@/components/ui/loading";
-import { useSystemSettingsQuery } from "@/lib/hooks/query/use-system-settings-query";
+import { Logo } from "@/components/common/logo";
 
 // 클라이언트 컴포넌트로 변경
 export default function HomePage() {
-  const { data: settings, isLoading: settingsLoading } =
-    useSystemSettingsQuery();
-
-  // 로딩 상태 표시
-  if (settingsLoading) {
-    return (
-      <PageLoading
-        text="사이트 설정을 불러오는 중..."
-        subText="잠시만 기다려주세요"
-        variant="gradient"
-        fullScreen={true}
-      />
-    );
-  }
-
-  // 시스템 설정 사용
+  // 환경변수로 설정값 가져오기
   const displaySettings = {
-    siteName: settings?.siteName || DEFAULT_SYSTEM_SETTINGS.siteName,
+    siteName:
+      process.env.NEXT_PUBLIC_SITE_NAME || "농장 출입 관리 시스템(FarmPass)",
     siteDescription:
-      settings?.siteDescription || DEFAULT_SYSTEM_SETTINGS.siteDescription,
-    logo: settings?.logo || null,
+      process.env.NEXT_PUBLIC_SITE_DESCRIPTION ||
+      "방역은 출입자 관리부터 시작됩니다. QR기록으로 축산 질병 예방의 첫걸음을 함께하세요.",
+    logo: process.env.NEXT_PUBLIC_SITE_LOGO || "/logo.svg",
   };
 
   return (
@@ -63,7 +47,7 @@ export default function HomePage() {
             </p>
 
             <div className="flex flex-col items-center justify-center gap-4 sm:flex-row">
-              <Button asChild size="lg" className="btn-hover min-w-[160px]">
+              <Button asChild size="lg" className="min-w-[160px]">
                 <Link href="/auth/register">
                   시작하기
                   <ArrowRight className="ml-2 h-4 w-4" />
@@ -73,7 +57,7 @@ export default function HomePage() {
                 asChild
                 variant="outline"
                 size="lg"
-                className="btn-hover min-w-[160px]"
+                className="min-w-[160px]"
               >
                 <Link href="/auth/login">관리자 로그인</Link>
               </Button>
@@ -175,7 +159,7 @@ export default function HomePage() {
                 asChild
                 size="lg"
                 variant="secondary"
-                className="btn-hover min-w-[160px]"
+                className="min-w-[160px]"
               >
                 <Link href="/auth/register">
                   무료로 시작하기
@@ -186,24 +170,6 @@ export default function HomePage() {
           </Card>
         </div>
       </section>
-
-      {/* 푸터 */}
-      {/* <footer className="border-t bg-card py-12">
-        <div className="container mx-auto px-4">
-          <div className="flex flex-col items-center justify-between gap-4 md:flex-row">
-            <Logo size="xl" />
-            <div className="flex gap-2">
-              <Badge variant="outline">모바일 최적화</Badge>
-              <Badge variant="outline">QR 코드 지원</Badge>
-              <Badge variant="outline">실시간 알림</Badge>
-            </div>
-            <p className="text-sm text-muted-foreground">
-              © {new Date().getFullYear()}{" "}
-              {process.env.ENV_COMPANY_NAME || "SWKorea"}. All rights reserved.
-            </p>
-          </div>
-        </div>
-      </footer> */}
     </div>
   );
 }

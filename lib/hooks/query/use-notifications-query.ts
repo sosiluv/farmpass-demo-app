@@ -4,9 +4,8 @@ import { useAuthenticatedQuery } from "@/lib/hooks/query-utils";
 import { useAuth } from "@/components/providers/auth-provider";
 import { apiClient } from "@/lib/utils/data/api-client";
 import { notificationKeys } from "./query-keys";
-import { useSupabaseRealtime } from "@/hooks/useSupabaseRealtime";
+import { useSupabaseRealtime } from "@/hooks/notification/useSupabaseRealtime";
 import type {
-  Notification,
   NotificationsResponse,
   NotificationsFilters,
 } from "@/lib/types/notification";
@@ -15,17 +14,12 @@ import type {
  * React Query 기반 알림 목록 조회 Hook
  */
 export function useNotificationsQuery(filters: NotificationsFilters = {}) {
-  const { state } = useAuth();
-
+  const { userId, isAuthenticated } = useAuth();
   const { page = 1, pageSize = 20, read, type } = filters;
-
-  // 현재 사용자 ID
-  const currentUserId =
-    state.status === "authenticated" ? state.user.id : undefined;
 
   // 알림 목록 쿼리 (사용자별로 캐시 분리)
   const notificationsQuery = useAuthenticatedQuery(
-    [...notificationKeys.list({ page, pageSize, read, type }), currentUserId],
+    [...notificationKeys.list({ page, pageSize, read, type }), userId],
     async (): Promise<NotificationsResponse> => {
       const params = new URLSearchParams({
         page: page.toString(),
@@ -51,7 +45,7 @@ export function useNotificationsQuery(filters: NotificationsFilters = {}) {
       return response;
     },
     {
-      enabled: state.status === "authenticated" && !!currentUserId,
+      enabled: isAuthenticated && !!userId,
       staleTime: 2 * 60 * 1000, // 2분 캐싱 (알림은 자주 변경됨)
       gcTime: 5 * 60 * 1000, // 5분간 캐시 유지
       refetchOnWindowFocus: false,
@@ -67,8 +61,7 @@ export function useNotificationsQuery(filters: NotificationsFilters = {}) {
 
   return {
     // 데이터
-    notifications: (notificationsQuery.data?.notifications ||
-      []) as Notification[],
+    notifications: notificationsQuery.data?.notifications || [],
     total: notificationsQuery.data?.total || 0,
     page: notificationsQuery.data?.page || 1,
     totalPages: notificationsQuery.data?.totalPages || 1,
