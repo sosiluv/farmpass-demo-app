@@ -16,7 +16,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Form, FormField } from "@/components/ui/form";
-import { Leaf, AlertCircle } from "lucide-react";
+import { Leaf } from "lucide-react";
 import { PasswordField, AuthButton } from "@/components/auth";
 import { motion } from "framer-motion";
 import { useCommonToast } from "@/lib/utils/notification/toast-messages";
@@ -38,6 +38,7 @@ import {
   getErrorMessage,
   mapRawErrorToCode,
 } from "@/lib/utils/error/errorUtil";
+import { PageLoading } from "@/components/ui/loading";
 
 export default function ResetPasswordConfirmPage() {
   const [loading, setLoading] = useState(false);
@@ -168,42 +169,24 @@ export default function ResetPasswordConfirmPage() {
 
   if (isTimedOut && !tokenProcessed && !tokenError) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-gradient-farm p-3">
-        <div className="w-full max-w-md">
-          <AdminError
-            title={ERROR_CONFIGS.TIMEOUT.title}
-            description={ERROR_CONFIGS.TIMEOUT.description}
-            error={new Error("Token verification timeout")}
-            retry={retry}
-            isTimeout={true}
-          />
-        </div>
-      </div>
+      <AdminError
+        title={ERROR_CONFIGS.TIMEOUT.title}
+        description={ERROR_CONFIGS.TIMEOUT.description}
+        error={new Error("Token verification timeout")}
+        retry={retry}
+        isTimeout={true}
+      />
     );
   }
 
   if (tokenLoading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-gradient-farm p-3">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-          className="w-full max-w-md"
-        >
-          <Card className="border-none shadow-soft-lg">
-            <CardHeader className="space-y-1 text-center">
-              <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
-                <LottieLoadingCompact size="md" />
-              </div>
-              <CardTitle className="text-2xl">{LABELS.LINK_CHECKING}</CardTitle>
-              <CardDescription>
-                {LABELS.LINK_CHECKING_DESCRIPTION}
-              </CardDescription>
-            </CardHeader>
-          </Card>
-        </motion.div>
-      </div>
+      <PageLoading
+        text={LABELS.LINK_CHECKING}
+        subText={LABELS.LINK_CHECKING_DESCRIPTION}
+        variant="lottie"
+        fullScreen={true}
+      />
     );
   }
 
@@ -216,9 +199,9 @@ export default function ResetPasswordConfirmPage() {
           transition={{ duration: 0.5 }}
           className="w-full max-w-md"
         >
-          <Card className="border-none shadow-soft-lg">
+          <Card className="border-none shadow-soft-lg min-h-fit">
             <CardHeader className="space-y-1 text-center">
-              <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-red-100">
+              <div className="mx-auto mb-4 flex h-24 w-24 items-center justify-center rounded-full bg-red-100">
                 <LottieLoadingCompact
                   animationPath="/lottie/admin_error.json"
                   size="md"

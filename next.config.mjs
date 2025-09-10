@@ -32,7 +32,6 @@ const withSerwist = withSerwistInit({
   swDest: "public/sw.js",
   register: true,
   disable: false, // 개발 환경에서 비활성화 여부
-  scope: "/", // 서비스 워커 스코프
   swUrl: "/sw.js", // 서비스 워커 URL
   reloadOnOnline: true, // 온라인 복구 시 페이지 새로고침
   cacheOnNavigation: false, // 네비게이션 시 캐싱 활성화

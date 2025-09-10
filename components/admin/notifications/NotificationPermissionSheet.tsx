@@ -3,7 +3,6 @@
 import React, { useState, useMemo } from "react";
 import { Sheet, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 import { CommonSheetContent } from "@/components/ui/sheet-common";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Bell, Shield, Users, Activity, CheckCircle, X } from "lucide-react";

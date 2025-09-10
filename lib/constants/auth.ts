@@ -57,14 +57,13 @@ export const LABELS = {
   EMAIL_CONFIRMATION_LOADING: "이메일 인증 중...",
   EMAIL_CONFIRMATION_SUCCESS: "인증 완료!",
   EMAIL_CONFIRMATION_FAILED: "인증 실패",
-  EMAIL_CONFIRMATION_PROCESSING: "이메일 인증을 처리하고 있습니다.",
+  EMAIL_CONFIRMATION_PROCESSING:
+    "이메일 인증을 확인 중입니다. 잠시만 기다려주세요...",
   EMAIL_CONFIRMATION_SUCCESS_DESC: "이메일 인증이 성공적으로 완료되었습니다.",
   EMAIL_CONFIRMATION_FAILED_DESC: "이메일 인증에 실패했습니다.",
   EMAIL_CONFIRMATION_ACTIVATED: "계정이 활성화되었습니다! 🎉",
   EMAIL_CONFIRMATION_REDIRECT: "후 로그인 페이지로 자동 이동합니다.",
   EMAIL_CONFIRMATION_REDIRECTING: "로그인 페이지로 이동 중...",
-  EMAIL_CONFIRMATION_PROCESSING_MESSAGE:
-    "이메일 인증을 확인 중입니다. 잠시만 기다려주세요...",
 } as const;
 
 // PageLoading 텍스트

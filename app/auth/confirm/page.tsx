@@ -7,7 +7,7 @@ import { useCommonToast } from "@/lib/utils/notification/toast-messages";
 import { useTimeout } from "@/hooks/system/useTimeout";
 import { AdminError } from "@/components/error/admin-error";
 import { ERROR_CONFIGS } from "@/lib/constants/error";
-import { LABELS } from "@/lib/constants/auth";
+import { LABELS, BUTTONS } from "@/lib/constants/auth";
 import {
   Card,
   CardContent,
@@ -15,17 +15,17 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { CheckCircle, AlertCircle } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { AuthButton } from "@/components/auth";
 import { motion } from "framer-motion";
 import { ErrorBoundary } from "@/components/error/error-boundary";
-import { Logo } from "@/components/common/logo";
 import { LottieLoadingCompact } from "@/components/ui/lottie-loading";
 import { useAuthActions } from "@/hooks/auth/useAuthActions";
 import {
   getErrorMessage,
   mapRawErrorToCode,
 } from "@/lib/utils/error/errorUtil";
+import { PageLoading } from "@/components/ui/loading";
 
 export default function ConfirmPage() {
   const [loading, setLoading] = useState(true);
@@ -144,27 +144,27 @@ export default function ConfirmPage() {
     router.push("/auth/login");
   };
 
-  const handleResendConfirmation = () => {
-    router.push("/auth/register");
-  };
-
   // 타임아웃 상태 처리
   if (isTimedOut && !confirmed && !error) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-gradient-farm p-3">
-        <div className="w-full max-w-md">
-          <div className="mb-8 text-center">
-            <Logo className="mx-auto" size="xl" />
-          </div>
-          <AdminError
-            title={ERROR_CONFIGS.TIMEOUT.title}
-            description={ERROR_CONFIGS.TIMEOUT.description}
-            error={new Error("Email verification timeout")}
-            retry={retry}
-            isTimeout={true}
-          />
-        </div>
-      </div>
+      <AdminError
+        title={ERROR_CONFIGS.TIMEOUT.title}
+        description={ERROR_CONFIGS.TIMEOUT.description}
+        error={new Error("Email verification timeout")}
+        retry={retry}
+        isTimeout={true}
+      />
+    );
+  }
+
+  if (loading) {
+    return (
+      <PageLoading
+        text={LABELS.EMAIL_CONFIRMATION_LOADING}
+        subText={LABELS.EMAIL_CONFIRMATION_PROCESSING}
+        variant="lottie"
+        fullScreen={true}
+      />
     );
   }
 
@@ -180,46 +180,34 @@ export default function ConfirmPage() {
           transition={{ duration: 0.5 }}
           className="w-full max-w-md"
         >
-          <div className="mb-8 text-center">
-            <Logo className="mx-auto" size="xl" />
-          </div>
-
-          <Card className="border-none shadow-soft-lg">
+          <Card className="border-none shadow-soft-lg min-h-fit">
             <CardHeader className="space-y-1 text-center">
-              <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
-                {loading ? (
-                  <LottieLoadingCompact size="sm" />
-                ) : confirmed ? (
-                  <CheckCircle className="h-6 w-6 text-green-600" />
+              <div className="mx-auto mb-4 flex h-24 w-24 items-center justify-center rounded-full bg-primary/10">
+                {confirmed ? (
+                  <LottieLoadingCompact
+                    animationPath="/lottie/success.json"
+                    size="md"
+                  />
                 ) : (
-                  <AlertCircle className="h-6 w-6 text-red-600" />
+                  <LottieLoadingCompact
+                    animationPath="/lottie/admin_error.json"
+                    size="md"
+                  />
                 )}
               </div>
               <CardTitle className="text-2xl">
-                {loading
-                  ? LABELS.EMAIL_CONFIRMATION_LOADING
-                  : confirmed
+                {confirmed
                   ? LABELS.EMAIL_CONFIRMATION_SUCCESS
                   : LABELS.EMAIL_CONFIRMATION_FAILED}
               </CardTitle>
               <CardDescription>
-                {loading
-                  ? LABELS.EMAIL_CONFIRMATION_PROCESSING
-                  : confirmed
+                {confirmed
                   ? LABELS.EMAIL_CONFIRMATION_SUCCESS_DESC
                   : LABELS.EMAIL_CONFIRMATION_FAILED_DESC}
               </CardDescription>
             </CardHeader>
 
             <CardContent className="space-y-4">
-              {loading && (
-                <div className="flex items-center justify-center py-8">
-                  <p className="text-sm text-muted-foreground w-full text-center">
-                    {LABELS.EMAIL_CONFIRMATION_PROCESSING_MESSAGE}
-                  </p>
-                </div>
-              )}
-
               {confirmed && (
                 <div className="space-y-4 text-center">
                   <div className="space-y-2">
@@ -252,20 +240,12 @@ export default function ConfirmPage() {
                 <div className="space-y-4 text-center">
                   <p className="text-sm text-red-600">{error}</p>
                   <div className="space-y-2">
-                    <AuthButton
-                      type="email-confirm"
-                      loading={false}
+                    <Button
                       onClick={handleGoToLogin}
-                      variant="outline"
-                      className="w-full"
-                    />
-                    <AuthButton
-                      type="email-confirm"
-                      loading={false}
-                      onClick={handleResendConfirmation}
-                      variant="outline"
-                      className="w-full"
-                    />
+                      className="w-full h-12 flex items-center justify-center"
+                    >
+                      {BUTTONS.BACK_TO_LOGIN}
+                    </Button>
                   </div>
                 </div>
               )}
