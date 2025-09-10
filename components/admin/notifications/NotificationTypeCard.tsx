@@ -38,7 +38,7 @@ const NotificationTypeCard = React.memo(function NotificationTypeCard({
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             {icon}
-            <CardTitle className="text-lg">{title}</CardTitle>
+            <CardTitle className="text-base">{title}</CardTitle>
           </div>
           {badge && <Badge variant="secondary">{badge}</Badge>}
         </div>

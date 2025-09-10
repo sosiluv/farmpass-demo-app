@@ -53,7 +53,7 @@ export function useNotificationService() {
             ((await Promise.race([
               navigator.serviceWorker.ready,
               new Promise((_, reject) =>
-                setTimeout(() => reject("Service Worker Timeout"), 5000)
+                setTimeout(() => reject("Service Worker Timeout"), 15000)
               ),
             ])) as ServiceWorkerRegistration);
           const browserSubscription =
