@@ -32,7 +32,7 @@ export function CustomDatePicker({
           <Button
             variant="outline"
             className={cn(
-              "flex-1 h-10 border-slate-200 dark:border-slate-600 focus:border-indigo-400 dark:focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 dark:focus:ring-indigo-900 transition-all duration-300 bg-white/90 dark:bg-slate-800 backdrop-blur-sm text-sm md:text-base shadow-sm hover:shadow-md dark:text-slate-100 dark:placeholder:text-slate-400 dark:disabled:text-slate-500 min-w-0 justify-start",
+              "flex-1 h-10 md:h-11 lg:h-12 border-slate-200 dark:border-slate-600 focus:border-indigo-400 dark:focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 dark:focus:ring-indigo-900 transition-all duration-300 bg-white/90 dark:bg-slate-800 backdrop-blur-sm text-sm md:text-base shadow-sm hover:shadow-md dark:text-slate-100 dark:placeholder:text-slate-400 dark:disabled:text-slate-500 justify-start",
               customStartDate &&
                 "border-indigo-400 dark:border-indigo-500 bg-indigo-50 dark:bg-indigo-900"
             )}
@@ -42,7 +42,7 @@ export function CustomDatePicker({
               {customStartDate ? (
                 format(customStartDate, "yyyy-MM-dd", { locale: ko })
               ) : (
-                <span className="dark:text-slate-400">
+                <span className="dark:text-slate-100">
                   {LABELS.CUSTOM_DATE_PICKER_START_DATE}
                 </span>
               )}
@@ -65,7 +65,7 @@ export function CustomDatePicker({
           <Button
             variant="outline"
             className={cn(
-              "flex-1 h-10 border-slate-200 dark:border-slate-600 focus:border-indigo-400 dark:focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 dark:focus:ring-indigo-900 transition-all duration-300 bg-white/90 dark:bg-slate-800 backdrop-blur-sm text-sm md:text-base shadow-sm hover:shadow-md dark:text-slate-100 dark:placeholder:text-slate-400 dark:disabled:text-slate-500 min-w-0 justify-start",
+              "flex-1 h-10 md:h-11 lg:h-12 border-slate-200 dark:border-slate-600 focus:border-indigo-400 dark:focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 dark:focus:ring-indigo-900 transition-all duration-300 bg-white/90 dark:bg-slate-800 backdrop-blur-sm text-sm md:text-base shadow-sm hover:shadow-md dark:text-slate-100 dark:placeholder:text-slate-400 dark:disabled:text-slate-500 justify-start",
               customEndDate &&
                 "border-indigo-400 dark:border-indigo-500 bg-indigo-50 dark:bg-indigo-900"
             )}
@@ -75,7 +75,7 @@ export function CustomDatePicker({
               {customEndDate ? (
                 format(customEndDate, "yyyy-MM-dd", { locale: ko })
               ) : (
-                <span className="dark:text-slate-400">
+                <span className="dark:text-slate-100">
                   {LABELS.CUSTOM_DATE_PICKER_END_DATE}
                 </span>
               )}

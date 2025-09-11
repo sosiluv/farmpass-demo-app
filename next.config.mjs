@@ -32,10 +32,10 @@ const withSerwist = withSerwistInit({
   swDest: "public/sw.js",
   register: true,
   disable: false, // 개발 환경에서 비활성화 여부
-  scope: "/", // 서비스 워커 스코프
   swUrl: "/sw.js", // 서비스 워커 URL
+  scope: "/",
   reloadOnOnline: true, // 온라인 복구 시 페이지 새로고침
-  cacheOnNavigation: false, // 네비게이션 시 캐싱 활성화
+  cacheOnNavigation: true, // 네비게이션 시 캐싱 활성화
   // 추가 프리캐시 엔트리
   additionalPrecacheEntries: [
     // 핵심 페이지들
@@ -44,8 +44,6 @@ const withSerwist = withSerwistInit({
     { url: "/maintenance", revision },
 
     // SEO 및 기본 파일들
-    { url: "/robots.txt", revision },
-    { url: "/sitemap.xml", revision },
     { url: "/manifest.json", revision },
     { url: "/favicon.ico", revision },
     { url: "/favicon.png", revision },
@@ -86,7 +84,6 @@ const withSerwist = withSerwistInit({
     { url: "/lottie/timeout.json", revision },
     { url: "/lottie/no_connection.json", revision },
     { url: "/lottie/404.json", revision },
-    { url: "/lottie/plant_loading.json", revision },
     { url: "/lottie/cat_loading.json", revision },
 
     // 문서 파일들 (오프라인 접근용) - 실제 파일명으로 수정

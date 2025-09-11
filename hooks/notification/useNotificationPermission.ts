@@ -9,7 +9,10 @@ import {
   safeNotificationAccess,
 } from "@/lib/utils/browser/safari-compat";
 import { useCreateSubscriptionMutation } from "@/lib/hooks/query/use-push-mutations";
-import { requestNotificationPermissionAndSubscribe } from "@/lib/utils/notification/push-subscription";
+import {
+  requestNotificationPermissionAndSubscribe,
+  getSWRegistration,
+} from "@/lib/utils/notification/push-subscription";
 import { useVapidKeyEffective } from "@/hooks/auth/useVapidKey";
 
 export function useNotificationPermission() {
@@ -45,7 +48,7 @@ export function useNotificationPermission() {
         return false;
       }
 
-      const registration = await navigator.serviceWorker.ready;
+      const registration = await getSWRegistration();
       const subscription = await registration.pushManager.getSubscription();
       return !!subscription;
     } catch (error) {

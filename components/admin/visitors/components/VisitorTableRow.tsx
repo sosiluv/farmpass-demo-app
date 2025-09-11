@@ -39,13 +39,13 @@ export function VisitorTableRow({
   onDelete,
 }: VisitorTableRowProps) {
   return (
-    <TableRow className="hover:bg-gray-50/80 transition-colors duration-200 group">
+    <TableRow className="hover:bg-gray-50/90 dark:hover:bg-slate-600/60 transition-colors duration-200 group">
       {/* 번호 */}
-      <TableCell className="w-16 sm:w-20 text-center font-medium text-gray-900">
+      <TableCell className="w-16 sm:w-20 text-center font-medium text-gray-900 dark:text-slate-100">
         <div className="flex items-center justify-center space-x-2">
           <Badge
             variant="outline"
-            className="text-[10px] sm:text-xs px-1 sm:px-1.5 py-0.5 font-bold dark:bg-slate-700 dark:text-white dark:border-slate-600"
+            className="text-[10px] sm:text-xs px-1 sm:px-1.5 py-0.5 font-bold bg-white/95 dark:bg-slate-600/90 text-gray-900 dark:text-slate-200 border-gray-300 dark:border-slate-500 backdrop-blur-sm"
           >
             #{index + 1}
           </Badge>
@@ -76,7 +76,7 @@ export function VisitorTableRow({
             <div className="flex items-center space-x-1 sm:space-x-2 mb-1">
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <h4 className="font-semibold text-gray-900 truncate text-sm sm:text-base cursor-help">
+                  <h4 className="font-semibold text-gray-900 dark:text-slate-100 truncate text-sm sm:text-base cursor-help">
                     {visitor.visitor_name}
                   </h4>
                 </TooltipTrigger>
@@ -87,7 +87,7 @@ export function VisitorTableRow({
             </div>
             <Tooltip>
               <TooltipTrigger asChild>
-                <p className="text-xs sm:text-sm text-gray-600 font-medium cursor-help">
+                <p className="text-xs sm:text-sm text-gray-600 dark:text-slate-200 font-medium cursor-help">
                   {formatPhoneNumber(visitor.visitor_phone)}
                 </p>
               </TooltipTrigger>
@@ -115,7 +115,7 @@ export function VisitorTableRow({
               <div className="min-w-0 flex-1">
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <div className="text-xs sm:text-sm text-gray-700 font-medium truncate cursor-help">
+                    <div className="text-xs sm:text-sm text-gray-700 dark:text-slate-100 font-medium truncate cursor-help">
                       {visitor.farms?.farm_name}
                     </div>
                   </TooltipTrigger>
@@ -124,7 +124,7 @@ export function VisitorTableRow({
                   </TooltipContent>
                 </Tooltip>
                 {visitor.farms?.farm_type && (
-                  <div className="text-[10px] sm:text-xs text-purple-600 font-medium">
+                  <div className="text-[10px] sm:text-xs text-purple-600 dark:text-purple-300 font-medium">
                     {getFarmTypeInfo(visitor.farms.farm_type ?? null).label}
                   </div>
                 )}
@@ -154,10 +154,10 @@ export function VisitorTableRow({
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <div className="cursor-help">
-                        <p className="text-xs sm:text-sm font-medium text-gray-900 leading-tight">
+                        <p className="text-xs sm:text-sm font-medium text-gray-700 dark:text-slate-100 leading-tight">
                           {datePart}
                         </p>
-                        <p className="text-[10px] sm:text-xs text-gray-600 leading-tight">
+                        <p className="text-[10px] sm:text-xs text-gray-600 dark:text-slate-300 leading-tight">
                           {timePart}
                         </p>
                       </div>
@@ -179,7 +179,7 @@ export function VisitorTableRow({
           <FileText className="w-3 h-3 sm:w-4 sm:h-4 text-emerald-500 flex-shrink-0" />
           <Tooltip>
             <TooltipTrigger asChild>
-              <span className="text-xs sm:text-sm font-medium text-gray-700 truncate max-w-[120px] sm:max-w-[150px] cursor-help">
+              <span className="text-xs sm:text-sm font-medium text-gray-700 dark:text-slate-100 truncate max-w-[120px] sm:max-w-[150px] cursor-help">
                 {visitor.visitor_purpose ||
                   LABELS.VISITOR_TABLE_ROW_DEFAULT_PURPOSE}
               </span>
@@ -201,7 +201,7 @@ export function VisitorTableRow({
             <Car className="w-3 h-3 sm:w-4 sm:h-4 text-amber-500 flex-shrink-0" />
             <Tooltip>
               <TooltipTrigger asChild>
-                <span className="text-xs sm:text-sm font-medium text-gray-700 cursor-help">
+                <span className="text-xs sm:text-sm font-medium text-gray-700 dark:text-slate-100 cursor-help">
                   {visitor.vehicle_number}
                 </span>
               </TooltipTrigger>
@@ -211,7 +211,7 @@ export function VisitorTableRow({
             </Tooltip>
           </div>
         ) : (
-          <span className="text-xs sm:text-sm text-gray-400">
+          <span className="text-xs sm:text-sm text-gray-400 dark:text-slate-400">
             {LABELS.VISITOR_TABLE_ROW_NO_VEHICLE}
           </span>
         )}
@@ -235,7 +235,7 @@ export function VisitorTableRow({
               <TooltipTrigger asChild>
                 <button
                   onClick={() => onViewDetails(visitor)}
-                  className="p-1.5 sm:p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all duration-200 group-hover:bg-blue-50"
+                  className="p-1.5 sm:p-2 text-gray-400 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-lg transition-all duration-200 group-hover:bg-blue-50 dark:group-hover:bg-blue-900/30"
                 >
                   <Eye className="w-3 h-3 sm:w-4 sm:h-4" />
                 </button>

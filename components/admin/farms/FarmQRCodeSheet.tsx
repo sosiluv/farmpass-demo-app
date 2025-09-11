@@ -39,10 +39,10 @@ export function FarmQRCodeSheet({
       <SheetTrigger asChild>
         <Button
           variant="outline"
-          className="flex-1 min-w-0 bg-gradient-to-r from-emerald-50 to-teal-50 border-emerald-200 hover:from-emerald-100 hover:to-teal-100 hover:border-emerald-300 transition-all duration-200 group"
+          className="flex-1 min-w-0 bg-gradient-to-r from-emerald-50 to-teal-50 dark:from-emerald-900/30 dark:to-teal-900/30 border-emerald-200 dark:border-emerald-700 hover:from-emerald-100 hover:to-teal-100 dark:hover:from-emerald-800/40 dark:hover:to-teal-800/40 hover:border-emerald-300 dark:hover:border-emerald-600 transition-all duration-200 group"
         >
-          <QrCode className="h-4 w-4 mr-2 text-emerald-600 group-hover:text-emerald-700 transition-colors" />
-          <span className="font-medium text-emerald-700 group-hover:text-emerald-800">
+          <QrCode className="h-4 w-4 mr-2 text-emerald-600 dark:text-emerald-400 group-hover:text-emerald-700 dark:group-hover:text-emerald-300 transition-colors" />
+          <span className="font-medium text-emerald-700 dark:text-emerald-300 group-hover:text-emerald-800 dark:group-hover:text-emerald-200">
             {BUTTONS.QR_CODE_BUTTON}
           </span>
         </Button>
@@ -63,7 +63,7 @@ export function FarmQRCodeSheet({
             {/* QR 코드 영역 */}
             <div className="flex justify-center">
               <div className="relative">
-                <div className="p-3 sm:p-6 bg-gradient-to-br from-emerald-50 to-teal-50 rounded-xl sm:rounded-2xl border-2 border-emerald-200 shadow-lg">
+                <div className="p-3 sm:p-6 bg-gradient-to-br from-emerald-50 to-teal-50 dark:from-emerald-900/30 dark:to-teal-900/30 rounded-xl sm:rounded-2xl border-2 border-emerald-200 dark:border-emerald-700 shadow-lg">
                   <QRCodeSVG
                     id={`qr-code-${farmId}`}
                     value={`${window.location.origin}/visit/${farmId}`}
@@ -120,14 +120,14 @@ export function FarmQRCodeSheet({
             </div>
 
             {/* URL 표시 영역 */}
-            <div className="bg-slate-50 rounded-lg p-3 sm:p-4 border border-slate-200">
-              <div className="text-sm font-medium text-slate-600 mb-2">
+            <div className="bg-slate-50 dark:bg-slate-800 rounded-lg p-3 sm:p-4 border border-slate-200 dark:border-slate-600">
+              <div className="text-sm font-medium text-slate-600 dark:text-slate-300 mb-2">
                 {LABELS.QR_CODE_LINK_TITLE}
               </div>
-              <div className="text-sm text-slate-500 break-all leading-relaxed">
+              <div className="text-sm text-slate-500 dark:text-slate-400 break-all leading-relaxed">
                 {`${window.location.origin}/visit/${farmId}`}
               </div>
-              <div className="text-sm text-muted-foreground mt-2 text-center">
+              <div className="text-sm text-muted-foreground dark:text-slate-400 mt-2 text-center">
                 {LABELS.QR_CODE_SCAN_INFO}
               </div>
             </div>

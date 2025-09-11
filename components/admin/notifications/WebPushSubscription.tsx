@@ -16,7 +16,7 @@ import { useCommonToast } from "@/lib/utils/notification/toast-messages";
 import { safeNotificationAccess } from "@/lib/utils/browser/safari-compat";
 import { PAGE_HEADER } from "@/lib/constants/notifications";
 import { useNotificationStore } from "@/store/use-notification-store";
-import { reRegisterServiceWorker } from "@/lib/utils/notification/push-subscription";
+import { getSWRegistration } from "@/lib/utils/notification/push-subscription";
 
 export function WebPushSubscription() {
   // 공통 스토어 사용
@@ -68,22 +68,7 @@ export function WebPushSubscription() {
         break;
       case "granted":
         try {
-          // Service Worker 등록 (타임아웃 시 재등록 로직 포함)
-          let registration: ServiceWorkerRegistration;
-          try {
-            registration = await Promise.race([
-              navigator.serviceWorker.ready,
-              new Promise<ServiceWorkerRegistration>((_, reject) =>
-                setTimeout(
-                  () => reject(new Error("Service Worker Ready 타임아웃")),
-                  15000
-                )
-              ),
-            ]);
-          } catch (error) {
-            console.warn("Service Worker Ready 타임아웃, 재등록 시도:", error);
-            registration = await reRegisterServiceWorker();
-          }
+          const registration = await getSWRegistration();
           const subscription = await registration.pushManager.getSubscription();
           // 브라우저의 실제 구독 상태를 우선적으로 확인
           if (subscription) {
@@ -119,7 +104,7 @@ export function WebPushSubscription() {
   const handleUnsubscribe = async () => {
     showInfo("구독 해제 시작", "푸시 구독을 해제하는 중입니다...");
     try {
-      const registration = await navigator.serviceWorker.ready;
+      const registration = await getSWRegistration();
       const subscription = await registration.pushManager.getSubscription();
       if (subscription) {
         await subscription.unsubscribe();

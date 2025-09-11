@@ -1,5 +1,5 @@
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Badge } from "@/components/ui/badge";
+
 import { CheckCircle, AlertTriangle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { LABELS } from "@/lib/constants/settings";
@@ -29,24 +29,30 @@ export function BroadcastResult({ lastSendResult }: BroadcastResultProps) {
           {lastSendResult.success ? (
             <>
               <CheckCircle className="h-4 w-4 text-green-600" />
-              {LABELS.BROADCAST_RESULT_SUCCESS}
+              <span className="text-green-800">
+                {LABELS.BROADCAST_RESULT_SUCCESS}
+              </span>
             </>
           ) : (
             <>
               <AlertTriangle className="h-4 w-4 text-red-600" />
-              {LABELS.BROADCAST_RESULT_FAILURE}
+              <span className="text-red-800">
+                {LABELS.BROADCAST_RESULT_FAILURE}
+              </span>
             </>
           )}
-          <Badge variant="outline" className="text-sm sm:text-base">
+          <span className="text-sm sm:text-base text-gray-800">
             {lastSendResult.timestamp.toLocaleString()}
-          </Badge>
+          </span>
         </div>
         {lastSendResult.success && (
           <div className="mt-1 text-sm sm:text-base">
-            {LABELS.BROADCAST_RESULT_SUCCESS_COUNT.replace(
-              "{count}",
-              lastSendResult.sentCount.toString()
-            )}
+            <span className="text-green-800">
+              {LABELS.BROADCAST_RESULT_SUCCESS_COUNT.replace(
+                "{count}",
+                lastSendResult.sentCount.toString()
+              )}
+            </span>
             {lastSendResult.failureCount > 0 && (
               <span className="text-yellow-600">
                 ,{" "}

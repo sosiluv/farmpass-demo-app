@@ -12,10 +12,13 @@ export function SummarySection({
   color = "orange",
 }: SummarySectionProps) {
   const colorClasses = {
-    blue: "border-blue-200 bg-blue-50/50 text-blue-700",
-    green: "border-green-200 bg-green-50/50 text-green-700",
-    orange: "border-orange-200 bg-orange-50/50 text-orange-700",
-    purple: "border-purple-200 bg-purple-50/50 text-purple-700",
+    blue: "border-blue-200 dark:border-blue-800/60 bg-blue-50/50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300",
+    green:
+      "border-green-200 dark:border-green-800/60 bg-green-50/50 dark:bg-green-900/30 text-green-700 dark:text-green-300",
+    orange:
+      "border-orange-200 dark:border-orange-800/60 bg-orange-50/50 dark:bg-orange-900/30 text-orange-700 dark:text-orange-300",
+    purple:
+      "border-purple-200 dark:border-purple-800/60 bg-purple-50/50 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300",
   };
 
   return (

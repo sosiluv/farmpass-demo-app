@@ -27,7 +27,7 @@ export function FarmCardHeader({ farm, isOwner }: FarmCardHeaderProps) {
         <TooltipProvider>
           <Tooltip>
             <TooltipTrigger asChild>
-              <CardTitle className="text-lg font-bold truncate cursor-help min-h-[1.75rem] flex items-center">
+              <CardTitle className="text-lg font-bold truncate cursor-help min-h-[1.75rem] flex items-center text-gray-900 dark:text-slate-100">
                 {farm.farm_name}
               </CardTitle>
             </TooltipTrigger>
@@ -58,7 +58,7 @@ export function FarmCardHeader({ farm, isOwner }: FarmCardHeaderProps) {
 
       {/* 소유자가 아닌 경우 안내 - 모든 화면 크기에서 별도 줄에 표시 */}
       {!isOwner && (
-        <div className="text-xs text-muted-foreground px-3 py-2 bg-gray-50 rounded-md text-center border border-gray-200">
+        <div className="text-xs text-muted-foreground dark:text-slate-400 px-3 py-2 bg-gray-50 dark:bg-slate-700 rounded-md text-center border border-gray-200 dark:border-slate-600">
           {LABELS.OWNER_ONLY_PERMISSION}
         </div>
       )}

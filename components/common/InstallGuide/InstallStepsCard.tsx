@@ -36,7 +36,7 @@ export function InstallStepsCard({ currentGuide }: InstallStepsCardProps) {
                     {step.title}
                   </h4>
                 </div>
-                <p className="text-xs sm:text-sm text-gray-600 leading-tight">
+                <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 leading-tight">
                   {step.description}
                 </p>
               </div>

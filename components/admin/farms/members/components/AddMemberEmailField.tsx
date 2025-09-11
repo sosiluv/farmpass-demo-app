@@ -37,7 +37,7 @@ const AddMemberEmailFieldComponent = ({
 }: AddMemberEmailFieldProps) => {
   return (
     <FormItem>
-      <FormLabel className="text-gray-800">
+      <FormLabel className="text-gray-800 dark:text-slate-200">
         {LABELS.MEMBER_EMAIL} <span className="text-red-500">*</span>
       </FormLabel>
       <div className="relative">
@@ -47,20 +47,19 @@ const AddMemberEmailFieldComponent = ({
             {...field}
             type="email"
             placeholder={PLACEHOLDERS.MEMBER_EMAIL_PLACEHOLDER}
-            className={`h-12 pl-10 ${error ? "border-red-500" : ""}`}
+            className={`pl-10 ${error ? "border-red-500" : ""}`}
             disabled={disabled}
           />
         </FormControl>
 
         {/* 검색어 초기화 버튼 */}
         {field.value && (
-          <Button
-            variant="ghost"
+          <button
             onClick={() => field.onChange("")}
-            className="absolute right-3 top-1/2 transform -translate-y-1/2 h-5 w-5 sm:h-6 sm:w-6 p-0 hover:bg-gray-100 rounded-full transition-all duration-200"
+            className="absolute right-1 sm:right-2 top-1/2 transform -translate-y-1/2 h-5 w-5 sm:h-6 sm:w-6 md:h-7 md:w-7 p-0 rounded-full flex items-center justify-center"
           >
-            <X className="h-2.5 w-2.5 sm:h-3 sm:w-3" />
-          </Button>
+            <X className="h-2.5 w-2.5 sm:h-3 sm:w-3 md:h-4 md:w-4" />
+          </button>
         )}
 
         {/* 사용자 검색 드롭다운 */}

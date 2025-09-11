@@ -21,7 +21,7 @@
     "paths": {
       "@/*": ["./*"]
     },
-    "types": ["@serwist/next/typings"]
+    "types": ["@serwist/next/typings", "node"]
   },
   "include": [
     "next-env.d.ts",

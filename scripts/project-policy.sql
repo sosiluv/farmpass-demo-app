@@ -1,7 +1,7 @@
 -- 특정 이메일을 가진 사용자에게 관리자 권한 부여
 UPDATE auth.users 
 SET raw_app_meta_data = raw_app_meta_data || '{"isAdmin": true}'::jsonb
-WHERE email = 'admin@swkorea.com';
+WHERE email = 'admin@samwon1141.com';
 
 ALTER TABLE public.profiles
 DROP CONSTRAINT fk_profiles_auth_users_id;
