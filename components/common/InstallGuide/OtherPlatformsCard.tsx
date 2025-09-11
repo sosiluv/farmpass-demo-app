@@ -30,91 +30,87 @@ export function OtherPlatformsCard() {
           </TabsList>
 
           <TabsContent value="ios">
-            <div className="space-y-3">
-              {(platformGuides[0].steps || []).map((step) => (
-                <div
-                  key={step.step}
-                  className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg"
-                >
-                  <div className="bg-blue-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs font-semibold flex-shrink-0">
-                    {step.step}
-                  </div>
-                  <div>
-                    <h5 className="font-medium text-sm">{step.title}</h5>
-                    <p className="text-xs text-gray-600">{step.description}</p>
-                  </div>
+            {(platformGuides[0].steps || []).map((step) => (
+              <div
+                key={step.step}
+                className="flex items-start gap-2 sm:gap-3 p-2 sm:p-3 rounded-lg"
+              >
+                <div className="bg-blue-500 text-white rounded-full w-5 h-5 sm:w-6 sm:h-6 flex items-center justify-center text-xs font-semibold flex-shrink-0">
+                  {step.step}
                 </div>
-              ))}
-            </div>
+                <div className="space-y-1">
+                  <h5 className="text-xs sm:text-sm font-medium">
+                    {step.title}
+                  </h5>
+                  <p className="text-xs text-gray-600 dark:text-gray-400 leading-tight">
+                    {step.description}
+                  </p>
+                </div>
+              </div>
+            ))}
           </TabsContent>
 
           <TabsContent value="android">
-            <div className="space-y-3">
-              {(platformGuides[1].steps || []).map((step) => (
-                <div
-                  key={step.step}
-                  className="flex items-start gap-2 sm:gap-3 p-2 sm:p-3 bg-gray-50 rounded-lg"
-                >
-                  <div className="bg-blue-500 text-white rounded-full w-5 h-5 sm:w-6 sm:h-6 flex items-center justify-center text-xs font-semibold flex-shrink-0">
-                    {step.step}
-                  </div>
-                  <div className="space-y-1">
-                    <h5 className="text-xs sm:text-sm font-medium">
-                      {step.title}
-                    </h5>
-                    <p className="text-xs text-gray-600 leading-tight">
-                      {step.description}
-                    </p>
-                  </div>
+            {(platformGuides[1].steps || []).map((step) => (
+              <div
+                key={step.step}
+                className="flex items-start gap-2 sm:gap-3 p-2 sm:p-3 rounded-lg"
+              >
+                <div className="bg-blue-500 text-white rounded-full w-5 h-5 sm:w-6 sm:h-6 flex items-center justify-center text-xs font-semibold flex-shrink-0">
+                  {step.step}
                 </div>
-              ))}
-            </div>
+                <div className="space-y-1">
+                  <h5 className="text-xs sm:text-sm font-medium">
+                    {step.title}
+                  </h5>
+                  <p className="text-xs text-gray-600 dark:text-gray-400 leading-tight">
+                    {step.description}
+                  </p>
+                </div>
+              </div>
+            ))}
           </TabsContent>
 
           <TabsContent value="samsung">
-            <div className="space-y-2 sm:space-y-3">
-              {(platformGuides[2].steps || []).map((step) => (
-                <div
-                  key={step.step}
-                  className="flex items-start gap-2 sm:gap-3 p-2 sm:p-3 bg-gray-50 rounded-lg"
-                >
-                  <div className="bg-blue-500 text-white rounded-full w-5 h-5 sm:w-6 sm:h-6 flex items-center justify-center text-xs font-semibold flex-shrink-0">
-                    {step.step}
-                  </div>
-                  <div className="space-y-1">
-                    <h5 className="text-xs sm:text-sm font-medium">
-                      {step.title}
-                    </h5>
-                    <p className="text-xs text-gray-600 leading-tight">
-                      {step.description}
-                    </p>
-                  </div>
+            {(platformGuides[2].steps || []).map((step) => (
+              <div
+                key={step.step}
+                className="flex items-start gap-2 sm:gap-3 p-2 sm:p-3 rounded-lg"
+              >
+                <div className="bg-blue-500 text-white rounded-full w-5 h-5 sm:w-6 sm:h-6 flex items-center justify-center text-xs font-semibold flex-shrink-0">
+                  {step.step}
                 </div>
-              ))}
-            </div>
+                <div className="space-y-1">
+                  <h5 className="text-xs sm:text-sm font-medium">
+                    {step.title}
+                  </h5>
+                  <p className="text-xs text-gray-600 dark:text-gray-400 leading-tight">
+                    {step.description}
+                  </p>
+                </div>
+              </div>
+            ))}
           </TabsContent>
 
           <TabsContent value="desktop">
-            <div className="space-y-2 sm:space-y-3">
-              {(platformGuides[3].steps || []).map((step) => (
-                <div
-                  key={step.step}
-                  className="flex items-start gap-2 sm:gap-3 p-2 sm:p-3 bg-gray-50 rounded-lg"
-                >
-                  <div className="bg-blue-500 text-white rounded-full w-5 h-5 sm:w-6 sm:h-6 flex items-center justify-center text-xs font-semibold flex-shrink-0">
-                    {step.step}
-                  </div>
-                  <div className="space-y-1">
-                    <h5 className="text-xs sm:text-sm font-medium">
-                      {step.title}
-                    </h5>
-                    <p className="text-xs text-gray-600 leading-tight">
-                      {step.description}
-                    </p>
-                  </div>
+            {(platformGuides[3].steps || []).map((step) => (
+              <div
+                key={step.step}
+                className="flex items-start gap-2 sm:gap-3 p-2 sm:p-3 rounded-lg"
+              >
+                <div className="bg-blue-500 text-white rounded-full w-5 h-5 sm:w-6 sm:h-6 flex items-center justify-center text-xs font-semibold flex-shrink-0">
+                  {step.step}
                 </div>
-              ))}
-            </div>
+                <div className="space-y-1">
+                  <h5 className="text-xs sm:text-sm font-medium">
+                    {step.title}
+                  </h5>
+                  <p className="text-xs text-gray-600 dark:text-gray-400 leading-tight">
+                    {step.description}
+                  </p>
+                </div>
+              </div>
+            ))}
           </TabsContent>
         </Tabs>
       </CardContent>

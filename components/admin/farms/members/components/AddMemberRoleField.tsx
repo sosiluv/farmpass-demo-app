@@ -35,7 +35,7 @@ const AddMemberRoleFieldComponent = ({
 }: AddMemberRoleFieldProps) => {
   return (
     <FormItem>
-      <FormLabel className="text-gray-800">
+      <FormLabel className="text-gray-800 dark:text-slate-200">
         {LABELS.MEMBER_ROLE} <span className="text-red-500">*</span>
       </FormLabel>
       <FormControl>

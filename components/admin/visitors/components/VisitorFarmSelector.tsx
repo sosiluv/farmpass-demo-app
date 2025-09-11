@@ -55,7 +55,7 @@ export function VisitorFarmSelector({
     <Select value={selectedFarm} onValueChange={onFarmChange}>
       <SelectTrigger
         id="visitor-farm-selector"
-        className="h-10 border-slate-200 dark:border-slate-600 focus:border-indigo-400 dark:focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 dark:focus:ring-indigo-900 transition-all duration-300 bg-white/90 dark:bg-slate-800 backdrop-blur-sm shadow-sm hover:shadow-md min-w-0 dark:text-slate-100 dark:placeholder:text-slate-400 dark:disabled:text-slate-500"
+        className="h-10 md:h-11 lg:h-12 border-slate-200 dark:border-slate-600 focus:border-indigo-400 dark:focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 dark:focus:ring-indigo-900 transition-all duration-300 bg-white/90 dark:bg-slate-800 backdrop-blur-sm shadow-sm hover:shadow-md min-w-0 dark:text-slate-100 dark:placeholder:text-slate-400 dark:disabled:text-slate-500"
       >
         <div className="flex items-center space-x-3 min-w-0">
           <div className="p-1 bg-gradient-to-br from-indigo-100 to-purple-100 dark:from-indigo-900 dark:to-purple-900 rounded-md flex-shrink-0">
@@ -66,7 +66,7 @@ export function VisitorFarmSelector({
           </span>
         </div>
       </SelectTrigger>
-      <SelectContent className="max-w-[280px] sm:max-w-sm bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100">
+      <SelectContent className="bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100">
         {showAllOption && (
           <SelectItem value="all">
             <div className="flex items-center space-x-3 min-w-0">
@@ -92,7 +92,7 @@ export function VisitorFarmSelector({
                     {farm.farm_name}
                   </div>
                   {farm.farm_type && (
-                    <div className="text-[10px] sm:text-xs text-indigo-600 dark:text-indigo-300 font-medium truncate">
+                    <div className="text-xs text-indigo-600 dark:text-indigo-300 font-medium truncate">
                       {getFarmTypeInfo(farm.farm_type).label}
                     </div>
                   )}

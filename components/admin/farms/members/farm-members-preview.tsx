@@ -25,8 +25,8 @@ export function FarmMembersPreview({ membersData }: FarmMembersPreviewProps) {
 
   if (isLoading) {
     return (
-      <div className="mt-4 pt-4 border-t border-border/50">
-        <div className="bg-gradient-to-r from-slate-50 to-gray-50 rounded-lg border border-slate-200/50 p-4">
+      <div className="mt-4 pt-4 border-t border-border/50 dark:border-slate-700/50">
+        <div className="bg-gradient-to-r from-slate-50 to-gray-50 dark:from-slate-700 dark:to-slate-600 rounded-lg border border-slate-200/50 dark:border-slate-600/50 p-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-3">
               <div className="w-8 h-8 bg-muted rounded-full animate-pulse"></div>
@@ -51,16 +51,18 @@ export function FarmMembersPreview({ membersData }: FarmMembersPreviewProps) {
 
   if (!members || members.length === 0) {
     return (
-      <div className="mt-4 pt-4 border-t border-border/50">
-        <div className="bg-gradient-to-r from-slate-50 to-gray-50 rounded-lg border border-slate-200/50 p-4">
+      <div className="mt-4 pt-4 border-t border-border/50 dark:border-slate-700/50">
+        <div className="bg-gradient-to-r from-slate-50 to-gray-50 dark:from-slate-700 dark:to-slate-600 rounded-lg border border-slate-200/50 dark:border-slate-600/50 p-4">
           <div className="flex items-center justify-center py-4">
-            <div className="flex items-center space-x-3 text-muted-foreground">
-              <div className="p-2 bg-slate-100 rounded-lg">
+            <div className="flex items-center space-x-3 text-muted-foreground dark:text-slate-400">
+              <div className="p-2 bg-slate-100 dark:bg-slate-600 rounded-lg">
                 <Users className="h-4 w-4" />
               </div>
               <div className="text-center">
-                <div className="text-sm font-medium">{LABELS.NO_MEMBERS}</div>
-                <div className="text-sm text-muted-foreground mt-1">
+                <div className="text-sm font-medium text-gray-900 dark:text-slate-200">
+                  {LABELS.NO_MEMBERS}
+                </div>
+                <div className="text-sm text-muted-foreground dark:text-slate-400 mt-1">
                   {LABELS.ADD_MEMBERS_SUGGESTION}
                 </div>
               </div>
@@ -89,28 +91,28 @@ export function FarmMembersPreview({ membersData }: FarmMembersPreviewProps) {
   const getRoleColor = (role: string) => {
     switch (role) {
       case "owner":
-        return "bg-gradient-to-r from-amber-50 to-orange-50 border-amber-200 text-amber-700";
+        return "bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-900/30 dark:to-orange-900/30 border-amber-200 dark:border-amber-700 text-amber-700 dark:text-amber-300";
       case "manager":
-        return "bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200 text-blue-700";
+        return "bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/30 dark:to-indigo-900/30 border-blue-200 dark:border-blue-700 text-blue-700 dark:text-blue-300";
       case "viewer":
-        return "bg-gradient-to-r from-slate-50 to-gray-50 border-slate-200 text-slate-700";
+        return "bg-gradient-to-r from-slate-50 to-gray-50 dark:from-slate-700 dark:to-slate-600 border-slate-200 dark:border-slate-600 text-slate-700 dark:text-slate-300";
       default:
-        return "bg-gradient-to-r from-gray-50 to-slate-50 border-gray-200 text-gray-700";
+        return "bg-gradient-to-r from-gray-50 to-slate-50 dark:from-slate-700 dark:to-slate-600 border-gray-200 dark:border-slate-600 text-gray-700 dark:text-slate-300";
     }
   };
 
   return (
-    <div className="mt-4 pt-4 border-t border-border/50">
-      <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border border-blue-200/50 hover:border-blue-300/70 transition-all duration-200 group cursor-pointer">
+    <div className="mt-4 pt-4 border-t border-border/50 dark:border-slate-700/50">
+      <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/30 dark:to-indigo-900/30 rounded-lg border border-blue-200/50 dark:border-blue-700/50 hover:border-blue-300/70 dark:hover:border-blue-600/70 transition-all duration-200 group cursor-pointer">
         <div className="p-4">
           {/* 헤더 섹션 */}
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-3">
-              <div className="p-2 bg-blue-100 rounded-lg group-hover:bg-blue-200 transition-colors">
-                <Users className="h-4 w-4 text-blue-600" />
+              <div className="p-2 bg-blue-100 dark:bg-blue-800/50 rounded-lg group-hover:bg-blue-200 dark:group-hover:bg-blue-700/50 transition-colors">
+                <Users className="h-4 w-4 text-blue-600 dark:text-blue-400" />
               </div>
               <div>
-                <div className="text-sm text-blue-600">
+                <div className="text-sm text-blue-600 dark:text-blue-300">
                   {LABELS.MEMBERS_COUNT.replace(
                     "{count}",
                     memberCount.toString()
@@ -137,7 +139,7 @@ export function FarmMembersPreview({ membersData }: FarmMembersPreviewProps) {
                       className="relative group/avatar"
                       title={`${member.profiles.name} (${member.role})`}
                     >
-                      <Avatar className="w-8 h-8 border-2 border-white shadow-sm transition-transform group-hover/avatar:scale-110 group-hover/avatar:z-10">
+                      <Avatar className="w-8 h-8 border-2 border-white dark:border-slate-700 shadow-sm transition-transform group-hover/avatar:scale-110 group-hover/avatar:z-10">
                         <AvatarImage
                           src={getAvatarUrl(
                             {
@@ -159,7 +161,7 @@ export function FarmMembersPreview({ membersData }: FarmMembersPreviewProps) {
                         </AvatarFallback>
                       </Avatar>
                       {/* 역할 표시 */}
-                      <div className="absolute -bottom-1 -right-1 p-0.5 bg-white rounded-full border border-blue-200 shadow-sm">
+                      <div className="absolute -bottom-1 -right-1 p-0.5 bg-white dark:bg-slate-700 rounded-full border border-blue-200 dark:border-blue-600 shadow-sm">
                         {getRoleIcon(member.role)}
                       </div>
                     </div>
@@ -169,7 +171,7 @@ export function FarmMembersPreview({ membersData }: FarmMembersPreviewProps) {
                 {/* 더 많은 구성원이 있을 때 +N 표시 */}
                 {memberCount > 4 && (
                   <div className="relative">
-                    <div className="w-8 h-8 rounded-full bg-gradient-to-r from-blue-200 to-blue-300 border-2 border-white flex items-center justify-center text-xs font-semibold text-blue-700 shadow-sm">
+                    <div className="w-8 h-8 rounded-full bg-gradient-to-r from-blue-200 to-blue-300 dark:from-blue-700 dark:to-blue-600 border-2 border-white dark:border-slate-700 flex items-center justify-center text-xs font-semibold text-blue-700 dark:text-blue-200 shadow-sm">
                       +{memberCount - 4}
                     </div>
                   </div>
@@ -177,8 +179,8 @@ export function FarmMembersPreview({ membersData }: FarmMembersPreviewProps) {
               </div>
 
               {/* 화살표 아이콘 */}
-              <div className="p-1 bg-blue-100 rounded-full group-hover:bg-blue-200 transition-colors">
-                <ChevronRight className="h-3 w-3 text-blue-600" />
+              <div className="p-1 bg-blue-100 dark:bg-blue-800/50 rounded-full group-hover:bg-blue-200 dark:group-hover:bg-blue-700/50 transition-colors">
+                <ChevronRight className="h-3 w-3 text-blue-600 dark:text-blue-400" />
               </div>
             </div>
           </div>

@@ -72,15 +72,15 @@ export function CommonSheetHeader({
       {show && (
         <SheetHeader
           className={cn(
-            "text-center space-y-2 pb-3 border-b border-gray-100/60",
+            "text-center space-y-2 pb-3 border-b border-gray-100/60 dark:border-slate-700/60",
             className
           )}
         >
-          <SheetTitle className="text-xl font-bold text-gray-900 leading-tight tracking-tight text-center">
+          <SheetTitle className="text-xl font-bold text-gray-900 dark:text-slate-100 leading-tight tracking-tight text-center">
             {title}
           </SheetTitle>
           {description && !hideDescription && (
-            <SheetDescription className="text-base text-gray-600 leading-relaxed max-w-sm sm:max-w-md mx-auto font-medium text-center">
+            <SheetDescription className="text-base text-gray-600 dark:text-slate-300 leading-relaxed max-w-sm sm:max-w-md mx-auto font-medium text-center">
               {description}
             </SheetDescription>
           )}
@@ -196,7 +196,7 @@ export function CommonSheetContent({
               "w-12 h-1.5 rounded-full transition-all duration-150",
               enableDragToResize && isDragging
                 ? "bg-primary w-16 h-2 shadow-sm"
-                : "bg-gray-300 hover:bg-gray-400 active:bg-gray-500"
+                : "bg-gray-300 dark:bg-slate-600 hover:bg-gray-400 dark:hover:bg-slate-500 active:bg-gray-500 dark:active:bg-slate-400"
             )}
           ></div>
         </div>

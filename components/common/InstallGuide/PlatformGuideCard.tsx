@@ -17,14 +17,14 @@ export function PlatformGuideCard({
     <Card>
       <CardContent className="p-4">
         <div className="flex items-center gap-2 sm:gap-3">
-          <div className="bg-blue-100 p-1.5 sm:p-2 rounded-lg">
+          <div className="bg-blue-100 dark:bg-blue-900/30 p-1.5 sm:p-2 rounded-lg">
             {currentGuide.icon}
           </div>
           <div className="space-y-1">
             <h3 className="text-sm sm:text-base font-semibold">
               {currentGuide.platform}
             </h3>
-            <p className="text-xs sm:text-sm text-gray-600 leading-tight">
+            <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 leading-tight">
               {installInfo.reason}
             </p>
           </div>

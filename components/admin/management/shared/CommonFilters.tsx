@@ -7,7 +7,7 @@ import {
   SelectContent,
   SelectItem,
 } from "@/components/ui/select";
-import { X } from "lucide-react";
+import { X, Search } from "lucide-react";
 import { ReactNode } from "react";
 
 interface CommonSelect {
@@ -37,26 +37,26 @@ export function CommonFilters({
     <div className="w-full">
       {/* 데스크톱: 한 줄에 모든 요소 배치, 모바일: extra만 다음 줄 */}
       <div className="flex flex-wrap items-center gap-1 sm:gap-2 lg:gap-3 xl:gap-4 w-full">
-        <div className="relative flex-1">
+        <div className="relative flex-1 group">
+          <Search className="absolute left-2 sm:left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-3 w-3 sm:h-4 sm:w-4 group-focus-within:text-blue-500 transition-colors duration-200" />
           <Input
             id="user-search"
             placeholder={searchPlaceholder}
             value={searchValue}
             onChange={onSearchChange}
+            className="pl-8 sm:pl-10"
           />
           {searchValue && (
-            <Button
-              variant="ghost"
-              size="sm"
+            <button
               onClick={() =>
                 onSearchChange({
                   target: { value: "" },
                 } as React.ChangeEvent<HTMLInputElement>)
               }
-              className="absolute right-1 sm:right-2 top-1/2 transform -translate-y-1/2 w-7 p-0 hover:bg-gray-100 rounded-full transition-all duration-200"
+              className="absolute right-1 sm:right-2 top-1/2 transform -translate-y-1/2 w-7 p-0 rounded-full flex items-center justify-center"
             >
               <X className="h-4 w-4" />
-            </Button>
+            </button>
           )}
         </div>
         {(selects || []).map((select, idx) => (

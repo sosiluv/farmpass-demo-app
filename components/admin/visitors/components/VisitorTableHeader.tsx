@@ -23,7 +23,7 @@ export function VisitorTableHeader({
 }: VisitorTableHeaderProps) {
   return (
     <TableHeader>
-      <TableRow className="bg-gradient-to-r from-gray-50 to-white border-b-2 border-gray-200">
+      <TableRow className="bg-gradient-to-r from-gray-50 to-white dark:from-slate-700 dark:to-slate-600 border-b-2 border-gray-200 dark:border-slate-600">
         {/* 번호 */}
         <TableHead className="w-16 sm:w-20 text-center">
           <div className="flex items-center justify-center space-x-1">
@@ -37,7 +37,7 @@ export function VisitorTableHeader({
         <TableHead className="w-32 sm:w-40">
           <div className="flex items-center space-x-1 sm:space-x-2">
             <User className="w-3 h-3 sm:w-4 sm:h-4 text-blue-500" />
-            <span className="text-xs sm:text-sm font-semibold text-gray-700">
+            <span className="text-xs sm:text-sm font-semibold text-gray-700 dark:text-slate-100">
               {LABELS.VISITOR_TABLE_HEADER_VISITOR}
             </span>
           </div>
@@ -48,7 +48,7 @@ export function VisitorTableHeader({
           <TableHead className="w-32 sm:w-40">
             <div className="flex items-center space-x-1 sm:space-x-2">
               <Building2 className="w-3 h-3 sm:w-4 sm:h-4 text-purple-500" />
-              <span className="text-xs sm:text-sm font-semibold text-gray-700">
+              <span className="text-xs sm:text-sm font-semibold text-gray-700 dark:text-slate-100">
                 {LABELS.VISITOR_TABLE_HEADER_FARM}
               </span>
             </div>
@@ -59,7 +59,7 @@ export function VisitorTableHeader({
         <TableHead className="w-24 sm:w-28">
           <div className="flex items-center space-x-1 sm:space-x-2">
             <Calendar className="w-3 h-3 sm:w-4 sm:h-4 text-blue-500" />
-            <span className="text-xs sm:text-sm font-semibold text-gray-700">
+            <span className="text-xs sm:text-sm font-semibold text-gray-700 dark:text-slate-100">
               {LABELS.VISITOR_TABLE_HEADER_VISIT_DATETIME}
             </span>
           </div>
@@ -69,7 +69,7 @@ export function VisitorTableHeader({
         <TableHead className="w-28 sm:w-32">
           <div className="flex items-center space-x-1 sm:space-x-2">
             <FileText className="w-3 h-3 sm:w-4 sm:h-4 text-emerald-500" />
-            <span className="text-xs sm:text-sm font-semibold text-gray-700">
+            <span className="text-xs sm:text-sm font-semibold text-gray-700 dark:text-slate-100">
               {LABELS.VISITOR_TABLE_HEADER_VISIT_PURPOSE}
             </span>
           </div>
@@ -79,7 +79,7 @@ export function VisitorTableHeader({
         <TableHead className="w-24 sm:w-28">
           <div className="flex items-center space-x-1 sm:space-x-2">
             <Car className="w-3 h-3 sm:w-4 sm:h-4 text-amber-500" />
-            <span className="text-xs sm:text-sm font-semibold text-gray-700">
+            <span className="text-xs sm:text-sm font-semibold text-gray-700 dark:text-slate-100">
               {LABELS.VISITOR_TABLE_HEADER_VEHICLE_NUMBER}
             </span>
           </div>
@@ -89,7 +89,7 @@ export function VisitorTableHeader({
         <TableHead className="w-20 sm:w-24">
           <div className="flex items-center space-x-1 sm:space-x-2">
             <Sparkles className="w-3 h-3 sm:w-4 sm:h-4 text-green-500" />
-            <span className="text-xs sm:text-sm font-semibold text-gray-700">
+            <span className="text-xs sm:text-sm font-semibold text-gray-700 dark:text-slate-100">
               {LABELS.VISITOR_TABLE_HEADER_DISINFECTION}
             </span>
           </div>
@@ -99,7 +99,7 @@ export function VisitorTableHeader({
         <TableHead className="w-16 sm:w-20 text-center">
           <div className="flex items-center justify-center space-x-1">
             <Eye className="w-3 h-3 sm:w-4 sm:h-4 text-gray-500" />
-            <span className="text-xs sm:text-sm font-semibold text-gray-700">
+            <span className="text-xs sm:text-sm font-semibold text-gray-700 dark:text-slate-100">
               {LABELS.VISITOR_TABLE_HEADER_ACTION}
             </span>
           </div>

@@ -29,38 +29,6 @@ export const urlBase64ToUint8Array = (base64String: string) => {
 };
 
 /**
- * Service Worker 재등록 함수
- * iOS Safari에서 Service Worker 문제를 해결하기 위한 강제 재등록
- */
-export async function reRegisterServiceWorker(): Promise<ServiceWorkerRegistration> {
-  try {
-    // 모든 기존 등록 해제
-    const registrations = await navigator.serviceWorker.getRegistrations();
-    for (const reg of registrations) {
-      await reg.unregister();
-      devLog.info("기존 Service Worker 등록 해제:", reg.scope);
-    }
-
-    // 새로 등록
-    const registration = await navigator.serviceWorker.register("/sw.js");
-    devLog.info("Service Worker 재등록 완료:", registration.scope);
-
-    // 재등록 후 ready 대기
-    const readyRegistration = await Promise.race([
-      navigator.serviceWorker.ready,
-      new Promise<ServiceWorkerRegistration>((_, reject) =>
-        setTimeout(() => reject(new Error("재등록 후 Ready 타임아웃")), 15000)
-      ),
-    ]);
-
-    return readyRegistration;
-  } catch (error) {
-    devLog.error("Service Worker 재등록 실패:", error);
-    throw error;
-  }
-}
-
-/**
  * 디바이스 정보를 기반으로 고유한 device_id를 생성하는 함수
  * @returns device_id 문자열
  */
@@ -82,6 +50,34 @@ export function generateDeviceId(): string {
     devLog.warn("디바이스 정보 생성 실패, 기본값 사용:", error);
     return `device_unknown`;
   }
+}
+
+// 안전하게 Service Worker Registration 확보
+export async function getSWRegistration(): Promise<ServiceWorkerRegistration> {
+  // 1) 이미 controller 있으면 바로 getRegistration 시도
+  if (navigator.serviceWorker.controller) {
+    const reg = await navigator.serviceWorker.getRegistration();
+    if (reg && reg.active) return reg;
+  }
+
+  // 2) ready 기다리기 (iOS 일부 기기에서는 resolve 안될 수 있음)
+  const readyPromise = navigator.serviceWorker.ready;
+
+  // 3) fallback: timeout 지나면 getRegistration 강제 체크
+  const timeoutPromise = new Promise<ServiceWorkerRegistration>(
+    async (resolve, reject) => {
+      setTimeout(async () => {
+        const reg = await navigator.serviceWorker.getRegistration();
+        if (reg && reg.active) {
+          resolve(reg);
+        } else {
+          reject(new Error("ServiceWorker not active within timeout"));
+        }
+      }, 10000);
+    }
+  );
+
+  return Promise.race([readyPromise, timeoutPromise]);
 }
 
 /**
@@ -148,22 +144,7 @@ export async function requestNotificationPermissionAndSubscribe(
       }
 
       try {
-        // Service Worker 등록 (타임아웃 시 재등록 로직 포함)
-        let registration: ServiceWorkerRegistration;
-        try {
-          registration = await Promise.race([
-            navigator.serviceWorker.ready,
-            new Promise<ServiceWorkerRegistration>((_, reject) =>
-              setTimeout(
-                () => reject(new Error("Service Worker Ready 타임아웃")),
-                15000
-              )
-            ),
-          ]);
-        } catch (error) {
-          devLog.warn("Service Worker Ready 타임아웃, 재등록 시도:", error);
-          registration = await reRegisterServiceWorker();
-        }
+        const registration = await getSWRegistration();
 
         // 푸시 구독 생성
         const subscription = await registration.pushManager.subscribe({

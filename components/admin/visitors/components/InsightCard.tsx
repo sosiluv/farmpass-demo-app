@@ -44,8 +44,8 @@ export function InsightCard({
                 "{value}",
                 dailyAverage.toString()
               ),
-        bgColor: "bg-blue-100",
-        textColor: "text-blue-600",
+        bgColor: "bg-blue-100 dark:bg-blue-800/50",
+        textColor: "text-blue-600 dark:text-blue-300",
       },
       {
         icon: Zap,
@@ -57,8 +57,8 @@ export function InsightCard({
                 "{value}",
                 activityIndex.toString()
               ),
-        bgColor: "bg-emerald-100",
-        textColor: "text-emerald-600",
+        bgColor: "bg-emerald-100 dark:bg-emerald-800/50",
+        textColor: "text-emerald-600 dark:text-emerald-300",
       },
     ];
 
@@ -71,8 +71,8 @@ export function InsightCard({
           "{value}",
           avgPerFarm.toString()
         ),
-        bgColor: "bg-purple-100",
-        textColor: "text-purple-600",
+        bgColor: "bg-purple-100 dark:bg-purple-800/50",
+        textColor: "text-purple-600 dark:text-purple-300",
       });
     }
 
@@ -80,19 +80,19 @@ export function InsightCard({
   }, [totalVisitors, todayVisitors, totalFarms, showFarmCount]);
 
   return (
-    <Card className="relative overflow-hidden border border-amber-200 bg-amber-50 hover:shadow-md transition-all duration-200 hover:scale-[1.02] group hidden md:block md:col-span-full">
+    <Card className="relative overflow-hidden border border-amber-200 dark:border-amber-800/60 bg-amber-50 dark:bg-slate-800 hover:shadow-md transition-all duration-200 hover:scale-[1.02] group hidden md:block md:col-span-full">
       <div className="absolute inset-0 bg-gradient-to-br from-amber-500 to-amber-600 opacity-0 group-hover:opacity-5 transition-opacity duration-200" />
 
       <CardContent className="p-3 sm:p-4">
         <div className="flex items-center space-x-2 sm:space-x-3 mb-3 sm:mb-4">
-          <div className="p-1.5 sm:p-2 rounded-lg bg-amber-100 shadow-sm group-hover:shadow-md transition-shadow duration-200">
-            <BarChart3 className="h-4 w-4 sm:h-5 sm:w-5 text-amber-700" />
+          <div className="p-1.5 sm:p-2 rounded-lg bg-amber-100 dark:bg-amber-800/50 shadow-sm group-hover:shadow-md transition-shadow duration-200">
+            <BarChart3 className="h-4 w-4 sm:h-5 sm:w-5 text-amber-700 dark:text-amber-300" />
           </div>
           <div>
-            <h3 className="text-sm sm:text-base md:text-lg font-semibold text-amber-800">
+            <h3 className="text-sm sm:text-base md:text-lg font-semibold text-amber-800 dark:text-amber-200">
               {LABELS.INSIGHT_CARD_TITLE}
             </h3>
-            <p className="text-xs sm:text-sm md:text-base text-amber-600">
+            <p className="text-xs sm:text-sm md:text-base text-amber-600 dark:text-amber-400">
               {LABELS.INSIGHT_CARD_SUBTITLE}
             </p>
           </div>
@@ -115,7 +115,7 @@ export function InsightCard({
                   >
                     {insight.label}
                   </p>
-                  <p className="text-xs sm:text-sm md:text-base text-amber-600 font-semibold">
+                  <p className="text-xs sm:text-sm md:text-base text-amber-600 dark:text-amber-300 font-semibold">
                     {insight.value}
                   </p>
                 </div>

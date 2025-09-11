@@ -18,6 +18,7 @@ import { LABELS, PLACEHOLDERS } from "@/lib/constants/farms";
 import { ResponsivePagination } from "@/components/ui/responsive-pagination";
 import type { FarmFormValues } from "@/lib/utils/validation";
 import { useFarmsQuery } from "@/lib/hooks/query/use-farms-query";
+import { Search, X } from "lucide-react";
 
 export default function FarmsPage() {
   const { showInfo, showSuccess, showError } = useCommonToast();
@@ -171,13 +172,23 @@ export default function FarmsPage() {
 
         {/* 검색 기능 */}
         <div className="mb-6">
-          <div className="relative flex-1">
+          <div className="relative flex-1 group">
+            <Search className="absolute left-2 sm:left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-3 w-3 sm:h-4 sm:w-4 group-focus-within:text-blue-500 transition-colors duration-200" />
             <Input
               id="farm-search"
               placeholder={PLACEHOLDERS.SEARCH}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-8 sm:pl-10"
             />
+            {searchTerm && (
+              <button
+                onClick={() => setSearchTerm("")}
+                className="absolute right-1 sm:right-2 top-1/2 transform -translate-y-1/2 h-5 w-5 sm:h-6 sm:w-6 md:h-7 md:w-7 p-0 rounded-full flex items-center justify-center"
+              >
+                <X className="h-2.5 w-2.5 sm:h-3 sm:w-3 md:h-4 md:w-4" />
+              </button>
+            )}
           </div>
         </div>
 
