@@ -70,12 +70,7 @@ export function Footer() {
 
         {/* 사업자 정보 */}
         <div className="mt-3 text-[11px] text-muted-foreground text-center md:text-right leading-relaxed md:mt-0">
-          <div className="mt-1">
-            <div className="mb-1">{FOOTER.COMPANY_INFO.PHONE}</div>
-            <div className="mb-1">{FOOTER.COMPANY_INFO.FAX}</div>
-            <div>{FOOTER.COMPANY_INFO.ADDRESS}</div>
-          </div>
-          <div className="mt-2 font-semibold">
+          <div className="font-semibold">
             {FOOTER.COMPANY_INFO.COPYRIGHT.replace(
               "{year}",
               new Date().getFullYear().toString()

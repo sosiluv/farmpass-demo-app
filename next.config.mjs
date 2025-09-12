@@ -1,4 +1,3 @@
-import { withSentryConfig } from "@sentry/nextjs";
 import { execSync } from "child_process";
 import withSerwistInit from "@serwist/next";
 
@@ -50,9 +49,7 @@ const withSerwist = withSerwistInit({
 
     // 로고 파일들
     { url: "/logo.svg", revision },
-    { url: "/logo.png", revision },
     { url: "/logo1.svg", revision },
-    { url: "/logo1.png", revision },
 
     // PWA 아이콘들
     { url: "/icon-72x72.png", revision },
@@ -120,8 +117,6 @@ const nextConfig = {
       allowedOrigins: [
         "localhost:3000", // 로컬 개발 환경
         "*.vercel.app", // Vercel 배포 환경
-        "www.samwon1141.com", // FarmPass 프로덕션 도메인
-        "samwon1141.com", // FarmPass 도메인 (www 없이)
       ],
     },
     // 빌드 성능 최적화
@@ -247,11 +242,4 @@ const nextConfig = {
  * Next.js가 이 설정을 사용하여 애플리케이션을 빌드하고 실행합니다.
  */
 const config = withSerwist(nextConfig);
-export default withSentryConfig(config, {
-  org: "samwon",
-  project: "samwon1141-farmpass",
-  silent: !process.env.CI,
-  widenClientFileUpload: true,
-  disableLogger: true,
-  automaticVercelMonitors: true,
-});
+export default config;

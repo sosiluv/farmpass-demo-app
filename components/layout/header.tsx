@@ -64,8 +64,6 @@ export function Header() {
             {HEADER_MENU.MENU}
           </span>
         </Button>
-        <Logo size="xl" className="sm:hidden" />
-        <Logo size="xxl" className="hidden sm:block" />
       </div>
 
       {/* 오른쪽 아이콘들 */}

@@ -157,7 +157,7 @@ async function createLog(
 
     const logData = {
       user_id: currentUserId || "00000000-0000-0000-0000-000000000000",
-      user_email: userEmail || "system@samwon1141.com",
+      user_email: userEmail || "system@demo.com",
       action,
       message,
       level,

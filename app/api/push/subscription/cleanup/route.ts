@@ -72,11 +72,7 @@ export async function POST(request: NextRequest) {
       if (!publicKey || !privateKey) {
         throwBusinessError("VAPID_KEY_REQUIRED_FOR_REALTIME");
       }
-      webpush.setVapidDetails(
-        "mailto:admin@samwon1141.com",
-        publicKey,
-        privateKey
-      );
+      webpush.setVapidDetails("mailto:admin@demo.com", publicKey, privateKey);
     }
 
     // 사용자의 모든 구독 조회 (삭제되지 않은 구독만)

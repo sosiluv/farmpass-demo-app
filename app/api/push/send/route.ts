@@ -26,11 +26,7 @@ async function initializeVapidKeys() {
       undefined;
 
     if (publicKey && privateKey) {
-      webpush.setVapidDetails(
-        "mailto:admin@samwon1141.com",
-        publicKey,
-        privateKey
-      );
+      webpush.setVapidDetails("mailto:admin@demo.com", publicKey, privateKey);
       return true;
     }
     return false;
@@ -113,7 +109,7 @@ export async function POST(request: NextRequest) {
       // 서버 사이드 호출인 경우 시스템 사용자로 처리
       user = {
         id: "00000000-0000-0000-0000-000000000000",
-        email: "system@samwon114.com",
+        email: "admin@demo.com",
       };
     }
 
@@ -191,12 +187,12 @@ export async function POST(request: NextRequest) {
     const notificationIcon =
       icon ||
       (settings?.notificationIcon
-        ? `/uploads/${settings.notificationIcon}`
+        ? settings.notificationIcon
         : "/icon-192x192.png");
     const notificationBadge =
       badge ||
       (settings?.notificationBadge
-        ? `/uploads/${settings.notificationBadge}`
+        ? settings.notificationBadge
         : "/icon-192x192.png");
 
     // VAPID 키 초기화

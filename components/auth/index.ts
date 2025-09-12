@@ -7,3 +7,4 @@ export { TermsSheet } from "./TermsSheet";
 export { TermConsentItem } from "./TermConsentItem";
 export { TurnstileSection } from "./TurnstileSection";
 export { AuthButton } from "./AuthButton";
+export { DemoLoginSection } from "./DemoLoginSection";

@@ -39,6 +39,8 @@ import { useAuthActions } from "@/hooks/auth/useAuthActions";
 import { useNotificationService } from "@/hooks/notification/useNotificationService";
 import { SocialLoginButton } from "@/components/ui/social-login-button";
 import { useLoginForm } from "@/hooks/auth/useLoginForm";
+import { DemoLoginSection } from "@/components/auth/DemoLoginSection";
+import { type DemoAccount } from "@/lib/constants/demo-accounts";
 
 export default function LoginPage() {
   const {
@@ -57,7 +59,7 @@ export default function LoginPage() {
   } = useLoginForm();
 
   const router = useRouter();
-  const { showInfo } = useCommonToast();
+  const { showInfo, showSuccess } = useCommonToast();
   const { signOut } = useAuthActions();
   const { handleUnsubscription } = useNotificationService();
 
@@ -209,6 +211,18 @@ export default function LoginPage() {
     handleSocialLogin("google", setGoogleLoading);
   };
 
+  // 데모 계정 선택 핸들러
+  const handleDemoAccountSelect = (account: DemoAccount) => {
+    // 폼에 데모 계정 정보 자동 입력
+    form.setValue("email", account.email);
+    form.setValue("password", account.password);
+
+    showSuccess(
+      "계정 정보 입력 완료",
+      `${account.name} 계정 정보가 입력되었습니다. 로그인 버튼을 클릭하세요.`
+    );
+  };
+
   return (
     <ErrorBoundary
       title={ERROR_CONFIGS.LOADING.title}
@@ -219,7 +233,7 @@ export default function LoginPage() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
-          className="w-full max-w-md"
+          className="w-full max-w-2xl"
         >
           <Card className="border-none shadow-soft-lg">
             <CardHeader className="space-y-1 text-center">
@@ -232,72 +246,87 @@ export default function LoginPage() {
               <CardDescription>{PAGE_HEADER.LOGIN_DESCRIPTION}</CardDescription>
             </CardHeader>
             <CardContent>
-              <Form {...form}>
-                <form
-                  onSubmit={form.handleSubmit(handleLogin)}
-                  className="space-y-4"
-                >
-                  <FormField
-                    control={form.control}
-                    name="email"
-                    render={({ field }) => (
-                      <EmailField
-                        field={field}
-                        loading={loading || redirecting}
-                        autoComplete="username"
-                        showFormMessage={true}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {/* 기존 로그인 폼 */}
+                <div className="space-y-4">
+                  <Form {...form}>
+                    <form
+                      onSubmit={form.handleSubmit(handleLogin)}
+                      className="space-y-4"
+                    >
+                      <FormField
+                        control={form.control}
+                        name="email"
+                        render={({ field }) => (
+                          <EmailField
+                            field={field}
+                            loading={loading || redirecting}
+                            autoComplete="username"
+                            showFormMessage={true}
+                          />
+                        )}
                       />
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="password"
-                    render={({ field }) => (
-                      <PasswordField
-                        type="current"
-                        field={field}
-                        loading={loading || redirecting}
-                        showPasswordStrength={false}
+                      <FormField
+                        control={form.control}
+                        name="password"
+                        render={({ field }) => (
+                          <PasswordField
+                            type="current"
+                            field={field}
+                            loading={loading || redirecting}
+                            showPasswordStrength={false}
+                          />
+                        )}
                       />
-                    )}
+                      {formError && (
+                        <p className="text-sm text-red-500">{formError}</p>
+                      )}
+                      <AuthButton
+                        type="login"
+                        loading={loading}
+                        redirecting={redirecting}
+                        className="h-12 w-full"
+                      />
+                      <div className="flex items-center my-4">
+                        <div className="flex-grow h-px bg-gray-200" />
+                        <span className="mx-3 text-xs text-gray-400">또는</span>
+                        <div className="flex-grow h-px bg-gray-200" />
+                      </div>
+                      {/* 소셜 로그인 버튼들 */}
+                      <div className="space-y-4">
+                        {SOCIAL_BUTTON_CONFIG.map((btn) => {
+                          const loading =
+                            btn.provider === "kakao"
+                              ? kakaoLoading
+                              : googleLoading;
+                          const onClick =
+                            btn.provider === "kakao"
+                              ? handleKakaoLogin
+                              : handleGoogleLogin;
+                          const disabled = loading || redirecting;
+                          return (
+                            <SocialLoginButton
+                              key={btn.provider}
+                              {...btn}
+                              loading={loading}
+                              onClick={onClick}
+                              disabled={disabled}
+                            />
+                          );
+                        })}
+                      </div>
+                    </form>
+                  </Form>
+                </div>
+
+                {/* 데모 로그인 섹션 */}
+                <div className="lg:border-l lg:pl-6">
+                  <DemoLoginSection
+                    onAccountSelect={handleDemoAccountSelect}
+                    loading={loading || redirecting}
                   />
-                  {formError && (
-                    <p className="text-sm text-red-500">{formError}</p>
-                  )}
-                  <AuthButton
-                    type="login"
-                    loading={loading}
-                    redirecting={redirecting}
-                    className="h-12 w-full"
-                  />
-                  <div className="flex items-center my-4">
-                    <div className="flex-grow h-px bg-gray-200" />
-                    <span className="mx-3 text-xs text-gray-400">또는</span>
-                    <div className="flex-grow h-px bg-gray-200" />
-                  </div>
-                  {/* 소셜 로그인 버튼들 */}
-                  <div className="space-y-4">
-                    {SOCIAL_BUTTON_CONFIG.map((btn) => {
-                      const loading =
-                        btn.provider === "kakao" ? kakaoLoading : googleLoading;
-                      const onClick =
-                        btn.provider === "kakao"
-                          ? handleKakaoLogin
-                          : handleGoogleLogin;
-                      const disabled = loading || redirecting;
-                      return (
-                        <SocialLoginButton
-                          key={btn.provider}
-                          {...btn}
-                          loading={loading}
-                          onClick={onClick}
-                          disabled={disabled}
-                        />
-                      );
-                    })}
-                  </div>
-                </form>
-              </Form>
+                </div>
+              </div>
             </CardContent>
             <CardFooter className="flex flex-col space-y-2">
               <div className="text-center text-sm">

@@ -1,5 +1,3 @@
-import { devLog } from "@/lib/utils/logging/dev-logger";
-
 interface ErrorHandlerOptions {
   context?: string;
   onStateUpdate?: (errorMessage: string) => void;
@@ -31,16 +29,6 @@ export function handleError(
     message = "요청하신 데이터를 찾을 수 없습니다.";
   } else if (status === 429) {
     message = "요청이 너무 많습니다. 잠시 후 다시 시도해 주세요.";
-  }
-
-  // Sentry 등 외부 로깅 (실서비스에서 주석 해제)
-  if (process.env.NODE_ENV === "production") {
-    try {
-      const Sentry = require("@sentry/nextjs");
-      Sentry.captureException(error, { extra: { context: opts.context } });
-    } catch (sentryError) {
-      console.warn("Sentry capture failed:", sentryError);
-    }
   }
 
   // 상태 업데이트 콜백 실행 (토스트는 apiClient에서 처리됨)

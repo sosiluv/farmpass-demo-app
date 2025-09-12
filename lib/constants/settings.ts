@@ -113,7 +113,7 @@ export const LABELS = {
   DATE_FORMAT_YYYY_MM_DD_KR: "YYYY년 MM월 DD일 (2025년 01월 21일)",
   // 브랜딩 설정
   SITE_LOGO: "사이트 로고",
-  SITE_LOGO_DESCRIPTION: "헤더 및 대시보드에 표시됩니다",
+  SITE_LOGO_DESCRIPTION: "header 및 footer에 표시됩니다",
   FAVICON: "파비콘",
   FAVICON_DESCRIPTION: "브라우저 탭에 표시됩니다",
   SITE_NAME: "사이트명",

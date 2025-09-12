@@ -321,11 +321,7 @@ export async function GET(request: NextRequest) {
       }
       if (publicKey && privateKey) {
         const webpush = require("web-push");
-        webpush.setVapidDetails(
-          "mailto:admin@samwon1141.com",
-          publicKey,
-          privateKey
-        );
+        webpush.setVapidDetails("mailto:admin@demo.com", publicKey, privateKey);
 
         // 각 구독의 유효성 검사
         for (const subscription of subscriptions) {

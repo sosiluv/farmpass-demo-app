@@ -73,14 +73,11 @@ export const FOOTER = {
     PRIVACY_POLICY: "개인정보처리방침",
   },
   COMPANY_INFO: {
-    PHONE: "대표전화 : 054-843-1141",
-    FAX: "팩스 : 054-855-9398",
-    ADDRESS: "주소 : 경상북도 안동시 풍산읍 괴정2길 106-23 주101~104동",
-    COPYRIGHT: "Copyright. © {year} SWKorea All rights reserved.",
+    COPYRIGHT: "Copyright. © {year} kks All rights reserved.",
   },
   URLS: {
-    COMPANY_INTRO: "http://www.swkukorea.com/theme/sample60/html/a1.php",
-    LOCATION: "http://www.swkukorea.com/theme/sample60/html/a5.php",
+    COMPANY_INTRO: "https://sosiluv.github.io/about/",
+    LOCATION: "",
     TERMS: "/terms",
     PRIVACY: "/privacy",
   },
@@ -89,25 +86,25 @@ export const FOOTER = {
 // 소셜 링크 상수
 export const SOCIAL_LINKS = [
   {
-    href: "http://pf.kakao.com/_fQFhG",
+    href: "https://open.kakao.com/o/sjy72FRh",
     title: "카카오톡 채널",
     src: "/btn_kakao_ch.svg",
     alt: "카카오톡 채널",
   },
   {
-    href: "https://blog.naver.com/k331502",
+    href: "https://sosiluv.github.io/",
     title: "블로그",
     src: "/btn_blog.svg",
     alt: "블로그",
   },
   {
-    href: "mailto:k331502@nate.com",
+    href: "mailto:admin@demo.com",
     title: "이메일",
     src: "/btn_mail.svg",
     alt: "이메일",
   },
   {
-    href: "http://www.swkukorea.com/",
+    href: "https://farmpass.vercel.app/",
     title: "홈페이지",
     src: "/btn_homepage.svg",
     alt: "홈페이지",
