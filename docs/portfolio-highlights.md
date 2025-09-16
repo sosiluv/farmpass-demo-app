@@ -344,15 +344,13 @@ graph TB
 
 ### 데모 및 소스코드
 
-- **라이브 데모**: https://farmpass-demo.vercel.app
-- **GitHub**: https://github.com/username/farm-pass
+- **라이브 데모**: https://farmpass.site
+- **GitHub**: https://github.com/sosiluv
 - **문서**: /docs 폴더 참조
 
 ### 기술 문의
 
-- **이메일**: developer@example.com
-- **LinkedIn**: linkedin.com/in/username
-- **포트폴리오**: portfolio.example.com
+- **이메일**: sosiluv@gmail.com
 
 ---
 
@@ -368,4 +366,3 @@ graph TB
 - **확장 가능성**: 미래 성장을 고려한 아키텍처 설계
 
 이 프로젝트를 통해 **실제 문제를 해결하는 가치 있는 소프트웨어를 만들 수 있는 개발자**임을 입증합니다.
-

@@ -83,7 +83,7 @@ vercel --prod
 # Vercel 대시보드에서 환경 변수 설정
 NEXT_PUBLIC_DEMO_MODE=true
 NEXT_PUBLIC_SITE_NAME="FarmPass 데모"
-NEXT_PUBLIC_SITE_URL=https://farmpass-demo.vercel.app
+NEXT_PUBLIC_SITE_URL=https://farmpass.site
 
 # Supabase 설정
 NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
@@ -92,7 +92,6 @@ SUPABASE_SERVICE_ROLE_KEY=your_service_role_key
 
 # 이메일 설정
 RESEND_API_KEY=your_resend_key
-FROM_EMAIL=demo@farmpass.com
 
 # 기타 설정
 NODE_ENV=production
@@ -324,7 +323,7 @@ npm run dev
 
 ```bash
 # 배포된 사이트 테스트
-curl -I https://farmpass-demo.vercel.app
+curl -I https://farmpass.site
 
 # 핵심 기능 테스트
 - 회원가입/로그인
@@ -338,7 +337,7 @@ curl -I https://farmpass-demo.vercel.app
 
 ```bash
 # Lighthouse 성능 테스트
-npx lighthouse https://farmpass-demo.vercel.app --output=html
+npx lighthouse https://farmpass.site --output=html
 
 # Core Web Vitals 확인
 - LCP (Largest Contentful Paint): < 2.5초
@@ -437,9 +436,7 @@ npx tsx prisma/demo-seed.ts
 ### 1. 도메인 설정 (선택사항)
 
 ```bash
-# 커스텀 도메인 연결
-vercel domains add farmpass-demo.com
-vercel domains verify farmpass-demo.com
+
 
 # DNS 설정
 # A 레코드: @ -> 76.76.19.61
@@ -450,7 +447,7 @@ vercel domains verify farmpass-demo.com
 
 ```bash
 # SSL 인증서 자동 발급 확인
-curl -I https://farmpass-demo.vercel.app
+curl -I https://farmpass.site
 # HTTP/2 200 OK 응답 확인
 ```
 
@@ -470,7 +467,7 @@ curl -I https://farmpass-demo.vercel.app
 
 ### 📍 배포 정보
 
-- **URL**: https://farmpass-demo.vercel.app
+- **URL**: https://farmpass.site
 - **상태**: 프로덕션 배포 완료
 - **모니터링**: Sentry + Vercel Analytics 활성화
 - **PWA**: 설치 가능
@@ -478,7 +475,7 @@ curl -I https://farmpass-demo.vercel.app
 
 ### 🧪 테스트 계정
 
-- **이메일**: demo@farmpass.com
+- **이메일**: admin@demo.com
 - **비밀번호**: demo123!
 
 ### 📊 성능 지표
@@ -488,4 +485,3 @@ curl -I https://farmpass-demo.vercel.app
 - **PWA 점수**: 100/100
 
 이제 포트폴리오 데모앱이 완성되었습니다! 🎉
-

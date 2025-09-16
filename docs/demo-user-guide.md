@@ -18,13 +18,13 @@
 ### 1. 데모 사이트 접속
 
 ```
-🌐 URL: https://farmpass-demo.vercel.app
+🌐 URL: https://farmpass.site
 ```
 
 ### 2. 테스트 계정으로 로그인
 
 ```
-📧 이메일: demo@farmpass.com
+📧 이메일: admin@demo.com
 🔑 비밀번호: demo123!
 ```
 
@@ -407,15 +407,14 @@
 
 ### 기술 문의
 
-- **이메일**: developer@example.com
-- **LinkedIn**: linkedin.com/in/username
-- **GitHub**: github.com/username/farm-pass
+- **이메일**: sosiluv@gmail.com
+- **GitHub**: https://github.com/sosiluv
 
 ### 데모 관련 문의
 
 - **기능 문의**: 데모 사이트 내 문의 폼
 - **버그 리포트**: GitHub Issues
-- **개선 제안**: 이메일 또는 LinkedIn
+- **개선 제안**: 이메일
 
 ---
 
@@ -435,4 +434,3 @@ FarmPass 데모를 통해 **실제 비즈니스 문제를 해결하는 엔터프
 ---
 
 **🎉 FarmPass 데모 체험을 시작해보세요!**
-

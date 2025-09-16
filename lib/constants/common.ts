@@ -73,7 +73,7 @@ export const FOOTER = {
     PRIVACY_POLICY: "개인정보처리방침",
   },
   COMPANY_INFO: {
-    COPYRIGHT: "Copyright. © {year} kks All rights reserved.",
+    COPYRIGHT: "Copyright. © {year} sosiluv All rights reserved.",
   },
   URLS: {
     COMPANY_INTRO: "https://sosiluv.github.io/about/",
@@ -98,13 +98,13 @@ export const SOCIAL_LINKS = [
     alt: "블로그",
   },
   {
-    href: "mailto:admin@demo.com",
+    href: "mailto:sosiluv@gmail.com",
     title: "이메일",
     src: "/btn_mail.svg",
     alt: "이메일",
   },
   {
-    href: "https://farmpass.vercel.app/",
+    href: "https://farmpass.site/",
     title: "홈페이지",
     src: "/btn_homepage.svg",
     alt: "홈페이지",

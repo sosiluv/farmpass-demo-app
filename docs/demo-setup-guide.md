@@ -16,10 +16,9 @@ SUPABASE_SERVICE_ROLE_KEY=your_demo_service_role_key
 
 # 이메일 설정 (데모용 - 실제 발송 안함)
 RESEND_API_KEY=your_resend_key
-FROM_EMAIL=demo@farmpass.com
 
 # 기타 설정
-NEXT_PUBLIC_SITE_URL=https://farmpass-demo.vercel.app
+NEXT_PUBLIC_SITE_URL=https://farmpass.site
 NODE_ENV=production
 ```
 
@@ -96,7 +95,7 @@ export default function DemoPage() {
         <h2 className="text-2xl font-bold mb-4">데모 계정</h2>
         <div className="bg-gray-100 p-4 rounded-lg">
           <p>
-            <strong>이메일:</strong> demo@farmpass.com
+            <strong>이메일:</strong> admin@demo.com
           </p>
           <p>
             <strong>비밀번호:</strong> demo123!
@@ -126,70 +125,3 @@ export function middleware(request: NextRequest) {
   return handleNormalMode(request);
 }
 ```
-
-### 7. 데모용 배포 설정
-
-```json
-// vercel.json
-{
-  "buildCommand": "npm run build",
-  "outputDirectory": ".next",
-  "framework": "nextjs",
-  "regions": ["icn1"],
-  "env": {
-    "NEXT_PUBLIC_DEMO_MODE": "true",
-    "NEXT_PUBLIC_SITE_NAME": "FarmPass 데모"
-  },
-  "rewrites": [
-    {
-      "source": "/demo",
-      "destination": "/demo"
-    }
-  ]
-}
-```
-
-### 8. 데모용 성능 최적화
-
-```typescript
-// next.config.mjs 수정
-const nextConfig = {
-  // 데모 모드에서는 개발 도구 활성화
-  ...(process.env.NEXT_PUBLIC_DEMO_MODE === "true" && {
-    experimental: {
-      instrumentationHook: true,
-    },
-  }),
-
-  // 데모용 이미지 최적화
-  images: {
-    domains: ["demo-images.farmpass.com"],
-    formats: ["image/webp", "image/avif"],
-  },
-};
-```
-
-### 9. 데모용 모니터링 설정
-
-```typescript
-// lib/utils/demo-analytics.ts
-export function trackDemoUsage(action: string, metadata?: object) {
-  if (process.env.NEXT_PUBLIC_DEMO_MODE !== "true") return;
-
-  // 데모 사용량 추적 (실제 사용자 데이터는 수집하지 않음)
-  console.log("Demo Usage:", { action, metadata, timestamp: new Date() });
-}
-```
-
-### 10. 데모용 보안 설정
-
-```typescript
-// 데모 모드에서는 일부 보안 제한 완화
-export const DEMO_SECURITY_CONFIG = {
-  ALLOW_DEMO_LOGIN: true,
-  SKIP_RATE_LIMITING: true,
-  ALLOW_DEMO_DATA_EXPORT: true,
-  DEMO_SESSION_DURATION: 24 * 60 * 60 * 1000, // 24시간
-};
-```
-
