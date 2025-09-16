@@ -53,18 +53,9 @@ export const SuccessCard = ({ onGoHome }: SuccessCardProps) => {
               {LABELS.SUCCESS_CARD_COMPLETION_GUIDE}
             </p>
             <div className="space-y-2">
-              <Button
-                onClick={() => {
-                  window.open("http://www.swkukorea.com/", "_blank");
-                }}
-                className="w-full h-12 text-sm sm:text-base"
-              >
-                {BUTTONS.SUCCESS_CARD_VIEW_COMPANY}
-              </Button>
               {onGoHome && (
                 <Button
                   onClick={onGoHome}
-                  variant="outline"
                   className="w-full h-12 text-sm sm:text-base"
                 >
                   {BUTTONS.SUCCESS_CARD_GO_HOME}

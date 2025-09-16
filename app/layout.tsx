@@ -11,7 +11,7 @@ import { DebugProvider } from "@/components/providers/debug-provider";
 import { SystemMonitor } from "@/components/common/system-monitor";
 import { ErrorBoundary } from "@/components/error/error-boundary";
 import { ERROR_CONFIGS } from "@/lib/constants/error";
-import { Analytics } from "@vercel/analytics/react";
+
 import { PWAProvider } from "@/components/providers/pwa-provider";
 import { Footer } from "@/components/layout/footer";
 
@@ -121,18 +121,22 @@ export default function RootLayout({
         <link rel="apple-touch-icon" href="/icon-152x152.png" sizes="152x152" />
         <link rel="apple-touch-icon" href="/icon-120x120.png" sizes="120x120" />
         {/* Google Analytics */}
-        <Script
-          src="https://www.googletagmanager.com/gtag/js?id=G-MQ40J6BMTC"
-          strategy="afterInteractive"
-        />
-        <Script id="gtag-init" strategy="afterInteractive">
-          {`
-            window.dataLayer = window.dataLayer || [];
-            function gtag(){dataLayer.push(arguments);}
-            gtag('js', new Date());
-            gtag('config', 'G-MQ40J6BMTC');
-          `}
-        </Script>
+        {process.env.NEXT_PUBLIC_GOOGLE_ANALYTICS && (
+          <>
+            <Script
+              src={`https://www.googletagmanager.com/gtag/js?id=${process.env.NEXT_PUBLIC_GOOGLE_ANALYTICS}`}
+              strategy="afterInteractive"
+            />
+            <Script id="gtag-init" strategy="afterInteractive">
+              {`
+                window.dataLayer = window.dataLayer || [];
+                function gtag(){dataLayer.push(arguments);}
+                gtag('js', new Date());
+                gtag('config', '${process.env.NEXT_PUBLIC_GOOGLE_ANALYTICS}');
+              `}
+            </Script>
+          </>
+        )}
       </head>
       <body
         className={cn(
@@ -158,7 +162,6 @@ export default function RootLayout({
               </DebugProvider>
             </PWAProvider>
           </QueryProvider>
-          <Analytics />
         </ErrorBoundary>
       </body>
     </html>

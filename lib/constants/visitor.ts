@@ -29,7 +29,6 @@ export const BUTTONS = {
   VISITOR_ACTION_MENU_DELETE: "삭제",
   VISITOR_ACTION_MENU_DELETING: "삭제 중...",
 
-  SUCCESS_CARD_VIEW_COMPANY: "회사 소개 보기",
   SUCCESS_CARD_GO_HOME: "홈페이지로 이동",
   VISITOR_FILTERS_ADVANCED: "고급 필터",
 
@@ -216,7 +215,7 @@ export const LABELS = {
   SUCCESS_CARD_HEADER: "방문 등록이 완료되었습니다!",
   SUCCESS_CARD_NOTIFICATION: "농장 관리자에게 알림이 전송되었습니다.",
   SUCCESS_CARD_POWERED_BY: "Powered by",
-  SUCCESS_CARD_SAMWON_KOREA: "SAMWON KOREA",
+  SUCCESS_CARD_SAMWON_KOREA: "FARMPASS",
   SUCCESS_CARD_REGISTRATION_TIME: "등록 시간:",
   SUCCESS_CARD_COMPLETION_GUIDE:
     "등록이 완료되었습니다. 브라우저의 X 버튼을 눌러 창을 닫아주세요.",
