@@ -67,7 +67,7 @@ export const FOOTER = {
     REAL_TIME_NOTIFICATION: "실시간 알림",
   },
   LINKS: {
-    COMPANY_INTRO: "회사소개",
+    COMPANY_INTRO: "about",
     LOCATION: "오시는길",
     TERMS_OF_SERVICE: "이용약관",
     PRIVACY_POLICY: "개인정보처리방침",
