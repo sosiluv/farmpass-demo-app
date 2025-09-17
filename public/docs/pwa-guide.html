@@ -20,70 +20,52 @@
       }
 
       .container {
-        max-width: 900px;
+        max-width: 1200px;
         margin: 0 auto;
         padding: 20px;
         background: white;
-        min-height: 100vh;
-        box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
-      }
-
-      .header {
-        text-align: center;
-        padding: 30px 0;
-        border-bottom: 3px solid #10b981;
-        margin-bottom: 30px;
-      }
-
-      .header h1 {
-        font-size: 2.5em;
-        color: #10b981;
-        margin-bottom: 10px;
-      }
-
-      .header .subtitle {
-        font-size: 1.2em;
-        color: #666;
-        background: #f0f9ff;
-        padding: 15px;
         border-radius: 8px;
-        border-left: 4px solid #10b981;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        margin-top: 20px;
+        margin-bottom: 20px;
       }
 
-      .nav {
-        background: #f8f9fa;
+
+      .next-steps {
+        background: linear-gradient(135deg, #e3f2fd, #f1f8e9);
+        border-radius: 12px;
+        padding: 30px;
+        margin: 30px 0;
+      }
+
+      .next-steps h3 {
+        color: #1976d2;
+        margin-top: 0;
+      }
+
+      .toc {
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
         padding: 20px;
-        border-radius: 8px;
-        margin-bottom: 30px;
-        border: 1px solid #e9ecef;
+        margin: 20px 0;
       }
 
-      .nav h3 {
-        color: #10b981;
+      .toc h3 {
+        color: #1e40af;
         margin-bottom: 15px;
-        font-size: 1.3em;
       }
 
-      .nav ul {
-        list-style: none;
-        columns: 2;
-        column-gap: 30px;
+      .toc ol {
+        margin-left: 20px;
       }
 
-      .nav li {
-        margin-bottom: 8px;
-      }
-
-      .nav a {
-        color: #007bff;
+      .toc a {
+        color: #3730a3;
         text-decoration: none;
-        padding: 5px 0;
-        display: block;
-        transition: color 0.2s;
       }
 
-      .nav a:hover {
-        color: #10b981;
+      .toc a:hover {
         text-decoration: underline;
       }
 
@@ -164,16 +146,7 @@
         font-weight: 500;
       }
 
-      .code-block {
-        background: #1f2937;
-        color: #f9fafb;
-        padding: 20px;
-        border-radius: 8px;
-        margin: 15px 0;
-        font-family: "Courier New", monospace;
-        overflow-x: auto;
-        border: 1px solid #374151;
-      }
+
 
       .feature-grid {
         display: grid;
@@ -200,13 +173,11 @@
       }
 
       .feature-list li {
-        margin-bottom: 8px;
-        padding-left: 30px;
+        margin-bottom: 5px;
         position: relative;
       }
 
       .feature-list li::before {
-        content: "✅";
         position: absolute;
         left: 0;
       }
@@ -255,9 +226,6 @@
           padding: 15px;
         }
 
-        .header h1 {
-          font-size: 2em;
-        }
 
         .nav ul {
           columns: 1;
@@ -268,87 +236,91 @@
         }
       }
 
-      /* nav-menu 스타일 수정 */
       .nav-menu {
-        background: #ffffff;
+        background: #e3f2fd;
+        border-radius: 12px;
         padding: 20px;
-        border-radius: 8px;
         margin-bottom: 30px;
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        text-align: center;
       }
 
       .nav-menu h3 {
-        color: #10b981;
-        margin-bottom: 20px;
-        font-size: 1.2em;
-        border-bottom: 2px solid #e2e8f0;
-        padding-bottom: 10px;
+        margin: 0 0 15px 0;
+        color: #1976d2;
       }
 
       .nav-menu a {
-        display: block;
-        color: #4a5568;
+        display: inline-block;
+        margin: 5px 10px;
+        padding: 8px 16px;
+        background-color: #bbdefb;
+        color: #0d47a1;
         text-decoration: none;
-        padding: 12px 16px;
-        border-radius: 6px;
-        margin-bottom: 8px;
-        transition: all 0.2s;
+        border-radius: 20px;
+        transition: all 0.3s ease;
         font-weight: 500;
       }
 
       .nav-menu a:hover {
-        background: #f7fafc;
-        color: #10b981;
+        background-color: #2196f3;
+        color: white;
+        transform: translateY(-2px);
+      }
+      .contact-support {
+        background: linear-gradient(135deg, #cda8eb, #b2b7e7);
+        color: white;
+        padding: 25px;
+        border-radius: 12px;
+        text-align: center;
+        margin: 30px 0;
       }
 
-      .nav-menu a.active {
-        background: #10b981;
+      .contact-support h3 {
         color: white;
+        margin-top: 0;
       }
+
+      .contact-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 15px;
+        margin-top: 20px;
+      }
+
+      .contact-item {
+        background: rgba(255, 255, 255, 0.1);
+        padding: 15px;
+        border-radius: 8px;
+      }
+
     </style>
   </head>
   <body>
     <div class="container">
-      <header class="header">
-        <h1>
-          <span class="emoji">📱</span> 농장 출입 관리 시스템 - PWA 사용 가이드
-        </h1>
-        <div class="subtitle">
-          <strong>Progressive Web App(PWA)</strong>: 웹 기술로 만든 네이티브 앱
-          수준의 사용 경험<br />
-          <strong>장점</strong>: 앱 스토어 없이 설치, 오프라인 지원, 푸시 알림,
-          빠른 로딩
-        </div>
-      </header>
-
       <div class="nav-menu">
         <h3>📚 사용자 문서 메뉴</h3>
         <a href="user-manual.html">📖 사용자 매뉴얼</a>
         <a href="quick-start.html">🚀 빠른 시작 가이드</a>
-        <a href="product-overview.html">📋 제품 소개서</a>
-        <a href="faq.html">❓ 자주 묻는 질문</a>
         <a href="pwa-guide.html" class="active">📱 PWA 사용 가이드</a>
       </div>
 
-      <nav class="nav">
-        <h3><span class="emoji">📑</span> 목차</h3>
-        <ul>
+      <div class="toc">
+        <h3>📋 목차</h3>
+        <ol>
           <li><a href="#installation">PWA 설치 방법</a></li>
           <li><a href="#mobile">모바일 설치</a></li>
           <li><a href="#desktop">데스크톱 설치</a></li>
           <li><a href="#usage">설치 후 사용법</a></li>
           <li><a href="#management">PWA 관리 및 설정</a></li>
           <li><a href="#benefits">PWA 장점 및 특징</a></li>
-          <li><a href="#troubleshooting">문제 해결 가이드</a></li>
-          <li><a href="#support">추가 지원</a></li>
-        </ul>
-      </nav>
+        </ol>
+      </div>
 
       <section id="installation">
-        <h2><span class="emoji">🚀</span> PWA 설치 방법</h2>
+        <h2>PWA 설치 방법</h2>
 
         <div id="mobile">
-          <h3><span class="emoji">📱</span> 모바일 (Android/iOS)</h3>
+          <h3>모바일 (Android/iOS)</h3>
 
           <h4>Android (Chrome, Samsung Internet, Edge)</h4>
           <div class="step-list">
@@ -407,7 +379,7 @@
         </div>
 
         <div id="desktop">
-          <h3><span class="emoji">💻</span> 데스크톱 (Windows/Mac/Linux)</h3>
+          <h3>데스크톱 (Windows/Mac/Linux)</h3>
 
           <h4>Chrome, Edge, Opera</h4>
           <div class="step-list">
@@ -454,9 +426,9 @@
       </section>
 
       <section id="usage">
-        <h2><span class="emoji">🎯</span> PWA 설치 후 사용법</h2>
+        <h2>PWA 설치 후 사용법</h2>
 
-        <h3><span class="emoji">📲</span> 앱처럼 사용하기</h3>
+        <h3>앱처럼 사용하기</h3>
         <div class="success-box">
           <ul class="feature-list">
             <li>홈 화면에서 앱 아이콘 클릭</li>
@@ -466,7 +438,7 @@
           </ul>
         </div>
 
-        <h3><span class="emoji">🔔</span> 푸시 알림 설정</h3>
+        <h3>푸시 알림 설정</h3>
         <div class="step-list">
           <ol>
             <li>
@@ -482,17 +454,7 @@
           </ol>
         </div>
 
-        <div class="highlight-box">
-          <strong><span class="emoji">📱</span> 지원되는 알림:</strong>
-          <ul>
-            <li>새로운 방문자 등록 알림</li>
-            <li>QR 스캔 완료 알림</li>
-            <li>시스템 상태 알림</li>
-            <li>긴급 알림 (보안, 에러 등)</li>
-          </ul>
-        </div>
-
-        <h3><span class="emoji">📶</span> 오프라인 사용</h3>
+        <h3>오프라인 사용</h3>
         <div class="success-box">
           <ul class="feature-list">
             <li>기본 페이지: 오프라인에서도 접근 가능</li>
@@ -504,9 +466,9 @@
       </section>
 
       <section id="management">
-        <h2><span class="emoji">🔧</span> PWA 관리 및 설정</h2>
+        <h2>PWA 관리 및 설정</h2>
 
-        <h3><span class="emoji">🎨</span> 테마 설정</h3>
+        <h3>테마 설정</h3>
         <div class="info-box">
           <strong
             ><span class="emoji">🌙</span> 다크모드/라이트모드 전환:</strong
@@ -525,7 +487,7 @@
           </ul>
         </div>
 
-        <h3><span class="emoji">📱</span> 모바일 PWA 관리</h3>
+        <h3>모바일 PWA 관리</h3>
 
         <h4>Android</h4>
         <div class="info-box">
@@ -559,7 +521,7 @@
           </ol>
         </div>
 
-        <h3><span class="emoji">💻</span> 데스크톱 PWA 관리</h3>
+        <h3>데스크톱 PWA 관리</h3>
 
         <h4>Chrome/Edge</h4>
         <div class="info-box">
@@ -579,7 +541,7 @@
       </section>
 
       <section id="benefits">
-        <h2><span class="emoji">🎉</span> PWA 장점 및 특징</h2>
+        <h2>PWA 장점 및 특징</h2>
 
         <div class="feature-grid">
           <div class="feature-card">
@@ -612,16 +574,6 @@
             </ul>
           </div>
 
-          <div class="feature-card">
-            <h4><span class="emoji">♿</span> 접근성 기능</h4>
-            <ul class="feature-list">
-              <li>키보드 네비게이션: 마우스 없이 완전 조작</li>
-              <li>스크린 리더: 시각 장애인 완벽 지원</li>
-              <li>고대비 모드: 색상 대비 최적화</li>
-              <li>폰트 크기 조절: 가독성 향상</li>
-              <li>음성 안내: 음성으로 기능 안내</li>
-            </ul>
-          </div>
 
           <div class="feature-card">
             <h4><span class="emoji">⚡</span> 성능 최적화</h4>
@@ -636,129 +588,34 @@
         </div>
       </section>
 
-      <section id="troubleshooting">
-        <h2><span class="emoji">🚨</span> 문제 해결 가이드</h2>
-
-        <h3>설치 버튼이 나타나지 않을 때</h3>
-        <div class="warning-box">
-          <strong>1️⃣ 브라우저 확인:</strong>
-          <ul>
-            <li>Chrome, Edge, Samsung Internet 사용 권장</li>
-            <li>최신 버전으로 업데이트</li>
-          </ul>
-
-          <strong>2️⃣ 조건 확인:</strong>
-          <ul>
-            <li>HTTPS 연결 상태 확인</li>
-            <li>페이지 완전 로딩 대기</li>
-            <li>잠시 후 다시 시도</li>
-          </ul>
-
-          <strong>3️⃣ 수동 설치:</strong>
-          <ul>
-            <li>브라우저 메뉴 → "홈 화면에 추가"</li>
-            <li>또는 "앱 설치" 옵션 찾기</li>
-          </ul>
-        </div>
-
-        <h3>푸시 알림이 오지 않을 때</h3>
-        <div class="warning-box">
-          <strong>1️⃣ 권한 확인:</strong>
-          <ul>
-            <li>브라우저/앱 알림 권한 허용 상태</li>
-            <li>기기 알림 설정 확인</li>
-          </ul>
-
-          <strong>2️⃣ 연결 상태:</strong>
-          <ul>
-            <li>인터넷 연결 상태 확인</li>
-            <li>백그라운드 데이터 허용 설정</li>
-          </ul>
-
-          <strong>3️⃣ 재설정:</strong>
-          <ul>
-            <li>앱 제거 후 재설치</li>
-            <li>알림 권한 재허용</li>
-          </ul>
-        </div>
-
-        <h3>오프라인 기능이 작동하지 않을 때</h3>
-        <div class="warning-box">
-          <strong>1️⃣ Service Worker 확인:</strong>
-          <ul>
-            <li>브라우저 새로고침 (Ctrl+F5)</li>
-            <li>캐시 삭제 후 재접속</li>
-          </ul>
-
-          <strong>2️⃣ 저장공간 확인:</strong>
-          <ul>
-            <li>기기 저장공간 여유 확인</li>
-            <li>브라우저 캐시 정리</li>
-          </ul>
-
-          <strong>3️⃣ 재설치:</strong>
-          <ul>
-            <li>PWA 제거 후 재설치</li>
-            <li>오프라인 데이터 재다운로드</li>
-          </ul>
-        </div>
-      </section>
-
-      <section id="support">
-        <h2><span class="emoji">📞</span> 추가 지원</h2>
-
-        <div class="feature-grid">
-          <div class="feature-card">
-            <h4><span class="emoji">👥</span> 사용자 지원</h4>
-            <ul>
-              <li><strong>사용 가이드</strong>: 앱 내 도움말 참조</li>
-              <li><strong>FAQ</strong>: 자주 묻는 질문 확인</li>
-              <li><strong>고객 지원</strong>: 문제 발생 시 관리자 연락</li>
-            </ul>
+ 
+      <div class="contact-support">
+        <div class="contact-grid">
+          <div class="contact-item">
+            <strong>이메일</strong><br />
+            sosiluv@gmail.com
           </div>
-
-          <div class="feature-card">
-            <h4><span class="emoji">🛠️</span> 기술 지원</h4>
-            <ul>
-              <li>
-                <strong>브라우저 호환성</strong>: Chrome, Edge, Safari, Samsung
-                Internet
-              </li>
-              <li>
-                <strong>운영체제</strong>: Android 5+, iOS 11.3+, Windows 10+,
-                macOS 10.12+
-              </li>
-              <li><strong>최소 요구사항</strong>: 1GB RAM, 100MB 저장공간</li>
-            </ul>
+          <div class="contact-item">
+            <strong>홈페이지</strong><br />
+            https://www.farmpass.site/
           </div>
         </div>
-      </section>
+      </div>
+
 
       <div class="back-to-top">
         <a href="#top"><span class="emoji">🔝</span> 맨 위로 이동</a>
       </div>
 
-      <footer
-        style="
-          text-align: center;
-          padding: 40px 0;
-          border-top: 1px solid #e9ecef;
-          margin-top: 50px;
-          color: #666;
-        "
-      >
-        <h3 style="color: #10b981; margin-bottom: 15px">
-          <span class="emoji">🎯</span> PWA로 언제 어디서나 농장 관리를 쉽고
-          빠르게!
-        </h3>
-        <p style="font-style: italic; line-height: 1.6">
-          Progressive Web App 기술로 네이티브 앱의 편리함과 웹의 접근성을 모두
-          제공합니다.<br />
-          설치부터 사용까지 간단하고, 오프라인에서도 기본 기능을 사용할 수
-          있어<br />
-          농장 현장에서 최적의 사용 경험을 제공합니다.
+      <div class="next-steps">
+        <h4>📖 상세 매뉴얼</h4>
+        <p>
+          더 자세한 사용법은
+          <a href="user-manual.html" style="color: #1976d2; font-weight: bold"
+            >전체 사용자 매뉴얼</a
+          >을 참고해주세요.
         </p>
-      </footer>
-    </div>
+      </div>
+    
   </body>
 </html>

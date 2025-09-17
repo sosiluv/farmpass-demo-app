@@ -118,9 +118,6 @@ export function TermsPageWrapper({
             </ReactMarkdown>
           </div>
         </section>
-        <div className="mt-8 text-base text-muted-foreground text-center">
-          {LABELS.TERMS_EFFECTIVE_DATE}
-        </div>
       </div>
     </ErrorBoundary>
   );
