@@ -346,7 +346,7 @@
   - notifications: "Users can view own notifications", "Admins can manage all notifications".
   - user_consents: "Users can manage own consents", "Admins can manage all consents".
 
-> 전체 SQL 전문은 `scripts/project-policy.sql` 파일을 참고하세요.
+> 전체 SQL 전문은 [scripts/project-policy.sql](../scripts/project-policy.sql) 파일을 참고하세요.
 
 ## Storage 버킷 & 보안 정책
 
@@ -361,6 +361,6 @@
 
 - **INSERT/SELECT/UPDATE/DELETE**: `bucket_id = 'visitor-photos'` 인 모든 사용(공개) 허용 — 운영 정책에 따라 조정 가능
 
-> 전체 SQL 전문은 `scripts/image-upload-policy.sql` 파일을 참고하세요.
+> 전체 SQL 전문은 [scripts/image-upload-policy.sql](../scripts/image-upload-policy.sql) 파일을 참고하세요.
 
 ---
