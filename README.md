@@ -1,19 +1,19 @@
-# 🌾 FarmPass — Demo App
+# FarmPass — Demo App
 
-<p align="center">
+<p align="left">
   <b>농장 방문자 출입을 QR로 디지털화하는 PWA 웹앱</b><br/>
   방역 준수 · 운영 자동화 · 실시간 대시보드 · 모바일 현장 최적화
 </p>
 
-<p align="center">
-  <a href="https://farmpass.site"><img alt="Live Demo" src="https://img.shields.io/badge/demo-live-brightgreen" /></a>
-  <img alt="Made with Next.js" src="https://img.shields.io/badge/Next.js-14-000000" />
-  <img alt="TypeScript" src="https://img.shields.io/badge/TypeScript-5-blue" />
-  <img alt="React Query" src="https://img.shields.io/badge/TanStack%20Query-5-ff4154" />
-  <img alt="Prisma" src="https://img.shields.io/badge/Prisma-6-black" />
-  <img alt="Supabase" src="https://img.shields.io/badge/Supabase-Postgres%20%7C%20Auth%20%7C%20Realtime-3fcf8e" />
-  <img alt="Serwist" src="https://img.shields.io/badge/Serwist-PWA%20SW-3b82f6" />
-  <img alt="Sentry" src="https://img.shields.io/badge/Monitoring-Sentry-362d59" />
+<p align="left">
+  <a href="https://farmpass.site"><img alt="Live Demo" src="https://img.shields.io/badge/Live%20Demo-farmpass.site-22c55e?style=flat-square&logo=vercel&logoColor=white" /></a>
+  <img alt="Next.js" src="https://img.shields.io/badge/Next.js-14-000000?style=flat-square&logo=next.js" />
+  <img alt="TypeScript" src="https://img.shields.io/badge/TypeScript-5-3178C6?style=flat-square&logo=typescript&logoColor=white" />
+  <img alt="React Query" src="https://img.shields.io/badge/TanStack%20Query-5-FF4154?style=flat-square&logo=reactquery&logoColor=white" />
+  <img alt="Prisma" src="https://img.shields.io/badge/Prisma-6-2D3748?style=flat-square&logo=prisma" />
+  <img alt="Supabase" src="https://img.shields.io/badge/Supabase-Postgres%20%7C%20Auth%20%7C%20Realtime-3FCF8E?style=flat-square&logo=supabase&logoColor=white" />
+  <img alt="PWA (Serwist)" src="https://img.shields.io/badge/PWA-Serwist-0EA5E9?style=flat-square&logo=googlechrome&logoColor=white" />
+  <img alt="Sentry" src="https://img.shields.io/badge/Monitoring-Sentry-362D59?style=flat-square&logo=sentry" />
 </p>
 
 ---
@@ -131,7 +131,7 @@
 
 ---
 
-## 🧱 아키텍처(요약)
+## 아키텍처(요약)
 
 ```mermaid
 graph TB
@@ -159,7 +159,7 @@ graph TB
   - `visitor-photos`(공개): 현장 업로드/조회(운영 정책에 따라 제한 가능)
 - **자동 정리(크론)**: 방문자·로그·푸시 구독·알림 보존 주기 기준 정리 함수 실행
 
-> 상세 스키마/정책은 [[/docs/schema-rls.md]] 문서를 참고.
+> 상세 스키마/정책은 [docs/schema-and-rls.md](docs/schema-and-rls.md) 문서를 참고.
 
 ---
 
@@ -231,20 +231,20 @@ SENTRY_AUTH_TOKEN=<your_sentry_auth_token>               # secret
 
 ### Supabase Database Function
 
-- Auth 관련 함수 추가 [[scripts/auth-function.sql]] 참고
-- 방문자 데이터 정리, 시스템 로그 자동 정리, 만료 푸시 구독 자동 정리, 인앱 알림 자동 정리 함수 추가 및 Cron 스케줄 등록 필요 [[scripts/자동삭제함수.sql]] 참고
+- Auth 관련 함수 추가 [scripts/auth-function.sql](scripts/auth-function.sql) 참고
+- 방문자 데이터 정리, 시스템 로그 자동 정리, 만료 푸시 구독 자동 정리, 인앱 알림 자동 정리 함수 추가 및 Cron 스케줄 등록 필요 [scripts/자동삭제함수.sql](scripts/자동삭제함수.sql) 참고
 
 ### Supabase Auth & RLS 정책
 
 - 카카오, 구글 로그인 Auth Provider 등록 필요 api key, client id, client secret값 필요
 - 이메일 전송(이메일 확인, 비밀번호 재설정)에 필요한 SMTP Provider Setting 필요 (Resend 적용)
 - URL Configuration -> Site URL 등록
-- Database RLS 활성화 및 정책 추가 필요 [[scripts/project-policy.sql]] 참고
-- Storage 관련 RLS 정책 추가 필요 [[scripts/image-upload-policy.sql]] 참고
+- Database RLS 활성화 및 정책 추가 필요 [scripts/project-policy.sql](scripts/project-policy.sql) 참고
+- Storage 관련 RLS 정책 추가 필요 [scripts/image-upload-policy.sql](scripts/image-upload-policy.sql) 참고
 
 ---
 
-## 🔐 환경변수 레퍼런스(요약 표)
+## 환경변수 레퍼런스(요약 표)
 
 | Key                              | Scope  | Required | Default/예시            | 설명                                                  |
 | -------------------------------- | ------ | -------: | ----------------------- | ----------------------------------------------------- |
@@ -274,7 +274,7 @@ SENTRY_AUTH_TOKEN=<your_sentry_auth_token>               # secret
 
 ---
 
-## 🔔 푸시 알림 플로우 (Mermaid)
+## 푸시 알림 플로우
 
 ```mermaid
 sequenceDiagram
@@ -301,7 +301,7 @@ U->>SW: notificationclick → focus/clients.openWindow()
 
 ---
 
-## 🗺️ ER 다이어그램
+## ER 다이어그램
 
 ```mermaid
 erDiagram
@@ -319,7 +319,7 @@ erDiagram
 
 ---
 
-## 🧠 캐싱 전략 (Serwist)
+## 캐싱 전략 (Serwist)
 
 **Precache(정적 자원)** — 빌드 시점에 고정 리소스를 선캐싱합니다.
 
@@ -335,9 +335,15 @@ erDiagram
 **Runtime Caching**
 
 - **HTML 내비게이션**: Network First → 실패 시 `/offline` 폴백
-- **API(`/api/*`)**: Network First(짧은 타임아웃)
-- **Supabase Storage 이미지**: Stale-While-Revalidate
-- **폰트/CDN 정적**: Cache First(긴 max-age)
+- **API(`/api/*`)**: Network First (timeout 10s)
+- **이미지(일반 + `/_next/image`)**: Stale-While-Revalidate
+  - 확장자 이미지: 30일 / Next Image: 24시간
+- **폰트/CDN**:
+  - `fonts.gstatic.com`(webfonts) → **Cache First (365일)**
+  - `fonts.googleapis.com`(stylesheets) & 로컬 폰트 에셋(`ttf|woff|...`) → **Stale-While-Revalidate (7일)**
+- **정적 JS**:
+  - `/_next/static/*.js` → **Cache First (24시간)**
+  - 그 외 `.js` → **Stale-While-Revalidate (24시간)**
 
 **Bypass/Ignore**
 
@@ -347,13 +353,13 @@ erDiagram
 
 ---
 
-## 📚 Reference
+## Reference
 
-- 데이터베이스 스키마 & RLS: `docs/schema-and-rls.md`
+- 데이터베이스 스키마 & RLS: [docs/schema-and-rls.md](docs/schema-and-rls.md)
 - 사용자 메뉴얼: [사용자 매뉴얼 - 농장 출입 관리 시스템](https://www.farmpass.site/docs/user-manual.html)
 - 시작 가이드: [농장 출입 관리 시스템 - 빠른 시작 가이드](https://www.farmpass.site/docs/quick-start.html)
 - PWA 가이드: [농장 출입 관리 시스템 - PWA 사용 가이드](https://www.farmpass.site/docs/pwa-guide.html)
 
-## 👋 문의
+## 문의
 
 - 📧 sosiluv@gmail.com
